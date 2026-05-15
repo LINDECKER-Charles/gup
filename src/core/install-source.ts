@@ -5,9 +5,7 @@ export type InstallSource = "scoop" | "choco" | "winget" | "manual";
 
 /**
  * Locate a binary in PATH and infer which package manager (if any) owns it
- * by matching well-known install directories. Used by providers without a
- * self-update mechanism (terraform, pulumi, kubectl, symfony-cli, ...) to
- * route the update through the responsible package manager.
+ * by matching well-known install directories.
  */
 export async function detectInstallSource(binary: string): Promise<InstallSource> {
   const probe = process.platform === "win32" ? "where" : "which";
@@ -15,50 +13,52 @@ export async function detectInstallSource(binary: string): Promise<InstallSource
   if (failed) return "manual";
   const path = stdout.split(/\r?\n/)[0]?.trim().toLowerCase() ?? "";
   if (!path) return "manual";
-  if (path.includes("\\scoop\\")) return "scoop";
-  if (path.includes("chocolatey")) return "choco";
-  if (path.includes("\\winget\\") || path.includes("\\windowsapps\\")) return "winget";
+  return inferSourceFromPath(path);
+}
+
+export function inferSourceFromPath(path: string): InstallSource {
+  const lower = path.toLowerCase();
+  if (lower.includes("\\scoop\\")) return "scoop";
+  if (lower.includes("chocolatey")) return "choco";
+  if (
+    lower.includes("\\winget\\") ||
+    lower.includes("\\windowsapps\\") ||
+    lower.includes("\\appdata\\local\\programs\\")
+  )
+    return "winget";
   return "manual";
 }
 
-export interface DelegateUpdateOptions {
-  /** Outcome id (typically the provider id or the package id). */
-  id: string;
-  /** Binary name to locate (e.g. "terraform"). */
-  binary: string;
-  /** Mapping of package manager → arguments to use for the upgrade. */
-  packageIds: {
-    scoop?: string;
-    choco?: string;
-    winget?: string;
-  };
-  /** Message shown when the binary is installed manually. */
-  manualMessage: string;
+export interface PackageIds {
+  scoop?: string;
+  choco?: string;
+  winget?: string;
 }
 
 /**
- * Run an upgrade through the detected install source. Returns a `skipped`
- * outcome (yellow, not red) when the binary was installed manually.
+ * Drive an upgrade through a specific package manager. Used when the source
+ * is already known (e.g. JetBrains provider that detected it during scan)
+ * and re-probing would be wasteful or incorrect.
  */
-export async function delegateUpdate(
-  options: DelegateUpdateOptions,
+export async function runPmUpdate(
+  id: string,
+  source: InstallSource,
+  packageIds: PackageIds,
+  manualMessage: string,
 ): Promise<UpdateOutcome> {
-  const source = await detectInstallSource(options.binary);
-  const pkgs = options.packageIds;
-
   switch (source) {
     case "scoop":
-      if (!pkgs.scoop) break;
-      return runDelegated(options.id, "scoop", ["update", pkgs.scoop]);
+      if (!packageIds.scoop) break;
+      return runDelegated(id, "scoop", ["update", packageIds.scoop]);
     case "choco":
-      if (!pkgs.choco) break;
-      return runDelegated(options.id, "choco", ["upgrade", pkgs.choco, "-y"]);
+      if (!packageIds.choco) break;
+      return runDelegated(id, "choco", ["upgrade", packageIds.choco, "-y"]);
     case "winget":
-      if (!pkgs.winget) break;
-      return runDelegated(options.id, "winget", [
+      if (!packageIds.winget) break;
+      return runDelegated(id, "winget", [
         "upgrade",
         "--id",
-        pkgs.winget,
+        packageIds.winget,
         "--silent",
         "--accept-package-agreements",
         "--accept-source-agreements",
@@ -68,11 +68,31 @@ export async function delegateUpdate(
   }
 
   return {
-    id: options.id,
+    id,
     success: false,
     skipped: true,
-    message: options.manualMessage,
+    message: manualMessage,
   };
+}
+
+export interface DelegateUpdateOptions {
+  id: string;
+  /** Binary name to locate (e.g. "terraform") for source detection. */
+  binary: string;
+  packageIds: PackageIds;
+  manualMessage: string;
+}
+
+/**
+ * Convenience: detect the source from a binary name in PATH and run the
+ * corresponding upgrade in one call. Used by providers that don't track
+ * the install path themselves (symfony-cli, terraform, pulumi, kubectl).
+ */
+export async function delegateUpdate(
+  options: DelegateUpdateOptions,
+): Promise<UpdateOutcome> {
+  const source = await detectInstallSource(options.binary);
+  return runPmUpdate(options.id, source, options.packageIds, options.manualMessage);
 }
 
 async function runDelegated(
