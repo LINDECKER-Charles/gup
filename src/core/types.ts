@@ -7,6 +7,13 @@ export interface OutdatedPackage {
   latest: string;
   /** Optional extra info ("pinned", "unknown", "source: msstore"...). */
   note?: string;
+  /**
+   * True when the provider knows ahead of time that calling update() will
+   * return a `skipped` outcome — no automatic action possible. Excluded
+   * from "Update all" by default and surfaced separately so the user can
+   * act on them manually.
+   */
+  manual?: boolean;
 }
 
 export interface UpdateOutcome {

@@ -53,6 +53,7 @@ export class TerraformProvider implements Provider {
         current,
         latest,
         note: describeSource(source),
+        ...(source === "manual" && { manual: true }),
       },
     ];
   }

@@ -52,6 +52,7 @@ export class KubectlProvider implements Provider {
         current,
         latest,
         note: describeSource(source),
+        ...(source === "manual" && { manual: true }),
       },
     ];
   }

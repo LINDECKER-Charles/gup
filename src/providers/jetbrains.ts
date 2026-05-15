@@ -52,6 +52,7 @@ export class JetBrainsProvider implements Provider {
           const latest = await fetchJetBrainsLatest(prod.productCode);
           if (!latest) return null;
           if (compareBuilds(prod.buildNumber, latest.build) >= 0) return null;
+          const isManual = prod.source === "toolbox" || prod.source === "manual";
           return {
             id: prod.productCode,
             name: prod.name,
@@ -61,6 +62,7 @@ export class JetBrainsProvider implements Provider {
               prod.source === "toolbox"
                 ? "via Toolbox"
                 : describeSource(prod.source),
+            ...(isManual && { manual: true }),
           };
         }),
       ),

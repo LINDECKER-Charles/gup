@@ -38,6 +38,7 @@ export class PulumiProvider implements Provider {
         current,
         latest: normLatest,
         note: describeSource(source),
+        ...(source === "manual" && { manual: true }),
       },
     ];
   }

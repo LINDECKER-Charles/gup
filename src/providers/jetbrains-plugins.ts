@@ -9,6 +9,7 @@ interface PluginMeta {
   id: string;
   name: string;
   version: string;
+  vendor: string | null;
   ideHosts: string[];
 }
 
@@ -42,6 +43,7 @@ export class JetBrainsPluginsProvider implements Provider {
     // version (an update there helps everyone) and merge ideHosts.
     const byId = new Map<string, PluginMeta>();
     for (const plugin of allPlugins) {
+      if (isPlatformPlugin(plugin.vendor, plugin.version)) continue;
       const existing = byId.get(plugin.id);
       if (!existing) {
         byId.set(plugin.id, { ...plugin });
@@ -68,6 +70,7 @@ export class JetBrainsPluginsProvider implements Provider {
             current: plugin.version,
             latest,
             note: plugin.ideHosts.join(", "),
+            manual: true,
           };
         }),
       ),
@@ -141,7 +144,7 @@ async function scanIdeDir(dir: string, ideHost: string): Promise<PluginMeta[]> {
       continue;
     }
 
-    let meta: { id: string; name: string; version: string } | null = null;
+    let meta: { id: string; name: string; version: string; vendor: string | null } | null = null;
     if (info.isDirectory()) {
       meta = await extractFromPluginDir(fullPath);
     } else if (entry.toLowerCase().endsWith(".jar")) {
@@ -155,7 +158,7 @@ async function scanIdeDir(dir: string, ideHost: string): Promise<PluginMeta[]> {
 
 async function extractFromPluginDir(
   dir: string,
-): Promise<{ id: string; name: string; version: string } | null> {
+): Promise<{ id: string; name: string; version: string; vendor: string | null } | null> {
   const direct = join(dir, "META-INF", "plugin.xml");
   if (existsSync(direct)) {
     try {
@@ -185,7 +188,7 @@ async function extractFromPluginDir(
 
 function extractFromJar(
   jarPath: string,
-): { id: string; name: string; version: string } | null {
+): { id: string; name: string; version: string; vendor: string | null } | null {
   try {
     const zip = new AdmZip(jarPath);
     const entry = zip.getEntry("META-INF/plugin.xml");
@@ -199,10 +202,11 @@ function extractFromJar(
 
 function parsePluginXml(
   xml: string,
-): { id: string; name: string; version: string } | null {
+): { id: string; name: string; version: string; vendor: string | null } | null {
   const idMatch = xml.match(/<id>([^<]+)<\/id>/);
   const nameMatch = xml.match(/<name>([^<]+)<\/name>/);
   const versionMatch = xml.match(/<version>([^<]+)<\/version>/);
+  const vendorMatch = xml.match(/<vendor[^>]*>([^<]+)<\/vendor>/);
   const id = idMatch?.[1]?.trim();
   const version = versionMatch?.[1]?.trim();
   if (!id || !version) return null;
@@ -210,7 +214,23 @@ function parsePluginXml(
     id,
     name: nameMatch?.[1]?.trim() ?? id,
     version,
+    vendor: vendorMatch?.[1]?.trim() ?? null,
   };
+}
+
+/**
+ * Platform plugins ship with (or version-track) the IDE — they update only
+ * when the IDE itself is updated. Detecting them by:
+ *   - vendor = JetBrains (string match, including "JetBrains s.r.o."),
+ *   - version follows the build-number scheme NNN.NNN.NN(N)? (e.g.
+ *     252.21735.59), distinguishing them from semver-style third-party
+ *     plugins by the same vendor (e.g. Kotlin "2.1.0").
+ */
+function isPlatformPlugin(vendor: string | null, version: string): boolean {
+  if (!vendor) return false;
+  const v = vendor.toLowerCase();
+  if (v !== "jetbrains" && v !== "jetbrains s.r.o.") return false;
+  return /^\d{3}\.\d{3,5}(?:\.\d{1,3})?$/.test(version);
 }
 
 function compareVersions(a: string, b: string): number {

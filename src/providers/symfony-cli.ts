@@ -40,6 +40,7 @@ export class SymfonyCliProvider implements Provider {
         current,
         latest: normLatest,
         note: describeSource(source),
+        ...(source === "manual" && { manual: true }),
       },
     ];
   }
