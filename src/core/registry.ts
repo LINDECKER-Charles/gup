@@ -15,7 +15,11 @@ import { VsCodeExtProvider } from "../providers/vscode-ext.js";
 import { SymfonyCliProvider } from "../providers/symfony-cli.js";
 import { GhExtensionsProvider } from "../providers/gh-extensions.js";
 import { JetBrainsProvider } from "../providers/jetbrains.js";
-import { JetBrainsPluginsProvider } from "../providers/jetbrains-plugins.js";
+// JetBrainsPluginsProvider exists in src/providers/jetbrains-plugins.ts but
+// is intentionally NOT registered: every result it produces is `manual:true`
+// (no reliable CLI path for plugin updates), so it would always be filtered
+// out by scanAll. Kept as code reference; re-register here if a future
+// automatable path is implemented (e.g. `<ide> installPlugins`).
 import { AzProvider } from "../providers/az.js";
 import { WslProvider } from "../providers/wsl.js";
 import { PulumiProvider } from "../providers/pulumi.js";
@@ -65,7 +69,6 @@ export const ALL_PROVIDERS: Provider[] = [
   new GhExtensionsProvider(),
   new VsCodeExtProvider(),
   new JetBrainsProvider(),
-  new JetBrainsPluginsProvider(),
 ];
 
 export interface ScanOptions {
@@ -118,7 +121,12 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
         options.onProviderStart?.(p);
         let result: ProviderScanResult;
         try {
-          const packages = await p.listOutdated();
+          const all = await p.listOutdated();
+          // The tool only surfaces actionable updates — items the provider
+          // flagged as `manual: true` (Toolbox-managed IDEs, manual binary
+          // installs, plugins behind GUI managers, ...) are dropped here so
+          // they never appear in lists, prompts, or "update all" flows.
+          const packages = all.filter((pkg) => !pkg.manual);
           result = { providerId: p.id, available: true, packages };
         } catch (err) {
           result = {

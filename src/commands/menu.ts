@@ -179,72 +179,23 @@ async function runSelect(state: MenuState): Promise<void> {
 }
 
 async function runAll(state: MenuState): Promise<void> {
-  // Partition automatable vs known-manual upfront so the user sees exactly
-  // what "Update all" will do, instead of discovering 100 SKIPs after the fact.
-  let automatable = 0;
-  let manual = 0;
-  const manualEntries: Array<{ provider: string; pkg: OutdatedPackage }> = [];
-  for (const scan of state.scans) {
-    for (const pkg of scan.packages) {
-      if (pkg.manual) {
-        manual++;
-        manualEntries.push({ provider: scan.providerId, pkg });
-      } else {
-        automatable++;
-      }
-    }
-  }
-
-  if (automatable === 0 && manual > 0) {
-    process.stdout.write(
-      chalk.yellow(
-        `\n  ${manual} mise(s) à jour disponible(s) mais toutes nécessitent une action manuelle.\n`,
-      ),
-    );
-    printManualList(manualEntries);
-    return;
-  }
-
-  let message = `Tout mettre à jour (${automatable} paquet(s) automatisable(s)`;
-  if (manual > 0) message += `, ${manual} ignoré(s) — action manuelle`;
-  message += ") ?";
-
-  const ok = await confirm({ message, default: true });
+  const total = totalUpdates(state);
+  const ok = await confirm({
+    message: `Mettre à jour les ${total} paquet(s) ?`,
+    default: true,
+  });
   if (!ok) return;
 
   const outcomes: UpdateOutcome[] = [];
   for (const scan of state.scans) {
-    const actionable = scan.packages.filter((p) => !p.manual);
-    if (actionable.length === 0) continue;
+    if (scan.packages.length === 0) continue;
     const provider = getProvider(scan.providerId);
     if (!provider) continue;
-    printSectionHeader(provider.displayName, actionable.length);
-    outcomes.push(...(await provider.updateAll(actionable)));
+    printSectionHeader(provider.displayName, scan.packages.length);
+    outcomes.push(...(await provider.updateAll(scan.packages)));
   }
   summarize(outcomes);
-
-  if (manual > 0) {
-    process.stdout.write(
-      chalk.yellow(`\n  ${manual} action(s) manuelle(s) à faire toi-même :\n`),
-    );
-    printManualList(manualEntries);
-  }
-
   await initialScan(state);
-}
-
-function printManualList(
-  entries: Array<{ provider: string; pkg: OutdatedPackage }>,
-): void {
-  for (const entry of entries) {
-    const provider = getProvider(entry.provider);
-    const label = provider?.displayName ?? entry.provider;
-    const name = entry.pkg.name ?? entry.pkg.id;
-    const note = entry.pkg.note ? chalk.dim(` — ${entry.pkg.note}`) : "";
-    process.stdout.write(
-      chalk.dim(`       · `) + `${name} ${chalk.dim(`(${label})`)}${note}\n`,
-    );
-  }
 }
 
 async function runTarget(): Promise<void> {

@@ -34,56 +34,23 @@ export async function updateCommand(options: UpdateOptions): Promise<number> {
 
   let selection: SelectedPackage[];
   if (options.all) {
-    const automatable = allPackages.filter((p) => !p.pkg.manual);
-    const manualOnly = allPackages.filter((p) => p.pkg.manual);
-    selection = automatable;
-
-    if (automatable.length === 0 && manualOnly.length > 0) {
-      process.stdout.write(
-        chalk.yellow(
-          `${manualOnly.length} mise(s) à jour mais toutes nécessitent une action manuelle.\n`,
-        ),
-      );
-      printManualList(manualOnly);
-      return 0;
-    }
+    selection = allPackages;
     if (!options.yes) {
       const ok = await confirm({
-        message: `${automatable.length} paquet(s) automatisable(s)${
-          manualOnly.length > 0 ? `, ${manualOnly.length} ignoré(s) — action manuelle` : ""
-        }. Continuer ?`,
+        message: `${selection.length} paquets à mettre à jour. Continuer ?`,
         default: true,
       });
       if (!ok) return 1;
     }
-    const exitCode = await runSelection(selection);
-    if (manualOnly.length > 0) {
-      process.stdout.write(
-        chalk.yellow(`\n${manualOnly.length} action(s) manuelle(s) à faire toi-même:\n`),
-      );
-      printManualList(manualOnly);
+  } else {
+    selection = await promptPackageSelection(scans);
+    if (selection.length === 0) {
+      process.stdout.write("Aucune sélection.\n");
+      return 0;
     }
-    return exitCode;
   }
 
-  selection = await promptPackageSelection(scans);
-  if (selection.length === 0) {
-    process.stdout.write("Aucune sélection.\n");
-    return 0;
-  }
   return runSelection(selection);
-}
-
-function printManualList(items: SelectedPackage[]): void {
-  for (const item of items) {
-    const provider = getProvider(item.providerId);
-    const label = provider?.displayName ?? item.providerId;
-    const name = item.pkg.name ?? item.pkg.id;
-    const note = item.pkg.note ? chalk.dim(` — ${item.pkg.note}`) : "";
-    process.stdout.write(
-      chalk.dim(`  · `) + `${name} ${chalk.dim(`(${label})`)}${note}\n`,
-    );
-  }
 }
 
 async function runTargets(targets: string[]): Promise<number> {
