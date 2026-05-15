@@ -2,8 +2,23 @@
   "name": "@hexanti/gup",
   "version": "0.1.0",
   "private": true,
-  "description": "Unified CLI to check and update packages across winget, npm-g, scoop, choco, pip, pipx, dotnet tools, cargo, pwsh modules, composer global, vscode extensions.",
+  "description": "Unified CLI to check and update packages across many sources (winget, npm-g, pnpm-g, scoop, choco, pip, pipx, dotnet tools, cargo, pwsh modules, composer global, vscode extensions, symfony-cli, gh extensions, jetbrains, az, yarn, wsl, pulumi, terraform, kubectl, krew, jetbrains plugins).",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LINDECKER-Charles/GlobalUpdater.git"
+  },
+  "keywords": [
+    "cli",
+    "updater",
+    "package-manager",
+    "winget",
+    "scoop",
+    "npm",
+    "dotnet",
+    "windows"
+  ],
   "bin": {
     "gup": "./dist/cli.js"
   },
@@ -19,6 +34,8 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.2.1",
+    "@types/adm-zip": "^0.5.8",
+    "adm-zip": "^0.5.17",
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",
     "commander": "^12.1.0",
