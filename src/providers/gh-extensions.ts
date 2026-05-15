@@ -17,6 +17,7 @@ export class GhExtensionsProvider implements Provider {
   readonly id = "gh-ext";
   readonly displayName = "GitHub CLI extensions";
   readonly installHint = "winget install GitHub.cli";
+  readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
     return commandExists("gh");

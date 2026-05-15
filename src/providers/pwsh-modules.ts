@@ -32,6 +32,7 @@ export class PwshModulesProvider implements Provider {
   readonly id = "pwsh-modules";
   readonly displayName = "PowerShell modules";
   readonly installHint = "PowerShell 7+: `winget install Microsoft.PowerShell`";
+  readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
     return (await commandExists("pwsh")) || (await commandExists("powershell"));

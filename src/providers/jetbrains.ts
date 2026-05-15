@@ -32,6 +32,7 @@ export class JetBrainsProvider implements Provider {
   readonly id = "jetbrains";
   readonly displayName = "JetBrains IDEs";
   readonly installHint = "JetBrains Toolbox: https://jb.gg/toolbox";
+  readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
     const dir = toolboxAppsDir();

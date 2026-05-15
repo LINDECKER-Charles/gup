@@ -23,6 +23,7 @@ export class PipxProvider implements Provider {
   readonly id = "pipx";
   readonly displayName = "pipx";
   readonly installHint = "python -m pip install --user pipx";
+  readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
     return commandExists("pipx");

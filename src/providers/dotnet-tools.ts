@@ -13,6 +13,7 @@ export class DotnetToolsProvider implements Provider {
   readonly id = "dotnet-tools";
   readonly displayName = ".NET tools (global)";
   readonly installHint = "Install .NET SDK: https://dotnet.microsoft.com/download";
+  readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
     return commandExists("dotnet");

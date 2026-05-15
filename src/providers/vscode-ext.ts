@@ -13,6 +13,7 @@ export class VsCodeExtProvider implements Provider {
   readonly id = "vscode-ext";
   readonly displayName = "VS Code extensions";
   readonly installHint = "VS Code: https://code.visualstudio.com";
+  readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
     return commandExists("code");

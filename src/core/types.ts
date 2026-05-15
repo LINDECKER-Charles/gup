@@ -35,6 +35,12 @@ export interface Provider {
   readonly displayName: string;
   /** Hint shown by `gup doctor` when not installed. */
   readonly installHint?: string;
+  /**
+   * Mark as `true` for providers whose scan involves slow per-package HTTP
+   * calls or filesystem walks. Skipped by `gup --fast` / "Fast mode" toggle.
+   * Declarative — no centralized opt-in list to maintain.
+   */
+  readonly slow?: boolean;
 
   isAvailable(): Promise<boolean>;
   listOutdated(): Promise<OutdatedPackage[]>;
