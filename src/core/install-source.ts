@@ -49,7 +49,7 @@ export async function runPmUpdate(
   switch (source) {
     case "scoop":
       if (!packageIds.scoop) break;
-      return runDelegated(id, "scoop", ["update", packageIds.scoop]);
+      return runDelegated(id, "scoop", ["update", packageIds.scoop], { shell: true });
     case "choco":
       if (!packageIds.choco) break;
       return runDelegated(id, "choco", ["upgrade", packageIds.choco, "-y"]);
@@ -99,8 +99,9 @@ async function runDelegated(
   id: string,
   command: string,
   args: string[],
+  options: { shell?: boolean } = {},
 ): Promise<UpdateOutcome> {
-  const res = await runInherit(command, args);
+  const res = await runInherit(command, args, options);
   return { id, success: !res.failed };
 }
 

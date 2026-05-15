@@ -1,5 +1,8 @@
-import { commandExists, run, runInherit } from "../core/runner.js";
+import { commandExists, isElevated, run, runInherit } from "../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
+
+const NOT_ADMIN_MESSAGE =
+  "Chocolatey nécessite un terminal admin. Relancer gup depuis PowerShell ou Terminal lancé en « Exécuter en tant qu'administrateur ».";
 
 /**
  * `choco outdated -r --limit-output` emits: name|currentVersion|availableVersion|pinned
@@ -35,12 +38,23 @@ export class ChocoProvider implements Provider {
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
+    if (!(await isElevated())) {
+      return { id: packageId, success: false, skipped: true, message: NOT_ADMIN_MESSAGE };
+    }
     const res = await runInherit("choco", ["upgrade", packageId, "-y"]);
     return { id: packageId, success: !res.failed };
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
     if (packages.length === 0) return [];
+    if (!(await isElevated())) {
+      return packages.map((p) => ({
+        id: p.id,
+        success: false,
+        skipped: true,
+        message: NOT_ADMIN_MESSAGE,
+      }));
+    }
     const res = await runInherit("choco", ["upgrade", "all", "-y"]);
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
   }

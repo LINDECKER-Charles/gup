@@ -61,3 +61,14 @@ export async function commandExists(command: string): Promise<boolean> {
   const result = await run(probe, [command]);
   return !result.failed && result.stdout.trim().length > 0;
 }
+
+/**
+ * Windows: `net session` requires admin privileges, so its exit code is a
+ * reliable cheap probe for elevation. Non-Windows always reports true since
+ * the providers that care about this (choco) are Windows-only anyway.
+ */
+export async function isElevated(): Promise<boolean> {
+  if (process.platform !== "win32") return true;
+  const result = await run("net", ["session"]);
+  return !result.failed;
+}

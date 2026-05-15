@@ -22,13 +22,13 @@ export class ScoopProvider implements Provider {
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
-    const res = await runInherit("scoop", ["update", packageId]);
+    const res = await runInherit("scoop", ["update", packageId], { shell: true });
     return { id: packageId, success: !res.failed };
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
     if (packages.length === 0) return [];
-    const res = await runInherit("scoop", ["update", "*"]);
+    const res = await runInherit("scoop", ["update", "*"], { shell: true });
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
   }
 }
