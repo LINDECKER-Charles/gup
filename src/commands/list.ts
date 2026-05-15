@@ -1,5 +1,5 @@
-import ora from "ora";
 import { scanAll } from "../core/registry.js";
+import { scanWithProgress } from "../ui/scan-progress.js";
 import { renderScanTable } from "../ui/table.js";
 
 export interface ListOptions {
@@ -9,12 +9,15 @@ export interface ListOptions {
 }
 
 export async function listCommand(options: ListOptions): Promise<number> {
-  const spinner = options.json ? null : ora({ text: "scan en cours...", spinner: "line" }).start();
-  const results = await scanAll({
-    ...(options.only && { only: options.only }),
-    ...(options.fast !== undefined && { fast: options.fast }),
-  });
-  spinner?.stop();
+  const results = options.json
+    ? await scanAll({
+        ...(options.only && { only: options.only }),
+        ...(options.fast !== undefined && { fast: options.fast }),
+      })
+    : await scanWithProgress({
+        ...(options.only && { only: options.only }),
+        ...(options.fast !== undefined && { fast: options.fast }),
+      });
 
   if (options.json) {
     process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);

@@ -75,6 +75,10 @@ export interface ScanOptions {
   fast?: boolean;
   /** Max parallel scans. Defaults to 4. */
   concurrency?: number;
+  /** Fired when a provider's scan starts (for live progress UI). */
+  onProviderStart?: (provider: Provider) => void;
+  /** Fired when a provider's scan ends (success or failure). */
+  onProviderEnd?: (provider: Provider, result: ProviderScanResult) => void;
 }
 
 export function getProvider(id: string): Provider | undefined {
@@ -88,29 +92,44 @@ export async function detectAvailableProviders(): Promise<Provider[]> {
   return checks.filter((c) => c.ok).map((c) => c.p);
 }
 
-export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanResult[]> {
+/**
+ * Returns the filtered list of providers that will be scanned, without
+ * actually running the scans. Useful for UI that needs to know the total
+ * upfront (e.g. progress counters).
+ */
+export async function getProvidersToScan(
+  options: ScanOptions = {},
+): Promise<Provider[]> {
   const available = await detectAvailableProviders();
-  const filtered = available.filter((p) => {
+  return available.filter((p) => {
     if (options.only?.length && !options.only.includes(p.id)) return false;
     if (options.fast && p.slow) return false;
     return true;
   });
+}
+
+export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanResult[]> {
+  const filtered = await getProvidersToScan(options);
 
   const limit = pLimit(options.concurrency ?? 4);
   return Promise.all(
     filtered.map((p) =>
       limit(async (): Promise<ProviderScanResult> => {
+        options.onProviderStart?.(p);
+        let result: ProviderScanResult;
         try {
           const packages = await p.listOutdated();
-          return { providerId: p.id, available: true, packages };
+          result = { providerId: p.id, available: true, packages };
         } catch (err) {
-          return {
+          result = {
             providerId: p.id,
             available: true,
             packages: [],
             error: err instanceof Error ? err.message : String(err),
           };
         }
+        options.onProviderEnd?.(p, result);
+        return result;
       }),
     ),
   );

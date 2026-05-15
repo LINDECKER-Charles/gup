@@ -1,14 +1,13 @@
 import { select, input, confirm, checkbox, Separator } from "@inquirer/prompts";
 import chalk from "chalk";
-import ora from "ora";
 import {
   ALL_PROVIDERS,
   detectAvailableProviders,
   getProvider,
-  scanAll,
 } from "../core/registry.js";
 import { promptPackageSelection } from "../ui/select.js";
 import { renderScanTable, renderProvidersStatus } from "../ui/table.js";
+import { scanWithProgress } from "../ui/scan-progress.js";
 import type {
   OutdatedPackage,
   ProviderScanResult,
@@ -139,15 +138,9 @@ async function initialScan(state: MenuState): Promise<void> {
   if (state.detectedCount === 0) {
     state.detectedCount = (await detectAvailableProviders()).length;
   }
-  const spinner = ora({ text: "Scan en cours...", spinner: "line" }).start();
-  state.scans = await scanAll({
+  state.scans = await scanWithProgress({
     fast: state.fast,
     ...(state.filter.length > 0 && { only: state.filter }),
-  });
-  const total = totalUpdates(state);
-  spinner.stopAndPersist({
-    symbol: chalk.dim("·"),
-    text: chalk.dim(`scan terminé — ${total} mise(s) à jour`),
   });
 }
 

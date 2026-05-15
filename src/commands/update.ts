@@ -1,7 +1,7 @@
 import { confirm } from "@inquirer/prompts";
 import chalk from "chalk";
-import ora from "ora";
-import { getProvider, scanAll } from "../core/registry.js";
+import { getProvider } from "../core/registry.js";
+import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection, type SelectedPackage } from "../ui/select.js";
 import type { OutdatedPackage, UpdateOutcome } from "../core/types.js";
 
@@ -18,12 +18,10 @@ export async function updateCommand(options: UpdateOptions): Promise<number> {
     return runTargets(options.targets);
   }
 
-  const spinner = ora({ text: "scan en cours...", spinner: "line" }).start();
-  const scans = await scanAll({
+  const scans = await scanWithProgress({
     ...(options.only && { only: options.only }),
     ...(options.fast !== undefined && { fast: options.fast }),
   });
-  spinner.stop();
 
   const allPackages: SelectedPackage[] = scans.flatMap((scan) =>
     scan.packages.map((pkg) => ({ providerId: scan.providerId, pkg })),
