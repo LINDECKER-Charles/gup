@@ -1,0 +1,112 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { run } from "../../core/runner.js";
+import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+
+interface GitHubReleaseJson {
+  tag_name?: string;
+  name?: string;
+}
+
+/**
+ * Docker Desktop ships its own in-app updater and an MSI installer with a
+ * code-signed daemon that requires admin elevation. `gup` can't reliably
+ * trigger that updater without admin + GUI interaction, so the provider is
+ * scan-only: detect the installed version, compare to the latest release
+ * tagged in docker/for-win, and surface the result as a manual action.
+ */
+export class DockerDesktopProvider implements Provider {
+  readonly id = "docker-desktop";
+  readonly displayName = "Docker Desktop";
+  readonly installHint = "winget install Docker.DockerDesktop";
+
+  async isAvailable(): Promise<boolean> {
+    return dockerDesktopExe() !== null;
+  }
+
+  async listOutdated(): Promise<OutdatedPackage[]> {
+    const exe = dockerDesktopExe();
+    if (!exe) return [];
+
+    const current = await readFileProductVersion(exe);
+    if (!current) return [];
+
+    const latest = await fetchDockerDesktopLatest();
+    if (!latest || latest === current) return [];
+
+    return [
+      {
+        id: "docker-desktop",
+        name: "Docker Desktop",
+        current,
+        latest,
+        note: "GUI updater",
+        manual: true,
+      },
+    ];
+  }
+
+  async update(_packageId: string): Promise<UpdateOutcome> {
+    return {
+      id: "docker-desktop",
+      success: false,
+      skipped: true,
+      message:
+        "Ouvrir Docker Desktop â†’ Settings â†’ Software Updates pour appliquer.",
+    };
+  }
+
+  async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
+    if (packages.length === 0) return [];
+    return [await this.update("docker-desktop")];
+  }
+}
+
+function dockerDesktopExe(): string | null {
+  const candidates = [
+    process.env["ProgramFiles"]
+      ? join(process.env["ProgramFiles"]!, "Docker", "Docker", "Docker Desktop.exe")
+      : null,
+    process.env["ProgramFiles(x86)"]
+      ? join(process.env["ProgramFiles(x86)"]!, "Docker", "Docker", "Docker Desktop.exe")
+      : null,
+  ].filter((p): p is string => p !== null);
+  return candidates.find((p) => existsSync(p)) ?? null;
+}
+
+async function readFileProductVersion(exePath: string): Promise<string | null> {
+  if (process.platform !== "win32") return null;
+  const { stdout, failed } = await run("powershell", [
+    "-NoProfile",
+    "-NonInteractive",
+    "-Command",
+    `(Get-Item -LiteralPath '${exePath.replace(/'/g, "''")}').VersionInfo.ProductVersion`,
+  ]);
+  if (failed) return null;
+  const v = stdout.trim().split(/\s+/)[0];
+  if (!v) return null;
+  // Docker Desktop file version is "4.34.2.167585" â€” only the first three
+  // components match what the release feed exposes.
+  const m = v.match(/^v?(\d+(?:\.\d+){1,2})/);
+  return m?.[1] ?? null;
+}
+
+async function fetchDockerDesktopLatest(): Promise<string | null> {
+  try {
+    const res = await fetch(
+      "https://api.github.com/repos/docker/for-win/releases/latest",
+      {
+        headers: { accept: "application/vnd.github+json" },
+        signal: AbortSignal.timeout(5_000),
+      },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as GitHubReleaseJson;
+    const raw = data.tag_name ?? data.name ?? null;
+    if (!raw) return null;
+    const m = raw.match(/v?(\d+(?:\.\d+){1,2})/);
+    return m?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
