@@ -50,12 +50,14 @@ jobs:
         run: npm run build
 
       - name: Inject build metadata
-        # Stamp the deploy timestamp into the built HTML so cache busting +
-        # freshness signals reach search engines. Runs against the build
-        # output, not the source — keeps the source clean.
+        # Stamp the deploy timestamp into the built HTML + sitemap so cache
+        # busting and freshness signals reach search engines. Runs against
+        # the build output, not the source — keeps the source clean.
         run: |
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          sed -i "s|<!-- @@BUILD_DATE@@ -->|<meta name=\"build-date\" content=\"$BUILD_DATE\" />|" dist/index.html || true
+          BUILD_DAY=$(date -u +"%Y-%m-%d")
+          sed -i "s|<!-- @@BUILD_DATE@@ -->|<meta name=\"build-date\" content=\"$BUILD_DATE\" />|" dist/index.html
+          sed -i "s|@@LASTMOD@@|$BUILD_DAY|" dist/sitemap.xml
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

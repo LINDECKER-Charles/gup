@@ -24,63 +24,58 @@
        the property to stay verified. -->
   <meta name="google-site-verification" content="YsysVCbPPuBg9QDIPs77j60iMD7xcG4OUQ3yRIh6l_E" />
 
-  <!-- Primary SEO. Keyword order matters: brand → main category → differentiator. -->
-  <title>gup — Global Updater CLI · winget, npm, scoop, pip, helm, cargo et 125+ autres en 1 commande</title>
+  <!--
+    Primary SEO. Keep title ≤ 60 chars (Google SERP cutoff ≈ 600px) and
+    description ≤ 160 chars (mobile snippet cap). Differentiator stays
+    in the title so it survives truncation; long-tail keywords live in
+    the body, JSON-LD `keywords`, and llms.txt.
+  -->
+  <title>gup — winget, npm, pip, helm, cargo à jour en 1 commande</title>
   <meta
     name="description"
-    content="gup (Global Updater) est une CLI TypeScript open source qui scanne et met à jour tous les paquets installés sur votre machine — winget, scoop, chocolatey, npm-g, pnpm, pip, pipx, cargo, helm, kubectl, terraform, dotnet tools, vscode extensions, JetBrains, pwsh modules — ~130 sources derrière une seule interface. Scan parallèle, fail-soft, sortie JSON, mode --fast, ciblage chirurgical. Node ≥ 20, Windows / WSL / Linux / macOS."
+    content="CLI TypeScript open source qui scanne et met à jour ~130 sources : winget, npm, pip, helm, cargo, kubectl. Scan parallèle, fail-soft, JSON, mode --fast."
   />
   <meta name="author" content="Charles Lindecker" />
   <meta name="application-name" content="gup" />
   <meta name="theme-color" content="#1c1a18" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#1c1a18" />
   <meta name="color-scheme" content="dark" />
-  <meta name="generator" content="gup landing — Vite + React" />
   <!-- @@BUILD_DATE@@ -->
 
-  <!-- Open Graph -->
+  <!--
+    Open Graph. The hero screenshot (1600x900) is not committed yet — once
+    it lands at /gup/screenshots/01-v3-hero.png, promote it to the primary
+    og:image and switch the Twitter card back to `summary_large_image`.
+    Until then the 512x512 logo is the primary image so socials render a
+    clean square preview instead of a 404 fallback.
+  -->
   <meta property="og:site_name" content="gup — Global Updater" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="fr_FR" />
-  <meta property="og:locale:alternate" content="en_US" />
   <meta property="og:url" content="https://lindecker-charles.github.io/gup/" />
   <meta property="og:title" content="gup — une commande, ~130 sources à jour" />
   <meta
     property="og:description"
     content="CLI TypeScript open source qui orchestre winget, npm, pip, helm, cargo, kubectl et ~125 autres package managers derrière une seule interface — scan parallèle, fail-soft, sortie JSON, ciblage chirurgical."
   />
-  <!--
-    Primary OG image: the hero screenshot. TODO: create it at this path
-    (1200x630 ideal, 1600x900 fine). Until then, scrapers fall back to the
-    second og:image below (the 512x512 app icon) which IS a real file.
-  -->
-  <meta property="og:image" content="https://lindecker-charles.github.io/gup/screenshots/01-v3-hero.png" />
-  <meta property="og:image:secure_url" content="https://lindecker-charles.github.io/gup/screenshots/01-v3-hero.png" />
-  <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:width" content="1600" />
-  <meta property="og:image:height" content="900" />
-  <meta
-    property="og:image:alt"
-    content="Capture d'écran de la CLI gup affichant un scan de providers et une table de paquets obsolètes."
-  />
   <meta property="og:image" content="https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png" />
+  <meta property="og:image:secure_url" content="https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="512" />
   <meta property="og:image:height" content="512" />
   <meta property="og:image:alt" content="Logo gup — Global Updater" />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
+  <!-- Twitter Card. `summary` (square) until the 1600x900 hero screenshot
+       is committed; switch back to `summary_large_image` then. -->
+  <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="gup — une commande, ~130 sources à jour" />
   <meta
     name="twitter:description"
     content="CLI TypeScript qui orchestre winget, npm, pip, helm, cargo et ~125 autres package managers derrière une seule interface."
   />
-  <meta name="twitter:image" content="https://lindecker-charles.github.io/gup/screenshots/01-v3-hero.png" />
-  <meta
-    name="twitter:image:alt"
-    content="Capture d'écran de la CLI gup affichant un scan de providers et une table de paquets obsolètes."
-  />
+  <meta name="twitter:url" content="https://lindecker-charles.github.io/gup/" />
+  <meta name="twitter:image" content="https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png" />
+  <meta name="twitter:image:alt" content="Logo gup — Global Updater" />
   <meta name="twitter:creator" content="@LINDECKERCharles" />
   <meta name="twitter:site" content="@LINDECKERCharles" />
 
@@ -94,23 +89,34 @@
   <meta name="msapplication-TileColor" content="#1c1a18" />
   <meta name="msapplication-TileImage" content="https://lindecker-charles.github.io/gup/public/web-app-manifest-192x192.png" />
 
-  <!-- Sitemap discovery (in addition to robots.txt Sitemap directive) -->
-  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
-
-  <!-- Performance hints -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!--
+    Performance hints. Fonts are self-hosted (see /gup/fonts/*.woff2 + the
+    @font-face block in styles.css). Preloading the two variable woff2 files
+    used in the initial paint removes them from the critical-path waterfall
+    behind the bundled CSS request and eliminates the previous 770ms Google
+    Fonts render-block + ~940ms LCP critical-path edge.
+  -->
   <link
-    href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
-    rel="stylesheet"
+    rel="preload"
+    href="/gup/fonts/geist-latin-wght-normal.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin="anonymous"
+  />
+  <link
+    rel="preload"
+    href="/gup/fonts/geist-mono-latin-wght-normal.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin="anonymous"
   />
 
   <!-- ============================================================
        Structured data (schema.org JSON-LD)
-       Blocks: SoftwareApplication (the CLI), WebSite, BreadcrumbList,
-       FAQPage, HowTo (install flow), Organization (project entity),
-       ItemList (providers catalog). Multiple @type entries help
-       Google, Bing, and AI engines pick the right facet.
+       Blocks: SoftwareApplication (the CLI), WebSite (search action),
+       Organization (project entity), FAQPage (rich result eligible).
+       Multiple @type entries help Google, Bing and AI engines pick
+       the right facet.
        ============================================================ -->
   <script type="application/ld+json">
   {
@@ -130,7 +136,7 @@
     "license": "https://spdx.org/licenses/MIT.html",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "description": "CLI qui orchestre winget, npm, pip, helm, cargo, kubectl, terraform, dotnet tools, vscode extensions, JetBrains, pwsh modules et ~125 autres gestionnaires de paquets derrière une seule interface unifiée — scan parallèle, fail-soft, mode --fast, sortie JSON, ciblage chirurgical provider:package.",
-    "screenshot": "https://lindecker-charles.github.io/gup/screenshots/01-v3-hero.png",
+    "image": "https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png",
     "author": {
       "@type": "Person",
       "name": "Charles Lindecker",
@@ -156,9 +162,7 @@
       "Menu interactif (@inquirer/prompts) avec sélection multiple",
       "Mode --fast qui skip les providers lents (HTTP par paquet)",
       "Ciblage chirurgical provider:packageId — bypass complet du scan",
-      "Fail-soft : un provider défaillant n'affecte pas les autres",
-      "Argv-vector strict, jamais de shell: true (sécurité subprocess)",
-      "Audit CodeQL security-extended + Semgrep + gitleaks + audit-ci"
+      "Fail-soft : un provider défaillant n'affecte pas les autres"
     ]
   }
   </script>
@@ -208,64 +212,19 @@
   }
   </script>
 
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Pourquoi",     "item": "https://lindecker-charles.github.io/gup/#problem" },
-      { "@type": "ListItem", "position": 2, "name": "Usage",        "item": "https://lindecker-charles.github.io/gup/#modes" },
-      { "@type": "ListItem", "position": 3, "name": "Architecture", "item": "https://lindecker-charles.github.io/gup/#architecture" },
-      { "@type": "ListItem", "position": 4, "name": "Cycle de vie", "item": "https://lindecker-charles.github.io/gup/#lifecycle" },
-      { "@type": "ListItem", "position": 5, "name": "Providers",    "item": "https://lindecker-charles.github.io/gup/#providers" },
-      { "@type": "ListItem", "position": 6, "name": "Installer",    "item": "https://lindecker-charles.github.io/gup/#install" }
-    ]
-  }
-  </script>
+  <!--
+    BreadcrumbList removed: every item URL was a fragment of /gup/. Google
+    strips fragments before deduplication, so the list resolved to a single
+    page repeated 6 times — flagged as "page with duplicate URL" in Search
+    Console with no rich-result benefit. The visible <nav> already covers
+    in-page navigation.
+  -->
 
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    "name": "Installer gup et mettre à jour toute sa machine en une commande",
-    "description": "Installation globale via npm puis premier scan + update.",
-    "tool": [
-      { "@type": "HowToTool", "name": "Node.js >= 20" },
-      { "@type": "HowToTool", "name": "PowerShell, Bash ou zsh" }
-    ],
-    "step": [
-      {
-        "@type": "HowToStep",
-        "position": 1,
-        "name": "Installer gup globalement depuis npm",
-        "text": "npm install -g @charles_lindecker/gup",
-        "url": "https://lindecker-charles.github.io/gup/#install"
-      },
-      {
-        "@type": "HowToStep",
-        "position": 2,
-        "name": "Vérifier les providers détectés",
-        "text": "gup doctor",
-        "url": "https://lindecker-charles.github.io/gup/#install"
-      },
-      {
-        "@type": "HowToStep",
-        "position": 3,
-        "name": "Lister les paquets obsolètes",
-        "text": "gup list --fast",
-        "url": "https://lindecker-charles.github.io/gup/#modes"
-      },
-      {
-        "@type": "HowToStep",
-        "position": 4,
-        "name": "Tout mettre à jour",
-        "text": "gup update --all -y",
-        "url": "https://lindecker-charles.github.io/gup/#modes"
-      }
-    ],
-    "totalTime": "PT2M"
-  }
-  </script>
+  <!--
+    HowTo schema removed: Google deprecated HowTo rich results in Aug 2023
+    (no longer eligible on desktop or mobile). The install steps live in
+    the visible Install section and in llms.txt for AI engines instead.
+  -->
 
   <script type="application/ld+json">
   {

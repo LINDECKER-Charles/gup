@@ -1,101 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:xhtml="http://www.w3.org/1999/xhtml"
-  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<!--
+  Single-page landing — only the canonical /gup/ URL belongs here.
 
+  Removed (and why):
+    - Fragment URLs (#problem, #modes, ...): Google strips fragments before
+      deduplication, so each entry resolved to /gup/ and surfaced as
+      "Page with duplicate URL" in Search Console.
+    - External URLs (github.com, npmjs.com): a sitemap declares pages YOU
+      control. External URLs are ignored by all major crawlers.
+    - <image:image> blocks: the referenced /gup/screenshots/*.png files
+      are not committed yet — add them back once the screenshots land.
+
+  lastmod is rewritten at deploy time by .github/workflows/pages.yml
+  (see "Inject build metadata" step) — the @@LASTMOD@@ placeholder
+  stays in source so local builds remain deterministic.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://lindecker-charles.github.io/gup/</loc>
-    <lastmod>2026-05-20</lastmod>
+    <lastmod>@@LASTMOD@@</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://lindecker-charles.github.io/gup/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://lindecker-charles.github.io/gup/"/>
-    <image:image>
-      <image:loc>https://lindecker-charles.github.io/gup/screenshots/01-v3-hero.png</image:loc>
-      <image:title>gup CLI — scan parallèle de ~130 sources d'installation</image:title>
-      <image:caption>Capture d'écran de la CLI gup affichant le scan en cours et la table des paquets obsolètes.</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://lindecker-charles.github.io/gup/screenshots/01-v3-arch.png</image:loc>
-      <image:title>Architecture gup — orchestrateur fan-out vers les providers natifs</image:title>
-    </image:image>
-    <image:image>
-      <image:loc>https://lindecker-charles.github.io/gup/screenshots/02-modes.png</image:loc>
-      <image:title>Trois modes d'usage : menu interactif, non-interactif, ciblé</image:title>
-    </image:image>
-  </url>
-
-  <!--
-    Section anchors. Strictly speaking Sitemaps target full URLs, but
-    listing fragment URLs helps some crawlers surface section-level
-    rich results (especially with the BreadcrumbList JSON-LD on the
-    main page). They are low priority.
-  -->
-  <url>
-    <loc>https://lindecker-charles.github.io/gup/#problem</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://lindecker-charles.github.io/gup/#modes</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://lindecker-charles.github.io/gup/#architecture</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://lindecker-charles.github.io/gup/#lifecycle</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://lindecker-charles.github.io/gup/#providers</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://lindecker-charles.github.io/gup/#install</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!--
-    External canonical docs on GitHub. Listing them in our sitemap
-    nudges crawlers that haven't yet picked them up from GitHub's own
-    sitemap (especially for AI engines indexing through llms.txt).
-  -->
-  <url>
-    <loc>https://github.com/LINDECKER-Charles/gup</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://github.com/LINDECKER-Charles/gup/blob/main/docs/architecture.md</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://github.com/LINDECKER-Charles/gup/blob/main/docs/how-gup-works.md</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://github.com/LINDECKER-Charles/gup/blob/main/docs/providers-catalog.md</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://github.com/LINDECKER-Charles/gup/blob/main/CONTRIBUTING.md</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>https://www.npmjs.com/package/@charles_lindecker/gup</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
   </url>
 </urlset>

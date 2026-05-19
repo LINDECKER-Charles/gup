@@ -4,7 +4,7 @@
   "description": "CLI qui orchestre winget, npm, pip, helm, cargo, kubectl, terraform et ~125 autres gestionnaires de paquets derrière une seule interface unifiée.",
   "start_url": "/gup/",
   "scope": "/gup/",
-  "id": "/gup/",
+  "id": "https://lindecker-charles.github.io/gup/",
   "icons": [
     {
       "src": "favicon-96x96.png",
@@ -41,13 +41,5 @@
   "orientation": "any",
   "lang": "fr-FR",
   "dir": "ltr",
-  "categories": ["developer", "utilities", "productivity"],
-  "screenshots": [
-    {
-      "src": "../screenshots/01-v3-hero.png",
-      "sizes": "1600x900",
-      "type": "image/png",
-      "label": "Scan parallèle de ~130 providers et table des paquets obsolètes"
-    }
-  ]
+  "categories": ["developer", "utilities", "productivity"]
 }
