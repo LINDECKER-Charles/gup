@@ -12,6 +12,7 @@ winget, scoop, choco, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, dotnet to
 [![Gitleaks](https://img.shields.io/badge/gitleaks-enabled-000?logo=gitleaks)](https://github.com/LINDECKER-Charles/GlobalUpdater/actions/workflows/security.yml)
 [![Dependabot](https://img.shields.io/badge/dependabot-weekly-025E8C?logo=dependabot&logoColor=white)](https://github.com/LINDECKER-Charles/GlobalUpdater/blob/main/.github/dependabot.yml)
 
+[![npm](https://img.shields.io/npm/v/@charles_lindecker/gup?logo=npm&color=CB3837)](https://www.npmjs.com/package/@charles_lindecker/gup)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
@@ -26,7 +27,7 @@ winget, scoop, choco, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, dotnet to
 ## TL;DR
 
 ```powershell
-npm install && npm run build && npm link
+npm install -g @charles_lindecker/gup
 gup                # menu interactif
 gup list --fast    # scan rapide
 gup update --all   # tout mettre à jour
@@ -37,6 +38,16 @@ gup update --all   # tout mettre à jour
 Sur une machine de dev, les binaires viennent de **dizaines de sources** (winget, scoop, npm-g, cargo, pipx, dotnet tools, vscode-ext, JetBrains, helm, terraform, kubectl…). Aucun outil natif ne les couvre tous — `winget upgrade --all` ignore silencieusement les paquets pinned, `ncu -g` ne voit que npm, et chaque CLI cloud/IaC/K8s a son propre `self-update`. `gup` unifie le tout derrière une CLI et un menu interactif.
 
 ## Installation
+
+### Via npm (recommandé)
+
+```powershell
+npm install -g @charles_lindecker/gup
+```
+
+Package : [`@charles_lindecker/gup`](https://www.npmjs.com/package/@charles_lindecker/gup) sur npm.
+
+### Depuis les sources
 
 ```powershell
 git clone https://github.com/LINDECKER-Charles/GlobalUpdater.git
