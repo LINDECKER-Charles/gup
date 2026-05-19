@@ -45,6 +45,33 @@ module.exports = {
         "security/detect-non-literal-fs-filename": "off",
       },
     },
+    {
+      // Desktop container providers probe well-known install paths joined from
+      // %ProgramFiles% / %LOCALAPPDATA% with hardcoded subdirs. The version
+      // regexes are anchored with bounded quantifiers ({1,3}/{1,2}) so
+      // detect-unsafe-regex is a false positive here.
+      files: [
+        "src/providers/containers/docker-desktop.ts",
+        "src/providers/containers/podman-desktop.ts",
+        "src/providers/containers/rancher-desktop.ts",
+      ],
+      rules: {
+        "security/detect-non-literal-fs-filename": "off",
+        "security/detect-unsafe-regex": "off",
+      },
+    },
+    {
+      // Neovim plugin providers join $XDG_DATA_HOME / $XDG_CONFIG_HOME (or the
+      // documented Windows equivalents) with hardcoded subpaths ("lazy",
+      // "mason", "lazy-lock.json"). No untrusted input reaches existsSync.
+      files: [
+        "src/providers/editor-plugins/nvim-lazy.ts",
+        "src/providers/editor-plugins/nvim-mason.ts",
+      ],
+      rules: {
+        "security/detect-non-literal-fs-filename": "off",
+      },
+    },
   ],
   ignorePatterns: ["dist/", "node_modules/", "tests/", "*.config.ts", "*.cjs"],
 };
