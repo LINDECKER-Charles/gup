@@ -58,7 +58,7 @@
     "@types/node": "^22.10.5",
     "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
+    "@typescript-eslint/parser": "^8.59.4",
     "@vitest/coverage-v8": "^4.1.6",
     "audit-ci": "^7.1.0",
     "eslint": "^8.57.1",
