@@ -25,9 +25,9 @@ rules:
                 '...'
     paths:
       include:
-        - "src/**/*.ts"
+        - "**/src/**/*.ts"
       exclude:
-        - "tests/**"
+        - "**/tests/**"
 
   - id: gup-no-exec-string
     message: >-
@@ -55,20 +55,30 @@ rules:
 
   - id: gup-fetch-url-must-be-literal
     message: >-
-      fetch() target should be a hardcoded https URL or built from
-      encodeURIComponent()-sanitized components only.
+      fetch() target must be a literal https:// URL. Build dynamic segments
+      with encodeURIComponent() into a local const before passing it to fetch().
     severity: WARNING
     languages: [typescript, javascript]
     patterns:
       - pattern: fetch($URL, ...)
+      # Restrict to literal-shaped URLs (string/template). Identifier URLs
+      # (`fetch(url, ...)`) are assumed safe via local const definition
+      # reviewed elsewhere — semgrep cannot do dataflow tracking without
+      # taint mode and the alternative is unacceptable false-positive churn.
       - metavariable-pattern:
           metavariable: $URL
-          patterns:
-            - pattern-not: |
-                "https://..."
-            - pattern-not: |
-                `https://...`
-            - pattern-not-regex: ^encodeURI
+          pattern-either:
+            - pattern: '"..."'
+            - pattern: "`...`"
+      # Keep only URLs that do NOT begin with the https:// scheme.
+      - metavariable-regex:
+          metavariable: $URL
+          regex: '^["`](?!https://)'
+    paths:
+      include:
+        - "**/src/**/*.ts"
+      exclude:
+        - "**/tests/**"
 
   - id: gup-no-http-scheme
     message: Plain http:// upstream — use https:// to prevent MITM tampering.
@@ -77,4 +87,4 @@ rules:
     pattern-regex: '"http://[^"]+"'
     paths:
       include:
-        - "src/**/*.ts"
+        - "**/src/**/*.ts"

@@ -22,6 +22,17 @@ export class ScoopProvider implements Provider {
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
+    if (!isSafeScoopPackageId(packageId)) {
+      return {
+        id: packageId,
+        success: false,
+        message: `Identifiant de paquet Scoop invalide : ${packageId}`,
+      };
+    }
+    // shell:true is required to invoke the scoop.cmd / scoop.ps1 shim on Windows;
+    // packageId is validated above against Scoop's allowed charset, so shell
+    // expansion cannot inject additional commands.
+    // nosemgrep: gup-no-shell-true-with-variable
     const res = await runInherit("scoop", ["update", packageId], { shell: true });
     return { id: packageId, success: !res.failed };
   }
@@ -31,6 +42,12 @@ export class ScoopProvider implements Provider {
     const res = await runInherit("scoop", ["update", "*"], { shell: true });
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
   }
+}
+
+// Scoop package ids are `[name]` or `[bucket]/[name]` with [a-zA-Z0-9._-] segments.
+const SCOOP_PACKAGE_ID_RE = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)?$/;
+export function isSafeScoopPackageId(s: string): boolean {
+  return SCOOP_PACKAGE_ID_RE.test(s);
 }
 
 export function parseScoopStatus(output: string): OutdatedPackage[] {
