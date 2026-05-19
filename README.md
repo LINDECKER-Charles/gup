@@ -2,23 +2,28 @@
 
 # `gup` — Global Updater
 
-**Une seule commande pour scanner et mettre à jour tout ce qui est installé sur ta machine.**
+**One command to scan and update everything installed on your machine.**
 winget, scoop, choco, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, dotnet tools, helm, kubectl, terraform, vscode extensions, JetBrains, WSL distros…
 
-[![CI](https://github.com/LINDECKER-Charles/GlobalUpdater/actions/workflows/ci.yml/badge.svg)](https://github.com/LINDECKER-Charles/GlobalUpdater/actions/workflows/ci.yml)
-[![Security](https://github.com/LINDECKER-Charles/GlobalUpdater/actions/workflows/security.yml/badge.svg)](https://github.com/LINDECKER-Charles/GlobalUpdater/actions/workflows/security.yml)
-[![CodeQL](https://img.shields.io/badge/CodeQL-security--extended-2ea44f?logo=github)](https://github.com/LINDECKER-Charles/GlobalUpdater/actions/workflows/security.yml)
-[![Semgrep](https://img.shields.io/badge/semgrep-p%2Ftypescript%20%2B%20p%2Fnodejs-1B4965?logo=semgrep&logoColor=white)](https://github.com/LINDECKER-Charles/GlobalUpdater/actions/workflows/security.yml)
-[![Gitleaks](https://img.shields.io/badge/gitleaks-enabled-000?logo=gitleaks)](https://github.com/LINDECKER-Charles/GlobalUpdater/actions/workflows/security.yml)
-[![Dependabot](https://img.shields.io/badge/dependabot-weekly-025E8C?logo=dependabot&logoColor=white)](https://github.com/LINDECKER-Charles/GlobalUpdater/blob/main/.github/dependabot.yml)
+[**Homepage**](https://lindecker-charles.github.io/gup/) · [**npm**](https://www.npmjs.com/package/@charles_lindecker/gup) · [**Docs**](docs/) · [**Providers (130+)**](docs/providers-catalog.md)
+
+[![CI](https://github.com/LINDECKER-Charles/gup/actions/workflows/ci.yml/badge.svg)](https://github.com/LINDECKER-Charles/gup/actions/workflows/ci.yml)
+[![Security](https://github.com/LINDECKER-Charles/gup/actions/workflows/security.yml/badge.svg)](https://github.com/LINDECKER-Charles/gup/actions/workflows/security.yml)
+[![Pages](https://github.com/LINDECKER-Charles/gup/actions/workflows/pages.yml/badge.svg)](https://lindecker-charles.github.io/gup/)
+[![CodeQL](https://img.shields.io/badge/CodeQL-security--extended-2ea44f?logo=github)](https://github.com/LINDECKER-Charles/gup/actions/workflows/security.yml)
+[![Semgrep](https://img.shields.io/badge/semgrep-p%2Ftypescript%20%2B%20p%2Fnodejs-1B4965?logo=semgrep&logoColor=white)](https://github.com/LINDECKER-Charles/gup/actions/workflows/security.yml)
+[![Gitleaks](https://img.shields.io/badge/gitleaks-enabled-000?logo=gitleaks)](https://github.com/LINDECKER-Charles/gup/actions/workflows/security.yml)
+[![Dependabot](https://img.shields.io/badge/dependabot-weekly-025E8C?logo=dependabot&logoColor=white)](https://github.com/LINDECKER-Charles/gup/blob/main/.github/dependabot.yml)
 
 [![npm](https://img.shields.io/npm/v/@charles_lindecker/gup?logo=npm&color=CB3837)](https://www.npmjs.com/package/@charles_lindecker/gup)
+[![npm downloads](https://img.shields.io/npm/dm/@charles_lindecker/gup?logo=npm&color=CB3837&label=downloads)](https://www.npmjs.com/package/@charles_lindecker/gup)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20WSL-0078D6?logo=windows)](https://learn.microsoft.com/windows/wsl/)
 [![Providers](https://img.shields.io/badge/providers-130%2B-brightgreen)](docs/providers-catalog.md)
+[![GitHub stars](https://img.shields.io/github/stars/LINDECKER-Charles/gup?style=social)](https://github.com/LINDECKER-Charles/gup/stargazers)
 
 </div>
 
@@ -28,78 +33,78 @@ winget, scoop, choco, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, dotnet to
 
 ```powershell
 npm install -g @charles_lindecker/gup
-gup                # menu interactif
-gup list --fast    # scan rapide
-gup update --all   # tout mettre à jour
+gup                # interactive menu
+gup list --fast    # fast scan
+gup update --all   # update everything
 ```
 
-## Pourquoi `gup`
+## Why `gup`
 
-Sur une machine de dev, les binaires viennent de **dizaines de sources** (winget, scoop, npm-g, cargo, pipx, dotnet tools, vscode-ext, JetBrains, helm, terraform, kubectl…). Aucun outil natif ne les couvre tous — `winget upgrade --all` ignore silencieusement les paquets pinned, `ncu -g` ne voit que npm, et chaque CLI cloud/IaC/K8s a son propre `self-update`. `gup` unifie le tout derrière une CLI et un menu interactif.
+On a dev machine, binaries come from **dozens of sources** (winget, scoop, npm-g, cargo, pipx, dotnet tools, vscode-ext, JetBrains, helm, terraform, kubectl…). No native tool covers them all — `winget upgrade --all` silently skips pinned packages, `ncu -g` only sees npm, and every cloud/IaC/K8s CLI ships its own `self-update`. `gup` unifies the whole thing behind a single CLI plus an interactive menu.
 
 ## Installation
 
-### Via npm (recommandé)
+### Via npm (recommended)
 
 ```powershell
 npm install -g @charles_lindecker/gup
 ```
 
-Package : [`@charles_lindecker/gup`](https://www.npmjs.com/package/@charles_lindecker/gup) sur npm.
+Package: [`@charles_lindecker/gup`](https://www.npmjs.com/package/@charles_lindecker/gup) on npm.
 
-### Depuis les sources
+### From source
 
 ```powershell
-git clone https://github.com/LINDECKER-Charles/GlobalUpdater.git
-cd GlobalUpdater
+git clone https://github.com/LINDECKER-Charles/gup.git
+cd gup
 npm install
 npm run build
-npm link            # expose la commande `gup` globalement
+npm link            # exposes the `gup` command globally
 ```
 
-Prérequis : **Node ≥ 20**, PowerShell ou Bash. Compatible Windows / WSL / Linux.
+Requirements: **Node ≥ 20**, PowerShell or Bash. Works on Windows / WSL / Linux.
 
 ## Usage
 
 ```powershell
-gup                                                  # menu interactif
-gup list                                             # liste les paquets obsolètes
-gup list --fast                                      # skip les scans lents
-gup list --provider winget npm-g                     # restreint
-gup list --json                                      # sortie JSON pipeable
-gup update                                           # sélection interactive
-gup update --all -y                                  # tout (sans confirmation, CI)
+gup                                                  # interactive menu
+gup list                                             # list outdated packages
+gup list --fast                                      # skip slow scans
+gup list --provider winget npm-g                     # restrict
+gup list --json                                      # pipeable JSON output
+gup update                                           # interactive selection
+gup update --all -y                                  # everything (no prompt, CI)
 gup update winget:Microsoft.PowerShell npm-g:typescript
-gup doctor                                           # providers détectés vs manquants
+gup doctor                                           # detected providers vs missing
 ```
 
-| Commande | Effet |
+| Command | Effect |
 |---|---|
-| `gup` | Menu interactif : Review / Update selected / Update all / Update target / Providers / Options |
-| `gup list` | Liste les paquets obsolètes, table colorisée |
-| `gup list --fast` | Skip les scans lents (pwsh-modules, vscode-ext…) |
-| `gup list --json` | Sortie JSON brute (pipeable) |
-| `gup update` | Sélection multi-paquets interactive |
-| `gup update --all` | Tout met à jour (avec confirmation) |
-| `gup update <provider:pkg>` | Cibles précises |
-| `gup doctor` | Providers détectés + hints d'install |
+| `gup` | Interactive menu: Review / Update selected / Update all / Update target / Providers / Options |
+| `gup list` | Lists outdated packages, colorized table |
+| `gup list --fast` | Skips slow scans (pwsh-modules, vscode-ext…) |
+| `gup list --json` | Raw JSON output (pipeable) |
+| `gup update` | Interactive multi-package selection |
+| `gup update --all` | Updates everything (with confirmation) |
+| `gup update <provider:pkg>` | Specific targets |
+| `gup doctor` | Detected providers + install hints |
 
 ## Documentation
 
-| Document | Contenu |
+| Document | Content |
 |---|---|
-| [`docs/architecture.md`](docs/architecture.md) | Architecture interne : couches, modèle de données, scan parallèle, pipeline d'update, sécurité — avec diagrammes mermaid. |
-| [`docs/how-gup-works.md`](docs/how-gup-works.md) | Walkthrough technique end-to-end (motivation, modèle, contrats internes, résilience, build). |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Guide de contribution : workflow d'ajout d'un provider, conventions obligatoires, cas particuliers, checklist PR. |
-| [`docs/providers-catalog.md`](docs/providers-catalog.md) | Catalogue exhaustif des 130+ providers, statut d'implémentation, hors scope. |
-| [`SECURITY.md`](SECURITY.md) | Threat model, mitigations, reporting de vulnérabilité. |
+| [`docs/architecture.md`](docs/architecture.md) | Internal architecture: layers, data model, parallel scan, update pipeline, security — with mermaid diagrams. |
+| [`docs/how-gup-works.md`](docs/how-gup-works.md) | End-to-end technical walkthrough (motivation, model, internal contracts, resilience, build). |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution guide: provider-addition workflow, mandatory conventions, edge cases, PR checklist. |
+| [`docs/providers-catalog.md`](docs/providers-catalog.md) | Exhaustive catalog of the 130+ providers, implementation status, out-of-scope items. |
+| [`SECURITY.md`](SECURITY.md) | Threat model, mitigations, vulnerability reporting. |
 
-## Sécurité
+## Security
 
-| Layer | Outil |
+| Layer | Tool |
 |---|---|
-| **Command injection** | `execa` argv-vector, pas de `shell: true` (allowlist pinned par tests) |
-| **HTTPS only** | toute requête `fetch()` enforced en `https://` |
+| **Command injection** | `execa` argv-vector, no `shell: true` (allowlist pinned by tests) |
+| **HTTPS only** | every `fetch()` call enforced as `https://` |
 | **Static analysis** | CodeQL `security-extended` + `security-and-quality` |
 | **SAST** | Semgrep (`.semgrep.yml` + `p/typescript` + `p/nodejs`) |
 | **Secrets** | gitleaks |
@@ -110,7 +115,7 @@ gup doctor                                           # providers détectés vs m
 npm run security        # audit + eslint-security + tests/security
 ```
 
-Reporting : [private security advisory](https://github.com/LINDECKER-Charles/GlobalUpdater/security/advisories/new). Voir [`SECURITY.md`](SECURITY.md).
+Reporting: [private security advisory](https://github.com/LINDECKER-Charles/gup/security/advisories/new). See [`SECURITY.md`](SECURITY.md).
 
 ## Tests
 
@@ -118,17 +123,17 @@ Reporting : [private security advisory](https://github.com/LINDECKER-Charles/Glo
 npm run typecheck             # tsc strict + noUncheckedIndexedAccess
 npm run test:run              # vitest one-shot
 npm run test:coverage         # vitest + v8 coverage
-npm run test:security         # suite sécu uniquement
+npm run test:security         # security suite only
 npm run lint                  # eslint
 ```
 
-CI cross-platform : **Ubuntu** + **Windows**, Node **20** & **22**.
+Cross-platform CI: **Ubuntu** + **Windows**, Node **20** & **22**.
 
-## Hors scope
+## Out of scope
 
 - **Windows Update OS / drivers** → `PSWindowsUpdate`
-- **Maven / Gradle / sbt / bundler / lockfiles** → project-scoped, pas global
-- **JetBrains Toolbox-managed IDEs** → la Toolbox a son propre updater
+- **Maven / Gradle / sbt / bundler / lockfiles** → project-scoped, not global
+- **JetBrains Toolbox-managed IDEs** → the Toolbox ships its own updater
 
 ## License
 

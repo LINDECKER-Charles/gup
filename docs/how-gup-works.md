@@ -1,77 +1,77 @@
 # How `gup` works — End-to-end technical walkthrough
 
-> Document source pour la création d'un site explicatif. Destiné à un public développeur intermédiaire / confirmé. Détaille **l'intégralité** du fonctionnement de `gup` : motivation, modèle, architecture, cycle de vie d'une commande, contrats internes, patterns de résilience, sécurité, build.
+> Source document for the explanatory site. Aimed at intermediate / advanced developers. Covers **the entirety** of `gup`'s operation: motivation, model, architecture, command lifecycle, internal contracts, resilience patterns, security, build.
 >
-> Repo : `LINDECKER-Charles/GlobalUpdater` · Stack : TypeScript strict (Node ≥ 20), ESM, `execa`, `commander`, `@inquirer/prompts`, `chalk`, `cli-table3`, `ora`, `p-limit`. Aucun runtime browser, aucun framework UI : c'est une CLI pure.
+> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 20), ESM, `execa`, `commander`, `@inquirer/prompts`, `chalk`, `cli-table3`, `ora`, `p-limit`. No browser runtime, no UI framework: this is a pure CLI.
 
 ---
 
-## 0. Élévateur
+## 0. Elevator pitch
 
-`gup` ("Global Updater") est une **CLI unifiée** qui scanne en parallèle ~130 sources d'installation différentes (gestionnaires de paquets OS, runtimes, outils dev, extensions IDE, registries cloud / IaC / K8s…), liste tout ce qui est obsolète, puis exécute les commandes natives de mise à jour de chaque source.
+`gup` ("Global Updater") is a **unified CLI** that scans, in parallel, ~130 different installation sources (OS package managers, runtimes, dev tools, IDE extensions, cloud / IaC / K8s registries…), lists everything that is outdated, then runs each source's native update commands.
 
-C'est volontairement un **orchestrateur d'outils existants**. `gup` n'invente pas de protocole d'update, n'embarque pas de cache de versions, ne télécharge rien lui-même : il **shell-out** sur `winget upgrade`, `npm outdated -g --json`, `helm repo update`, `pip list --outdated --format json`, etc., et homogénéise leurs sorties hétérogènes derrière une seule interface utilisateur.
+It is deliberately an **orchestrator of existing tools**. `gup` does not invent an update protocol, ships no version cache, and downloads nothing itself: it **shells out** to `winget upgrade`, `npm outdated -g --json`, `helm repo update`, `pip list --outdated --format json`, etc., and homogenizes their heterogeneous outputs behind a single user interface.
 
-Trois manières de l'utiliser :
+Three ways to use it:
 
-1. **Menu interactif** (commande nue `gup`) — scan automatique, puis menu Review / Update selected / Update all / Update target / Providers / Options.
-2. **Non-interactif** (`gup list`, `gup update --all -y`) — adapté à l'automatisation et au CI.
-3. **Ciblé** (`gup update winget:Microsoft.PowerShell npm-g:typescript`) — bypass complet du scan.
-
----
-
-## 1. Pourquoi `gup` existe — le problème métier
-
-Sur une station de dev moderne, un binaire peut venir de **dizaines de sources concurrentes**, chacune avec :
-
-- Sa propre commande de listing des updates (`winget upgrade`, `npm outdated -g --json`, `pipx list`, `scoop status`, `helm repo update && helm search repo`, `gem outdated`, `dotnet tool list -g`, `cargo install --list`, `cs update --installed`, `kubectl version`, etc.).
-- Son propre format de sortie (table texte fixe-largeur, JSON, JSONL, YAML, sortie humaine localisée…).
-- Ses propres edge-cases : `winget` ignore silencieusement les paquets "pinned" et "unknown version" ; `ncu -g` ne voit que npm ; les CLIs cloud (`az`, `gcloud`, `aws`) ont chacun leur sous-commande `self-update` à invoquer à la main ; les outils HashiCorp (`terraform`, `vault`, `consul`, …) n'ont pas de updater intégré du tout et doivent être comparés à leur feed de releases.
-
-Constat : **aucun outil natif ne couvre l'ensemble**. La conséquence pratique pour un développeur est d'avoir 10–15 commandes à enchaîner manuellement, plusieurs fois par mois, sans savoir laquelle a oublié quoi.
-
-`gup` réduit ça à **une commande** + une boucle de scan parallèle + une UI cohérente.
-
-### Ce que `gup` n'est PAS
-
-- Pas un gestionnaire de paquets. Il ne *publie* rien, ne *résout* aucune dépendance, ne maintient pas d'état partagé.
-- Pas un agent permanent. Pas de daemon, pas de tray, pas de polling background. Tout est on-demand.
-- Pas un outil project-scoped. `package.json`, `requirements.txt`, `Cargo.toml`, `composer.json` — hors scope. `gup` cible exclusivement les installs **globales** d'une machine.
-- Pas un outil Windows Update / driver / kernel. `PSWindowsUpdate` couvre déjà ça.
-
-### Hors scope explicite (cf. `README.md` §❌)
-
-- Windows Update OS / drivers OEM / services SYSTEM / DISM / Appx provisionnés.
-- Lockfiles project-scoped (Maven, Gradle, sbt, bundler, `npm ci`, `pip-tools sync`).
-- JetBrains Toolbox-managed IDEs (la Toolbox a son propre updater).
+1. **Interactive menu** (bare `gup` command) — automatic scan, then a Review / Update selected / Update all / Update target / Providers / Options menu.
+2. **Non-interactive** (`gup list`, `gup update --all -y`) — suitable for automation and CI.
+3. **Targeted** (`gup update winget:Microsoft.PowerShell npm-g:typescript`) — bypasses the scan entirely.
 
 ---
 
-## 2. Vocabulaire / concepts clés
+## 1. Why `gup` exists — the business problem
 
-Un seul vocabulaire à intérioriser :
+On a modern dev workstation, a binary may come from **dozens of competing sources**, each with:
 
-| Terme | Définition |
+- Its own update-listing command (`winget upgrade`, `npm outdated -g --json`, `pipx list`, `scoop status`, `helm repo update && helm search repo`, `gem outdated`, `dotnet tool list -g`, `cargo install --list`, `cs update --installed`, `kubectl version`, etc.).
+- Its own output format (fixed-width text table, JSON, JSONL, YAML, localized human output…).
+- Its own edge cases: `winget` silently ignores "pinned" and "unknown version" packages; `ncu -g` only sees npm; cloud CLIs (`az`, `gcloud`, `aws`) each have their own `self-update` subcommand to invoke by hand; HashiCorp tools (`terraform`, `vault`, `consul`, …) have no built-in updater at all and must be compared to their releases feed.
+
+Observation: **no native tool covers the entire surface**. The practical consequence for a developer is having 10–15 commands to chain manually, several times a month, without knowing which one forgot what.
+
+`gup` reduces this to **one command** + a parallel scan loop + a coherent UI.
+
+### What `gup` is NOT
+
+- Not a package manager. It does not *publish* anything, does not *resolve* any dependency, holds no shared state.
+- Not a permanent agent. No daemon, no tray, no background polling. Everything is on-demand.
+- Not a project-scoped tool. `package.json`, `requirements.txt`, `Cargo.toml`, `composer.json` — out of scope. `gup` exclusively targets the **global** installs on a machine.
+- Not a Windows Update / driver / kernel tool. `PSWindowsUpdate` already covers that.
+
+### Explicit out-of-scope (cf. `README.md` §❌)
+
+- Windows Update OS / OEM drivers / SYSTEM services / DISM / provisioned Appx.
+- Project-scoped lockfiles (Maven, Gradle, sbt, bundler, `npm ci`, `pip-tools sync`).
+- JetBrains Toolbox-managed IDEs (the Toolbox ships its own updater).
+
+---
+
+## 2. Vocabulary / key concepts
+
+One vocabulary to internalize:
+
+| Term | Definition |
 |---|---|
-| **Provider** | Module isolé qui sait gérer **une** source d'installation. Un fichier = un provider. Implémente l'interface `Provider` (`src/core/types.ts`). Exemples : `WingetProvider`, `NpmGlobalProvider`, `HelmProvider`. |
-| **Provider id** | Identifiant kebab-case stable, unique sur l'ensemble du registry. Utilisé en CLI : `gup update <provider-id>:<packageId>` (ex. `winget:Microsoft.PowerShell`). |
-| **OutdatedPackage** | Une entrée dans le résultat de scan : `{ id, name?, current, latest, note?, manual? }`. C'est la **monnaie d'échange** entre la couche Provider et l'UI. |
-| **UpdateOutcome** | Résultat d'un update : `{ id, success, skipped?, message?, retryable? }`. |
-| **ProviderScanResult** | Agrégat par provider après scan : `{ providerId, available, packages[], error? }`. |
-| **slow** | Flag déclaratif sur un Provider (`readonly slow = true`) qui désactive son scan en mode `--fast`. À utiliser quand le scan fait du HTTP par paquet ou du filesystem-walk lourd. |
-| **manual** | Flag sur un `OutdatedPackage` qui signifie "le provider sait dès maintenant que l'update demandera une intervention humaine". Filtré hors `scanAll` → jamais montré à l'utilisateur, jamais inclus dans Update all. |
-| **skipped** | Flag dans `UpdateOutcome` : l'update a été tenté puis abandonné proprement (action humaine requise — ex. terminal admin manquant, GUI uniquement). Affiché en jaune `SKIP`, distinct du rouge `FAIL`. |
-| **retryable** | Flag dans `UpdateOutcome` : l'échec pourrait passer avec une stratégie plus agressive (`--force`, `--uninstall-previous`, reinstall en 2 étapes). Active la prompt de retry post-batch. |
+| **Provider** | Isolated module that knows how to handle **one** installation source. One file = one provider. Implements the `Provider` interface (`src/core/types.ts`). Examples: `WingetProvider`, `NpmGlobalProvider`, `HelmProvider`. |
+| **Provider id** | Stable kebab-case identifier, unique across the registry. Used at the CLI: `gup update <provider-id>:<packageId>` (e.g. `winget:Microsoft.PowerShell`). |
+| **OutdatedPackage** | One scan-result entry: `{ id, name?, current, latest, note?, manual? }`. It is the **currency** between the Provider layer and the UI. |
+| **UpdateOutcome** | Result of an update: `{ id, success, skipped?, message?, retryable? }`. |
+| **ProviderScanResult** | Per-provider aggregate after a scan: `{ providerId, available, packages[], error? }`. |
+| **slow** | Declarative flag on a Provider (`readonly slow = true`) that disables its scan in `--fast` mode. To be used when the scan does HTTP per package or a heavy filesystem walk. |
+| **manual** | Flag on an `OutdatedPackage` meaning "the provider knows right now that the update will require human intervention". Filtered out of `scanAll` → never shown to the user, never included in Update all. |
+| **skipped** | Flag in `UpdateOutcome`: the update was attempted then gracefully abandoned (human action required — e.g. missing admin terminal, GUI-only). Shown as yellow `SKIP`, distinct from red `FAIL`. |
+| **retryable** | Flag in `UpdateOutcome`: the failure might pass with a more aggressive strategy (`--force`, `--uninstall-previous`, two-step reinstall). Triggers the post-batch retry prompt. |
 
-Ces sept primitives suffisent à modéliser l'ensemble des comportements de `gup`.
+These seven primitives are enough to model the entire behavior of `gup`.
 
 ---
 
-## 3. Architecture vue d'avion
+## 3. Bird's-eye architecture
 
 ```
                            ┌─────────────────────┐
-        user typing  ─────▶│   src/cli.ts        │  commander, dispatch sous-cmds
+        user typing  ─────▶│   src/cli.ts        │  commander, dispatch sub-cmds
                            └──────────┬──────────┘
                                       │
             ┌──────────┬───────────┬──┴───────────┬──────────────┐
@@ -88,7 +88,7 @@ Ces sept primitives suffisent à modéliser l'ensemble des comportements de `gup
                   ┌──────────▼──────────┐
                   │   core/registry     │  ALL_PROVIDERS[], scanAll, pLimit
                   └──────────┬──────────┘
-                             │ fan-out (concurrency=4 par défaut)
+                             │ fan-out (concurrency=4 by default)
        ┌────────┬────────┬───┴────┬────────┬────────┬───────┐
        ▼        ▼        ▼        ▼        ▼        ▼       ▼
    winget    npm-g    pip     helm     cargo   kubectl   ... ×130
@@ -104,29 +104,29 @@ Ces sept primitives suffisent à modéliser l'ensemble des comportements de `gup
                     OS subprocess (winget.exe, npm.cmd, …)
 ```
 
-### Layout des fichiers
+### File layout
 
 ```
 src/
-├── cli.ts                    # entrée commander
-├── commands/                 # 1 fichier = 1 sous-commande utilisateur
+├── cli.ts                    # commander entry
+├── commands/                 # 1 file = 1 user-facing subcommand
 │   ├── list.ts               # gup list
 │   ├── update.ts             # gup update
 │   ├── doctor.ts             # gup doctor
-│   └── menu.ts               # gup (sans sous-cmd) — REPL interactif
+│   └── menu.ts               # gup (no subcmd) — interactive REPL
 ├── core/
 │   ├── types.ts              # Provider, OutdatedPackage, UpdateOutcome, UpdateOptions, ProviderScanResult
 │   ├── runner.ts             # run, runInherit, commandExists, whichFirst, isElevated
 │   ├── registry.ts           # ALL_PROVIDERS, detectAvailableProviders, scanAll, getProvider
 │   ├── gh-releases.ts        # fetchGitHubReleaseLatest, fetchGitHubReleaseTagMatching, normalizeVersion
-│   ├── hashicorp-releases.ts # helper pour Terraform / Vault / Consul / Nomad / Packer / Boundary
-│   ├── wsl.ts                # pont d'invocation `wsl.exe -d <distro> -- <cmd>`
-│   ├── install-source.ts     # heuristique pour deviner quel PM possède un binaire (delegateUpdate)
-│   ├── corepack-ownership.ts # détection "pnpm/yarn est-il un shim corepack ?"
-│   └── nvim-paths.ts         # localisation des configs neovim (lazy / packer / mason)
-├── providers/                # 1 fichier = 1 provider
-│   ├── _template.ts          # squelette à copier pour ajouter un provider
-│   ├── self.ts               # méta-provider : update des PM eux-mêmes
+│   ├── hashicorp-releases.ts # helper for Terraform / Vault / Consul / Nomad / Packer / Boundary
+│   ├── wsl.ts                # bridge `wsl.exe -d <distro> -- <cmd>`
+│   ├── install-source.ts     # heuristic to guess which PM owns a binary (delegateUpdate)
+│   ├── corepack-ownership.ts # detection of "is pnpm/yarn a corepack shim?"
+│   └── nvim-paths.ts         # neovim config locator (lazy / packer / mason)
+├── providers/                # 1 file = 1 provider
+│   ├── _template.ts          # skeleton to copy when adding a provider
+│   ├── self.ts               # meta-provider: update of the PMs themselves
 │   ├── os/                   # winget, scoop, choco
 │   ├── wsl/                  # wsl, wsl-apt, wsl-dnf, wsl-pacman, wsl-brew, wsl-flatpak, wsl-nix
 │   ├── node/                 # npm-g, pnpm-g, yarn-g, bun-g, deno, corepack, fnm, volta, nvm-windows
@@ -142,80 +142,80 @@ src/
 │   ├── containers/           # nerdctl, oras, dive, docker-images, docker-desktop, podman-desktop, rancher-desktop
 │   ├── security/             # trivy, grype, syft, cosign, rekor, gitsign, nuclei, nuclei-templates, pdtm, semgrep
 │   ├── dev-cli/              # lazygit, lazydocker, jj, delta, glab, tea, gh-extensions
-│   ├── ide/                  # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains (+ manual-only refs : jetbrains-plugins, zed-ext, sublime-pc, obsidian-plugins, unity-hub, notepad-pp, eclipse-marketplace)
+│   ├── ide/                  # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains (+ manual-only refs: jetbrains-plugins, zed-ext, sublime-pc, obsidian-plugins, unity-hub, notepad-pp, eclipse-marketplace)
 │   ├── editor-plugins/       # nvim-lazy, nvim-packer, nvim-mason, vim-plug
 │   ├── embedded-mobile/      # arduino-cli, platformio, android-sdk, expo, fastlane
 │   └── shell/                # oh-my-posh, starship, nerd-fonts, pwsh-modules
 └── ui/
     ├── table.ts              # cli-table3 wrappers (renderScanTable, renderProvidersStatus)
-    ├── scan-progress.ts      # spinner ora + counters [done/total] + in-flight names
-    ├── select.ts             # @inquirer/prompts checkbox groupé par provider
-    └── retry-failed.ts       # prompt de stratégie de retry post-batch
+    ├── scan-progress.ts      # ora spinner + [done/total] counters + in-flight names
+    ├── select.ts             # @inquirer/prompts checkbox grouped by provider
+    └── retry-failed.ts       # post-batch retry-strategy prompt
 ```
 
-### Principe directeur n°1 : **isolation des providers**
+### Guiding principle #1: **provider isolation**
 
-> Un fichier = un provider. **Aucun import croisé** entre providers. Aucun état partagé.
+> One file = one provider. **No cross-imports** between providers. No shared state.
 
-Le but est qu'un provider qui pète (parse cassé sur une nouvelle version de l'outil amont, HTTP timeout, exception non interceptée) **n'affecte que sa propre cellule du tableau**. Concrètement, `scanAll` enveloppe chaque appel `listOutdated()` dans un `try/catch` qui le convertit en `ProviderScanResult.error: string`. Les autres providers continuent de s'exécuter en parallèle.
+The goal is that a provider that breaks (parser broken on a new upstream version, HTTP timeout, uncaught exception) **only affects its own cell of the table**. Concretely, `scanAll` wraps every `listOutdated()` call in a `try/catch` that turns it into `ProviderScanResult.error: string`. The other providers keep running in parallel.
 
-### Principe directeur n°2 : **shell-out uniquement via `runner.ts`**
+### Guiding principle #2: **shell out only through `runner.ts`**
 
-> Aucun `child_process` direct. Tout passe par `run()` / `runInherit()`.
+> No direct `child_process`. Everything goes through `run()` / `runInherit()`.
 
-Ces wrappers centralisent : encoding UTF-8 forcé (sinon `winget`, `choco` rendent du mojibake sous cp65001), `windowsHide: true`, `reject: false` (jamais de throw sur exit non-zéro), argv-vector explicite (jamais de `shell: true`). Les deux providers qui ont besoin de `shell: true` (Scoop, à cause de son shim PowerShell) sont **pinned par allowlist** dans `tests/security/shell-usage.test.ts`.
+These wrappers centralize: forced UTF-8 encoding (otherwise `winget`, `choco` render mojibake under cp65001), `windowsHide: true`, `reject: false` (never throw on non-zero exit), explicit argv-vector (never `shell: true`). The two providers that need `shell: true` (Scoop, because of its PowerShell shim) are **pinned by allowlist** in `tests/security/shell-usage.test.ts`.
 
-### Principe directeur n°3 : **fail-soft, never-throw**
+### Guiding principle #3: **fail-soft, never-throw**
 
-> `listOutdated` et `update` ne **jettent jamais**. Ils retournent `[]` ou `{ success: false, message }`.
+> `listOutdated` and `update` **never throw**. They return `[]` or `{ success: false, message }`.
 
-Une exception non interceptée dans un provider ferait s'effondrer tout le scan parallèle. Le contrat est : si tu peux pas, retourne vide / failed avec un message clair, mais **ne casse pas la chaîne**.
+An uncaught exception inside a provider would collapse the entire parallel scan. The contract is: if you can't, return empty / failed with a clear message, but **don't break the chain**.
 
 ---
 
-## 4. Cycle de vie complet d'une commande
+## 4. Full command lifecycle
 
-### 4.1 `gup` (commande nue — menu interactif)
+### 4.1 `gup` (bare command — interactive menu)
 
 ```
-1. commander parse argv → aucune sous-commande détectée
-   └─> appelle program.action() → menuCommand()  (src/commands/menu.ts)
+1. commander parses argv → no subcommand detected
+   └─> calls program.action() → menuCommand()  (src/commands/menu.ts)
 
-2. menuCommand() initialise MenuState :
+2. menuCommand() initializes MenuState:
      { scans: [], fast: false, filter: [], detectedCount: 0 }
 
 3. printHeader()  →  ASCII title + version
 4. initialScan(state)
      └─> ui/scan-progress.scanWithProgress({ fast, only? })
-           ├─ ora spinner "détection des providers…"
-           ├─ detectAvailableProviders() : Promise.all(ALL_PROVIDERS.map(p => p.isAvailable()))
+           ├─ ora spinner "detecting providers…"
+           ├─ detectAvailableProviders(): Promise.all(ALL_PROVIDERS.map(p => p.isAvailable()))
            ├─ filter (only / fast)  →  planned[]
            ├─ scanAll({ detected, onProviderStart, onProviderEnd })
-           │     └─> pLimit(4) wrappe chaque provider.listOutdated()
-           │           ├─ render() live : in-flight set, [done/total], top-3 + "+N"
+           │     └─> pLimit(4) wraps each provider.listOutdated()
+           │           ├─ live render(): in-flight set, [done/total], top-3 + "+N"
            │           ├─ catch error → ProviderScanResult.error
-           │           └─ filtre `pkg.manual === true`
-           └─ spinner.stopAndPersist(`scan terminé en Xs — N providers, M maj`)
+           │           └─ filter `pkg.manual === true`
+           └─ spinner.stopAndPersist(`scan completed in Xs — N providers, M updates`)
 
-5. Boucle infinie du menu :
-     printStatus(state)  →  "K provider(s) détecté(s) · M mise(s) à jour"
+5. Infinite menu loop:
+     printStatus(state)  →  "K provider(s) detected · M update(s)"
      select<MenuAction>  →  Scan / Review / Update selected / Update all
                               / Update target / Providers / Options / Quit
 
-   Chaque action :
-     - Scan      → initialScan(state)  (rescanne)
+   Each action:
+     - Scan      → initialScan(state)  (rescan)
      - Review    → renderScanTable(state.scans)
      - select    → ui/select.promptPackageSelection(state.scans)
-                   ├─ checkbox groupé par provider
-                   ├─ confirm "Appliquer N mises à jour ?"
-                   ├─ groupe par providerId → provider.updateAll(pkgs) (ou .update si 1)
+                   ├─ checkbox grouped by provider
+                   ├─ confirm "Apply N updates?"
+                   ├─ group by providerId → provider.updateAll(pkgs) (or .update if 1)
                    ├─ maybeRetryFailures(entries) (cf. §10)
                    └─ summarize(outcomes)
-                   puis rescanne
-     - all       → confirm → boucle sur scans → provider.updateAll → retry → summarize → rescanne
-     - target    → input "provider:packageId, espace/virgule" → boucle .update
+                   then rescan
+     - all       → confirm → loop over scans → provider.updateAll → retry → summarize → rescan
+     - target    → input "provider:packageId, space/comma" → loop .update
      - doctor    → renderProvidersStatus(detected, missing)
-     - options   → toggle fast / filtre par providers (checkbox)
+     - options   → toggle fast / filter by providers (checkbox)
      - quit      → return 0
 ```
 
@@ -223,35 +223,35 @@ Une exception non interceptée dans un provider ferait s'effondrer tout le scan 
 
 ```
 listCommand({ only?, fast?, json? })
-  ├─ if json → scanAll() pur, JSON.stringify(results)
+  ├─ if json → raw scanAll(), JSON.stringify(results)
   └─ else    → scanWithProgress() + renderScanTable()
 ```
 
-Pas de prompt, pas d'écriture, sortie sur stdout. Exit code 0 toujours (list ne *fait* rien, sauf erreur catastrophique).
+No prompt, no writes, output on stdout. Always exit 0 (list does not *do* anything except in case of catastrophic error).
 
 ### 4.3 `gup update [targets...]`
 
-Trois chemins :
+Three paths:
 
 ```
 updateCommand({ all, yes, only, fast, targets })
 
-(a) targets fournis :
+(a) targets provided:
     → runTargets(targets)
         └─ split "provider:packageId" → getProvider → provider.update(packageId)
         → maybeRetryFailures → summarize
-    SHORTCUT : skip complet du scan.
+    SHORTCUT: full scan skipped.
 
-(b) all + yes :
+(b) all + yes:
     → scanWithProgress
-    → selection = TOUS les packages
-    → groupe par provider → provider.updateAll
-    → retry → summarize → exit code (0 si rien failed, 1 sinon)
+    → selection = ALL packages
+    → group by provider → provider.updateAll
+    → retry → summarize → exit code (0 if nothing failed, 1 otherwise)
 
-(c) ni all ni targets :
+(c) neither all nor targets:
     → scanWithProgress
-    → promptPackageSelection (checkbox interactif)
-    → groupe par provider → provider.updateAll
+    → promptPackageSelection (interactive checkbox)
+    → group by provider → provider.updateAll
     → retry → summarize
 ```
 
@@ -261,24 +261,24 @@ updateCommand({ all, yes, only, fast, targets })
 doctorCommand()
   ├─ Promise.all(ALL_PROVIDERS.map(p => ({ p, ok: await p.isAvailable() })))
   ├─ detected = ok'd providers
-  ├─ missing  = !ok'd, avec installHint
+  ├─ missing  = !ok'd, with installHint
   └─ renderProvidersStatus(detected, missing)
 ```
 
-Pas de scan, pas d'update : ça répond uniquement à la question "qu'est-ce qui est détectable sur cette machine, et comment installer ce qui manque ?".
+No scan, no update: only answers the question "what is detectable on this machine, and how do I install what is missing?".
 
 ---
 
-## 5. Le contrat **Provider** — anatomie détaillée
+## 5. The **Provider** contract — anatomy in detail
 
-Le cœur de `gup`. Toute la valeur du projet réside dans la qualité et l'isolation des ~130 implémentations de cette interface.
+The heart of `gup`. The entire value of the project lies in the quality and isolation of the ~130 implementations of this interface.
 
 ```ts
 export interface Provider {
-  readonly id: string;            // kebab-case, unique, stable (clé CLI)
-  readonly displayName: string;   // affiché en table / menu — court, sans marketing
-  readonly installHint?: string;  // affiché par `gup doctor` quand non détecté
-  readonly slow?: boolean;        // true ↔ HTTP-per-package, walk FS lourd, etc.
+  readonly id: string;            // kebab-case, unique, stable (CLI key)
+  readonly displayName: string;   // shown in table / menu — short, no marketing
+  readonly installHint?: string;  // shown by `gup doctor` when not detected
+  readonly slow?: boolean;        // true ↔ HTTP-per-package, heavy FS walk, etc.
 
   isAvailable(): Promise<boolean>;
   listOutdated(): Promise<OutdatedPackage[]>;
@@ -287,30 +287,30 @@ export interface Provider {
 }
 ```
 
-### 5.1 `isAvailable()` — la détection
+### 5.1 `isAvailable()` — detection
 
-Doit retourner **rapidement**. Stratégie standard : `commandExists("<binary>")`, qui sous le capot fait `where <bin>` (Windows) / `which <bin>` (POSIX). Coût ~quelques ms.
+Must return **fast**. Standard strategy: `commandExists("<binary>")`, which under the hood runs `where <bin>` (Windows) / `which <bin>` (POSIX). Cost ~a few ms.
 
-Cas particuliers :
-- Providers qui dépendent d'un **dossier de config** plutôt que d'un binaire (ex. `nvim-lazy` détecte `~/.local/share/nvim/lazy` ou équivalent Windows) utilisent `access()` de `node:fs/promises`.
-- Providers WSL : ils sont disponibles si `wsl.exe` répond, **et** si une distro tournant un PM cible est listée. Voir `src/core/wsl.ts`.
+Edge cases:
+- Providers that depend on a **config folder** rather than a binary (e.g. `nvim-lazy` detects `~/.local/share/nvim/lazy` or the Windows equivalent) use `access()` from `node:fs/promises`.
+- WSL providers: available if `wsl.exe` responds **and** a distro running a target PM is listed. See `src/core/wsl.ts`.
 
-### 5.2 `listOutdated()` — le scan
+### 5.2 `listOutdated()` — the scan
 
-C'est la méthode la plus complexe et la plus variable. Le contrat :
+The most complex and most variable method. The contract:
 
-1. **Ne jamais throw.** En cas d'erreur de parsing, de timeout HTTP, de PM cassé : return `[]`.
-2. **Output uniquement les paquets vraiment obsolètes.** `current === latest` doit être filtré.
-3. Construire chaque `OutdatedPackage` avec :
-   - `id` : identifiant utilisable par `update(id)` (provider-local ; pas besoin d'être global-unique).
-   - `name?` : nom human-readable si différent de l'id.
-   - `current` / `latest` : strings tels que sortis du PM, **non normalisés** (l'UI les affiche tels quels — la comparaison sémantique est faite côté provider via `normalizeVersion()`).
-   - `note?` : info supplémentaire libre (`"pinned"`, `"unknown version"`, `"source: msstore"`…).
-   - `manual?: true` : signale que l'update demandera une action humaine. Filtré par `scanAll` → invisible à l'utilisateur, **mais reste visible dans la décision "à montrer ou pas"**. Patterns d'usage : JetBrains Toolbox, plugins behind GUI, packages App Installer (winget itself).
+1. **Never throw.** On parsing error, HTTP timeout, broken PM: return `[]`.
+2. **Only emit truly outdated packages.** `current === latest` must be filtered out.
+3. Build each `OutdatedPackage` with:
+   - `id`: identifier usable by `update(id)` (provider-local; no need to be globally unique).
+   - `name?`: human-readable name when different from id.
+   - `current` / `latest`: strings as emitted by the PM, **un-normalized** (the UI displays them as-is — semantic comparison happens inside the provider via `normalizeVersion()`).
+   - `note?`: free-form extra info (`"pinned"`, `"unknown version"`, `"source: msstore"`…).
+   - `manual?: true`: signals that the update will require a human action. Filtered by `scanAll` → invisible to the user, **but still part of the "show or not" decision**. Usage patterns: JetBrains Toolbox, plugins behind a GUI, App Installer packages (winget itself).
 
-#### Pattern A : le PM expose du JSON
+#### Pattern A: the PM exposes JSON
 
-Le bonheur. Exemple `NpmGlobalProvider` :
+The happy path. Example `NpmGlobalProvider`:
 
 ```ts
 const { stdout } = await run("npm", ["outdated", "-g", "--json", "--long"]);
@@ -320,29 +320,29 @@ return Object.entries(parsed)
   .map(([name, info]) => ({ id: name, name, current: info.current!, latest: info.latest! }));
 ```
 
-Pas de regex, pas de parsing positionnel.
+No regex, no positional parsing.
 
-#### Pattern B : le PM ne sort que du texte tabulaire
+#### Pattern B: the PM only emits a text table
 
-`WingetProvider`, `ScoopProvider`. La technique : repérer la **ligne d'en-tête** ("Name Installed Version Latest Version"), calculer les offsets de colonnes par position de chaque header, puis slicer chaque ligne sur ces offsets. Résistant aux libellés localisés (FR/EN).
+`WingetProvider`, `ScoopProvider`. Technique: locate the **header line** ("Name Installed Version Latest Version"), compute column offsets from each header's position, then slice each line on those offsets. Resilient to localized labels (FR/EN).
 
 ```ts
 const headerIdx = lines.findIndex((l) => /^\s*Name\s+Installed Version\s+Latest Version/i.test(l));
-// puis pour chaque ligne au-delà du séparateur :
-const parts = line.trim().split(/\s{2,}/);  // ≥ 2 espaces = nouvelle colonne
+// then for each line past the separator:
+const parts = line.trim().split(/\s{2,}/);  // ≥ 2 spaces = new column
 ```
 
-#### Pattern C : le PM n'a pas de "list outdated", mais expose `--version`
+#### Pattern C: the PM has no "list outdated", but exposes `--version`
 
-Cas typique des outils HashiCorp, des CLIs cloud, de la plupart des outils dev (`lazygit`, `jj`, `delta`…). Le provider :
+Typical for HashiCorp tools, cloud CLIs, most dev tools (`lazygit`, `jj`, `delta`…). The provider:
 
-1. Lit la version installée via `<bin> --version`.
-2. Va chercher la version upstream via une API (GitHub Releases, HashiCorp Checkpoint, npm registry, PyPI…).
-3. Compare avec `normalizeVersion()` (trim leading `v`, lowercase).
-4. Génère **au plus une** entrée `OutdatedPackage` (un seul "paquet" à mettre à jour : l'outil lui-même).
-5. `update()` délègue à un PM hôte via `delegateUpdate()` (`core/install-source.ts`).
+1. Reads the installed version via `<bin> --version`.
+2. Fetches the upstream version through an API (GitHub Releases, HashiCorp Checkpoint, npm registry, PyPI…).
+3. Compares with `normalizeVersion()` (trim leading `v`, lowercase).
+4. Produces **at most one** `OutdatedPackage` entry (a single "package" to update: the tool itself).
+5. `update()` delegates to a host PM via `delegateUpdate()` (`core/install-source.ts`).
 
-Exemple condensé (`SelfProvider` pour `gh`) :
+Condensed example (`SelfProvider` for `gh`):
 
 ```ts
 {
@@ -352,50 +352,50 @@ Exemple condensé (`SelfProvider` pour `gh`) :
   update: async () => delegateUpdate({
     id: "gh", binary: "gh",
     packageIds: { winget: "GitHub.cli", scoop: "gh", choco: "gh" },
-    manualMessage: "Télécharger https://github.com/cli/cli/releases et remplacer gh.exe",
+    manualMessage: "Download https://github.com/cli/cli/releases and replace gh.exe",
   }),
 }
 ```
 
-Tous ces providers sont **flaggés `slow = true`** (un appel HTTP par scan).
+All these providers are **flagged `slow = true`** (one HTTP call per scan).
 
-#### Pattern D : `helm repo update` + `helm search repo --versions` (Kubernetes/Helm)
+#### Pattern D: `helm repo update` + `helm search repo --versions` (Kubernetes/Helm)
 
-Helm est sui generis : pas de "outdated" intégré. La technique consiste à `helm repo update` (refresh local), puis pour chaque release installée comparer la version locale au champ `version` de `helm search repo <chart> --versions -o json`. C'est cher → flaggé `slow`.
+Helm is sui generis: no built-in "outdated". The technique is to `helm repo update` (refresh local), then for each installed release compare the local version to the `version` field of `helm search repo <chart> --versions -o json`. Expensive → flagged `slow`.
 
-#### Pattern E : Bridge WSL
+#### Pattern E: WSL bridge
 
-Les providers `wsl-apt`, `wsl-dnf`, `wsl-pacman`, etc. fonctionnent en encapsulant `wsl.exe -d <distro> -- <command-linux>`. Le helper `src/core/wsl.ts` gère :
-- Détection des distros disponibles (`wsl.exe -l -q`).
-- Sélection : si plusieurs distros tournent le même PM, lister par distro et donner un id composé (`apt:<distro>:<pkg>`).
+Providers `wsl-apt`, `wsl-dnf`, `wsl-pacman`, etc. work by wrapping `wsl.exe -d <distro> -- <linux-command>`. The helper `src/core/wsl.ts` handles:
+- Detection of available distros (`wsl.exe -l -q`).
+- Selection: if several distros run the same PM, list per distro and produce a compound id (`apt:<distro>:<pkg>`).
 
-### 5.3 `update(packageId, options?)` — un paquet
+### 5.3 `update(packageId, options?)` — one package
 
-Reçoit un `packageId` (issu de `OutdatedPackage.id` ou typé à la main par l'utilisateur) et retourne **toujours** un `UpdateOutcome` :
+Receives a `packageId` (from `OutdatedPackage.id` or typed by the user) and **always** returns an `UpdateOutcome`:
 
 ```ts
 interface UpdateOutcome {
   id: string;
   success: boolean;
-  skipped?: boolean;    // ran out gracefully, action humaine requise
-  message?: string;     // raison de l'échec / du skip
-  retryable?: boolean;  // pourrait passer avec une stratégie plus agressive
+  skipped?: boolean;    // ran out gracefully, human action required
+  message?: string;     // reason for failure / skip
+  retryable?: boolean;  // could pass with a more aggressive strategy
 }
 ```
 
-`UpdateOptions` :
+`UpdateOptions`:
 
 ```ts
 interface UpdateOptions {
-  force?: boolean;              // bypass hash check (ex. winget --force)
-  uninstallPrevious?: boolean;  // ex. winget --uninstall-previous (destructif)
-  reinstall?: boolean;          // dernier recours : uninstall + install en 2 commandes
+  force?: boolean;              // bypass hash check (e.g. winget --force)
+  uninstallPrevious?: boolean;  // e.g. winget --uninstall-previous (destructive)
+  reinstall?: boolean;          // last resort: uninstall + install in 2 commands
 }
 ```
 
-Ces flags ne sont JAMAIS positionnés par `gup` lui-même au premier passage. Ils sont activés uniquement par l'**utilisateur explicitement**, via le menu de retry post-batch (`ui/retry-failed.ts`). Voir §10.
+These flags are NEVER set by `gup` itself on the first pass. They are activated only by the **user explicitly**, through the post-batch retry menu (`ui/retry-failed.ts`). See §10.
 
-L'implémentation typique :
+Typical implementation:
 
 ```ts
 async update(packageId: string, options?: UpdateOptions): Promise<UpdateOutcome> {
@@ -411,16 +411,16 @@ async update(packageId: string, options?: UpdateOptions): Promise<UpdateOutcome>
 }
 ```
 
-Notes :
-- `runInherit` **stream le stdout/stderr du sous-process directement dans le terminal de l'utilisateur**. C'est volontaire : pendant un update on veut voir les barres de progression, les questions interactives (winget peut demander l'acceptation d'une EULA), les warnings.
-- Ne pas confondre avec `run()`, qui capture stdout/stderr en mémoire (utilisé pour parser dans `listOutdated`).
+Notes:
+- `runInherit` **streams the subprocess's stdout/stderr directly to the user's terminal**. Intentional: during an update we want to see progress bars, interactive prompts (winget can request EULA acceptance), warnings.
+- Don't confuse with `run()`, which captures stdout/stderr in memory (used for parsing in `listOutdated`).
 
 ### 5.4 `updateAll(packages, options?)` — bulk
 
-Quand le PM supporte un upgrade groupé natif, le provider l'utilise et **mappe le résultat unique** à autant d'`UpdateOutcome` que de paquets :
+When the PM supports a native grouped upgrade, the provider uses it and **maps the single result** to as many `UpdateOutcome`s as packages:
 
 ```ts
-// npm-global : un seul `npm install -g pkg1@latest pkg2@latest …`
+// npm-global: a single `npm install -g pkg1@latest pkg2@latest …`
 async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
   const args = ["install", "-g", ...packages.map((p) => `${p.id}@latest`)];
   const res = await runInherit("npm", args);
@@ -428,30 +428,30 @@ async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
 }
 ```
 
-Quand le PM ne supporte pas le bulk (cas de `SelfProvider`, certains providers GitHub-Release-driven), `updateAll` boucle simplement sur `update`.
+When the PM does not support bulk (case of `SelfProvider`, some GitHub-Release-driven providers), `updateAll` simply loops over `update`.
 
 ### 5.5 `manual: true` vs `skipped: true`
 
-Deux concepts orthogonaux qu'il faut bien distinguer :
+Two orthogonal concepts to clearly separate:
 
-- **`manual: true`** est posé sur un `OutdatedPackage` par `listOutdated`. Signifie : "ce paquet est obsolète, mais je sais déjà qu'aucune commande automatique ne marchera (GUI-only, store Microsoft, etc.)". `scanAll` les **filtre dès le scan** (`packages.filter(pkg => !pkg.manual)`) — l'utilisateur ne les voit jamais. Les providers qui ne produisent **que** des items `manual` sont retirés du registry pour ne pas plomber le temps de scan (cf. les commentaires dans `src/core/registry.ts` autour de `jetbrains-plugins`, `zed-ext`, etc.).
-- **`skipped: true`** est posé sur un `UpdateOutcome` par `update()`. Signifie : "j'ai essayé, j'ai détecté en cours de route qu'une condition humaine manquait (par exemple : pas d'élévation admin), j'arrête sans rien casser". L'utilisateur le voit en jaune `SKIP` distinct du rouge `FAIL`.
+- **`manual: true`** is set on an `OutdatedPackage` by `listOutdated`. Means: "this package is outdated, but I already know no automatic command will work (GUI-only, Microsoft Store, etc.)". `scanAll` **filters them out at scan time** (`packages.filter(pkg => !pkg.manual)`) — the user never sees them. Providers that produce **only** `manual` items are removed from the registry so they don't bloat scan time (cf. the comments in `src/core/registry.ts` around `jetbrains-plugins`, `zed-ext`, etc.).
+- **`skipped: true`** is set on an `UpdateOutcome` by `update()`. Means: "I tried, I detected mid-way that a human condition was missing (for example: no admin elevation), I stopped without breaking anything". The user sees it as yellow `SKIP` distinct from red `FAIL`.
 
 ---
 
-## 6. Le moteur de scan — `core/registry.ts`
+## 6. The scan engine — `core/registry.ts`
 
 ### 6.1 `ALL_PROVIDERS`
 
-Une simple liste statique d'instances. L'ordre dans la liste **dicte l'ordre d'affichage** dans `gup doctor` et dans la table de scan. Organisée par catégorie pour lisibilité.
+A simple static list of instances. The order in the list **drives the display order** in `gup doctor` and in the scan table. Organized by category for readability.
 
 ```ts
 export const ALL_PROVIDERS: Provider[] = [
   new WingetProvider(), new ScoopProvider(), new ChocoProvider(),
   new WslProvider(), new WslAptProvider(), /* ... */
   new NpmGlobalProvider(), /* ... */
-  // ~130 entrées au total
-  new SelfProvider(), // toujours en dernier
+  // ~130 entries total
+  new SelfProvider(), // always last
 ];
 ```
 
@@ -464,11 +464,11 @@ const checks = await Promise.all(
 return checks.filter((c) => c.ok).map((c) => c.p);
 ```
 
-Probe complet, en parallèle, sans pLimit (les `commandExists` sont des `where`/`which`, ms-cheap, le coût est de toute façon dominé par le binaire le plus lent à répondre — typiquement `wsl.exe -l -q`).
+Full probe, in parallel, no pLimit (the `commandExists` calls are `where`/`which`, ms-cheap, the cost is anyway dominated by the slowest binary to respond — typically `wsl.exe -l -q`).
 
 ### 6.3 `getProvidersToScan(options)`
 
-Filtre `ALL_PROVIDERS` :
+Filters `ALL_PROVIDERS`:
 
 ```ts
 return available.filter((p) => {
@@ -478,9 +478,9 @@ return available.filter((p) => {
 });
 ```
 
-Le `options.detected` permet à l'UI qui a déjà tourné `detectAvailableProviders()` (le spinner "détection des providers…") de ne pas la refaire.
+The `options.detected` lets a UI that already ran `detectAvailableProviders()` (the "detecting providers…" spinner) avoid doing it again.
 
-### 6.4 `scanAll(options)` — l'orchestrateur
+### 6.4 `scanAll(options)` — the orchestrator
 
 ```ts
 const limit = pLimit(options.concurrency ?? 4);
@@ -506,40 +506,40 @@ return Promise.all(
 );
 ```
 
-Trois invariants posés ici :
-1. **Concurrency 4 par défaut.** Le but est de ne pas saturer la machine de subprocess et de garder la sortie spinner lisible. Configurable via `concurrency`.
-2. **Le `try/catch` est dans `scanAll`, pas dans le provider.** Le provider est libre de lever, scanAll absorbe. C'est la dernière ligne de défense.
-3. **`pkg.manual` est filtré ici, une seule fois.** Aucun code en aval n'a besoin de savoir que `manual` existe (sauf les rares providers qui les produisent eux-mêmes en interne).
+Three invariants set here:
+1. **Concurrency 4 by default.** Goal: don't saturate the machine with subprocesses and keep the spinner output readable. Configurable via `concurrency`.
+2. **The `try/catch` is in `scanAll`, not in the provider.** The provider is free to throw, scanAll absorbs. It is the last line of defense.
+3. **`pkg.manual` is filtered here, once.** No downstream code needs to know `manual` exists (except the rare providers that produce them internally).
 
 ---
 
-## 7. Le runner — `core/runner.ts`
+## 7. The runner — `core/runner.ts`
 
-Toute interaction avec le système se fait via 5 fonctions de ce fichier.
+All interaction with the system happens through 5 functions in this file.
 
 ```ts
-// 1. Capture stdout/stderr en mémoire — utilisé par listOutdated() pour parser
+// 1. Capture stdout/stderr in memory — used by listOutdated() for parsing
 async function run(command, args = [], options = {}): Promise<RunResult>
 
-// 2. Stream stdout/stderr vers le terminal user — utilisé par update() pour qu'il voie l'install tourner
+// 2. Stream stdout/stderr to the user's terminal — used by update() so they see the install run
 async function runInherit(command, args = [], options = {}): Promise<RunResult>
 
-// 3. `where <bin>` / `which <bin>` — utilisé partout dans isAvailable()
+// 3. `where <bin>` / `which <bin>` — used everywhere in isAvailable()
 async function commandExists(command): Promise<boolean>
 
-// 4. Première résolution PATH d'un binaire — utilisé quand l'emplacement compte (ex. corepack-ownership)
+// 4. First PATH resolution of a binary — used when location matters (e.g. corepack-ownership)
 async function whichFirst(command): Promise<string | null>
 
-// 5. Probe d'élévation Windows (`net session`) — utilisé par les providers admin-required (choco)
+// 5. Windows elevation probe (`net session`) — used by admin-required providers (choco)
 async function isElevated(): Promise<boolean>
 ```
 
-### Décisions clés
+### Key decisions
 
-- **`reject: false`** : execa par défaut throw sur exit non-zéro. Ici on inspecte `failed` à la main. Évite de devoir wrapper chaque appel dans un try/catch.
-- **`encoding: "utf8"`** sur `run()` : sans ça, Windows en cp65001 retourne du mojibake (`winget`, `choco` particulièrement). Cassait le parsing des tables.
-- **`windowsHide: true`** : sinon chaque subprocess ouvre brièvement une fenêtre cmd qui clignote. Cosmétique mais essentiel pour l'UX.
-- **Pas de `shell: true` par défaut.** L'argv vector empêche l'injection. Les deux exceptions (Scoop : son shim PowerShell ne s'invoque pas autrement) sont **allowlistées par un test sécurité** (`tests/security/shell-usage.test.ts`) : si un nouveau provider veut faire `shell: true`, le test casse.
+- **`reject: false`**: execa throws on non-zero exit by default. Here we inspect `failed` by hand. Avoids wrapping every call in try/catch.
+- **`encoding: "utf8"`** on `run()`: without this, Windows on cp65001 returns mojibake (`winget`, `choco` especially). Breaks table parsing.
+- **`windowsHide: true`**: otherwise every subprocess briefly opens a flashing cmd window. Cosmetic but essential for UX.
+- **No `shell: true` by default.** The argv vector prevents injection. The two exceptions (Scoop: its PowerShell shim can't be invoked otherwise) are **allowlisted by a security test** (`tests/security/shell-usage.test.ts`): if a new provider wants `shell: true`, the test breaks.
 
 ### `RunResult`
 
@@ -548,162 +548,162 @@ interface RunResult {
   stdout: string;
   stderr: string;
   exitCode: number;
-  failed: boolean;  // true si exitCode !== 0 OU si execa a flaggé failed (timeout, signal, etc.)
+  failed: boolean;  // true if exitCode !== 0 OR if execa flagged failed (timeout, signal, etc.)
 }
 ```
 
-Volontairement plat. Pas de "value" / "ok" sucre. Lisible direct.
+Deliberately flat. No "value" / "ok" sugar. Reads straight.
 
 ---
 
-## 8. Helpers transverses (`core/`)
+## 8. Cross-cutting helpers (`core/`)
 
 ### 8.1 `gh-releases.ts`
 
-Pattern le plus fréquent dans `gup` : "ce paquet vient de GitHub, va chercher le tag de la dernière release et compare-le à `<bin> --version`".
+The most frequent pattern in `gup`: "this package comes from GitHub, fetch the latest release tag and compare it to `<bin> --version`".
 
 ```ts
 fetchGitHubReleaseLatest(ownerRepo, { stripVPrefix = true, timeoutMs = 5000 })
-fetchGitHubReleaseTagMatching(ownerRepo, predicate, opts) // pour kustomize, k3d : tags préfixés
+fetchGitHubReleaseTagMatching(ownerRepo, predicate, opts) // for kustomize, k3d: prefixed tags
 normalizeVersion(v)  // strip "v", lowercase, trim
 ```
 
-Toutes ces fonctions retournent `null` en cas d'erreur réseau / HTTP : **pas de throw**. Le provider qui les utilise traite `null` comme "skip cette entrée du scan".
+All these functions return `null` on network / HTTP error: **no throw**. The provider using them treats `null` as "skip this scan entry".
 
-Timeout 5 s par défaut, borné par `AbortSignal.timeout(5_000)`. Crucial : sans ça, un seul GitHub API timeout pourrait bloquer un scan parallèle entier (avec concurrency=4, la pile attend le slot).
+5 s default timeout, bounded by `AbortSignal.timeout(5_000)`. Crucial: without this, a single GitHub API timeout could block a whole parallel scan (with concurrency=4, the queue waits for the slot).
 
 ### 8.2 `hashicorp-releases.ts`
 
-Équivalent pour Terraform / Vault / Consul / Nomad / Packer / Boundary. Utilise l'endpoint `https://api.releases.hashicorp.com/v1/releases/<product>/latest` qui n'a pas de rate-limit GitHub.
+Equivalent for Terraform / Vault / Consul / Nomad / Packer / Boundary. Uses the `https://api.releases.hashicorp.com/v1/releases/<product>/latest` endpoint which has no GitHub rate-limit.
 
 ### 8.3 `wsl.ts`
 
-Détecte les distros WSL (`wsl -l -q`), invoque des commandes Linux à travers `wsl -d <distro> -- bash -c "<cmd>"`. Utilisé par les 7 providers `wsl-*`.
+Detects WSL distros (`wsl -l -q`), invokes Linux commands through `wsl -d <distro> -- bash -c "<cmd>"`. Used by all 7 `wsl-*` providers.
 
 ### 8.4 `install-source.ts`
 
-Heuristique inverse : étant donné un binaire sur PATH, deviner quel PM l'a installé (basé sur le chemin résolu — `%LOCALAPPDATA%\Microsoft\WinGet\Packages\…` → winget, `~\scoop\…` → scoop, etc.). Exposé via `delegateUpdate()`, utilisé par les providers qui ne s'auto-updatent pas et doivent re-router vers leur PM hôte (ex. `gh`).
+Inverse heuristic: given a binary on PATH, guess which PM installed it (based on the resolved path — `%LOCALAPPDATA%\Microsoft\WinGet\Packages\…` → winget, `~\scoop\…` → scoop, etc.). Exposed via `delegateUpdate()`, used by providers that don't self-update and must reroute to their host PM (e.g. `gh`).
 
 ### 8.5 `corepack-ownership.ts`
 
-Cas tordu spécifique à pnpm / yarn. Modern pnpm/yarn peuvent être :
-- Installés directement (`pnpm self-update`, `npm i -g yarn`),
-- Ou shimmés par corepack (`corepack prepare pnpm@latest --activate`).
+Tricky pnpm / yarn case. Modern pnpm/yarn can be:
+- Installed directly (`pnpm self-update`, `npm i -g yarn`),
+- Or shimmed by corepack (`corepack prepare pnpm@latest --activate`).
 
-Le binaire visible sur PATH peut être l'un ou l'autre. La détection regarde si le chemin du binaire est dans le répertoire corepack. `SelfProvider` utilise ça pour éviter de proposer un `pnpm self-update` qui ne marcherait pas si pnpm est un shim corepack — c'est `CorepackProvider` qui doit s'en charger.
+The binary on PATH can be either. Detection looks at whether the binary's path is inside the corepack directory. `SelfProvider` uses this to avoid offering a `pnpm self-update` that would not work if pnpm is a corepack shim — that case is handled by `CorepackProvider`.
 
 ### 8.6 `nvim-paths.ts`
 
-Localise les répertoires Neovim selon l'OS (`XDG_DATA_HOME`, `%LOCALAPPDATA%\nvim-data`, etc.) pour les providers `nvim-lazy`, `nvim-packer`, `nvim-mason`.
+Locates Neovim directories per OS (`XDG_DATA_HOME`, `%LOCALAPPDATA%\nvim-data`, etc.) for the `nvim-lazy`, `nvim-packer`, `nvim-mason` providers.
 
 ---
 
-## 9. Les commandes — `commands/`
+## 9. Commands — `commands/`
 
-### 9.1 `cli.ts` — l'entrée
+### 9.1 `cli.ts` — the entry
 
-Pure orchestration commander. 5 entry points (par défaut + 4 sous-cmds). Chaque action `await`s un `*Command()` qui retourne un exit code, puis `process.exit(code)`. Catch global :
-- `ExitPromptError` (Ctrl+C dans un prompt @inquirer) → silent, exit 130 (convention POSIX SIGINT).
-- Autre exception → `chalk.red("Error:")` + message + exit 1.
+Pure commander orchestration. 5 entry points (default + 4 subcommands). Each action `await`s a `*Command()` that returns an exit code, then `process.exit(code)`. Global catch:
+- `ExitPromptError` (Ctrl+C inside an @inquirer prompt) → silent, exit 130 (POSIX SIGINT convention).
+- Other exception → `chalk.red("Error:")` + message + exit 1.
 
 ### 9.2 `list.ts`
 
-Mince. Soit JSON pipeable (`--json` → `scanAll` brut → `JSON.stringify`), soit table colorisée (`scanWithProgress` + `renderScanTable`). Toujours exit 0.
+Thin. Either pipeable JSON (`--json` → raw `scanAll` → `JSON.stringify`) or colorized table (`scanWithProgress` + `renderScanTable`). Always exit 0.
 
 ### 9.3 `update.ts`
 
-Trois branches selon les options (cf. §4.3). Important : le code groupe `selection` par `providerId` avant d'invoquer `provider.updateAll(pkgs)` pour bénéficier du bulk natif quand dispo.
+Three branches depending on options (cf. §4.3). Important: the code groups `selection` by `providerId` before calling `provider.updateAll(pkgs)` to benefit from native bulk when available.
 
 ### 9.4 `doctor.ts`
 
-Probe seulement, pas de scan. Sortie `renderProvidersStatus(detected, missing)`. Pas de `--json` (volontaire — c'est une commande de diagnostic interactive, pas une primitive scriptable ; pour ça utiliser `gup list --json`).
+Probe only, no scan. Outputs `renderProvidersStatus(detected, missing)`. No `--json` (intentional — it's an interactive diagnostic command, not a scriptable primitive; use `gup list --json` for that).
 
 ### 9.5 `menu.ts`
 
-Le mode "default". REPL en `for(;;)`. Maintient un `MenuState` partagé entre itérations :
-- `scans` : derniers résultats du scan (réutilisés tant que pas de rescanne).
-- `fast` : flag mode rapide.
-- `filter` : liste de providers à scanner (vide = tous).
-- `detectedCount` : nombre de providers détectés (affiché dans la barre de status).
+The "default" mode. REPL in `for(;;)`. Maintains a `MenuState` shared between iterations:
+- `scans`: latest scan results (reused until a rescan).
+- `fast`: fast-mode flag.
+- `filter`: list of providers to scan (empty = all).
+- `detectedCount`: number of detected providers (shown in the status bar).
 
-Le menu invalide `scans` après chaque update batch (auto-rescanne) → l'utilisateur voit immédiatement les paquets qui sont passés à jour disparaître de la liste.
-
----
-
-## 10. Stratégies de retry — `ui/retry-failed.ts`
-
-Spécifique à `winget` mais conçu générique. Le problème : `winget upgrade` peut échouer pour plusieurs raisons réversibles avec une commande plus agressive :
-
-- Mismatch de hash d'installeur → `--force` ignore la vérification.
-- Changement de technologie d'install (MSI → MSIX) ou version courante "Unknown" → `--uninstall-previous` désinstalle d'abord.
-- Cas où même `--uninstall-previous` ne se déclenche pas → exécuter `winget uninstall` puis `winget install --force` en deux commandes séparées.
-
-### Mécanisme
-
-1. Chaque provider qui peut être dans ce cas retourne `{ success: false, retryable: true }` sur son premier échec.
-2. À la fin du batch, `maybeRetryFailures(entries)` regarde si au moins une entry est `retryable`.
-3. Si oui, présente à l'utilisateur (et lui SEUL — jamais en mode `--yes`) un `select` avec 3 stratégies progressivement plus agressives :
-   - `--force` (sûr — n'altère que la vérif SHA).
-   - `--force --uninstall-previous` (destructif — peut perdre la config app hors `%APPDATA%`).
-   - `uninstall + install` en 2 étapes (dernier recours — même destructivité).
-4. L'utilisateur choisit "Aucun" pour laisser l'échec, ou une stratégie pour réessayer **tous** les retryables.
-5. La fonction se rappelle elle-même avec la stratégie déjà tentée **exclue** des choix suivants. Garantie d'absence de boucle infinie.
-
-### Pourquoi cette structure
-
-- **Opt-in explicite** : `--force` désactive la vérif d'intégrité, donc on ne le déclenche jamais sans confirmation humaine.
-- **Mode CI safe** : `-y / --yes` court-circuite tout retry. Acceptable : si un winget échoue en CI, on veut le voir.
-- **Progression unique** : la liste des stratégies déjà tentées est portée dans la récursion (`excludeStrategies`). Pas d'état global, pas de file mutable.
+The menu invalidates `scans` after every update batch (auto-rescan) → the user immediately sees the updated packages disappear from the list.
 
 ---
 
-## 11. La couche UI — `ui/`
+## 10. Retry strategies — `ui/retry-failed.ts`
+
+Specific to `winget` but designed generically. The problem: `winget upgrade` can fail for several reasons reversible with a more aggressive command:
+
+- Installer hash mismatch → `--force` ignores the check.
+- Installer technology change (MSI → MSIX) or current version "Unknown" → `--uninstall-previous` uninstalls first.
+- Case where even `--uninstall-previous` does not trigger → execute `winget uninstall` then `winget install --force` as two separate commands.
+
+### Mechanism
+
+1. Each provider that can be in this case returns `{ success: false, retryable: true }` on first failure.
+2. At end of batch, `maybeRetryFailures(entries)` checks if at least one entry is `retryable`.
+3. If so, presents the user (and ONLY them — never under `--yes`) a `select` with 3 progressively more aggressive strategies:
+   - `--force` (safe — only bypasses the SHA check).
+   - `--force --uninstall-previous` (destructive — can lose app config outside `%APPDATA%`).
+   - `uninstall + install` in 2 steps (last resort — same destructiveness).
+4. The user picks "None" to leave the failure, or a strategy to retry **all** retryables.
+5. The function calls itself with the already-tried strategy **excluded** from the next choices. Guarantee against infinite loops.
+
+### Why this structure
+
+- **Explicit opt-in**: `--force` disables integrity check, so we never trigger it without human confirmation.
+- **CI-safe mode**: `-y / --yes` short-circuits any retry. Acceptable: if a winget fails in CI, we want to see it.
+- **Single progression**: the list of already-tried strategies is carried in the recursion (`excludeStrategies`). No global state, no mutable queue.
+
+---
+
+## 11. The UI layer — `ui/`
 
 ### 11.1 `table.ts`
 
-Wrap `cli-table3`. Deux helpers :
-- `renderScanTable(results)` : Provider · Package · Current · Latest · Note. Tri lexicographique par providerId. Errors de scan affichées en rouge inline. Totalise les updates en bas.
-- `renderProvidersStatus(detected, missing)` : double liste à puces vertes (●) / grises (○). Les missing affichent leur `installHint`.
+Wraps `cli-table3`. Two helpers:
+- `renderScanTable(results)`: Provider · Package · Current · Latest · Note. Lexicographic sort by providerId. Scan errors shown inline in red. Totalizes updates at the bottom.
+- `renderProvidersStatus(detected, missing)`: double bullet list, green (●) / gray (○). Missing entries show their `installHint`.
 
 ### 11.2 `scan-progress.ts`
 
-L'élément le plus user-facing. Utilise `ora` (spinner Unicode) + état local pour rendre :
+The most user-facing element. Uses `ora` (Unicode spinner) + local state to render:
 
 ```
 ⠋ scan [12/47] — npm (global) · pip · Helm  +5
 ```
 
-Mécanique : `inFlight = new Set<string>()`. `onProviderStart` ajoute le `displayName`, `onProviderEnd` le retire. À chaque event, `render()` reconstruit la chaîne avec les 3 premiers + "+N" si overflow. Sur erreur, persist temporairement le message avant le prochain render.
+Mechanics: `inFlight = new Set<string>()`. `onProviderStart` adds the `displayName`, `onProviderEnd` removes it. On every event, `render()` rebuilds the string with the first 3 + "+N" on overflow. On error, persists the message briefly before the next render.
 
-À la fin, un `stopAndPersist` affiche le résumé : durée, nombre de providers, nombre d'updates.
+At the end, a `stopAndPersist` shows the summary: duration, number of providers, number of updates.
 
 ### 11.3 `select.ts`
 
-Wraps `@inquirer/prompts.checkbox` mais avec un layout **grouped by provider**. Sépare chaque groupe par un `Separator`, indente les paquets, affiche le note en gris à droite.
+Wraps `@inquirer/prompts.checkbox` but with a **grouped by provider** layout. Separates each group with a `Separator`, indents packages, displays the note in gray on the right.
 
 ### 11.4 `retry-failed.ts`
 
-Couvert §10.
+Covered in §10.
 
 ---
 
-## 12. Mode `--fast`
+## 12. `--fast` mode
 
-Beaucoup de providers font du HTTP par paquet (helm-search, vscode-ext, pwsh-modules, self) ou du filesystem walk lourd. Sur une machine bien remplie, un scan complet peut prendre 30–60 secondes.
+Many providers do HTTP per package (helm-search, vscode-ext, pwsh-modules, self) or heavy filesystem walks. On a well-populated machine, a full scan can take 30–60 seconds.
 
-`--fast` (ou `Options → Fast mode ON` dans le menu) **exclut tous les providers `slow = true`** de la liste à scanner. Ramène typiquement le scan à <5 secondes.
+`--fast` (or `Options → Fast mode ON` in the menu) **excludes every `slow = true` provider** from the scan list. Brings the scan down to typically <5 seconds.
 
-C'est **un flag déclaratif sur le provider**, pas une allowlist centralisée. Ajouter un provider slow demande juste d'écrire `readonly slow = true` dans la classe — pas de modification de `registry.ts`.
+It is **a declarative flag on the provider**, not a centralized allowlist. Adding a slow provider only requires writing `readonly slow = true` on the class — no modification of `registry.ts`.
 
-Liste typique des `slow`s : `pwsh-modules` (PowerShell Gallery HTTP per module), `vscode-ext` (GitHub Marketplace), `helm-repo` (`helm repo update`), `pip` (PyPI HTTP per package), `self` (npm/PyPI/GitHub per PM), tous les providers IaC HashiCorp (release feed), Helm chart providers, etc.
+Typical list of `slow`s: `pwsh-modules` (PowerShell Gallery HTTP per module), `vscode-ext` (GitHub Marketplace), `helm-repo` (`helm repo update`), `pip` (PyPI HTTP per package), `self` (npm/PyPI/GitHub per PM), every HashiCorp IaC provider (release feed), Helm chart providers, etc.
 
 ---
 
-## 13. Catalogue providers (snapshot)
+## 13. Providers catalog (snapshot)
 
-Source canonique : [`docs/providers-catalog.md`](./providers-catalog.md). Distribution actuelle (~130 entrées) :
+Canonical source: [`docs/providers-catalog.md`](./providers-catalog.md). Current distribution (~130 entries):
 
-| Catégorie | # | Représentants |
+| Category | # | Examples |
 |---|---:|---|
 | OS / Windows | 3 | winget, scoop, choco |
 | WSL | 7 | wsl, wsl-apt, wsl-dnf, wsl-pacman, wsl-brew, wsl-flatpak, wsl-nix |
@@ -712,7 +712,7 @@ Source canonique : [`docs/providers-catalog.md`](./providers-catalog.md). Distri
 | .NET / PHP | 5 | dotnet-tools, composer-self, composer-g, symfony-cli, phive |
 | JVM | 2 | jbang, coursier-cs |
 | Rust | 2 | rustup, cargo |
-| Autres langages | 12 | gem, opam, hex, mix-archive, luarocks, cabal, stack, nimble, julia-pkg, r-packages, flutter, pub-global |
+| Other languages | 12 | gem, opam, hex, mix-archive, luarocks, cabal, stack, nimble, julia-pkg, r-packages, flutter, pub-global |
 | Polyglot toolchain | 5 | mise, asdf, proto, sdkman, goenv |
 | Cloud CLIs | 12 | az, gcloud, aws, oci, scw, hcloud, linode, doctl, supabase, heroku, railway, flyctl |
 | IaC | 10 | terraform, opentofu, terragrunt, vault, consul, nomad, packer, boundary, tflint, pulumi |
@@ -724,67 +724,67 @@ Source canonique : [`docs/providers-catalog.md`](./providers-catalog.md). Distri
 | Editor plugins | 4 | nvim-lazy, nvim-packer, nvim-mason, vim-plug |
 | Embedded / Mobile | 5 | arduino-cli, platformio, android-sdk, expo, fastlane |
 | Shell / cosmetic | 4 | oh-my-posh, starship, nerd-fonts, pwsh-modules |
-| Meta | 1 | self (auto-MAJ des PM eux-mêmes) |
+| Meta | 1 | self (auto-update of the PMs themselves) |
 
-Le doc `providers-catalog.md` détaille pour chacun : ID, source upstream, statut (✅ intégré, 🚧 code présent / non câblé car manual-only, ⬜ candidat, ➡️ absorbé, ❌ hors scope).
-
----
-
-## 14. Cas particuliers notables
-
-### 14.1 `WingetProvider` — parsing de table localisé
-
-Winget n'a pas de mode JSON pour `upgrade`. Le provider :
-1. Lit `winget upgrade --include-unknown --accept-source-agreements`.
-2. Cherche la ligne d'en-tête par regex tolérante à la langue.
-3. Calcule les offsets de colonnes à partir des positions des headers.
-4. Slice chaque ligne sur ces offsets.
-5. Croise avec la liste `winget pin list` pour annoter `pinned`.
-6. Marque `note: "unknown version"` si la version courante est `<` (sentinelle winget pour "version inconnue").
-
-L'update accepte 3 niveaux progressifs (force, force+uninstall-previous, reinstall en 2 étapes), tous derrière `UpdateOptions`. Chaque échec lève le flag `retryable: true` pour que `maybeRetryFailures` puisse proposer le niveau supérieur.
-
-### 14.2 `ScoopProvider` — l'exception `shell: true`
-
-Scoop est en réalité un script PowerShell (`scoop.ps1` exposé via le shim `scoop.cmd`). Pour qu'execa l'invoque correctement sur Windows, il faut `shell: true`. Le risque d'injection est neutralisé par :
-1. Une regex de validation stricte sur le packageId : `^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)?$` (charset Scoop).
-2. Un test sécu (`tests/security/shell-usage.test.ts`) qui pin la liste exhaustive des appels `shell: true` dans le codebase. Toute nouvelle utilisation casse la CI.
-
-### 14.3 `SelfProvider` — méta-update des PM
-
-Surface les "Le PM lui-même est obsolète". Couvre winget, scoop, choco, npm, pnpm, yarn, pip, pipx, gh. Pour chacun :
-1. `current()` : parse `<bin> --version` avec une regex semver tolérante.
-2. `latest()` : fetch upstream (npm registry, PyPI, GitHub Releases selon le PM).
-3. `update()` : commande canonique documentée (`scoop update`, `npm install -g npm@latest`, `corepack prepare yarn@stable --activate`, `pipx upgrade pipx`, …).
-
-Trois ownership quirks gérés :
-- **pnpm / yarn corepack-owned** : si le binaire est un shim corepack, `SelfProvider` skip ce target (c'est `CorepackProvider` qui s'en charge via `corepack prepare`).
-- **pip Windows multi-Python** : la résolution de l'interpréteur cible se fait à partir du chemin physique de `pip.exe` (pas via `py -m pip`), pour garantir qu'on update l'install que PATH résout.
-- **gh** : pas de `self update`. Delegation à `winget` / `scoop` / `choco` via `install-source.ts`.
-
-### 14.4 Manual-only providers retirés du registry
-
-Les providers `jetbrains-plugins`, `zed-ext`, `sublime-pc`, `obsidian-plugins`, `unity-hub`, `notepad-pp`, `eclipse-marketplace` existent comme **code** dans `src/providers/ide/` mais ne sont **pas** dans `ALL_PROVIDERS`. Raison : tous leurs items sortent `manual: true`, et donc `scanAll` les filtrerait à 100%. Les laisser dans le registry ajouterait du temps de scan sans bénéfice UI. Le code est conservé en référence pour un futur où un chemin d'update automatisable apparaîtrait.
+The `providers-catalog.md` doc details for each one: ID, upstream source, status (✅ integrated, 🚧 code present / not wired because manual-only, ⬜ candidate, ➡️ absorbed, ❌ out of scope).
 
 ---
 
-## 15. Sécurité
+## 14. Notable edge cases
 
-Surface d'attaque significative (shell-out sur ~130 outils tiers). Voir `SECURITY.md`.
+### 14.1 `WingetProvider` — localized table parsing
+
+Winget has no JSON mode for `upgrade`. The provider:
+1. Reads `winget upgrade --include-unknown --accept-source-agreements`.
+2. Looks up the header line via a locale-tolerant regex.
+3. Computes column offsets from header positions.
+4. Slices each line on those offsets.
+5. Cross-references the `winget pin list` to annotate `pinned`.
+6. Marks `note: "unknown version"` when the current version is `<` (winget sentinel for "unknown version").
+
+The update accepts 3 progressive levels (force, force+uninstall-previous, two-step reinstall), all behind `UpdateOptions`. Each failure raises the `retryable: true` flag so `maybeRetryFailures` can offer the next level.
+
+### 14.2 `ScoopProvider` — the `shell: true` exception
+
+Scoop is actually a PowerShell script (`scoop.ps1` exposed via the `scoop.cmd` shim). For execa to invoke it correctly on Windows, `shell: true` is required. Injection risk is neutralized by:
+1. A strict validation regex on the packageId: `^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)?$` (Scoop charset).
+2. A security test (`tests/security/shell-usage.test.ts`) that pins the exhaustive list of `shell: true` calls in the codebase. Any new usage breaks CI.
+
+### 14.3 `SelfProvider` — meta-update of PMs
+
+Surfaces "the PM itself is outdated". Covers winget, scoop, choco, npm, pnpm, yarn, pip, pipx, gh. For each one:
+1. `current()`: parse `<bin> --version` with a tolerant semver regex.
+2. `latest()`: upstream fetch (npm registry, PyPI, GitHub Releases depending on the PM).
+3. `update()`: canonical documented command (`scoop update`, `npm install -g npm@latest`, `corepack prepare yarn@stable --activate`, `pipx upgrade pipx`, …).
+
+Three ownership quirks handled:
+- **pnpm / yarn corepack-owned**: if the binary is a corepack shim, `SelfProvider` skips that target (it's `CorepackProvider`'s job via `corepack prepare`).
+- **pip on Windows multi-Python**: resolution of the target interpreter is done from the physical path of `pip.exe` (not via `py -m pip`), to guarantee the install resolved by PATH is the one being updated.
+- **gh**: no `self update`. Delegation to `winget` / `scoop` / `choco` via `install-source.ts`.
+
+### 14.4 Manual-only providers removed from the registry
+
+The providers `jetbrains-plugins`, `zed-ext`, `sublime-pc`, `obsidian-plugins`, `unity-hub`, `notepad-pp`, `eclipse-marketplace` exist as **code** in `src/providers/ide/` but are **not** in `ALL_PROVIDERS`. Reason: all their items come out `manual: true`, so `scanAll` would filter 100% of them. Leaving them in the registry would add scan time with no UI benefit. The code is kept as a reference for a future where an automatable update path would appear.
+
+---
+
+## 15. Security
+
+Significant attack surface (shell-out to ~130 third-party tools). See `SECURITY.md`.
 
 ### Threat model
 
-1. **Command injection via package id hostile** (manifest amont compromis, registry réponse poisoneuse).
-   - Mitigation : argv-vector partout, `shell: true` allowlisté + validation regex sur les packageId qui s'en servent.
-2. **MITM sur les probes de version upstream**.
-   - Mitigation : tous les `fetch()` doivent cibler `https://`. Pinned par `tests/security/http-targets.test.ts`.
+1. **Command injection via hostile package id** (compromised upstream manifest, poisoned registry response).
+   - Mitigation: argv-vector everywhere, `shell: true` allowlisted + regex validation on the packageIds that use it.
+2. **MITM on upstream version probes**.
+   - Mitigation: every `fetch()` must target `https://`. Pinned by `tests/security/http-targets.test.ts`.
 3. **Provider mis-routing**.
-   - `install-source.inferSourceFromPath` décide quel PM possède un binaire ; misclassification = upgrade vers la mauvaise source.
-   - Pinned par `tests/security/install-source.test.ts`.
+   - `install-source.inferSourceFromPath` decides which PM owns a binary; misclassification = upgrade against the wrong source.
+   - Pinned by `tests/security/install-source.test.ts`.
 
-### Outillage
+### Tooling
 
-| Layer | Outil | Config |
+| Layer | Tool | Config |
 |---|---|---|
 | Static SAST | CodeQL `security-extended` + `security-and-quality` | `.github/workflows/security.yml` |
 | Custom SAST | Semgrep + `p/typescript` + `p/nodejs` | `.semgrep.yml` |
@@ -793,29 +793,29 @@ Surface d'attaque significative (shell-out sur ~130 outils tiers). Voir `SECURIT
 | Lint | `eslint-plugin-security` | `.eslintrc.security.cjs` |
 | Custom pins | Vitest security suite | `tests/security/*.test.ts` |
 
-`npm run security` enchaîne `audit:deps:ci` + `lint:security` + `test:security`.
+`npm run security` chains `audit:deps:ci` + `lint:security` + `test:security`.
 
 ---
 
 ## 16. Tests
 
-Stack : Vitest + v8 coverage. CI cross-platform : Ubuntu + Windows × Node 20 + Node 22.
+Stack: Vitest + v8 coverage. Cross-platform CI: Ubuntu + Windows × Node 20 + Node 22.
 
 ```bash
 npm run typecheck             # tsc strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes
 npm run test                  # watch
 npm run test:run              # one-shot
 npm run test:coverage         # + coverage report
-npm run test:security         # suite sécu seule
+npm run test:security         # security suite only
 npm run lint                  # eslint
 ```
 
-Trois types de tests :
-1. **Unit** : parsers de chaque provider (winget table, scoop status, npm outdated JSON, helm search…), helpers (`gh-releases.ts`, `install-source.ts`, `normalizeVersion`).
-2. **Security pins** : `shell-usage.test.ts` (allowlist des `shell: true`), `http-targets.test.ts` (https-only), `install-source.test.ts` (mappings binaire ↔ PM).
-3. **Integration** : très limités — la CLI shell-out sur des outils réels qui peuvent ne pas être installés en CI.
+Three kinds of tests:
+1. **Unit**: parsers of each provider (winget table, scoop status, npm outdated JSON, helm search…), helpers (`gh-releases.ts`, `install-source.ts`, `normalizeVersion`).
+2. **Security pins**: `shell-usage.test.ts` (allowlist of `shell: true`), `http-targets.test.ts` (https-only), `install-source.test.ts` (binary ↔ PM mappings).
+3. **Integration**: very limited — the CLI shells out to real tools that may not be installed in CI.
 
-Conventions strictes : `tsconfig.json` active `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. Pas de cast `as` sauf nécessité, pas de `any`. Code review : "no comments stating WHAT, only WHY when non-obvious".
+Strict conventions: `tsconfig.json` enables `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. No `as` cast unless necessary, no `any`. Code review: "no comments stating WHAT, only WHY when non-obvious".
 
 ---
 
@@ -823,11 +823,11 @@ Conventions strictes : `tsconfig.json` active `strict`, `noUncheckedIndexedAcces
 
 ### Stack
 
-- TypeScript ESM, `tsconfig.json` strict.
-- Bundler : `tsup` (config minimale, single bundle, `dist/cli.js`).
-- Pas de publication npm (`"private": true` dans `package.json`). Distribution = `git clone` + `npm install && npm run build && npm link`.
+- ESM TypeScript, strict `tsconfig.json`.
+- Bundler: `tsup` (minimal config, single bundle, `dist/cli.js`).
+- Distributed via npm as `@charles_lindecker/gup`. `git clone` + `npm install && npm run build && npm link` is also supported for local hacking.
 
-### Scripts npm
+### npm scripts
 
 ```
 dev              # tsx src/cli.ts (no-build dev loop)
@@ -837,30 +837,28 @@ typecheck        # tsc --noEmit
 test, test:run, test:security, test:coverage, test:coverage:ci
 lint, lint:security
 audit:deps, audit:deps:ci
-security         # composite : audit + lint sécu + tests sécu
+security         # composite: audit + lint security + tests security
 ```
 
-### Pourquoi pas npm-publish ?
+### Distribution choice
 
-Choix conscient :
-1. La cible est une station de dev personnelle, pas un package consommé par d'autres projets.
-2. La forme distribuée serait sensiblement la même que le source (un seul binaire, pas de lib publique).
-3. `npm link` après `git clone` reste la voie la plus simple à auditer pour un nouvel utilisateur.
+- Published on npm so end users get a one-liner install. The distributed bundle is small (single file, no public library surface).
+- Source install via `git clone` + `npm link` remains the easiest way to audit before running, and is the workflow for contributors.
 
 ---
 
-## 18. Étendre `gup` — ajouter un provider en pratique
+## 18. Extending `gup` — adding a provider in practice
 
-Cf. `CONTRIBUTING.md`. Workflow type :
+See `CONTRIBUTING.md`. Typical workflow:
 
 ```powershell
-# 1. Copie du template
+# 1. Copy the template
 Copy-Item src/providers/_template.ts src/providers/<category>/<your-provider>.ts
 
-# 2. Édite la classe : id, displayName, installHint, slow?
-#    Implémente isAvailable(), listOutdated(), update(), updateAll().
+# 2. Edit the class: id, displayName, installHint, slow?
+#    Implement isAvailable(), listOutdated(), update(), updateAll().
 
-# 3. Enregistre dans src/core/registry.ts (import + entry dans ALL_PROVIDERS).
+# 3. Register in src/core/registry.ts (import + entry in ALL_PROVIDERS).
 
 # 4. Smoke test
 npm run typecheck
@@ -868,60 +866,60 @@ npx tsx src/cli.ts doctor
 npx tsx src/cli.ts list --provider my-tool
 ```
 
-Conventions à respecter :
-- Un fichier = un provider. Aucun import croisé entre providers.
-- Aucun throw dans `listOutdated`/`update`/`updateAll`. Return `[]` ou `success: false`.
-- Toujours via `run` / `runInherit`. Jamais `child_process` direct.
-- `fetch` toujours borné par `AbortSignal.timeout(5_000)`.
-- `slow: true` si le scan fait du HTTP-par-paquet ou du walk FS.
-- `skipped: true` quand l'update demande une action humaine.
-- TypeScript strict, pas de cast inutile.
-- User-facing strings en français (cible principale FR), code/identifiers en anglais.
+Conventions to follow:
+- One file = one provider. No cross-import between providers.
+- No throw inside `listOutdated`/`update`/`updateAll`. Return `[]` or `success: false`.
+- Always via `run` / `runInherit`. Never direct `child_process`.
+- `fetch` always bounded by `AbortSignal.timeout(5_000)`.
+- `slow: true` if the scan does HTTP-per-package or an FS walk.
+- `skipped: true` when the update needs a human action.
+- Strict TypeScript, no unnecessary casts.
+- Docs / code / identifiers in English; user-facing CLI strings in French (primary FR audience).
 
 ---
 
-## 19. Synthèse — la mental map en une phrase
+## 19. Summary — the mental map in one sentence
 
-> **`gup`** est une **CLI orchestratrice** qui agrège ~130 **Providers** (un fichier = une source d'installation), chacun implémentant un contrat à 4 méthodes (`isAvailable` / `listOutdated` / `update` / `updateAll`) ; les Providers sont **fan-out scannés** en parallèle via `pLimit(4)` derrière un spinner live ; les résultats sont **fail-soft** (un provider qui casse n'affecte que sa cellule) ; les updates sont **stream-inherit** vers le terminal user ; les échecs récupérables passent par un menu de **retry progressivement agressif** opt-in ; toute la surface shell-out est verrouillée par tests sécurité + SAST + audit dépendances + secret scanning.
+> **`gup`** is an **orchestrator CLI** that aggregates ~130 **Providers** (one file = one installation source), each implementing a 4-method contract (`isAvailable` / `listOutdated` / `update` / `updateAll`); the Providers are **fan-out scanned** in parallel via `pLimit(4)` behind a live spinner; results are **fail-soft** (a broken provider only affects its own cell); updates are **stream-inherit** to the user's terminal; recoverable failures go through a **progressively aggressive opt-in retry menu**; the entire shell-out surface is locked down by security tests + SAST + dependency audit + secret scanning.
 
 ---
 
-## Annexe A — Tableau récapitulatif des contrats
+## Appendix A — Contract recap
 
-| Concept | Type | Lieu | Invariant |
+| Concept | Type | Where | Invariant |
 |---|---|---|---|
-| `Provider.id` | `string` (kebab-case) | classe provider | unique sur `ALL_PROVIDERS`, stable |
-| `Provider.slow` | `boolean?` | classe provider | déclaratif ; gated par `--fast` |
-| `OutdatedPackage.manual` | `boolean?` | output `listOutdated` | filtré dans `scanAll`, jamais visible user |
-| `UpdateOutcome.success` | `boolean` | output `update` | `false` ↔ échec OU skip |
-| `UpdateOutcome.skipped` | `boolean?` | output `update` | `success: false` requis ; jaune SKIP |
-| `UpdateOutcome.retryable` | `boolean?` | output `update` | `success: false` requis ; déclenche menu retry |
-| `UpdateOptions.force` | `boolean?` | input `update` | jamais setté par défaut, opt-in user only |
-| `UpdateOptions.uninstallPrevious` | `boolean?` | input `update` | destructif, opt-in user only |
-| `UpdateOptions.reinstall` | `boolean?` | input `update` | destructif, dernier recours, opt-in user only |
-| `ScanOptions.concurrency` | `number?` | input `scanAll` | défaut 4 |
-| `ScanOptions.only` | `string[]?` | input `scanAll` | restriction par provider id |
-| `ScanOptions.fast` | `boolean?` | input `scanAll` | skip les `slow` |
+| `Provider.id` | `string` (kebab-case) | provider class | unique across `ALL_PROVIDERS`, stable |
+| `Provider.slow` | `boolean?` | provider class | declarative; gated by `--fast` |
+| `OutdatedPackage.manual` | `boolean?` | output of `listOutdated` | filtered in `scanAll`, never user-visible |
+| `UpdateOutcome.success` | `boolean` | output of `update` | `false` ↔ failure OR skip |
+| `UpdateOutcome.skipped` | `boolean?` | output of `update` | requires `success: false`; yellow SKIP |
+| `UpdateOutcome.retryable` | `boolean?` | output of `update` | requires `success: false`; triggers retry menu |
+| `UpdateOptions.force` | `boolean?` | input of `update` | never set by default, opt-in user only |
+| `UpdateOptions.uninstallPrevious` | `boolean?` | input of `update` | destructive, opt-in user only |
+| `UpdateOptions.reinstall` | `boolean?` | input of `update` | destructive, last resort, opt-in user only |
+| `ScanOptions.concurrency` | `number?` | input of `scanAll` | default 4 |
+| `ScanOptions.only` | `string[]?` | input of `scanAll` | restriction by provider id |
+| `ScanOptions.fast` | `boolean?` | input of `scanAll` | skip `slow` ones |
 
 ---
 
-## Annexe B — Mapping commande utilisateur → code
+## Appendix B — User command → code mapping
 
-| Commande user | Entry | Logique |
+| User command | Entry | Logic |
 |---|---|---|
 | `gup` | `program.action` | `menuCommand()` REPL |
 | `gup list` | `program.command("list")` | `listCommand()` |
 | `gup list --json` | idem | bypass renderScanTable, `JSON.stringify(scanAll)` |
-| `gup list --fast` | idem | `fast: true` passé à `scanWithProgress` |
+| `gup list --fast` | idem | `fast: true` passed to `scanWithProgress` |
 | `gup list --provider winget npm-g` | idem | `only: ["winget", "npm-g"]` |
-| `gup update` | `program.command("update")` | `updateCommand()` → checkbox interactif |
-| `gup update --all` | idem | tous les paquets scannés sélectionnés |
+| `gup update` | `program.command("update")` | `updateCommand()` → interactive checkbox |
+| `gup update --all` | idem | every scanned package selected |
 | `gup update --all -y` | idem | + skip confirm + skip retry menu |
-| `gup update winget:Microsoft.PowerShell` | idem | `runTargets(["winget:Microsoft.PowerShell"])` ; pas de scan |
+| `gup update winget:Microsoft.PowerShell` | idem | `runTargets(["winget:Microsoft.PowerShell"])`; no scan |
 | `gup doctor` | `program.command("doctor")` | `doctorCommand()` |
-| Ctrl+C dans un prompt | catch global | `ExitPromptError` → exit 130 |
-| Erreur fatale | catch global | `chalk.red("Error:")` + exit 1 |
+| Ctrl+C inside a prompt | global catch | `ExitPromptError` → exit 130 |
+| Fatal error | global catch | `chalk.red("Error:")` + exit 1 |
 
 ---
 
-*Fin du document. Toutes les références de chemin sont valides à la date du snapshot du repo. Mises à jour majeures du modèle (nouveau type d'OutdatedPackage / UpdateOutcome, refonte du moteur de scan) devront être reflétées ici.*
+*End of document. All path references are valid as of the repo snapshot. Major updates to the model (new `OutdatedPackage`/`UpdateOutcome` type, scan-engine overhaul) must be reflected here.*

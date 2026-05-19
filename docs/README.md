@@ -1,30 +1,30 @@
 # Documentation
 
-Index de la documentation détaillée de `gup`. Le [`README.md`](../README.md) racine reste léger ; le contenu technique vit ici.
+Index of the detailed `gup` documentation. The root [`README.md`](../README.md) stays light; technical content lives here.
 
-| Document | Pour qui | Contenu |
+| Document | Audience | Content |
 |---|---|---|
-| [`architecture.md`](architecture.md) | Contributeurs, mainteneurs, revue sécu | Couches & responsabilités, modèle de données, cycle de vie d'un provider, scan parallèle, pipeline d'update + retry, sécurité — **diagrammes mermaid**. |
-| [`how-gup-works.md`](how-gup-works.md) | Public dev intermédiaire/confirmé | Walkthrough technique end-to-end : motivation, modèle, contrats internes, patterns de résilience, build. Document source pour un site explicatif. |
-| [`providers-catalog.md`](providers-catalog.md) | Utilisateurs, mainteneurs | Catalogue exhaustif des 130+ providers, statut d'implémentation (✅ 🚧 ⬜ ➡️ ❌), hors scope. |
-| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Contributeurs | Workflow d'ajout d'un provider, conventions obligatoires, cas particuliers, checklist PR — **diagrammes mermaid**. |
-| [`../SECURITY.md`](../SECURITY.md) | Revue sécu, reporters | Threat model, mitigations CI/local, reporting d'une vulnérabilité. |
+| [`architecture.md`](architecture.md) | Contributors, maintainers, security review | Layers & responsibilities, data model, provider lifecycle, parallel scan, update pipeline + retry, security — **mermaid diagrams**. |
+| [`how-gup-works.md`](how-gup-works.md) | Intermediate/advanced developers | End-to-end technical walkthrough: motivation, model, internal contracts, resilience patterns, build. Source document for an explanatory site. |
+| [`providers-catalog.md`](providers-catalog.md) | Users, maintainers | Exhaustive catalog of the 130+ providers, implementation status (✅ 🚧 ⬜ ➡️ ❌), out-of-scope items. |
+| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Contributors | Provider-addition workflow, mandatory conventions, edge cases, PR checklist — **mermaid diagrams**. |
+| [`../SECURITY.md`](../SECURITY.md) | Security review, reporters | Threat model, CI/local mitigations, vulnerability reporting. |
 
-## Schémas mermaid
+## Mermaid diagrams
 
-Les diagrammes mermaid sont rendus nativement par GitHub. En local :
+Mermaid diagrams render natively on GitHub. Locally:
 
-- VS Code → extension *Markdown Preview Mermaid Support*.
-- Export PNG/SVG → [mermaid.live](https://mermaid.live) (copier-coller le bloc).
+- VS Code → *Markdown Preview Mermaid Support* extension.
+- PNG/SVG export → [mermaid.live](https://mermaid.live) (copy-paste the block).
 
-## Ordre de lecture suggéré
+## Suggested reading order
 
 ```mermaid
 flowchart LR
-    A[README] --> B[architecture.md<br/>vue d'ensemble]
-    B --> C{Objectif ?}
-    C -->|Contribuer| D[CONTRIBUTING.md]
-    C -->|Lister providers| E[providers-catalog.md]
-    C -->|Comprendre en profondeur| G[how-gup-works.md]
-    C -->|Reporter vuln| F[SECURITY.md]
+    A[README] --> B[architecture.md<br/>overview]
+    B --> C{Goal?}
+    C -->|Contribute| D[CONTRIBUTING.md]
+    C -->|List providers| E[providers-catalog.md]
+    C -->|Deep dive| G[how-gup-works.md]
+    C -->|Report vuln| F[SECURITY.md]
 ```

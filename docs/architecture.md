@@ -1,66 +1,66 @@
 # Architecture
 
-Vue technique de `gup`. Cible : contributeurs, mainteneurs, revue de sécurité.
+Technical view of `gup`. Audience: contributors, maintainers, security review.
 
-> Pour la liste complète des providers et leur statut d'implémentation : [`providers-catalog.md`](providers-catalog.md).
-> Pour ajouter un provider : [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
-
----
-
-## Sommaire
-
-- [1. Vue d'ensemble](#1-vue-densemble)
-- [2. Couches & responsabilités](#2-couches--responsabilités)
-- [3. Modèle de données](#3-modèle-de-données)
-- [4. Cycle de vie d'un provider](#4-cycle-de-vie-dun-provider)
-- [5. Scan parallèle](#5-scan-parallèle)
-- [6. Pipeline d'update + retry](#6-pipeline-dupdate--retry)
-- [7. Mode interactif (menu)](#7-mode-interactif-menu)
-- [8. Runner & isolation des effets de bord](#8-runner--isolation-des-effets-de-bord)
-- [9. Helpers transverses](#9-helpers-transverses)
-- [10. Sécurité](#10-sécurité)
-- [11. Arborescence](#11-arborescence)
+> For the full provider list and implementation status: [`providers-catalog.md`](providers-catalog.md).
+> To add a provider: [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
 
 ---
 
-## 1. Vue d'ensemble
+## Table of contents
 
-`gup` est un orchestrateur stateless : il découvre les gestionnaires de paquets installés sur la machine, leur demande **ce qui est obsolète**, puis leur délègue **les mises à jour**. Aucune base de données, aucun cache persistant.
+- [1. Overview](#1-overview)
+- [2. Layers & responsibilities](#2-layers--responsibilities)
+- [3. Data model](#3-data-model)
+- [4. Provider lifecycle](#4-provider-lifecycle)
+- [5. Parallel scan](#5-parallel-scan)
+- [6. Update pipeline + retry](#6-update-pipeline--retry)
+- [7. Interactive mode (menu)](#7-interactive-mode-menu)
+- [8. Runner & side-effect isolation](#8-runner--side-effect-isolation)
+- [9. Cross-cutting helpers](#9-cross-cutting-helpers)
+- [10. Security](#10-security)
+- [11. Tree layout](#11-tree-layout)
+
+---
+
+## 1. Overview
+
+`gup` is a stateless orchestrator: it discovers the package managers installed on the machine, asks them **what is outdated**, then delegates **the updates** to them. No database, no persistent cache.
 
 ```mermaid
 flowchart LR
-    User([Utilisateur]) -->|gup| CLI[cli.ts<br/>Commander]
-    CLI --> Menu[menu.ts<br/>interactif]
+    User([User]) -->|gup| CLI[cli.ts<br/>Commander]
+    CLI --> Menu[menu.ts<br/>interactive]
     CLI --> List[list.ts]
     CLI --> Update[update.ts]
     CLI --> Doctor[doctor.ts]
 
     Menu & List & Update & Doctor --> Registry[(registry.ts<br/>ALL_PROVIDERS)]
-    Registry -->|scan parallèle<br/>pLimit| Providers[Providers<br/>~130 modules]
+    Registry -->|parallel scan<br/>pLimit| Providers[Providers<br/>~130 modules]
     Providers -->|run / runInherit| Runner[runner.ts<br/>execa wrapper]
     Runner --> Tools[(winget · scoop · npm<br/>cargo · pipx · helm · …)]
 
-    Providers -.fetch HTTPS.-> Releases[(gh-releases<br/>hashicorp-releases)]
+    Providers -.HTTPS fetch.-> Releases[(gh-releases<br/>hashicorp-releases)]
 
     classDef boundary stroke-dasharray: 4 4
     class Tools,Releases boundary
 ```
 
-**Principes :**
+**Principles:**
 
-- **Un fichier = un provider.** Pas de couplage horizontal entre providers.
-- **Aucun `throw` dans `listOutdated` / `update`.** Un provider qui casse ne casse pas les autres.
-- **Pas de `child_process` direct.** Tout passe par `core/runner.ts` (encoding Windows, no-shell).
-- **Pas de cache.** Chaque invocation rescanne — comportement déterministe, pas de drift.
+- **One file = one provider.** No horizontal coupling between providers.
+- **No `throw` inside `listOutdated` / `update`.** A broken provider does not break the others.
+- **No direct `child_process`.** Everything goes through `core/runner.ts` (Windows encoding, no-shell).
+- **No cache.** Every invocation rescans — deterministic behavior, no drift.
 
 ---
 
-## 2. Couches & responsabilités
+## 2. Layers & responsibilities
 
 ```mermaid
 flowchart TB
     subgraph CLI["cli.ts — entry"]
-        Commander[Commander<br/>parsing argv]
+        Commander[Commander<br/>argv parsing]
     end
 
     subgraph Commands["commands/ — orchestration"]
@@ -77,14 +77,14 @@ flowchart TB
         Helpers[gh-releases · hashicorp-releases<br/>wsl · install-source<br/>corepack-ownership · nvim-paths]
     end
 
-    subgraph UI["ui/ — rendu terminal"]
+    subgraph UI["ui/ — terminal rendering"]
         Table[table.ts]
         Select[select.ts]
         Progress[scan-progress.ts]
         Retry[retry-failed.ts]
     end
 
-    subgraph ProvidersLayer["providers/ — adaptateurs"]
+    subgraph ProvidersLayer["providers/ — adapters"]
         OS[os/]
         Wsl[wsl/]
         Node[node/]
@@ -100,22 +100,22 @@ flowchart TB
     RegistryC --> ProvidersLayer
     ProvidersLayer --> RunnerC
     ProvidersLayer --> Helpers
-    ProvidersLayer -.implémente.-> Types
+    ProvidersLayer -.implements.-> Types
 ```
 
-| Couche | Rôle | Règle |
+| Layer | Role | Rule |
 |---|---|---|
-| `cli.ts` | Parsing argv + dispatch | Pas de logique métier. |
-| `commands/` | Orchestration d'un cas d'usage (list / update / doctor / menu) | Compose registry + UI. |
-| `core/` | Domaine + primitives (runner, types, registry, helpers) | Aucune dépendance vers `ui/` ou `providers/`. |
-| `ui/` | Rendu terminal (tables, prompts, spinners) | Aucune logique métier — uniquement de la présentation. |
-| `providers/` | Adaptateurs vers un gestionnaire de paquets externe | Implémente `Provider`. Pas d'import croisé. |
+| `cli.ts` | argv parsing + dispatch | No business logic. |
+| `commands/` | Orchestration of one use case (list / update / doctor / menu) | Composes registry + UI. |
+| `core/` | Domain + primitives (runner, types, registry, helpers) | No dependency on `ui/` or `providers/`. |
+| `ui/` | Terminal rendering (tables, prompts, spinners) | No business logic — presentation only. |
+| `providers/` | Adapters to an external package manager | Implements `Provider`. No cross-import. |
 
 ---
 
-## 3. Modèle de données
+## 3. Data model
 
-Trois interfaces drivent l'ensemble du système.
+Three interfaces drive the entire system.
 
 ```mermaid
 classDiagram
@@ -161,22 +161,22 @@ classDiagram
         +error?: string
     }
 
-    Provider ..> OutdatedPackage : produit
-    Provider ..> UpdateOutcome : produit
-    Provider ..> UpdateOptions : accepte
+    Provider ..> OutdatedPackage : produces
+    Provider ..> UpdateOutcome : produces
+    Provider ..> UpdateOptions : accepts
     ProviderScanResult o-- OutdatedPackage
 ```
 
-**Sémantique fine :**
+**Fine-grained semantics:**
 
-- `manual: true` → l'item est filtré par `scanAll` avant d'arriver à l'UI (jamais affiché, jamais inclus dans `update --all`). Sert aux items qui exigent une action GUI (JetBrains Toolbox, Eclipse Marketplace…).
-- `slow: true` sur le provider → exclu en `--fast`. Réservé aux scans qui font du HTTP par paquet ou du walk filesystem.
-- `skipped: true` dans l'outcome → différent de `success: false`. Surfacé en **jaune `SKIP`** vs **rouge `FAIL`**.
-- `retryable: true` → autorise la boucle de retry à proposer `--force` / `--uninstall-previous` / `reinstall` (typique winget hash mismatch).
+- `manual: true` → the item is filtered by `scanAll` before reaching the UI (never displayed, never included in `update --all`). Used for items that require a GUI action (JetBrains Toolbox, Eclipse Marketplace…).
+- `slow: true` on a provider → excluded under `--fast`. Reserved for scans that do HTTP per package or a filesystem walk.
+- `skipped: true` on an outcome → different from `success: false`. Surfaced as **yellow `SKIP`** vs **red `FAIL`**.
+- `retryable: true` → allows the retry loop to offer `--force` / `--uninstall-previous` / `reinstall` (typical winget hash mismatch).
 
 ---
 
-## 4. Cycle de vie d'un provider
+## 4. Provider lifecycle
 
 ```mermaid
 sequenceDiagram
@@ -185,7 +185,7 @@ sequenceDiagram
     participant Reg as registry.ts
     participant P as Provider
     participant Run as runner.ts
-    participant Bin as Outil externe
+    participant Bin as External tool
 
     CLI->>Reg: detectAvailableProviders()
     Reg->>P: isAvailable()
@@ -198,7 +198,7 @@ sequenceDiagram
     Note over Reg: filter fast + only
 
     CLI->>Reg: scanAll(opts)
-    par pour chaque provider détecté (pLimit=4)
+    par for each detected provider (pLimit=4)
         Reg->>P: listOutdated()
         P->>Run: run(bin, [args])
         Run->>Bin: spawn (no shell)
@@ -210,31 +210,31 @@ sequenceDiagram
 
     Note over CLI: user picks packages
 
-    CLI->>P: update(packageId) ou updateAll(...)
+    CLI->>P: update(packageId) or updateAll(...)
     P->>Run: runInherit(bin, [upgrade])
     Run->>Bin: spawn stdio=inherit
     Bin-->>CLI: stream stdout/stderr
     P-->>CLI: UpdateOutcome
 ```
 
-**Garanties :**
+**Guarantees:**
 
-- `isAvailable` ne fait **jamais d'I/O réseau** — uniquement `where/which` ou check de fichier.
-- `listOutdated` peut faire du HTTP (release latest) mais doit borner via `AbortSignal.timeout(5_000)`.
-- `update` utilise `runInherit` pour que l'utilisateur voie le progress bar du gestionnaire en temps réel.
+- `isAvailable` never does **network I/O** — only `where/which` or a file check.
+- `listOutdated` may do HTTP (latest release) but must bound it with `AbortSignal.timeout(5_000)`.
+- `update` uses `runInherit` so the user sees the manager's progress bar in real time.
 
 ---
 
-## 5. Scan parallèle
+## 5. Parallel scan
 
-`registry.ts:scanAll` est le seul endroit où la concurrence est gérée.
+`registry.ts:scanAll` is the only place where concurrency is managed.
 
 ```mermaid
 flowchart LR
-    Start([scanAll opts]) --> Detect{detected<br/>fourni ?}
-    Detect -->|oui| Filter
-    Detect -->|non| Probe[detectAvailableProviders<br/>Promise.all sur isAvailable]
-    Probe --> Filter[filtrer: only / fast]
+    Start([scanAll opts]) --> Detect{detected<br/>provided?}
+    Detect -->|yes| Filter
+    Detect -->|no| Probe[detectAvailableProviders<br/>Promise.all over isAvailable]
+    Probe --> Filter[filter: only / fast]
     Filter --> Limit[pLimit concurrency=4]
     Limit --> P1[listOutdated A]
     Limit --> P2[listOutdated B]
@@ -244,59 +244,59 @@ flowchart LR
     Catch -->|throw| Error[error: msg]
     FilterManual --> Result[ProviderScanResult]
     Error --> Result
-    Result --> End([retourne array])
+    Result --> End([returns array])
 ```
 
-**Points clés :**
+**Key points:**
 
-- `pLimit=4` par défaut → évite de saturer la machine quand winget + scoop + choco + cargo + pipx scannent en même temps.
-- Chaque erreur est isolée dans un `try/catch` au sein du callback `pLimit` → **aucune erreur ne propage**. Le résultat porte `error: string` au lieu d'exception.
-- `manual: true` est filtré dans `scanAll` (registry.ts:426) → les couches au-dessus ne voient jamais ces items.
-- Hooks UI : `onProviderStart` / `onProviderEnd` permettent à `ui/scan-progress.ts` d'afficher un compteur live sans coupler le scan au rendu.
+- `pLimit=4` by default → avoids saturating the machine when winget + scoop + choco + cargo + pipx scan at the same time.
+- Each error is isolated in a `try/catch` inside the `pLimit` callback → **no error propagates**. The result carries `error: string` instead of throwing.
+- `manual: true` is filtered inside `scanAll` (registry.ts:426) → layers above never see these items.
+- UI hooks: `onProviderStart` / `onProviderEnd` let `ui/scan-progress.ts` display a live counter without coupling scan to rendering.
 
 ---
 
-## 6. Pipeline d'update + retry
+## 6. Update pipeline + retry
 
-Le flow d'update partage la même structure entre `update` CLI et `runSelect`/`runAll` du menu.
+The update flow shares the same structure between the `update` CLI and the menu's `runSelect`/`runAll`.
 
 ```mermaid
 flowchart TD
-    Start([sélection N packages]) --> Group[grouper par providerId]
-    Group --> Loop{pour chaque<br/>provider}
-    Loop --> Bulk{N==1 ?}
-    Bulk -->|oui| One[provider.update id]
-    Bulk -->|non| Many[provider.updateAll pkgs]
-    One & Many --> Collect[collecte UpdateOutcome]
+    Start([selection of N packages]) --> Group[group by providerId]
+    Group --> Loop{for each<br/>provider}
+    Loop --> Bulk{N==1?}
+    Bulk -->|yes| One[provider.update id]
+    Bulk -->|no| Many[provider.updateAll pkgs]
+    One & Many --> Collect[collect UpdateOutcome]
     Collect --> Loop
-    Loop -->|fini| Summary[summarize]
+    Loop -->|done| Summary[summarize]
 
-    Summary --> Retry{retryable<br/>présent ?}
-    Retry -->|non| End([exit code])
-    Retry -->|oui| Strategy{user choisit}
+    Summary --> Retry{any<br/>retryable?}
+    Retry -->|no| End([exit code])
+    Retry -->|yes| Strategy{user picks}
     Strategy -->|none| End
     Strategy -->|force| F[options.force=true]
     Strategy -->|force+uninstall| FU[options.force + uninstallPrevious]
     Strategy -->|reinstall| R[options.reinstall=true]
-    F & FU & R --> Rerun[provider.update avec options]
+    F & FU & R --> Rerun[provider.update with options]
     Rerun --> Summary
 ```
 
-**Stratégies de retry** (ui/retry-failed.ts) — ordre du moins au plus destructif :
+**Retry strategies** (ui/retry-failed.ts) — ordered from least to most destructive:
 
-| Stratégie | Flags | Usage typique |
+| Strategy | Flags | Typical use |
 |---|---|---|
-| `--force` | `force=true` | winget hash mismatch (manifest locale-specific). |
-| `--force --uninstall-previous` | `force=true`, `uninstallPrevious=true` | Techno d'installer changée. **Destructif** : config hors `%APPDATA%` perdue. |
-| `uninstall + install` | `force=true`, `reinstall=true` | Dernier recours : `--uninstall-previous` ne se déclenche pas (version installée "Unknown"). |
+| `--force` | `force=true` | winget hash mismatch (locale-specific manifest). |
+| `--force --uninstall-previous` | `force=true`, `uninstallPrevious=true` | Installer technology changed. **Destructive**: app config outside `%APPDATA%` is lost. |
+| `uninstall + install` | `force=true`, `reinstall=true` | Last resort: `--uninstall-previous` does not trigger (installed version "Unknown"). |
 
-Le user doit explicitement choisir : aucune escalade automatique → la destruction de config n'arrive jamais sans consentement.
+The user must explicitly choose: no automatic escalation → config destruction never happens without consent.
 
 ---
 
-## 7. Mode interactif (menu)
+## 7. Interactive mode (menu)
 
-Le menu est une state-machine au-dessus du même registry.
+The menu is a state machine on top of the same registry.
 
 ```mermaid
 stateDiagram-v2
@@ -309,12 +309,12 @@ stateDiagram-v2
 
     Idle --> SelectPkg: total > 0
     SelectPkg --> ConfirmSel
-    ConfirmSel --> ApplyUpdates: oui
-    ConfirmSel --> Idle: non
+    ConfirmSel --> ApplyUpdates: yes
+    ConfirmSel --> Idle: no
 
     Idle --> ConfirmAll: total > 0
-    ConfirmAll --> ApplyUpdates: oui
-    ConfirmAll --> Idle: non
+    ConfirmAll --> ApplyUpdates: yes
+    ConfirmAll --> Idle: no
 
     Idle --> InputTarget
     InputTarget --> ApplyUpdates
@@ -332,71 +332,71 @@ stateDiagram-v2
     Idle --> [*]: Quit
 ```
 
-L'état (`MenuState`) tient quatre choses : `scans`, `fast`, `filter`, `detectedCount`. Pas d'autre persistance. Re-scanner = recharger l'état.
+The state (`MenuState`) holds four things: `scans`, `fast`, `filter`, `detectedCount`. No other persistence. Rescanning = reloading state.
 
 ---
 
-## 8. Runner & isolation des effets de bord
+## 8. Runner & side-effect isolation
 
-`core/runner.ts` est le **seul** point où `gup` spawn un sous-processus. Tous les providers passent par lui.
+`core/runner.ts` is the **only** place where `gup` spawns a subprocess. All providers go through it.
 
 ```mermaid
 flowchart LR
-    P[Provider] --> R{run /<br/>runInherit ?}
+    P[Provider] --> R{run /<br/>runInherit?}
     R -->|capture| Cap[run<br/>encoding=utf8<br/>stripFinalNewline<br/>reject=false]
     R -->|stream| Inh[runInherit<br/>stdio=inherit<br/>reject=false]
     Cap & Inh --> Execa[execa]
     Execa --> Spawn[spawn argv vector<br/>NO shell:true]
-    Spawn --> Bin[(binaire externe)]
+    Spawn --> Bin[(external binary)]
 
-    Cap -.résultat.-> Result["RunResult{stdout,stderr,exitCode,failed}"]
-    Inh -.résultat.-> Result
+    Cap -.result.-> Result["RunResult{stdout,stderr,exitCode,failed}"]
+    Inh -.result.-> Result
 ```
 
-**Invariants vérifiés par tests sécu** :
+**Invariants pinned by security tests**:
 
-- `shell: true` interdit hors d'une **allowlist** (Scoop PowerShell shim) — `tests/security/shell-usage.test.ts`.
-- `fetch()` doit cibler `https://` uniquement — `tests/security/http-targets.test.ts`.
+- `shell: true` forbidden outside an **allowlist** (Scoop PowerShell shim) — `tests/security/shell-usage.test.ts`.
+- `fetch()` must target `https://` only — `tests/security/http-targets.test.ts`.
 - `inferSourceFromPath` pinned — `tests/security/install-source.test.ts`.
-- Aucun `child_process` importé hors `runner.ts`.
+- No `child_process` imported outside `runner.ts`.
 
-**Helpers utilitaires** :
+**Utility helpers**:
 
-- `commandExists(cmd)` → wrapper `where`/`which`.
-- `whichFirst(cmd)` → chemin absolu de la 1ʳᵉ résolution PATH (utile pour `inferSourceFromPath`).
-- `isElevated()` → sonde admin Windows via `net session` (utilisé par choco).
+- `commandExists(cmd)` → `where`/`which` wrapper.
+- `whichFirst(cmd)` → absolute path of the 1st PATH resolution (useful for `inferSourceFromPath`).
+- `isElevated()` → Windows admin probe via `net session` (used by choco).
 
 ---
 
-## 9. Helpers transverses
+## 9. Cross-cutting helpers
 
-Modules dans `core/` partagés entre providers — toujours sans état.
+Modules in `core/` shared between providers — always stateless.
 
-| Helper | Rôle |
+| Helper | Role |
 |---|---|
-| `gh-releases.ts` | Latest tag GitHub Releases (helm-plugins, lazygit, jj, …). Fetch + parse + cache de la requête en cours uniquement. |
-| `hashicorp-releases.ts` | Index HashiCorp (`releases.hashicorp.com`) pour terraform/vault/consul/nomad/packer/boundary. |
-| `wsl.ts` | Bridge `wsl -d <distro> -- <cmd>` mutualisé pour tous les providers `wsl-*`. |
-| `install-source.ts` | Décide quel PM possède un binaire (`%LocalAppData%\Microsoft\WinGet` → winget, `~\scoop\shims` → scoop, …). Critique sécurité → pinned. |
-| `corepack-ownership.ts` | Détecte si pnpm/yarn sont managés par corepack pour router l'update au bon endroit. |
-| `nvim-paths.ts` | Résout les chemins de config Neovim cross-platform (lazy/packer/mason). |
+| `gh-releases.ts` | Latest GitHub Releases tag (helm-plugins, lazygit, jj, …). Fetch + parse + caching of the in-flight request only. |
+| `hashicorp-releases.ts` | HashiCorp index (`releases.hashicorp.com`) for terraform/vault/consul/nomad/packer/boundary. |
+| `wsl.ts` | Shared `wsl -d <distro> -- <cmd>` bridge for every `wsl-*` provider. |
+| `install-source.ts` | Decides which PM owns a binary (`%LocalAppData%\Microsoft\WinGet` → winget, `~\scoop\shims` → scoop, …). Security-critical → pinned. |
+| `corepack-ownership.ts` | Detects whether pnpm/yarn are managed by corepack so the update is routed to the right place. |
+| `nvim-paths.ts` | Resolves cross-platform Neovim config paths (lazy/packer/mason). |
 
 ---
 
-## 10. Sécurité
+## 10. Security
 
-Schéma synthétique — détails opérationnels dans [`../SECURITY.md`](../SECURITY.md).
+Summary diagram — operational details in [`../SECURITY.md`](../SECURITY.md).
 
 ```mermaid
 flowchart TB
-    subgraph Surface["Surface d'attaque"]
-        Mani[Manifest hostile<br/>package id]
-        MITM[MITM probe versions]
-        Misroute[Mauvais provider<br/>pour un binaire]
+    subgraph Surface["Attack surface"]
+        Mani[Hostile manifest<br/>package id]
+        MITM[MITM on version probes]
+        Misroute[Wrong provider<br/>for a binary]
     end
 
     subgraph Mitigation["Mitigations"]
-        Argv[execa argv vector<br/>shell:true allowlisté]
+        Argv[execa argv vector<br/>shell:true allowlisted]
         Https[fetch HTTPS only<br/>AbortSignal.timeout 5s]
         PinSource[install-source<br/>tests pinned]
     end
@@ -410,15 +410,15 @@ flowchart TB
         Dependabot[Dependabot weekly]
     end
 
-    Mani -.couvert par.-> Argv
-    MITM -.couvert par.-> Https
-    Misroute -.couvert par.-> PinSource
-    Argv & Https & PinSource -.vérifié par.-> CI
+    Mani -.covered by.-> Argv
+    MITM -.covered by.-> Https
+    Misroute -.covered by.-> PinSource
+    Argv & Https & PinSource -.verified by.-> CI
 ```
 
 ---
 
-## 11. Arborescence
+## 11. Tree layout
 
 ```
 src/
@@ -427,10 +427,10 @@ src/
 │   ├── list.ts                     # gup list
 │   ├── update.ts                   # gup update
 │   ├── doctor.ts                   # gup doctor
-│   └── menu.ts                     # gup (interactif)
+│   └── menu.ts                     # gup (interactive)
 ├── core/
 │   ├── types.ts                    # Provider, OutdatedPackage, UpdateOutcome, UpdateOptions
-│   ├── runner.ts                   # execa wrapper Windows-safe
+│   ├── runner.ts                   # Windows-safe execa wrapper
 │   ├── registry.ts                 # ALL_PROVIDERS, scanAll (pLimit)
 │   ├── gh-releases.ts              # GitHub releases helper
 │   ├── hashicorp-releases.ts       # HashiCorp releases helper
@@ -438,8 +438,8 @@ src/
 │   ├── install-source.ts           # PM ownership detection (security-critical)
 │   ├── corepack-ownership.ts       # corepack vs standalone routing
 │   └── nvim-paths.ts               # Neovim config paths
-├── providers/                      # 1 fichier = 1 source
-│   ├── _template.ts                # à copier pour démarrer
+├── providers/                      # 1 file = 1 source
+│   ├── _template.ts                # copy this to start
 │   ├── os/                         # winget, scoop, choco
 │   ├── wsl/                        # wsl, wsl-apt, wsl-dnf, …
 │   ├── node/                       # npm-g, pnpm-g, yarn-g, bun-g, deno, corepack, fnm, volta, nvm-windows
@@ -455,23 +455,23 @@ src/
 │   ├── containers/                 # nerdctl, oras, dive, docker-*, podman-desktop, rancher-desktop
 │   ├── security/                   # trivy, grype, syft, cosign, rekor, gitsign, nuclei, pdtm, semgrep
 │   ├── dev-cli/                    # lazygit, lazydocker, jj, delta, glab, tea, gh-extensions
-│   ├── ide/                        # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains (+ manuels non-câblés)
+│   ├── ide/                        # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains (+ unwired manuals)
 │   ├── editor-plugins/             # nvim-lazy, nvim-packer, nvim-mason, vim-plug
 │   ├── embedded-mobile/            # arduino-cli, platformio, android-sdk, expo, fastlane
 │   ├── shell/                      # oh-my-posh, starship, nerd-fonts, pwsh-modules
-│   └── self.ts                     # auto-MAJ des PM eux-mêmes
+│   └── self.ts                     # auto-update of the PMs themselves
 └── ui/
     ├── table.ts                    # cli-table3 + chalk rendering
-    ├── select.ts                   # checkbox multi-package
+    ├── select.ts                   # multi-package checkbox
     ├── scan-progress.ts            # spinner + live counter (ora)
     └── retry-failed.ts             # retry strategy prompt
 ```
 
 ---
 
-## Décisions notables
+## Notable decisions
 
-- **Pas de cache disque.** Le coût d'un scan est dominé par les outils externes (winget peut prendre 10s). Cacher introduirait du drift sans gain proportionnel. `--fast` suffit pour les workflows itératifs.
-- **Pas de plugin system.** Ajouter un provider = écrire un fichier + une ligne dans `registry.ts`. Plus simple qu'un mécanisme de discovery dynamique, et garde la surface de sécurité bornée.
-- **CLI français pour les messages utilisateur, anglais pour le code.** Le projet a un user FR-first, mais la base de code reste accessible internationalement.
-- **`updateAll` peut être un bulk ou une boucle.** Le contrat n'impose pas l'efficience : si l'outil propose un `upgrade --all` natif, le provider l'utilise ; sinon il itère sur `update(id)`. Le caller ne voit pas la différence.
+- **No disk cache.** Scan cost is dominated by external tools (winget can take 10s). Caching would introduce drift without proportional gain. `--fast` is enough for iterative workflows.
+- **No plugin system.** Adding a provider = write one file + one line in `registry.ts`. Simpler than a dynamic-discovery mechanism, and it keeps the security surface bounded.
+- **French CLI strings for end-user messages, English for code.** The project has a FR-first user, but the codebase stays internationally accessible.
+- **`updateAll` can be a bulk or a loop.** The contract does not mandate efficiency: if the tool exposes a native `upgrade --all`, the provider uses it; otherwise it loops over `update(id)`. The caller sees no difference.

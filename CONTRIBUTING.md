@@ -1,75 +1,75 @@
 # Contributing
 
-Merci de contribuer. La contribution type est l'**ajout d'un provider** — un module isolé qui sait scanner et mettre à jour une source de paquets.
+Thanks for contributing. The typical contribution is **adding a provider** — an isolated module that knows how to scan and update one package source.
 
-> Avant de plonger : lire [`docs/architecture.md`](docs/architecture.md) pour le contexte (cycle de vie, runner, scan parallèle, modèle de données).
-
----
-
-## Sommaire
-
-- [1. Setup local](#1-setup-local)
-- [2. Workflow d'ajout d'un provider](#2-workflow-dajout-dun-provider)
-- [3. Anatomie d'un provider](#3-anatomie-dun-provider)
-- [4. Conventions obligatoires](#4-conventions-obligatoires)
-- [5. Cas particuliers](#5-cas-particuliers)
-- [6. Tests & qualité avant PR](#6-tests--qualité-avant-pr)
-- [7. Style de code](#7-style-de-code)
-- [8. Reporter un bug provider](#8-reporter-un-bug-provider)
+> Before diving in: read [`docs/architecture.md`](docs/architecture.md) for context (lifecycle, runner, parallel scan, data model).
 
 ---
 
-## 1. Setup local
+## Table of contents
+
+- [1. Local setup](#1-local-setup)
+- [2. Provider-addition workflow](#2-provider-addition-workflow)
+- [3. Provider anatomy](#3-provider-anatomy)
+- [4. Mandatory conventions](#4-mandatory-conventions)
+- [5. Edge cases](#5-edge-cases)
+- [6. Tests & quality before PR](#6-tests--quality-before-pr)
+- [7. Code style](#7-code-style)
+- [8. Reporting a provider bug](#8-reporting-a-provider-bug)
+
+---
+
+## 1. Local setup
 
 ```powershell
-git clone https://github.com/LINDECKER-Charles/GlobalUpdater.git
-cd GlobalUpdater
+git clone https://github.com/LINDECKER-Charles/gup.git
+cd gup
 npm install
 npm run build
-npm link            # expose gup globalement (optionnel)
+npm link            # exposes gup globally (optional)
 ```
 
-Prérequis : **Node ≥ 20**, PowerShell ou Bash. Pour itérer sans rebuild : `npm run dev -- <args>` (utilise `tsx`).
+Requirements: **Node ≥ 20**, PowerShell or Bash. To iterate without rebuilding: `npm run dev -- <args>` (uses `tsx`).
 
 ---
 
-## 2. Workflow d'ajout d'un provider
+## 2. Provider-addition workflow
 
 ```mermaid
 flowchart TD
-    Start([Source à intégrer]) --> Scope{Dans le scope ?}
-    Scope -->|non| OutOfScope[lire 'Hors scope'<br/>du README]
-    Scope -->|oui| Copy[Copier _template.ts<br/>dans la bonne catégorie]
-    Copy --> Impl[Implémenter les 4 méthodes<br/>isAvailable / listOutdated / update / updateAll]
-    Impl --> Register[Importer + ajouter à<br/>ALL_PROVIDERS dans registry.ts]
+    Start([Source to integrate]) --> Scope{In scope?}
+    Scope -->|no| OutOfScope[read 'Out of scope'<br/>in README]
+    Scope -->|yes| Copy[Copy _template.ts<br/>into the right category]
+    Copy --> Impl[Implement the 4 methods<br/>isAvailable / listOutdated / update / updateAll]
+    Impl --> Register[Import + add to<br/>ALL_PROVIDERS in registry.ts]
     Register --> Smoke[Smoke test:<br/>tsx src/cli.ts doctor<br/>tsx src/cli.ts list --provider id]
-    Smoke --> Pass{Détecté ?<br/>Scan ok ?<br/>Update ok ?}
-    Pass -->|non| Impl
-    Pass -->|oui| Tests[npm run typecheck<br/>npm run lint<br/>npm run security]
-    Tests --> Doc[Mettre à jour docs/providers-catalog.md<br/>+ README si nouvelle catégorie]
+    Smoke --> Pass{Detected?<br/>Scan ok?<br/>Update ok?}
+    Pass -->|no| Impl
+    Pass -->|yes| Tests[npm run typecheck<br/>npm run lint<br/>npm run security]
+    Tests --> Doc[Update docs/providers-catalog.md<br/>+ README if new category]
     Doc --> PR([Pull Request])
 ```
 
-### 2.1 Choisir la catégorie
+### 2.1 Pick the category
 
-Le fichier va dans `src/providers/<catégorie>/`. Catégories existantes : `os/`, `wsl/`, `node/`, `python/`, `rust/`, `dotnet-php/`, `jvm/`, `lang-other/`, `toolchain/`, `cloud/`, `iac/`, `kubernetes/`, `containers/`, `security/`, `dev-cli/`, `ide/`, `editor-plugins/`, `embedded-mobile/`, `shell/`. Voir [`docs/architecture.md`](docs/architecture.md#11-arborescence) pour la cartographie complète.
+The file goes into `src/providers/<category>/`. Existing categories: `os/`, `wsl/`, `node/`, `python/`, `rust/`, `dotnet-php/`, `jvm/`, `lang-other/`, `toolchain/`, `cloud/`, `iac/`, `kubernetes/`, `containers/`, `security/`, `dev-cli/`, `ide/`, `editor-plugins/`, `embedded-mobile/`, `shell/`. See [`docs/architecture.md`](docs/architecture.md#11-tree-layout) for the full map.
 
-Une nouvelle catégorie n'est créée que si **3+ providers** y tomberaient logiquement — sinon, placer dans `lang-other/` ou `dev-cli/`.
+Only create a new category if **3+ providers** would logically fall into it — otherwise drop the file into `lang-other/` or `dev-cli/`.
 
-### 2.2 Copier le template
+### 2.2 Copy the template
 
 ```powershell
-Copy-Item src/providers/_template.ts src/providers/<catégorie>/<your-provider>.ts
+Copy-Item src/providers/_template.ts src/providers/<category>/<your-provider>.ts
 ```
 
-Le template (`src/providers/_template.ts`) contient les imports corrects et la signature minimale.
+The template (`src/providers/_template.ts`) ships with the correct imports and the minimal signature.
 
-### 2.3 Registrer
+### 2.3 Register it
 
-Dans `src/core/registry.ts` :
+In `src/core/registry.ts`:
 
 ```ts
-import { YourProvider } from "../providers/<catégorie>/<your-provider>.js";
+import { YourProvider } from "../providers/<category>/<your-provider>.js";
 
 export const ALL_PROVIDERS: Provider[] = [
   // ...
@@ -77,20 +77,20 @@ export const ALL_PROVIDERS: Provider[] = [
 ];
 ```
 
-L'ordre dans le tableau dicte l'ordre d'affichage dans `gup doctor` — grouper les providers conceptuellement liés.
+The order in the array drives the display order in `gup doctor` — group conceptually related providers together.
 
 ### 2.4 Smoke test
 
 ```powershell
 npm run typecheck
-npx tsx src/cli.ts doctor                       # provider détecté ?
-npx tsx src/cli.ts list --provider <your-id>    # scan correct ?
-npx tsx src/cli.ts update <your-id>:<pkg>       # update fonctionnel ?
+npx tsx src/cli.ts doctor                       # provider detected?
+npx tsx src/cli.ts list --provider <your-id>    # scan correct?
+npx tsx src/cli.ts update <your-id>:<pkg>       # update works?
 ```
 
 ---
 
-## 3. Anatomie d'un provider
+## 3. Provider anatomy
 
 ```mermaid
 sequenceDiagram
@@ -98,14 +98,14 @@ sequenceDiagram
     participant Registry
     participant P as YourProvider
     participant Runner as core/runner.ts
-    participant Tool as Outil externe
+    participant Tool as External tool
 
     Registry->>P: isAvailable()
     P->>Runner: commandExists("your-bin")
     Runner-->>P: boolean
     P-->>Registry: available
 
-    Note over Registry: si available et non filtré
+    Note over Registry: if available and not filtered
 
     Registry->>P: listOutdated()
     P->>Runner: run("your-bin", ["list", "--outdated"])
@@ -135,7 +135,7 @@ export class YourProvider implements Provider {
   readonly id = "your-tool";              // unique, kebab-case, stable
   readonly displayName = "Your Tool";
   readonly installHint = "winget install YourTool";
-  readonly slow = false;                   // true si scan = HTTP par paquet
+  readonly slow = false;                   // true if scan = HTTP per package
 
   async isAvailable(): Promise<boolean> {
     return commandExists("your-bin");
@@ -161,105 +161,105 @@ export class YourProvider implements Provider {
 }
 ```
 
-### Sémantique du retour
+### Return semantics
 
 ```mermaid
 flowchart LR
-    Update[update returns] --> Success{success ?}
-    Success -->|true| OK[OK vert]
-    Success -->|false + skipped| SKIP[SKIP jaune<br/>action manuelle]
-    Success -->|false + retryable| RETRY[FAIL rouge<br/>+ prompt retry]
-    Success -->|false| FAIL[FAIL rouge]
+    Update[update returns] --> Success{success?}
+    Success -->|true| OK[green OK]
+    Success -->|false + skipped| SKIP[yellow SKIP<br/>manual action]
+    Success -->|false + retryable| RETRY[red FAIL<br/>+ retry prompt]
+    Success -->|false| FAIL[red FAIL]
 ```
 
-- `success: true` → succès.
-- `success: false, skipped: true` → l'action exige l'utilisateur (download manuel, GUI). Pas un échec, pas un succès.
-- `success: false, retryable: true` → l'échec peut être contourné avec `--force`/`uninstallPrevious`/`reinstall`. Surfacé en `FAIL` mais propose un retry.
-- `success: false` → vrai échec, message dans `message`.
+- `success: true` → success.
+- `success: false, skipped: true` → action requires the user (manual download, GUI). Neither failure nor success.
+- `success: false, retryable: true` → the failure can be worked around with `--force`/`uninstallPrevious`/`reinstall`. Surfaced as `FAIL` but proposes a retry.
+- `success: false` → real failure, message in `message`.
 
 ---
 
-## 4. Conventions obligatoires
+## 4. Mandatory conventions
 
-| Règle | Pourquoi |
+| Rule | Why |
 |---|---|
-| **Un fichier = un provider** | Pas de couplage. Suppression triviale. |
-| **Aucun `throw` dans `listOutdated` / `update`** | Un provider qui casse ne casse pas le scan global. Retourne `[]` ou `success: false`. |
-| **`run` / `runInherit` uniquement** — jamais `child_process` | Encoding Windows safe, `shell: true` interdit (sauf allowlist sécu). |
-| **`fetch` avec `AbortSignal.timeout(5_000)`** | Pas de scan qui hang sur un upstream lent. |
-| **HTTPS uniquement** dans `fetch` | Vérifié par `tests/security/http-targets.test.ts`. |
-| **`slow: true`** si scan HTTP par paquet ou walk FS | Permet à `--fast` de skipper. |
-| **`skipped: true`** quand le provider sait qu'aucune automation n'est possible | Évite un faux `FAIL`. |
-| **`manual: true`** dans `OutdatedPackage` si tout le provider est purely-manual | `scanAll` filtre — l'item n'apparaît jamais dans les listes. |
-| **Pas de nouvelle dépendance npm sans discussion** | Footprint volontairement minimal. |
+| **One file = one provider** | No coupling. Removal is trivial. |
+| **No `throw` inside `listOutdated` / `update`** | A broken provider must not break the global scan. Return `[]` or `success: false`. |
+| **`run` / `runInherit` only** — never `child_process` | Windows-safe encoding, `shell: true` forbidden (security allowlist aside). |
+| **`fetch` with `AbortSignal.timeout(5_000)`** | No scan hanging on a slow upstream. |
+| **HTTPS only** in `fetch` | Pinned by `tests/security/http-targets.test.ts`. |
+| **`slow: true`** if scan does HTTP-per-package or FS walk | Lets `--fast` skip it. |
+| **`skipped: true`** when the provider knows no automation is possible | Avoids a false `FAIL`. |
+| **`manual: true`** in `OutdatedPackage` if the entire provider is purely manual | `scanAll` filters it — the item never shows up in lists. |
+| **No new npm dependency without discussion** | Footprint is intentionally minimal. |
 
 ---
 
-## 5. Cas particuliers
+## 5. Edge cases
 
-### 5.1 Provider HTTP-heavy (gh releases, etc.)
+### 5.1 HTTP-heavy providers (gh releases, etc.)
 
-Utiliser `core/gh-releases.ts` ou `core/hashicorp-releases.ts` quand l'outil publie via GitHub/HashiCorp. Ces helpers gèrent la timeout, le parsing, et le rate-limit basique.
+Use `core/gh-releases.ts` or `core/hashicorp-releases.ts` when the tool publishes via GitHub/HashiCorp. These helpers handle timeout, parsing, and basic rate-limiting.
 
-### 5.2 Provider WSL
+### 5.2 WSL providers
 
-Hériter du pattern dans `src/providers/wsl/` — le helper `core/wsl.ts` bridge `wsl -d <distro> -- <cmd>` et expose la liste des distros détectées.
+Inherit the pattern in `src/providers/wsl/` — the helper `core/wsl.ts` bridges `wsl -d <distro> -- <cmd>` and exposes the list of detected distros.
 
-### 5.3 Provider "manuel uniquement"
+### 5.3 "Manual-only" providers
 
-Si **chaque** mise à jour exige une action GUI (ex. JetBrains Toolbox, Eclipse Marketplace), le fichier existe pour documenter le cas mais n'est **pas** ajouté à `ALL_PROVIDERS`. Voir le commentaire `Manual-only providers` dans `registry.ts` lignes 151-161.
+If **every** update requires a GUI action (e.g. JetBrains Toolbox, Eclipse Marketplace), the file exists to document the case but is **not** added to `ALL_PROVIDERS`. See the `Manual-only providers` comment in `registry.ts` lines 151-161.
 
-### 5.4 Provider qui partage un binaire avec un autre
+### 5.4 Providers sharing a binary with another
 
-Utiliser `core/install-source.ts` pour décider qui possède le binaire (`whichFirst` → path → mapping PM). Critique sécurité : tout changement est pinned par `tests/security/install-source.test.ts`.
+Use `core/install-source.ts` to decide who owns the binary (`whichFirst` → path → PM mapping). Security-critical: any change is pinned by `tests/security/install-source.test.ts`.
 
-### 5.5 Provider winget-like avec retry
+### 5.5 winget-like providers with retry
 
-Marquer les outcomes `retryable: true` quand le message d'erreur upstream suggère qu'un `--force` aiderait (hash mismatch, app running). Implémenter le branchement sur `options.force` / `options.uninstallPrevious` / `options.reinstall` dans `update` — voir `src/providers/os/winget.ts` pour la référence.
+Mark outcomes `retryable: true` when the upstream error message suggests `--force` would help (hash mismatch, app running). Branch on `options.force` / `options.uninstallPrevious` / `options.reinstall` inside `update` — see `src/providers/os/winget.ts` for the reference.
 
 ---
 
-## 6. Tests & qualité avant PR
+## 6. Tests & quality before PR
 
 ```powershell
 npm run typecheck             # tsc strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes
 npm run lint                  # eslint
 npm run test:run              # vitest one-shot
-npm run test:security         # suite sécu (shell-usage, http-targets, install-source)
+npm run test:security         # security suite (shell-usage, http-targets, install-source)
 npm run security              # audit-ci + lint:security + test:security
 ```
 
-CI cross-platform : **Ubuntu** + **Windows**, Node **20** & **22**. Toute PR qui ajoute un provider doit passer ces 4 combinaisons.
+Cross-platform CI: **Ubuntu** + **Windows**, Node **20** & **22**. Every PR that adds a provider must pass all four combinations.
 
 ### Coverage
 
-Si le parsing est non-trivial, ajouter un test unitaire dans `tests/providers/<your-provider>.test.ts` — pas obligatoire pour un wrapper trivial, recommandé dès qu'il y a une regex ou une fusion de champs.
+If parsing is non-trivial, add a unit test in `tests/providers/<your-provider>.test.ts` — not mandatory for a trivial wrapper, recommended as soon as there's a regex or a field merge.
 
 ---
 
-## 7. Style de code
+## 7. Code style
 
-- **TypeScript strict** + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`. Pas de cast sauf nécessité.
-- **Pas de commentaires qui décrivent le quoi** — seulement le pourquoi quand non-trivial. Un identifier bien nommé bat un commentaire.
-- **Français pour les strings user-facing** (le user principal est FR), **anglais** pour le code, les identifiers, et la doc technique (cette page).
-- **Imports `.js`** dans les paths (extension ES modules, même pour les sources `.ts`).
-- **Pas de `any`**, pas de `as` non nécessaire.
-
----
-
-## 8. Reporter un bug provider
-
-Inclure dans l'issue :
-
-- Sortie de `gup doctor` (providers détectés vs manquants).
-- Sortie de `gup list --provider <id> --json` (ou snippet rédacté si données sensibles).
-- Versions OS + outil concerné (`<bin> --version`).
-- Sortie verbeuse si pertinente : `gup update <id>:<pkg> 2>&1 | tee gup.log`.
-
-Ça suffit en général pour reproduire.
+- **Strict TypeScript** + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`. No casts unless necessary.
+- **No comments describing the WHAT** — only the WHY when non-obvious. A well-named identifier beats a comment.
+- **English for docs, code, and identifiers.** User-facing CLI strings remain **French** (primary user is FR).
+- **`.js` extensions** in import paths (ES-module extension, even for `.ts` sources).
+- **No `any`**, no unnecessary `as`.
 
 ---
 
-## Reporter une vulnérabilité
+## 8. Reporting a provider bug
 
-Voir [`SECURITY.md`](SECURITY.md). **Ne pas** ouvrir une issue publique avec un reproducer — passer par une [private security advisory GitHub](https://github.com/LINDECKER-Charles/GlobalUpdater/security/advisories/new).
+Include in the issue:
+
+- Output of `gup doctor` (detected providers vs missing).
+- Output of `gup list --provider <id> --json` (or a redacted snippet if data is sensitive).
+- OS + tool versions (`<bin> --version`).
+- Verbose output when relevant: `gup update <id>:<pkg> 2>&1 | tee gup.log`.
+
+That's usually enough to reproduce.
+
+---
+
+## Reporting a vulnerability
+
+See [`SECURITY.md`](SECURITY.md). **Do not** open a public issue with a reproducer — file a [private GitHub security advisory](https://github.com/LINDECKER-Charles/gup/security/advisories/new) instead.
