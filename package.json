@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LINDECKER-Charles/GlobalUpdater.git"
+    "url": "https://github.com/LINDECKER-Charles/gup"
   },
   "keywords": [
     "cli",
