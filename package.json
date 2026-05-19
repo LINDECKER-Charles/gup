@@ -43,7 +43,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@inquirer/prompts": "^7.2.1",
+    "@inquirer/prompts": "^8.4.3",
     "@types/adm-zip": "^0.5.8",
     "adm-zip": "^0.5.17",
     "chalk": "^5.3.0",
