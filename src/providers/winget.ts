@@ -86,38 +86,76 @@ interface WingetRow {
   available: string;
 }
 
+/**
+ * Winget emits *two* upgrade tables: the regular one, then a second
+ * "require explicit targeting" table (pinned / version-locked packages).
+ * Both must be parsed, otherwise some upgrades are silently skipped.
+ * Tables are detected by header line; column offsets are recomputed per
+ * table since column widths depend on the rows that follow.
+ */
 function parseWingetTable(output: string): WingetRow[] {
-  const lines = output.split(/\r?\n/);
-
-  let headerIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i] ?? "";
-    if (/(Name|Nom)\s+(Id)\s+(Version)\s+(Available|Disponible)/i.test(l)) {
-      headerIdx = i;
-      break;
-    }
-  }
-  if (headerIdx === -1) return [];
-
-  const header = lines[headerIdx] ?? "";
-  const separator = lines[headerIdx + 1] ?? "";
-  if (!/^-+/.test(separator)) return [];
-
-  const cols = locateColumns(header);
-  if (!cols) return [];
-
+  // Winget streams a progress spinner using bare \r (carriage returns), which
+  // would otherwise glue the spinner frames onto the header line and skew the
+  // column offsets. Keep only the final segment after the last \r per line.
+  const lines = output.split(/\r?\n/).map((l) => {
+    const idx = l.lastIndexOf("\r");
+    return idx === -1 ? l : l.slice(idx + 1);
+  });
+  const headerRe = /(Name|Nom)\s+(Id)\s+(Version)\s+(Available|Disponible)/i;
   const rows: WingetRow[] = [];
-  for (let i = headerIdx + 2; i < lines.length; i++) {
-    const line = lines[i] ?? "";
-    if (!line.trim() || /^-+/.test(line)) continue;
-    if (/upgrades available|mises à jour/i.test(line)) break;
+  const seen = new Set<string>();
 
-    rows.push({
-      name: line.slice(cols.name, cols.id).trim(),
-      id: line.slice(cols.id, cols.version).trim(),
-      version: line.slice(cols.version, cols.available).trim(),
-      available: line.slice(cols.available, cols.source).trim(),
-    });
+  let i = 0;
+  while (i < lines.length) {
+    if (!headerRe.test(lines[i] ?? "")) {
+      i++;
+      continue;
+    }
+
+    const header = lines[i] ?? "";
+    const separator = lines[i + 1] ?? "";
+    if (!/^-+/.test(separator)) {
+      i++;
+      continue;
+    }
+
+    const cols = locateColumns(header);
+    if (!cols) {
+      i++;
+      continue;
+    }
+
+    i += 2;
+    while (i < lines.length) {
+      const line = lines[i] ?? "";
+      if (!line.trim() || /^-+/.test(line)) {
+        i++;
+        continue;
+      }
+      // End of table: hit a non-row marker (counts, explanatory text, next header).
+      if (headerRe.test(line)) break;
+      if (/^\s*\d+\s+(upgrades?|package|mises?\s+à)/i.test(line)) {
+        i++;
+        continue;
+      }
+      // Heuristic: a real row has an Id (no spaces) at the Id column.
+      const idCell = line.slice(cols.id, cols.version).trim();
+      if (!idCell || /\s/.test(idCell)) {
+        i++;
+        continue;
+      }
+
+      if (!seen.has(idCell)) {
+        seen.add(idCell);
+        rows.push({
+          name: line.slice(cols.name, cols.id).trim(),
+          id: idCell,
+          version: line.slice(cols.version, cols.available).trim(),
+          available: line.slice(cols.available, cols.source).trim(),
+        });
+      }
+      i++;
+    }
   }
   return rows;
 }
@@ -129,9 +167,11 @@ function locateColumns(header: string): {
   available: number;
   source: number;
 } | null {
+  // Case-insensitive lookup: winget FR emits "ID" while EN emits "Id".
+  const lower = header.toLowerCase();
   const find = (...labels: string[]): number => {
     for (const label of labels) {
-      const idx = header.indexOf(label);
+      const idx = lower.indexOf(label.toLowerCase());
       if (idx !== -1) return idx;
     }
     return -1;
