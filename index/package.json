@@ -1,0 +1,20 @@
+{
+  "name": "@charles_lindecker/gup-landing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Landing page for gup — built with Vite + React, deployed to GitHub Pages.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}

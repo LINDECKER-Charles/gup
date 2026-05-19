@@ -1,0 +1,53 @@
+{
+  "name": "gup — Global Updater",
+  "short_name": "gup",
+  "description": "CLI qui orchestre winget, npm, pip, helm, cargo, kubectl, terraform et ~125 autres gestionnaires de paquets derrière une seule interface unifiée.",
+  "start_url": "/gup/",
+  "scope": "/gup/",
+  "id": "/gup/",
+  "icons": [
+    {
+      "src": "favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#1c1a18",
+  "background_color": "#1c1a18",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "fr-FR",
+  "dir": "ltr",
+  "categories": ["developer", "utilities", "productivity"],
+  "screenshots": [
+    {
+      "src": "../screenshots/01-v3-hero.png",
+      "sizes": "1600x900",
+      "type": "image/png",
+      "label": "Scan parallèle de ~130 providers et table des paquets obsolètes"
+    }
+  ]
+}

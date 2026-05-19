@@ -1,0 +1,47 @@
+# robots.txt — gup (Global Updater CLI)
+# Site is served from GitHub Pages on the LINDECKER-Charles/gup repo.
+# If you change the deploy URL, update the Sitemap directive below.
+#
+# Default: fully open. For a public OSS landing page, maximum
+# discoverability (Google, Bing, DuckDuckGo, plus AI answer engines
+# like ChatGPT/Perplexity) is the goal.
+#
+# If at some point you want to opt out of AI training crawlers,
+# uncomment the block at the bottom of this file.
+
+User-agent: *
+Allow: /
+Disallow:
+
+# Hint major engines that the LLM-oriented manifest exists. Not a
+# standard directive — search engines ignore it, but a few AI crawlers
+# (You.com, Perplexity, Kagi) read robots.txt comments looking for
+# llms.txt references.
+# llms: /llms.txt
+
+Sitemap: https://lindecker-charles.github.io/gup/sitemap.xml
+
+# ---------------------------------------------------------------
+# Optional: block AI training/scraping crawlers. Uncomment to apply.
+# Keeping them ALLOWED (default) maximises discoverability via
+# ChatGPT, Claude, Perplexity, Gemini and Kagi answer surfaces —
+# which is the whole point of llms.txt.
+# ---------------------------------------------------------------
+# User-agent: GPTBot
+# Disallow: /
+# User-agent: ChatGPT-User
+# Disallow: /
+# User-agent: ClaudeBot
+# Disallow: /
+# User-agent: Claude-Web
+# Disallow: /
+# User-agent: anthropic-ai
+# Disallow: /
+# User-agent: CCBot
+# Disallow: /
+# User-agent: PerplexityBot
+# Disallow: /
+# User-agent: Google-Extended
+# Disallow: /
+# User-agent: Bytespider
+# Disallow: /
