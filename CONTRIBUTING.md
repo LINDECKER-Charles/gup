@@ -4,12 +4,12 @@ Thanks for considering a contribution. The most common contribution is adding a 
 
 ## Add a new provider
 
-A provider is a class implementing the `Provider` interface from `src/core/types.ts`. Each provider lives in its own file under `src/providers/`.
+A provider is a class implementing the `Provider` interface from `src/core/types.ts`. Each provider lives in its own file under `src/providers/<category>/` (e.g. `os/`, `node/`, `python/`, `cloud/`, `iac/`, `kubernetes/`, `security/`, `ide/`, ...). See `src/core/registry.ts` for the canonical list of categories.
 
 ### 1. Copy the template
 
 ```powershell
-Copy-Item src/providers/_template.ts src/providers/<your-provider>.ts
+Copy-Item src/providers/_template.ts src/providers/<category>/<your-provider>.ts
 ```
 
 ### 2. Implement the four methods
