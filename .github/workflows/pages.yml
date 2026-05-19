@@ -1,0 +1,78 @@
+name: pages
+
+# Deploys the static landing in index/ to GitHub Pages.
+# The page is the canonical entry point referenced by README, package.json
+# (homepage), the sitemap, and every JSON-LD block in index.html — so it
+# MUST stay reachable at https://lindecker-charles.github.io/gup/ for SEO
+# (canonical URL, OG image, sitemap discovery, AI engines' llms.txt fetch).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build static site
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: index
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: index/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Vite)
+        # Outputs to index/dist/. Tree-shaken, minified, code-split (react in
+        # its own chunk via vite.config.js manualChunks). All assets under
+        # static/ are copied verbatim, preserving /gup/public/* SEO paths.
+        run: npm run build
+
+      - name: Inject build metadata
+        # Stamp the deploy timestamp into the built HTML so cache busting +
+        # freshness signals reach search engines. Runs against the build
+        # output, not the source — keeps the source clean.
+        run: |
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          sed -i "s|<!-- @@BUILD_DATE@@ -->|<meta name=\"build-date\" content=\"$BUILD_DATE\" />|" dist/index.html || true
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./index/dist
+
+  deploy:
+    name: deploy to pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
