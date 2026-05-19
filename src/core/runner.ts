@@ -63,6 +63,19 @@ export async function commandExists(command: string): Promise<boolean> {
 }
 
 /**
+ * Return the absolute path of the first PATH resolution of `command`, or null
+ * if not found. Used when the *location* matters (e.g. to verify which install
+ * a binary belongs to), not just whether the binary exists.
+ */
+export async function whichFirst(command: string): Promise<string | null> {
+  const probe = process.platform === "win32" ? "where" : "which";
+  const result = await run(probe, [command]);
+  if (result.failed) return null;
+  const first = result.stdout.split(/\r?\n/)[0]?.trim();
+  return first && first.length > 0 ? first : null;
+}
+
+/**
  * Windows: `net session` requires admin privileges, so its exit code is a
  * reliable cheap probe for elevation. Non-Windows always reports true since
  * the providers that care about this (choco) are Windows-only anyway.
