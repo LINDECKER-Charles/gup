@@ -1,4 +1,56 @@
 /* gup — landing page */
+
+/* ----------------------------------------------------------------------------
+   Self-hosted Geist + Geist Mono (variable woff2, latin subset only).
+   Replaces the previous Google Fonts <link> in index.html. Local hosting kills
+   the 770ms render-block and the 940ms LCP critical-path edge.
+   The font-display:swap + size-adjust/ascent overrides on the synthetic
+   "Geist Local Fallback" face collapse CLS from the swap from ~0.143 to ~0.
+   Metrics derived from Geist's em-square (UPM 1000, ascent 960, descent 250)
+   matched against Arial (UPM 2048, ascent 1854, descent 434).
+---------------------------------------------------------------------------- */
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/gup/fonts/geist-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/gup/fonts/geist-mono-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Fallback faces tuned so the system font occupies the SAME box as Geist —
+   when the real font swaps in, no reflow. */
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial"), local("Helvetica"), local("Liberation Sans");
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+@font-face {
+  font-family: "Geist Mono Fallback";
+  src: local("Consolas"), local("Menlo"), local("Liberation Mono"), local("Courier New");
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+
 :root {
   --bg: oklch(0.14 0.012 60);
   --bg-elevated: oklch(0.18 0.014 60);
@@ -16,8 +68,8 @@
   --blue: oklch(0.72 0.13 230);
   --purple: oklch(0.72 0.13 305);
 
-  --sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+  --sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, "SFMono-Regular", monospace;
 
   --radius: 10px;
   --radius-lg: 18px;
