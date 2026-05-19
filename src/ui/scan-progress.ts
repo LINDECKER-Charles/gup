@@ -1,28 +1,52 @@
 import chalk from "chalk";
 import ora from "ora";
 import type { Provider, ProviderScanResult } from "../core/types.js";
-import { getProvidersToScan, scanAll, type ScanOptions } from "../core/registry.js";
+import {
+  detectAvailableProviders,
+  scanAll,
+  type ScanOptions,
+} from "../core/registry.js";
+
+export interface ScanWithProgressResult {
+  results: ProviderScanResult[];
+  /** Total number of providers detected on the system, before `only`/`fast` filtering. */
+  detectedCount: number;
+}
 
 /**
  * Runs scanAll with a live spinner showing currently-scanning providers and
  * a [done/total] counter. Caps the displayed in-flight list at 3 names so
  * the line stays readable; remaining are summarized as "+N".
+ *
+ * Detection itself can take a noticeable amount of time (probing every
+ * provider's `isAvailable()`), so we surface a dedicated spinner phase
+ * before the scan kicks in.
  */
 export async function scanWithProgress(
   baseOptions: Omit<ScanOptions, "onProviderStart" | "onProviderEnd"> = {},
-): Promise<ProviderScanResult[]> {
-  const planned = await getProvidersToScan(baseOptions);
+): Promise<ScanWithProgressResult> {
+  const spinner = ora({
+    text: chalk.dim("détection des providers…"),
+    spinner: "line",
+  }).start();
+
+  const detected = await detectAvailableProviders();
+  const planned = detected.filter((p) => {
+    if (baseOptions.only?.length && !baseOptions.only.includes(p.id)) return false;
+    if (baseOptions.fast && p.slow) return false;
+    return true;
+  });
   const total = planned.length;
 
   if (total === 0) {
-    process.stdout.write(chalk.dim("  aucun provider disponible\n"));
-    return [];
+    spinner.stopAndPersist({
+      symbol: chalk.dim("·"),
+      text: chalk.dim("aucun provider disponible"),
+    });
+    return { results: [], detectedCount: detected.length };
   }
 
-  const spinner = ora({
-    text: chalk.dim(`scan [0/${total}]`),
-    spinner: "line",
-  }).start();
+  spinner.text = chalk.dim(`scan [0/${total}]`);
 
   const inFlight = new Set<string>();
   let done = 0;
@@ -44,6 +68,7 @@ export async function scanWithProgress(
 
   const results = await scanAll({
     ...baseOptions,
+    detected,
     onProviderStart: (provider: Provider) => {
       inFlight.add(provider.displayName);
       render();
@@ -71,5 +96,5 @@ export async function scanWithProgress(
     ),
   });
 
-  return results;
+  return { results, detectedCount: detected.length };
 }

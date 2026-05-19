@@ -3,6 +3,10 @@ import chalk from "chalk";
 import { getProvider } from "../core/registry.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection, type SelectedPackage } from "../ui/select.js";
+import {
+  maybeRetryFailures,
+  type OutcomeWithProvider,
+} from "../ui/retry-failed.js";
 import type { OutdatedPackage, UpdateOutcome } from "../core/types.js";
 
 export interface UpdateOptions {
@@ -15,10 +19,10 @@ export interface UpdateOptions {
 
 export async function updateCommand(options: UpdateOptions): Promise<number> {
   if (options.targets?.length) {
-    return runTargets(options.targets);
+    return runTargets(options.targets, { ...(options.yes !== undefined && { yes: options.yes }) });
   }
 
-  const scans = await scanWithProgress({
+  const { results: scans } = await scanWithProgress({
     ...(options.only && { only: options.only }),
     ...(options.fast !== undefined && { fast: options.fast }),
   });
@@ -50,11 +54,14 @@ export async function updateCommand(options: UpdateOptions): Promise<number> {
     }
   }
 
-  return runSelection(selection);
+  return runSelection(selection, { ...(options.yes !== undefined && { yes: options.yes }) });
 }
 
-async function runTargets(targets: string[]): Promise<number> {
-  const outcomes: UpdateOutcome[] = [];
+async function runTargets(
+  targets: string[],
+  opts: { yes?: boolean } = {},
+): Promise<number> {
+  const entries: OutcomeWithProvider[] = [];
   for (const target of targets) {
     const idx = target.indexOf(":");
     if (idx === -1) {
@@ -69,12 +76,16 @@ async function runTargets(targets: string[]): Promise<number> {
       return 2;
     }
     process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
-    outcomes.push(await provider.update(packageId));
+    entries.push({ providerId, outcome: await provider.update(packageId) });
   }
+  const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
   return summarize(outcomes);
 }
 
-async function runSelection(selection: SelectedPackage[]): Promise<number> {
+async function runSelection(
+  selection: SelectedPackage[],
+  opts: { yes?: boolean } = {},
+): Promise<number> {
   const grouped = new Map<string, OutdatedPackage[]>();
   for (const sel of selection) {
     const list = grouped.get(sel.providerId) ?? [];
@@ -82,19 +93,20 @@ async function runSelection(selection: SelectedPackage[]): Promise<number> {
     grouped.set(sel.providerId, list);
   }
 
-  const outcomes: UpdateOutcome[] = [];
+  const entries: OutcomeWithProvider[] = [];
   for (const [providerId, pkgs] of grouped) {
     const provider = getProvider(providerId);
     if (!provider) continue;
     process.stdout.write(
       chalk.bold(`\n→ ${provider.displayName} (${pkgs.length})\n`),
     );
-    if (pkgs.length === 1) {
-      outcomes.push(await provider.update(pkgs[0]!.id));
-    } else {
-      outcomes.push(...(await provider.updateAll(pkgs)));
-    }
+    const results =
+      pkgs.length === 1
+        ? [await provider.update(pkgs[0]!.id)]
+        : await provider.updateAll(pkgs);
+    for (const o of results) entries.push({ providerId, outcome: o });
   }
+  const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
   return summarize(outcomes);
 }
 

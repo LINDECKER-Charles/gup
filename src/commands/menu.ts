@@ -8,6 +8,10 @@ import {
 import { promptPackageSelection } from "../ui/select.js";
 import { renderScanTable, renderProvidersStatus } from "../ui/table.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
+import {
+  maybeRetryFailures,
+  type OutcomeWithProvider,
+} from "../ui/retry-failed.js";
 import type {
   OutdatedPackage,
   ProviderScanResult,
@@ -135,13 +139,12 @@ function printStatus(state: MenuState): void {
 }
 
 async function initialScan(state: MenuState): Promise<void> {
-  if (state.detectedCount === 0) {
-    state.detectedCount = (await detectAvailableProviders()).length;
-  }
-  state.scans = await scanWithProgress({
+  const { results, detectedCount } = await scanWithProgress({
     fast: state.fast,
     ...(state.filter.length > 0 && { only: state.filter }),
   });
+  state.scans = results;
+  state.detectedCount = detectedCount;
 }
 
 async function runSelect(state: MenuState): Promise<void> {
@@ -163,17 +166,18 @@ async function runSelect(state: MenuState): Promise<void> {
     grouped.set(sel.providerId, list);
   }
 
-  const outcomes: UpdateOutcome[] = [];
+  const entries: OutcomeWithProvider[] = [];
   for (const [providerId, pkgs] of grouped) {
     const provider = getProvider(providerId);
     if (!provider) continue;
     printSectionHeader(provider.displayName, pkgs.length);
-    if (pkgs.length === 1) {
-      outcomes.push(await provider.update(pkgs[0]!.id));
-    } else {
-      outcomes.push(...(await provider.updateAll(pkgs)));
-    }
+    const results =
+      pkgs.length === 1
+        ? [await provider.update(pkgs[0]!.id)]
+        : await provider.updateAll(pkgs);
+    for (const o of results) entries.push({ providerId, outcome: o });
   }
+  const outcomes = await maybeRetryFailures(entries);
   summarize(outcomes);
   await initialScan(state);
 }
@@ -186,14 +190,16 @@ async function runAll(state: MenuState): Promise<void> {
   });
   if (!ok) return;
 
-  const outcomes: UpdateOutcome[] = [];
+  const entries: OutcomeWithProvider[] = [];
   for (const scan of state.scans) {
     if (scan.packages.length === 0) continue;
     const provider = getProvider(scan.providerId);
     if (!provider) continue;
     printSectionHeader(provider.displayName, scan.packages.length);
-    outcomes.push(...(await provider.updateAll(scan.packages)));
+    const results = await provider.updateAll(scan.packages);
+    for (const o of results) entries.push({ providerId: scan.providerId, outcome: o });
   }
+  const outcomes = await maybeRetryFailures(entries);
   summarize(outcomes);
   await initialScan(state);
 }
@@ -208,7 +214,7 @@ async function runTarget(): Promise<void> {
     .map((t) => t.trim())
     .filter(Boolean);
 
-  const outcomes: UpdateOutcome[] = [];
+  const entries: OutcomeWithProvider[] = [];
   for (const target of targets) {
     const idx = target.indexOf(":");
     if (idx === -1) {
@@ -223,8 +229,9 @@ async function runTarget(): Promise<void> {
       continue;
     }
     printSectionHeader(`${provider.displayName} : ${packageId}`, 1);
-    outcomes.push(await provider.update(packageId));
+    entries.push({ providerId, outcome: await provider.update(packageId) });
   }
+  const outcomes = await maybeRetryFailures(entries);
   summarize(outcomes);
 }
 
