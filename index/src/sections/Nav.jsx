@@ -2,6 +2,12 @@ import { Container } from "../ui/Container.jsx";
 import { Heart, GitHub } from "../lib/icons.jsx";
 import { content } from "../data/content.js";
 
+// Vite-injected at build time (matches `base` in vite.config.js, e.g. "/gup/").
+// Using BASE_URL keeps logo URLs valid regardless of the page's current path —
+// relative paths like "public/logo-32.png" would break under any future
+// non-root client route.
+const BASE = import.meta.env.BASE_URL;
+
 export function Nav() {
   const { nav } = content;
 
@@ -13,12 +19,12 @@ export function Nav() {
             <picture>
               <source
                 type="image/webp"
-                srcSet="public/logo-32.webp 1x, public/logo-64.webp 2x"
+                srcSet={`${BASE}public/logo-32.webp 1x, ${BASE}public/logo-64.webp 2x`}
               />
               <img
                 className="nav-brand-mark"
-                src="public/logo-32.png"
-                srcSet="public/logo-32.png 1x, public/logo-64.png 2x"
+                src={`${BASE}public/logo-32.png`}
+                srcSet={`${BASE}public/logo-32.png 1x, ${BASE}public/logo-64.png 2x`}
                 alt="gup logo"
                 width={36}
                 height={36}

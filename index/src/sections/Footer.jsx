@@ -1,6 +1,9 @@
 import { Container } from "../ui/Container.jsx";
 import { content } from "../data/content.js";
 
+// See Nav.jsx for the BASE_URL rationale (avoids fragile relative paths).
+const BASE = import.meta.env.BASE_URL;
+
 function FooterColumn({ column }) {
   return (
     <div>
@@ -32,12 +35,12 @@ export function Footer() {
               <picture>
                 <source
                   type="image/webp"
-                  srcSet="public/logo-32.webp 1x, public/logo-64.webp 2x"
+                  srcSet={`${BASE}public/logo-32.webp 1x, ${BASE}public/logo-64.webp 2x`}
                 />
                 <img
                   className="nav-brand-mark"
-                  src="public/logo-32.png"
-                  srcSet="public/logo-32.png 1x, public/logo-64.png 2x"
+                  src={`${BASE}public/logo-32.png`}
+                  srcSet={`${BASE}public/logo-32.png 1x, ${BASE}public/logo-64.png 2x`}
                   alt="gup logo"
                   width={32}
                   height={32}
