@@ -61,13 +61,26 @@ module.exports = {
       },
     },
     {
-      // Neovim plugin providers join $XDG_DATA_HOME / $XDG_CONFIG_HOME (or the
-      // documented Windows equivalents) with hardcoded subpaths ("lazy",
-      // "mason", "lazy-lock.json"). No untrusted input reaches existsSync.
+      // Neovim / vim plugin providers join $XDG_DATA_HOME / $XDG_CONFIG_HOME
+      // (or the documented Windows equivalents) with hardcoded subpaths
+      // ("lazy", "mason", "packer", "plug.vim", ...). No untrusted input
+      // reaches existsSync.
       files: [
         "src/providers/editor-plugins/nvim-lazy.ts",
         "src/providers/editor-plugins/nvim-mason.ts",
+        "src/providers/editor-plugins/nvim-packer.ts",
+        "src/providers/editor-plugins/vim-plug.ts",
       ],
+      rules: {
+        "security/detect-non-literal-fs-filename": "off",
+      },
+    },
+    {
+      // Eclipse provider probes well-known install roots (%PROGRAMFILES%,
+      // %LOCALAPPDATA%) joined with hardcoded subdirs ("features", "plugins")
+      // and walks the resulting directories. Entries are then filtered by
+      // strict version regex. No external input reaches fs.
+      files: ["src/providers/ide/eclipse-marketplace.ts"],
       rules: {
         "security/detect-non-literal-fs-filename": "off",
       },
