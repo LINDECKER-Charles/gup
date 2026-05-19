@@ -24,10 +24,10 @@ jobs:
     name: security tests + eslint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
       - run: npm ci
       - name: ESLint (security ruleset)
@@ -39,10 +39,10 @@ jobs:
     name: npm audit (audit-ci)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
       - run: npm ci
       - run: npm run audit:deps:ci
@@ -55,12 +55,12 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
           queries: security-extended,security-and-quality
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
         with:
           category: "/language:javascript-typescript"
 
@@ -70,7 +70,7 @@ jobs:
     container:
       image: returntocorp/semgrep:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: semgrep ci --config=.semgrep.yml --config=p/typescript --config=p/nodejs --error
         env:
           # Public-OSS mode (no SEMGREP_APP_TOKEN required).
@@ -79,8 +79,13 @@ jobs:
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
+    # gitleaks-action is still pinned to Node 20 (no v3 published yet). Opt into
+    # the GitHub-runner Node 24 shim so we don't trip the deprecation warning
+    # ahead of the June 2026 cutover. Drop this once gitleaks-action ships v3.
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2
