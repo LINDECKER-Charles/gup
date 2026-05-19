@@ -24,7 +24,7 @@ jobs:
     name: security tests + eslint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -39,7 +39,7 @@ jobs:
     name: npm audit (audit-ci)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -55,7 +55,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
@@ -70,7 +70,7 @@ jobs:
     container:
       image: returntocorp/semgrep:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: semgrep ci --config=.semgrep.yml --config=p/typescript --config=p/nodejs --error
         env:
           # Public-OSS mode (no SEMGREP_APP_TOKEN required).
@@ -80,7 +80,7 @@ jobs:
     name: gitleaks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2
