@@ -1,0 +1,80 @@
+rules:
+  - id: gup-no-shell-true-with-variable
+    message: >-
+      execa/runInherit/run called with shell:true and a dynamic argument.
+      Shell expansion of untrusted package ids enables command injection.
+      Either drop shell:true or hardcode the args.
+    severity: ERROR
+    languages: [typescript, javascript]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              run($CMD, [..., $ARG, ...], { ..., shell: true, ... })
+          - pattern: |
+              runInherit($CMD, [..., $ARG, ...], { ..., shell: true, ... })
+          - pattern: |
+              execa($CMD, [..., $ARG, ...], { ..., shell: true, ... })
+      - pattern-not: |
+          run($CMD, [...], { ..., shell: true, ... })
+      - metavariable-pattern:
+          metavariable: $ARG
+          patterns:
+            - pattern-not: |
+                "..."
+            - pattern-not: |
+                '...'
+    paths:
+      include:
+        - "src/**/*.ts"
+      exclude:
+        - "tests/**"
+
+  - id: gup-no-exec-string
+    message: >-
+      child_process.exec / execSync take a single shell string and are unsafe
+      with any dynamic content. Use spawn/execa with an args array instead.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: child_process.exec($X, ...)
+      - pattern: child_process.execSync($X, ...)
+      - pattern: |
+          import { exec } from 'child_process'
+          ...
+          exec($X, ...)
+
+  - id: gup-no-eval
+    message: eval / new Function / vm.runIn* expand arbitrary code.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+      - pattern: vm.runInThisContext(...)
+      - pattern: vm.runInNewContext(...)
+
+  - id: gup-fetch-url-must-be-literal
+    message: >-
+      fetch() target should be a hardcoded https URL or built from
+      encodeURIComponent()-sanitized components only.
+    severity: WARNING
+    languages: [typescript, javascript]
+    patterns:
+      - pattern: fetch($URL, ...)
+      - metavariable-pattern:
+          metavariable: $URL
+          patterns:
+            - pattern-not: |
+                "https://..."
+            - pattern-not: |
+                `https://...`
+            - pattern-not-regex: ^encodeURI
+
+  - id: gup-no-http-scheme
+    message: Plain http:// upstream — use https:// to prevent MITM tampering.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-regex: '"http://[^"]+"'
+    paths:
+      include:
+        - "src/**/*.ts"

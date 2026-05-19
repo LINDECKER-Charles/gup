@@ -27,7 +27,17 @@
     "build": "tsup",
     "start": "node dist/cli.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:security": "vitest run tests/security",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:watch": "vitest --coverage",
+    "test:coverage:ci": "vitest run --coverage --reporter=default --reporter=junit --outputFile=coverage/junit.xml",
+    "lint": "eslint src --ext .ts",
+    "lint:security": "eslint src --ext .ts --no-eslintrc --config .eslintrc.security.cjs",
+    "audit:deps": "npm audit --omit=dev --audit-level=high",
+    "audit:deps:ci": "audit-ci --config audit-ci.json",
+    "security": "npm run audit:deps:ci && npm run lint:security && npm run test:security"
   },
   "engines": {
     "node": ">=20"
@@ -47,8 +57,15 @@
   "devDependencies": {
     "@types/node": "^22.10.5",
     "@types/semver": "^7.5.8",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitest/coverage-v8": "^4.1.6",
+    "audit-ci": "^7.1.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-security": "^3.0.1",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.6"
   }
 }

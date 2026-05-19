@@ -1,0 +1,25 @@
+title = "gup gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "False positives / fixtures / lockfiles"
+paths = [
+  '''node_modules/''',
+  '''dist/''',
+  '''package-lock\.json''',
+  '''tests/fixtures/''',
+]
+
+[[rules]]
+id = "generic-bearer-token"
+description = "Bearer token in source / config"
+regex = '''(?i)bearer\s+[A-Za-z0-9._\-]{20,}'''
+tags = ["token"]
+
+[[rules]]
+id = "npm-token"
+description = "npm publish token"
+regex = '''npm_[A-Za-z0-9]{36,}'''
+tags = ["npm"]
