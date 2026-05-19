@@ -68,27 +68,33 @@ jobs:
     name: semgrep
     runs-on: ubuntu-latest
     container:
-      image: returntocorp/semgrep:latest
+      # returntocorp/* is deprecated; semgrep/semgrep is the current image.
+      image: semgrep/semgrep:latest
     steps:
       - uses: actions/checkout@v5
-      - run: semgrep ci --config=.semgrep.yml --config=p/typescript --config=p/nodejs --error
-        env:
-          # Public-OSS mode (no SEMGREP_APP_TOKEN required).
-          SEMGREP_RULES: ""
+      # `semgrep ci` assumes the Semgrep AppSec Platform (baseline diff, app
+      # token, findings upload). Without those it returns 2. `semgrep scan`
+      # is the local-OSS entry point — same rules, no platform dependency.
+      - run: semgrep scan --config=.semgrep.yml --config=p/typescript --config=p/nodejs --error
 
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
-    # gitleaks-action is still pinned to Node 20 (no v3 published yet). Opt into
-    # the GitHub-runner Node 24 shim so we don't trip the deprecation warning
-    # ahead of the June 2026 cutover. Drop this once gitleaks-action ships v3.
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    # We invoke the gitleaks binary directly instead of gitleaks-action@v2:
+    # the latter requires a paid license for private repositories (the
+    # licensing call fails with "repository not found"). The binary itself is
+    # MIT-licensed and free for any repo.
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_CONFIG: .gitleaks.toml
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION="8.30.1"
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan history
+        run: gitleaks detect --config=.gitleaks.toml --redact --verbose --exit-code 1
