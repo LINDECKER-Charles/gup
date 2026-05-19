@@ -2,26 +2,62 @@
   "name": "@charles_lindecker/gup",
   "version": "0.1.0",
   "private": false,
-  "description": "Unified CLI to check and update packages across many sources (winget, npm-g, pnpm-g, scoop, choco, pip, pipx, dotnet tools, cargo, pwsh modules, composer global, vscode extensions, symfony-cli, gh extensions, jetbrains, az, yarn, wsl, pulumi, terraform, kubectl, krew, jetbrains plugins).",
+  "description": "gup (Global Updater) — one CLI to scan and update everything installed on your machine across ~130 sources: winget, scoop, chocolatey, npm-g, pnpm-g, yarn-g, bun, pip, pipx, uv, cargo, gem, dotnet tools, composer, helm, kubectl, krew, terraform, pulumi, az, gcloud, vscode extensions, JetBrains, pwsh modules, gh extensions, symfony-cli, WSL distros. Parallel scan, fail-soft, JSON output, --fast mode, surgical targeting.",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://lindecker-charles.github.io/gup/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LINDECKER-Charles/gup"
+    "url": "git+https://github.com/LINDECKER-Charles/gup.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LINDECKER-Charles/gup/issues"
+  },
+  "funding": [
+    {
+      "type": "ko_fi",
+      "url": "https://ko-fi.com/charleslindecker"
+    },
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/LINDECKER-Charles"
+    }
+  ],
+  "author": {
+    "name": "Charles Lindecker",
+    "url": "https://github.com/LINDECKER-Charles"
   },
   "keywords": [
     "cli",
     "updater",
     "package-manager",
+    "global-updater",
     "winget",
     "scoop",
-    "npm",
-    "dotnet",
-    "windows"
+    "chocolatey",
+    "npm-global",
+    "pip",
+    "pipx",
+    "cargo",
+    "helm",
+    "kubectl",
+    "terraform",
+    "dotnet-tools",
+    "pwsh",
+    "vscode-extensions",
+    "windows",
+    "wsl",
+    "devops"
   ],
   "bin": {
     "gup": "./dist/cli.js"
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "SECURITY.md"
+  ],
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsup",
@@ -42,6 +78,11 @@
   "engines": {
     "node": ">=20"
   },
+  "os": [
+    "win32",
+    "linux",
+    "darwin"
+  ],
   "dependencies": {
     "@inquirer/prompts": "^7.2.1",
     "@types/adm-zip": "^0.5.8",
