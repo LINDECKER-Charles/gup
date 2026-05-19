@@ -1,7 +1,7 @@
 {
   "name": "@charles_lindecker/gup",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Unified CLI to check and update packages across many sources (winget, npm-g, pnpm-g, scoop, choco, pip, pipx, dotnet tools, cargo, pwsh modules, composer global, vscode extensions, symfony-cli, gh extensions, jetbrains, az, yarn, wsl, pulumi, terraform, kubectl, krew, jetbrains plugins).",
   "type": "module",
   "license": "MIT",
