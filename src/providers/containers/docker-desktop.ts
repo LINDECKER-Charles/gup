@@ -79,8 +79,11 @@ async function readFileProductVersion(exePath: string): Promise<string | null> {
   const { stdout, failed } = await run("powershell", [
     "-NoProfile",
     "-NonInteractive",
-    "-Command",
-    `(Get-Item -LiteralPath '${exePath.replace(/'/g, "''")}').VersionInfo.ProductVersion`,
+    "-File",
+    "-",
+    "$ErrorActionPreference = 'Stop'; (Get-Item -LiteralPath $args[1]).VersionInfo.ProductVersion",
+    "--",
+    exePath,
   ]);
   if (failed) return null;
   const v = stdout.trim().split(/\s+/)[0];
