@@ -12,6 +12,7 @@ import type { ProviderScanResult } from "./types.js";
 export type BinaryOwner =
   | InstallSource
   | "nvm-windows"
+  | "nvm"
   | "fnm"
   | "volta"
   | "mise"
@@ -40,12 +41,24 @@ export function inferBinaryOwnerFromPath(path: string): BinaryOwner {
   const fromInstallSource = inferSourceFromPath(lower);
   if (fromInstallSource !== "manual") return fromInstallSource;
 
-  if (hasSegment(lower, "nvm4w") || hasSegment(lower, "nvm")) return "nvm-windows";
+  // nvm-windows lives under Windows-specific roots (nvm4w, %ProgramData%\nvm).
+  // POSIX nvm uses ~/.nvm and is a distinct project — surface it as "nvm" so
+  // the actualOwner reported in exclusions is accurate across platforms.
+  if (
+    hasSegment(lower, "nvm4w") ||
+    lower.includes("\\programdata\\nvm\\") ||
+    lower.includes("/programdata/nvm/")
+  )
+    return "nvm-windows";
+  if (hasSegment(lower, "nvm")) return "nvm";
   if (hasSegment(lower, "fnm") || hasSegment(lower, "fnm-multishells")) return "fnm";
   if (hasSegment(lower, "volta")) return "volta";
   if (hasSegment(lower, "mise") || lower.includes("/.local/share/mise/")) return "mise";
   if (hasSegment(lower, "pyenv-win") || hasSegment(lower, "pyenv")) return "pyenv-win";
-  if (lower.includes("\\.cargo\\bin\\uv") || lower.includes("/uv/bin/uv")) return "uv";
+  // uv ships as a cargo-installed binary on both Windows and POSIX:
+  //   Windows  %USERPROFILE%\.cargo\bin\uv.exe
+  //   POSIX    ~/.cargo/bin/uv
+  if (lower.includes("\\.cargo\\bin\\uv") || lower.includes("/.cargo/bin/uv")) return "uv";
   if (hasSegment(lower, "asdf")) return "asdf";
   if (hasSegment(lower, "proto")) return "proto";
   return "manual";
@@ -151,6 +164,19 @@ export async function filterByOwnership(
 ): Promise<{ results: ProviderScanResult[]; exclusions: OwnershipExclusion[] }> {
   const exclusions: OwnershipExclusion[] = [];
   const filtered: ProviderScanResult[] = [];
+  // Cache `detect` results per binary: the default detector shells out to
+  // `where`/`which`, and many packageIds map to the same binary (e.g. choco's
+  // python / python3 / python311 / python312 all resolve to `python`). Without
+  // this cache `scanAll` paid the PATH-probe cost N times per scan.
+  const ownerCache = new Map<string, BinaryOwner>();
+  const detectCached = async (binary: string): Promise<BinaryOwner> => {
+    const cached = ownerCache.get(binary);
+    if (cached !== undefined) return cached;
+    const owner = await detect(binary);
+    ownerCache.set(binary, owner);
+    return owner;
+  };
+
   for (const r of results) {
     const table = POLYGLOT_OWNERSHIP[r.providerId];
     if (!table) {
@@ -164,7 +190,7 @@ export async function filterByOwnership(
         kept.push(pkg);
         continue;
       }
-      const owner = await detect(binary);
+      const owner = await detectCached(binary);
       if (owner === r.providerId || owner === "manual") {
         kept.push(pkg);
       } else {

@@ -445,6 +445,13 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
   // toolchain manager (e.g. choco:nodejs surfaced while nvm-windows owns
   // `node` on PATH would shadow the nvm shim on next shell). See
   // src/core/ownership.ts for the polyglot table and detection heuristic.
+  //
+  // The `exclusions` list returned by filterByOwnership is intentionally
+  // discarded here for now: surfacing per-package advisories ("hidden by
+  // ownership filter") would change list/menu output shape and warrants
+  // a separate UX pass. Until then, scanAll honours the existing contract
+  // (returns only the kept ProviderScanResult[]). The filter itself stays
+  // observable through src/core/ownership.ts unit tests.
   const { results } = await filterByOwnership(raw);
   return results;
 }

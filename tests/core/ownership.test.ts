@@ -7,16 +7,19 @@ import {
 import type { ProviderScanResult } from "../../src/core/types.js";
 
 describe("inferBinaryOwnerFromPath", () => {
-  it("recognizes nvm-windows install roots", () => {
+  it("recognizes nvm-windows install roots (Windows-specific)", () => {
     expect(inferBinaryOwnerFromPath("C:\\ProgramData\\nvm\\v22.21.1\\node.exe")).toBe(
       "nvm-windows",
     );
     expect(inferBinaryOwnerFromPath("C:\\Users\\me\\AppData\\Roaming\\nvm4w\\v20\\node.exe")).toBe(
       "nvm-windows",
     );
-    expect(inferBinaryOwnerFromPath("/home/me/.nvm/versions/node/v20/bin/node")).toBe(
-      "nvm-windows",
-    );
+  });
+
+  it("recognizes POSIX nvm separately from nvm-windows", () => {
+    // POSIX nvm is a distinct project; we surface it as the dedicated "nvm"
+    // owner so the exclusion advisory reads correctly across platforms.
+    expect(inferBinaryOwnerFromPath("/home/me/.nvm/versions/node/v20/bin/node")).toBe("nvm");
   });
 
   it("recognizes fnm, volta, mise, pyenv-win, asdf, proto roots", () => {
@@ -45,6 +48,11 @@ describe("inferBinaryOwnerFromPath", () => {
     expect(
       inferBinaryOwnerFromPath("C:\\Users\\me\\AppData\\Local\\Programs\\nodejs\\node.exe"),
     ).toBe("winget");
+  });
+
+  it("recognizes uv installed under ~/.cargo/bin on both POSIX and Windows", () => {
+    expect(inferBinaryOwnerFromPath("/home/me/.cargo/bin/uv")).toBe("uv");
+    expect(inferBinaryOwnerFromPath("C:\\Users\\me\\.cargo\\bin\\uv.exe")).toBe("uv");
   });
 
   it("returns 'manual' for unrecognized paths", () => {
@@ -135,5 +143,21 @@ describe("filterByOwnership", () => {
     );
     expect(results[0]!.packages.map((p) => p.id)).toEqual(["Microsoft.VisualStudioCode"]);
     expect(exclusions.map((e) => e.actualOwner)).toEqual(["fnm", "pyenv-win"]);
+  });
+
+  it("calls the detector at most once per distinct binary across packages", async () => {
+    // choco's python / python3 / python311 / python312 / python313 / python314
+    // all map to the same `python` binary. Without caching the default detector
+    // would shell out to `where`/`which` six times per scan.
+    const callsByBinary = new Map<string, number>();
+    const fakeDetect = async (binary: string): Promise<BinaryOwner> => {
+      callsByBinary.set(binary, (callsByBinary.get(binary) ?? 0) + 1);
+      return "manual";
+    };
+    await filterByOwnership(
+      [mkScan("choco", ["python", "python3", "python311", "python312", "python313", "python314"])],
+      fakeDetect,
+    );
+    expect(callsByBinary.get("python")).toBe(1);
   });
 });
