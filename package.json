@@ -61,6 +61,7 @@
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsup",
+    "prepare": "npm run build",
     "start": "node dist/cli.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
