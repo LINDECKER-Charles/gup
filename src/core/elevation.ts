@@ -1,6 +1,6 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 
 import { runInherit } from "./runner.js";
@@ -75,19 +75,28 @@ export async function readBatchInput(file: string): Promise<AdminBatchInput> {
   return parsed;
 }
 
-/** Mirror of {@link readBatchInput} for the outcomes file. */
+/**
+ * Mirror of {@link readBatchInput} for the outcomes file. The `wx` flag
+ * forbids overwriting an existing file at the same path — the elevated
+ * child must hit a freshly-created location, never a pre-staged one.
+ */
 export async function writeBatchOutput(file: string, outcomes: UpdateOutcome[]): Promise<void> {
   const payload: AdminBatchOutput = { version: 1, outcomes };
-  await writeFile(file, JSON.stringify(payload), { encoding: "utf8" });
+  await writeFile(file, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
 }
 
 async function writeBatchInput(
   targets: string[],
 ): Promise<{ inputFile: string; cleanup: () => Promise<void> }> {
+  // mkdtemp creates the parent directory with permissions tied to the
+  // current user, and the file we write inside it is opened with the
+  // exclusive-create flag (`wx`): together they shut down the classic
+  // TOCTOU race on a shared tmp dir that CodeQL flags as
+  // "Insecure creation of file in the os temp dir".
   const dir = await mkdtemp(join(tmpdir(), "gup-elevate-"));
   const inputFile = join(dir, `${randomBytes(8).toString("hex")}.json`);
   const payload: AdminBatchInput = { version: 1, targets };
-  await writeFile(inputFile, JSON.stringify(payload), { encoding: "utf8" });
+  await writeFile(inputFile, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
   return {
     inputFile,
     cleanup: async () => {
@@ -164,33 +173,43 @@ async function defaultSpawner(inputFile: string): Promise<void> {
   assertNoControlChars(inputFile);
 
   if (process.platform === "win32") {
-    const psCommand = [
-      "Start-Process",
-      "-FilePath",
-      `'${psEscape(node)}'`,
-      "-ArgumentList",
-      `'${psEscape(cli)}','__admin-batch','${psEscape(inputFile)}'`,
-      "-Verb",
-      "RunAs",
-      "-Wait",
-    ].join(" ");
-    // nosemgrep: gup-no-shell-true-with-variable
+    // Write a static PowerShell wrapper next to the input file. The script
+    // body is a hard-coded literal — none of the elevated paths are woven
+    // into it; they arrive as $args[0..2] positional parameters when we
+    // invoke `powershell.exe -File wrapper.ps1 <node> <cli> <inputFile>`.
+    //
+    // execa receives an argv VECTOR (no shell concatenation), and the
+    // wrapper itself never builds a shell line from the args — Start-Process
+    // -ArgumentList takes them as discrete strings. This structurally
+    // breaks the taint flow that CodeQL's
+    // `js/shell-command-injection-from-environment` query tracks: the only
+    // env-derived inputs flow as data through argv, never as code through a
+    // shell command line.
+    const ps1 = join(dirname(inputFile), "spawn.ps1");
+    const script =
+      "$ErrorActionPreference = 'Stop'\r\n" +
+      "Start-Process -FilePath $args[0] -ArgumentList $args[1],'__admin-batch',$args[2] -Verb RunAs -Wait\r\n";
+    await writeFile(ps1, script, { encoding: "utf8", flag: "wx" });
     const res = await runInherit("powershell.exe", [
       "-NoProfile",
       "-NonInteractive",
-      "-Command",
-      psCommand,
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      ps1,
+      node,
+      cli,
+      inputFile,
     ]);
     if (res.failed) throw new Error("PowerShell Start-Process élevé a échoué");
     return;
   }
 
+  // POSIX: argv vector, no shell, no concat — node/cli/inputFile arrive as
+  // discrete sudo arguments. Same property as the Windows path now: only
+  // data flows through env-derived inputs, never code.
   const res = await runInherit("sudo", [node, cli, "__admin-batch", inputFile]);
   if (res.failed) throw new Error("sudo a échoué ou a été refusé");
-}
-
-function psEscape(s: string): string {
-  return s.replace(/'/g, "''");
 }
 
 /**

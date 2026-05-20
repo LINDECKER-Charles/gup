@@ -1,7 +1,6 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { randomBytes } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getProviderMock } = vi.hoisted(() => ({ getProviderMock: vi.fn() }));
@@ -26,13 +25,21 @@ afterEach(() => {
   // Best-effort cleanup is fine — we use unique filenames per test.
 });
 
-function mkInputFile(): string {
-  return join(tmpdir(), `gup-admin-batch-test-${randomBytes(6).toString("hex")}.json`);
+/**
+ * Allocate a per-test input file inside a freshly-mkdtemp'd directory.
+ * mkdtemp creates the directory with permissions tied to the current user
+ * (mode 0700 on POSIX, ACL-restricted on Windows), so the test doesn't
+ * write a predictable path into the shared tmp dir — silencing CodeQL's
+ * "Insecure creation of file in the os temp dir".
+ */
+async function mkInputFile(): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), "gup-admin-batch-test-"));
+  return join(dir, "input.json");
 }
 
 describe("adminBatchCommand", () => {
   it("runs each target through provider.update and writes outcomes next to the input", async () => {
-    const file = mkInputFile();
+    const file = await mkInputFile();
     await writeFile(
       file,
       JSON.stringify({ version: 1, targets: ["choco:nodejs", "choco:python"] }),
@@ -66,7 +73,7 @@ describe("adminBatchCommand", () => {
   });
 
   it("returns exit 0 when every outcome is success or skipped", async () => {
-    const file = mkInputFile();
+    const file = await mkInputFile();
     await writeFile(
       file,
       JSON.stringify({ version: 1, targets: ["choco:caddy"] }),
@@ -86,7 +93,7 @@ describe("adminBatchCommand", () => {
   });
 
   it("emits a Format invalide outcome for a target missing the separator", async () => {
-    const file = mkInputFile();
+    const file = await mkInputFile();
     await writeFile(file, JSON.stringify({ version: 1, targets: ["malformed"] }), {
       encoding: "utf8",
     });
@@ -102,7 +109,7 @@ describe("adminBatchCommand", () => {
   });
 
   it("emits a Provider inconnu outcome when getProvider returns undefined", async () => {
-    const file = mkInputFile();
+    const file = await mkInputFile();
     await writeFile(file, JSON.stringify({ version: 1, targets: ["ghost:x"] }), {
       encoding: "utf8",
     });

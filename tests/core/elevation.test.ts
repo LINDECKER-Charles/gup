@@ -1,4 +1,6 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -7,32 +9,49 @@ import {
   writeBatchOutput,
 } from "../../src/core/elevation.js";
 
+/**
+ * Per-test sandbox: a freshly-mkdtemp'd directory with user-scoped perms
+ * (mode 0700 on POSIX, ACL-restricted on Windows). Avoids writing predictable
+ * paths into the shared tmp dir and silences CodeQL's "Insecure creation of
+ * file in the os temp dir" on these helper test fixtures.
+ */
+async function mkSandboxFile(name: string): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), "gup-elevation-test-"));
+  return join(dir, name);
+}
+
 describe("readBatchInput / writeBatchOutput", () => {
   it("rejects payloads with the wrong version", async () => {
-    const tmp = `${process.env.TEMP || "/tmp"}/gup-elevation-test-${Date.now()}-version.json`;
-    await writeFile(tmp, JSON.stringify({ version: 99, targets: [] }), { encoding: "utf8" });
+    const tmp = await mkSandboxFile("version.json");
+    await writeFile(tmp, JSON.stringify({ version: 99, targets: [] }), {
+      encoding: "utf8",
+      flag: "wx",
+    });
     await expect(readBatchInput(tmp)).rejects.toThrow(/unsupported version 99/);
   });
 
   it("rejects payloads whose targets field is not a string array", async () => {
-    const tmp = `${process.env.TEMP || "/tmp"}/gup-elevation-test-${Date.now()}-shape.json`;
-    await writeFile(tmp, JSON.stringify({ version: 1, targets: [1, 2, 3] }), { encoding: "utf8" });
+    const tmp = await mkSandboxFile("shape.json");
+    await writeFile(tmp, JSON.stringify({ version: 1, targets: [1, 2, 3] }), {
+      encoding: "utf8",
+      flag: "wx",
+    });
     await expect(readBatchInput(tmp)).rejects.toThrow(/string array/);
   });
 
   it("round-trips a valid input payload", async () => {
-    const tmp = `${process.env.TEMP || "/tmp"}/gup-elevation-test-${Date.now()}-ok.json`;
+    const tmp = await mkSandboxFile("ok.json");
     await writeFile(
       tmp,
       JSON.stringify({ version: 1, targets: ["choco:nodejs", "choco:python"] }),
-      { encoding: "utf8" },
+      { encoding: "utf8", flag: "wx" },
     );
     const parsed = await readBatchInput(tmp);
     expect(parsed.targets).toEqual(["choco:nodejs", "choco:python"]);
   });
 
   it("writeBatchOutput emits a version: 1 envelope around the outcomes array", async () => {
-    const tmp = `${process.env.TEMP || "/tmp"}/gup-elevation-test-${Date.now()}-out.json`;
+    const tmp = await mkSandboxFile("out.json");
     await writeBatchOutput(tmp, [{ id: "nodejs", success: true }]);
     const raw = await readFile(tmp, "utf8");
     expect(JSON.parse(raw)).toEqual({
