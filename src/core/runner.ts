@@ -7,16 +7,38 @@ export interface RunResult {
   failed: boolean;
 }
 
+// Allowlist for the `command` argument: alphanumerics + the path glyphs that
+// appear in real binaries on either OS (`/`, `\`, `:` for Windows drives,
+// space and parens for `C:\Program Files (x86)\…`). Anything outside this set
+// is rejected before reaching execa. Combined with the per-provider argv
+// validation, this guarantees no shell metacharacter can flow into the
+// command name even on the shell-routed callsites (scoop's .cmd/.ps1 shim,
+// see tests/security/shell-usage.test.ts allowlist) — and gives static
+// analysis (CodeQL js/indirect-command-line-injection) an explicit sanitizer
+// point.
+const SAFE_COMMAND_PATTERN = /^[A-Za-z0-9_.+\-/\\: ()]+$/;
+
+function assertSafeCommand(command: string): void {
+  if (typeof command !== "string" || command.length === 0) {
+    throw new TypeError("runner: command must be a non-empty string");
+  }
+  if (!SAFE_COMMAND_PATTERN.test(command)) {
+    throw new Error(`runner: refusing to spawn unsafe command name: ${command}`);
+  }
+}
+
 /**
  * Execa wrapper hardened for Windows console output:
  * - forces UTF-8 decoding to avoid garbled winget/choco output under cp65001,
- * - never throws on non-zero exit (callers inspect `failed`).
+ * - never throws on non-zero exit (callers inspect `failed`),
+ * - validates `command` against {@link SAFE_COMMAND_PATTERN}.
  */
 export async function run(
   command: string,
   args: string[] = [],
   options: Options = {},
 ): Promise<RunResult> {
+  assertSafeCommand(command);
   const proc = execa(command, args, {
     reject: false,
     encoding: "utf8",
@@ -40,6 +62,7 @@ export async function runInherit(
   args: string[] = [],
   options: Options = {},
 ): Promise<RunResult> {
+  assertSafeCommand(command);
   const proc = execa(command, args, {
     reject: false,
     stdio: "inherit",

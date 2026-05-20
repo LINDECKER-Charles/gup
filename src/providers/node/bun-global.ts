@@ -54,10 +54,20 @@ export class BunGlobalProvider implements Provider {
   }
 }
 
+function encodeNpmPackage(pkg: string): string {
+  if (pkg.startsWith("@")) {
+    const slash = pkg.indexOf("/");
+    if (slash > 0) {
+      return `@${encodeURIComponent(pkg.slice(1, slash))}/${encodeURIComponent(pkg.slice(slash + 1))}`;
+    }
+  }
+  return encodeURIComponent(pkg);
+}
+
 async function fetchNpmLatest(pkg: string): Promise<string | null> {
   try {
     const res = await fetch(
-      `https://registry.npmjs.org/${encodeURIComponent(pkg).replace("%40", "@")}/latest`,
+      `https://registry.npmjs.org/${encodeNpmPackage(pkg)}/latest`,
       { signal: AbortSignal.timeout(5_000) },
     );
     if (!res.ok) return null;

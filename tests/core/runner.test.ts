@@ -97,6 +97,37 @@ describe("runner.run", () => {
     const [, , opts] = execaMock.mock.calls[0]!;
     expect(opts).toMatchObject({ encoding: "buffer", env: { X: "1" } });
   });
+
+  it.each([
+    "npm",
+    "winget",
+    "scoop",
+    "Rscript",
+    "node.exe",
+    "C:\\Program Files\\nodejs\\node.exe",
+    "C:\\Program Files (x86)\\Tool\\foo.exe",
+    "/usr/local/bin/foo",
+    "python3.13",
+  ])("accepts safe command name %j", async (cmd) => {
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    await expect(run(cmd)).resolves.toMatchObject({ failed: false });
+  });
+
+  it.each([
+    "echo hi; rm -rf /",
+    "foo|bar",
+    "foo&bar",
+    "foo$VAR",
+    "foo`bar`",
+    "foo>out",
+    "foo\nbar",
+    "foo'bar",
+    'foo"bar',
+    "",
+  ])("rejects unsafe command name %j without invoking execa", async (cmd) => {
+    await expect(run(cmd)).rejects.toThrow(/runner:/);
+    expect(execaMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("runner.runInherit", () => {
@@ -119,6 +150,11 @@ describe("runner.runInherit", () => {
     execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: undefined, failed: true }));
     const res = await runInherit("foo");
     expect(res.exitCode).toBe(-1);
+  });
+
+  it("rejects unsafe command name without invoking execa", async () => {
+    await expect(runInherit("foo;bar")).rejects.toThrow(/runner:/);
+    expect(execaMock).not.toHaveBeenCalled();
   });
 });
 

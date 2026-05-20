@@ -1170,14 +1170,20 @@ describe("RPackagesProvider", () => {
     ]);
   });
 
-  it("update succeeds and escapes single quotes in package id", async () => {
-    runInheritMock.mockResolvedValueOnce(mkRun(""));
+  it("update rejects package ids that don't match the CRAN-safe allowlist", async () => {
     const res = await new RPackagesProvider().update("d'angerous");
-    expect(res).toEqual({ id: "d'angerous", success: true });
+    expect(res).toEqual({ id: "d'angerous", success: false });
+    expect(runInheritMock).not.toHaveBeenCalled();
+  });
+
+  it("update accepts safe package ids and forwards to Rscript", async () => {
+    runInheritMock.mockResolvedValueOnce(mkRun(""));
+    const res = await new RPackagesProvider().update("ggplot2");
+    expect(res).toEqual({ id: "ggplot2", success: true });
     const args = runInheritMock.mock.calls[0]![1] as string[];
     expect(args[0]).toBe("--vanilla");
     expect(args[1]).toBe("-e");
-    expect(args[2]).toContain("install.packages('d\\'angerous'");
+    expect(args[2]).toContain("install.packages('ggplot2'");
     expect(args[2]).toContain(".libPaths()[1]");
   });
 

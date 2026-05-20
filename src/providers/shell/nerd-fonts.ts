@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import {
   mkdir,
+  mkdtemp,
   readdir,
   readFile,
   rm,
@@ -126,9 +127,8 @@ export class NerdFontsProvider implements Provider {
       };
     }
 
-    const tmpRoot = join(tmpdir(), `gup-nerd-${packageId}-${Date.now()}`);
+    const tmpRoot = await mkdtemp(join(tmpdir(), "gup-nerd-"));
     try {
-      await mkdir(tmpRoot, { recursive: true });
       const zip = new AdmZip(Buffer.from(buf));
       const fontEntries = zip
         .getEntries()

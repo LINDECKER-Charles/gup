@@ -48,10 +48,13 @@ export class RPackagesProvider implements Provider {
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
+    if (!/^[A-Za-z][A-Za-z0-9.]*$/.test(packageId)) {
+      return { id: packageId, success: false };
+    }
     const res = await runInherit("Rscript", [
       "--vanilla",
       "-e",
-      `install.packages('${packageId.replace(/'/g, "\\'")}', lib = .libPaths()[1], repos = 'https://cloud.r-project.org')`,
+      `install.packages('${packageId}', lib = .libPaths()[1], repos = 'https://cloud.r-project.org')`,
     ]);
     return { id: packageId, success: !res.failed };
   }
