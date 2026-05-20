@@ -43,7 +43,7 @@ describe("adminBatchCommand", () => {
     await writeFile(
       file,
       JSON.stringify({ version: 1, targets: ["choco:nodejs", "choco:python"] }),
-      { encoding: "utf8" },
+      { encoding: "utf8", flag: "wx" },
     );
     const provider = {
       id: "choco",
@@ -77,7 +77,7 @@ describe("adminBatchCommand", () => {
     await writeFile(
       file,
       JSON.stringify({ version: 1, targets: ["choco:caddy"] }),
-      { encoding: "utf8" },
+      { encoding: "utf8", flag: "wx" },
     );
     const provider = {
       id: "choco",
@@ -96,6 +96,7 @@ describe("adminBatchCommand", () => {
     const file = await mkInputFile();
     await writeFile(file, JSON.stringify({ version: 1, targets: ["malformed"] }), {
       encoding: "utf8",
+      flag: "wx",
     });
 
     await adminBatchCommand(file);
@@ -112,6 +113,7 @@ describe("adminBatchCommand", () => {
     const file = await mkInputFile();
     await writeFile(file, JSON.stringify({ version: 1, targets: ["ghost:x"] }), {
       encoding: "utf8",
+      flag: "wx",
     });
     getProviderMock.mockReturnValueOnce(undefined);
 
