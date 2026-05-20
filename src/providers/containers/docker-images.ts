@@ -23,8 +23,9 @@ export class DockerImagesProvider implements Provider {
   }
 
   async listOutdated(): Promise<OutdatedPackage[]> {
-    const images = await listLocalImages();
-    return images.map((img) => ({
+    const all = await listLocalImages();
+    const pullable = await filterPullableImages(all);
+    return pullable.map((img) => ({
       id: img.ref,
       name: img.ref,
       current: img.shortId,
@@ -75,4 +76,50 @@ async function listLocalImages(): Promise<LocalImage[]> {
     });
   }
   return Array.from(seen.values());
+}
+
+/**
+ * Drop locally-built images from the candidate list. `docker image inspect`
+ * exposes `.RepoDigests` — non-empty when the image was pulled from a registry
+ * (each entry is "<repo>@sha256:..."), null/empty when the image was built
+ * locally (`docker build -t myapp .`). Surfacing the latter as "outdated" is
+ * a guaranteed FAIL on update because `docker pull myapp:latest` has no
+ * upstream to talk to. The probe is free (no network, inspects local
+ * metadata) and ordered: one line of stdout per input ref.
+ *
+ * If the probe itself fails entirely (daemon crash mid-scan, etc.) we fall
+ * back to the unfiltered list rather than masking everything — better a few
+ * known false positives than an empty scan.
+ */
+export async function filterPullableImages(
+  images: LocalImage[],
+): Promise<LocalImage[]> {
+  if (images.length === 0) return images;
+  const { stdout, failed } = await run("docker", [
+    "image",
+    "inspect",
+    "--format",
+    "{{json .RepoDigests}}",
+    ...images.map((img) => img.ref),
+  ]);
+  if (failed && !stdout.trim()) return images;
+
+  const lines = stdout.split(/\r?\n/).filter((l) => l.length > 0);
+  const out: LocalImage[] = [];
+  for (let i = 0; i < images.length; i++) {
+    if (hasRepoDigest(lines[i])) out.push(images[i]!);
+  }
+  return out;
+}
+
+export function hasRepoDigest(line: string | undefined): boolean {
+  if (!line) return false;
+  const trimmed = line.trim();
+  if (!trimmed || trimmed === "null" || trimmed === "[]") return false;
+  try {
+    const parsed = JSON.parse(trimmed);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch {
+    return false;
+  }
 }
