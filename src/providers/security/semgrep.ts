@@ -1,4 +1,6 @@
-import { commandExists, run, runInherit } from "../../core/runner.js";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { commandExists, run, runInherit, whichFirst } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PypiJson {
@@ -6,14 +8,18 @@ interface PypiJson {
 }
 
 /**
- * Semgrep (static analyzer). Distributed via pip â€” we update through pip
- * to keep the upgrade path independent of how it was installed. `semgrep
- * --version` prints just the version, e.g. "1.79.0".
+ * Semgrep (static analyzer), distributed via pip. We must upgrade in-place
+ * inside the Python prefix that owns the `semgrep` binary currently on PATH —
+ * not via `pip install --user`. Otherwise the user-site copy is shadowed by
+ * the older system-wide binary, `semgrep --version` keeps reporting the old
+ * version, and gup re-detects it as outdated forever; each re-run also
+ * downgrades transitive deps (jsonschema, mcp, opentelemetry-*) back to
+ * Semgrep's pins, creating a churn loop with the pip(user) provider.
  */
 export class SemgrepProvider implements Provider {
   readonly id = "semgrep";
   readonly displayName = "Semgrep";
-  readonly installHint = "pip install --user semgrep";
+  readonly installHint = "pip install semgrep";
 
   async isAvailable(): Promise<boolean> {
     return commandExists("semgrep");
@@ -34,13 +40,22 @@ export class SemgrepProvider implements Provider {
   }
 
   async update(_packageId: string): Promise<UpdateOutcome> {
-    const pip = (await commandExists("python")) ? "python" : "py";
-    const res = await runInherit(pip, [
+    const python = await pythonForSemgrep();
+    if (!python) {
+      return {
+        id: "semgrep",
+        success: false,
+        skipped: true,
+        message:
+          "Python hôte de semgrep introuvable. Mise à jour manuelle: `python -m pip install --upgrade semgrep` depuis l'install correspondante.",
+      };
+    }
+    const res = await runInherit(python, [
       "-m",
       "pip",
       "install",
-      "--user",
       "--upgrade",
+      "--disable-pip-version-check",
       "semgrep",
     ]);
     return { id: "semgrep", success: !res.failed };
@@ -63,4 +78,30 @@ async function fetchPypiLatest(pkg: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Resolve the python interpreter that owns the `semgrep` entry point currently
+ * on PATH. Returns null if the binary or its companion interpreter can't be
+ * located — caller surfaces that as a manual skip rather than risking a
+ * --user shadow install.
+ *
+ * - Windows: `<prefix>\Scripts\semgrep.exe`  →  `<prefix>\python.exe`
+ * - POSIX:   `<prefix>/bin/semgrep`         →  `<prefix>/bin/python{3,}`
+ */
+async function pythonForSemgrep(): Promise<string | null> {
+  const bin = await whichFirst("semgrep");
+  if (!bin) return null;
+  const sameDir = dirname(bin);
+  const parent = dirname(sameDir);
+  const candidates =
+    process.platform === "win32"
+      ? [join(parent, "python.exe"), join(sameDir, "python.exe")]
+      : [
+          join(sameDir, "python3"),
+          join(sameDir, "python"),
+          join(parent, "bin", "python3"),
+          join(parent, "bin", "python"),
+        ];
+  return candidates.find((p) => existsSync(p)) ?? null;
 }

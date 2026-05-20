@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { commandExistsMock, runMock, runInheritMock } = vi.hoisted(() => ({
+const { commandExistsMock, runMock, runInheritMock, whichFirstMock } = vi.hoisted(() => ({
   commandExistsMock: vi.fn(),
   runMock: vi.fn(),
   runInheritMock: vi.fn(),
+  whichFirstMock: vi.fn(),
 }));
 
 vi.mock("../../src/core/runner.js", () => ({
@@ -11,8 +12,17 @@ vi.mock("../../src/core/runner.js", () => ({
   run: runMock,
   runInherit: runInheritMock,
   isElevated: vi.fn(),
-  whichFirst: vi.fn(),
+  whichFirst: whichFirstMock,
 }));
+
+const { existsSyncMock } = vi.hoisted(() => ({
+  existsSyncMock: vi.fn(),
+}));
+
+vi.mock("node:fs", async () => {
+  const actual = await vi.importActual<typeof import("node:fs")>("node:fs");
+  return { ...actual, existsSync: existsSyncMock };
+});
 
 const {
   delegateUpdateMock,
@@ -74,6 +84,8 @@ beforeEach(() => {
   commandExistsMock.mockReset();
   runMock.mockReset();
   runInheritMock.mockReset();
+  whichFirstMock.mockReset();
+  existsSyncMock.mockReset();
   delegateUpdateMock.mockReset();
   detectInstallSourceMock.mockReset();
   describeSourceMock.mockReset();
@@ -625,33 +637,47 @@ describe("semgrep provider", () => {
     ]);
   });
 
-  it("update prefers `python -m pip` when available", async () => {
-    commandExistsMock.mockResolvedValueOnce(true);
+  it("update pilots pip via the python that owns semgrep on PATH (Windows)", async () => {
+    if (process.platform !== "win32") return; // path layout differs
+    whichFirstMock.mockResolvedValueOnce("F:\\Programme\\Python\\Scripts\\semgrep.exe");
+    existsSyncMock.mockImplementation(
+      (p: unknown) => p === "F:\\Programme\\Python\\python.exe",
+    );
     runInheritMock.mockResolvedValueOnce(mkRun(""));
     await expect(new SemgrepProvider().update("semgrep")).resolves.toEqual({
       id: "semgrep",
       success: true,
     });
-    expect(runInheritMock).toHaveBeenCalledWith("python", [
+    expect(runInheritMock).toHaveBeenCalledWith("F:\\Programme\\Python\\python.exe", [
       "-m",
       "pip",
       "install",
-      "--user",
       "--upgrade",
+      "--disable-pip-version-check",
       "semgrep",
     ]);
   });
 
-  it("update falls back to `py` when python is missing", async () => {
-    commandExistsMock.mockResolvedValueOnce(false);
-    runInheritMock.mockResolvedValueOnce(mkRun(""));
+  it("update marks skipped when the host python can't be resolved", async () => {
+    whichFirstMock.mockResolvedValueOnce(null);
     const res = await new SemgrepProvider().update("semgrep");
-    expect(res).toEqual({ id: "semgrep", success: true });
-    expect(runInheritMock).toHaveBeenCalledWith("py", expect.any(Array));
+    expect(res).toMatchObject({ id: "semgrep", success: false, skipped: true });
+    expect(res.message).toMatch(/Python/i);
+    expect(runInheritMock).not.toHaveBeenCalled();
   });
 
-  it("update propagates failure", async () => {
-    commandExistsMock.mockResolvedValueOnce(true);
+  it("update marks skipped when the companion python is missing on disk", async () => {
+    whichFirstMock.mockResolvedValueOnce("/usr/local/bin/semgrep");
+    existsSyncMock.mockReturnValue(false);
+    const res = await new SemgrepProvider().update("semgrep");
+    expect(res).toMatchObject({ id: "semgrep", success: false, skipped: true });
+    expect(runInheritMock).not.toHaveBeenCalled();
+  });
+
+  it("update propagates failure when pip exits non-zero", async () => {
+    if (process.platform !== "win32") return;
+    whichFirstMock.mockResolvedValueOnce("F:\\Programme\\Python\\Scripts\\semgrep.exe");
+    existsSyncMock.mockReturnValue(true);
     runInheritMock.mockResolvedValueOnce(mkRun("", true));
     const res = await new SemgrepProvider().update("semgrep");
     expect(res).toEqual({ id: "semgrep", success: false });
@@ -662,7 +688,9 @@ describe("semgrep provider", () => {
   });
 
   it("updateAll non-empty runs update once", async () => {
-    commandExistsMock.mockResolvedValueOnce(true);
+    if (process.platform !== "win32") return;
+    whichFirstMock.mockResolvedValueOnce("F:\\Programme\\Python\\Scripts\\semgrep.exe");
+    existsSyncMock.mockReturnValue(true);
     runInheritMock.mockResolvedValueOnce(mkRun(""));
     const res = await new SemgrepProvider().updateAll([{ id: "semgrep" } as never]);
     expect(res).toEqual([{ id: "semgrep", success: true }]);
