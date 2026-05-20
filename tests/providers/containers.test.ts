@@ -353,6 +353,23 @@ describe("docker-images provider", () => {
     expect(rows[0]!.id).toBe("alpine:3.18");
   });
 
+  it("listOutdated falls back to the unfiltered list when inspect output drifts from the strict 'one line per ref' contract", async () => {
+    // Two images on input, only one digest line on output — index mapping
+    // would shift and silently drop a real pullable image. Surface both
+    // refs instead of risking the silent drop.
+    runMock.mockResolvedValueOnce(
+      mkRun(
+        [
+          "alpine\t3.18\tabcdef0123456789\t7.4MB",
+          "nginx\tlatest\t11223344556677\t140MB",
+        ].join("\n"),
+      ),
+    );
+    runMock.mockResolvedValueOnce(mkRun('["alpine@sha256:1111"]'));
+    const rows = await new DockerImagesProvider().listOutdated();
+    expect(rows.map((r) => r.id)).toEqual(["alpine:3.18", "nginx:latest"]);
+  });
+
   it("listOutdated handles missing id/size fields", async () => {
     // Tab-separated line with only repo and tag yields undefined id/size
     const stdout = "alpine\t3.18";

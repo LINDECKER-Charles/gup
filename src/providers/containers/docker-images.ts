@@ -85,15 +85,15 @@ async function listLocalImages(): Promise<LocalImage[]> {
  * locally (`docker build -t myapp .`). Surfacing the latter as "outdated" is
  * a guaranteed FAIL on update because `docker pull myapp:latest` has no
  * upstream to talk to. The probe is free (no network, inspects local
- * metadata) and ordered: one line of stdout per input ref.
+ * metadata) and the contract is strict: exactly one JSON line per input ref,
+ * same order. Internal — referenced only by listOutdated().
  *
- * If the probe itself fails entirely (daemon crash mid-scan, etc.) we fall
- * back to the unfiltered list rather than masking everything — better a few
- * known false positives than an empty scan.
+ * Fallback to the unfiltered list whenever the probe's output drifts from
+ * that contract (`failed` with empty stdout, line count mismatch, etc.)
+ * rather than silently dropping images on a malformed payload. Better a
+ * few known false positives than hidden pullable images.
  */
-export async function filterPullableImages(
-  images: LocalImage[],
-): Promise<LocalImage[]> {
+async function filterPullableImages(images: LocalImage[]): Promise<LocalImage[]> {
   if (images.length === 0) return images;
   const { stdout, failed } = await run("docker", [
     "image",
@@ -105,6 +105,11 @@ export async function filterPullableImages(
   if (failed && !stdout.trim()) return images;
 
   const lines = stdout.split(/\r?\n/).filter((l) => l.length > 0);
+  // Strict-contract guard: any deviation from "one line per ref" means we
+  // cannot map outputs back to inputs by index without risk of shifting and
+  // dropping a real pullable image. Surface the unfiltered list instead.
+  if (lines.length !== images.length) return images;
+
   const out: LocalImage[] = [];
   for (let i = 0; i < images.length; i++) {
     if (hasRepoDigest(lines[i])) out.push(images[i]!);
@@ -112,7 +117,7 @@ export async function filterPullableImages(
   return out;
 }
 
-export function hasRepoDigest(line: string | undefined): boolean {
+function hasRepoDigest(line: string | undefined): boolean {
   if (!line) return false;
   const trimmed = line.trim();
   if (!trimmed || trimmed === "null" || trimmed === "[]") return false;
