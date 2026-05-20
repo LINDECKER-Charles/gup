@@ -120,6 +120,17 @@ function summarize(outcomes: UpdateOutcome[]): number {
     process.stdout.write(
       chalk.green(`OK   ${succeeded.length} mise(s) à jour effectuée(s)\n`),
     );
+    // Surface advisory messages attached to successful outcomes (e.g. choco
+    // exit 3010 = installed, reboot required). Without this branch the
+    // reboot-required information stays in the data model but never reaches
+    // the user, who would only see "OK" and miss the action they need to
+    // take. Skipped/failed messages already had their own branch below.
+    for (const s of succeeded) {
+      if (!s.message) continue;
+      process.stdout.write(
+        chalk.green(`     - ${s.id}`) + chalk.dim(` — ${s.message}`) + "\n",
+      );
+    }
   }
   if (skipped.length > 0) {
     process.stdout.write(
