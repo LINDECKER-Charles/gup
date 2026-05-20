@@ -43,7 +43,17 @@ export class ChocoProvider implements Provider {
     // `choco upgrade all` aggregates many MSI/installer exits into one final
     // exit code. We can't attribute a per-package reboot here without parsing
     // the live stdout, so apply the same broad mapping: 0/3010/1641 ⇒ success.
-    return packages.map((p) => chocoOutcome(p.id, res.exitCode));
+    // The reboot advisory is global to the batch (not per-package), so attach
+    // the message only to the first entry to avoid 21 identical "reboot required"
+    // lines drowning the OK summary.
+    return packages.map((p, i) => {
+      const outcome = chocoOutcome(p.id, res.exitCode);
+      if (i > 0 && outcome.message) {
+        const { message: _msg, ...rest } = outcome;
+        return rest;
+      }
+      return outcome;
+    });
   }
 }
 

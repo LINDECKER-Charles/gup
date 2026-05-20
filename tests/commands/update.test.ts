@@ -345,4 +345,24 @@ describe("updateCommand: summary output", () => {
     expect(out).toMatch(/SKIP\s+1/);
     expect(out).toMatch(/FAIL\s+1\/2/);
   });
+
+  it("surfaces advisory messages attached to successful outcomes (e.g. reboot required)", async () => {
+    // chocoOutcome attaches a reboot advisory to the message field of a
+    // SUCCESSFUL outcome (exit 3010 / 1641). The summarizer must surface it,
+    // otherwise the user only sees "OK 1" and misses the reboot they need.
+    const p = mkProvider({
+      update: vi.fn().mockResolvedValue({
+        id: "vcredist140",
+        success: true,
+        message: "Mise à jour effectuée — redémarrage requis pour finaliser.",
+      }),
+    });
+    getProviderMock.mockReturnValue(p);
+
+    await updateCommand({ targets: ["p:vcredist140"] });
+    const out = stdoutSpy.mock.calls.map((c) => String(c[0])).join("");
+    expect(out).toMatch(/OK\s+1 mise/);
+    expect(out).toMatch(/vcredist140/);
+    expect(out).toMatch(/redémarrage requis/);
+  });
 });
