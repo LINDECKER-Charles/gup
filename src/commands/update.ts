@@ -1,13 +1,13 @@
 import { confirm } from "@inquirer/prompts";
 import chalk from "chalk";
-import { getProvider } from "../core/registry.js";
+import { ALL_PROVIDERS, getProvider } from "../core/registry.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection, type SelectedPackage } from "../ui/select.js";
 import {
   maybeRetryFailures,
   type OutcomeWithProvider,
 } from "../ui/retry-failed.js";
-import type { OutdatedPackage, UpdateOutcome } from "../core/types.js";
+import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
 
 export interface UpdateOptions {
   only?: string[];
@@ -65,7 +65,7 @@ async function runTargets(
   for (const target of targets) {
     const idx = target.indexOf(":");
     if (idx === -1) {
-      process.stderr.write(`Format invalide: "${target}". Attendu provider:packageId\n`);
+      process.stderr.write(formatBadTargetMessage(target, ALL_PROVIDERS));
       return 2;
     }
     const providerId = target.slice(0, idx);
@@ -108,6 +108,51 @@ async function runSelection(
   }
   const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
   return summarize(outcomes);
+}
+
+/**
+ * Build the actionable error message shown when a user passes a positional
+ * argument to `gup update` without the `provider:packageId` separator.
+ *
+ * Pure / testable: the provider list is injected so the function can be
+ * exercised without spinning the registry up. Preserves the historical
+ * "Format invalide: ..." prefix to avoid breaking existing assertions and
+ * downstream tooling that greps for it.
+ */
+export function formatBadTargetMessage(
+  target: string,
+  providers: readonly Pick<Provider, "id" | "displayName">[],
+): string {
+  // Preserve the historical prefix verbatim ("Attendu provider:packageId"
+  // with no trailing period) so downstream greps / external tools that
+  // pattern-match this line keep working.
+  const head = `Format invalide: "${target}". Attendu provider:packageId`;
+  const trimmed = target.trim();
+  const key = trimmed.toLowerCase();
+  // Case-insensitive on both id AND displayName: id resolution should not
+  // silently differ from display-name resolution.
+  const hint =
+    providers.find((p) => p.id.toLowerCase() === key) ??
+    providers.find((p) => p.displayName.toLowerCase() === key);
+
+  const lines: string[] = [head];
+  if (hint) {
+    lines.push(
+      `"${trimmed}" est un nom de provider, pas un identifiant de paquet.`,
+      `Pour ce provider, essaie :`,
+      `  gup list --provider ${hint.id}`,
+      `  gup update --provider ${hint.id} --all`,
+      `  gup                            # menu interactif`,
+    );
+  } else {
+    lines.push(
+      `Exemples : gup update winget:Microsoft.VisualStudioCode`,
+      `           gup update npm-global:typescript`,
+      `Pour mettre à jour tout un provider sans cibler un paquet :`,
+      `           gup update --provider <id> --all`,
+    );
+  }
+  return lines.join("\n") + "\n";
 }
 
 function summarize(outcomes: UpdateOutcome[]): number {
