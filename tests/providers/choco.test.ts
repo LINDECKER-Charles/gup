@@ -1,5 +1,38 @@
 import { describe, it, expect } from "vitest";
-import { parseChocoOutdated } from "../../src/providers/os/choco.js";
+import { chocoOutcome, parseChocoOutdated } from "../../src/providers/os/choco.js";
+
+describe("chocoOutcome", () => {
+  it("treats exit 0 as plain success", () => {
+    expect(chocoOutcome("caddy", 0)).toEqual({ id: "caddy", success: true });
+  });
+
+  it("treats exit 3010 (reboot required) as success with a reboot advisory", () => {
+    expect(chocoOutcome("vcredist140", 3010)).toEqual({
+      id: "vcredist140",
+      success: true,
+      message: expect.stringMatching(/redémarrage/i),
+    });
+  });
+
+  it("treats exit 1641 (installer initiated restart) as success with a reboot advisory", () => {
+    expect(chocoOutcome("dotnet-runtime", 1641)).toEqual({
+      id: "dotnet-runtime",
+      success: true,
+      message: expect.stringMatching(/redémarrage/i),
+    });
+  });
+
+  it("keeps any other non-zero exit as a failure (no silent success)", () => {
+    // 1603 = MSI fatal error — the canonical "the install actually failed".
+    // We never want this collapsed into success.
+    expect(chocoOutcome("python312", 1603)).toEqual({
+      id: "python312",
+      success: false,
+    });
+    expect(chocoOutcome("anything", 1)).toEqual({ id: "anything", success: false });
+    expect(chocoOutcome("anything", -1)).toEqual({ id: "anything", success: false });
+  });
+});
 
 describe("parseChocoOutdated", () => {
   it("parses the pipe-separated -r --limit-output format", () => {

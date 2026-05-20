@@ -26,7 +26,7 @@ export class ChocoProvider implements Provider {
       return { id: packageId, success: false, skipped: true, message: NOT_ADMIN_MESSAGE };
     }
     const res = await runInherit("choco", ["upgrade", packageId, "-y"]);
-    return { id: packageId, success: !res.failed };
+    return chocoOutcome(packageId, res.exitCode);
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
@@ -40,8 +40,38 @@ export class ChocoProvider implements Provider {
       }));
     }
     const res = await runInherit("choco", ["upgrade", "all", "-y"]);
-    return packages.map((p) => ({ id: p.id, success: !res.failed }));
+    // `choco upgrade all` aggregates many MSI/installer exits into one final
+    // exit code. We can't attribute a per-package reboot here without parsing
+    // the live stdout, so apply the same broad mapping: 0/3010/1641 ⇒ success.
+    return packages.map((p) => chocoOutcome(p.id, res.exitCode));
   }
+}
+
+/**
+ * Chocolatey propagates the underlying installer/MSI exit code as its own
+ * process exit when the upgrade itself was "valid but conditional". The two
+ * cases we see in the wild and want to surface as success — not failure —
+ * are reboot advisories from the Windows Installer:
+ *
+ *   3010 — Success, restart required to finish the upgrade. The package is
+ *          installed; the user just needs to reboot for kernel/SxS/etc.
+ *          state to take effect. Common with vcredist140, .NET runtimes,
+ *          driver-adjacent installs.
+ *   1641 — Success, restart was initiated by the installer.
+ *
+ * All other non-zero exits stay failures so we never silently swallow a real
+ * MSI 1603 / Chocolatey 1 / lockfile / hash-mismatch outcome.
+ */
+export function chocoOutcome(id: string, exitCode: number): UpdateOutcome {
+  if (exitCode === 0) return { id, success: true };
+  if (exitCode === 3010 || exitCode === 1641) {
+    return {
+      id,
+      success: true,
+      message: "Mise à jour effectuée — redémarrage requis pour finaliser.",
+    };
+  }
+  return { id, success: false };
 }
 
 export function parseChocoOutdated(stdout: string): OutdatedPackage[] {
