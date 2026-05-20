@@ -100,6 +100,37 @@ describe("runElevatedBatch", () => {
     expect(outcomes[0]!.message).toMatch(/Échec du process élevé/);
   });
 
+  it("rejects an outcomes payload whose length differs from the requested targets", async () => {
+    // The parent maps outcomes to targets by index. A length mismatch would
+    // either shift the mapping or silently drop a target — surface every
+    // target as a generic failure so the summary stays trustworthy.
+    const spawner = vi.fn(async (inputFile: string) => {
+      // Length 1 for 2 targets → mismatch.
+      await writeBatchOutput(`${inputFile}.out`, [{ id: "nodejs", success: true }]);
+    });
+    const outcomes = await runElevatedBatch(["choco:nodejs", "choco:python"], spawner);
+    expect(outcomes.map((o) => o.success)).toEqual([false, false]);
+    expect(outcomes[0]!.message).toMatch(/length mismatch/);
+    expect(outcomes[1]!.message).toMatch(/length mismatch/);
+  });
+
+  it("replaces a malformed outcome entry with a synthetic failure tied to the matching target", async () => {
+    // Length matches but one entry is junk — keep the well-formed entry and
+    // synthesise a failure for the malformed one so the summary still has
+    // one row per requested target.
+    const spawner = vi.fn(async (inputFile: string) => {
+      const payload = {
+        version: 1,
+        outcomes: [{ id: "nodejs", success: true }, { not: "an outcome" }],
+      };
+      await writeFile(`${inputFile}.out`, JSON.stringify(payload), { encoding: "utf8" });
+    });
+    const outcomes = await runElevatedBatch(["choco:nodejs", "choco:python"], spawner);
+    expect(outcomes[0]).toEqual({ id: "nodejs", success: true });
+    expect(outcomes[1]).toMatchObject({ id: "python", success: false });
+    expect(outcomes[1]!.message).toMatch(/malformed outcome/);
+  });
+
   it("derives a usable id from a target that lacks the provider:packageId separator", async () => {
     // Defensive: even if the caller forgets to validate targets, the fallback
     // outcome should still have an id we can show to the user.

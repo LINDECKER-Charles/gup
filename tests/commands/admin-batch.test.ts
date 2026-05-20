@@ -26,13 +26,13 @@ afterEach(() => {
   // Best-effort cleanup is fine — we use unique filenames per test.
 });
 
-function mkInputFile(targets: string[]): string {
+function mkInputFile(): string {
   return join(tmpdir(), `gup-admin-batch-test-${randomBytes(6).toString("hex")}.json`);
 }
 
 describe("adminBatchCommand", () => {
   it("runs each target through provider.update and writes outcomes next to the input", async () => {
-    const file = mkInputFile([]);
+    const file = mkInputFile();
     await writeFile(
       file,
       JSON.stringify({ version: 1, targets: ["choco:nodejs", "choco:python"] }),
@@ -66,7 +66,7 @@ describe("adminBatchCommand", () => {
   });
 
   it("returns exit 0 when every outcome is success or skipped", async () => {
-    const file = mkInputFile([]);
+    const file = mkInputFile();
     await writeFile(
       file,
       JSON.stringify({ version: 1, targets: ["choco:caddy"] }),
@@ -86,7 +86,7 @@ describe("adminBatchCommand", () => {
   });
 
   it("emits a Format invalide outcome for a target missing the separator", async () => {
-    const file = mkInputFile([]);
+    const file = mkInputFile();
     await writeFile(file, JSON.stringify({ version: 1, targets: ["malformed"] }), {
       encoding: "utf8",
     });
@@ -102,7 +102,7 @@ describe("adminBatchCommand", () => {
   });
 
   it("emits a Provider inconnu outcome when getProvider returns undefined", async () => {
-    const file = mkInputFile([]);
+    const file = mkInputFile();
     await writeFile(file, JSON.stringify({ version: 1, targets: ["ghost:x"] }), {
       encoding: "utf8",
     });

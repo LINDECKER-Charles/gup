@@ -105,10 +105,34 @@ async function readBatchOutput(file: string, targets: string[]): Promise<UpdateO
     if (parsed.version !== 1 || !Array.isArray(parsed.outcomes)) {
       throw new Error("malformed output payload");
     }
-    return parsed.outcomes;
+    // The parent maps outcomes to targets by array index — so the child MUST
+    // emit exactly one outcome per requested target, in the same order. If the
+    // length differs we cannot recover a safe mapping (silently dropping or
+    // shifting outcomes would lie to the user), so surface every requested
+    // target as a generic failure with a precise message instead.
+    if (parsed.outcomes.length !== targets.length) {
+      throw new Error(
+        `outcomes length mismatch: expected ${targets.length}, got ${parsed.outcomes.length}`,
+      );
+    }
+    // Defensive per-entry shape check: anything that doesn't look like a
+    // valid UpdateOutcome gets replaced with a synthetic failure tied to
+    // the matching target id, so the summary keeps one row per request.
+    return parsed.outcomes.map((o, i) =>
+      isWellFormedOutcome(o) ? o : fallbackFailure(targets[i] ?? "", new Error("malformed outcome entry")),
+    );
   } catch (err) {
     return targets.map((t) => fallbackFailure(t, err));
   }
+}
+
+function isWellFormedOutcome(o: unknown): o is UpdateOutcome {
+  return (
+    typeof o === "object" &&
+    o !== null &&
+    typeof (o as UpdateOutcome).id === "string" &&
+    typeof (o as UpdateOutcome).success === "boolean"
+  );
 }
 
 function fallbackFailure(target: string, err: unknown): UpdateOutcome {
