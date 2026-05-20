@@ -14,6 +14,13 @@ export interface OutdatedPackage {
    * act on them manually.
    */
   manual?: boolean;
+  /**
+   * True when the upgrade requires an elevated process (UAC on Windows,
+   * sudo on POSIX). The CLI batches these together behind a single
+   * elevation prompt instead of letting each provider hit the user with
+   * its own SKIP message at update time.
+   */
+  requiresAdmin?: boolean;
 }
 
 export interface UpdateOutcome {

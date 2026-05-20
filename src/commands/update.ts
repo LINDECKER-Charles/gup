@@ -1,5 +1,6 @@
 import { confirm } from "@inquirer/prompts";
 import chalk from "chalk";
+import { runElevatedBatch } from "../core/elevation.js";
 import { ALL_PROVIDERS, getProvider } from "../core/registry.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection, type SelectedPackage } from "../ui/select.js";
@@ -86,8 +87,19 @@ async function runSelection(
   selection: SelectedPackage[],
   opts: { yes?: boolean } = {},
 ): Promise<number> {
-  const grouped = new Map<string, OutdatedPackage[]>();
+  // Split admin-required packages out so we can batch them behind a single
+  // UAC prompt instead of letting each provider SKIP them at update time.
+  // `requiresAdmin` is set at scan time (see ChocoProvider.listOutdated),
+  // and is only true when the current process is NOT already elevated.
+  const adminSelection: SelectedPackage[] = [];
+  const normalSelection: SelectedPackage[] = [];
   for (const sel of selection) {
+    if (sel.pkg.requiresAdmin) adminSelection.push(sel);
+    else normalSelection.push(sel);
+  }
+
+  const grouped = new Map<string, OutdatedPackage[]>();
+  for (const sel of normalSelection) {
     const list = grouped.get(sel.providerId) ?? [];
     list.push(sel.pkg);
     grouped.set(sel.providerId, list);
@@ -106,6 +118,12 @@ async function runSelection(
         : await provider.updateAll(pkgs);
     for (const o of results) entries.push({ providerId, outcome: o });
   }
+
+  if (adminSelection.length > 0) {
+    const adminEntries = await runAdminBatch(adminSelection, { ...(opts.yes !== undefined && { yes: opts.yes }) });
+    entries.push(...adminEntries);
+  }
+
   const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
   return summarize(outcomes);
 }
@@ -153,6 +171,54 @@ export function formatBadTargetMessage(
     );
   }
   return lines.join("\n") + "\n";
+}
+
+/**
+ * Group every admin-required package behind a single UAC prompt and dispatch
+ * the elevated batch through {@link runElevatedBatch}. When the user declines
+ * the elevation we surface the whole batch as skipped (not failed) — they made
+ * a deliberate choice, not a runtime crash.
+ */
+async function runAdminBatch(
+  adminSelection: SelectedPackage[],
+  opts: { yes?: boolean } = {},
+): Promise<OutcomeWithProvider[]> {
+  const targets = adminSelection.map((s) => `${s.providerId}:${s.pkg.id}`);
+  process.stdout.write(
+    chalk.bold(`\n→ Admin (${adminSelection.length})\n`) +
+      chalk.dim(`  ${targets.join(", ")}\n`),
+  );
+
+  const elevate =
+    opts.yes ||
+    (await confirm({
+      message: `${adminSelection.length} paquet(s) nécessitent les droits administrateur. Ouvrir une invite UAC pour les traiter en bloc ?`,
+      default: true,
+    }));
+  if (!elevate) {
+    return adminSelection.map((s) => ({
+      providerId: s.providerId,
+      outcome: {
+        id: s.pkg.id,
+        success: false,
+        skipped: true,
+        message: "Élévation refusée par l'utilisateur",
+      },
+    }));
+  }
+
+  const outcomes = await runElevatedBatch(targets);
+  // runElevatedBatch enforces 1-to-1 ordering with `targets` (see
+  // src/core/elevation.ts: readBatchOutput rejects length mismatches and
+  // produces fallback failures rather than letting the indexes drift).
+  // We can therefore zip outcomes with the corresponding `provider:packageId`
+  // entry and recover providerId from that — no need to thread it through
+  // the IPC payload.
+  return outcomes.map((outcome, i) => {
+    const target = targets[i] ?? "";
+    const providerId = target.includes(":") ? target.slice(0, target.indexOf(":")) : "";
+    return { providerId, outcome };
+  });
 }
 
 function summarize(outcomes: UpdateOutcome[]): number {
