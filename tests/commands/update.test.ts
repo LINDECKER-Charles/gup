@@ -39,6 +39,13 @@ vi.mock("../../src/ui/retry-failed.js", () => ({
 const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }));
 vi.mock("@inquirer/prompts", () => ({ confirm: confirmMock }));
 
+const { runElevatedBatchMock } = vi.hoisted(() => ({
+  runElevatedBatchMock: vi.fn(),
+}));
+vi.mock("../../src/core/elevation.js", () => ({
+  runElevatedBatch: runElevatedBatchMock,
+}));
+
 import { updateCommand } from "../../src/commands/update.js";
 
 const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
@@ -68,6 +75,7 @@ beforeEach(() => {
   promptPackageSelectionMock.mockReset();
   maybeRetryFailuresMock.mockReset();
   confirmMock.mockReset();
+  runElevatedBatchMock.mockReset();
   stdoutSpy.mockClear();
   stderrSpy.mockClear();
   // Default: pass entries through unchanged.
@@ -364,5 +372,93 @@ describe("updateCommand: summary output", () => {
     expect(out).toMatch(/OK\s+1 mise/);
     expect(out).toMatch(/vcredist140/);
     expect(out).toMatch(/redémarrage requis/);
+  });
+});
+
+describe("updateCommand: admin batch elevation", () => {
+  it("splits requiresAdmin packages out and dispatches them through runElevatedBatch", async () => {
+    const adminPkg = { id: "nodejs", current: "1", latest: "2", requiresAdmin: true };
+    const normalPkg = { id: "fzf", current: "1", latest: "2" };
+    scanWithProgressMock.mockResolvedValueOnce({
+      results: [
+        { providerId: "choco", available: true, packages: [adminPkg, normalPkg] },
+      ],
+      detectedCount: 1,
+    });
+    promptPackageSelectionMock.mockResolvedValueOnce([
+      { providerId: "choco", pkg: adminPkg },
+      { providerId: "choco", pkg: normalPkg },
+    ]);
+    const provChoco = mkProvider({
+      id: "choco",
+      displayName: "Chocolatey",
+      update: vi.fn().mockResolvedValue({ id: "fzf", success: true }),
+    });
+    getProviderMock.mockReturnValue(provChoco);
+    confirmMock.mockResolvedValueOnce(true); // accept elevation
+    runElevatedBatchMock.mockResolvedValueOnce([{ id: "nodejs", success: true }]);
+
+    const code = await updateCommand({});
+    expect(code).toBe(0);
+    // Non-admin path: normal provider.update called for fzf, NOT for nodejs.
+    expect(provChoco.update).toHaveBeenCalledWith("fzf");
+    expect(provChoco.update).not.toHaveBeenCalledWith("nodejs");
+    // Admin path: runElevatedBatch invoked with the full provider:packageId target.
+    expect(runElevatedBatchMock).toHaveBeenCalledWith(["choco:nodejs"]);
+  });
+
+  it("marks the whole admin batch as skipped when the user declines the elevation prompt", async () => {
+    const adminPkg = { id: "nodejs", current: "1", latest: "2", requiresAdmin: true };
+    scanWithProgressMock.mockResolvedValueOnce({
+      results: [{ providerId: "choco", available: true, packages: [adminPkg] }],
+      detectedCount: 1,
+    });
+    promptPackageSelectionMock.mockResolvedValueOnce([
+      { providerId: "choco", pkg: adminPkg },
+    ]);
+    getProviderMock.mockReturnValue(mkProvider({ id: "choco" }));
+    confirmMock.mockResolvedValueOnce(false); // decline elevation
+
+    const code = await updateCommand({});
+    expect(runElevatedBatchMock).not.toHaveBeenCalled();
+    // Skipped (not failed) → exit 0; the user made a deliberate choice.
+    expect(code).toBe(0);
+    const out = stdoutSpy.mock.calls.map((c) => String(c[0])).join("");
+    expect(out).toMatch(/SKIP/);
+    expect(out).toMatch(/Élévation refusée/);
+  });
+
+  it("with --yes skips the elevation prompt and triggers the batch directly", async () => {
+    const adminPkg = { id: "nodejs", current: "1", latest: "2", requiresAdmin: true };
+    scanWithProgressMock.mockResolvedValueOnce({
+      results: [{ providerId: "choco", available: true, packages: [adminPkg] }],
+      detectedCount: 1,
+    });
+    getProviderMock.mockReturnValue(mkProvider({ id: "choco" }));
+    confirmMock.mockResolvedValue(true); // would say yes if asked — but should NOT be asked
+    runElevatedBatchMock.mockResolvedValueOnce([{ id: "nodejs", success: true }]);
+
+    const code = await updateCommand({ all: true, yes: true });
+    expect(code).toBe(0);
+    expect(confirmMock).not.toHaveBeenCalled();
+    expect(runElevatedBatchMock).toHaveBeenCalledWith(["choco:nodejs"]);
+  });
+
+  it("does not invoke runElevatedBatch when no package is marked requiresAdmin", async () => {
+    const pkg = { id: "fzf", current: "1", latest: "2" };
+    scanWithProgressMock.mockResolvedValueOnce({
+      results: [{ providerId: "choco", available: true, packages: [pkg] }],
+      detectedCount: 1,
+    });
+    promptPackageSelectionMock.mockResolvedValueOnce([{ providerId: "choco", pkg }]);
+    const provChoco = mkProvider({
+      id: "choco",
+      update: vi.fn().mockResolvedValue({ id: "fzf", success: true }),
+    });
+    getProviderMock.mockReturnValue(provChoco);
+
+    await updateCommand({});
+    expect(runElevatedBatchMock).not.toHaveBeenCalled();
+    expect(confirmMock).not.toHaveBeenCalled();
   });
 });

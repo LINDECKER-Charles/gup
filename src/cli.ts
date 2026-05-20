@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import chalk from "chalk";
+import { adminBatchCommand } from "./commands/admin-batch.js";
 import { listCommand } from "./commands/list.js";
 import { updateCommand } from "./commands/update.js";
 import { doctorCommand } from "./commands/doctor.js";
@@ -63,6 +64,17 @@ program
   .description("Affiche les providers détectés et ceux non installés.")
   .action(async () => {
     const code = await doctorCommand();
+    process.exit(code);
+  });
+
+// Internal: invoked by the parent gup process after UAC elevation. NOT meant
+// for direct use — runs a pre-validated batch from a temp file. Hidden from
+// `--help`; the name is deliberately ugly so accidental discovery is hard.
+program
+  .command("__admin-batch <file>", { hidden: true })
+  .description("Internal: run a pre-validated elevated batch from a temp file.")
+  .action(async (file: string) => {
+    const code = await adminBatchCommand(file);
     process.exit(code);
   });
 

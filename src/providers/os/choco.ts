@@ -18,7 +18,12 @@ export class ChocoProvider implements Provider {
 
   async listOutdated(): Promise<OutdatedPackage[]> {
     const { stdout } = await run("choco", ["outdated", "-r", "--limit-output"]);
-    return parseChocoOutdated(stdout);
+    const elevated = await isElevated();
+    const parsed = parseChocoOutdated(stdout);
+    // Mark every chocolatey outdated entry as admin-required when we are not
+    // already elevated; the CLI surfaces them under a single UAC prompt at
+    // update time rather than letting each one bounce with SKIP individually.
+    return elevated ? parsed : parsed.map((p) => ({ ...p, requiresAdmin: true }));
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
