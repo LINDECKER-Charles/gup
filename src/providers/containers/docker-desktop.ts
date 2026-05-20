@@ -76,15 +76,20 @@ function dockerDesktopExe(): string | null {
 
 async function readFileProductVersion(exePath: string): Promise<string | null> {
   if (process.platform !== "win32") return null;
-  const { stdout, failed } = await run("powershell", [
-    "-NoProfile",
-    "-NonInteractive",
-    "-File",
-    "-",
-    "$ErrorActionPreference = 'Stop'; (Get-Item -LiteralPath $args[1]).VersionInfo.ProductVersion",
-    "--",
-    exePath,
-  ]);
+  // Pass the path via an env var rather than interpolating into the script
+  // body. Avoids any quoting concerns and gives CodeQL a clean signal that the
+  // command line is not built from tainted input (re: alert #12,
+  // js/indirect-command-line-injection).
+  const { stdout, failed } = await run(
+    "powershell",
+    [
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      "$ErrorActionPreference = 'Stop'; (Get-Item -LiteralPath $env:GUP_DOCKER_DESKTOP_EXE).VersionInfo.ProductVersion",
+    ],
+    { env: { ...process.env, GUP_DOCKER_DESKTOP_EXE: exePath } },
+  );
   if (failed) return null;
   const v = stdout.trim().split(/\s+/)[0];
   if (!v) return null;
