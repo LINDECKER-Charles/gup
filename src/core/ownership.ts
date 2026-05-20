@@ -1,0 +1,182 @@
+import { run } from "./runner.js";
+import { inferSourceFromPath, type InstallSource } from "./install-source.js";
+import type { ProviderScanResult } from "./types.js";
+
+/**
+ * Wider sense of "who installed this binary" than {@link InstallSource}.
+ * Captures the OS-level package managers (scoop/choco/winget) plus the
+ * toolchain managers (nvm, fnm, volta, mise, pyenv-win, asdf, proto) that
+ * legitimately compete for the same executable. `manual` keeps its meaning
+ * from install-source: PATH lookup did not point at any known install root.
+ */
+export type BinaryOwner =
+  | InstallSource
+  | "nvm-windows"
+  | "fnm"
+  | "volta"
+  | "mise"
+  | "asdf"
+  | "proto"
+  | "pyenv-win"
+  | "uv";
+
+/** PATH-first resolution → owning install root. */
+export async function detectBinaryOwner(binary: string): Promise<BinaryOwner> {
+  const probe = process.platform === "win32" ? "where" : "which";
+  const { stdout, failed } = await run(probe, [binary]);
+  if (failed) return "manual";
+  const first = stdout.split(/\r?\n/)[0]?.trim() ?? "";
+  if (!first) return "manual";
+  return inferBinaryOwnerFromPath(first);
+}
+
+/**
+ * Same heuristic shape as `inferSourceFromPath` but covers the toolchain
+ * managers too. Falls back to the install-source detector first so the
+ * existing scoop/choco/winget paths win when present.
+ */
+export function inferBinaryOwnerFromPath(path: string): BinaryOwner {
+  const lower = path.toLowerCase();
+  const fromInstallSource = inferSourceFromPath(lower);
+  if (fromInstallSource !== "manual") return fromInstallSource;
+
+  if (hasSegment(lower, "nvm4w") || hasSegment(lower, "nvm")) return "nvm-windows";
+  if (hasSegment(lower, "fnm") || hasSegment(lower, "fnm-multishells")) return "fnm";
+  if (hasSegment(lower, "volta")) return "volta";
+  if (hasSegment(lower, "mise") || lower.includes("/.local/share/mise/")) return "mise";
+  if (hasSegment(lower, "pyenv-win") || hasSegment(lower, "pyenv")) return "pyenv-win";
+  if (lower.includes("\\.cargo\\bin\\uv") || lower.includes("/uv/bin/uv")) return "uv";
+  if (hasSegment(lower, "asdf")) return "asdf";
+  if (hasSegment(lower, "proto")) return "proto";
+  return "manual";
+}
+
+/**
+ * Match a path component, tolerating the optional leading dot used by tools
+ * that live under the user's home (e.g. `~/.volta`, `~/.asdf`) and the
+ * Windows-style or POSIX-style separators on both sides.
+ */
+function hasSegment(lowercasePath: string, segment: string): boolean {
+  return (
+    lowercasePath.includes(`\\${segment}\\`) ||
+    lowercasePath.includes(`\\.${segment}\\`) ||
+    lowercasePath.includes(`/${segment}/`) ||
+    lowercasePath.includes(`/.${segment}/`)
+  );
+}
+
+/**
+ * Provider id → { package id → binary whose PATH-first owner decides the
+ * canonical install. Listed here are the polyglot binaries where parallel
+ * installs by competing managers are common AND destructive: surfacing a
+ * choco upgrade for `nodejs` when nvm-windows actually owns `node` would
+ * shadow the nvm shim and break versioned scripts on the next shell.
+ *
+ * The table is deliberately small — only entries with a verified, well-known
+ * binary name belong here. False negatives (no entry) just preserve current
+ * behavior; false positives (wrong binary mapping) would silently hide real
+ * upgrades, so we err on the side of omission.
+ */
+export const POLYGLOT_OWNERSHIP: Record<string, Record<string, string>> = {
+  choco: {
+    nodejs: "node",
+    "nodejs.install": "node",
+    "nodejs-lts": "node",
+    "nodejs-lts.install": "node",
+    python: "python",
+    python3: "python",
+    python311: "python",
+    python312: "python",
+    python313: "python",
+    python314: "python",
+    ruby: "ruby",
+    "ruby.devkit": "ruby",
+    php: "php",
+    git: "git",
+    "git.install": "git",
+    golang: "go",
+    go: "go",
+    rust: "rustc",
+    rustup: "rustup",
+    "docker-desktop": "docker",
+    docker: "docker",
+  },
+  winget: {
+    "OpenJS.NodeJS": "node",
+    "OpenJS.NodeJS.LTS": "node",
+    "Python.Python.3.11": "python",
+    "Python.Python.3.12": "python",
+    "Python.Python.3.13": "python",
+    "Python.Python.3.14": "python",
+    "RubyInstallerTeam.Ruby.3.3": "ruby",
+    "RubyInstallerTeam.Ruby.3.4": "ruby",
+    "Rustlang.Rustup": "rustup",
+    "Docker.DockerDesktop": "docker",
+    "Git.Git": "git",
+    "GoLang.Go": "go",
+  },
+  scoop: {
+    nodejs: "node",
+    "nodejs-lts": "node",
+    python: "python",
+    ruby: "ruby",
+    rust: "rustc",
+    rustup: "rustup",
+    go: "go",
+    git: "git",
+  },
+};
+
+export interface OwnershipExclusion {
+  providerId: string;
+  packageId: string;
+  binary: string;
+  actualOwner: BinaryOwner;
+}
+
+/**
+ * Drop packages whose canonical binary belongs to a different install
+ * source. Returns the filtered scan results alongside the list of dropped
+ * entries so the UI can surface them as advisories rather than swallow
+ * them silently.
+ *
+ * The contract is conservative: when the owner cannot be determined
+ * (`manual` — binary not on PATH at all) we KEEP the package, because
+ * an absent binary is no evidence of conflict. We only drop when the
+ * binary IS on PATH and lives somewhere that is NOT the scanning provider.
+ */
+export async function filterByOwnership(
+  results: readonly ProviderScanResult[],
+  detect: (binary: string) => Promise<BinaryOwner> = detectBinaryOwner,
+): Promise<{ results: ProviderScanResult[]; exclusions: OwnershipExclusion[] }> {
+  const exclusions: OwnershipExclusion[] = [];
+  const filtered: ProviderScanResult[] = [];
+  for (const r of results) {
+    const table = POLYGLOT_OWNERSHIP[r.providerId];
+    if (!table) {
+      filtered.push(r);
+      continue;
+    }
+    const kept: typeof r.packages = [];
+    for (const pkg of r.packages) {
+      const binary = table[pkg.id];
+      if (!binary) {
+        kept.push(pkg);
+        continue;
+      }
+      const owner = await detect(binary);
+      if (owner === r.providerId || owner === "manual") {
+        kept.push(pkg);
+      } else {
+        exclusions.push({
+          providerId: r.providerId,
+          packageId: pkg.id,
+          binary,
+          actualOwner: owner,
+        });
+      }
+    }
+    filtered.push({ ...r, packages: kept });
+  }
+  return { results: filtered, exclusions };
+}
