@@ -79,10 +79,88 @@ module.exports = {
       // Eclipse provider probes well-known install roots (%PROGRAMFILES%,
       // %LOCALAPPDATA%) joined with hardcoded subdirs ("features", "plugins")
       // and walks the resulting directories. Entries are then filtered by
-      // strict version regex. No external input reaches fs.
+      // strict version regex (anchored, bounded quantifiers {1,3}). No
+      // external input reaches fs.
       files: ["src/providers/ide/eclipse-marketplace.ts"],
       rules: {
         "security/detect-non-literal-fs-filename": "off",
+        "security/detect-unsafe-regex": "off",
+      },
+    },
+    {
+      // Obsidian provider reads %APPDATA%\obsidian\obsidian.json (hardcoded
+      // path from env var) then walks vault paths declared by the user's own
+      // Obsidian config, joined with hardcoded subpaths
+      // (".obsidian/plugins/<id>/manifest.json"). Vault list is authored by
+      // the user via Obsidian itself — same trust boundary as the user's
+      // home directory.
+      files: ["src/providers/ide/obsidian-plugins.ts"],
+      rules: {
+        "security/detect-non-literal-fs-filename": "off",
+      },
+    },
+    {
+      // Notepad++ provider joins %LOCALAPPDATA% / %PROGRAMFILES(X86)?% with
+      // hardcoded "Notepad++/plugins" subpath and probes <entry>/<entry>.dll
+      // inside the resulting dir. No external input reaches fs.
+      files: ["src/providers/ide/notepad-pp.ts"],
+      rules: {
+        "security/detect-non-literal-fs-filename": "off",
+      },
+    },
+    {
+      // Sublime / Unity Hub / Zed providers all join %APPDATA% / %LOCALAPPDATA%
+      // / $HOME / $XDG_*_HOME with hardcoded subpaths to enumerate user
+      // installs. Unity's regex parses `Unity Hub --headless editors` stdout
+      // (version line) — single capture, no nested quantifiers.
+      files: [
+        "src/providers/ide/sublime-pc.ts",
+        "src/providers/ide/unity-hub.ts",
+        "src/providers/ide/zed-ext.ts",
+      ],
+      rules: {
+        "security/detect-non-literal-fs-filename": "off",
+        "security/detect-unsafe-regex": "off",
+      },
+    },
+    {
+      // Nerd Fonts walks %LOCALAPPDATA%\Microsoft\Windows\Fonts and writes to
+      // %LOCALAPPDATA%\gup\nerd-fonts.json. Family names downloaded as zip
+      // assets are pre-validated via `isSafeFamilyName` against a strict
+      // `^[A-Za-z0-9][A-Za-z0-9_.+-]{0,63}$` regex before reaching fs/URL.
+      files: ["src/providers/shell/nerd-fonts.ts"],
+      rules: {
+        "security/detect-non-literal-fs-filename": "off",
+      },
+    },
+    {
+      // SDKMAN provider reads `$HOME/.sdkman/bin/sdkman-init.sh` (hardcoded
+      // subpath off homedir()). Version regex is anchored on `[0-9][\w.+-]*`
+      // — single character-class quantifier, no backtracking pathology.
+      files: ["src/providers/toolchain/sdkman.ts"],
+      rules: {
+        "security/detect-non-literal-fs-filename": "off",
+        "security/detect-unsafe-regex": "off",
+      },
+    },
+    {
+      // Toolchain / CLI providers parse `<bin> --version` stdout with
+      // semver-ish regexes (`\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?`, or the
+      // looser `[0-9][\w.+-]*` form). All have a single character-class
+      // quantifier with one optional non-capturing tail — no nested
+      // quantifiers, no catastrophic backtracking. Scoop's package-id regex
+      // is fully anchored with bounded char classes.
+      files: [
+        "src/providers/jvm/coursier-cs.ts",
+        "src/providers/kubernetes/skaffold.ts",
+        "src/providers/kubernetes/tilt.ts",
+        "src/providers/node/bun-global.ts",
+        "src/providers/os/scoop.ts",
+        "src/providers/toolchain/asdf.ts",
+        "src/providers/toolchain/proto.ts",
+      ],
+      rules: {
+        "security/detect-unsafe-regex": "off",
       },
     },
   ],

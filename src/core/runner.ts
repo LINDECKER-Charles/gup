@@ -15,16 +15,41 @@ export interface RunResult {
 // command name even on the shell-routed callsites (scoop's .cmd/.ps1 shim,
 // see tests/security/shell-usage.test.ts allowlist) — and gives static
 // analysis (CodeQL js/indirect-command-line-injection) an explicit sanitizer
-// point.
+// point: `sanitizeCommand`/`sanitizeArgs` return the cleaned value so the
+// tainted-flow analysis sees the barrier, instead of a side-effecting assert
+// the analyzer may not propagate through.
 const SAFE_COMMAND_PATTERN = /^[A-Za-z0-9_.+\-/\\: ()]+$/;
 
-function assertSafeCommand(command: string): void {
+function sanitizeCommand(command: string): string {
   if (typeof command !== "string" || command.length === 0) {
     throw new TypeError("runner: command must be a non-empty string");
   }
   if (!SAFE_COMMAND_PATTERN.test(command)) {
     throw new Error(`runner: refusing to spawn unsafe command name: ${command}`);
   }
+  return command;
+}
+
+/**
+ * Argv sanitization barrier. Each entry must be a string with no NUL byte —
+ * NUL is illegal in POSIX argv and Win32 command lines anyway, but rejecting
+ * it explicitly here both hardens the runner against caller bugs and gives
+ * CodeQL a recognizable taint-cleansing point on the argv path. Shell
+ * metacharacters in args are intentionally NOT rejected: `bash -lc <script>`
+ * (sdkman) legitimately needs them, and execa with the default `shell: false`
+ * passes argv as a vector — see tests/security/command-injection.test.ts.
+ */
+function sanitizeArgs(args: readonly string[]): readonly string[] {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (typeof arg !== "string") {
+      throw new TypeError(`runner: argv[${i}] must be a string`);
+    }
+    if (arg.indexOf("\0") !== -1) {
+      throw new Error(`runner: argv[${i}] must not contain NUL bytes`);
+    }
+  }
+  return args;
 }
 
 /**
@@ -38,8 +63,9 @@ export async function run(
   args: string[] = [],
   options: Options = {},
 ): Promise<RunResult> {
-  assertSafeCommand(command);
-  const proc = execa(command, args, {
+  const safeCommand = sanitizeCommand(command);
+  const safeArgs = sanitizeArgs(args);
+  const proc = execa(safeCommand, safeArgs as string[], {
     reject: false,
     encoding: "utf8",
     stripFinalNewline: true,
@@ -62,8 +88,9 @@ export async function runInherit(
   args: string[] = [],
   options: Options = {},
 ): Promise<RunResult> {
-  assertSafeCommand(command);
-  const proc = execa(command, args, {
+  const safeCommand = sanitizeCommand(command);
+  const safeArgs = sanitizeArgs(args);
+  const proc = execa(safeCommand, safeArgs as string[], {
     reject: false,
     stdio: "inherit",
     windowsHide: true,
