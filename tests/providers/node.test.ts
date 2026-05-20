@@ -499,7 +499,7 @@ describe("FnmProvider", () => {
       binary: "fnm",
       packageIds: { scoop: "fnm", choco: "fnm", winget: "Schniz.fnm" },
     });
-    expect(call.manualMessage).toMatch(/github\.com\/Schniz\/fnm/);
+    expect(call.manualMessage).toContain("github.com/Schniz/fnm");
   });
 
   it("updateAll [] short-circuits", async () => {
@@ -701,7 +701,7 @@ describe("NvmWindowsProvider", () => {
         winget: "CoreyButler.NVMforWindows",
       },
     });
-    expect(call.manualMessage).toMatch(/coreybutler\/nvm-windows/);
+    expect(call.manualMessage).toContain("coreybutler/nvm-windows");
   });
 
   it("updateAll [] -> []", async () => {
@@ -892,7 +892,7 @@ describe("VoltaProvider", () => {
       binary: "volta",
       packageIds: { scoop: "volta", choco: "volta", winget: "Volta.Volta" },
     });
-    expect(call.manualMessage).toMatch(/volta-cli\/volta/);
+    expect(call.manualMessage).toContain("volta-cli/volta");
   });
 
   it("updateAll [] -> []", async () => {

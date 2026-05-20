@@ -51,10 +51,6 @@ function mkRun(stdout: string, failed = false) {
   return { stdout, stderr: "", exitCode: failed ? 1 : 0, failed };
 }
 
-function jsonResponse(body: unknown, ok = true): Response {
-  return { ok, json: async () => body } as unknown as Response;
-}
-
 function textResponse(body: string, ok = true): Response {
   return { ok, text: async () => body } as unknown as Response;
 }

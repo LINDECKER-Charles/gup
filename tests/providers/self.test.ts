@@ -379,7 +379,7 @@ describe("SelfProvider.update", () => {
       binary: "gh",
       packageIds: { winget: "GitHub.cli", scoop: "gh", choco: "gh" },
     });
-    expect(arg.manualMessage).toMatch(/github\.com\/cli\/cli/);
+    expect(arg.manualMessage).toContain("github.com/cli/cli");
   });
 });
 

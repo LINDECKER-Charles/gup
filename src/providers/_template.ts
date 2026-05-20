@@ -35,8 +35,13 @@ export class TemplateProvider implements Provider {
     // Parse stdout → list of { id, current, latest, name?, note? }.
     // For HTTP-based latest version lookups, prefer `fetch` with
     // `AbortSignal.timeout(5_000)` and tolerate failures gracefully.
+    const outdated: OutdatedPackage[] = [];
+    for (const line of stdout.split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      // Parse `line` → push { id, current, latest, name?, note? } into `outdated`.
+    }
 
-    return [];
+    return outdated;
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
