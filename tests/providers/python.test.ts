@@ -229,12 +229,9 @@ describe("PipProvider", () => {
     await expect(new PipProvider().isAvailable()).resolves.toBe(true);
   });
 
-  // Source: `return commandExists("pip") || commandExists("pip3");`
-  // Both calls return Promises; the first Promise is truthy, so JS short-circuits
-  // and returns its resolved value (i.e. only pip is actually probed).
-  it("isAvailable resolves to whatever commandExists('pip') returns", async () => {
+  it("isAvailable true when only pip3 is on PATH", async () => {
     commandExistsMock.mockImplementation(async (bin: string) => bin === "pip3");
-    await expect(new PipProvider().isAvailable()).resolves.toBe(false);
+    await expect(new PipProvider().isAvailable()).resolves.toBe(true);
   });
 
   it("isAvailable false when neither is on PATH", async () => {

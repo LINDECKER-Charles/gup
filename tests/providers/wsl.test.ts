@@ -433,7 +433,7 @@ describe("WslDnfProvider", () => {
       ]);
     });
 
-    it("skips when exit code is 100 but stdout has no parseable lines (count<=0 short-circuit)", async () => {
+    it("emits a refresh entry when exit code is 100 but stdout has no parseable lines", async () => {
       listWslDistrosMock.mockResolvedValueOnce(["Fedora"]);
       distroHasBinaryMock.mockResolvedValueOnce(true);
       runInDistroMock.mockResolvedValueOnce(
@@ -442,9 +442,9 @@ describe("WslDnfProvider", () => {
           failed: true,
         }),
       );
-      // countUpgradable returns -1 (refresh marker) which is <=0, so the
-      // outer provider skips it — the "refresh" branch is dead-code-protected.
-      await expect(new WslDnfProvider().listOutdated()).resolves.toEqual([]);
+      await expect(new WslDnfProvider().listOutdated()).resolves.toEqual([
+        { id: "Fedora", name: "Fedora (dnf)", current: "?", latest: "refresh" },
+      ]);
     });
   });
 

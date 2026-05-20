@@ -32,7 +32,7 @@ export class WslDnfProvider implements Provider {
     for (const distro of distros) {
       if (!(await distroHasBinary(distro, "dnf"))) continue;
       const count = await countUpgradable(distro);
-      if (count <= 0) continue;
+      if (count === 0) continue;
       out.push({
         id: distro,
         name: `${distro} (dnf)`,

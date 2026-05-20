@@ -18,7 +18,7 @@ export class PipProvider implements Provider {
   readonly installHint = "Python: https://www.python.org/downloads/";
 
   async isAvailable(): Promise<boolean> {
-    return commandExists("pip") || commandExists("pip3");
+    return (await commandExists("pip")) || (await commandExists("pip3"));
   }
 
   async listOutdated(): Promise<OutdatedPackage[]> {
