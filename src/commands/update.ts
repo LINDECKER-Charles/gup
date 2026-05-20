@@ -123,11 +123,17 @@ export function formatBadTargetMessage(
   target: string,
   providers: readonly Pick<Provider, "id" | "displayName">[],
 ): string {
-  const head = `Format invalide: "${target}". Attendu provider:packageId.`;
+  // Preserve the historical prefix verbatim ("Attendu provider:packageId"
+  // with no trailing period) so downstream greps / external tools that
+  // pattern-match this line keep working.
+  const head = `Format invalide: "${target}". Attendu provider:packageId`;
   const trimmed = target.trim();
+  const key = trimmed.toLowerCase();
+  // Case-insensitive on both id AND displayName: id resolution should not
+  // silently differ from display-name resolution.
   const hint =
-    providers.find((p) => p.id === trimmed) ??
-    providers.find((p) => p.displayName.toLowerCase() === trimmed.toLowerCase());
+    providers.find((p) => p.id.toLowerCase() === key) ??
+    providers.find((p) => p.displayName.toLowerCase() === key);
 
   const lines: string[] = [head];
   if (hint) {

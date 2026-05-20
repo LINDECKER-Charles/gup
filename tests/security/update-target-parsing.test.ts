@@ -51,9 +51,13 @@ describe("update target parsing", () => {
 });
 
 describe("formatBadTargetMessage", () => {
-  it("preserves the historical 'Format invalide' prefix so existing tooling/tests keep matching", () => {
-    expect(formatBadTargetMessage("malformed", FAKE_PROVIDERS)).toMatch(
-      /^Format invalide: "malformed"\. Attendu provider:packageId\./,
+  it("preserves the historical 'Format invalide' prefix verbatim (no trailing period after packageId)", () => {
+    const msg = formatBadTargetMessage("malformed", FAKE_PROVIDERS);
+    // The historical line was 'Format invalide: "<tok>". Attendu provider:packageId'
+    // with NO period at the very end of the prefix — preserve that exactly so
+    // downstream greps keep matching the original wording.
+    expect(msg.split("\n")[0]).toBe(
+      'Format invalide: "malformed". Attendu provider:packageId',
     );
   });
 
@@ -62,6 +66,13 @@ describe("formatBadTargetMessage", () => {
     expect(msg).toContain("nom de provider");
     expect(msg).toContain("gup list --provider choco");
     expect(msg).toContain("gup update --provider choco --all");
+  });
+
+  it("resolves the provider id case-insensitively (CHOCO/Choco/choco all match)", () => {
+    for (const variant of ["choco", "CHOCO", "Choco", "ChoCo"]) {
+      const msg = formatBadTargetMessage(variant, FAKE_PROVIDERS);
+      expect(msg).toContain("gup update --provider choco --all");
+    }
   });
 
   it("resolves a display name back to its provider id (case-insensitive)", () => {
