@@ -1,5 +1,7 @@
 import pLimit from "p-limit";
 
+import { filterByOwnership } from "./ownership.js";
+
 // --- OS-level / Windows -----------------------------------------------------
 import { WingetProvider } from "../providers/os/winget.js";
 import { ScoopProvider } from "../providers/os/scoop.js";
@@ -412,7 +414,7 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
   const filtered = await getProvidersToScan(options);
 
   const limit = pLimit(options.concurrency ?? 4);
-  return Promise.all(
+  const raw = await Promise.all(
     filtered.map((p) =>
       limit(async (): Promise<ProviderScanResult> => {
         options.onProviderStart?.(p);
@@ -438,4 +440,18 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
       }),
     ),
   );
+
+  // Drop OS-level upgrades whose canonical binary is actually owned by a
+  // toolchain manager (e.g. choco:nodejs surfaced while nvm-windows owns
+  // `node` on PATH would shadow the nvm shim on next shell). See
+  // src/core/ownership.ts for the polyglot table and detection heuristic.
+  //
+  // The `exclusions` list returned by filterByOwnership is intentionally
+  // discarded here for now: surfacing per-package advisories ("hidden by
+  // ownership filter") would change list/menu output shape and warrants
+  // a separate UX pass. Until then, scanAll honours the existing contract
+  // (returns only the kept ProviderScanResult[]). The filter itself stays
+  // observable through src/core/ownership.ts unit tests.
+  const { results } = await filterByOwnership(raw);
+  return results;
 }
