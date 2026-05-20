@@ -23,8 +23,9 @@ export class DockerImagesProvider implements Provider {
   }
 
   async listOutdated(): Promise<OutdatedPackage[]> {
-    const images = await listLocalImages();
-    return images.map((img) => ({
+    const all = await listLocalImages();
+    const pullable = await filterPullableImages(all);
+    return pullable.map((img) => ({
       id: img.ref,
       name: img.ref,
       current: img.shortId,
@@ -75,4 +76,55 @@ async function listLocalImages(): Promise<LocalImage[]> {
     });
   }
   return Array.from(seen.values());
+}
+
+/**
+ * Drop locally-built images from the candidate list. `docker image inspect`
+ * exposes `.RepoDigests` — non-empty when the image was pulled from a registry
+ * (each entry is "<repo>@sha256:..."), null/empty when the image was built
+ * locally (`docker build -t myapp .`). Surfacing the latter as "outdated" is
+ * a guaranteed FAIL on update because `docker pull myapp:latest` has no
+ * upstream to talk to. The probe is free (no network, inspects local
+ * metadata) and the contract is strict: exactly one JSON line per input ref,
+ * same order. Internal — referenced only by listOutdated().
+ *
+ * Fallback to the unfiltered list whenever the probe's output drifts from
+ * that contract (`failed` with empty stdout, line count mismatch, etc.)
+ * rather than silently dropping images on a malformed payload. Better a
+ * few known false positives than hidden pullable images.
+ */
+async function filterPullableImages(images: LocalImage[]): Promise<LocalImage[]> {
+  if (images.length === 0) return images;
+  const { stdout, failed } = await run("docker", [
+    "image",
+    "inspect",
+    "--format",
+    "{{json .RepoDigests}}",
+    ...images.map((img) => img.ref),
+  ]);
+  if (failed && !stdout.trim()) return images;
+
+  const lines = stdout.split(/\r?\n/).filter((l) => l.length > 0);
+  // Strict-contract guard: any deviation from "one line per ref" means we
+  // cannot map outputs back to inputs by index without risk of shifting and
+  // dropping a real pullable image. Surface the unfiltered list instead.
+  if (lines.length !== images.length) return images;
+
+  const out: LocalImage[] = [];
+  for (let i = 0; i < images.length; i++) {
+    if (hasRepoDigest(lines[i])) out.push(images[i]!);
+  }
+  return out;
+}
+
+function hasRepoDigest(line: string | undefined): boolean {
+  if (!line) return false;
+  const trimmed = line.trim();
+  if (!trimmed || trimmed === "null" || trimmed === "[]") return false;
+  try {
+    const parsed = JSON.parse(trimmed);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch {
+    return false;
+  }
 }

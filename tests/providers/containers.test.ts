@@ -284,6 +284,15 @@ describe("docker-images provider", () => {
       "alpine\t3.18\tabcdef0123456789\t7.4MB", // duplicate (deduped)
     ].join("\n");
     runMock.mockResolvedValueOnce(mkRun(stdout));
+    // Both images are upstream-pulled (non-empty RepoDigests) → kept by filter.
+    runMock.mockResolvedValueOnce(
+      mkRun(
+        [
+          '["alpine@sha256:1111111111111111"]',
+          '["nginx@sha256:2222222222222222"]',
+        ].join("\n"),
+      ),
+    );
 
     const rows = await new DockerImagesProvider().listOutdated();
     expect(rows).toHaveLength(2);
@@ -303,10 +312,69 @@ describe("docker-images provider", () => {
     });
   });
 
+  it("listOutdated drops locally-built images (empty/null RepoDigests)", async () => {
+    // image ls reports two refs: one pulled from a registry, one built locally.
+    runMock.mockResolvedValueOnce(
+      mkRun(
+        [
+          "alpine\t3.18\tabcdef0123456789\t7.4MB",       // pulled
+          "myapp\tlatest\t999900001111aaaa\t150MB",       // built locally
+        ].join("\n"),
+      ),
+    );
+    // docker image inspect prints one JSON line per input ref, in order.
+    runMock.mockResolvedValueOnce(
+      mkRun(
+        [
+          '["alpine@sha256:1111111111111111"]',
+          "[]", // locally-built → no upstream digest → dropped
+        ].join("\n"),
+      ),
+    );
+
+    const rows = await new DockerImagesProvider().listOutdated();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.id).toBe("alpine:3.18");
+  });
+
+  it("listOutdated treats 'null' RepoDigests as locally-built", async () => {
+    runMock.mockResolvedValueOnce(mkRun("myapp\tdev\t000011112222\t40MB"));
+    runMock.mockResolvedValueOnce(mkRun("null"));
+    await expect(new DockerImagesProvider().listOutdated()).resolves.toEqual([]);
+  });
+
+  it("listOutdated falls back to the unfiltered list when the inspect probe crashes hard", async () => {
+    // Daemon hiccup between `image ls` and `image inspect`: failed=true AND no
+    // stdout. We surface the unfiltered list rather than masking everything.
+    runMock.mockResolvedValueOnce(mkRun("alpine\t3.18\tabcdef0123456789\t7.4MB"));
+    runMock.mockResolvedValueOnce(mkRun("", true));
+    const rows = await new DockerImagesProvider().listOutdated();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.id).toBe("alpine:3.18");
+  });
+
+  it("listOutdated falls back to the unfiltered list when inspect output drifts from the strict 'one line per ref' contract", async () => {
+    // Two images on input, only one digest line on output — index mapping
+    // would shift and silently drop a real pullable image. Surface both
+    // refs instead of risking the silent drop.
+    runMock.mockResolvedValueOnce(
+      mkRun(
+        [
+          "alpine\t3.18\tabcdef0123456789\t7.4MB",
+          "nginx\tlatest\t11223344556677\t140MB",
+        ].join("\n"),
+      ),
+    );
+    runMock.mockResolvedValueOnce(mkRun('["alpine@sha256:1111"]'));
+    const rows = await new DockerImagesProvider().listOutdated();
+    expect(rows.map((r) => r.id)).toEqual(["alpine:3.18", "nginx:latest"]);
+  });
+
   it("listOutdated handles missing id/size fields", async () => {
     // Tab-separated line with only repo and tag yields undefined id/size
     const stdout = "alpine\t3.18";
     runMock.mockResolvedValueOnce(mkRun(stdout));
+    runMock.mockResolvedValueOnce(mkRun('["alpine@sha256:abcd"]'));
     const rows = await new DockerImagesProvider().listOutdated();
     expect(rows).toEqual([
       { id: "alpine:3.18", name: "alpine:3.18", current: "?", latest: "pull", note: "" },
