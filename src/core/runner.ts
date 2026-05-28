@@ -17,43 +17,66 @@ export interface RunResult {
 // is rejected before reaching execa. Combined with the per-provider argv
 // validation, this guarantees no shell metacharacter can flow into the
 // command name even on the shell-routed callsites (scoop's .cmd/.ps1 shim,
-// see tests/security/shell-usage.test.ts allowlist) — and gives static
-// analysis (CodeQL js/indirect-command-line-injection) an explicit sanitizer
-// point: `sanitizeCommand`/`sanitizeArgs` return the cleaned value so the
-// tainted-flow analysis sees the barrier, instead of a side-effecting assert
-// the analyzer may not propagate through.
+// see tests/security/shell-usage.test.ts allowlist). The regex is anchored
+// and uses an explicit character class so CodeQL's JS taint analysis
+// recognises it as a sanitiser for js/shell-command-injection-from-environment
+// and js/indirect-command-line-injection.
 const SAFE_COMMAND_PATTERN = /^[A-Za-z0-9_.+\-/\\: ()]+$/;
 
 function sanitizeCommand(command: string): string {
   if (typeof command !== "string" || command.length === 0) {
     throw new TypeError("runner: command must be a non-empty string");
   }
-  if (!SAFE_COMMAND_PATTERN.test(command)) {
+  // Use `exec()` and return `match[0]` (not the original `command` after a
+  // `.test()` check) so the value flowing out is a freshly-allocated string
+  // captured from the anchored allowlist regex. CodeQL's tainted-flow
+  // analysis treats regex-match results derived from a limited character
+  // class as a sanitisation barrier; returning the raw input after a side-
+  // effect-only `.test()` does not break the flow even though it is
+  // semantically equivalent.
+  const match = SAFE_COMMAND_PATTERN.exec(command);
+  if (!match) {
     throw new Error(`runner: refusing to spawn unsafe command name: ${command}`);
   }
-  return command;
+  return match[0];
 }
 
+// Defence-in-depth allowlist for argv entries. Permits the printable ASCII
+// set plus the whitespace chars that legitimately appear in shell payloads
+// passed to `bash -lc` (tab, LF, CR) and any non-ASCII codepoint (UTF-8
+// package ids, paths with accented chars). Excludes the C0 control range
+// except for those three whitespace chars — those have no legitimate use in
+// argv and are how quoting bugs sneak through layered shells. Anchored +
+// explicit character class so CodeQL recognises it as a sanitiser for
+// js/indirect-command-line-injection.
+// eslint-disable-next-line security/detect-unsafe-regex -- single character class with a `*` quantifier, fully anchored; no nested repetition. safe-regex false positive.
+const SAFE_ARG_PATTERN = /^[\t\n\r\u0020-\u007e\u0080-\u{10ffff}]*$/u;
+
 /**
- * Argv sanitization barrier. Each entry must be a string with no NUL byte —
- * NUL is illegal in POSIX argv and Win32 command lines anyway, but rejecting
- * it explicitly here both hardens the runner against caller bugs and gives
- * CodeQL a recognizable taint-cleansing point on the argv path. Shell
- * metacharacters in args are intentionally NOT rejected: `bash -lc <script>`
- * (sdkman) legitimately needs them, and execa with the default `shell: false`
- * passes argv as a vector — see tests/security/command-injection.test.ts.
+ * Argv sanitisation barrier. Each entry must be a string that matches
+ * {@link SAFE_ARG_PATTERN}; the returned array contains freshly-allocated
+ * regex-match strings so the call site sees clean values (not the tainted
+ * input references). Shell metacharacters in args are intentionally allowed:
+ * `bash -lc <script>` (sdkman) legitimately needs them, and execa with the
+ * default `shell: false` passes argv as a vector — see
+ * tests/security/command-injection.test.ts.
  */
-function sanitizeArgs(args: readonly string[]): readonly string[] {
+function sanitizeArgs(args: readonly string[]): string[] {
+  const cleaned: string[] = new Array(args.length);
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (typeof arg !== "string") {
       throw new TypeError(`runner: argv[${i}] must be a string`);
     }
-    if (arg.indexOf("\0") !== -1) {
-      throw new Error(`runner: argv[${i}] must not contain NUL bytes`);
+    const match = SAFE_ARG_PATTERN.exec(arg);
+    if (!match) {
+      throw new Error(
+        `runner: argv[${i}] contains a forbidden control character`,
+      );
     }
+    cleaned[i] = match[0];
   }
-  return args;
+  return cleaned;
 }
 
 // ---------------------------------------------------------------------------
@@ -153,7 +176,7 @@ export async function run(
 ): Promise<RunResult> {
   const safeCommand = sanitizeCommand(command);
   const safeArgs = sanitizeArgs(args);
-  const proc = execa(safeCommand, safeArgs as string[], {
+  const proc = execa(safeCommand, safeArgs, {
     reject: false,
     encoding: "utf8",
     stripFinalNewline: true,
@@ -201,7 +224,7 @@ export async function runInherit(
   // One controller drives both skip levers — the timeout timer and the manual
   // Ctrl+C handler both abort it, which makes execa kill the child.
   const controller = new AbortController();
-  const proc = execa(safeCommand, safeArgs as string[], {
+  const proc = execa(safeCommand, safeArgs, {
     reject: false,
     stdio: "inherit",
     cancelSignal: controller.signal,
