@@ -55,6 +55,28 @@ export default [
     },
   },
   {
+    // Elevation IPC writes/reads stay inside a freshly-created mkdtemp dir
+    // (user-only perms) with filenames assembled from randomBytes(8) plus a
+    // hardcoded basename (`.json`, `.out`, `spawn.ps1`). The `wx` flag
+    // forbids overwriting any pre-staged file at the resulting path, which
+    // shuts down the TOCTOU race on a shared tmp dir. No external input
+    // reaches fs.
+    files: ["src/core/elevation.ts"],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
+    // Semgrep python resolver joins `dirname(whichFirst("semgrep"))` with
+    // hardcoded basenames ("python.exe", "python3", "python", "bin/python3",
+    // "bin/python") to locate the interpreter that owns the on-PATH binary.
+    // No untrusted input reaches existsSync.
+    files: ["src/providers/security/semgrep.ts"],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
     // JetBrains providers walk %APPDATA%\JetBrains\<IDE>\plugins. Paths are
     // joined from a hardcoded env var with directory entries filtered by
     // strict regex (^[A-Za-z]+\d{4}\.\d+$). No external input reaches fs.
