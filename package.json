@@ -103,7 +103,7 @@
     "@typescript-eslint/parser": "^7.18.0",
     "@vitest/coverage-v8": "^4.1.7",
     "audit-ci": "^7.1.0",
-    "eslint": "^8.57.1",
+    "eslint": "^10.4.0",
     "eslint-plugin-security": "^3.0.1",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
