@@ -8,6 +8,11 @@ import {
   maybeRetryFailures,
   type OutcomeWithProvider,
 } from "../ui/retry-failed.js";
+import {
+  beginSkipSession,
+  discardPendingInterrupt,
+  finalizeOutcome,
+} from "../ui/skip-controller.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
 
 export interface UpdateOptions {
@@ -62,7 +67,8 @@ async function runTargets(
   targets: string[],
   opts: { yes?: boolean } = {},
 ): Promise<number> {
-  const entries: OutcomeWithProvider[] = [];
+  // Validate every target up front so a typo doesn't open a skip session.
+  const resolved: { providerId: string; provider: Provider; packageId: string }[] = [];
   for (const target of targets) {
     const idx = target.indexOf(":");
     if (idx === -1) {
@@ -76,11 +82,23 @@ async function runTargets(
       process.stderr.write(`Provider inconnu: ${providerId}\n`);
       return 2;
     }
-    process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
-    entries.push({ providerId, outcome: await provider.update(packageId) });
+    resolved.push({ providerId, provider, packageId });
   }
-  const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
-  return summarize(outcomes);
+
+  const entries: OutcomeWithProvider[] = [];
+  const session = beginSkipSession();
+  try {
+    for (const { providerId, provider, packageId } of resolved) {
+      if (session.isAbortRequested()) break;
+      process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
+      const outcome = finalizeOutcome(await provider.update(packageId));
+      entries.push({ providerId, outcome });
+    }
+    const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
+    return summarize(outcomes);
+  } finally {
+    session.dispose();
+  }
 }
 
 async function runSelection(
@@ -106,26 +124,36 @@ async function runSelection(
   }
 
   const entries: OutcomeWithProvider[] = [];
-  for (const [providerId, pkgs] of grouped) {
-    const provider = getProvider(providerId);
-    if (!provider) continue;
-    process.stdout.write(
-      chalk.bold(`\n→ ${provider.displayName} (${pkgs.length})\n`),
-    );
-    const results =
-      pkgs.length === 1
-        ? [await provider.update(pkgs[0]!.id)]
-        : await provider.updateAll(pkgs);
-    for (const o of results) entries.push({ providerId, outcome: o });
-  }
+  const session = beginSkipSession();
+  try {
+    // One package at a time (not provider.updateAll) so a timeout / Ctrl+C
+    // maps cleanly to a single package: the rest of the batch keeps going.
+    outer: for (const [providerId, pkgs] of grouped) {
+      const provider = getProvider(providerId);
+      if (!provider) continue;
+      process.stdout.write(
+        chalk.bold(`\n→ ${provider.displayName} (${pkgs.length})\n`),
+      );
+      for (const pkg of pkgs) {
+        if (session.isAbortRequested()) break outer;
+        const outcome = finalizeOutcome(await provider.update(pkg.id));
+        entries.push({ providerId, outcome });
+      }
+    }
 
-  if (adminSelection.length > 0) {
-    const adminEntries = await runAdminBatch(adminSelection, { ...(opts.yes !== undefined && { yes: opts.yes }) });
-    entries.push(...adminEntries);
-  }
+    if (!session.isAbortRequested() && adminSelection.length > 0) {
+      const adminEntries = await runAdminBatch(adminSelection, { ...(opts.yes !== undefined && { yes: opts.yes }) });
+      // The elevated PowerShell wait goes through runInherit too; drop any
+      // interrupt flag it left so it can't mislabel a later retried package.
+      discardPendingInterrupt();
+      entries.push(...adminEntries);
+    }
 
-  const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
-  return summarize(outcomes);
+    const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
+    return summarize(outcomes);
+  } finally {
+    session.dispose();
+  }
 }
 
 /**

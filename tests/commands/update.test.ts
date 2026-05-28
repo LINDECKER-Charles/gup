@@ -190,7 +190,10 @@ describe("updateCommand: scan + interactive selection", () => {
     expect(out).toMatch(/Aucune sélection/);
   });
 
-  it("groups selection by provider and uses update() when one package, updateAll() otherwise", async () => {
+  it("groups selection by provider and updates one package at a time (never updateAll)", async () => {
+    // One-at-a-time dispatch is deliberate: it lets a per-package timeout or a
+    // Ctrl+C skip drop a single wedged install while the rest of the batch
+    // keeps going. updateAll() would couple them into one un-skippable call.
     const pkgA1 = { id: "a1", current: "1", latest: "2" };
     const pkgA2 = { id: "a2", current: "1", latest: "2" };
     const pkgB1 = { id: "b1", current: "1", latest: "2" };
@@ -211,13 +214,11 @@ describe("updateCommand: scan + interactive selection", () => {
     const provA = mkProvider({
       id: "a",
       displayName: "A",
-      update: vi.fn(),
-      updateAll: vi
+      update: vi
         .fn()
-        .mockResolvedValue([
-          { id: "a1", success: true },
-          { id: "a2", success: true },
-        ]),
+        .mockResolvedValueOnce({ id: "a1", success: true })
+        .mockResolvedValueOnce({ id: "a2", success: true }),
+      updateAll: vi.fn(),
     });
     const provB = mkProvider({
       id: "b",
@@ -231,8 +232,9 @@ describe("updateCommand: scan + interactive selection", () => {
 
     const code = await updateCommand({});
     expect(code).toBe(0);
-    expect(provA.updateAll).toHaveBeenCalledWith([pkgA1, pkgA2]);
-    expect(provA.update).not.toHaveBeenCalled();
+    expect(provA.update).toHaveBeenNthCalledWith(1, "a1");
+    expect(provA.update).toHaveBeenNthCalledWith(2, "a2");
+    expect(provA.updateAll).not.toHaveBeenCalled();
     expect(provB.update).toHaveBeenCalledWith("b1");
     expect(provB.updateAll).not.toHaveBeenCalled();
   });

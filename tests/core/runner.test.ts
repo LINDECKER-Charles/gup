@@ -10,9 +10,13 @@ vi.mock("execa", () => ({ execa: execaMock }));
 
 import {
   commandExists,
+  consumeInterrupt,
+  getInstallTimeoutSeconds,
   isElevated,
   run,
   runInherit,
+  setInstallTimeoutSeconds,
+  skipCurrent,
   whichFirst,
 } from "../../src/core/runner.js";
 
@@ -136,7 +140,12 @@ describe("runner.runInherit", () => {
     const res = await runInherit("foo", ["bar"]);
     expect(res).toEqual({ stdout: "", stderr: "", exitCode: 0, failed: false });
     const [, , opts] = execaMock.mock.calls[0]!;
-    expect(opts).toMatchObject({ reject: false, stdio: "inherit", windowsHide: true });
+    // Inherit path streams to the terminal and must NOT hide windows: an
+    // installer that falls back to GUI has to be visible, not block on an
+    // invisible window. It also wires a cancelSignal for the manual skip lever.
+    expect(opts).toMatchObject({ reject: false, stdio: "inherit" });
+    expect(opts).not.toHaveProperty("windowsHide");
+    expect((opts as { cancelSignal?: unknown }).cancelSignal).toBeInstanceOf(AbortSignal);
   });
 
   it("flags failed=true when execa reports a non-zero exit", async () => {
@@ -155,6 +164,90 @@ describe("runner.runInherit", () => {
   it("rejects unsafe command name without invoking execa", async () => {
     await expect(runInherit("foo;bar")).rejects.toThrow(/runner:/);
     expect(execaMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("runner install-timeout config", () => {
+  afterEach(() => {
+    setInstallTimeoutSeconds(1200);
+  });
+
+  it("defaults to 1200s and is settable", () => {
+    expect(getInstallTimeoutSeconds()).toBe(1200);
+    setInstallTimeoutSeconds(30);
+    expect(getInstallTimeoutSeconds()).toBe(30);
+  });
+
+  it("floors fractional seconds and clamps invalid/negative to 0", () => {
+    setInstallTimeoutSeconds(12.9);
+    expect(getInstallTimeoutSeconds()).toBe(12);
+    setInstallTimeoutSeconds(-5);
+    expect(getInstallTimeoutSeconds()).toBe(0);
+    setInstallTimeoutSeconds(Number.NaN);
+    expect(getInstallTimeoutSeconds()).toBe(0);
+  });
+});
+
+describe("runner skip + interrupt channel", () => {
+  afterEach(() => {
+    // Tidy any flag a test left behind so the next test starts clean.
+    consumeInterrupt();
+  });
+
+  it("skipCurrent returns false when no install is in flight", () => {
+    expect(skipCurrent()).toBe(false);
+  });
+
+  it("consumeInterrupt returns cleared flags by default", () => {
+    expect(consumeInterrupt()).toEqual({ timedOut: false, aborted: false });
+  });
+
+  it("skipCurrent aborts the in-flight runInherit and surfaces aborted", async () => {
+    let resolveProc!: (v: unknown) => void;
+    const deferred = new Promise((r) => {
+      resolveProc = r;
+    });
+    execaMock.mockReturnValueOnce(deferred);
+
+    // runInherit runs synchronously up to `await proc`, so by the time this
+    // returns the abort hook is registered.
+    const pending = runInherit("winget", ["upgrade", "--id", "x"]);
+    expect(skipCurrent()).toBe(true);
+    resolveProc({ exitCode: 1, failed: true });
+
+    const res = await pending;
+    expect(res.aborted).toBe(true);
+    expect(res.failed).toBe(true);
+
+    const flags = consumeInterrupt();
+    expect(flags.aborted).toBe(true);
+    expect(consumeInterrupt().aborted).toBe(false); // consumed → reset
+  });
+
+  it("clears the abort hook after completion (no stale skip target)", async () => {
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    await runInherit("foo");
+    expect(skipCurrent()).toBe(false);
+  });
+
+  it("a caller-supplied options.timeout overrides the global default", async () => {
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    const res = await runInherit("foo", [], { timeout: 5000 });
+    expect(res.failed).toBe(false);
+    // cancelSignal is still wired regardless of which timeout source wins.
+    const [, , opts] = execaMock.mock.calls[0]!;
+    expect((opts as { cancelSignal?: unknown }).cancelSignal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("does not arm a timer when the timeout is disabled (0)", async () => {
+    setInstallTimeoutSeconds(0);
+    try {
+      execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+      const res = await runInherit("foo");
+      expect(res).toEqual({ stdout: "", stderr: "", exitCode: 0, failed: false });
+    } finally {
+      setInstallTimeoutSeconds(1200);
+    }
   });
 });
 

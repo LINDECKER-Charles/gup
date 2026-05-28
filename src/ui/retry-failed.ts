@@ -1,6 +1,7 @@
 import { select } from "@inquirer/prompts";
 import chalk from "chalk";
 import { getProvider } from "../core/registry.js";
+import { finalizeOutcome, isAbortRequested } from "./skip-controller.js";
 import type { UpdateOptions, UpdateOutcome } from "../core/types.js";
 
 export interface OutcomeWithProvider {
@@ -125,7 +126,8 @@ export async function maybeRetryFailures(
       `\n${chalk.bold(`  ↻ ${provider.displayName} (${spec.label})`)} ${chalk.dim(`(${ids.length})`)}\n`,
     );
     for (const id of ids) {
-      const out = await provider.update(id, spec.options);
+      if (isAbortRequested()) break;
+      const out = finalizeOutcome(await provider.update(id, spec.options));
       retried.set(`${providerId}:${id}`, out);
     }
   }

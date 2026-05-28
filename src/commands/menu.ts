@@ -12,6 +12,14 @@ import {
   maybeRetryFailures,
   type OutcomeWithProvider,
 } from "../ui/retry-failed.js";
+import {
+  beginSkipSession,
+  finalizeOutcome,
+} from "../ui/skip-controller.js";
+import {
+  getInstallTimeoutSeconds,
+  setInstallTimeoutSeconds,
+} from "../core/runner.js";
 import type {
   OutdatedPackage,
   ProviderScanResult,
@@ -166,20 +174,37 @@ async function runSelect(state: MenuState): Promise<void> {
     grouped.set(sel.providerId, list);
   }
 
-  const entries: OutcomeWithProvider[] = [];
-  for (const [providerId, pkgs] of grouped) {
-    const provider = getProvider(providerId);
-    if (!provider) continue;
-    printSectionHeader(provider.displayName, pkgs.length);
-    const results =
-      pkgs.length === 1
-        ? [await provider.update(pkgs[0]!.id)]
-        : await provider.updateAll(pkgs);
-    for (const o of results) entries.push({ providerId, outcome: o });
-  }
+  const entries = await applyGrouped(grouped);
   const outcomes = await maybeRetryFailures(entries);
   summarize(outcomes);
   await initialScan(state);
+}
+
+/**
+ * Run a provider→packages map one package at a time, under a skip session so a
+ * timed-out / Ctrl+C'd install is skipped and the batch continues. Shared by
+ * "Update selected" and "Update all".
+ */
+async function applyGrouped(
+  grouped: Map<string, OutdatedPackage[]>,
+): Promise<OutcomeWithProvider[]> {
+  const entries: OutcomeWithProvider[] = [];
+  const session = beginSkipSession();
+  try {
+    outer: for (const [providerId, pkgs] of grouped) {
+      const provider = getProvider(providerId);
+      if (!provider) continue;
+      printSectionHeader(provider.displayName, pkgs.length);
+      for (const pkg of pkgs) {
+        if (session.isAbortRequested()) break outer;
+        const outcome = finalizeOutcome(await provider.update(pkg.id));
+        entries.push({ providerId, outcome });
+      }
+    }
+  } finally {
+    session.dispose();
+  }
+  return entries;
 }
 
 async function runAll(state: MenuState): Promise<void> {
@@ -190,15 +215,13 @@ async function runAll(state: MenuState): Promise<void> {
   });
   if (!ok) return;
 
-  const entries: OutcomeWithProvider[] = [];
+  const grouped = new Map<string, OutdatedPackage[]>();
   for (const scan of state.scans) {
     if (scan.packages.length === 0) continue;
-    const provider = getProvider(scan.providerId);
-    if (!provider) continue;
-    printSectionHeader(provider.displayName, scan.packages.length);
-    const results = await provider.updateAll(scan.packages);
-    for (const o of results) entries.push({ providerId: scan.providerId, outcome: o });
+    grouped.set(scan.providerId, scan.packages);
   }
+
+  const entries = await applyGrouped(grouped);
   const outcomes = await maybeRetryFailures(entries);
   summarize(outcomes);
   await initialScan(state);
@@ -215,21 +238,28 @@ async function runTarget(): Promise<void> {
     .filter(Boolean);
 
   const entries: OutcomeWithProvider[] = [];
-  for (const target of targets) {
-    const idx = target.indexOf(":");
-    if (idx === -1) {
-      process.stderr.write(chalk.red(`  format invalide: ${target}\n`));
-      continue;
+  const session = beginSkipSession();
+  try {
+    for (const target of targets) {
+      if (session.isAbortRequested()) break;
+      const idx = target.indexOf(":");
+      if (idx === -1) {
+        process.stderr.write(chalk.red(`  format invalide: ${target}\n`));
+        continue;
+      }
+      const providerId = target.slice(0, idx);
+      const packageId = target.slice(idx + 1);
+      const provider = getProvider(providerId);
+      if (!provider) {
+        process.stderr.write(chalk.red(`  provider inconnu: ${providerId}\n`));
+        continue;
+      }
+      printSectionHeader(`${provider.displayName} : ${packageId}`, 1);
+      const outcome = finalizeOutcome(await provider.update(packageId));
+      entries.push({ providerId, outcome });
     }
-    const providerId = target.slice(0, idx);
-    const packageId = target.slice(idx + 1);
-    const provider = getProvider(providerId);
-    if (!provider) {
-      process.stderr.write(chalk.red(`  provider inconnu: ${providerId}\n`));
-      continue;
-    }
-    printSectionHeader(`${provider.displayName} : ${packageId}`, 1);
-    entries.push({ providerId, outcome: await provider.update(packageId) });
+  } finally {
+    session.dispose();
   }
   const outcomes = await maybeRetryFailures(entries);
   summarize(outcomes);
@@ -247,9 +277,10 @@ async function runDoctor(): Promise<void> {
   process.stdout.write(`\n${renderProvidersStatus(detected, missing)}\n`);
 }
 
-type OptionAction = "fast" | "filter" | "back";
+type OptionAction = "fast" | "filter" | "timeout" | "back";
 
 async function runOptions(state: MenuState): Promise<void> {
+  const timeout = getInstallTimeoutSeconds();
   const choice = await select<OptionAction>({
     message: "Options",
     choices: [
@@ -266,6 +297,13 @@ async function runOptions(state: MenuState): Promise<void> {
           state.filter.length === 0 ? "tous" : state.filter.join(", "),
         ),
         value: "filter",
+      },
+      {
+        name: pad(
+          `Timeout install  [${timeout > 0 ? `${timeout}s` : "OFF"}]`,
+          "skip auto si une install bloque",
+        ),
+        value: "timeout",
       },
       new Separator(dim("  ─")),
       { name: pad("Retour", ""), value: "back" },
@@ -294,6 +332,20 @@ async function runOptions(state: MenuState): Promise<void> {
       dim(
         `  filtre: ${state.filter.length === 0 ? "tous" : state.filter.join(", ")} — rescanne pour appliquer\n`,
       ),
+    );
+  } else if (choice === "timeout") {
+    const raw = await input({
+      message: "Timeout par install en secondes (0 = désactivé)",
+      default: String(getInstallTimeoutSeconds()),
+      validate: (v) => {
+        const n = Number(v.trim());
+        return (Number.isFinite(n) && n >= 0) || "saisir un nombre de secondes >= 0";
+      },
+    });
+    setInstallTimeoutSeconds(Number(raw.trim()));
+    const next = getInstallTimeoutSeconds();
+    process.stdout.write(
+      dim(`  timeout install: ${next > 0 ? `${next}s` : "désactivé"}\n`),
     );
   }
 }

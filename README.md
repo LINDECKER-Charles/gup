@@ -75,8 +75,25 @@ gup list --json                                      # pipeable JSON output
 gup update                                           # interactive selection
 gup update --all -y                                  # everything (no prompt, CI)
 gup update winget:Microsoft.PowerShell npm-g:typescript
+gup update --all --timeout 300                       # auto-skip any install stuck > 5 min
 gup doctor                                           # detected providers vs missing
 ```
+
+### Skipping stuck installs
+
+Some installs can hang (a stalled download, the Windows Installer mutex, an
+installer that drops its `--silent` flag and waits on a now-visible GUI). gup
+won't block forever:
+
+- **Ctrl+C** during a batch skips the install in flight and moves on; **Ctrl+C
+  twice** stops the whole batch.
+- A per-install **wall-clock timeout** (default 20 min) auto-skips a wedged
+  install. Tune it with `--timeout <seconds>` (0 disables), the
+  `GUP_INSTALL_TIMEOUT` env var (seconds), or the menu's *Options → Timeout
+  install*.
+
+Skipped installs are reported as `SKIP` (not failures) and don't trigger the
+retry prompt.
 
 | Command | Effect |
 |---|---|
@@ -87,6 +104,7 @@ gup doctor                                           # detected providers vs mis
 | `gup update` | Interactive multi-package selection |
 | `gup update --all` | Updates everything (with confirmation) |
 | `gup update <provider:pkg>` | Specific targets |
+| `gup update --timeout <s>` | Auto-skip any install exceeding `<s>` seconds (0 = off) |
 | `gup doctor` | Detected providers + install hints |
 
 ## Documentation

@@ -5,6 +5,10 @@ export interface RunResult {
   stderr: string;
   exitCode: number;
   failed: boolean;
+  /** Set when the wall-clock timeout fired and the child was killed. */
+  timedOut?: boolean;
+  /** Set when the user manually skipped this run (Ctrl+C → skipCurrent()). */
+  aborted?: boolean;
 }
 
 // Allowlist for the `command` argument: alphanumerics + the path glyphs that
@@ -52,6 +56,90 @@ function sanitizeArgs(args: readonly string[]): readonly string[] {
   return args;
 }
 
+// ---------------------------------------------------------------------------
+// Install timeout + manual-skip plumbing
+//
+// All real installs flow through runInherit() (providers stream their output
+// to the terminal there; run() is reserved for scans/probes). So wiring the
+// timeout and the Ctrl+C "skip" lever into runInherit covers every provider
+// without touching any of them.
+// ---------------------------------------------------------------------------
+
+/** Wall-clock cap per install, in seconds. 0 disables. Overridable at runtime. */
+// 20 min: long enough for big installers, short enough that a wedged one
+// doesn't hang the whole run forever.
+const DEFAULT_INSTALL_TIMEOUT_S = 1200;
+
+function readEnvTimeoutSeconds(): number {
+  const raw = process.env.GUP_INSTALL_TIMEOUT;
+  if (raw === undefined || raw === "") return DEFAULT_INSTALL_TIMEOUT_S;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : DEFAULT_INSTALL_TIMEOUT_S;
+}
+
+let installTimeoutSeconds = readEnvTimeoutSeconds();
+
+/** Set the per-install wall-clock timeout (seconds). 0 disables it. */
+export function setInstallTimeoutSeconds(seconds: number): void {
+  installTimeoutSeconds =
+    Number.isFinite(seconds) && seconds >= 0 ? Math.floor(seconds) : 0;
+}
+
+/** Current per-install timeout in seconds (0 = disabled). */
+export function getInstallTimeoutSeconds(): number {
+  return installTimeoutSeconds;
+}
+
+// The currently-running interruptible child, if any. Updates are sequential
+// (never concurrent — see commands/update.ts and ui/retry-failed.ts), so a
+// single slot is enough; nested runInherit calls save/restore it.
+let abortCurrent: (() => void) | null = null;
+
+/**
+ * Kill the install that's running right now (the Ctrl+C handler calls this).
+ * Returns false when nothing interruptible is in flight, so the caller can
+ * decide that the keypress means "abort the batch" instead.
+ */
+export function skipCurrent(): boolean {
+  if (!abortCurrent) return false;
+  abortCurrent();
+  return true;
+}
+
+interface InterruptFlags {
+  timedOut: boolean;
+  aborted: boolean;
+}
+
+// runInherit can't return the interrupt cause to the batch loop through the
+// provider (providers build their own UpdateOutcome and drop our RunResult
+// flags). This one-slot channel bridges that gap: runInherit records the
+// cause, the batch loop reads-and-clears it right after each provider.update().
+// Safe because updates never run concurrently.
+let pendingInterrupt: InterruptFlags = { timedOut: false, aborted: false };
+
+/** Read and reset the interrupt flags recorded by the last runInherit call(s). */
+export function consumeInterrupt(): InterruptFlags {
+  const flags = pendingInterrupt;
+  pendingInterrupt = { timedOut: false, aborted: false };
+  return flags;
+}
+
+/**
+ * Best-effort: kill the whole process tree on Windows. winget/choco spawn
+ * installer children (msiexec, setup.exe) that a SIGTERM to the direct child
+ * leaves orphaned; `taskkill /T` takes the tree down. Fire-and-forget — we
+ * never await it and swallow any error. No-op when there's no pid (e.g. the
+ * mocked child in tests) or off Windows (cancelSignal already SIGTERMs there).
+ */
+function treeKillWindows(pid: number | undefined): void {
+  if (process.platform !== "win32" || !pid || pid <= 0) return;
+  void execa("taskkill", ["/pid", String(pid), "/t", "/f"], {
+    reject: false,
+    windowsHide: true,
+  }).catch(() => {});
+}
+
 /**
  * Execa wrapper hardened for Windows console output:
  * - forces UTF-8 decoding to avoid garbled winget/choco output under cp65001,
@@ -82,7 +170,17 @@ export async function run(
   };
 }
 
-/** Stream output to the user's terminal (used during interactive updates). */
+/**
+ * Stream output to the user's terminal (used during interactive updates).
+ *
+ * Unlike {@link run}, this path:
+ * - applies the per-install wall-clock timeout (so a wedged installer can't
+ *   hang the run forever) and tree-kills on expiry,
+ * - registers the child as interruptible so the Ctrl+C handler can skip it,
+ * - does NOT pass `windowsHide`: an installer that ignores `--silent` and
+ *   falls back to its GUI must show its window, otherwise it waits on a click
+ *   to an invisible window and blocks indefinitely.
+ */
 export async function runInherit(
   command: string,
   args: string[] = [],
@@ -90,20 +188,61 @@ export async function runInherit(
 ): Promise<RunResult> {
   const safeCommand = sanitizeCommand(command);
   const safeArgs = sanitizeArgs(args);
+
+  // We manage the timeout ourselves (own timer + tree-kill), so strip any
+  // caller `timeout` from the execa options to avoid double-arming execa's
+  // native timeout alongside ours.
+  const { timeout: timeoutOverride, ...execaOptions } = options;
+  const timeoutMs =
+    typeof timeoutOverride === "number"
+      ? timeoutOverride
+      : installTimeoutSeconds * 1000;
+
+  // One controller drives both skip levers — the timeout timer and the manual
+  // Ctrl+C handler both abort it, which makes execa kill the child.
+  const controller = new AbortController();
   const proc = execa(safeCommand, safeArgs as string[], {
     reject: false,
     stdio: "inherit",
-    windowsHide: true,
-    ...options,
+    cancelSignal: controller.signal,
+    ...execaOptions,
   }) as ResultPromise;
 
-  const result = await proc;
-  return {
-    stdout: "",
-    stderr: "",
-    exitCode: typeof result.exitCode === "number" ? result.exitCode : -1,
-    failed: Boolean(result.failed) || result.exitCode !== 0,
+  let manuallyAborted = false;
+  let timedOut = false;
+  const abort = (reason: "manual" | "timeout"): void => {
+    if (reason === "manual") manuallyAborted = true;
+    else timedOut = true;
+    try {
+      controller.abort();
+    } catch {
+      /* AbortController.abort doesn't throw; stay defensive anyway */
+    }
+    treeKillWindows((proc as { pid?: number }).pid);
   };
+
+  const previous = abortCurrent;
+  abortCurrent = () => abort("manual");
+  const timer =
+    timeoutMs > 0 ? setTimeout(() => abort("timeout"), timeoutMs) : null;
+
+  try {
+    const result = await proc;
+    if (timedOut) pendingInterrupt.timedOut = true;
+    if (manuallyAborted) pendingInterrupt.aborted = true;
+    const out: RunResult = {
+      stdout: "",
+      stderr: "",
+      exitCode: typeof result.exitCode === "number" ? result.exitCode : -1,
+      failed: Boolean(result.failed) || result.exitCode !== 0,
+    };
+    if (timedOut) out.timedOut = true;
+    if (manuallyAborted) out.aborted = true;
+    return out;
+  } finally {
+    if (timer) clearTimeout(timer);
+    abortCurrent = previous;
+  }
 }
 
 export async function commandExists(command: string): Promise<boolean> {

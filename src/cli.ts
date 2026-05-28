@@ -5,6 +5,7 @@ import { listCommand } from "./commands/list.js";
 import { updateCommand } from "./commands/update.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { menuCommand } from "./commands/menu.js";
+import { setInstallTimeoutSeconds } from "./core/runner.js";
 
 const program = new Command();
 
@@ -43,11 +44,25 @@ program
   .option("-y, --yes", "Skip la confirmation en mode --all")
   .option("-p, --provider <ids...>", "Restreint à certains providers")
   .option("--fast", "Skip les scans lents")
+  .option(
+    "--timeout <seconds>",
+    "Timeout par install en secondes — l'install bloquée est skippée (0 = désactivé)",
+  )
   .action(
     async (
       targets: string[],
-      opts: { all?: boolean; yes?: boolean; provider?: string[]; fast?: boolean },
+      opts: { all?: boolean; yes?: boolean; provider?: string[]; fast?: boolean; timeout?: string },
     ) => {
+      if (opts.timeout !== undefined) {
+        const seconds = Number(opts.timeout);
+        if (!Number.isFinite(seconds) || seconds < 0) {
+          process.stderr.write(
+            `${chalk.red("Error:")} --timeout attend un nombre de secondes >= 0\n`,
+          );
+          process.exit(2);
+        }
+        setInstallTimeoutSeconds(seconds);
+      }
       const code = await updateCommand({
         ...(targets.length > 0 && { targets }),
         ...(opts.all !== undefined && { all: opts.all }),
