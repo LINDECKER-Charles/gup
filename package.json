@@ -99,7 +99,7 @@
   "devDependencies": {
     "@types/node": "^25.9.3",
     "@types/semver": "^7.5.8",
-    "@typescript-eslint/eslint-plugin": "^8.61.1",
+    "@typescript-eslint/eslint-plugin": "^8.62.0",
     "@typescript-eslint/parser": "^8.60.0",
     "@vitest/coverage-v8": "^4.1.9",
     "audit-ci": "^7.1.0",
