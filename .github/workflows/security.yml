@@ -24,7 +24,7 @@ jobs:
     name: security tests + eslint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
@@ -39,7 +39,7 @@ jobs:
     name: npm audit (audit-ci)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
@@ -55,7 +55,7 @@ jobs:
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
@@ -71,7 +71,7 @@ jobs:
       # returntocorp/* is deprecated; semgrep/semgrep is the current image.
       image: semgrep/semgrep:latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # `semgrep ci` assumes the Semgrep AppSec Platform (baseline diff, app
       # token, findings upload). Without those it returns 2. `semgrep scan`
       # is the local-OSS entry point — same rules, no platform dependency.
@@ -85,7 +85,7 @@ jobs:
     # licensing call fails with "repository not found"). The binary itself is
     # MIT-licensed and free for any repo.
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Install gitleaks
