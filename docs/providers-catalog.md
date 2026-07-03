@@ -178,7 +178,7 @@ Unified overview — implementation status, sources, and out-of-scope items. Sou
 | `nerdctl` | nerdctl (containerd) | ✅ |
 | `oras` | ORAS | ✅ |
 | `dive` | dive | ✅ |
-| `docker-images` | Pinned Docker tags | ✅ |
+| `docker-images` | Pinned Docker tags | ❌ removed — local images are workload artifacts, not tools to update |
 | `docker-desktop` | Docker Desktop | ✅ scan-only |
 | `podman-desktop` | Podman Desktop | ✅ scan-only |
 | `rancher-desktop` | Rancher Desktop | ✅ scan-only |

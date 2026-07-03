@@ -117,7 +117,6 @@ export const providers = [
   { id: "nerdctl",         name: "nerdctl",        category: "Containers" },
   { id: "oras",            name: "ORAS",           category: "Containers", slow: true },
   { id: "dive",            name: "dive",           category: "Containers", slow: true },
-  { id: "docker-images",   name: "Docker images",  category: "Containers" },
   { id: "docker-desktop",  name: "Docker Desktop", category: "Containers" },
   { id: "podman-desktop",  name: "Podman Desktop", category: "Containers" },
   { id: "rancher-desktop", name: "Rancher Desktop",category: "Containers" },

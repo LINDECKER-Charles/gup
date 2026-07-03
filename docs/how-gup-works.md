@@ -139,7 +139,7 @@ src/
 │   ├── cloud/                # az, gcloud, aws-cli-v2, oci, scw, hcloud, linode, doctl, supabase, heroku, railway, flyctl
 │   ├── iac/                  # terraform, opentofu, terragrunt, vault, consul, nomad, packer, boundary, tflint, pulumi
 │   ├── kubernetes/           # helm, helm-repo, helm-plugins, kubectl, krew, kustomize, flux, argocd, k3d, kind, minikube, skaffold, tilt
-│   ├── containers/           # nerdctl, oras, dive, docker-images, docker-desktop, podman-desktop, rancher-desktop
+│   ├── containers/           # nerdctl, oras, dive, docker-desktop, podman-desktop, rancher-desktop
 │   ├── security/             # trivy, grype, syft, cosign, rekor, gitsign, nuclei, nuclei-templates, pdtm, semgrep
 │   ├── dev-cli/              # lazygit, lazydocker, jj, delta, glab, tea, gh-extensions
 │   ├── ide/                  # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains (+ manual-only refs: jetbrains-plugins, zed-ext, sublime-pc, obsidian-plugins, unity-hub, notepad-pp, eclipse-marketplace)
@@ -717,7 +717,7 @@ Canonical source: [`docs/providers-catalog.md`](./providers-catalog.md). Current
 | Cloud CLIs | 12 | az, gcloud, aws, oci, scw, hcloud, linode, doctl, supabase, heroku, railway, flyctl |
 | IaC | 10 | terraform, opentofu, terragrunt, vault, consul, nomad, packer, boundary, tflint, pulumi |
 | Kubernetes / Helm | 13 | helm, helm-repo, helm-plugins, kubectl, krew, kustomize, flux, argocd, k3d, kind, minikube, skaffold, tilt |
-| Containers | 7 | nerdctl, oras, dive, docker-images, docker-desktop, podman-desktop, rancher-desktop |
+| Containers | 6 | nerdctl, oras, dive, docker-desktop, podman-desktop, rancher-desktop |
 | Security scanning | 10 | trivy, grype, syft, cosign, rekor, gitsign, nuclei, nuclei-templates, pdtm, semgrep |
 | Dev CLIs | 7 | lazygit, lazydocker, jj, delta, glab, tea, gh-extensions |
 | IDEs / Extensions | 5 | vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains |

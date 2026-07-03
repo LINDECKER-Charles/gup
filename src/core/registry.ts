@@ -118,7 +118,6 @@ import { TiltProvider } from "../providers/kubernetes/tilt.js";
 import { NerdctlProvider } from "../providers/containers/nerdctl.js";
 import { OrasProvider } from "../providers/containers/oras.js";
 import { DiveProvider } from "../providers/containers/dive.js";
-import { DockerImagesProvider } from "../providers/containers/docker-images.js";
 import { DockerDesktopProvider } from "../providers/containers/docker-desktop.js";
 import { PodmanDesktopProvider } from "../providers/containers/podman-desktop.js";
 import { RancherDesktopProvider } from "../providers/containers/rancher-desktop.js";
@@ -299,7 +298,6 @@ export const ALL_PROVIDERS: Provider[] = [
   new NerdctlProvider(),
   new OrasProvider(),
   new DiveProvider(),
-  new DockerImagesProvider(),
   new DockerDesktopProvider(),
   new PodmanDesktopProvider(),
   new RancherDesktopProvider(),
