@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type {
   OutdatedPackage,
   Provider,
@@ -14,8 +15,11 @@ import type {
 export class WingetProvider implements Provider {
   readonly id = "winget";
   readonly displayName = "Winget";
-  readonly installHint =
-    "PrÃ©-installÃ© sur Windows 11. Sinon: https://aka.ms/getwinget";
+  readonly installHint = pickInstallHint({
+    win32: "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget",
+    fallback:
+      "Winget est un composant Windows — il n'existe pas sur cette plateforme.",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("winget");
@@ -76,7 +80,7 @@ export class WingetProvider implements Provider {
     // Retryable until the explicit uninstall+install fallback has been
     // attempted. Earlier tiers (--force, --uninstall-previous) sometimes
     // refuse to proceed (unknown current version, "no applicable upgrade",
-    // technology change detected post-download) â€” the CLI walks through
+    // technology change detected post-download) — the CLI walks through
     // progressively more aggressive strategies on subsequent passes.
     return { id: packageId, success: false, retryable: true };
   }
@@ -195,7 +199,7 @@ export function parseWingetTable(output: string): WingetRow[] {
       }
       // End of table: hit a non-row marker (counts, explanatory text, next header).
       if (headerRe.test(line)) break;
-      if (/^\s*\d+\s+(upgrades?|package|mises?\s+Ã )/i.test(line)) {
+      if (/^\s*\d+\s+(upgrades?|package|mises?\s+à)/i.test(line)) {
         i++;
         continue;
       }

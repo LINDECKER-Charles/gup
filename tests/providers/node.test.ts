@@ -172,6 +172,33 @@ describe("BunGlobalProvider", () => {
     ]);
   });
 
+  it("parses the real tree-prefixed layout `bun pm ls -g` actually prints", async () => {
+    // Regression guard. Every other fixture in this file feeds two-space
+    // indented lines, but bun prints a box-drawing tree. The prefix
+    // alternation in the provider had been corrupted into double-encoded
+    // UTF-8 (`â”œâ”€â”€` instead of `├──`), so it could never match real output
+    // and every tree-prefixed package was silently dropped from the scan —
+    // a bug no fixture here could reveal.
+    runMock.mockResolvedValueOnce(
+      mkRun(
+        [
+          "/home/user/.bun/install/global node_modules (3)",
+          "├── typescript@5.0.0",
+          "└── @scope/pkg@1.0.0",
+        ].join("\n"),
+      ),
+    );
+    fetchMock.mockImplementation(async (url: string) =>
+      jsonResponse({ version: url.includes("typescript") ? "5.1.0" : "2.0.0" }),
+    );
+
+    const rows = await new BunGlobalProvider().listOutdated();
+    expect(rows).toEqual([
+      { id: "typescript", name: "typescript", current: "5.0.0", latest: "5.1.0" },
+      { id: "@scope/pkg", name: "@scope/pkg", current: "1.0.0", latest: "2.0.0" },
+    ]);
+  });
+
   it("listOutdated swallows fetch errors", async () => {
     runMock.mockResolvedValueOnce(mkRun("  typescript@5.0.0"));
     fetchMock.mockRejectedValueOnce(new Error("network"));

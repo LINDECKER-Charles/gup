@@ -59,6 +59,23 @@ describe("parseWingetTable", () => {
     expect(rows[1]?.available).toBe("2.44.0");
   });
 
+  it("never turns a French summary line into a package row", () => {
+    // The end-of-table guard matches the localized summary ("N mises à jour /
+    // à niveau disponibles."). Its pattern had been corrupted into
+    // double-encoded UTF-8 (`mises?\s+Ã ` instead of `mises?\s+à`), so on a
+    // French Windows it could never fire and the summary line fell through to
+    // the column slicer. Pinned here for both phrasings winget emits.
+    for (const summary of [
+      "2 mises à jour disponibles.",
+      "2 mises à niveau disponibles.",
+      "1 mise à niveau disponible.",
+    ]) {
+      const table = FR_TABLE.replace("2 mises à jour disponibles.", summary);
+      const rows = parseWingetTable(table);
+      expect(rows.map((r) => r.id)).toEqual(["Google.Chrome", "Git.Git"]);
+    }
+  });
+
   it("parses BOTH tables when winget emits a second pinned-upgrades section", () => {
     const rows = parseWingetTable(PINNED_SECOND_TABLE);
     const ids = rows.map((r) => r.id);

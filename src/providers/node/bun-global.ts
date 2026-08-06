@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -9,7 +10,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class BunGlobalProvider implements Provider {
   readonly id = "bun-g";
   readonly displayName = "Bun global";
-  readonly installHint = "https://bun.sh";
+  readonly installHint = pickInstallHint({
+    win32: "https://bun.sh",
+    fallback: "brew install bun",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
@@ -20,11 +24,11 @@ export class BunGlobalProvider implements Provider {
     const { stdout, failed } = await run("bun", ["pm", "ls", "-g"]);
     if (failed) return [];
 
-    // Output format: "<path>\nâ”œâ”€â”€ pkg@1.2.3\nâ””â”€â”€ @scope/pkg@4.5.6\n"
+    // Output format: "<path>\n├── pkg@1.2.3\n└── @scope/pkg@4.5.6\n"
     const installed: { name: string; current: string }[] = [];
     for (const rawLine of stdout.split(/\r?\n/)) {
       const line = rawLine.trim();
-      const m = line.match(/^(?:â”œâ”€â”€|â””â”€â”€|[â”‚ ]\s+)?\s*(@?[\w./-]+)@([0-9][^\s]*)/);
+      const m = line.match(/^(?:├──|└──|[│ ]\s+)?\s*(@?[\w./-]+)@([0-9][^\s]*)/);
       if (!m) continue;
       const [, name, current] = m;
       if (!name || !current) continue;
