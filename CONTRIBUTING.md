@@ -29,7 +29,16 @@ npm run build
 npm link            # exposes gup globally (optional)
 ```
 
-Requirements: **Node ≥ 20**, PowerShell or Bash. To iterate without rebuilding: `npm run dev -- <args>` (uses `tsx`).
+Requirements: **Node ≥ 22**, any shell. To iterate without rebuilding: `npm run dev -- <args>` (uses `tsx`).
+
+### Two deliberate version pins
+
+Both show up in `npm outdated`; neither is an oversight, so please don't "fix" them without checking these reasons still hold.
+
+| Package | Pinned to | Why |
+|---|---|---|
+| `typescript` | `^6` | typescript-eslint does not support the TypeScript 7 API yet — `npm run lint` and `npm run lint:security` both fail outright on TS 7 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)). `tsc --noEmit` and the build are fine on 7; the linters are the blocker. |
+| `@types/node` | `^22` | Matched to the `engines.node` floor on purpose. Typing against the *minimum* supported runtime is what makes `tsc` reject an API that only exists on Node 24/26 — bumping these types to the latest silently removes that guard. Raise it only together with `engines`. |
 
 ---
 
@@ -229,7 +238,9 @@ npm run test:security         # security suite (shell-usage, http-targets, insta
 npm run security              # audit-ci + lint:security + test:security
 ```
 
-Cross-platform CI: **Ubuntu** + **Windows**, Node **20** & **22**. Every PR that adds a provider must pass all four combinations.
+Cross-platform CI: **Windows** + **macOS** + **Ubuntu**, Node **22** & **24**. Every PR that adds a provider must pass all six combinations.
+
+Because the matrix now runs on three OSes, a provider must never build a path with the platform-dependent `path.join` inside a platform-specific branch: use `path.win32.join` for a Windows path and `path.posix.join` for a POSIX one. Otherwise the unit tests — which mock `process.platform` — only pass on a matching runner.
 
 ### Coverage
 

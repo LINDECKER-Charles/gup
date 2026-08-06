@@ -2,7 +2,7 @@
 
 > Source document for the explanatory site. Aimed at intermediate / advanced developers. Covers **the entirety** of `gup`'s operation: motivation, model, architecture, command lifecycle, internal contracts, resilience patterns, security, build.
 >
-> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 20), ESM, `execa`, `commander`, `@inquirer/prompts`, `chalk`, `cli-table3`, `ora`, `p-limit`. No browser runtime, no UI framework: this is a pure CLI.
+> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 22), ESM, `execa`, `commander`, `@inquirer/prompts`, `chalk`, `cli-table3`, `ora`, `p-limit`. No browser runtime, no UI framework: this is a pure CLI.
 
 ---
 
@@ -37,11 +37,13 @@ Observation: **no native tool covers the entire surface**. The practical consequ
 - Not a package manager. It does not *publish* anything, does not *resolve* any dependency, holds no shared state.
 - Not a permanent agent. No daemon, no tray, no background polling. Everything is on-demand.
 - Not a project-scoped tool. `package.json`, `requirements.txt`, `Cargo.toml`, `composer.json` — out of scope. `gup` exclusively targets the **global** installs on a machine.
-- Not a Windows Update / driver / kernel tool. `PSWindowsUpdate` already covers that.
+- Not an OS-update tool. Windows Update / drivers / kernel are covered by `PSWindowsUpdate`; macOS releases and XProtect are covered by `softwareupdate`. Same rule on both platforms.
 
 ### Explicit out-of-scope (cf. `README.md` §❌)
 
 - Windows Update OS / OEM drivers / SYSTEM services / DISM / provisioned Appx.
+- macOS system updates (`softwareupdate`, XProtect/MRT, Command Line Tools).
+- Apple's system Ruby (`/usr/bin/gem`): frozen under SIP, `gem update` cannot succeed there, so the `gem` provider hides itself rather than reporting ~40 unfixable gems.
 - Project-scoped lockfiles (Maven, Gradle, sbt, bundler, `npm ci`, `pip-tools sync`).
 - JetBrains Toolbox-managed IDEs (the Toolbox ships its own updater).
 
@@ -582,7 +584,18 @@ Detects WSL distros (`wsl -l -q`), invokes Linux commands through `wsl -d <distr
 
 ### 8.4 `install-source.ts`
 
-Inverse heuristic: given a binary on PATH, guess which PM installed it (based on the resolved path — `%LOCALAPPDATA%\Microsoft\WinGet\Packages\…` → winget, `~\scoop\…` → scoop, etc.). Exposed via `delegateUpdate()`, used by providers that don't self-update and must reroute to their host PM (e.g. `gh`).
+Inverse heuristic: given a binary on PATH, guess which PM installed it (based on the resolved path — `%LOCALAPPDATA%\Microsoft\WinGet\Packages\…` → winget, `~\scoop\…` → scoop, `/opt/homebrew/Cellar/…` → brew, etc.). Exposed via `delegateUpdate()`, used by providers that don't self-update and must reroute to their host PM (e.g. `gh`).
+
+Sources: `scoop`, `choco`, `winget`, `brew`, `apt`, `dnf`, `manual`.
+
+Two POSIX-only refinements sit on top of the plain path match:
+
+- **Symlink resolution.** Homebrew only exposes a symlink on PATH (`/opt/homebrew/bin/kubectl` → `../Cellar/kubernetes-cli/1.36.3/bin/kubectl`). `which` reports the link, so without `realpath` every brew install would classify as `manual` — and since providers turn `manual` into `manual: true`, which `scanAll` filters out, every brew-installed tool was **silently invisible** on macOS. This is the single change that makes the macOS scan honest.
+- **Package-database probe.** Distro packages live in shared prefixes (`/usr/bin`) that carry no ownership signal in the path; `dpkg -S` / `rpm -qf` are the only reliable answer. Only consulted for paths under a system prefix, and only on Linux.
+
+Neither runs on Windows. The win32 branch was restructured — the `where` probe moved out of `detectInstallSource` into the shared `resolveBinaryPath()` — but it is semantically identical, and `tests/core/install-source-macos.test.ts` pins the properties that matter: `realpath` is never called, no extra probe is spawned, and the scoop/choco/winget verdicts are unchanged.
+
+The Homebrew classifier is deliberately conservative: `/opt/homebrew` and `.linuxbrew` are brew-exclusive prefixes, but `/usr/local` is shared with hand-installs, so it only counts when combined with a `Cellar`/`Caskroom` segment. A directory merely *named* `cellar` never routes an upgrade to brew — pinned by `tests/security/install-source.test.ts`.
 
 ### 8.5 `corepack-ownership.ts`
 
@@ -706,6 +719,7 @@ Canonical source: [`docs/providers-catalog.md`](./providers-catalog.md). Current
 | Category | # | Examples |
 |---|---:|---|
 | OS / Windows | 3 | winget, scoop, choco |
+| OS / macOS | 4 | brew, brew-cask, mas, macports |
 | WSL | 7 | wsl, wsl-apt, wsl-dnf, wsl-pacman, wsl-brew, wsl-flatpak, wsl-nix |
 | Node.js / JS | 9 | npm-g, pnpm-g, yarn-g, bun-g, deno, corepack, fnm, volta, nvm-windows |
 | Python | 8 | pip, pipx, uv-tools, poetry, pdm, rye, pyenv-win, conda |
@@ -799,7 +813,7 @@ Significant attack surface (shell-out to ~130 third-party tools). See `SECURITY.
 
 ## 16. Tests
 
-Stack: Vitest + v8 coverage. Cross-platform CI: Ubuntu + Windows × Node 20 + Node 22.
+Stack: Vitest + v8 coverage. Cross-platform CI: Windows + macOS + Ubuntu × Node 22 + Node 24.
 
 ```bash
 npm run typecheck             # tsc strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes

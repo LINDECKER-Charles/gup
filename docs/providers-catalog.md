@@ -1,6 +1,6 @@
 # Providers catalog
 
-Unified overview — implementation status, sources, and out-of-scope items. Source: `src/core/registry.ts` (`ALL_PROVIDERS`). Snapshot: 2026-05-19.
+Unified overview — implementation status, sources, and out-of-scope items. Source: `src/core/registry.ts` (`ALL_PROVIDERS`, 134 entries). Snapshot: 2026-08-05.
 
 ## Legend
 
@@ -12,7 +12,7 @@ Unified overview — implementation status, sources, and out-of-scope items. Sou
 | ➡️ | Absorbed — covered by an existing provider |
 | ❌ | Out of scope |
 
-**Global out-of-scope**: the Windows OS itself (Windows Update, WSUS, `PSWindowsUpdate`, OEM drivers, SYSTEM services, DISM, provisioned Appx, M365 Click-to-Run) and anything project-scoped (Maven, Gradle, sbt, bundler, `npm ci`, `pip-tools sync`, lockfiles).
+**Global out-of-scope**: the OS itself — Windows (Windows Update, WSUS, `PSWindowsUpdate`, OEM drivers, SYSTEM services, DISM, provisioned Appx, M365 Click-to-Run) and macOS (`softwareupdate`, XProtect/MRT, Command Line Tools, Apple's SIP-frozen system Ruby) — plus anything project-scoped (Maven, Gradle, sbt, bundler, `npm ci`, `pip-tools sync`, lockfiles).
 
 ---
 
@@ -23,6 +23,24 @@ Unified overview — implementation status, sources, and out-of-scope items. Sou
 | `winget` | Windows Package Manager | ✅ |
 | `scoop` | Scoop | ✅ |
 | `choco` | Chocolatey | ✅ |
+
+## 1b. OS / macOS
+
+| ID | Source | Status |
+|---|---|---|
+| `brew` | Homebrew formulae (`brew outdated --formula`) | ✅ |
+| `brew-cask` | Homebrew casks (GUI apps, `/Applications`) | ✅ |
+| `mas` | Mac App Store, via the `mas` CLI | ✅ |
+| `macports` | MacPorts (`port outdated`, upgrades via `sudo`) | ✅ |
+| `softwareupdate` | macOS releases / XProtect / CLT | ❌ out of scope (OS-level) |
+
+`brew` also covers **Linuxbrew**, so it is not gated on darwin. `brew-cask`,
+`mas` and `macports` are macOS-only and report themselves unavailable elsewhere.
+
+Native Linux distro packages are not standalone providers: `apt` and `dnf` are
+reachable as **delegation targets** (`InstallSource`), so a tool installed by
+the distro is upgraded through `sudo apt-get install --only-upgrade` /
+`sudo dnf upgrade` rather than being reported as manual.
 
 ## 2. WSL
 

@@ -377,7 +377,8 @@ Modules in `core/` shared between providers — always stateless.
 | `gh-releases.ts` | Latest GitHub Releases tag (helm-plugins, lazygit, jj, …). Fetch + parse + caching of the in-flight request only. |
 | `hashicorp-releases.ts` | HashiCorp index (`releases.hashicorp.com`) for terraform/vault/consul/nomad/packer/boundary. |
 | `wsl.ts` | Shared `wsl -d <distro> -- <cmd>` bridge for every `wsl-*` provider. |
-| `install-source.ts` | Decides which PM owns a binary (`%LocalAppData%\Microsoft\WinGet` → winget, `~\scoop\shims` → scoop, …). Security-critical → pinned. |
+| `install-source.ts` | Decides which PM owns a binary (`%LocalAppData%\Microsoft\WinGet` → winget, `~\scoop\shims` → scoop, `/opt/homebrew/Cellar` → brew, `dpkg -S` → apt, …). Resolves POSIX symlinks first, so a Homebrew shim is classified by its Cellar target. Security-critical → pinned. |
+| `install-hint.ts` | Picks the `installHint` matching the running platform, so `gup doctor` never suggests `winget install …` on a Mac. |
 | `corepack-ownership.ts` | Detects whether pnpm/yarn are managed by corepack so the update is routed to the right place. |
 | `nvim-paths.ts` | Resolves cross-platform Neovim config paths (lazy/packer/mason). |
 

@@ -3,7 +3,7 @@
 # `gup` — Global Updater
 
 **One command to scan and update everything installed on your machine.**
-winget, scoop, choco, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, dotnet tools, helm, kubectl, terraform, vscode extensions, JetBrains, WSL distros…
+winget, scoop, choco, brew, casks, Mac App Store, MacPorts, apt, dnf, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, dotnet tools, helm, kubectl, terraform, vscode extensions, JetBrains, WSL distros…
 
 [**Homepage**](https://lindecker-charles.github.io/gup/) · [**npm**](https://www.npmjs.com/package/@charles_lindecker/gup) · [**Docs**](docs/) · [**Providers (130+)**](docs/providers-catalog.md)
 
@@ -17,11 +17,11 @@ winget, scoop, choco, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, dotnet to
 
 [![npm](https://img.shields.io/npm/v/@charles_lindecker/gup?logo=npm&color=CB3837)](https://www.npmjs.com/package/@charles_lindecker/gup)
 [![npm downloads](https://img.shields.io/npm/dm/@charles_lindecker/gup?logo=npm&color=CB3837&label=downloads)](https://www.npmjs.com/package/@charles_lindecker/gup)
-[![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node](https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20WSL-0078D6?logo=windows)](https://learn.microsoft.com/windows/wsl/)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20WSL-4c6ef5)](#platform-support)
 [![Providers](https://img.shields.io/badge/providers-130%2B-brightgreen)](docs/providers-catalog.md)
 [![GitHub stars](https://img.shields.io/github/stars/LINDECKER-Charles/gup?style=social)](https://github.com/LINDECKER-Charles/gup/stargazers)
 
@@ -31,7 +31,7 @@ winget, scoop, choco, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, dotnet to
 
 ## TL;DR
 
-```powershell
+```bash
 npm install -g @charles_lindecker/gup
 gup                # interactive menu
 gup list --fast    # fast scan
@@ -40,13 +40,13 @@ gup update --all   # update everything
 
 ## Why `gup`
 
-On a dev machine, binaries come from **dozens of sources** (winget, scoop, npm-g, cargo, pipx, dotnet tools, vscode-ext, JetBrains, helm, terraform, kubectl…). No native tool covers them all — `winget upgrade --all` silently skips pinned packages, `ncu -g` only sees npm, and every cloud/IaC/K8s CLI ships its own `self-update`. `gup` unifies the whole thing behind a single CLI plus an interactive menu.
+On a dev machine, binaries come from **dozens of sources** (winget, scoop, brew, npm-g, cargo, pipx, dotnet tools, vscode-ext, JetBrains, helm, terraform, kubectl…). No native tool covers them all — `winget upgrade --all` silently skips pinned packages, `brew upgrade` never sees your npm globals or your VS Code extensions, `ncu -g` only sees npm, and every cloud/IaC/K8s CLI ships its own `self-update`. `gup` unifies the whole thing behind a single CLI plus an interactive menu.
 
 ## Installation
 
 ### Via npm (recommended)
 
-```powershell
+```bash
 npm install -g @charles_lindecker/gup
 ```
 
@@ -54,7 +54,7 @@ Package: [`@charles_lindecker/gup`](https://www.npmjs.com/package/@charles_linde
 
 ### From source
 
-```powershell
+```bash
 git clone https://github.com/LINDECKER-Charles/gup.git
 cd gup
 npm install
@@ -62,11 +62,25 @@ npm run build
 npm link            # exposes the `gup` command globally
 ```
 
-Requirements: **Node ≥ 20**, PowerShell or Bash. Works on Windows / WSL / Linux.
+Requirements: **Node ≥ 22**, and any shell (PowerShell, bash, zsh, fish).
+
+### Platform support
+
+| Platform | OS-level providers | Status |
+|---|---|---|
+| **Windows** | winget, scoop, chocolatey | Primary target. Adds the WSL bridge (apt, dnf, pacman, brew, flatpak, nix inside your distros) and the UAC elevation batch. |
+| **macOS** | Homebrew (formulae + casks), Mac App Store (`mas`), MacPorts | Binaries installed by brew are detected through their Cellar/Caskroom symlink, so upgrades are delegated back to brew instead of being reported as manual. |
+| **Linux** | Homebrew/Linuxbrew, apt, dnf | Ownership of a binary under a system prefix is resolved via `dpkg -S` / `rpm -qf`. |
+
+Everything above the OS layer — npm/pnpm/yarn/bun globals, pip/pipx/uv, cargo,
+gem, composer, the cloud/IaC/K8s CLIs, VS Code & JetBrains — is
+platform-independent and works the same everywhere the underlying tool runs.
+Providers that cannot exist on a platform (winget on a Mac, MacPorts on
+Windows) simply report themselves as unavailable and never appear in a scan.
 
 ## Usage
 
-```powershell
+```bash
 gup                                                  # interactive menu
 gup list                                             # list outdated packages
 gup list --fast                                      # skip slow scans
@@ -129,7 +143,7 @@ retry prompt.
 | **Dependencies** | `audit-ci` + Dependabot (weekly grouped) |
 | **Lint** | `eslint-plugin-security` |
 
-```powershell
+```bash
 npm run security        # audit + eslint-security + tests/security
 ```
 
@@ -137,7 +151,7 @@ Reporting: [private security advisory](https://github.com/LINDECKER-Charles/gup/
 
 ## Tests
 
-```powershell
+```bash
 npm run typecheck             # tsc strict + noUncheckedIndexedAccess
 npm run test:run              # vitest one-shot
 npm run test:coverage         # vitest + v8 coverage
@@ -145,11 +159,13 @@ npm run test:security         # security suite only
 npm run lint                  # eslint
 ```
 
-Cross-platform CI: **Ubuntu** + **Windows**, Node **20** & **22**.
+Cross-platform CI: **Windows** + **macOS** + **Ubuntu**, Node **22** & **24** — the two LTS lines still under support.
 
 ## Out of scope
 
 - **Windows Update OS / drivers** → `PSWindowsUpdate`
+- **macOS system updates** (`softwareupdate`, XProtect, Command Line Tools) → same rule as Windows Update: OS releases aren't gup's business
+- **Apple's system Ruby** → frozen by Apple under SIP; `gem update` there cannot succeed, so the `gem` provider hides itself when it resolves to `/usr/bin/gem`
 - **Maven / Gradle / sbt / bundler / lockfiles** → project-scoped, not global
 - **JetBrains Toolbox-managed IDEs** → the Toolbox ships its own updater
 
