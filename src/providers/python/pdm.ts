@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -12,7 +13,10 @@ interface PypiJson {
 export class PdmProvider implements Provider {
   readonly id = "pdm";
   readonly displayName = "PDM";
-  readonly installHint = "https://pdm-project.org/en/latest/#installation";
+  readonly installHint = pickInstallHint({
+    win32: "https://pdm-project.org/en/latest/#installation",
+    fallback: "brew install pdm",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("pdm");

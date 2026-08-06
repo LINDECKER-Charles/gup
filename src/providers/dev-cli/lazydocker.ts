@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -15,7 +16,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class LazydockerProvider implements Provider {
   readonly id = "lazydocker";
   readonly displayName = "Lazydocker";
-  readonly installHint = "winget install JesseDuffield.Lazydocker";
+  readonly installHint = pickInstallHint({
+    win32: "winget install JesseDuffield.Lazydocker",
+    fallback: "brew install lazydocker",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("lazydocker");
@@ -53,9 +57,10 @@ export class LazydockerProvider implements Provider {
         scoop: "lazydocker",
         choco: "lazydocker",
         winget: "JesseDuffield.Lazydocker",
+        brew: "lazydocker",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/jesseduffield/lazydocker/releases et remplacer lazydocker.exe",
+        "Télécharger https://github.com/jesseduffield/lazydocker/releases et remplacer lazydocker.exe",
     });
   }
 

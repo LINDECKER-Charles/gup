@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run } from "../../core/runner.js";
 import {
   delegateUpdate,
@@ -8,13 +9,16 @@ import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Volta â€” Node toolchain manager. `volta --version` prints "1.1.1".
- * No self-update â€” delegate to source PM.
+ * Volta — Node toolchain manager. `volta --version` prints "1.1.1".
+ * No self-update — delegate to source PM.
  */
 export class VoltaProvider implements Provider {
   readonly id = "volta";
   readonly displayName = "Volta";
-  readonly installHint = "winget install Volta.Volta";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Volta.Volta",
+    fallback: "brew install volta",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("volta");
@@ -52,9 +56,10 @@ export class VoltaProvider implements Provider {
         scoop: "volta",
         choco: "volta",
         winget: "Volta.Volta",
+        brew: "volta",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/volta-cli/volta/releases et remplacer volta.exe",
+        "Télécharger https://github.com/volta-cli/volta/releases et remplacer volta.exe",
     });
   }
 

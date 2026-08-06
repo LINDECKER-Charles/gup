@@ -5,16 +5,20 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * OpenTofu (Terraform fork). No self-update â€” delegate to the source PM.
+ * OpenTofu (Terraform fork). No self-update — delegate to the source PM.
  * Version line example: "OpenTofu v1.7.2"
  */
 export class OpenTofuProvider implements Provider {
   readonly id = "opentofu";
   readonly displayName = "OpenTofu";
-  readonly installHint = "winget install OpenTofu.Tofu";
+  readonly installHint = pickInstallHint({
+    win32: "winget install OpenTofu.Tofu",
+    fallback: "brew install opentofu",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("tofu");
@@ -52,9 +56,12 @@ export class OpenTofuProvider implements Provider {
         scoop: "opentofu",
         choco: "opentofu",
         winget: "OpenTofu.Tofu",
+        // Formule homebrew-core "opentofu" (le binaire s'appelle `tofu`).
+        // Le cask homonyme "tofu" est un autre logiciel : pas de brewCask.
+        brew: "opentofu",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/opentofu/opentofu/releases/latest et remplacer tofu.exe",
+        "Télécharger https://github.com/opentofu/opentofu/releases/latest et remplacer tofu.exe",
     });
   }
 

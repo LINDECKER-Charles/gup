@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface MiseOutdatedEntry {
@@ -18,7 +19,10 @@ interface MiseOutdatedEntry {
 export class MiseProvider implements Provider {
   readonly id = "mise";
   readonly displayName = "mise (toolchains)";
-  readonly installHint = "https://mise.jdx.dev";
+  readonly installHint = pickInstallHint({
+    win32: "https://mise.jdx.dev",
+    fallback: "brew install mise",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("mise");

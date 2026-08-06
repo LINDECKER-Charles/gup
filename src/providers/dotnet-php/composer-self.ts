@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PackagistPackageJson {
@@ -20,7 +21,10 @@ interface PackagistPackageJson {
 export class ComposerSelfProvider implements Provider {
   readonly id = "composer-self";
   readonly displayName = "Composer";
-  readonly installHint = "https://getcomposer.org/download/";
+  readonly installHint = pickInstallHint({
+    win32: "https://getcomposer.org/download/",
+    fallback: "brew install composer",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("composer");

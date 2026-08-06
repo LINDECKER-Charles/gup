@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface ComposerOutdated {
@@ -13,7 +14,10 @@ interface ComposerOutdated {
 export class ComposerGlobalProvider implements Provider {
   readonly id = "composer-g";
   readonly displayName = "Composer (global)";
-  readonly installHint = "https://getcomposer.org/download/";
+  readonly installHint = pickInstallHint({
+    win32: "https://getcomposer.org/download/",
+    fallback: "brew install composer",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("composer");

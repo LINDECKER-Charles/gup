@@ -1,16 +1,22 @@
 import pLimit from "p-limit";
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Krew: plugins manager for kubectl. No native "outdated" command â€”
+ * Krew: plugins manager for kubectl. No native "outdated" command —
  * we list installed plugins, then fetch each plugin's manifest from the
  * krew-index repo and compare versions.
  */
 export class KrewProvider implements Provider {
   readonly id = "krew";
   readonly displayName = "Krew (kubectl plugins)";
-  readonly installHint = "https://krew.sigs.k8s.io/docs/user-guide/setup/install/";
+  readonly installHint = pickInstallHint({
+    // Sur Windows l'installation passe par le script officiel : pas de
+    // paquet natif. Homebrew fournit la formule sur macOS et Linuxbrew.
+    win32: "https://krew.sigs.k8s.io/docs/user-guide/setup/install/",
+    fallback: "brew install krew",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
@@ -81,7 +87,7 @@ async function fetchKrewPluginVersion(name: string): Promise<string | null> {
     const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
     if (!res.ok) return null;
     const text = await res.text();
-    // YAML root-level `version: <v>` â€” manifests are simple enough for regex.
+    // YAML root-level `version: <v>` — manifests are simple enough for regex.
     const match = text.match(/^\s*version:\s*"?([^"\r\n]+)"?\s*$/m);
     return match?.[1]?.trim() ?? null;
   } catch {

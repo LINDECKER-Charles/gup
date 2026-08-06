@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class JujutsuProvider implements Provider {
   readonly id = "jj";
   readonly displayName = "Jujutsu (jj)";
-  readonly installHint = "winget install martinvonz.jj";
+  readonly installHint = pickInstallHint({
+    win32: "winget install martinvonz.jj",
+    fallback: "brew install jj",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("jj");
@@ -50,9 +54,10 @@ export class JujutsuProvider implements Provider {
       packageIds: {
         scoop: "jj",
         winget: "martinvonz.jj",
+        brew: "jj",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/jj-vcs/jj/releases ou `cargo install --locked jj-cli`",
+        "Télécharger https://github.com/jj-vcs/jj/releases ou `cargo install --locked jj-cli`",
     });
   }
 

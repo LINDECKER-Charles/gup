@@ -1,9 +1,10 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * goenv (go-nv/goenv) â€” Go version manager. Almost always installed as a
+ * goenv (go-nv/goenv) — Go version manager. Almost always installed as a
  * git clone of the repo; in that case `goenv update` (the bundled command
  * provided by the `goenv-update` plugin) fast-forwards to upstream.
  *
@@ -15,7 +16,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class GoenvProvider implements Provider {
   readonly id = "goenv";
   readonly displayName = "goenv";
-  readonly installHint = "https://github.com/go-nv/goenv";
+  readonly installHint = pickInstallHint({
+    win32: "https://github.com/go-nv/goenv",
+    fallback: "brew install goenv",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("goenv");
@@ -38,7 +42,7 @@ export class GoenvProvider implements Provider {
   async update(_packageId: string): Promise<UpdateOutcome> {
     // `goenv update` is provided by the bundled goenv-update plugin and is
     // the canonical self-update path for git-clone installs. Falls back to
-    // failure if the plugin isn't present â€” user can refresh via git pull.
+    // failure if the plugin isn't present — user can refresh via git pull.
     const res = await runInherit("goenv", ["update"]);
     if (res.failed) {
       return {
@@ -46,7 +50,7 @@ export class GoenvProvider implements Provider {
         success: false,
         skipped: true,
         message:
-          "`goenv update` indisponible â€” mettre Ã  jour via `git -C $(goenv root) pull`",
+          "`goenv update` indisponible — mettre à jour via `git -C $(goenv root) pull`",
       };
     }
     return { id: "goenv", success: true };

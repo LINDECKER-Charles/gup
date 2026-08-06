@@ -1,15 +1,21 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * pyenv-win â€” Windows port of pyenv. Has built-in self-update via
+ * pyenv-win — Windows port of pyenv. Has built-in self-update via
  * `pyenv update`. Version: `pyenv --version` -> "pyenv 3.1.1".
  */
 export class PyenvWinProvider implements Provider {
   readonly id = "pyenv-win";
   readonly displayName = "pyenv-win";
-  readonly installHint = "https://github.com/pyenv-win/pyenv-win";
+  // Port Windows-only : hors win32, c'est le pyenv amont (pyenv/pyenv) qu'il
+  // faut installer, un projet distinct avec sa propre formule Homebrew.
+  readonly installHint = pickInstallHint({
+    win32: "https://github.com/pyenv-win/pyenv-win",
+    fallback: "Windows uniquement — équivalent macOS/Linux : brew install pyenv",
+  });
 
   async isAvailable(): Promise<boolean> {
     if (process.platform !== "win32") return false;

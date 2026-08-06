@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { win32 as winPath } from "node:path";
 import { run } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -11,7 +12,13 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class RancherDesktopProvider implements Provider {
   readonly id = "rancher-desktop";
   readonly displayName = "Rancher Desktop";
-  readonly installHint = "winget install SUSE.RancherDesktop";
+  // Détection basée sur les chemins Windows + VersionInfo : ailleurs le
+  // provider ne remonte rien, même si l'application existe sur la plateforme.
+  readonly installHint = pickInstallHint({
+    win32: "winget install SUSE.RancherDesktop",
+    darwin: "brew install --cask rancher (suivi gup : Windows uniquement)",
+    fallback: "Suivi par gup sous Windows uniquement.",
+  });
 
   async isAvailable(): Promise<boolean> {
     return rancherDesktopExe() !== null;
@@ -46,7 +53,7 @@ export class RancherDesktopProvider implements Provider {
       success: false,
       skipped: true,
       message:
-        "Lancer Rancher Desktop â†’ Preferences â†’ Check for Updates pour appliquer.",
+        "Lancer Rancher Desktop → Preferences → Check for Updates pour appliquer.",
     };
   }
 
@@ -58,10 +65,12 @@ export class RancherDesktopProvider implements Provider {
 
 function rancherDesktopExe(): string | null {
   const local = process.env["LOCALAPPDATA"] ?? "";
+  // `winPath.join` : ces chemins restent des chemins Windows quelle que soit
+  // la machine qui exécute le code (les tests simulent win32 depuis POSIX).
   const candidates = [
-    local && join(local, "Programs", "Rancher Desktop", "Rancher Desktop.exe"),
+    local && winPath.join(local, "Programs", "Rancher Desktop", "Rancher Desktop.exe"),
     process.env["ProgramFiles"]
-      ? join(process.env["ProgramFiles"]!, "Rancher Desktop", "Rancher Desktop.exe")
+      ? winPath.join(process.env["ProgramFiles"]!, "Rancher Desktop", "Rancher Desktop.exe")
       : null,
   ].filter((p): p is string => Boolean(p));
   return candidates.find((p) => existsSync(p)) ?? null;

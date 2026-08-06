@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchHashicorpLatest } from "../../core/hashicorp-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -14,7 +15,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class NomadProvider implements Provider {
   readonly id = "nomad";
   readonly displayName = "Nomad";
-  readonly installHint = "winget install HashiCorp.Nomad";
+  // Les outils HashiCorp ont quitté homebrew-core : ils ne vivent plus que
+  // dans le tap hashicorp/tap, d'où le `brew tap` explicite dans le hint.
+  readonly installHint = pickInstallHint({
+    win32: "winget install HashiCorp.Nomad",
+    fallback: "brew tap hashicorp/tap && brew install nomad",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("nomad");
@@ -54,9 +60,12 @@ export class NomadProvider implements Provider {
         scoop: "nomad",
         choco: "nomad",
         winget: "HashiCorp.Nomad",
+        // Formule du tap hashicorp/tap : une fois installée, le nom court
+        // suffit à `brew upgrade`.
+        brew: "nomad",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://releases.hashicorp.com/nomad/ et remplacer nomad.exe",
+        "Télécharger https://releases.hashicorp.com/nomad/ et remplacer nomad.exe",
     });
   }
 

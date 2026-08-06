@@ -5,6 +5,7 @@ import {
   runPmUpdate,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -18,7 +19,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class HerokuProvider implements Provider {
   readonly id = "heroku";
   readonly displayName = "Heroku CLI";
-  readonly installHint = "https://devcenter.heroku.com/articles/heroku-cli";
+  readonly installHint = pickInstallHint({
+    win32: "https://devcenter.heroku.com/articles/heroku-cli",
+    fallback: "brew install heroku",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("heroku");
@@ -53,8 +57,13 @@ export class HerokuProvider implements Provider {
       return runPmUpdate(
         "heroku",
         source,
-        { scoop: "heroku-cli", choco: "heroku-cli", winget: "Heroku.HerokuCLI" },
-        "RÃ©installer depuis https://devcenter.heroku.com/articles/heroku-cli",
+        {
+          scoop: "heroku-cli",
+          choco: "heroku-cli",
+          winget: "Heroku.HerokuCLI",
+          brew: "heroku",
+        },
+        "Réinstaller depuis https://devcenter.heroku.com/articles/heroku-cli",
       );
     }
     // Standalone tarball install: built-in updater.

@@ -1,4 +1,5 @@
 import { commandExists, run } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import {
   delegateUpdate,
   describeSource,
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class SyftProvider implements Provider {
   readonly id = "syft";
   readonly displayName = "Syft";
-  readonly installHint = "https://github.com/anchore/syft#installation";
+  readonly installHint = pickInstallHint({
+    win32: "https://github.com/anchore/syft#installation",
+    fallback: "brew install syft",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("syft");
@@ -51,9 +55,10 @@ export class SyftProvider implements Provider {
         scoop: "syft",
         choco: "syft",
         winget: "Anchore.Syft",
+        brew: "syft",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/anchore/syft/releases et remplacer syft.exe",
+        "Télécharger https://github.com/anchore/syft/releases et remplacer syft.exe",
     });
   }
 

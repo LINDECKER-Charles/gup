@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -14,7 +15,10 @@ interface NpmOutdatedEntry {
 export class NpmGlobalProvider implements Provider {
   readonly id = "npm-g";
   readonly displayName = "npm (global)";
-  readonly installHint = "Installer Node.js: https://nodejs.org";
+  readonly installHint = pickInstallHint({
+    win32: "Installer Node.js: https://nodejs.org",
+    fallback: "brew install node",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("npm");

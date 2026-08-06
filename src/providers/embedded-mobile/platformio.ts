@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PypiJson {
@@ -6,7 +7,7 @@ interface PypiJson {
 }
 
 /**
- * PlatformIO (`pio`). Distributed via pip â€” self-update goes through `pio upgrade`.
+ * PlatformIO (`pio`). Distributed via pip — self-update goes through `pio upgrade`.
  * The CLI also manages embedded library/platform packages (`pio pkg update -g`)
  * but we keep the scope to the binary itself to avoid running long network
  * scans per global package.
@@ -16,7 +17,10 @@ interface PypiJson {
 export class PlatformIoProvider implements Provider {
   readonly id = "platformio";
   readonly displayName = "PlatformIO Core";
-  readonly installHint = "pip install --user platformio";
+  readonly installHint = pickInstallHint({
+    win32: "pip install --user platformio",
+    fallback: "brew install platformio",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("pio");

@@ -1,8 +1,9 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Hex â€” the Erlang/Elixir package manager. We update only the Hex archive
+ * Hex — the Erlang/Elixir package manager. We update only the Hex archive
  * itself (`mix local.hex --force`); per-project deps live in `mix.exs` and
  * are out of scope for a global updater.
  *
@@ -12,7 +13,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class HexProvider implements Provider {
   readonly id = "hex";
   readonly displayName = "Hex (Elixir)";
-  readonly installHint = "https://elixir-lang.org/install.html";
+  readonly installHint = pickInstallHint({
+    win32: "https://elixir-lang.org/install.html",
+    fallback: "brew install elixir",
+  });
 
   async isAvailable(): Promise<boolean> {
     if (!(await commandExists("mix"))) return false;

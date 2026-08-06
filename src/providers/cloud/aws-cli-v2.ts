@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -17,7 +18,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class AwsCliV2Provider implements Provider {
   readonly id = "aws-cli-v2";
   readonly displayName = "AWS CLI v2";
-  readonly installHint = "winget install Amazon.AWSCLI";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Amazon.AWSCLI",
+    fallback: "brew install awscli",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("aws");
@@ -56,9 +60,10 @@ export class AwsCliV2Provider implements Provider {
         scoop: "aws",
         choco: "awscli",
         winget: "Amazon.AWSCLI",
+        brew: "awscli",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://awscli.amazonaws.com/AWSCLIV2.msi et relancer l'installeur",
+        "Télécharger https://awscli.amazonaws.com/AWSCLIV2.msi et relancer l'installeur",
     });
   }
 

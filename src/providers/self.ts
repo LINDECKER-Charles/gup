@@ -12,7 +12,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js"
 /**
  * Meta-provider that surfaces self-updates of the package managers themselves
  * (the binaries `gup` orchestrates). Per `docs/providers-catalog.md` § 10:
- * tracks winget, scoop, choco, npm, pnpm, yarn, pip, pipx and gh.
+ * tracks winget, scoop, choco, npm, pnpm, yarn, pip, pipx and gh — plus brew,
+ * the same role on macOS/Linuxbrew.
  *
  * Each target advertises its current version via its own `--version` output
  * and compares it against the canonical upstream registry/release feed
@@ -37,7 +38,7 @@ export class SelfProvider implements Provider {
     // Light up as soon as at least one tracked PM is on PATH. Cheap probe:
     // commandExists is a `where`/`which` lookup, fan-out is fine.
     const checks = await Promise.all(
-      TARGETS.map((t) => commandExists(t.binary)),
+      activeTargets().map((t) => commandExists(t.binary)),
     );
     return checks.some(Boolean);
   }
@@ -52,7 +53,7 @@ export class SelfProvider implements Provider {
       isCorepackShim("pnpm"),
       isCorepackShim("yarn"),
     ]);
-    const targets = TARGETS.filter((t) => {
+    const targets = activeTargets().filter((t) => {
       if (t.id === "pnpm" && pnpmOwned) return false;
       if (t.id === "yarn" && yarnOwned) return false;
       return true;
@@ -79,7 +80,7 @@ export class SelfProvider implements Provider {
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
-    const target = TARGETS.find((t) => t.id === packageId);
+    const target = activeTargets().find((t) => t.id === packageId);
     if (!target) {
       return { id: packageId, success: false, message: "Cible self inconnue" };
     }
@@ -106,6 +107,22 @@ interface SelfTarget {
   /** Surface row but mark as manual:true — filtered out of "Update all". */
   manual?: boolean;
   manualMessage?: string;
+  /**
+   * Platforms the target can exist on. Omitted means "everywhere".
+   *
+   * Filtering here rather than relying on the PATH probe matters: a target
+   * that cannot exist on the running OS would still cost a `where`/`which`
+   * spawn per scan, and would light up on the strength of a shim that merely
+   * forwards elsewhere (a `brew.cmd` bridging into WSL, say).
+   */
+  platforms?: readonly NodeJS.Platform[];
+}
+
+/** Targets that can exist on the running platform. */
+function activeTargets(): SelfTarget[] {
+  return TARGETS.filter(
+    (t) => !t.platforms || t.platforms.includes(process.platform),
+  );
 }
 
 async function runStdout(cmd: string, args: string[]): Promise<string> {
@@ -168,15 +185,18 @@ async function resolvePythonForPip(): Promise<string | null> {
   const pipPath = await whichFirst("pip");
   if (!pipPath) return null;
 
+  // Explicit path flavours rather than the host-dependent `path.*`: a
+  // `C:\…\python.exe` stays a Windows path even when the process building it
+  // runs on macOS (unit tests mock `process.platform`), and vice versa.
   if (process.platform === "win32") {
-    const installRoot = path.dirname(path.dirname(pipPath));
-    const python = path.join(installRoot, "python.exe");
+    const installRoot = path.win32.dirname(path.win32.dirname(pipPath));
+    const python = path.win32.join(installRoot, "python.exe");
     return (await pathExists(python)) ? python : null;
   }
 
-  const binDir = path.dirname(pipPath);
+  const binDir = path.posix.dirname(pipPath);
   for (const candidate of ["python3", "python"]) {
-    const p = path.join(binDir, candidate);
+    const p = path.posix.join(binDir, candidate);
     if (await pathExists(p)) return p;
   }
   return null;
@@ -260,6 +280,29 @@ const TARGETS: SelfTarget[] = [
       }
       const res = await runInherit("choco", ["upgrade", "chocolatey", "-y"]);
       return { id: "choco", success: !res.failed };
+    },
+  },
+
+  // `brew update` is Homebrew's own self-update: it fast-forwards the brew
+  // git repo (and every tap index) without touching installed formulae —
+  // upgrading those is BrewProvider's job. `brew --version` prints
+  // "Homebrew X.Y.Z" on its first line; upstream tags live on Homebrew/brew.
+  {
+    id: "brew",
+    displayName: "Homebrew",
+    binary: "brew",
+    platforms: ["darwin", "linux"],
+    current: async () => {
+      const out = await runStdout("brew", ["--version"]);
+      // A brew checkout ahead of the last tag reports a git-describe suffix
+      // ("4.6.15-56-g1a2b3c4") that no GitHub release carries; keeping it
+      // would report a permanent, unfixable drift.
+      return parseFirstSemver(out.replace(/-\d+-g[0-9a-f]+/i, ""));
+    },
+    latest: async () => fetchGitHubReleaseLatest("Homebrew/brew"),
+    update: async () => {
+      const res = await runInherit("brew", ["update"]);
+      return { id: "brew", success: !res.failed };
     },
   },
 

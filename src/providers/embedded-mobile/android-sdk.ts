@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -6,7 +7,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  *
  * `sdkmanager --list` prints three sections separated by blank-line headers:
  *   "Installed packages:", "Available Packages:", "Available Updates:".
- * Only the Updates section is parsed here â€” each row is fixed-width with a
+ * Only the Updates section is parsed here — each row is fixed-width with a
  * "Package | Installed | Available" layout (column separator is `|`).
  *
  * Update path: `sdkmanager --update` upgrades every installed package in one
@@ -15,13 +16,16 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  * `sdkmanager --install "<pkg>"` since `--update` does not accept a filter.
  *
  * License prompts (`y/N`) are unavoidable on first install of new components
- * â€” we stream stdio so the user can accept them. `runInherit` does this.
+ * — we stream stdio so the user can accept them. `runInherit` does this.
  */
 export class AndroidSdkProvider implements Provider {
   readonly id = "android-sdk";
   readonly displayName = "Android SDK";
-  readonly installHint =
-    "Installer Android Studio ou les Command-line Tools (sdkmanager) â€” https://developer.android.com/tools";
+  readonly installHint = pickInstallHint({
+    win32:
+      "Installer Android Studio ou les Command-line Tools (sdkmanager) — https://developer.android.com/tools",
+    fallback: "brew install --cask android-commandlinetools",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

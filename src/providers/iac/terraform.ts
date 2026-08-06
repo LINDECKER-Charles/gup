@@ -4,6 +4,7 @@ import {
   describeSource,
   detectInstallSource,
 } from "../../core/install-source.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface TerraformVersionJson {
@@ -17,13 +18,18 @@ interface HashicorpReleaseJson {
 
 /**
  * Terraform has no self-update. `terraform version -json` includes an
- * `terraform_outdated` field but doesn't surface the latest version â€” we
+ * `terraform_outdated` field but doesn't surface the latest version — we
  * use HashiCorp's releases API for that.
  */
 export class TerraformProvider implements Provider {
   readonly id = "terraform";
   readonly displayName = "Terraform";
-  readonly installHint = "winget install HashiCorp.Terraform";
+  // Les outils HashiCorp ont quitté homebrew-core : ils ne vivent plus que
+  // dans le tap hashicorp/tap, d'où le `brew tap` explicite dans le hint.
+  readonly installHint = pickInstallHint({
+    win32: "winget install HashiCorp.Terraform",
+    fallback: "brew tap hashicorp/tap && brew install terraform",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("terraform");
@@ -66,9 +72,12 @@ export class TerraformProvider implements Provider {
         scoop: "terraform",
         choco: "terraform",
         winget: "HashiCorp.Terraform",
+        // Formule du tap hashicorp/tap : une fois installée, le nom court
+        // suffit à `brew upgrade`.
+        brew: "terraform",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://releases.hashicorp.com/terraform/ et remplacer terraform.exe",
+        "Télécharger https://releases.hashicorp.com/terraform/ et remplacer terraform.exe",
     });
   }
 

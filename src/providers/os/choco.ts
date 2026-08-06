@@ -1,8 +1,9 @@
 import { commandExists, isElevated, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 const NOT_ADMIN_MESSAGE =
-  "Chocolatey nÃ©cessite un terminal admin. Relancer gup depuis PowerShell ou Terminal lancÃ© en Â« ExÃ©cuter en tant qu'administrateur Â».";
+  "Chocolatey nécessite un terminal admin. Relancer gup depuis PowerShell ou Terminal lancé en « Exécuter en tant qu'administrateur ».";
 
 /**
  * `choco outdated -r --limit-output` emits: name|currentVersion|availableVersion|pinned
@@ -10,7 +11,11 @@ const NOT_ADMIN_MESSAGE =
 export class ChocoProvider implements Provider {
   readonly id = "choco";
   readonly displayName = "Chocolatey";
-  readonly installHint = "https://chocolatey.org/install";
+  readonly installHint = pickInstallHint({
+    win32: "https://chocolatey.org/install",
+    fallback:
+      "Chocolatey est un gestionnaire Windows — il n'existe pas sur cette plateforme (utiliser Homebrew).",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("choco");

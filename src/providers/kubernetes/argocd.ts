@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class ArgoCdProvider implements Provider {
   readonly id = "argocd";
   readonly displayName = "ArgoCD CLI";
-  readonly installHint = "winget install Argo.ArgoCD";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Argo.ArgoCD",
+    fallback: "brew install argocd",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("argocd");
@@ -51,9 +55,10 @@ export class ArgoCdProvider implements Provider {
         scoop: "argo-cd",
         choco: "argocd-cli",
         winget: "Argo.ArgoCD",
+        brew: "argocd",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/argoproj/argo-cd/releases et remplacer argocd.exe",
+        "Télécharger https://github.com/argoproj/argo-cd/releases et remplacer argocd.exe",
     });
   }
 

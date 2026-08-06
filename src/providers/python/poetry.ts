@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -6,7 +7,7 @@ interface PypiJson {
 }
 
 /**
- * Poetry self-update. Only the Poetry binary itself â€” the dependencies it
+ * Poetry self-update. Only the Poetry binary itself — the dependencies it
  * manages live in per-project virtualenvs (out of scope for a global updater).
  *
  * `poetry --version --no-ansi` prints "Poetry (version 1.8.3)".
@@ -14,7 +15,10 @@ interface PypiJson {
 export class PoetryProvider implements Provider {
   readonly id = "poetry";
   readonly displayName = "Poetry";
-  readonly installHint = "https://python-poetry.org/docs/#installation";
+  readonly installHint = pickInstallHint({
+    win32: "https://python-poetry.org/docs/#installation",
+    fallback: "brew install poetry",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("poetry");

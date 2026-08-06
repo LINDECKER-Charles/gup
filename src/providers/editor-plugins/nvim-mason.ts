@@ -5,12 +5,12 @@ import { nvimDataDir } from "../../core/nvim-paths.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * mason.nvim â€” LSP/DAP/linter/formatter manager.
+ * mason.nvim — LSP/DAP/linter/formatter manager.
  *
  * `:MasonUpdate` refreshes Mason's package registries. Upgrading installed
  * packages individually requires `:MasonInstall <name>` (Mason has no
  * built-in "upgrade all"). We invoke `:MasonUpdate` followed by Mason's
- * own log-driven upgrade prompt â€” users who want bulk upgrades should rely
+ * own log-driven upgrade prompt — users who want bulk upgrades should rely
  * on `mason-tool-installer` plugin (`:MasonToolsUpdate`), which we attempt
  * silently if defined.
  */
@@ -31,7 +31,7 @@ export class NvimMasonProvider implements Provider {
         name: "mason update",
         current: "?",
         latest: "refresh",
-        note: "Met Ã  jour les registres + outils Mason",
+        note: "Met à jour les registres + outils Mason",
       },
     ];
   }

@@ -5,16 +5,22 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * TFLint (Terraform linter). No self-update â€” delegate to the source PM.
+ * TFLint (Terraform linter). No self-update — delegate to the source PM.
  * Version output (first line): "TFLint version 0.50.3"
  */
 export class TFLintProvider implements Provider {
   readonly id = "tflint";
   readonly displayName = "TFLint";
-  readonly installHint = "winget install TerraformLinters.tflint";
+  // Pas de formule "tflint" dans homebrew-core : on renvoie vers la doc
+  // amont plutôt que d'annoncer une commande brew qui n'existe pas.
+  readonly installHint = pickInstallHint({
+    win32: "winget install TerraformLinters.tflint",
+    fallback: "https://github.com/terraform-linters/tflint#installation",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("tflint");
@@ -52,9 +58,13 @@ export class TFLintProvider implements Provider {
         scoop: "tflint",
         choco: "tflint",
         winget: "TerraformLinters.tflint",
+        // Volontairement pas de `brew`: aucune formule "tflint" n'existe dans
+        // homebrew-core et le tap amont n'a pas pu être vérifié. Un id faux
+        // ferait upgrader autre chose ; sans id on retombe sur le message
+        // manuel, ce qui est le comportement sûr.
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/terraform-linters/tflint/releases et remplacer tflint.exe",
+        "Télécharger https://github.com/terraform-linters/tflint/releases et remplacer tflint.exe",
     });
   }
 

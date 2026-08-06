@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
@@ -9,7 +10,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class RyeProvider implements Provider {
   readonly id = "rye";
   readonly displayName = "Rye";
-  readonly installHint = "https://rye.astral.sh/";
+  readonly installHint = pickInstallHint({
+    win32: "https://rye.astral.sh/",
+    fallback: "brew install rye",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("rye");

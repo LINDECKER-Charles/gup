@@ -283,12 +283,13 @@ describe("boundary provider", () => {
     delegateUpdateMock.mockResolvedValueOnce({ id: "boundary", success: true });
     await new BoundaryProvider().update("boundary");
     const call = delegateUpdateMock.mock.calls[0]![0] as {
-      packageIds: { scoop?: string; choco?: string; winget?: string };
+      packageIds: { scoop?: string; choco?: string; winget?: string; brew?: string };
     };
     expect(call.packageIds).toEqual({
       scoop: "boundary",
       choco: "boundary",
       winget: "HashiCorp.Boundary",
+      brew: "boundary",
     });
   });
 
@@ -411,7 +412,7 @@ describe("terraform provider", () => {
     const call = delegateUpdateMock.mock.calls[0]![0] as {
       id: string;
       binary: string;
-      packageIds: { scoop?: string; choco?: string; winget?: string };
+      packageIds: { scoop?: string; choco?: string; winget?: string; brew?: string };
     };
     expect(call.id).toBe("terraform");
     expect(call.binary).toBe("terraform");
@@ -419,6 +420,7 @@ describe("terraform provider", () => {
       scoop: "terraform",
       choco: "terraform",
       winget: "HashiCorp.Terraform",
+      brew: "terraform",
     });
   });
 

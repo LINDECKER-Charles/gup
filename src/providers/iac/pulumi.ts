@@ -4,6 +4,7 @@ import {
   describeSource,
   detectInstallSource,
 } from "../../core/install-source.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class PulumiProvider implements Provider {
   readonly id = "pulumi";
   readonly displayName = "Pulumi";
-  readonly installHint = "https://www.pulumi.com/docs/install/";
+  readonly installHint = pickInstallHint({
+    win32: "https://www.pulumi.com/docs/install/",
+    fallback: "brew install pulumi",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("pulumi");
@@ -51,9 +55,10 @@ export class PulumiProvider implements Provider {
         scoop: "pulumi",
         choco: "pulumi",
         winget: "Pulumi.Pulumi",
+        brew: "pulumi",
       },
       manualMessage:
-        "RÃ©installer via https://www.pulumi.com/docs/install/ (le script tÃ©lÃ©charge la derniÃ¨re version).",
+        "Réinstaller via https://www.pulumi.com/docs/install/ (le script télécharge la dernière version).",
     });
   }
 

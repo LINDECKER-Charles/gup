@@ -1,10 +1,11 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
  * Helm chart repositories. Distinct from the `helm` binary provider:
  * this one runs `helm repo update` to refresh the local repo cache
- * (no per-chart upgrade â€” Helm doesn't track installed releases without
+ * (no per-chart upgrade — Helm doesn't track installed releases without
  * cluster connectivity).
  *
  * Surfaces as one synthetic "all repos" entry whenever at least one repo
@@ -14,7 +15,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class HelmRepoProvider implements Provider {
   readonly id = "helm-repo";
   readonly displayName = "Helm repositories";
-  readonly installHint = "winget install Helm.Helm";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Helm.Helm",
+    fallback: "brew install helm",
+  });
 
   async isAvailable(): Promise<boolean> {
     if (!(await commandExists("helm"))) return false;
@@ -45,7 +49,7 @@ export class HelmRepoProvider implements Provider {
         name: "helm repo update",
         current: "?",
         latest: "refresh",
-        note: `${repos.length} repo(s) configurÃ©s`,
+        note: `${repos.length} repo(s) configurés`,
       },
     ];
   }

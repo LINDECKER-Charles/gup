@@ -4,12 +4,12 @@ import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Corepack â€” Node.js' built-in shim for pnpm / yarn. We only surface the
+ * Corepack — Node.js' built-in shim for pnpm / yarn. We only surface the
  * package managers Corepack actually serves (i.e. the binary on PATH resolves
  * to a Corepack shim) and compare their versions to the npm registry.
  *
  * Update path: `corepack use <pm>@latest` (pins in the current project) is
- * not what we want here â€” we want the *global* default, hence
+ * not what we want here — we want the *global* default, hence
  * `corepack prepare <pm>@latest --activate`.
  *
  * Skipped when corepack isn't enabled (the shims aren't on PATH yet), since
@@ -18,7 +18,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CorepackProvider implements Provider {
   readonly id = "corepack";
   readonly displayName = "Corepack";
-  readonly installHint = "Bundled with Node.js â‰¥ 14.19 â€” `corepack enable`";
+  readonly installHint = "Bundled with Node.js ≥ 14.19 — `corepack enable`";
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

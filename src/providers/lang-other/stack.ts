@@ -1,16 +1,20 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Stack â€” Haskell's curated build tool. Self-update via `stack upgrade`.
+ * Stack — Haskell's curated build tool. Self-update via `stack upgrade`.
  *
  * `stack --version` prints "Version 2.15.5, Git revision ... x86_64 hpack-...".
  */
 export class StackProvider implements Provider {
   readonly id = "stack";
   readonly displayName = "Stack (Haskell)";
-  readonly installHint = "https://docs.haskellstack.org/en/stable/install_and_upgrade/";
+  readonly installHint = pickInstallHint({
+    win32: "https://docs.haskellstack.org/en/stable/install_and_upgrade/",
+    fallback: "brew install haskell-stack",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("stack");

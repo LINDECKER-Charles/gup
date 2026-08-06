@@ -9,7 +9,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  * `lazy-lock.json` under nvim config dir. We can't cheaply enumerate
  * outdated plugins from outside the editor (Lazy keeps per-plugin git
  * heads in its lock file, but resolving "latest" requires hitting each
- * upstream remote) â€” surface a synthetic "sync" entry instead, same
+ * upstream remote) — surface a synthetic "sync" entry instead, same
  * shape as the `helm-repo` provider.
  */
 export class NvimLazyProvider implements Provider {

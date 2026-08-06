@@ -1,4 +1,5 @@
 import { commandExists, run } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import {
   delegateUpdate,
   describeSource,
@@ -15,7 +16,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class GitsignProvider implements Provider {
   readonly id = "gitsign";
   readonly displayName = "gitsign";
-  readonly installHint = "scoop install gitsign";
+  readonly installHint = pickInstallHint({
+    win32: "scoop install gitsign",
+    fallback: "brew install gitsign",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("gitsign");
@@ -53,9 +57,10 @@ export class GitsignProvider implements Provider {
       binary: "gitsign",
       packageIds: {
         scoop: "gitsign",
+        brew: "gitsign",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/sigstore/gitsign/releases et remplacer gitsign.exe",
+        "Télécharger https://github.com/sigstore/gitsign/releases et remplacer gitsign.exe",
     });
   }
 

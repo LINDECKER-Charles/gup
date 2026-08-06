@@ -1,9 +1,10 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Coursier (`cs`) â€” Scala/JVM artifact fetcher & launcher.
+ * Coursier (`cs`) — Scala/JVM artifact fetcher & launcher.
  *
  * `cs --version` prints "Coursier 2.1.10 (...)" (or just the number on older
  * installs). `cs update` updates every installed app shim.
@@ -11,7 +12,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CoursierCsProvider implements Provider {
   readonly id = "coursier-cs";
   readonly displayName = "Coursier (cs)";
-  readonly installHint = "https://get-coursier.io/docs/cli-installation";
+  readonly installHint = pickInstallHint({
+    win32: "https://get-coursier.io/docs/cli-installation",
+    fallback: "brew install coursier",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("cs");

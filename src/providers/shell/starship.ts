@@ -1,4 +1,5 @@
 import { commandExists, run } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import {
   delegateUpdate,
   describeSource,
@@ -9,13 +10,16 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 
 /**
  * Starship cross-shell prompt. `starship --version` prints "starship 1.21.1".
- * Pas de self-update â€” dÃ©lÃ©gation au PM d'origine (scoop / choco / winget /
- * cargo). Si binaire posÃ© manuellement, on signale `manual:true`.
+ * Pas de self-update — délégation au PM d'origine (scoop / choco / winget /
+ * cargo). Si binaire posé manuellement, on signale `manual:true`.
  */
 export class StarshipProvider implements Provider {
   readonly id = "starship";
   readonly displayName = "Starship";
-  readonly installHint = "winget install Starship.Starship";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Starship.Starship",
+    fallback: "brew install starship",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("starship");
@@ -53,9 +57,10 @@ export class StarshipProvider implements Provider {
         scoop: "starship",
         choco: "starship",
         winget: "Starship.Starship",
+        brew: "starship",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/starship/starship/releases ou `cargo install starship --locked`",
+        "Télécharger https://github.com/starship/starship/releases ou `cargo install starship --locked`",
     });
   }
 

@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -10,7 +11,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class JBangProvider implements Provider {
   readonly id = "jbang";
   readonly displayName = "JBang";
-  readonly installHint = "https://www.jbang.dev/download/";
+  readonly installHint = pickInstallHint({
+    win32: "https://www.jbang.dev/download/",
+    fallback: "brew install jbang",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("jbang");

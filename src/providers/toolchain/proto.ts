@@ -1,5 +1,6 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface ProtoOutdatedEntry {
@@ -9,7 +10,7 @@ interface ProtoOutdatedEntry {
 }
 
 /**
- * proto (moonrepo) â€” poly-runtime toolchain manager. Cross-platform binary.
+ * proto (moonrepo) — poly-runtime toolchain manager. Cross-platform binary.
  *
  * Scope split:
  *  - The proto binary itself is reported under id "proto" (latest via GitHub
@@ -23,7 +24,10 @@ interface ProtoOutdatedEntry {
 export class ProtoProvider implements Provider {
   readonly id = "proto";
   readonly displayName = "proto (moonrepo)";
-  readonly installHint = "https://moonrepo.dev/docs/proto/install";
+  readonly installHint = pickInstallHint({
+    win32: "https://moonrepo.dev/docs/proto/install",
+    fallback: "brew install proto",
+  });
   readonly slow = true; // `proto outdated` hits the network per managed tool.
 
   async isAvailable(): Promise<boolean> {

@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PwshModuleRow {
@@ -25,13 +26,16 @@ $results | ConvertTo-Json -Compress -Depth 3
 
 /**
  * Uses pwsh (cross-platform) if available, else falls back to powershell.exe.
- * Querying PSGallery for every module is slow â€” provider sits behind the
+ * Querying PSGallery for every module is slow — provider sits behind the
  * generic parallel scan and the user can opt out by filtering providers.
  */
 export class PwshModulesProvider implements Provider {
   readonly id = "pwsh-modules";
   readonly displayName = "PowerShell modules";
-  readonly installHint = "PowerShell 7+: `winget install Microsoft.PowerShell`";
+  readonly installHint = pickInstallHint({
+    win32: "PowerShell 7+: `winget install Microsoft.PowerShell`",
+    fallback: "PowerShell 7+: `brew install powershell`",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

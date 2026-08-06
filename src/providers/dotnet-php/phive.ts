@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -12,7 +13,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class PhiveProvider implements Provider {
   readonly id = "phive";
   readonly displayName = "PHIVE";
-  readonly installHint = "https://phar.io/";
+  readonly installHint = pickInstallHint({
+    win32: "https://phar.io/",
+    fallback: "brew install phive",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("phive");

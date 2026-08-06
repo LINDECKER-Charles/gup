@@ -121,7 +121,12 @@ interface SimpleSpec {
   versionArgs: string[];
   versionStdout: (v: string) => string;
   unparsable: string;
-  expectedPackageIds: { scoop?: string; choco?: string; winget?: string };
+  expectedPackageIds: {
+    scoop?: string;
+    choco?: string;
+    winget?: string;
+    brew?: string;
+  };
 }
 
 const simpleSpecs: SimpleSpec[] = [
@@ -133,7 +138,12 @@ const simpleSpecs: SimpleSpec[] = [
     versionArgs: ["version", "--client", "--short"],
     versionStdout: (v) => `argocd: v${v}+abcdef`,
     unparsable: "no version here",
-    expectedPackageIds: { scoop: "argo-cd", choco: "argocd-cli", winget: "Argo.ArgoCD" },
+    expectedPackageIds: {
+      scoop: "argo-cd",
+      choco: "argocd-cli",
+      winget: "Argo.ArgoCD",
+      brew: "argocd",
+    },
   },
   {
     name: "flux",
@@ -143,7 +153,14 @@ const simpleSpecs: SimpleSpec[] = [
     versionArgs: ["--version"],
     versionStdout: (v) => `flux version ${v}`,
     unparsable: "no number",
-    expectedPackageIds: { scoop: "flux", choco: "flux", winget: "FluxCD.Flux" },
+    // flux lives in the fluxcd tap, not homebrew-core — the tap-qualified name
+    // is what `brew upgrade` resolves for an installed tap formula.
+    expectedPackageIds: {
+      scoop: "flux",
+      choco: "flux",
+      winget: "FluxCD.Flux",
+      brew: "fluxcd/tap/flux",
+    },
   },
   {
     name: "k3d",
@@ -153,7 +170,12 @@ const simpleSpecs: SimpleSpec[] = [
     versionArgs: ["version"],
     versionStdout: (v) => `k3d version v${v}\nk3s version v1.28.x`,
     unparsable: "garbage output without anything",
-    expectedPackageIds: { scoop: "k3d", choco: "k3d", winget: "k3d-io.k3d" },
+    expectedPackageIds: {
+      scoop: "k3d",
+      choco: "k3d",
+      winget: "k3d-io.k3d",
+      brew: "k3d",
+    },
   },
   {
     name: "kind",
@@ -163,7 +185,12 @@ const simpleSpecs: SimpleSpec[] = [
     versionArgs: ["version"],
     versionStdout: (v) => `kind v${v} go1.22.x linux/amd64`,
     unparsable: "wrong header",
-    expectedPackageIds: { scoop: "kind", choco: "kind", winget: "Kubernetes.kind" },
+    expectedPackageIds: {
+      scoop: "kind",
+      choco: "kind",
+      winget: "Kubernetes.kind",
+      brew: "kind",
+    },
   },
   {
     name: "minikube",
@@ -173,7 +200,12 @@ const simpleSpecs: SimpleSpec[] = [
     versionArgs: ["version"],
     versionStdout: (v) => `minikube version: v${v}\ncommit: deadbeef`,
     unparsable: "wrong header line",
-    expectedPackageIds: { scoop: "minikube", choco: "minikube", winget: "Kubernetes.minikube" },
+    expectedPackageIds: {
+      scoop: "minikube",
+      choco: "minikube",
+      winget: "Kubernetes.minikube",
+      brew: "minikube",
+    },
   },
   {
     name: "skaffold",
@@ -183,7 +215,12 @@ const simpleSpecs: SimpleSpec[] = [
     versionArgs: ["version"],
     versionStdout: (v) => `v${v}`,
     unparsable: "abcdef",
-    expectedPackageIds: { scoop: "skaffold", choco: "skaffold", winget: "Google.Skaffold" },
+    expectedPackageIds: {
+      scoop: "skaffold",
+      choco: "skaffold",
+      winget: "Google.Skaffold",
+      brew: "skaffold",
+    },
   },
   {
     name: "tilt",
@@ -193,7 +230,7 @@ const simpleSpecs: SimpleSpec[] = [
     versionArgs: ["version"],
     versionStdout: (v) => `v${v}, built 2024-01-01`,
     unparsable: "no semver token",
-    expectedPackageIds: { scoop: "tilt" },
+    expectedPackageIds: { scoop: "tilt", brew: "tilt" },
   },
 ];
 
@@ -381,6 +418,7 @@ describe("helm provider", () => {
       scoop: "helm",
       choco: "kubernetes-helm",
       winget: "Helm.Helm",
+      brew: "helm",
     });
   });
 
@@ -490,6 +528,7 @@ describe("kubectl provider", () => {
       scoop: "kubectl",
       choco: "kubernetes-cli",
       winget: "Kubernetes.kubectl",
+      brew: "kubernetes-cli",
     });
   });
 
@@ -585,6 +624,7 @@ describe("kustomize provider", () => {
       scoop: "kustomize",
       choco: "kustomize",
       winget: "Kubernetes.kustomize",
+      brew: "kustomize",
     });
   });
 

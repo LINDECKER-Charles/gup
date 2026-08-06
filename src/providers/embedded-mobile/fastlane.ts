@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface RubygemsVersionResponse {
@@ -6,20 +7,23 @@ interface RubygemsVersionResponse {
 }
 
 /**
- * Fastlane CLI. Distributed via RubyGems â€” covered by the generic `gem`
+ * Fastlane CLI. Distributed via RubyGems — covered by the generic `gem`
  * provider, but we keep a dedicated entry because mobile/embedded users are
  * unlikely to scan their entire gem set and fastlane's own update path
  * (`fastlane update_fastlane`) bypasses sudo prompts on system Ruby installs.
  *
  * Version source: `fastlane --version` (first line prints "fastlane <ver>",
- * subsequent lines list plugin versions which we ignore here â€” fastlane has
+ * subsequent lines list plugin versions which we ignore here — fastlane has
  * its own `fastlane update_plugins` workflow that should not be invoked from
  * the outside).
  */
 export class FastlaneProvider implements Provider {
   readonly id = "fastlane";
   readonly displayName = "Fastlane";
-  readonly installHint = "gem install fastlane --user-install";
+  readonly installHint = pickInstallHint({
+    win32: "gem install fastlane --user-install",
+    fallback: "brew install fastlane",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("fastlane");

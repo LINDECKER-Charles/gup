@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -17,7 +18,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class SupabaseProvider implements Provider {
   readonly id = "supabase";
   readonly displayName = "Supabase CLI";
-  readonly installHint = "scoop install supabase";
+  readonly installHint = pickInstallHint({
+    win32: "scoop install supabase",
+    fallback: "brew install supabase",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("supabase");
@@ -53,9 +57,10 @@ export class SupabaseProvider implements Provider {
       binary: "supabase",
       packageIds: {
         scoop: "supabase",
+        brew: "supabase",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/supabase/cli/releases ou `npm i -g supabase`",
+        "Télécharger https://github.com/supabase/cli/releases ou `npm i -g supabase`",
     });
   }
 

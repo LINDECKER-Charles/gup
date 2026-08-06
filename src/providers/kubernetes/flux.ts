@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,13 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class FluxProvider implements Provider {
   readonly id = "flux";
   readonly displayName = "Flux CLI";
-  readonly installHint = "winget install FluxCD.Flux";
+  // Attention : la formule homebrew-core `flux` est le langage de requête
+  // d'InfluxData, pas FluxCD. Le CLI GitOps ne vit que dans fluxcd/tap, d'où
+  // le nom pleinement qualifié partout ci-dessous.
+  readonly installHint = pickInstallHint({
+    win32: "winget install FluxCD.Flux",
+    fallback: "brew install fluxcd/tap/flux",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("flux");
@@ -54,9 +61,10 @@ export class FluxProvider implements Provider {
         scoop: "flux",
         choco: "flux",
         winget: "FluxCD.Flux",
+        brew: "fluxcd/tap/flux",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/fluxcd/flux2/releases et remplacer flux.exe",
+        "Télécharger https://github.com/fluxcd/flux2/releases et remplacer flux.exe",
     });
   }
 

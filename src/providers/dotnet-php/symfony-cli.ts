@@ -1,4 +1,5 @@
 import { commandExists, run } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import {
   delegateUpdate,
   describeSource,
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class SymfonyCliProvider implements Provider {
   readonly id = "symfony-cli";
   readonly displayName = "Symfony CLI";
-  readonly installHint = "https://symfony.com/download";
+  readonly installHint = pickInstallHint({
+    win32: "https://symfony.com/download",
+    fallback: "brew install symfony-cli",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("symfony");
@@ -54,9 +58,10 @@ export class SymfonyCliProvider implements Provider {
         scoop: "symfony-cli",
         choco: "symfony-cli",
         winget: "SensioLabs.Symfony-Cli",
+        brew: "symfony-cli",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/symfony-cli/symfony-cli/releases et remplacer symfony.exe",
+        "Télécharger https://github.com/symfony-cli/symfony-cli/releases et remplacer symfony.exe",
     });
   }
 

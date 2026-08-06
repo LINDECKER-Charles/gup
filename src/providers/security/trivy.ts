@@ -1,4 +1,5 @@
 import { commandExists, run } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import {
   delegateUpdate,
   describeSource,
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class TrivyProvider implements Provider {
   readonly id = "trivy";
   readonly displayName = "Trivy";
-  readonly installHint = "winget install AquaSecurity.Trivy";
+  readonly installHint = pickInstallHint({
+    win32: "winget install AquaSecurity.Trivy",
+    fallback: "brew install trivy",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("trivy");
@@ -51,9 +55,10 @@ export class TrivyProvider implements Provider {
         scoop: "trivy",
         choco: "trivy",
         winget: "AquaSecurity.Trivy",
+        brew: "trivy",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/aquasecurity/trivy/releases et remplacer trivy.exe",
+        "Télécharger https://github.com/aquasecurity/trivy/releases et remplacer trivy.exe",
     });
   }
 

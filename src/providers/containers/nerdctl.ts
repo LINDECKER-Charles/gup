@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -14,7 +15,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class NerdctlProvider implements Provider {
   readonly id = "nerdctl";
   readonly displayName = "nerdctl";
-  readonly installHint = "scoop install nerdctl";
+  readonly installHint = pickInstallHint({
+    win32: "scoop install nerdctl",
+    fallback: "brew install nerdctl",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("nerdctl");
@@ -50,9 +54,10 @@ export class NerdctlProvider implements Provider {
       binary: "nerdctl",
       packageIds: {
         scoop: "nerdctl",
+        brew: "nerdctl",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/containerd/nerdctl/releases et remplacer nerdctl.exe",
+        "Télécharger https://github.com/containerd/nerdctl/releases et remplacer nerdctl.exe",
     });
   }
 

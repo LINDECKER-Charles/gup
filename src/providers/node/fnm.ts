@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run } from "../../core/runner.js";
 import {
   delegateUpdate,
@@ -8,10 +9,10 @@ import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * fnm â€” Fast Node Manager. The binary itself has no self-update; we delegate
+ * fnm — Fast Node Manager. The binary itself has no self-update; we delegate
  * to whichever PM owns it.
  *
- * NOTE: scope is the fnm BINARY, not the Node versions it manages â€” those are
+ * NOTE: scope is the fnm BINARY, not the Node versions it manages — those are
  * a separate concern (would need a dedicated provider listing `fnm list` and
  * comparing against `fnm ls-remote --lts`).
  *
@@ -20,7 +21,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class FnmProvider implements Provider {
   readonly id = "fnm";
   readonly displayName = "fnm (Node version manager)";
-  readonly installHint = "winget install Schniz.fnm";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Schniz.fnm",
+    fallback: "brew install fnm",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("fnm");
@@ -58,9 +62,10 @@ export class FnmProvider implements Provider {
         scoop: "fnm",
         choco: "fnm",
         winget: "Schniz.fnm",
+        brew: "fnm",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/Schniz/fnm/releases et remplacer fnm.exe",
+        "Télécharger https://github.com/Schniz/fnm/releases et remplacer fnm.exe",
     });
   }
 

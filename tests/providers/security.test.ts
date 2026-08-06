@@ -122,7 +122,12 @@ interface DelegatedSpec {
   versionStdout: (v: string) => string;
   unparsable: string;
   expectedId: string;
-  expectedPackageIds: { scoop?: string; choco?: string; winget?: string };
+  expectedPackageIds: {
+    scoop?: string;
+    choco?: string;
+    winget?: string;
+    brew?: string;
+  };
 }
 
 const delegatedSpecs: DelegatedSpec[] = [
@@ -135,7 +140,12 @@ const delegatedSpecs: DelegatedSpec[] = [
     versionStdout: (v) => `GitVersion:    v${v}\nGitCommit: abc`,
     unparsable: "no version line here",
     expectedId: "cosign",
-    expectedPackageIds: { scoop: "cosign", choco: "cosign", winget: "sigstore.cosign" },
+    expectedPackageIds: {
+      scoop: "cosign",
+      choco: "cosign",
+      winget: "sigstore.cosign",
+      brew: "cosign",
+    },
   },
   {
     name: "grype",
@@ -146,7 +156,12 @@ const delegatedSpecs: DelegatedSpec[] = [
     versionStdout: (v) => `Application:        grype\nVersion:    ${v}\n`,
     unparsable: "irrelevant",
     expectedId: "grype",
-    expectedPackageIds: { scoop: "grype", choco: "grype", winget: "Anchore.Grype" },
+    expectedPackageIds: {
+      scoop: "grype",
+      choco: "grype",
+      winget: "Anchore.Grype",
+      brew: "grype",
+    },
   },
   {
     name: "rekor",
@@ -157,7 +172,7 @@ const delegatedSpecs: DelegatedSpec[] = [
     versionStdout: (v) => `GitVersion:    v${v}\nGitCommit: abc`,
     unparsable: "irrelevant",
     expectedId: "rekor",
-    expectedPackageIds: { scoop: "rekor-cli" },
+    expectedPackageIds: { scoop: "rekor-cli", brew: "rekor-cli" },
   },
   {
     name: "syft",
@@ -168,7 +183,12 @@ const delegatedSpecs: DelegatedSpec[] = [
     versionStdout: (v) => `Application:        syft\nVersion:    ${v}\n`,
     unparsable: "irrelevant",
     expectedId: "syft",
-    expectedPackageIds: { scoop: "syft", choco: "syft", winget: "Anchore.Syft" },
+    expectedPackageIds: {
+      scoop: "syft",
+      choco: "syft",
+      winget: "Anchore.Syft",
+      brew: "syft",
+    },
   },
   {
     name: "trivy",
@@ -179,7 +199,12 @@ const delegatedSpecs: DelegatedSpec[] = [
     versionStdout: (v) => `Version: ${v}\nVulnerability DB:\n`,
     unparsable: "irrelevant",
     expectedId: "trivy",
-    expectedPackageIds: { scoop: "trivy", choco: "trivy", winget: "AquaSecurity.Trivy" },
+    expectedPackageIds: {
+      scoop: "trivy",
+      choco: "trivy",
+      winget: "AquaSecurity.Trivy",
+      brew: "trivy",
+    },
   },
 ];
 
@@ -334,7 +359,7 @@ describe("gitsign provider", () => {
     await new GitsignProvider().update("gitsign");
     const arg = delegateUpdateMock.mock.calls[0]![0];
     expect(arg.binary).toBe("gitsign");
-    expect(arg.packageIds).toEqual({ scoop: "gitsign" });
+    expect(arg.packageIds).toEqual({ scoop: "gitsign", brew: "gitsign" });
   });
 
   it("updateAll empty returns []", async () => {

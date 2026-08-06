@@ -1,4 +1,5 @@
 import { commandExists, run } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import {
   delegateUpdate,
   describeSource,
@@ -15,7 +16,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class RekorProvider implements Provider {
   readonly id = "rekor";
   readonly displayName = "Rekor CLI";
-  readonly installHint = "scoop install rekor-cli";
+  readonly installHint = pickInstallHint({
+    win32: "scoop install rekor-cli",
+    fallback: "brew install rekor-cli",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("rekor-cli");
@@ -51,9 +55,10 @@ export class RekorProvider implements Provider {
       binary: "rekor-cli",
       packageIds: {
         scoop: "rekor-cli",
+        brew: "rekor-cli",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/sigstore/rekor/releases et remplacer rekor-cli.exe",
+        "Télécharger https://github.com/sigstore/rekor/releases et remplacer rekor-cli.exe",
     });
   }
 

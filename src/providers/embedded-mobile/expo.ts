@@ -17,7 +17,7 @@ interface NpmRegistryResponse {
  * legacy global install when present because users keep it on their PATH for
  * existing projects. Pinning the dedicated provider on `expo --version`
  * avoids surfacing the entry for users who don't actually have it installed
- * globally â€” npm-g would only see it if it was `npm i -g`'d.
+ * globally — npm-g would only see it if it was `npm i -g`'d.
  */
 export class ExpoProvider implements Provider {
   readonly id = "expo";

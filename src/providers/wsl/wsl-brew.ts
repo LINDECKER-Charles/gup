@@ -5,6 +5,7 @@ import {
   runInDistro,
   runInDistroInherit,
 } from "../../core/wsl.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -12,12 +13,19 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  *
  * Brew lives outside PATH for non-interactive shells on most setups, so we
  * sniff the canonical install paths as well as `command -v`. All commands
- * run as the default user â€” brew refuses to operate under root.
+ * run as the default user — brew refuses to operate under root.
  */
 export class WslBrewProvider implements Provider {
   readonly id = "wsl-brew";
-  readonly displayName = "WSL Â· Homebrew";
-  readonly installHint = "https://brew.sh â€” `/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"`";
+  readonly displayName = "WSL · Homebrew";
+  readonly installHint = pickInstallHint({
+    win32:
+      'https://brew.sh — `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`',
+    // Off Windows there is no WSL distro to reach into: Homebrew is installed
+    // natively and the `brew` provider already covers it.
+    fallback:
+      "Provider spécifique à WSL (Windows) — sur macOS/Linux, Homebrew est géré par le provider `brew`.",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

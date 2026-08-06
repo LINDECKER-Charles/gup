@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class TerragruntProvider implements Provider {
   readonly id = "terragrunt";
   readonly displayName = "Terragrunt";
-  readonly installHint = "winget install Gruntwork.Terragrunt";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Gruntwork.Terragrunt",
+    fallback: "brew install terragrunt",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("terragrunt");
@@ -51,9 +55,10 @@ export class TerragruntProvider implements Provider {
         scoop: "terragrunt",
         choco: "terragrunt",
         winget: "Gruntwork.Terragrunt",
+        brew: "terragrunt",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/gruntwork-io/terragrunt/releases et remplacer terragrunt.exe",
+        "Télécharger https://github.com/gruntwork-io/terragrunt/releases et remplacer terragrunt.exe",
     });
   }
 

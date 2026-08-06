@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -8,7 +9,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class UvToolsProvider implements Provider {
   readonly id = "uv-tools";
   readonly displayName = "uv tools";
-  readonly installHint = "https://docs.astral.sh/uv";
+  readonly installHint = pickInstallHint({
+    win32: "https://docs.astral.sh/uv",
+    fallback: "brew install uv",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

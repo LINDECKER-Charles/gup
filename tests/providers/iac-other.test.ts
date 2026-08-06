@@ -100,6 +100,8 @@ interface GhSpec {
   wingetId: string;
   scoopId: string;
   chocoId: string;
+  /** Absent when the tool has no Homebrew formula to delegate to. */
+  brewId?: string;
 }
 
 const ghSpecs: GhSpec[] = [
@@ -114,6 +116,7 @@ const ghSpecs: GhSpec[] = [
     wingetId: "OpenTofu.Tofu",
     scoopId: "opentofu",
     chocoId: "opentofu",
+    brewId: "opentofu",
   },
   {
     name: "terragrunt",
@@ -126,6 +129,7 @@ const ghSpecs: GhSpec[] = [
     wingetId: "Gruntwork.Terragrunt",
     scoopId: "terragrunt",
     chocoId: "terragrunt",
+    brewId: "terragrunt",
   },
   {
     name: "tflint",
@@ -214,7 +218,12 @@ for (const spec of ghSpecs) {
       const call = delegateUpdateMock.mock.calls[0]![0] as {
         id: string;
         binary: string;
-        packageIds: { scoop?: string; choco?: string; winget?: string };
+        packageIds: {
+          scoop?: string;
+          choco?: string;
+          winget?: string;
+          brew?: string;
+        };
         manualMessage?: string;
       };
       expect(call.id).toBe(spec.name);
@@ -223,6 +232,7 @@ for (const spec of ghSpecs) {
         scoop: spec.scoopId,
         choco: spec.chocoId,
         winget: spec.wingetId,
+        ...(spec.brewId && { brew: spec.brewId }),
       });
       // French manualMessage present (matched loosely on a stable substring)
       expect(call.manualMessage).toMatch(/remplacer|installer/i);
@@ -340,7 +350,7 @@ describe("pulumi provider", () => {
     const call = delegateUpdateMock.mock.calls[0]![0] as {
       id: string;
       binary: string;
-      packageIds: { scoop?: string; choco?: string; winget?: string };
+      packageIds: { scoop?: string; choco?: string; winget?: string; brew?: string };
       manualMessage?: string;
     };
     expect(call.id).toBe("pulumi");
@@ -349,6 +359,7 @@ describe("pulumi provider", () => {
       scoop: "pulumi",
       choco: "pulumi",
       winget: "Pulumi.Pulumi",
+      brew: "pulumi",
     });
     expect(call.manualMessage).toMatch(/installer/i);
   });

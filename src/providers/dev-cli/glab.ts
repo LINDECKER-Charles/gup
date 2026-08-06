@@ -1,5 +1,6 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -12,7 +13,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class GlabProvider implements Provider {
   readonly id = "glab";
   readonly displayName = "GitLab CLI";
-  readonly installHint = "winget install GitLab.GitLabCli";
+  readonly installHint = pickInstallHint({
+    win32: "winget install GitLab.GitLabCli",
+    fallback: "brew install glab",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("glab");

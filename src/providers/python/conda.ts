@@ -1,9 +1,10 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Conda / mamba self-update. We don't touch project envs â€” `conda update --all`
+ * Conda / mamba self-update. We don't touch project envs — `conda update --all`
  * is scoped to the `base` env where conda itself lives, which is what the
  * catalog calls out. Scan compares the conda binary to the latest GitHub
  * release; the actual `update --all` runs side-effects beyond a single
@@ -14,7 +15,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CondaProvider implements Provider {
   readonly id = "conda";
   readonly displayName = "Conda";
-  readonly installHint = "https://docs.conda.io/projects/conda/en/stable/";
+  // Homebrew ne distribue pas `conda` seul : il n'existe que via les casks
+  // miniconda / anaconda, qui embarquent la distribution complète.
+  readonly installHint = pickInstallHint({
+    win32: "https://docs.conda.io/projects/conda/en/stable/",
+    fallback: "brew install --cask miniconda",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("conda");

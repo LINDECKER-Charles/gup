@@ -1,5 +1,6 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 
@@ -25,7 +26,10 @@ interface ArduinoVersion {
 export class ArduinoCliProvider implements Provider {
   readonly id = "arduino-cli";
   readonly displayName = "Arduino CLI";
-  readonly installHint = "winget install ArduinoSA.CLI";
+  readonly installHint = pickInstallHint({
+    win32: "winget install ArduinoSA.CLI",
+    fallback: "brew install arduino-cli",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

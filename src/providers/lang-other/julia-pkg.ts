@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -9,7 +10,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  *
  * Output lines look like:
  *   "  [12345abc] PackageName v1.2.3 (<v1.3.0)"
- * The "(<vX)" marker indicates the latest available â€” that's our parse target.
+ * The "(<vX)" marker indicates the latest available — that's our parse target.
  *
  * Update is a single global `Pkg.update()` since Julia resolves the whole
  * environment together; we don't expose per-package updates.
@@ -17,7 +18,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class JuliaPkgProvider implements Provider {
   readonly id = "julia-pkg";
   readonly displayName = "Julia Pkg";
-  readonly installHint = "https://julialang.org/downloads/";
+  readonly installHint = pickInstallHint({
+    win32: "https://julialang.org/downloads/",
+    fallback: "brew install julia",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

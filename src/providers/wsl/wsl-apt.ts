@@ -5,12 +5,13 @@ import {
   runInDistro,
   runInDistroInherit,
 } from "../../core/wsl.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
  * APT inside Debian/Ubuntu-family WSL distros. One synthetic entry per
  * distro (id = distro name); we count upgradable packages rather than
- * surfacing each one â€” `apt-get upgrade` is the single atomic action and
+ * surfacing each one — `apt-get upgrade` is the single atomic action and
  * flooding the table with hundreds of OS packages buries everything else.
  *
  * Runs with `-u root` so unattended upgrades don't trip on sudo prompts in
@@ -18,8 +19,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  */
 export class WslAptProvider implements Provider {
   readonly id = "wsl-apt";
-  readonly displayName = "WSL Â· apt (Debian/Ubuntu)";
-  readonly installHint = "wsl --install -d Ubuntu";
+  readonly displayName = "WSL · apt (Debian/Ubuntu)";
+  readonly installHint = pickInstallHint({
+    win32: "wsl --install -d Ubuntu",
+    fallback: "WSL est une fonctionnalité Windows — inexistante sur cette plateforme.",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

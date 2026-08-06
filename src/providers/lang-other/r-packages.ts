@@ -1,8 +1,9 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * R packages (CRAN). We restrict to the user's library tree â€” leaving the
+ * R packages (CRAN). We restrict to the user's library tree — leaving the
  * system tree to whatever installed R (admin scope). The `old.packages()`
  * built-in returns a matrix with `Package`, `Installed`, `ReposVer` columns.
  *
@@ -11,7 +12,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class RPackagesProvider implements Provider {
   readonly id = "R-packages";
   readonly displayName = "R (CRAN)";
-  readonly installHint = "https://cran.r-project.org/bin/windows/base/";
+  // The historical CRAN link only serves Windows binaries, so everywhere else
+  // we point at the Homebrew formula — which also ships Rscript.
+  readonly installHint = pickInstallHint({
+    win32: "https://cran.r-project.org/bin/windows/base/",
+    fallback: "brew install r",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

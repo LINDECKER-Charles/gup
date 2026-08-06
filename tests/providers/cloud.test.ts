@@ -737,6 +737,7 @@ describe("HerokuProvider", () => {
       scoop: "heroku-cli",
       choco: "heroku-cli",
       winget: "Heroku.HerokuCLI",
+      brew: "heroku",
     });
     expect(runInheritMock).not.toHaveBeenCalled();
   });
@@ -834,6 +835,35 @@ describe("LinodeCliProvider", () => {
       message: expect.stringMatching(/pip\/python introuvable/i),
     });
     expect(runInheritMock).not.toHaveBeenCalled();
+  });
+
+  it("update hands a Homebrew install back to brew instead of pip", async () => {
+    // A brew install lives in its own virtualenv: `pip install --user` there
+    // is refused by PEP 668, or silently writes a shadowed second copy.
+    detectInstallSourceMock.mockResolvedValueOnce("brew");
+    runPmUpdateMock.mockResolvedValueOnce({ id: "linode-cli", success: true });
+    const res = await new LinodeCliProvider().update("linode-cli");
+    expect(res).toEqual({ id: "linode-cli", success: true });
+    expect(runPmUpdateMock).toHaveBeenCalledWith(
+      "linode-cli",
+      "brew",
+      { brew: "linode-cli" },
+      expect.any(String),
+    );
+    expect(runInheritMock).not.toHaveBeenCalled();
+  });
+
+  it("update keeps the pip route for every non-brew source", async () => {
+    // Regression guard: the Windows path (pip --user) must not be diverted.
+    detectInstallSourceMock.mockResolvedValueOnce("manual");
+    commandExistsMock.mockImplementation(async (b: string) => b === "python");
+    runInheritMock.mockResolvedValueOnce(mkRun(""));
+    await new LinodeCliProvider().update("linode-cli");
+    expect(runPmUpdateMock).not.toHaveBeenCalled();
+    expect(runInheritMock).toHaveBeenCalledWith(
+      "python",
+      expect.arrayContaining(["-m", "pip", "install", "--user", "--upgrade"]),
+    );
   });
 
   it("update prefers python with `-m pip`", async () => {
@@ -959,6 +989,34 @@ describe("OciCliProvider", () => {
       skipped: true,
       message: expect.stringMatching(/pip\/python introuvable/i),
     });
+  });
+
+  it("update hands a Homebrew install back to brew instead of pip", async () => {
+    detectInstallSourceMock.mockResolvedValueOnce("brew");
+    runPmUpdateMock.mockResolvedValueOnce({ id: "oci-cli", success: true });
+    const res = await new OciCliProvider().update("oci-cli");
+    expect(res).toEqual({ id: "oci-cli", success: true });
+    // Detection keys on the `oci` binary, which is what the CLI installs.
+    expect(detectInstallSourceMock).toHaveBeenCalledWith("oci");
+    expect(runPmUpdateMock).toHaveBeenCalledWith(
+      "oci-cli",
+      "brew",
+      { brew: "oci-cli" },
+      expect.any(String),
+    );
+    expect(runInheritMock).not.toHaveBeenCalled();
+  });
+
+  it("update keeps the pip route for every non-brew source", async () => {
+    detectInstallSourceMock.mockResolvedValueOnce("choco");
+    commandExistsMock.mockImplementation(async (b: string) => b === "python");
+    runInheritMock.mockResolvedValueOnce(mkRun(""));
+    await new OciCliProvider().update("oci-cli");
+    expect(runPmUpdateMock).not.toHaveBeenCalled();
+    expect(runInheritMock).toHaveBeenCalledWith(
+      "python",
+      expect.arrayContaining(["-m", "pip", "install", "--user", "--upgrade"]),
+    );
   });
 
   it("update with python -m pip succeeds", async () => {

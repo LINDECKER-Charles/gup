@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class DeltaProvider implements Provider {
   readonly id = "delta";
   readonly displayName = "git-delta";
-  readonly installHint = "winget install dandavison.delta";
+  // Le binaire s'appelle `delta`, la formule Homebrew `git-delta`.
+  readonly installHint = pickInstallHint({
+    win32: "winget install dandavison.delta",
+    fallback: "brew install git-delta",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("delta");
@@ -51,9 +56,10 @@ export class DeltaProvider implements Provider {
         scoop: "delta",
         choco: "delta",
         winget: "dandavison.delta",
+        brew: "git-delta",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/dandavison/delta/releases ou `cargo install git-delta`",
+        "Télécharger https://github.com/dandavison/delta/releases ou `cargo install git-delta`",
     });
   }
 

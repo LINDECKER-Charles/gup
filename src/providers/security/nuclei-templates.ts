@@ -1,16 +1,20 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Nuclei detection templates â€” versioned independently from the engine.
+ * Nuclei detection templates — versioned independently from the engine.
  * `nuclei -version` includes a "Nuclei Templates Version: v9.x.y" line.
  * Updated via `nuclei -update-templates`.
  */
 export class NucleiTemplatesProvider implements Provider {
   readonly id = "nuclei-templates";
   readonly displayName = "Nuclei templates";
-  readonly installHint = "Installer Nuclei: https://docs.projectdiscovery.io/tools/nuclei/install";
+  readonly installHint = pickInstallHint({
+    win32: "Installer Nuclei: https://docs.projectdiscovery.io/tools/nuclei/install",
+    fallback: "Installer Nuclei: brew install nuclei",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("nuclei");

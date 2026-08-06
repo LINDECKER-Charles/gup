@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PipOutdatedEntry {
@@ -10,12 +11,18 @@ interface PipOutdatedEntry {
 
 /**
  * Global pip packages. `--user` only would miss system-installed ones,
- * but on Windows global writes typically need admin â€” we scope to `--user`.
+ * but on Windows global writes typically need admin — we scope to `--user`.
  */
 export class PipProvider implements Provider {
   readonly id = "pip";
   readonly displayName = "pip (user)";
-  readonly installHint = "Python: https://www.python.org/downloads/";
+  // macOS ships a python3 without pip and deprecates it; the usable Python is
+  // the Homebrew one. Pointing a Mac user at python.org would install a third
+  // interpreter next to the two already there.
+  readonly installHint = pickInstallHint({
+    darwin: "brew install python",
+    fallback: "Python: https://www.python.org/downloads/",
+  });
 
   async isAvailable(): Promise<boolean> {
     return (await commandExists("pip")) || (await commandExists("pip3"));

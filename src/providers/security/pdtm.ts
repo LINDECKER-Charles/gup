@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -11,7 +12,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class PdtmProvider implements Provider {
   readonly id = "pdtm";
   readonly displayName = "ProjectDiscovery tool manager";
-  readonly installHint = "https://github.com/projectdiscovery/pdtm";
+  readonly installHint = pickInstallHint({
+    win32: "https://github.com/projectdiscovery/pdtm",
+    fallback: "brew install pdtm",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("pdtm");

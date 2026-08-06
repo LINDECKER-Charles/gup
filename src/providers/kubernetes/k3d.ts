@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -14,7 +15,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class K3dProvider implements Provider {
   readonly id = "k3d";
   readonly displayName = "k3d";
-  readonly installHint = "winget install k3d-io.k3d";
+  readonly installHint = pickInstallHint({
+    win32: "winget install k3d-io.k3d",
+    fallback: "brew install k3d",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("k3d");
@@ -52,9 +56,10 @@ export class K3dProvider implements Provider {
         scoop: "k3d",
         choco: "k3d",
         winget: "k3d-io.k3d",
+        brew: "k3d",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/k3d-io/k3d/releases et remplacer k3d.exe",
+        "Télécharger https://github.com/k3d-io/k3d/releases et remplacer k3d.exe",
     });
   }
 

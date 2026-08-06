@@ -1,4 +1,6 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
+import { detectInstallSource, runPmUpdate } from "../../core/install-source.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PypiJson {
@@ -15,7 +17,10 @@ interface PypiJson {
 export class OciCliProvider implements Provider {
   readonly id = "oci-cli";
   readonly displayName = "Oracle Cloud CLI";
-  readonly installHint = "pip install --user oci-cli";
+  readonly installHint = pickInstallHint({
+    win32: "pip install --user oci-cli",
+    fallback: "brew install oci-cli",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("oci");
@@ -36,6 +41,15 @@ export class OciCliProvider implements Provider {
   }
 
   async update(_packageId: string): Promise<UpdateOutcome> {
+    // Same reasoning as linode-cli: a Homebrew install lives in its own
+    // virtualenv that pip is not allowed to modify (PEP 668), so brew-owned
+    // binaries are handed back to brew. Any other install path keeps the
+    // historical pip route unchanged.
+    const source = await detectInstallSource("oci");
+    if (source === "brew") {
+      return runPmUpdate("oci-cli", source, { brew: "oci-cli" }, "brew upgrade oci-cli");
+    }
+
     const bin = await pickPip();
     if (!bin) {
       return {

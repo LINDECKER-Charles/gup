@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class KindProvider implements Provider {
   readonly id = "kind";
   readonly displayName = "kind";
-  readonly installHint = "winget install Kubernetes.kind";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Kubernetes.kind",
+    fallback: "brew install kind",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("kind");
@@ -51,9 +55,10 @@ export class KindProvider implements Provider {
         scoop: "kind",
         choco: "kind",
         winget: "Kubernetes.kind",
+        brew: "kind",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/kubernetes-sigs/kind/releases et remplacer kind.exe",
+        "Télécharger https://github.com/kubernetes-sigs/kind/releases et remplacer kind.exe",
     });
   }
 

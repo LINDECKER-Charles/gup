@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface InstalledExt {
@@ -11,12 +12,15 @@ interface InstalledExt {
 /**
  * `gh extension list` has no JSON output. We parse the tabular view and
  * query each extension's GitHub repo for its latest release via `gh api`
- * (leverages existing auth â€” no rate limit pain).
+ * (leverages existing auth — no rate limit pain).
  */
 export class GhExtensionsProvider implements Provider {
   readonly id = "gh-ext";
   readonly displayName = "GitHub CLI extensions";
-  readonly installHint = "winget install GitHub.cli";
+  readonly installHint = pickInstallHint({
+    win32: "winget install GitHub.cli",
+    fallback: "brew install gh",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

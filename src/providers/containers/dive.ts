@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class DiveProvider implements Provider {
   readonly id = "dive";
   readonly displayName = "dive";
-  readonly installHint = "winget install wagoodman.dive";
+  readonly installHint = pickInstallHint({
+    win32: "winget install wagoodman.dive",
+    fallback: "brew install dive",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("dive");
@@ -51,9 +55,10 @@ export class DiveProvider implements Provider {
         scoop: "dive",
         choco: "dive",
         winget: "wagoodman.dive",
+        brew: "dive",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/wagoodman/dive/releases et remplacer dive.exe",
+        "Télécharger https://github.com/wagoodman/dive/releases et remplacer dive.exe",
     });
   }
 

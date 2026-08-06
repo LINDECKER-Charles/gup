@@ -1,8 +1,9 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * LuaRocks â€” Lua's package manager. We restrict to the `--local` tree so we
+ * LuaRocks — Lua's package manager. We restrict to the `--local` tree so we
  * stay user-scope; the system tree typically needs sudo and is out of scope.
  *
  * `luarocks list --outdated --porcelain` is the parse-friendly form:
@@ -11,7 +12,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class LuaRocksProvider implements Provider {
   readonly id = "luarocks";
   readonly displayName = "LuaRocks";
-  readonly installHint = "https://luarocks.org/";
+  readonly installHint = pickInstallHint({
+    win32: "https://luarocks.org/",
+    fallback: "brew install luarocks",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("luarocks");

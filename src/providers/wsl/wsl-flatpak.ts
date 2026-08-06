@@ -5,19 +5,24 @@ import {
   runInDistro,
   runInDistroInherit,
 } from "../../core/wsl.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
  * Flatpak inside any WSL distro. Both --user and --system installs are
  * covered by the default `flatpak update` (it iterates over every
  * installation in scope). We don't elevate: system flatpaks will prompt
- * for sudo themselves if needed â€” that's better than running the whole
+ * for sudo themselves if needed — that's better than running the whole
  * pipeline as root and surprising the user's keychain agent.
  */
 export class WslFlatpakProvider implements Provider {
   readonly id = "wsl-flatpak";
-  readonly displayName = "WSL Â· Flatpak";
-  readonly installHint = "https://flatpak.org/setup/";
+  readonly displayName = "WSL · Flatpak";
+  readonly installHint = pickInstallHint({
+    win32: "https://flatpak.org/setup/",
+    fallback:
+      "Provider spécifique à WSL (Windows) — inexistant sur cette plateforme.",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

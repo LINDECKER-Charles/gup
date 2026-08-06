@@ -6,7 +6,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 
 /**
  * packer.nvim. Detection: the conventional packer install path under nvim
- * data (`site/pack/packer/start/packer.nvim`). PackerSync is async â€” pair
+ * data (`site/pack/packer/start/packer.nvim`). PackerSync is async — pair
  * it with an autocmd that quits once the User PackerComplete event fires
  * so the headless invocation actually returns.
  */

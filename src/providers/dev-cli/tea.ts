@@ -4,6 +4,7 @@ import {
   describeSource,
   detectInstallSource,
 } from "../../core/install-source.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface GiteaReleaseJson {
@@ -11,7 +12,7 @@ interface GiteaReleaseJson {
 }
 
 /**
- * Gitea CLI (`tea`). Hosted on gitea.com, not GitHub â€” we hit its native
+ * Gitea CLI (`tea`). Hosted on gitea.com, not GitHub — we hit its native
  * Gitea API for the latest release tag.
  *
  * `tea --version` prints "Tea version 0.9.2".
@@ -19,7 +20,10 @@ interface GiteaReleaseJson {
 export class TeaProvider implements Provider {
   readonly id = "tea";
   readonly displayName = "Gitea CLI (tea)";
-  readonly installHint = "scoop install tea";
+  readonly installHint = pickInstallHint({
+    win32: "scoop install tea",
+    fallback: "brew install tea",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("tea");
@@ -55,9 +59,11 @@ export class TeaProvider implements Provider {
       binary: "tea",
       packageIds: {
         scoop: "tea",
+        // Formule homebrew-core `tea` = le CLI Gitea (gitea.com/gitea/tea).
+        brew: "tea",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://gitea.com/gitea/tea/releases et remplacer tea.exe",
+        "Télécharger https://gitea.com/gitea/tea/releases et remplacer tea.exe",
     });
   }
 

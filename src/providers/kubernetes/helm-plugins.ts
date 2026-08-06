@@ -4,7 +4,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 /**
  * Helm plugins. `helm plugin list` prints a TSV-ish header (NAME / VERSION /
  * DESCRIPTION). Helm exposes no per-plugin "outdated" probe and a plugin's
- * upstream version lookup would require parsing its source URL â€” we instead
+ * upstream version lookup would require parsing its source URL — we instead
  * surface a synthetic refresh entry whenever at least one plugin is
  * installed, and delegate the actual upgrade to `helm plugin update --all`
  * (idempotent if everything is current).
@@ -33,7 +33,7 @@ export class HelmPluginsProvider implements Provider {
         name: "helm plugin update --all",
         current: "?",
         latest: "refresh",
-        note: `${plugins.length} plugin(s) installÃ©(s)`,
+        note: `${plugins.length} plugin(s) installé(s)`,
       },
     ];
   }

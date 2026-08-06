@@ -1,10 +1,11 @@
 import pLimit from "p-limit";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Yarn 1 only â€” Yarn 2+ deprecated `yarn global`. We auto-skip when the
- * detected yarn major is â‰¥ 2 (those users typically rely on volta/corepack
+ * Yarn 1 only — Yarn 2+ deprecated `yarn global`. We auto-skip when the
+ * detected yarn major is ≥ 2 (those users typically rely on volta/corepack
  * or per-project installs).
  *
  * Yarn 1 has no native "outdated --global"; we list installs and query the
@@ -13,7 +14,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class YarnGlobalProvider implements Provider {
   readonly id = "yarn-g";
   readonly displayName = "yarn (global)";
-  readonly installHint = "npm install -g yarn  (or corepack enable)";
+  // La formule Homebrew `yarn` est toujours Yarn classic (1.x), soit exactement
+  // le périmètre de ce provider.
+  readonly installHint = pickInstallHint({
+    win32: "npm install -g yarn  (or corepack enable)",
+    fallback: "brew install yarn  (ou corepack enable)",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

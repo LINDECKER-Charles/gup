@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -17,7 +18,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class RailwayProvider implements Provider {
   readonly id = "railway";
   readonly displayName = "Railway CLI";
-  readonly installHint = "scoop install railway";
+  readonly installHint = pickInstallHint({
+    win32: "scoop install railway",
+    fallback: "brew install railway",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("railway");
@@ -54,9 +58,10 @@ export class RailwayProvider implements Provider {
       packageIds: {
         scoop: "railway",
         winget: "Railway.Railway",
+        brew: "railway",
       },
       manualMessage:
-        "Relancer https://railway.app/install.ps1 ou tÃ©lÃ©charger https://github.com/railwayapp/cli/releases",
+        "Relancer https://railway.app/install.ps1 ou télécharger https://github.com/railwayapp/cli/releases",
     });
   }
 

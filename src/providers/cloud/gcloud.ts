@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface GcloudComponentJson {
@@ -17,7 +18,12 @@ interface GcloudComponentJson {
 export class GcloudProvider implements Provider {
   readonly id = "gcloud";
   readonly displayName = "gcloud components";
-  readonly installHint = "https://cloud.google.com/sdk/docs/install";
+  // Le SDK est distribué en cask (l'ancien token `google-cloud-sdk` a été
+  // renommé `gcloud-cli`), jamais en formule.
+  readonly installHint = pickInstallHint({
+    win32: "https://cloud.google.com/sdk/docs/install",
+    fallback: "brew install --cask gcloud-cli",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("gcloud");
@@ -52,7 +58,7 @@ export class GcloudProvider implements Provider {
   }
 
   async update(_packageId: string): Promise<UpdateOutcome> {
-    // gcloud's component manager refuses partial component updates â€” the whole
+    // gcloud's component manager refuses partial component updates — the whole
     // SDK is bumped at once. Same call for any package id.
     const res = await runInherit("gcloud", ["components", "update", "--quiet"]);
     return { id: "gcloud", success: !res.failed };

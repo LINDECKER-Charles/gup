@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface AzVersionPayload {
@@ -12,7 +13,10 @@ interface AzVersionPayload {
 export class AzProvider implements Provider {
   readonly id = "az";
   readonly displayName = "Azure CLI";
-  readonly installHint = "winget install Microsoft.AzureCLI";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Microsoft.AzureCLI",
+    fallback: "brew install azure-cli",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("az");

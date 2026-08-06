@@ -1,9 +1,10 @@
 import pLimit from "p-limit";
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Mix archives â€” globally installed Elixir archives (`mix archive.install`).
+ * Mix archives — globally installed Elixir archives (`mix archive.install`).
  * Typical residents: phx_new, hex itself, nerves_bootstrap. `mix archive`
  * prints one block per archive, version embedded in the directory name:
  *   "* hex-2.0.6"
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class MixArchiveProvider implements Provider {
   readonly id = "mix-archive";
   readonly displayName = "Mix archives";
-  readonly installHint = "Installer Elixir + `mix archive.install hex ...`";
+  readonly installHint = pickInstallHint({
+    win32: "Installer Elixir + `mix archive.install hex ...`",
+    fallback: "brew install elixir, puis `mix archive.install hex ...`",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class OpamProvider implements Provider {
   readonly id = "opam";
   readonly displayName = "opam (OCaml)";
-  readonly installHint = "https://opam.ocaml.org/doc/Install.html";
+  readonly installHint = pickInstallHint({
+    win32: "https://opam.ocaml.org/doc/Install.html",
+    fallback: "brew install opam",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

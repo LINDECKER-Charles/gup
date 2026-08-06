@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchHashicorpLatest } from "../../core/hashicorp-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -16,7 +17,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class BoundaryProvider implements Provider {
   readonly id = "boundary";
   readonly displayName = "Boundary";
-  readonly installHint = "winget install HashiCorp.Boundary";
+  // Les outils HashiCorp ont quitté homebrew-core : ils ne vivent plus que
+  // dans le tap hashicorp/tap, d'où le `brew tap` explicite dans le hint.
+  readonly installHint = pickInstallHint({
+    win32: "winget install HashiCorp.Boundary",
+    fallback: "brew tap hashicorp/tap && brew install boundary",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("boundary");
@@ -57,9 +63,12 @@ export class BoundaryProvider implements Provider {
         scoop: "boundary",
         choco: "boundary",
         winget: "HashiCorp.Boundary",
+        // Formule du tap hashicorp/tap : une fois installée, le nom court
+        // suffit à `brew upgrade`.
+        brew: "boundary",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://releases.hashicorp.com/boundary/ et remplacer boundary.exe",
+        "Télécharger https://releases.hashicorp.com/boundary/ et remplacer boundary.exe",
     });
   }
 

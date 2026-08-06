@@ -306,6 +306,7 @@ describe("StarshipProvider", () => {
       scoop: "starship",
       choco: "starship",
       winget: "Starship.Starship",
+      brew: "starship",
     });
     expect(call.manualMessage).toMatch(/starship/);
   });

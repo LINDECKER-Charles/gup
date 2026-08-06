@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CabalProvider implements Provider {
   readonly id = "cabal";
   readonly displayName = "cabal-install";
-  readonly installHint = "https://www.haskell.org/ghcup/";
+  readonly installHint = pickInstallHint({
+    win32: "https://www.haskell.org/ghcup/",
+    fallback: "brew install cabal-install",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("cabal");
@@ -35,7 +39,7 @@ export class CabalProvider implements Provider {
 
   async update(_packageId: string): Promise<UpdateOutcome> {
     // Refresh the index, then ask cabal to rebuild itself. Users that manage
-    // GHC via ghcup will typically prefer `ghcup install cabal latest` â€” we
+    // GHC via ghcup will typically prefer `ghcup install cabal latest` — we
     // document the alternative in installHint.
     await run("cabal", ["update"]);
     const res = await runInherit("cabal", [

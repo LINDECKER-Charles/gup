@@ -33,7 +33,7 @@ export class VimPlugProvider implements Provider {
         name: "vim-plug update",
         current: "?",
         latest: "refresh",
-        note: "Met Ã  jour tous les plugins (:PlugUpdate --sync)",
+        note: "Met à jour tous les plugins (:PlugUpdate --sync)",
       },
     ];
   }

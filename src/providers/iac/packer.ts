@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchHashicorpLatest } from "../../core/hashicorp-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class PackerProvider implements Provider {
   readonly id = "packer";
   readonly displayName = "Packer";
-  readonly installHint = "winget install HashiCorp.Packer";
+  // Les outils HashiCorp ont quitté homebrew-core : ils ne vivent plus que
+  // dans le tap hashicorp/tap, d'où le `brew tap` explicite dans le hint.
+  readonly installHint = pickInstallHint({
+    win32: "winget install HashiCorp.Packer",
+    fallback: "brew tap hashicorp/tap && brew install packer",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("packer");
@@ -53,9 +59,12 @@ export class PackerProvider implements Provider {
         scoop: "packer",
         choco: "packer",
         winget: "HashiCorp.Packer",
+        // Formule du tap hashicorp/tap : une fois installée, le nom court
+        // suffit à `brew upgrade`.
+        brew: "packer",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://releases.hashicorp.com/packer/ et remplacer packer.exe",
+        "Télécharger https://releases.hashicorp.com/packer/ et remplacer packer.exe",
     });
   }
 

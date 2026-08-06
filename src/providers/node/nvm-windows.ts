@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run } from "../../core/runner.js";
 import {
   delegateUpdate,
@@ -8,7 +9,7 @@ import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * nvm-windows (coreybutler/nvm-windows) â€” distinct from the Linux/macOS
+ * nvm-windows (coreybutler/nvm-windows) — distinct from the Linux/macOS
  * `nvm` shell function. Binary is `nvm.exe`. Scope is the nvm binary itself,
  * not the Node versions it manages.
  *
@@ -18,7 +19,14 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class NvmWindowsProvider implements Provider {
   readonly id = "nvm-windows";
   readonly displayName = "nvm-windows";
-  readonly installHint = "winget install CoreyButler.NVMforWindows";
+  // Projet Windows-only : hors win32 on renvoie vers les équivalents POSIX
+  // (nvm-sh ou fnm), qui sont des outils distincts — jamais vers un paquet
+  // brew `nvm-windows`, qui n'existe pas.
+  readonly installHint = pickInstallHint({
+    win32: "winget install CoreyButler.NVMforWindows",
+    fallback:
+      "Windows uniquement — équivalents macOS/Linux : brew install nvm ou brew install fnm",
+  });
 
   async isAvailable(): Promise<boolean> {
     if (process.platform !== "win32") return false;
@@ -63,7 +71,7 @@ export class NvmWindowsProvider implements Provider {
         winget: "CoreyButler.NVMforWindows",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/coreybutler/nvm-windows/releases et exÃ©cuter nvm-setup.exe",
+        "Télécharger https://github.com/coreybutler/nvm-windows/releases et exécuter nvm-setup.exe",
     });
   }
 

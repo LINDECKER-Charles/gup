@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -9,7 +10,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class OhMyPoshProvider implements Provider {
   readonly id = "oh-my-posh";
   readonly displayName = "Oh My Posh";
-  readonly installHint = "winget install JanDeDobbeleer.OhMyPosh";
+  readonly installHint = pickInstallHint({
+    win32: "winget install JanDeDobbeleer.OhMyPosh",
+    fallback: "brew install oh-my-posh",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("oh-my-posh");

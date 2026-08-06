@@ -1,4 +1,5 @@
 import { commandExists, run } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import {
   delegateUpdate,
   describeSource,
@@ -15,7 +16,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CosignProvider implements Provider {
   readonly id = "cosign";
   readonly displayName = "Cosign";
-  readonly installHint = "winget install sigstore.cosign";
+  readonly installHint = pickInstallHint({
+    win32: "winget install sigstore.cosign",
+    fallback: "brew install cosign",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("cosign");
@@ -53,9 +57,10 @@ export class CosignProvider implements Provider {
         scoop: "cosign",
         choco: "cosign",
         winget: "sigstore.cosign",
+        brew: "cosign",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/sigstore/cosign/releases et remplacer cosign.exe",
+        "Télécharger https://github.com/sigstore/cosign/releases et remplacer cosign.exe",
     });
   }
 

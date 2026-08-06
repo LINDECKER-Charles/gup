@@ -1,4 +1,6 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
+import { detectInstallSource, runPmUpdate } from "../../core/install-source.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PypiJson {
@@ -14,7 +16,10 @@ interface PypiJson {
 export class LinodeCliProvider implements Provider {
   readonly id = "linode-cli";
   readonly displayName = "Linode CLI";
-  readonly installHint = "pip install --user linode-cli";
+  readonly installHint = pickInstallHint({
+    win32: "pip install --user linode-cli",
+    fallback: "brew install linode-cli",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("linode-cli");
@@ -35,6 +40,21 @@ export class LinodeCliProvider implements Provider {
   }
 
   async update(_packageId: string): Promise<UpdateOutcome> {
+    // A Homebrew install ships its own virtualenv, and pip cannot touch it:
+    // `pip install --user` there either writes a second, shadowed copy under
+    // ~/.local/bin, or is refused outright by PEP 668
+    // (externally-managed-environment). Hand those back to brew; every other
+    // install path keeps the historical pip route unchanged.
+    const source = await detectInstallSource("linode-cli");
+    if (source === "brew") {
+      return runPmUpdate(
+        "linode-cli",
+        source,
+        { brew: "linode-cli" },
+        "brew upgrade linode-cli",
+      );
+    }
+
     const bin = await pickPip();
     if (!bin) {
       return {

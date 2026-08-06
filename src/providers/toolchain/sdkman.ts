@@ -5,7 +5,7 @@ import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * SDKMAN! â€” JVM ecosystem version manager (Java, Kotlin, Gradle, sbt, â€¦).
+ * SDKMAN! — JVM ecosystem version manager (Java, Kotlin, Gradle, sbt, …).
  *
  * Not a binary: `sdk` is a shell function defined by sourcing
  * `$HOME/.sdkman/bin/sdkman-init.sh`. To invoke it from a non-shell host we

@@ -4,6 +4,7 @@ import {
   describeSource,
   detectInstallSource,
 } from "../../core/install-source.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface GitHubReleaseJson {
@@ -13,13 +14,16 @@ interface GitHubReleaseJson {
 /**
  * Helm ships no self-update mechanism. We compare the installed binary
  * version against the latest GitHub release and delegate the update to the
- * package manager that owns the binary (scoop / choco / winget) â€” falling
+ * package manager that owns the binary (scoop / choco / winget) — falling
  * back to a manual hint when none matches.
  */
 export class HelmProvider implements Provider {
   readonly id = "helm";
   readonly displayName = "Helm";
-  readonly installHint = "winget install Helm.Helm";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Helm.Helm",
+    fallback: "brew install helm",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("helm");
@@ -58,9 +62,10 @@ export class HelmProvider implements Provider {
         scoop: "helm",
         choco: "kubernetes-helm",
         winget: "Helm.Helm",
+        brew: "helm",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/helm/helm/releases/latest et remplacer helm.exe",
+        "Télécharger https://github.com/helm/helm/releases/latest et remplacer helm.exe",
     });
   }
 

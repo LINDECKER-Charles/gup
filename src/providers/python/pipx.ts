@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -22,7 +23,10 @@ interface PipxListResponse {
 export class PipxProvider implements Provider {
   readonly id = "pipx";
   readonly displayName = "pipx";
-  readonly installHint = "python -m pip install --user pipx";
+  readonly installHint = pickInstallHint({
+    win32: "python -m pip install --user pipx",
+    fallback: "brew install pipx",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

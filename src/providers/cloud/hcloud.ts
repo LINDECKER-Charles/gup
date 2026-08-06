@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class HcloudProvider implements Provider {
   readonly id = "hcloud";
   readonly displayName = "Hetzner Cloud CLI";
-  readonly installHint = "scoop install hcloud";
+  readonly installHint = pickInstallHint({
+    win32: "scoop install hcloud",
+    fallback: "brew install hcloud",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("hcloud");
@@ -49,9 +53,10 @@ export class HcloudProvider implements Provider {
       binary: "hcloud",
       packageIds: {
         scoop: "hcloud",
+        brew: "hcloud",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/hetznercloud/cli/releases et remplacer hcloud.exe",
+        "Télécharger https://github.com/hetznercloud/cli/releases et remplacer hcloud.exe",
     });
   }
 

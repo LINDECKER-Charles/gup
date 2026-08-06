@@ -5,6 +5,7 @@ import {
   runInDistro,
   runInDistroInherit,
 } from "../../core/wsl.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -17,8 +18,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  */
 export class WslDnfProvider implements Provider {
   readonly id = "wsl-dnf";
-  readonly displayName = "WSL Â· dnf (Fedora)";
-  readonly installHint = "wsl --install -d FedoraLinux-42";
+  readonly displayName = "WSL · dnf (Fedora)";
+  readonly installHint = pickInstallHint({
+    win32: "wsl --install -d FedoraLinux-42",
+    fallback: "WSL est une fonctionnalité Windows — inexistante sur cette plateforme.",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

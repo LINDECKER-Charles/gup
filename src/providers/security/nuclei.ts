@@ -1,15 +1,19 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Nuclei (ProjectDiscovery) â€” vulnerability scanner. Has built-in
+ * Nuclei (ProjectDiscovery) — vulnerability scanner. Has built-in
  * `-update` self-update. Version line: "Nuclei Engine Version: v3.2.9".
  */
 export class NucleiProvider implements Provider {
   readonly id = "nuclei";
   readonly displayName = "Nuclei";
-  readonly installHint = "https://docs.projectdiscovery.io/tools/nuclei/install";
+  readonly installHint = pickInstallHint({
+    win32: "https://docs.projectdiscovery.io/tools/nuclei/install",
+    fallback: "brew install nuclei",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("nuclei");

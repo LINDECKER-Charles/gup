@@ -4,6 +4,7 @@ import {
   describeSource,
   detectInstallSource,
 } from "../../core/install-source.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface KubectlVersion {
@@ -16,7 +17,10 @@ interface KubectlVersion {
 export class KubectlProvider implements Provider {
   readonly id = "kubectl";
   readonly displayName = "kubectl";
-  readonly installHint = "winget install Kubernetes.kubectl";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Kubernetes.kubectl",
+    fallback: "brew install kubernetes-cli",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("kubectl");
@@ -65,9 +69,11 @@ export class KubectlProvider implements Provider {
         scoop: "kubectl",
         choco: "kubernetes-cli",
         winget: "Kubernetes.kubectl",
+        // La formule Homebrew s'appelle kubernetes-cli, pas kubectl.
+        brew: "kubernetes-cli",
       },
       manualMessage:
-        "TÃ©lÃ©charger kubectl depuis https://kubernetes.io/releases/download/",
+        "Télécharger kubectl depuis https://kubernetes.io/releases/download/",
     });
   }
 

@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -12,7 +13,10 @@ interface GitHubReleaseJson {
 export class DenoProvider implements Provider {
   readonly id = "deno";
   readonly displayName = "Deno";
-  readonly installHint = "https://deno.com";
+  readonly installHint = pickInstallHint({
+    win32: "https://deno.com",
+    fallback: "brew install deno",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("deno");

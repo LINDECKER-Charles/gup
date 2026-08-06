@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface NugetSearchResponse {
@@ -12,7 +13,12 @@ interface NugetSearchResponse {
 export class DotnetToolsProvider implements Provider {
   readonly id = "dotnet-tools";
   readonly displayName = ".NET tools (global)";
-  readonly installHint = "Install .NET SDK: https://dotnet.microsoft.com/download";
+  // Homebrew ships the full SDK as a cask (`dotnet-sdk`); the `dotnet` formula
+  // exists too but tracks releases more slowly.
+  readonly installHint = pickInstallHint({
+    win32: "Install .NET SDK: https://dotnet.microsoft.com/download",
+    fallback: "brew install --cask dotnet-sdk",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

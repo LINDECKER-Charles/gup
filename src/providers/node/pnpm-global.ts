@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -11,13 +12,16 @@ interface PnpmOutdatedEntry {
 
 /**
  * pnpm has native JSON output for outdated. We use `add -g <pkg>@latest`
- * (not `update -g`) so cross-major upgrades are applied â€” `update` is
+ * (not `update -g`) so cross-major upgrades are applied — `update` is
  * semver-respecting and would skip majors.
  */
 export class PnpmGlobalProvider implements Provider {
   readonly id = "pnpm-g";
   readonly displayName = "pnpm (global)";
-  readonly installHint = "winget install pnpm.pnpm";
+  readonly installHint = pickInstallHint({
+    win32: "winget install pnpm.pnpm",
+    fallback: "brew install pnpm",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("pnpm");

@@ -1,4 +1,5 @@
 import { commandExists, run } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import {
   delegateUpdate,
   describeSource,
@@ -14,7 +15,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class GrypeProvider implements Provider {
   readonly id = "grype";
   readonly displayName = "Grype";
-  readonly installHint = "https://github.com/anchore/grype#installation";
+  readonly installHint = pickInstallHint({
+    win32: "https://github.com/anchore/grype#installation",
+    fallback: "brew install grype",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("grype");
@@ -52,9 +56,10 @@ export class GrypeProvider implements Provider {
         scoop: "grype",
         choco: "grype",
         winget: "Anchore.Grype",
+        brew: "grype",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/anchore/grype/releases et remplacer grype.exe",
+        "Télécharger https://github.com/anchore/grype/releases et remplacer grype.exe",
     });
   }
 

@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -31,7 +32,10 @@ interface FlutterReleases {
 export class FlutterProvider implements Provider {
   readonly id = "flutter";
   readonly displayName = "Flutter SDK";
-  readonly installHint = "https://docs.flutter.dev/get-started/install";
+  readonly installHint = pickInstallHint({
+    win32: "https://docs.flutter.dev/get-started/install",
+    fallback: "brew install --cask flutter",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("flutter");

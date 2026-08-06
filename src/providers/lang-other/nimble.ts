@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface NimblePackageEntry {
@@ -8,10 +9,10 @@ interface NimblePackageEntry {
 }
 
 /**
- * Nimble â€” Nim's package manager. We list user-installed packages with
+ * Nimble — Nim's package manager. We list user-installed packages with
  * `nimble list --installed`, then resolve each name to its upstream Git repo
  * via the canonical packages.json registry. Only GitHub-hosted packages get a
- * real "latest" check (release tag); everything else is dropped â€” keeping the
+ * real "latest" check (release tag); everything else is dropped — keeping the
  * provider automation-only as the rest of the codebase requires.
  *
  * `nimble list -i -y` output:
@@ -20,7 +21,12 @@ interface NimblePackageEntry {
 export class NimbleProvider implements Provider {
   readonly id = "nimble";
   readonly displayName = "Nimble (Nim)";
-  readonly installHint = "https://nim-lang.org/install.html";
+  // Nimble ships with the Nim toolchain; Homebrew has no `nimble` formula, so
+  // `nim` is the right thing to point at.
+  readonly installHint = pickInstallHint({
+    win32: "https://nim-lang.org/install.html",
+    fallback: "brew install nim",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

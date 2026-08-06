@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -15,7 +16,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class MinikubeProvider implements Provider {
   readonly id = "minikube";
   readonly displayName = "Minikube";
-  readonly installHint = "winget install Kubernetes.minikube";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Kubernetes.minikube",
+    fallback: "brew install minikube",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("minikube");
@@ -53,9 +57,10 @@ export class MinikubeProvider implements Provider {
         scoop: "minikube",
         choco: "minikube",
         winget: "Kubernetes.minikube",
+        brew: "minikube",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/kubernetes/minikube/releases et remplacer minikube.exe",
+        "Télécharger https://github.com/kubernetes/minikube/releases et remplacer minikube.exe",
     });
   }
 

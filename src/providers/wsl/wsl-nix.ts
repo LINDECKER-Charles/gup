@@ -4,20 +4,26 @@ import {
   listWslDistros,
   runInDistroInherit,
 } from "../../core/wsl.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
  * Nix (single-user or daemon) inside any WSL distro.
  *
- * Unlike apt/dnf/brew/flatpak there's no cheap "list outdated" command â€”
+ * Unlike apt/dnf/brew/flatpak there's no cheap "list outdated" command —
  * `nix-channel --update` rebuilds the channel index, and `nix-env -u` then
  * decides what to bump. We surface the distro as a refresh action whenever
  * `nix-env` is detected, mirroring the helm-repo provider.
  */
 export class WslNixProvider implements Provider {
   readonly id = "wsl-nix";
-  readonly displayName = "WSL Â· Nix";
-  readonly installHint = "https://nixos.org/download â€” `sh <(curl -L https://nixos.org/nix/install)`";
+  readonly displayName = "WSL · Nix";
+  readonly installHint = pickInstallHint({
+    win32:
+      "https://nixos.org/download — `sh <(curl -L https://nixos.org/nix/install)`",
+    fallback:
+      "Provider spécifique à WSL (Windows) — inexistant sur cette plateforme.",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
@@ -64,7 +70,7 @@ const NIX_EXTRA_PATHS = [
 /**
  * Single-user installs put nix at ~/.nix-profile, multi-user at
  * /nix/var/nix/profiles/default. The official installer ships a
- * nix-daemon.sh wrapper that both paths source â€” load it before the
+ * nix-daemon.sh wrapper that both paths source — load it before the
  * command so PATH/NIX_PATH are populated under non-interactive shells.
  */
 const NIX_PREFIX =

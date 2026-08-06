@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -15,7 +16,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class OrasProvider implements Provider {
   readonly id = "oras";
   readonly displayName = "ORAS";
-  readonly installHint = "winget install oras-project.oras";
+  readonly installHint = pickInstallHint({
+    win32: "winget install oras-project.oras",
+    fallback: "brew install oras",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("oras");
@@ -53,9 +57,10 @@ export class OrasProvider implements Provider {
         scoop: "oras",
         choco: "oras",
         winget: "oras-project.oras",
+        brew: "oras",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/oras-project/oras/releases et remplacer oras.exe",
+        "Télécharger https://github.com/oras-project/oras/releases et remplacer oras.exe",
     });
   }
 

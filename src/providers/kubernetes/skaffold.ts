@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,7 +14,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class SkaffoldProvider implements Provider {
   readonly id = "skaffold";
   readonly displayName = "Skaffold";
-  readonly installHint = "winget install Google.Skaffold";
+  readonly installHint = pickInstallHint({
+    win32: "winget install Google.Skaffold",
+    fallback: "brew install skaffold",
+  });
 
   async isAvailable(): Promise<boolean> {
     return commandExists("skaffold");
@@ -51,9 +55,10 @@ export class SkaffoldProvider implements Provider {
         scoop: "skaffold",
         choco: "skaffold",
         winget: "Google.Skaffold",
+        brew: "skaffold",
       },
       manualMessage:
-        "TÃ©lÃ©charger https://github.com/GoogleContainerTools/skaffold/releases et remplacer skaffold.exe",
+        "Télécharger https://github.com/GoogleContainerTools/skaffold/releases et remplacer skaffold.exe",
     });
   }
 
