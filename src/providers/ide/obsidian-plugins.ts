@@ -1,8 +1,9 @@
 import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { posix as posixPath, win32 as winPath } from "node:path";
 import pLimit from "p-limit";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface InstalledPlugin {
@@ -13,21 +14,25 @@ interface InstalledPlugin {
 
 /**
  * Obsidian community plugins. Detect-only: Obsidian replaces plugin files
- * (`main.js`, `manifest.json`, `styles.css`) from its in-app updater â€” no
+ * (`main.js`, `manifest.json`, `styles.css`) from its in-app updater — no
  * CLI surface. Strategy:
  *   1. Parse `%APPDATA%\obsidian\obsidian.json` (the Hub config) for vault
  *      paths.
  *   2. For each vault, enumerate `.obsidian/plugins/<id>/manifest.json`.
- *   3. Hit the community-plugins index once to map id â†’ GitHub repo.
+ *   3. Hit the community-plugins index once to map id → GitHub repo.
  *   4. Query each matching repo's `releases/latest` for the upstream tag.
  *
  * Plugins not present in the official index (custom forks) are dropped
- * silently â€” there is no reliable upstream signal for them.
+ * silently — there is no reliable upstream signal for them.
  */
 export class ObsidianPluginsProvider implements Provider {
   readonly id = "obsidian-plugins";
   readonly displayName = "Obsidian plugins";
-  readonly installHint = "https://obsidian.md/";
+  readonly installHint = pickInstallHint({
+    win32: "https://obsidian.md/",
+    darwin: "brew install --cask obsidian",
+    fallback: "https://obsidian.md/",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
@@ -63,7 +68,7 @@ export class ObsidianPluginsProvider implements Provider {
             name: p.id,
             current: p.current,
             latest,
-            note: `vault: ${basename(p.vault)}`,
+            note: `vault: ${vaultPath().basename(p.vault)}`,
             manual: true,
           };
         }),
@@ -78,7 +83,7 @@ export class ObsidianPluginsProvider implements Provider {
       success: false,
       skipped: true,
       message:
-        "Mettre Ã  jour depuis Obsidian â†’ Settings â†’ Community plugins â†’ Check for updates.",
+        "Mettre à jour depuis Obsidian → Settings → Community plugins → Check for updates.",
     };
   }
 
@@ -92,21 +97,30 @@ export class ObsidianPluginsProvider implements Provider {
   }
 }
 
+/**
+ * Vaults live on the *target* OS, so the separator follows `process.platform`
+ * rather than the host `path` default — otherwise a win32-mocked unit test
+ * only produces `C:\…` paths when the runner itself is Windows.
+ */
+function vaultPath(): typeof winPath {
+  return process.platform === "win32" ? winPath : posixPath;
+}
+
 function obsidianConfigFile(): string {
   if (process.platform === "win32") {
     const appdata = process.env["APPDATA"];
-    return appdata ? join(appdata, "obsidian", "obsidian.json") : "";
+    return appdata ? winPath.join(appdata, "obsidian", "obsidian.json") : "";
   }
   if (process.platform === "darwin") {
     const home = process.env["HOME"];
     return home
-      ? join(home, "Library", "Application Support", "obsidian", "obsidian.json")
+      ? posixPath.join(home, "Library", "Application Support", "obsidian", "obsidian.json")
       : "";
   }
   const xdg = process.env["XDG_CONFIG_HOME"];
-  if (xdg) return join(xdg, "obsidian", "obsidian.json");
+  if (xdg) return posixPath.join(xdg, "obsidian", "obsidian.json");
   const home = process.env["HOME"];
-  return home ? join(home, ".config", "obsidian", "obsidian.json") : "";
+  return home ? posixPath.join(home, ".config", "obsidian", "obsidian.json") : "";
 }
 
 async function listObsidianVaults(): Promise<string[]> {
@@ -127,7 +141,8 @@ async function listObsidianVaults(): Promise<string[]> {
 }
 
 async function scanVaultPlugins(vault: string): Promise<InstalledPlugin[]> {
-  const dir = join(vault, ".obsidian", "plugins");
+  const p = vaultPath();
+  const dir = p.join(vault, ".obsidian", "plugins");
   if (!existsSync(dir)) return [];
   let entries: string[];
   try {
@@ -137,7 +152,7 @@ async function scanVaultPlugins(vault: string): Promise<InstalledPlugin[]> {
   }
   const out: InstalledPlugin[] = [];
   for (const entry of entries) {
-    const manifestPath = join(dir, entry, "manifest.json");
+    const manifestPath = p.join(dir, entry, "manifest.json");
     if (!existsSync(manifestPath)) continue;
     try {
       const m = JSON.parse(await readFile(manifestPath, "utf8")) as {

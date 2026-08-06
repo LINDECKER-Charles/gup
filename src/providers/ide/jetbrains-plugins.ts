@@ -1,6 +1,6 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { posix as posixPath, win32 as winPath } from "node:path";
 import AdmZip from "adm-zip";
 import pLimit from "p-limit";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
@@ -16,18 +16,19 @@ interface PluginMeta {
 /**
  * Plugins installed manually in JetBrains IDEs (i.e. under the user config
  * dir, not bundled with the IDE itself). Detect-only: updates flow through
- * the IDE's plugin manager â€” we can't safely replace JARs without breaking
+ * the IDE's plugin manager — we can't safely replace JARs without breaking
  * the IDE's tracking.
  *
- * Scan strategy: enumerate `%APPDATA%\JetBrains\<ProductDirYYYY.X>\plugins`,
- * extract metadata from each plugin's `META-INF/plugin.xml` (sometimes
- * embedded in a JAR), query the JetBrains marketplace XML listing for the
- * latest stable version.
+ * Scan strategy: enumerate `%APPDATA%\JetBrains\<ProductDirYYYY.X>\plugins`
+ * (on macOS `~/Library/Application Support/JetBrains/<ProductDirYYYY.X>/
+ * plugins`), extract metadata from each plugin's `META-INF/plugin.xml`
+ * (sometimes embedded in a JAR), query the JetBrains marketplace XML listing
+ * for the latest stable version.
  */
 export class JetBrainsPluginsProvider implements Provider {
   readonly id = "jetbrains-plugins";
   readonly displayName = "JetBrains plugins";
-  readonly installHint = "Auto-installÃ©s depuis l'IDE (Settings â†’ Plugins)";
+  readonly installHint = "Auto-installés depuis l'IDE (Settings → Plugins)";
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
@@ -39,7 +40,7 @@ export class JetBrainsPluginsProvider implements Provider {
     const allPlugins = await scanAllPlugins();
     if (allPlugins.length === 0) return [];
 
-    // Dedupe: same plugin installed in multiple IDEs â€” keep the oldest
+    // Dedupe: same plugin installed in multiple IDEs — keep the oldest
     // version (an update there helps everyone) and merge ideHosts.
     const byId = new Map<string, PluginMeta>();
     for (const plugin of allPlugins) {
@@ -83,7 +84,7 @@ export class JetBrainsPluginsProvider implements Provider {
       id: packageId,
       success: false,
       skipped: true,
-      message: "Settings â†’ Plugins â†’ Updates (depuis l'IDE concernÃ©).",
+      message: "Settings → Plugins → Updates (depuis l'IDE concerné).",
     };
   }
 
@@ -97,10 +98,34 @@ export class JetBrainsPluginsProvider implements Provider {
   }
 }
 
+/**
+ * Join with the separator of the running OS rather than the host's — the two
+ * differ under test, where `process.platform` is forced to "win32" on a POSIX
+ * box and a bare `join()` would emit "/" where the asserted `C:\…` paths need
+ * "\".
+ *
+ * Keyed on win32 specifically, not on "not darwin": under WSL this is a Linux
+ * process that may still see a translated `APPDATA` (`/mnt/c/Users/…`), and
+ * joining that with backslashes would produce a path that resolves nowhere.
+ */
+function joinPath(...parts: string[]): string {
+  return process.platform === "win32"
+    ? winPath.join(...parts)
+    : posixPath.join(...parts);
+}
+
 function jetbrainsConfigRoot(): string {
+  // macOS stores per-IDE configuration (and therefore user-installed plugins)
+  // under the user Application Support tree — the exact counterpart of
+  // %APPDATA%\JetBrains on Windows.
+  if (process.platform === "darwin") {
+    const home = process.env["HOME"];
+    if (!home) return "";
+    return posixPath.join(home, "Library", "Application Support", "JetBrains");
+  }
   const appdata = process.env["APPDATA"];
   if (!appdata) return "";
-  return join(appdata, "JetBrains");
+  return joinPath(appdata, "JetBrains");
 }
 
 async function scanAllPlugins(): Promise<PluginMeta[]> {
@@ -117,7 +142,7 @@ async function scanAllPlugins(): Promise<PluginMeta[]> {
   const out: PluginMeta[] = [];
   for (const ide of ides) {
     if (!/^[A-Za-z]+\d{4}\.\d+$/.test(ide)) continue;
-    const pluginsDir = join(root, ide, "plugins");
+    const pluginsDir = joinPath(root, ide, "plugins");
     if (!existsSync(pluginsDir)) continue;
 
     const plugins = await scanIdeDir(pluginsDir, shortenIdeName(ide));
@@ -136,7 +161,7 @@ async function scanIdeDir(dir: string, ideHost: string): Promise<PluginMeta[]> {
 
   const out: PluginMeta[] = [];
   for (const entry of entries) {
-    const fullPath = join(dir, entry);
+    const fullPath = joinPath(dir, entry);
     let info;
     try {
       info = await stat(fullPath);
@@ -159,7 +184,7 @@ async function scanIdeDir(dir: string, ideHost: string): Promise<PluginMeta[]> {
 async function extractFromPluginDir(
   dir: string,
 ): Promise<{ id: string; name: string; version: string; vendor: string | null } | null> {
-  const direct = join(dir, "META-INF", "plugin.xml");
+  const direct = joinPath(dir, "META-INF", "plugin.xml");
   if (existsSync(direct)) {
     try {
       const content = await readFile(direct, "utf8");
@@ -170,7 +195,7 @@ async function extractFromPluginDir(
     }
   }
 
-  const libDir = join(dir, "lib");
+  const libDir = joinPath(dir, "lib");
   if (!existsSync(libDir)) return null;
 
   let jars: string[];
@@ -180,7 +205,7 @@ async function extractFromPluginDir(
     return null;
   }
   for (const jar of jars) {
-    const meta = extractFromJar(join(libDir, jar));
+    const meta = extractFromJar(joinPath(libDir, jar));
     if (meta) return meta;
   }
   return null;
@@ -219,7 +244,7 @@ function parsePluginXml(
 }
 
 /**
- * Platform plugins ship with (or version-track) the IDE â€” they update only
+ * Platform plugins ship with (or version-track) the IDE — they update only
  * when the IDE itself is updated. Detecting them by:
  *   - vendor = JetBrains (string match, including "JetBrains s.r.o."),
  *   - version follows the build-number scheme NNN.NNN.NN(N)? (e.g.

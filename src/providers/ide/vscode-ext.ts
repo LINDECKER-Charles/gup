@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists } from "../../core/runner.js";
 import {
   fetchMicrosoftMarketplaceLatest,
@@ -16,7 +17,14 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class VsCodeExtProvider implements Provider {
   readonly id = "vscode-ext";
   readonly displayName = "VS Code extensions";
-  readonly installHint = "VS Code: https://code.visualstudio.com";
+  // Le cask macOS n'ajoute pas `code` au PATH : c'est la palette de commandes
+  // qui pose le shim, d'où le rappel explicite.
+  readonly installHint = pickInstallHint({
+    win32: "VS Code: https://code.visualstudio.com",
+    darwin:
+      "brew install --cask visual-studio-code, puis Command Palette → Shell Command: Install 'code' command in PATH",
+    fallback: "VS Code: https://code.visualstudio.com",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

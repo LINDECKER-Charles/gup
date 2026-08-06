@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { join } from "node:path";
+import { win32 as winPath } from "node:path";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface NppPluginsListEntry {
@@ -17,18 +18,21 @@ interface NppPluginsList {
 /**
  * Notepad++ plugins.
  *
- * Notepad++ ships a built-in Plugin Admin (Menu â†’ Plugins â†’ Plugins Admin)
+ * Notepad++ ships a built-in Plugin Admin (Menu → Plugins → Plugins Admin)
  * with no CLI counterpart. We enumerate installed plugin folders from the
  * user-mode plugin path and the per-machine install path, then compare
  * names against the official `nppPluginList` JSON to surface the upstream
  * version. Installed version is unavailable without parsing the DLL
- * resource table (PE version info) â€” left as `?` since the actionable
+ * resource table (PE version info) — left as `?` since the actionable
  * value is the upstream "latest" and the Plugin Admin handles diffing.
  */
 export class NotepadPpProvider implements Provider {
   readonly id = "notepad-pp";
   readonly displayName = "Notepad++ plugins";
-  readonly installHint = "Plugins â†’ Plugins Admin (depuis Notepad++)";
+  readonly installHint = pickInstallHint({
+    win32: "Plugins → Plugins Admin (depuis Notepad++)",
+    fallback: "Windows uniquement : Notepad++ n'existe pas sur cette plateforme.",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
@@ -64,7 +68,7 @@ export class NotepadPpProvider implements Provider {
       id: packageId,
       success: false,
       skipped: true,
-      message: "Notepad++ â†’ Plugins â†’ Plugins Admin â†’ Updates.",
+      message: "Notepad++ → Plugins → Plugins Admin → Updates.",
     };
   }
 
@@ -82,11 +86,11 @@ function pluginDirs(): string[] {
   const out: string[] = [];
   const localAppData = process.env["LOCALAPPDATA"];
   if (localAppData) {
-    out.push(join(localAppData, "Notepad++", "plugins"));
+    out.push(winPath.join(localAppData, "Notepad++", "plugins"));
   }
   for (const env of ["PROGRAMFILES", "PROGRAMFILES(X86)"]) {
     const base = process.env[env];
-    if (base) out.push(join(base, "Notepad++", "plugins"));
+    if (base) out.push(winPath.join(base, "Notepad++", "plugins"));
   }
   return out;
 }
@@ -106,7 +110,7 @@ async function listInstalledPluginNames(): Promise<Set<string>> {
       if (entry.toLowerCase() === "config") continue;
       if (entry.toLowerCase() === "apis") continue;
       if (entry.toLowerCase() === "doc") continue;
-      const dll = join(dir, entry, `${entry}.dll`);
+      const dll = winPath.join(dir, entry, `${entry}.dll`);
       if (existsSync(dll)) names.add(entry);
     }
   }

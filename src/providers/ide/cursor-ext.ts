@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists } from "../../core/runner.js";
 import {
   fetchMicrosoftMarketplaceLatest,
@@ -13,7 +14,14 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CursorExtProvider implements Provider {
   readonly id = "cursor-ext";
   readonly displayName = "Cursor extensions";
-  readonly installHint = "https://www.cursor.com/";
+  // Sur macOS le cask installe l'app mais pas toujours le binaire `cursor`
+  // dans le PATH : la palette de commandes est le seul moyen fiable.
+  readonly installHint = pickInstallHint({
+    win32: "https://www.cursor.com/",
+    darwin:
+      "brew install --cask cursor, puis Cursor → Command Palette → Shell Command: Install 'cursor' command",
+    fallback: "https://www.cursor.com/",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

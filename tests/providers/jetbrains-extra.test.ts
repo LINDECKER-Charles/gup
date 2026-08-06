@@ -47,6 +47,11 @@ const jsonResponse = (body: unknown, ok = true) =>
 
 let fetchMock: ReturnType<typeof vi.fn>;
 const ORIGINAL_ENV = { ...process.env };
+const ORIGINAL_PLATFORM = process.platform;
+
+function setPlatform(value: NodeJS.Platform): void {
+  Object.defineProperty(process, "platform", { value, configurable: true });
+}
 
 beforeEach(() => {
   runPmUpdateMock.mockReset();
@@ -60,12 +65,19 @@ beforeEach(() => {
   statMock.mockReset();
   fetchMock = vi.fn();
   vi.stubGlobal("fetch", fetchMock);
+  // This whole file exercises the Windows install layout (%LOCALAPPDATA%
+  // Toolbox, Program Files, scoop apps). The provider now branches on the
+  // platform to pick its candidate roots and its path separator, so the
+  // platform has to be pinned — otherwise these cases only run on a Windows
+  // runner and silently do nothing on the macOS and Linux CI legs.
+  setPlatform("win32");
   process.env["LOCALAPPDATA"] = "C:\\Users\\me\\AppData\\Local";
   process.env["USERPROFILE"] = "C:\\Users\\me";
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  setPlatform(ORIGINAL_PLATFORM);
   process.env = { ...ORIGINAL_ENV };
 });
 

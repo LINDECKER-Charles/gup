@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { win32 as winPath } from "node:path";
+import { pickInstallHint } from "../../core/install-hint.js";
 import { run } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -10,12 +11,12 @@ interface InstalledEditor {
 }
 
 /**
- * Unity Hub â€” manages installed Unity Editor versions.
+ * Unity Hub — manages installed Unity Editor versions.
  *
  * Detection is filesystem-only (the Hub binary lives in a fixed install
  * path on Windows). The Hub CLI (`Unity Hub.exe -- --headless editors
  * --installed`) lists installed editors but it's a GUI process invoked
- * non-interactively, with quirky output â€” we fall back to parsing
+ * non-interactively, with quirky output — we fall back to parsing
  * `%APPDATA%\UnityHub\editors-v2.json` when present.
  *
  * Latest version lookup goes to Unity's public release feed. Items are
@@ -25,7 +26,13 @@ interface InstalledEditor {
 export class UnityHubProvider implements Provider {
   readonly id = "unity-hub";
   readonly displayName = "Unity Editor (via Hub)";
-  readonly installHint = "https://unity.com/unity-hub";
+  // Le Hub existe sur macOS/Linux, mais la détection ci-dessous est encore
+  // limitée aux chemins Windows : le dire plutôt que promettre une détection.
+  readonly installHint = pickInstallHint({
+    win32: "https://unity.com/unity-hub",
+    fallback:
+      "Détection Windows uniquement pour l'instant : https://unity.com/unity-hub",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
@@ -52,7 +59,7 @@ export class UnityHubProvider implements Provider {
       id: packageId,
       success: false,
       skipped: true,
-      message: "Mettre Ã  jour depuis Unity Hub (Installs â†’ â‹® â†’ Install Editor).",
+      message: "Mettre à jour depuis Unity Hub (Installs → ⋮ → Install Editor).",
     };
   }
 
@@ -69,19 +76,19 @@ export class UnityHubProvider implements Provider {
 function unityHubExe(): string | null {
   if (process.platform !== "win32") return null;
   const candidates = [
-    process.env["PROGRAMFILES"] && join(process.env["PROGRAMFILES"], "Unity Hub", "Unity Hub.exe"),
-    process.env["PROGRAMFILES(X86)"] && join(process.env["PROGRAMFILES(X86)"], "Unity Hub", "Unity Hub.exe"),
+    process.env["PROGRAMFILES"] && winPath.join(process.env["PROGRAMFILES"], "Unity Hub", "Unity Hub.exe"),
+    process.env["PROGRAMFILES(X86)"] && winPath.join(process.env["PROGRAMFILES(X86)"], "Unity Hub", "Unity Hub.exe"),
   ].filter((p): p is string => typeof p === "string");
   return candidates.find((p) => existsSync(p)) ?? null;
 }
 
 function editorsConfigFile(): string {
   const appdata = process.env["APPDATA"];
-  return appdata ? join(appdata, "UnityHub", "editors-v2.json") : "";
+  return appdata ? winPath.join(appdata, "UnityHub", "editors-v2.json") : "";
 }
 
 async function listInstalledEditors(): Promise<InstalledEditor[]> {
-  // Prefer the JSON the Hub maintains â€” no process spawn, no GUI dance.
+  // Prefer the JSON the Hub maintains — no process spawn, no GUI dance.
   const cfg = editorsConfigFile();
   if (existsSync(cfg)) {
     try {

@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
-import { join } from "node:path";
+import { posix as posixPath, win32 as winPath } from "node:path";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -13,13 +14,17 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  *
  * Strategy: enumerate `<data>/extensions/installed/<name>/extension.toml`
  * (newer Zed) or `extension.json` (older), grab installed versions, mark
- * everything `manual: true` â€” Zed's own background updater is the source
+ * everything `manual: true` — Zed's own background updater is the source
  * of truth.
  */
 export class ZedExtProvider implements Provider {
   readonly id = "zed-ext";
   readonly displayName = "Zed extensions";
-  readonly installHint = "https://zed.dev/";
+  readonly installHint = pickInstallHint({
+    win32: "https://zed.dev/",
+    darwin: "brew install --cask zed",
+    fallback: "https://zed.dev/",
+  });
 
   async isAvailable(): Promise<boolean> {
     const dir = zedInstalledDir();
@@ -39,14 +44,14 @@ export class ZedExtProvider implements Provider {
 
     const out: OutdatedPackage[] = [];
     for (const entry of entries) {
-      const version = await readExtensionVersion(join(dir, entry));
+      const version = await readExtensionVersion(zedPath().join(dir, entry));
       if (!version) continue;
       out.push({
         id: entry,
         name: entry,
         current: version,
         latest: "?",
-        note: "auto-update gÃ©rÃ© par Zed",
+        note: "auto-update géré par Zed",
         manual: true,
       });
     }
@@ -58,7 +63,7 @@ export class ZedExtProvider implements Provider {
       id: packageId,
       success: false,
       skipped: true,
-      message: "Mettre Ã  jour depuis Zed (zed: extensions).",
+      message: "Mettre à jour depuis Zed (zed: extensions).",
     };
   }
 
@@ -72,25 +77,37 @@ export class ZedExtProvider implements Provider {
   }
 }
 
+/**
+ * The extension tree sits on the *target* OS, so the separator follows
+ * `process.platform` rather than the host `path` default — otherwise a
+ * win32-mocked unit test only builds `C:\…` paths on a Windows runner.
+ */
+function zedPath(): typeof winPath {
+  return process.platform === "win32" ? winPath : posixPath;
+}
+
 function zedInstalledDir(): string {
   if (process.platform === "win32") {
     const local = process.env["LOCALAPPDATA"];
-    return local ? join(local, "Zed", "extensions", "installed") : "";
+    return local ? winPath.join(local, "Zed", "extensions", "installed") : "";
   }
   if (process.platform === "darwin") {
     const home = process.env["HOME"];
     return home
-      ? join(home, "Library", "Application Support", "Zed", "extensions", "installed")
+      ? posixPath.join(home, "Library", "Application Support", "Zed", "extensions", "installed")
       : "";
   }
   const xdg = process.env["XDG_DATA_HOME"];
-  if (xdg) return join(xdg, "zed", "extensions", "installed");
+  if (xdg) return posixPath.join(xdg, "zed", "extensions", "installed");
   const home = process.env["HOME"];
-  return home ? join(home, ".local", "share", "zed", "extensions", "installed") : "";
+  return home
+    ? posixPath.join(home, ".local", "share", "zed", "extensions", "installed")
+    : "";
 }
 
 async function readExtensionVersion(dir: string): Promise<string | null> {
-  const tomlPath = join(dir, "extension.toml");
+  const p = zedPath();
+  const tomlPath = p.join(dir, "extension.toml");
   if (existsSync(tomlPath)) {
     try {
       const content = await readFile(tomlPath, "utf8");
@@ -100,7 +117,7 @@ async function readExtensionVersion(dir: string): Promise<string | null> {
       /* fall through */
     }
   }
-  const jsonPath = join(dir, "extension.json");
+  const jsonPath = p.join(dir, "extension.json");
   if (existsSync(jsonPath)) {
     try {
       const data = JSON.parse(await readFile(jsonPath, "utf8")) as {

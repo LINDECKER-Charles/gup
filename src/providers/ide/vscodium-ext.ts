@@ -1,3 +1,4 @@
+import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists } from "../../core/runner.js";
 import {
   fetchOpenVsxLatest,
@@ -13,7 +14,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class VsCodiumExtProvider implements Provider {
   readonly id = "vscodium-ext";
   readonly displayName = "VSCodium extensions";
-  readonly installHint = "https://vscodium.com/";
+  readonly installHint = pickInstallHint({
+    win32: "https://vscodium.com/",
+    darwin: "brew install --cask vscodium",
+    fallback: "https://vscodium.com/",
+  });
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

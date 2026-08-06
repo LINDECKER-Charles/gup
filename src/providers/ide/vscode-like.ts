@@ -9,7 +9,7 @@ import type { OutdatedPackage, UpdateOutcome } from "../../core/types.js";
  * Microsoft Marketplace gallery.
  *
  * VSCodium-style forks that consume Open VSX instead use the same CLI but
- * a different gallery â€” handled by passing a custom `fetchLatest`.
+ * a different gallery — handled by passing a custom `fetchLatest`.
  */
 export interface VsCodeLikeOptions {
   /** Binary in PATH (`code`, `cursor`, `windsurf`, `codium`). */
@@ -106,7 +106,7 @@ export async function fetchMicrosoftMarketplaceLatest(
 export async function fetchOpenVsxLatest(
   extensionId: string,
 ): Promise<string | null> {
-  // Open VSX uses publisher/name URL segments â€” extensionId is publisher.name.
+  // Open VSX uses publisher/name URL segments — extensionId is publisher.name.
   const idx = extensionId.indexOf(".");
   if (idx === -1) return null;
   const publisher = extensionId.slice(0, idx);

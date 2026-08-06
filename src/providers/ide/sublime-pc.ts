@@ -1,16 +1,17 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { posix as posixPath, win32 as winPath } from "node:path";
+import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
- * Sublime Text â€” Package Control packages.
+ * Sublime Text — Package Control packages.
  *
  * Package Control runs inside the editor and auto-updates on startup; there
  * is no external CLI. This provider just enumerates `installed_packages`
  * from `Package Control.sublime-settings` so the inventory is visible.
- * Everything is flagged `manual: true` â€” actual updates happen on next
- * Sublime launch (or via Command Palette â†’ Package Control: Upgrade All).
+ * Everything is flagged `manual: true` — actual updates happen on next
+ * Sublime launch (or via Command Palette → Package Control: Upgrade All).
  *
  * `.sublime-settings` files are JSON-with-comments. We strip line/block
  * comments and trailing commas before parsing.
@@ -18,7 +19,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class SublimePcProvider implements Provider {
   readonly id = "sublime-pc";
   readonly displayName = "Sublime Package Control";
-  readonly installHint = "https://packagecontrol.io/";
+  readonly installHint = pickInstallHint({
+    win32: "https://packagecontrol.io/",
+    darwin:
+      "brew install --cask sublime-text, puis Package Control : https://packagecontrol.io/",
+    fallback: "https://packagecontrol.io/",
+  });
 
   async isAvailable(): Promise<boolean> {
     return existsSync(packageControlSettingsFile());
@@ -63,7 +69,7 @@ export class SublimePcProvider implements Provider {
       success: false,
       skipped: true,
       message:
-        "Sublime Text â†’ Command Palette â†’ Package Control: Upgrade Package.",
+        "Sublime Text → Command Palette → Package Control: Upgrade Package.",
     };
   }
 
@@ -78,21 +84,23 @@ export class SublimePcProvider implements Provider {
 }
 
 function packageControlSettingsFile(): string {
-  const file = join("Packages", "User", "Package Control.sublime-settings");
+  // Spread as segments (instead of pre-joining) so each branch renders the
+  // separator of its own platform, whatever the host running this code.
+  const file = ["Packages", "User", "Package Control.sublime-settings"];
   if (process.platform === "win32") {
     const appdata = process.env["APPDATA"];
-    return appdata ? join(appdata, "Sublime Text", file) : "";
+    return appdata ? winPath.join(appdata, "Sublime Text", ...file) : "";
   }
   if (process.platform === "darwin") {
     const home = process.env["HOME"];
     return home
-      ? join(home, "Library", "Application Support", "Sublime Text", file)
+      ? posixPath.join(home, "Library", "Application Support", "Sublime Text", ...file)
       : "";
   }
   const xdg = process.env["XDG_CONFIG_HOME"];
-  if (xdg) return join(xdg, "sublime-text", file);
+  if (xdg) return posixPath.join(xdg, "sublime-text", ...file);
   const home = process.env["HOME"];
-  return home ? join(home, ".config", "sublime-text", file) : "";
+  return home ? posixPath.join(home, ".config", "sublime-text", ...file) : "";
 }
 
 function stripJsonComments(input: string): string {
