@@ -6,6 +6,7 @@ import { updateCommand } from "./commands/update.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { menuCommand } from "./commands/menu.js";
 import { setInstallTimeoutSeconds } from "./core/runner.js";
+import { gupVersion } from "./core/version.js";
 
 const program = new Command();
 
@@ -14,7 +15,7 @@ program
   .description(
     "Gestionnaire unifié de mises à jour. `gup` ouvre un menu interactif ; les sous-commandes (list, update, doctor) court-circuitent le menu.",
   )
-  .version("0.1.0");
+  .version(gupVersion());
 
 // Default action: open the interactive menu when no subcommand is given.
 program.action(async () => {

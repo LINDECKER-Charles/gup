@@ -20,13 +20,13 @@ import {
   getInstallTimeoutSeconds,
   setInstallTimeoutSeconds,
 } from "../core/runner.js";
+import { gupVersion } from "../core/version.js";
 import type {
   OutdatedPackage,
   ProviderScanResult,
   UpdateOutcome,
 } from "../core/types.js";
 
-const VERSION = "0.1.0";
 
 interface MenuState {
   scans: ProviderScanResult[];
@@ -124,7 +124,7 @@ export async function menuCommand(): Promise<number> {
 function printHeader(): void {
   const title = chalk.bold("gup");
   const sub = chalk.dim("global updater");
-  const version = chalk.dim(`v${VERSION}`);
+  const version = chalk.dim(`v${gupVersion()}`);
   const line = chalk.dim("─".repeat(60));
   process.stdout.write(`\n  ${title}  ${sub}${" ".repeat(40 - "global updater".length)}${version}\n`);
   process.stdout.write(`  ${line}\n`);
