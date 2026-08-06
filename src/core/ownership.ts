@@ -1,5 +1,8 @@
-import { run } from "./runner.js";
-import { inferSourceFromPath, type InstallSource } from "./install-source.js";
+import {
+  inferSourceFromPath,
+  resolveBinaryPath,
+  type InstallSource,
+} from "./install-source.js";
 import type { ProviderScanResult } from "./types.js";
 
 /**
@@ -23,12 +26,9 @@ export type BinaryOwner =
 
 /** PATH-first resolution → owning install root. */
 export async function detectBinaryOwner(binary: string): Promise<BinaryOwner> {
-  const probe = process.platform === "win32" ? "where" : "which";
-  const { stdout, failed } = await run(probe, [binary]);
-  if (failed) return "manual";
-  const first = stdout.split(/\r?\n/)[0]?.trim() ?? "";
-  if (!first) return "manual";
-  return inferBinaryOwnerFromPath(first);
+  const resolved = await resolveBinaryPath(binary);
+  if (!resolved) return "manual";
+  return inferBinaryOwnerFromPath(resolved);
 }
 
 /**
@@ -136,6 +136,28 @@ export const POLYGLOT_OWNERSHIP: Record<string, Record<string, string>> = {
     rust: "rustc",
     rustup: "rustup",
     go: "go",
+    git: "git",
+  },
+  // Homebrew is the macOS equivalent of the conflict above: `brew install node`
+  // and fnm/volta/mise/asdf all want to own `node` on PATH, and brew's keg-only
+  // versioned formulae (node@22, python@3.13) share the same shim name.
+  brew: {
+    node: "node",
+    "node@20": "node",
+    "node@22": "node",
+    "node@24": "node",
+    python: "python3",
+    "python@3.11": "python3",
+    "python@3.12": "python3",
+    "python@3.13": "python3",
+    "python@3.14": "python3",
+    ruby: "ruby",
+    go: "go",
+    rust: "rustc",
+    rustup: "rustup",
+    php: "php",
+    "php@8.3": "php",
+    "php@8.4": "php",
     git: "git",
   },
 };

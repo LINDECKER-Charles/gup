@@ -19,8 +19,18 @@ export async function isCorepackShim(binary: string): Promise<boolean> {
     whichFirst(binary),
   ]);
   if (!corepackPath || !binaryPath) return false;
-  return (
-    path.dirname(corepackPath).toLowerCase() ===
-    path.dirname(binaryPath).toLowerCase()
-  );
+
+  // Windows paths are case-insensitive and `where` echoes back the casing of
+  // the PATH entry it matched, so `C:\Program Files\nodejs` and
+  // `C:\PROGRAM FILES\NODEJS` must compare equal — hence the lowercasing.
+  // That trick is wrong on POSIX, where `/usr/bin` and `/usr/BIN` are two
+  // distinct directories: folding the case there could claim corepack owns a
+  // binary that lives somewhere else entirely.
+  if (process.platform === "win32") {
+    return (
+      path.win32.dirname(corepackPath).toLowerCase() ===
+      path.win32.dirname(binaryPath).toLowerCase()
+    );
+  }
+  return path.posix.dirname(corepackPath) === path.posix.dirname(binaryPath);
 }
