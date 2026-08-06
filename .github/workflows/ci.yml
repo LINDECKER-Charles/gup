@@ -17,8 +17,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
-        node: ["20", "22"]
+        # gup shells out to a different package manager on every platform and
+        # builds OS-specific paths, so a single-OS matrix cannot catch a
+        # regression on the other two. Windows stays the primary target;
+        # macOS and Linux are first-class since the Homebrew/apt/dnf
+        # delegation landed.
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        # The two Node lines still under support: 22 (Maintenance LTS, until
+        # 2027-04) and 24 (Active LTS, until 2028-04). Node 20 reached EOL on
+        # 2026-04-30 — testing it advertised support for an unpatched runtime.
+        node: ["22", "24"]
 
     steps:
       - name: Checkout
@@ -35,6 +43,18 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      # CONTRIBUTING lists lint as part of the PR gate, but no workflow ran it
+      # until now — an eslint bump could add violations that nothing surfaced.
+      # Restricted to one leg: eslint output does not vary by OS or Node line,
+      # so running it six times would only slow the matrix down.
+      - name: Lint
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
+        run: npm run lint
+
+      - name: Lint (security ruleset)
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
+        run: npm run lint:security
 
       - name: Build
         run: npm run build
