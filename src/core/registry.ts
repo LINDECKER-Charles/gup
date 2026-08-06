@@ -7,6 +7,12 @@ import { WingetProvider } from "../providers/os/winget.js";
 import { ScoopProvider } from "../providers/os/scoop.js";
 import { ChocoProvider } from "../providers/os/choco.js";
 
+// --- OS-level / macOS -------------------------------------------------------
+import { BrewProvider } from "../providers/os/brew.js";
+import { BrewCaskProvider } from "../providers/os/brew-cask.js";
+import { MasProvider } from "../providers/os/mas.js";
+import { MacPortsProvider } from "../providers/os/macports.js";
+
 // --- WSL --------------------------------------------------------------------
 import { WslProvider } from "../providers/wsl/wsl.js";
 import { WslAptProvider } from "../providers/wsl/wsl-apt.js";
@@ -195,6 +201,13 @@ export const ALL_PROVIDERS: Provider[] = [
   new WingetProvider(),
   new ScoopProvider(),
   new ChocoProvider(),
+
+  // OS-level / macOS
+  new BrewProvider(),
+  new BrewCaskProvider(),
+  new MasProvider(),
+  new MacPortsProvider(),
+
   new WslProvider(),
   new WslAptProvider(),
   new WslDnfProvider(),
