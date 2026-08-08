@@ -6,6 +6,10 @@ export default defineConfig({
     environment: "node",
     reporters: ["default"],
     clearMocks: true,
+    // The history writer is reached transitively by the command/ui suites and
+    // writes to the real user profile. Off by default here; the suites that
+    // actually exercise it re-enable it against a temp directory.
+    env: { GUP_HISTORY: "0" },
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "html", "lcov", "json-summary"],

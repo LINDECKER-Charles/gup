@@ -179,6 +179,18 @@ export default [
     },
   },
   {
+    // History store appends to <data root>/gup/history/<YYYY-MM>.jsonl. The
+    // directory comes from a hardcoded env var (%LOCALAPPDATA%,
+    // $XDG_STATE_HOME) or homedir() joined with fixed segments, and the
+    // basename is a UTC month formatted by the code itself. The one
+    // user-controlled input, $GUP_HISTORY_DIR, is the user pointing their own
+    // history at their own path — same trust boundary as their home directory.
+    files: ["src/core/history/store.ts"],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
     // SDKMAN provider reads `$HOME/.sdkman/bin/sdkman-init.sh` (hardcoded
     // subpath off homedir()). Version regex is anchored on `[0-9][\w.+-]*`
     // — single character-class quantifier, no backtracking pathology.
