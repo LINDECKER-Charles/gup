@@ -108,8 +108,14 @@ describe("runner: real process spawn", () => {
 
   it("reports a missing binary as a failure, not a rejection", async () => {
     const res = await run("gup-definitely-not-a-real-binary", []);
+    // The contract callers rely on is "resolves, and says it failed" — no
+    // throw to unwind a provider mid-scan. The exit code itself is not part of
+    // that contract and is not portable: POSIX surfaces the spawn ENOENT, so
+    // execa reports no numeric code and run() falls back to its -1 sentinel,
+    // while on Windows execa 10 resolves the lookup failure to exit code 1.
+    // Asserting either literal pins the test to one platform.
     expect(res.failed).toBe(true);
-    expect(res.exitCode).toBe(-1);
+    expect(res.exitCode).not.toBe(0);
   });
 
   it("captures stderr separately from stdout", async () => {

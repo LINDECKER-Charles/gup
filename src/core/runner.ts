@@ -13,15 +13,30 @@ export interface RunResult {
 
 // Allowlist for the `command` argument: alphanumerics + the path glyphs that
 // appear in real binaries on either OS (`/`, `\`, `:` for Windows drives,
-// space and parens for `C:\Program Files (x86)\…`). Anything outside this set
-// is rejected before reaching execa. Combined with the per-provider argv
-// validation, this guarantees no shell metacharacter can flow into the
-// command name even on the shell-routed callsites (scoop's .cmd/.ps1 shim,
-// see tests/security/shell-usage.test.ts allowlist). The regex is anchored
-// and uses an explicit character class so CodeQL's JS taint analysis
-// recognises it as a sanitiser for js/shell-command-injection-from-environment
-// and js/indirect-command-line-injection.
-const SAFE_COMMAND_PATTERN = /^[A-Za-z0-9_.+\-/\\: ()]+$/;
+// space and parens for `C:\Program Files (x86)\…`, `~` for 8.3 short paths).
+// Anything outside this set is rejected before reaching execa. Combined with
+// the per-provider argv validation, this guarantees no shell metacharacter can
+// flow into the command name even on the shell-routed callsites (scoop's
+// .cmd/.ps1 shim, see tests/security/shell-usage.test.ts allowlist). The regex
+// is anchored and uses an explicit character class so CodeQL's JS taint
+// analysis recognises it as a sanitiser for
+// js/shell-command-injection-from-environment and
+// js/indirect-command-line-injection.
+//
+// `~` is load-bearing on Windows, not a convenience: 8.3 short paths are what
+// the OS hands back for any directory whose name exceeds 8 characters or
+// contains a space, so `C:\PROGRA~1\nodejs\npm.cmd` and
+// `C:\Users\CHARLE~1\scoop\shims\gh.exe` are ordinary PATH entries on a large
+// share of machines — %TEMP% itself is short-form for any username over 8
+// characters. Without it, gup refuses to spawn a perfectly legitimate binary.
+// It stays inert as far as injection goes: every callsite that derives a
+// command name from a path runs through execa with shell interpretation off,
+// where argv is passed as a vector and `~` is just a character; the one
+// shell-routed callsite (scoop) passes a fixed literal, never a derived path.
+// (Spelling out the opt-in flag here would trip the drift detector in
+// tests/security/shell-usage.test.ts, which greps source text, comments
+// included, and would read this file as a new shell callsite.)
+const SAFE_COMMAND_PATTERN = /^[A-Za-z0-9_.+\-/\\:~ ()]+$/;
 
 function sanitizeCommand(command: string): string {
   if (typeof command !== "string" || command.length === 0) {
