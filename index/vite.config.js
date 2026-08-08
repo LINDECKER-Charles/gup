@@ -24,8 +24,19 @@ export default defineConfig({
     assetsInlineLimit: 0,
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ["react", "react-dom"],
+        // Vite 8 swapped Rollup for Rolldown, which only accepts the function
+        // form of `manualChunks` — the object map that worked under Rollup
+        // now aborts the build with "manualChunks is not a function". The
+        // function form is understood by both bundlers, so this stays portable
+        // if the bundler changes again.
+        //
+        // `scheduler` rides along deliberately: it is react-dom's own runtime
+        // dependency, and leaving it out strands it in the entry chunk, which
+        // defeats the point of splitting React off in the first place.
+        manualChunks(id) {
+          return /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)
+            ? "react"
+            : undefined;
         },
       },
     },
