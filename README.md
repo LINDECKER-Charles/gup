@@ -121,6 +121,59 @@ retry prompt.
 | `gup update --timeout <s>` | Auto-skip any install exceeding `<s>` seconds (0 = off) |
 | `gup doctor` | Detected providers + install hints |
 
+### Activity history
+
+Every scan and every update attempt is appended to a local log, so you keep a
+record of what was updated, when, from which version to which, and what failed.
+Nothing is sent anywhere and nothing is read back — the log never influences
+what `gup` does next.
+
+**Where** — one file per month, `YYYY-MM.jsonl`, under:
+
+| Platform | Path |
+|---|---|
+| Windows | `%LOCALAPPDATA%\gup\history\` |
+| macOS | `~/Library/Application Support/gup/history/` |
+| Linux / other | `$XDG_STATE_HOME/gup/history/` (default `~/.local/state/gup/history/`) |
+
+**Format** — [JSONL](https://jsonlines.org): one JSON object per line, each
+stamped with a schema version (`v`) and a `runId` shared by every record of the
+same `gup` invocation.
+
+```jsonc
+{"v":1,"ts":"2026-08-08T20:11:04.318Z","runId":"3f2a…","gup":"0.3.1","platform":"win32",
+ "kind":"scan","durationMs":8421,"fast":false,"filter":[],"outdated":7,
+ "providers":[{"providerId":"winget","outdated":5},{"providerId":"npm-global","outdated":2}]}
+{"v":1,"ts":"2026-08-08T20:11:19.902Z","runId":"3f2a…","gup":"0.3.1","platform":"win32",
+ "kind":"update","providerId":"npm-global","packageId":"typescript","status":"success",
+ "from":"5.9.2","to":"6.0.3","durationMs":14108}
+```
+
+`status` is one of `success`, `failed` or `skipped`. Optional fields appear only
+when they apply: `message` (failure cause or skip reason), `retry` (the retry
+strategy used), `elevated` (applied through the UAC / sudo batch).
+
+**Reading it back:**
+
+```powershell
+Get-Content "$env:LOCALAPPDATA\gup\history\2026-08.jsonl" | ConvertFrom-Json |
+  Where-Object kind -eq 'update' | Group-Object status
+```
+
+```bash
+jq -s 'map(select(.kind=="update" and .status=="success")) | length' ~/.local/state/gup/history/*.jsonl
+```
+
+**Turning it off / moving it:**
+
+| Variable | Effect |
+|---|---|
+| `GUP_HISTORY=0` | Disables history entirely (`false`, `off`, `no` also work) |
+| `GUP_HISTORY_DIR=<path>` | Writes the shards somewhere else |
+
+A history that cannot be written (full disk, read-only profile) prints one
+dimmed warning on stderr and is never fatal to an update.
+
 ## Documentation
 
 | Document | Content |

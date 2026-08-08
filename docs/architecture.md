@@ -25,7 +25,7 @@ Technical view of `gup`. Audience: contributors, maintainers, security review.
 
 ## 1. Overview
 
-`gup` is a stateless orchestrator: it discovers the package managers installed on the machine, asks them **what is outdated**, then delegates **the updates** to them. No database, no persistent cache.
+`gup` is a stateless orchestrator: it discovers the package managers installed on the machine, asks them **what is outdated**, then delegates **the updates** to them. No database, no persistent cache. It does keep an append-only log of what it did (§9), but never reads it back — no run's behaviour depends on a previous one.
 
 ```mermaid
 flowchart LR
@@ -51,7 +51,7 @@ flowchart LR
 - **One file = one provider.** No horizontal coupling between providers.
 - **No `throw` inside `listOutdated` / `update`.** A broken provider does not break the others.
 - **No direct `child_process`.** Everything goes through `core/runner.ts` (Windows encoding, no-shell).
-- **No cache.** Every invocation rescans — deterministic behavior, no drift.
+- **No cache.** Every invocation rescans — deterministic behavior, no drift. The single thing `gup` writes to disk is the activity history (§9), and it is never read back into a decision: it records what happened, it never influences what happens next.
 
 ---
 
@@ -370,7 +370,7 @@ flowchart LR
 
 ## 9. Cross-cutting helpers
 
-Modules in `core/` shared between providers — always stateless.
+Modules in `core/` shared between providers. All stateless but one, `history/`, which appends to disk.
 
 | Helper | Role |
 |---|---|
@@ -381,6 +381,25 @@ Modules in `core/` shared between providers — always stateless.
 | `install-hint.ts` | Picks the `installHint` matching the running platform, so `gup doctor` never suggests `winget install …` on a Mac. |
 | `corepack-ownership.ts` | Detects whether pnpm/yarn are managed by corepack so the update is routed to the right place. |
 | `nvim-paths.ts` | Resolves cross-platform Neovim config paths (lazy/packer/mason). |
+| `history/` | The one stateful helper: appends every scan and every update attempt to a JSONL log. Write-only from the tool's point of view — see below. (Providers may write on their own account while doing their job — Nerd Fonts keeps a version lockfile — but that is install work, not orchestrator state.) |
+
+### Activity history
+
+`core/history/` is an append-only log of what `gup` did, kept for later analysis (charts, reports). It is deliberately **write-only within the tool**: nothing reads it back, so a missing, truncated or hand-edited log can never change an update's behaviour.
+
+```
+core/history/
+├── types.ts     # versioned record schema (ScanEvent | UpdateEvent)
+├── paths.ts     # <data root>/gup/history/<YYYY-MM>.jsonl
+└── store.ts     # recordScan / recordUpdate — synchronous, best-effort
+```
+
+Four decisions worth stating:
+
+- **JSONL, not a JSON array or a database.** One self-describing object per line means an append is a single `write` — no read-modify-write cycle, so the elevated child and its parent can log concurrently without a lock, and a process killed mid-write costs one line instead of the file. It also stays parseable by anything, without pulling a native dependency into a package that has none.
+- **Synchronous writes.** Every command in `cli.ts` ends on `process.exit(code)`, which does not drain pending async I/O. A fire-and-forget append would routinely drop the last records of a run.
+- **Best-effort, never fatal.** A full disk or a read-only profile costs a dimmed warning on stderr (never stdout — `gup list --json` is a pipe), not a failed upgrade.
+- **One write site per concern.** Updates are logged from `ui/apply-update.ts`, the single seam every non-elevated update goes through; scans from `ui/scan-progress.ts` plus the `--json` branch of `list.ts` that bypasses it. The elevated child stays a pure executor and its parent logs what comes back, so records always land in the invoking user's profile and never twice.
 
 ---
 
@@ -438,7 +457,11 @@ src/
 │   ├── wsl.ts                      # WSL bridge
 │   ├── install-source.ts           # PM ownership detection (security-critical)
 │   ├── corepack-ownership.ts       # corepack vs standalone routing
-│   └── nvim-paths.ts               # Neovim config paths
+│   ├── nvim-paths.ts               # Neovim config paths
+│   └── history/                    # append-only JSONL activity log
+│       ├── types.ts                # versioned record schema
+│       ├── paths.ts                # <data root>/gup/history/<YYYY-MM>.jsonl
+│       └── store.ts                # recordScan / recordUpdate
 ├── providers/                      # 1 file = 1 source
 │   ├── _template.ts                # copy this to start
 │   ├── os/                         # winget, scoop, choco
@@ -465,6 +488,8 @@ src/
     ├── table.ts                    # cli-table3 + chalk rendering
     ├── select.ts                   # multi-package checkbox
     ├── scan-progress.ts            # spinner + live counter (ora)
+    ├── skip-controller.ts          # Ctrl+C / timeout → SKIP outcome
+    ├── apply-update.ts             # single seam: dispatch + finalize + record
     └── retry-failed.ts             # retry strategy prompt
 ```
 

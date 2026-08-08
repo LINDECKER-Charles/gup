@@ -16,6 +16,15 @@ perform upgrades. The dominant risks are:
    binary; misclassification could drive the wrong upgrade. Pinned by
    `tests/security/install-source.test.ts`.
 
+Out of that scope, the orchestrator writes one thing of its own to disk: the
+activity history (`src/core/history/`). It is a plain-text JSONL log of scans
+and update attempts — package ids, versions, outcomes — under the user's own
+state directory, with no credential, no path outside it, and no network egress.
+It is never read back, so a tampered log cannot influence an upgrade. Disable it
+with `GUP_HISTORY=0`. (Individual providers may still write as part of the
+install they perform — the Nerd Fonts provider keeps a version lockfile — which
+is install work, not tool state.)
+
 ## Local security checks
 
 ```bash
