@@ -303,7 +303,12 @@ describe("JetBrainsProvider.update — macOS", () => {
     realpathMock.mockImplementation(async (p: string) => p);
     const res = await new JetBrainsProvider().update("WS");
     expect(res.skipped).toBe(true);
-    expect(res.message).toMatch(/jetbrains\.com\/webstorm\/download/);
+    // Substring, not a regex: an unanchored pattern also accepts a host that
+    // merely embeds the path (`evil.test/jetbrains.com/webstorm/download`),
+    // which is what js/regex/missing-regexp-anchor flags. Asserting the
+    // absolute URL — scheme and host included — is both stricter and free of
+    // the ambiguity.
+    expect(res.message).toContain("https://www.jetbrains.com/webstorm/download/");
     expect(runPmUpdateMock).not.toHaveBeenCalled();
   });
 });
