@@ -1,36 +1,152 @@
 version: 2
+
+# Posture: security-first, low-noise.
+#
+# Two mechanisms run here, and they are deliberately tuned in opposite
+# directions:
+#
+#   - Version updates (this file, `schedule`) — routine housekeeping. Slowed
+#     down on purpose: monthly cadence + a `cooldown` window so a freshly
+#     published release is never proposed on the day it lands. Most npm
+#     supply-chain compromises (event-stream, ua-parser-js, node-ipc,
+#     chalk/debug) were caught and unpublished within hours to a few days;
+#     sitting out that window turns "latest" into "latest that survived
+#     scrutiny".
+#
+#   - Security updates (repo setting, not this file) — fixes for a published
+#     advisory. These deliberately bypass everything below: `cooldown` is
+#     documented as version-updates-only, and `open-pull-requests-limit` does
+#     not apply to them. A CVE fix lands the day it is published, whatever the
+#     schedule says.
+#
+# The one option that leaks across both is `ignore` — it suppresses security
+# updates too. So it is used sparingly and only where the dependency has no
+# meaningful attack surface (see @types/node below). Majors are held back with
+# a long cooldown instead, which slows routine bumps without ever gagging a
+# security fix that only exists in the next major.
+
 updates:
+  # ── CLI package (published to npm) ────────────────────────────────────────
   - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: weekly
-      day: monday
-    open-pull-requests-limit: 10
+      interval: monthly
+      time: "05:00"
+      timezone: "Europe/Paris"
+
+    cooldown:
+      default-days: 14
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+
+    # Monthly + grouping keeps this well under the limit. Security PRs are
+    # exempt from it, so a low cap never delays a fix.
+    open-pull-requests-limit: 5
+
+    versioning-strategy: increase
+
     groups:
+      # One PR per advisory batch instead of one per package: fewer, denser
+      # reviews means the fix ships faster.
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+
       typescript-eslint:
-        patterns:
-          - "@typescript-eslint/*"
-        update-types: [major, minor, patch]
+        applies-to: version-updates
+        patterns: ["@typescript-eslint/*"]
+        update-types: [minor, patch]
       eslint:
-        patterns:
-          - "eslint"
-          - "eslint-*"
-        update-types: [major, minor, patch]
+        applies-to: version-updates
+        patterns: ["eslint", "eslint-*"]
+        update-types: [minor, patch]
       vitest:
-        patterns:
-          - "vitest"
-          - "@vitest/*"
-        update-types: [major, minor, patch]
+        applies-to: version-updates
+        patterns: ["vitest", "@vitest/*"]
+        update-types: [minor, patch]
       dev-dependencies:
+        applies-to: version-updates
         dependency-type: development
         update-types: [minor, patch]
       runtime-dependencies:
+        applies-to: version-updates
         dependency-type: production
-        update-types: [patch]
-    labels: [dependencies, security]
+        update-types: [minor, patch]
 
+    ignore:
+      # Pinned to the 22.x line to match `engines: node >=22.13.0`. Bumping the
+      # types past the minimum supported runtime lets code typecheck against
+      # APIs that do not exist for our users. Safe to ignore outright: a
+      # types-only dev dependency ships no runtime code.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+
+  # ── Landing page in index/ (built and deployed by pages.yml) ──────────────
+  # Previously absent from this file, so it only ever moved when an advisory
+  # fired. It is deployed code, so it gets a real schedule.
+  - package-ecosystem: npm
+    directory: "/index"
+    schedule:
+      interval: monthly
+      time: "05:00"
+      timezone: "Europe/Paris"
+
+    cooldown:
+      default-days: 14
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+
+    open-pull-requests-limit: 3
+
+    groups:
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+      landing:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+    labels: [dependencies, landing]
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+
+  # ── GitHub Actions ────────────────────────────────────────────────────────
+  # Highest-value target in the repo: a workflow runs with a token, so a
+  # compromised action is code execution in CI. The cooldown matters more here
+  # than anywhere else — the tj-actions/changed-files compromise was live for
+  # roughly two days before it was pulled.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
-    labels: [ci, security]
+      interval: monthly
+      time: "05:00"
+      timezone: "Europe/Paris"
+
+    cooldown:
+      default-days: 14
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+
+    open-pull-requests-limit: 5
+
+    groups:
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+      actions:
+        applies-to: version-updates
+        patterns: ["*"]
+
+    labels: [ci, dependencies]
+    commit-message:
+      prefix: "chore(ci)"
