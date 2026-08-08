@@ -1,19 +1,17 @@
 import type { PackageIds } from "../../core/install-source.js";
 
 /**
- * Correspondances produit JetBrains → identifiants par gestionnaire de paquets
- * et → slug de la page de téléchargement.
+ * JetBrains product code → package-manager ids, and → download-page slug.
  *
- * Séparé de `jetbrains.ts` parce que ce sont des données, pas de la logique :
- * elles changent au rythme du catalogue JetBrains, pas à celui du provider, et
- * les garder dans le même fichier y noyait les 200 lignes de scan sous 120
- * lignes de table.
+ * Split out of `jetbrains.ts` because this is data, not logic: it changes at
+ * the pace of the JetBrains catalogue, not the provider's, and keeping it in
+ * the same file drowned 200 lines of scanning under 120 lines of table.
  */
 
 /**
- * JetBrains publie chaque IDE en *cask* Homebrew, jamais en formule, donc tous
- * les identifiants macOS vivent sous `brewCask` (`brew upgrade --cask <token>`).
- * AQ (Aqua) n'a pas de token de cask vérifié et reste délibérément sans.
+ * JetBrains ships every IDE as a Homebrew *cask*, never a formula, so all the
+ * macOS ids live under `brewCask` (`brew upgrade --cask <token>`). AQ (Aqua) has
+ * no verified cask token and is deliberately left without one.
  */
 const PACKAGE_IDS: Record<string, PackageIds> = {
   IU: {
@@ -108,7 +106,7 @@ const PACKAGE_IDS: Record<string, PackageIds> = {
   },
 };
 
-/** Segment d'URL de `https://www.jetbrains.com/<slug>/download/`. */
+/** URL segment of `https://www.jetbrains.com/<slug>/download/`. */
 const PRODUCT_SLUGS: Record<string, string> = {
   IU: "idea",
   IC: "idea",
@@ -128,12 +126,12 @@ const PRODUCT_SLUGS: Record<string, string> = {
   RR: "rust",
 };
 
-/** Identifiants par PM pour un code produit, `{}` si le produit n'est pas mappé. */
+/** Package-manager ids for a product code, `{}` when the product is unmapped. */
 export function packageIdsFor(productCode: string): PackageIds {
   return PACKAGE_IDS[productCode] ?? {};
 }
 
-/** Slug de téléchargement, `products` (la page catalogue) en repli. */
+/** Download slug, falling back to `products` (the catalogue page). */
 export function productSlug(productCode: string): string {
   return PRODUCT_SLUGS[productCode] ?? "products";
 }

@@ -115,16 +115,16 @@ export class NerdFontsProvider implements Provider {
 }
 
 // ---------------------------------------------------------------------------
-// update — étapes
+// update — steps
 
 function failed(id: string, message: string): UpdateOutcome {
   return { id, success: false, message };
 }
 
 /**
- * Dossier de polices utilisateur, ou `null` si ce provider ne peut rien piloter
- * ici. Le lockfile vit sous `%LOCALAPPDATA%` lui aussi, donc l'absence de
- * `gupDataDir()` disqualifie l'update autant que celle du dossier de polices.
+ * User fonts directory, or `null` when this provider can drive nothing here.
+ * The lockfile lives under `%LOCALAPPDATA%` too, so a missing `gupDataDir()`
+ * disqualifies the update just as much as a missing fonts directory.
  */
 function resolveUserFontsDir(): string | null {
   if (process.platform !== "win32") return null;
@@ -305,7 +305,7 @@ async function readLockfile(): Promise<Record<string, string>> {
   }
 }
 
-/** Garde les entrées dont la valeur est une chaîne, ignore le reste. */
+/** Keep entries whose value is a string, drop the rest. */
 function onlyStringValues(data: Record<string, unknown>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(data)) {
@@ -338,7 +338,7 @@ function isSafeFamilyName(name: string): boolean {
 const FONTS_KEY_PARENT = String.raw`HKCU:\Software\Microsoft\Windows NT\CurrentVersion`;
 const FONTS_KEY = `${FONTS_KEY_PARENT}\\Fonts`;
 
-/** Une commande `New-ItemProperty` par police, valeurs échappées pour PowerShell. */
+/** One `New-ItemProperty` per font, values escaped for PowerShell. */
 function registryCommandFor(fontPath: string): string {
   const baseName = fontPath.split(/[\\/]/).pop()!;
   const suffix = /\.otf$/i.test(baseName) ? " (OpenType)" : " (TrueType)";

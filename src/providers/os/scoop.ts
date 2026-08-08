@@ -64,9 +64,9 @@ export function parseScoopStatus(output: string): OutdatedPackage[] {
   const out: OutdatedPackage[] = [];
   for (let i = headerIdx + 2; i < lines.length; i++) {
     const line = lines[i] ?? "";
-    // Une ligne vide clôt la table — contrairement aux autres parseurs, on
-    // sort au lieu de continuer, `scoop status` pouvant enchaîner d'autres
-    // sections après celle-ci.
+    // A blank line closes the table — unlike the other parsers we break rather
+    // than continue, since `scoop status` can print further sections after
+    // this one.
     if (!line.trim()) break;
     const row = parseScoopRow(line);
     if (row) out.push(row);
@@ -74,7 +74,7 @@ export function parseScoopStatus(output: string): OutdatedPackage[] {
   return out;
 }
 
-/** null quand la ligne n'a pas ses trois colonnes ou n'annonce aucun écart. */
+/** null when the line lacks its three columns or reports no version gap. */
 function parseScoopRow(line: string): OutdatedPackage | null {
   // Columns are whitespace-separated; package names are not allowed to contain spaces.
   const parts = line.trim().split(/\s{2,}/);

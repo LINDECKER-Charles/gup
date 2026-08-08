@@ -88,7 +88,7 @@ export async function maybeRetryFailures(
   });
 }
 
-/** Ids des échecs marqués `retryable`, regroupés par provider. */
+/** Ids of the failures flagged `retryable`, grouped by provider. */
 function groupRetryables(
   entries: OutcomeWithProvider[],
 ): Map<string, string[]> {
@@ -120,7 +120,7 @@ function announceRetryables(retryByProvider: Map<string, string[]>): void {
   );
 }
 
-/** Stratégie choisie par l'utilisateur, ou null s'il décline. */
+/** The strategy the user picked, or null when they decline. */
 async function promptStrategy(
   remaining: typeof STRATEGIES,
 ): Promise<(typeof STRATEGIES)[number] | null> {
@@ -141,7 +141,7 @@ async function promptStrategy(
   return STRATEGIES.find((s) => s.value === strategy) ?? null;
 }
 
-/** Rejoue chaque échec récupérable, indexé sur `providerId:packageId`. */
+/** Replay every retryable failure, keyed on `providerId:packageId`. */
 async function retryAll(
   retryByProvider: Map<string, string[]>,
   spec: (typeof STRATEGIES)[number],

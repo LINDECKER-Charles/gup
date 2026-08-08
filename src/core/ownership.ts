@@ -37,13 +37,13 @@ export async function detectBinaryOwner(binary: string): Promise<BinaryOwner> {
  * existing scoop/choco/winget paths win when present.
  */
 /**
- * Toolchain managers reconnaissables à un segment de chemin, dans l'ordre où
- * ils doivent être testés : `nvm-windows` avant `nvm` (le second est un
- * préfixe du premier), `pyenv-win` avant `pyenv`.
+ * Toolchain managers recognisable by a path segment, in the order they must
+ * be tested: `nvm-windows` before `nvm` (the latter is a prefix of the
+ * former), `pyenv-win` before `pyenv`.
  *
- * Chaque entrée est un prédicat plutôt qu'un simple segment, parce que
- * plusieurs de ces outils ont une racine alternative qui ne suit pas la forme
- * `<sep><nom><sep>`.
+ * Each entry is a predicate rather than a bare segment, because several of
+ * these tools have an alternative root that does not follow the
+ * `<sep><name><sep>` shape.
  */
 const TOOLCHAIN_OWNERS: Array<[BinaryOwner, (lower: string) => boolean]> = [
   // nvm-windows lives under Windows-specific roots (nvm4w, %ProgramData%\nvm).
@@ -236,7 +236,7 @@ function memoizeOwner(
   };
 }
 
-/** Sépare les paquets d'un provider entre ceux qu'il possède et les autres. */
+/** Split a provider's packages into the ones it owns and the ones it does not. */
 async function splitOwned(
   result: ProviderScanResult,
   table: Record<string, string>,
@@ -260,10 +260,10 @@ async function splitOwned(
 }
 
 /**
- * Renvoie l'exclusion à enregistrer si un autre gestionnaire possède le
- * binaire, ou null quand le paquet doit être conservé. Un binaire non mappé ou
- * sans propriétaire identifié (`manual`) est toujours conservé : mieux vaut
- * proposer une mise à jour de trop que d'en masquer une vraie.
+ * Returns the exclusion to record when another manager owns the binary, or
+ * null when the package should be kept. An unmapped binary, or one with no
+ * identified owner (`manual`), is always kept: better to surface one update
+ * too many than to hide a real one.
  */
 async function classifyPackage(
   pkg: { id: string },

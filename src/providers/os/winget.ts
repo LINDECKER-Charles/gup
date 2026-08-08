@@ -180,7 +180,7 @@ function stripSpinnerFrames(output: string): string[] {
   });
 }
 
-/** Colonnes de la table démarrant en `i`, ou null si ce n'en est pas une. */
+/** Columns of the table starting at `i`, or null when it is not one. */
 function tableHeaderAt(lines: string[], i: number): WingetColumns | null {
   if (!HEADER_RE.test(lines[i] ?? "")) return null;
   if (!/^-+/.test(lines[i + 1] ?? "")) return null;
@@ -188,8 +188,8 @@ function tableHeaderAt(lines: string[], i: number): WingetColumns | null {
 }
 
 /**
- * null quand la ligne n'est pas une ligne de données : vide, séparateur, ligne
- * de total (« 3 upgrades available »), ou colonne Id absente/mal alignée.
+ * null when the line is not a data row: blank, separator, a totals line
+ * ("3 upgrades available"), or an Id column that is missing or misaligned.
  */
 function parseRow(line: string, cols: WingetColumns): WingetRow | null {
   if (!line.trim() || /^-+/.test(line)) return null;
@@ -205,7 +205,7 @@ function parseRow(line: string, cols: WingetColumns): WingetRow | null {
   };
 }
 
-/** Lit les lignes de données jusqu'à la fin de la table, et rend l'index atteint. */
+/** Read data rows until the table ends, and return the index reached. */
 function readRows(
   lines: string[],
   start: number,

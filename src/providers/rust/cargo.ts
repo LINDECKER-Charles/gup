@@ -42,10 +42,10 @@ export class CargoProvider implements Provider {
 }
 
 /**
- * Une ligne du tableau `cargo install-update -l`, ou null quand ce n'est pas
- * un paquet à proposer : séparateur, colonnes manquantes, versions identiques,
- * ou « Latest » qui n'est pas un numéro de version (`cargo` y écrit parfois
- * `Yes`/`No` selon la version du plugin).
+ * One row of the `cargo install-update -l` table, or null when it is not a
+ * package to surface: separator, missing columns, identical versions, or a
+ * "Latest" that is not a version number (`cargo` writes `Yes`/`No` there
+ * depending on the plugin version).
  */
 function parseCargoRow(line: string): OutdatedPackage | null {
   if (!line.trim() || /^-+/.test(line)) return null;

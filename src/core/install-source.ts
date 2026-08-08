@@ -181,10 +181,10 @@ interface UpgradeCommand {
 }
 
 /**
- * Commande d'upgrade par gestionnaire, ou null quand `packageIds` ne porte pas
- * l'identifiant qu'il faut — auquel cas l'appelant retombe sur le message
- * manuel. Table plutôt que `switch` : chaque gestionnaire se lit d'un bloc, et
- * en ajouter un ne rallonge aucune fonction.
+ * Upgrade command per package manager, or null when `packageIds` does not
+ * carry the id that manager needs — in which case the caller falls back to
+ * the manual message. A table rather than a `switch`: each manager reads as
+ * one block, and adding one lengthens no function.
  */
 const UPGRADE_COMMANDS: Record<
   Exclude<InstallSource, "manual">,
@@ -234,7 +234,7 @@ const UPGRADE_COMMANDS: Record<
       : null,
 };
 
-// eslint-disable-next-line max-params -- signature publique appelée depuis ~40 providers ; les 4 arguments sont cohésifs et `delegateUpdate` offre déjà la variante objet.
+// eslint-disable-next-line max-params -- public signature called from ~40 providers; the 4 arguments are cohesive, and delegateUpdate already offers the object-shaped variant.
 export async function runPmUpdate(
   id: string,
   source: InstallSource,

@@ -64,7 +64,7 @@ export async function updateVsCodeLikeExtension(
   return { id: packageId, success: !res.failed };
 }
 
-/** Requête de la Gallery API : filtre par cible VS Code puis par id d'extension. */
+/** Gallery API query: filter by VS Code target, then by extension id. */
 function marketplaceQuery(extensionId: string): unknown {
   return {
     filters: [

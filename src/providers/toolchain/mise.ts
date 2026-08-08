@@ -50,9 +50,9 @@ export class MiseProvider implements Provider {
 }
 
 /**
- * `mise outdated --json` a changé de forme entre versions : tableau d'entrées
- * dans les récentes, objet indexé par nom d'outil dans les anciennes. On
- * normalise les deux vers un tableau ; une sortie illisible vaut « rien ».
+ * `mise outdated --json` changed shape between versions: an array of entries in
+ * recent ones, an object keyed by tool name in older ones. Both are normalised
+ * to an array; unreadable output means "nothing".
  */
 function parseMiseEntries(stdout: string): MiseOutdatedEntry[] {
   let parsed: MiseOutdatedEntry[] | Record<string, MiseOutdatedEntry>;

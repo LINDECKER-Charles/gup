@@ -135,9 +135,9 @@ async function findEclipseHome(): Promise<string | null> {
 }
 
 /**
- * Balaie les enfants directs de `root`. Le `try` couvre aussi l'inspection des
- * enfants, pas seulement le `readdir` : un `stat` qui lève sur un candidat
- * (lien cassé, permission) doit faire abandonner cette racine, pas remonter.
+ * Sweep the direct children of `root`. The `try` covers inspecting the
+ * children too, not just the `readdir`: a `stat` throwing on a candidate
+ * (broken link, permission) must abandon this root rather than propagate.
  */
 async function firstEclipseHomeUnder(root: string): Promise<string | null> {
   try {

@@ -66,8 +66,8 @@ function reportScanDone(
 }
 
 /**
- * Callbacks de progression pour `scanAll`. Elles referment sur le compteur et
- * l'ensemble des providers en vol, pour que l'appelant n'ait pas à les porter.
+ * Progress callbacks for `scanAll`. They close over the counter and the set of
+ * in-flight providers so the caller does not have to carry them.
  */
 function progressCallbacks(spinner: Ora, total: number) {
   const inFlight = new Set<string>();
@@ -93,7 +93,7 @@ function progressCallbacks(spinner: Ora, total: number) {
   };
 }
 
-/** Combien de providers détectés survivent aux filtres `only` / `fast`. */
+/** How many detected providers survive the `only` / `fast` filters. */
 function countPlanned(
   detected: Provider[],
   options: Pick<ScanOptions, "only" | "fast">,
@@ -105,7 +105,7 @@ function countPlanned(
   }).length;
 }
 
-/** « — a · b · c +2 » : les providers en cours, tronqués à trois. */
+/** "— a · b · c +2": the providers currently scanning, capped at three. */
 function inFlightSuffix(inFlight: Set<string>): string {
   const active = [...inFlight];
   if (active.length === 0) return "";

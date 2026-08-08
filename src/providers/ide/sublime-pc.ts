@@ -109,8 +109,8 @@ function stripJsonComments(input: string): string {
   while (i < input.length) {
     const c = input[i];
     if (c === '"') {
-      // Un commentaire à l'intérieur d'une chaîne n'en est pas un : on recopie
-      // le littéral tel quel plutôt que de l'analyser caractère par caractère.
+      // A comment inside a string is not a comment: copy the literal through
+      // verbatim rather than scanning it character by character.
       const literal = readStringLiteral(input, i);
       out += literal.text;
       i = literal.next;
@@ -131,7 +131,7 @@ function stripJsonComments(input: string): string {
   return out.replace(/,(\s*[}\]])/g, "$1");
 }
 
-/** Littéral chaîne depuis le guillemet ouvrant `start`, échappements compris. */
+/** String literal from the opening quote at `start`, escapes included. */
 function readStringLiteral(
   input: string,
   start: number,

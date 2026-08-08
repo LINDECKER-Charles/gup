@@ -2,11 +2,11 @@ import chalk from "chalk";
 import type { ProviderScanResult } from "../core/types.js";
 
 /**
- * État partagé du menu interactif, et les deux helpers de mise en forme qui
- * l'accompagnent.
+ * Shared state of the interactive menu, plus the two formatting helpers that
+ * go with it.
  *
- * Ce module existe pour que `menu.ts` et `menu-options.ts` partagent le type et
- * les helpers sans s'importer mutuellement.
+ * This module exists so `menu.ts` and `menu-options.ts` can share the type and
+ * the helpers without importing each other.
  */
 export interface MenuState {
   scans: ProviderScanResult[];
@@ -15,7 +15,7 @@ export interface MenuState {
   detectedCount: number;
 }
 
-/** Libellé aligné sur 22 colonnes, suivi d'un indice grisé optionnel. */
+/** Label padded to 22 columns, followed by an optional dimmed hint. */
 export function pad(label: string, hint: string): string {
   const padded = label.padEnd(22);
   return hint ? `${padded} ${dim(hint)}` : padded;
@@ -25,7 +25,7 @@ export function dim(s: string): string {
   return chalk.dim(s);
 }
 
-/** Résumé lisible d'un filtre de providers — « tous » quand il est vide. */
+/** Readable summary of a provider filter — "tous" when it is empty. */
 export function describeFilter(filter: string[]): string {
   return filter.length === 0 ? "tous" : filter.join(", ");
 }

@@ -21,7 +21,7 @@ function newScanTable(): Table.Table {
   });
 }
 
-/** Lignes d'un provider : soit son erreur de scan, soit un paquet par ligne. */
+/** A provider's rows: either its scan error, or one line per package. */
 function scanRows(result: ProviderScanResult): string[][] {
   const name = chalk.cyan(providerName(result.providerId));
   if (result.error) {

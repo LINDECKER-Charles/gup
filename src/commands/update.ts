@@ -28,7 +28,7 @@ export interface UpdateOptions {
   targets?: string[];
 }
 
-/** `{ yes }` seulement quand l'option a été passée, pour ne pas écraser un défaut. */
+/** `{ yes }` only when the flag was passed, so a default is never overwritten. */
 function yesFlag(options: { yes?: boolean }): { yes?: boolean } {
   return { ...(options.yes !== undefined && { yes: options.yes }) };
 }
@@ -64,9 +64,9 @@ type SelectionResult =
   | { kind: "empty" };
 
 /**
- * `--all` prend tout (sous réserve de confirmation), sinon on ouvre le
- * sélecteur interactif. Les deux issues « rien à faire » sont distinguées :
- * un refus de confirmation sort en 1, une sélection vide en 0.
+ * `--all` takes everything (subject to confirmation), otherwise the
+ * interactive picker opens. The two "nothing to do" outcomes stay distinct:
+ * a declined confirmation exits 1, an empty selection exits 0.
  */
 async function chooseSelection(
   allPackages: SelectedPackage[],
@@ -99,9 +99,9 @@ interface ResolvedTarget {
 }
 
 /**
- * Résout tous les `provider:packageId` d'un coup, avant d'ouvrir une session de
- * skip : une coquille ne doit pas laisser une session ouverte derrière elle.
- * Renvoie null après avoir écrit le diagnostic sur stderr.
+ * Resolve every `provider:packageId` up front, before opening a skip session:
+ * a typo must not leave a session dangling behind it. Returns null after
+ * writing the diagnostic to stderr.
  */
 function resolveTargets(targets: string[]): ResolvedTarget[] | null {
   const resolved: ResolvedTarget[] = [];
@@ -173,7 +173,7 @@ async function runSelection(
   }
 }
 
-/** Applique un map provider→paquets, un provider après l'autre, sous session. */
+/** Apply a provider→packages map, one provider at a time, under a session. */
 async function applyGrouped(
   grouped: Map<string, OutdatedPackage[]>,
   session: { isAbortRequested: () => boolean },
@@ -251,7 +251,7 @@ export function formatBadTargetMessage(
   return [head, ...body].join("\n") + "\n";
 }
 
-/** L'utilisateur a tapé un nom de provider : on lui montre les bonnes commandes. */
+/** The user typed a provider name: show them the commands that do work. */
 function providerNameHint(typed: string, providerId: string): string[] {
   return [
     `"${typed}" est un nom de provider, pas un identifiant de paquet.`,
@@ -360,7 +360,7 @@ function summarize(outcomes: UpdateOutcome[]): number {
   return failed.length === 0 ? 0 : 1;
 }
 
-/** En-tête coloré, puis une ligne `- <id> — <message>` par élément. */
+/** Coloured header, then one `- <id> — <message>` line per entry. */
 function writeGroup(
   outcomes: UpdateOutcome[],
   color: (s: string) => string,

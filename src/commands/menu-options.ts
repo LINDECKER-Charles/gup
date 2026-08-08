@@ -7,9 +7,9 @@ import {
 import { describeFilter, dim, pad, type MenuState } from "./menu-state.js";
 
 /**
- * Écran « Options » du menu interactif : fast mode, filtre de providers et
- * timeout d'install. Séparé de `menu.ts`, qui garde la boucle principale et le
- * rendu du statut.
+ * The interactive menu's "Options" screen: fast mode, provider filter and
+ * install timeout. Split out of `menu.ts`, which keeps the main loop and the
+ * status rendering.
  */
 type OptionAction = "fast" | "filter" | "timeout" | "back";
 

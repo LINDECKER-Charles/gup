@@ -103,7 +103,7 @@ export class JetBrainsProvider implements Provider {
 const TOOLBOX_SKIP = "Géré par Toolbox — ouvrir Toolbox pour appliquer.";
 const JETBRAINS_SITE = "https://www.jetbrains.com";
 
-/** Route l'update vers le canal qui possède réellement l'install. */
+/** Route the update to whichever channel actually owns the install. */
 async function updateBySource(target: ProductInfo): Promise<UpdateOutcome> {
   const id = target.productCode;
   switch (target.source) {
@@ -291,7 +291,7 @@ async function findLatestProductInfo(
   return best;
 }
 
-/** Lit le `product-info.json` de `dir`, ou null s'il est absent ou incomplet. */
+/** Read `dir`'s `product-info.json`, or null when missing or incomplete. */
 async function readProductInfo(
   dir: string,
 ): Promise<Omit<ProductInfo, "source"> | null> {
@@ -309,8 +309,8 @@ async function readProductInfo(
 }
 
 /**
- * Sous-dossiers directs de `dir`, bundles macOS élagués. Un dossier illisible
- * (permission, lien cassé) est ignoré plutôt que de faire échouer le scan.
+ * Direct subdirectories of `dir`, macOS bundles pruned. An unreadable
+ * directory (permission, broken link) is skipped rather than failing the scan.
  */
 async function childDirectories(dir: string): Promise<string[]> {
   const pruneBundles = process.platform === "darwin";

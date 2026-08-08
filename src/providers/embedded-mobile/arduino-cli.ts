@@ -69,13 +69,13 @@ export class ArduinoCliProvider implements Provider {
 }
 
 // ---------------------------------------------------------------------------
-// listOutdated — étapes
+// listOutdated — steps
 //
-// Trois sources indépendantes (le binaire lui-même, les plateformes, les
-// bibliothèques) plutôt qu'une seule méthode : chacune a son propre parsing et
-// son propre mode d'échec, et aucune ne doit faire tomber les autres.
+// Three independent sources (the binary itself, platforms, libraries) rather
+// than one method: each has its own parsing and its own failure mode, and none
+// of them should be able to take the others down.
 
-/** Le binaire arduino-cli lui-même, comparé à la dernière release GitHub. */
+/** The arduino-cli binary itself, compared against the latest GitHub release. */
 async function selfUpdate(): Promise<OutdatedPackage[]> {
   const ver = await run("arduino-cli", ["version", "--format", "json"]);
   if (ver.failed) return [];
@@ -110,7 +110,7 @@ interface LibraryVersions {
   latest?: string | undefined;
 }
 
-/** Une bibliothèque n'est proposée que si les trois champs sont là et diffèrent. */
+/** A library is only surfaced when all three fields are present and differ. */
 function isUpgradableLibrary(
   v: LibraryVersions,
 ): v is { name: string; current: string; latest: string } {
@@ -134,7 +134,7 @@ function libraryUpdates(entry: ArduinoOutdatedEntry | null): OutdatedPackage[] {
     }));
 }
 
-/** JSON tolérant : une sortie illisible vaut « rien à signaler ». */
+/** Lenient JSON: unreadable output means "nothing to report". */
 function parseJson<T>(raw: string): T | null {
   try {
     return JSON.parse(raw) as T;

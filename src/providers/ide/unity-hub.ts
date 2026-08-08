@@ -104,9 +104,9 @@ async function listInstalledEditors(): Promise<InstalledEditor[]> {
 }
 
 /**
- * Éditeurs listés dans le JSON maintenu par le Hub. Renvoie un tableau vide
- * — et non une erreur — dès que le fichier manque ou n'est pas lisible :
- * l'appelant retombe alors sur le CLI du Hub.
+ * Editors listed in the JSON the Hub maintains. Returns an empty array — not
+ * an error — as soon as the file is missing or unreadable: the caller then
+ * falls back to the Hub CLI.
  */
 async function editorsFromConfig(): Promise<InstalledEditor[]> {
   const cfg = editorsConfigFile();

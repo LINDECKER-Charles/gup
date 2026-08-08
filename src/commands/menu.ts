@@ -323,7 +323,7 @@ function summarize(outcomes: UpdateOutcome[]): void {
   writeGroup(failed, chalk.red, `  FAIL ${failed.length}/${outcomes.length} échec(s)\n`);
 }
 
-/** En-tête coloré puis une ligne `- <id> — <message>` par élément. */
+/** Coloured header, then one `- <id> — <message>` line per entry. */
 function writeGroup(
   outcomes: UpdateOutcome[],
   color: (s: string) => string,

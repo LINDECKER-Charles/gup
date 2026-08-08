@@ -182,8 +182,8 @@ async function fetchCommunityIndex(): Promise<Map<string, string> | null> {
 }
 
 /**
- * Plugins de tous les coffres, dédupliqués par id : le premier coffre qui
- * porte un plugin gagne, les suivants n'écrasent pas sa version.
+ * Plugins across every vault, deduped by id: the first vault carrying a plugin
+ * wins, later ones do not overwrite its version.
  */
 async function collectVaultPlugins(
   vaults: string[],

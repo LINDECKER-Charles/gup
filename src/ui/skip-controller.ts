@@ -63,7 +63,7 @@ export function beginSkipSession(): SkipSession {
   };
 }
 
-/** Handler SIGINT propre à une session — il porte son propre horodatage. */
+/** Per-session SIGINT handler — it carries its own timestamp. */
 function makeSigintHandler(session: ActiveSession): () => void {
   let lastPress = 0;
   return (): void => {
@@ -77,9 +77,9 @@ function makeSigintHandler(session: ActiveSession): () => void {
 }
 
 /**
- * Écrit le message correspondant au Ctrl+C reçu. Renvoie true quand
- * l'interruption doit arrêter le batch entier, false quand elle se limite à
- * l'install en cours.
+ * Write the message matching the Ctrl+C received. Returns true when the
+ * interrupt should stop the whole batch, false when it only skips the install
+ * currently running.
  */
 function announceInterrupt(isDouble: boolean, skipped: boolean): boolean {
   if (isDouble) {

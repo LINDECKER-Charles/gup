@@ -90,8 +90,8 @@ async function fetchKubectlLatest(): Promise<string | null> {
 }
 
 /**
- * Version cliente issue de `kubectl version --client -o json`, préfixe `v`
- * retiré. null si la sortie n'est pas du JSON exploitable.
+ * Client version from `kubectl version --client -o json`, `v` prefix stripped.
+ * null when the output is not usable JSON.
  */
 function parseClientVersion(stdout: string): string | null {
   try {

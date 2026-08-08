@@ -210,8 +210,8 @@ function extractFromJar(
 
 /**
  * Dedupe: same plugin installed in multiple IDEs — keep the oldest version (an
- * update there helps everyone) and merge ideHosts. Les plugins de plateforme
- * sont écartés : ils suivent la version de l'IDE, pas la leur.
+ * update there helps everyone) and merge ideHosts. Platform plugins are
+ * dropped: they track the IDE's version, not their own.
  */
 function dedupeAcrossIdes(plugins: PluginMeta[]): Map<string, PluginMeta> {
   const byId = new Map<string, PluginMeta>();
@@ -232,7 +232,7 @@ function dedupeAcrossIdes(plugins: PluginMeta[]): Map<string, PluginMeta> {
   return byId;
 }
 
-/** Contenu du premier `<tag>…</tag>`, ou null. */
+/** Text of the first `<tag>…</tag>`, or null. */
 function tagText(xml: string, pattern: RegExp): string | null {
   return xml.match(pattern)?.[1]?.trim() || null;
 }

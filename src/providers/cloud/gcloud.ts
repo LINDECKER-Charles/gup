@@ -65,9 +65,9 @@ export class GcloudProvider implements Provider {
 }
 
 /**
- * gcloud marque l'état d'un composant en clair (« Update Available »), et ne
- * renseigne pas toujours les deux versions. null pour tout ce qui n'est pas
- * une mise à jour exploitable.
+ * gcloud spells a component's state out in plain text ("Update Available"), and
+ * does not always fill in both versions. null for anything that is not an
+ * actionable update.
  */
 function toComponentUpdate(c: GcloudComponentJson): OutdatedPackage | null {
   if (!/update available/i.test(c.state?.name ?? "")) return null;

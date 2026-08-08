@@ -102,8 +102,8 @@ export function parseChocoOutdated(stdout: string): OutdatedPackage[] {
 }
 
 /**
- * Format `name|current|latest|pinned`. null pour les lignes de bannière et
- * pour tout ce qui n'est pas une vraie mise à jour.
+ * Format `name|current|latest|pinned`. null for banner lines and for anything
+ * that is not a real update.
  */
 function parseChocoLine(line: string): OutdatedPackage | null {
   const trimmed = line.trim();

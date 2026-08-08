@@ -71,8 +71,8 @@ function parseGhExtList(output: string): InstalledExt[] {
 }
 
 /**
- * `gh extension list` préfixe l'extension active d'une astérisque et intercale
- * en-têtes et séparateurs. null pour tout ce qui n'est pas une extension.
+ * `gh extension list` prefixes the active extension with an asterisk and
+ * interleaves headers and separators. null for anything that is not one.
  */
 function parseGhExtLine(rawLine: string): InstalledExt | null {
   const line = rawLine.replace(/^\*\s*/, "").trim();
