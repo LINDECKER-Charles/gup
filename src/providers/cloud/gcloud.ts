@@ -45,16 +45,9 @@ export class GcloudProvider implements Provider {
       return [];
     }
 
-    const out: OutdatedPackage[] = [];
-    for (const c of parsed) {
-      const state = c.state?.name ?? "";
-      if (!/update available/i.test(state)) continue;
-      const current = c.current_version_string;
-      const latest = c.latest_version_string;
-      if (!current || !latest || current === latest) continue;
-      out.push({ id: c.id, name: c.name ?? c.id, current, latest });
-    }
-    return out;
+    return parsed
+      .map(toComponentUpdate)
+      .filter((p): p is OutdatedPackage => p !== null);
   }
 
   async update(_packageId: string): Promise<UpdateOutcome> {
@@ -69,4 +62,17 @@ export class GcloudProvider implements Provider {
     const res = await runInherit("gcloud", ["components", "update", "--quiet"]);
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
   }
+}
+
+/**
+ * gcloud marque l'état d'un composant en clair (« Update Available »), et ne
+ * renseigne pas toujours les deux versions. null pour tout ce qui n'est pas
+ * une mise à jour exploitable.
+ */
+function toComponentUpdate(c: GcloudComponentJson): OutdatedPackage | null {
+  if (!/update available/i.test(c.state?.name ?? "")) return null;
+  const current = c.current_version_string;
+  const latest = c.latest_version_string;
+  if (!current || !latest || current === latest) return null;
+  return { id: c.id, name: c.name ?? c.id, current, latest };
 }

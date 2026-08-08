@@ -43,7 +43,8 @@ export class NerdFontsProvider implements Provider {
   readonly installHint = pickInstallHint({
     win32: "gup update nerd-fonts:<Famille>  (FiraCode, JetBrainsMono, Meslo, …)",
     darwin:
-      "Windows uniquement — sur macOS : brew install --cask font-<nom>-nerd-font (ex. font-fira-code-nerd-font)",
+      "Windows uniquement — sur macOS : brew install --cask font-<nom>-nerd-font" +
+      " (ex. font-fira-code-nerd-font)",
     fallback:
       "Windows uniquement — ailleurs : https://github.com/ryanoasis/nerd-fonts/releases",
   });
@@ -87,111 +88,23 @@ export class NerdFontsProvider implements Provider {
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
-    const userDir = userFontsDir();
-    const dataDir = gupDataDir();
-    if (process.platform !== "win32" || !userDir || !dataDir) {
-      return {
-        id: packageId,
-        success: false,
-        message: "Provider Windows-only (per-user fonts).",
-      };
-    }
+    const userDir = resolveUserFontsDir();
+    if (!userDir) return failed(packageId, "Provider Windows-only (per-user fonts).");
     if (!isSafeFamilyName(packageId)) {
-      return {
-        id: packageId,
-        success: false,
-        message: `Nom de famille invalide: "${packageId}"`,
-      };
+      return failed(packageId, `Nom de famille invalide: "${packageId}"`);
     }
 
     const latest = await fetchGitHubReleaseLatest("ryanoasis/nerd-fonts", {
       stripVPrefix: false,
     });
     if (!latest) {
-      return {
-        id: packageId,
-        success: false,
-        message: "Impossible de récupérer la dernière release Nerd Fonts.",
-      };
+      return failed(packageId, "Impossible de récupérer la dernière release Nerd Fonts.");
     }
 
-    const url = `https://github.com/ryanoasis/nerd-fonts/releases/download/${latest}/${packageId}.zip`;
-    process.stdout.write(`  ↓ ${url}\n`);
+    const download = await downloadFamilyZip(packageId, latest);
+    if ("message" in download) return failed(packageId, download.message);
 
-    let buf: ArrayBuffer;
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(120_000) });
-      if (!res.ok) {
-        return {
-          id: packageId,
-          success: false,
-          message: `Asset introuvable (HTTP ${res.status}). Vérifie le nom : https://github.com/ryanoasis/nerd-fonts/releases/tag/${latest}`,
-        };
-      }
-      buf = await res.arrayBuffer();
-    } catch (err) {
-      return {
-        id: packageId,
-        success: false,
-        message: `Échec téléchargement : ${err instanceof Error ? err.message : String(err)}`,
-      };
-    }
-
-    const tmpRoot = await mkdtemp(join(tmpdir(), "gup-nerd-"));
-    try {
-      const zip = new AdmZip(Buffer.from(buf));
-      const fontEntries = zip
-        .getEntries()
-        .filter(
-          (e) => !e.isDirectory && /NerdFont.*\.(ttf|otf)$/i.test(e.entryName),
-        );
-      if (fontEntries.length === 0) {
-        return {
-          id: packageId,
-          success: false,
-          message: `Aucun fichier *NerdFont*.(ttf|otf) trouvé dans ${packageId}.zip`,
-        };
-      }
-
-      await mkdir(userDir, { recursive: true });
-      const installed: string[] = [];
-      for (const entry of fontEntries) {
-        const fileName = entry.entryName.split(/[\\/]/).pop()!;
-        const tmpFile = join(tmpRoot, fileName);
-        await writeFile(tmpFile, entry.getData());
-        // Destination sous `%LOCALAPPDATA%` : chemin Windows, cf. plus bas.
-        const dest = winPath.join(userDir, fileName);
-        await copyFile(tmpFile, dest);
-        installed.push(dest);
-      }
-
-      const regOk = await registerFontsInHKCU(installed);
-      if (!regOk) {
-        return {
-          id: packageId,
-          success: false,
-          message:
-            "Copie OK mais enregistrement HKCU échoué — relancer un shell, ou re-exécuter.",
-        };
-      }
-
-      const lock = await readLockfile();
-      lock[packageId] = latest;
-      await writeLockfile(lock);
-
-      process.stdout.write(
-        `  ✓ ${installed.length} fichier(s) installé(s) dans ${userDir}\n`,
-      );
-      return { id: packageId, success: true };
-    } catch (err) {
-      return {
-        id: packageId,
-        success: false,
-        message: err instanceof Error ? err.message : String(err),
-      };
-    } finally {
-      await rm(tmpRoot, { recursive: true, force: true }).catch(() => {});
-    }
+    return installFamily({ packageId, latest, zip: download.zip, userDir });
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
@@ -199,6 +112,120 @@ export class NerdFontsProvider implements Provider {
     for (const pkg of packages) outcomes.push(await this.update(pkg.id));
     return outcomes;
   }
+}
+
+// ---------------------------------------------------------------------------
+// update — étapes
+
+function failed(id: string, message: string): UpdateOutcome {
+  return { id, success: false, message };
+}
+
+/**
+ * Dossier de polices utilisateur, ou `null` si ce provider ne peut rien piloter
+ * ici. Le lockfile vit sous `%LOCALAPPDATA%` lui aussi, donc l'absence de
+ * `gupDataDir()` disqualifie l'update autant que celle du dossier de polices.
+ */
+function resolveUserFontsDir(): string | null {
+  if (process.platform !== "win32") return null;
+  const userDir = userFontsDir();
+  return userDir && gupDataDir() ? userDir : null;
+}
+
+interface DownloadedZip {
+  zip: ArrayBuffer;
+}
+
+interface DownloadError {
+  message: string;
+}
+
+async function downloadFamilyZip(
+  packageId: string,
+  latest: string,
+): Promise<DownloadedZip | DownloadError> {
+  const releases = "https://github.com/ryanoasis/nerd-fonts/releases";
+  const url = `${releases}/download/${latest}/${packageId}.zip`;
+  process.stdout.write(`  ↓ ${url}\n`);
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(120_000) });
+    if (!res.ok) {
+      return {
+        message:
+          `Asset introuvable (HTTP ${res.status}). ` +
+          `Vérifie le nom : ${releases}/tag/${latest}`,
+      };
+    }
+    return { zip: await res.arrayBuffer() };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    return { message: `Échec téléchargement : ${reason}` };
+  }
+}
+
+interface InstallRequest {
+  packageId: string;
+  latest: string;
+  zip: ArrayBuffer;
+  userDir: string;
+}
+
+const NO_FONT_IN_ZIP = "Aucun fichier *NerdFont*.(ttf|otf) trouvé dans";
+const HKCU_REGISTRATION_FAILED =
+  "Copie OK mais enregistrement HKCU échoué — relancer un shell, ou re-exécuter.";
+
+async function installFamily(req: InstallRequest): Promise<UpdateOutcome> {
+  const { packageId, latest, zip, userDir } = req;
+  const tmpRoot = await mkdtemp(join(tmpdir(), "gup-nerd-"));
+  try {
+    const entries = fontEntriesOf(zip);
+    if (entries.length === 0) {
+      return failed(packageId, `${NO_FONT_IN_ZIP} ${packageId}.zip`);
+    }
+    const installed = await copyFontsToUserDir(entries, tmpRoot, userDir);
+    if (!(await registerFontsInHKCU(installed))) {
+      return failed(packageId, HKCU_REGISTRATION_FAILED);
+    }
+    await pinFamilyVersion(packageId, latest);
+    const count = installed.length;
+    process.stdout.write(`  ✓ ${count} fichier(s) installé(s) dans ${userDir}\n`);
+    return { id: packageId, success: true };
+  } catch (err) {
+    return failed(packageId, err instanceof Error ? err.message : String(err));
+  } finally {
+    await rm(tmpRoot, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+function fontEntriesOf(zip: ArrayBuffer): AdmZip.IZipEntry[] {
+  return new AdmZip(Buffer.from(zip))
+    .getEntries()
+    .filter((e) => !e.isDirectory && /NerdFont.*\.(ttf|otf)$/i.test(e.entryName));
+}
+
+async function copyFontsToUserDir(
+  entries: AdmZip.IZipEntry[],
+  tmpRoot: string,
+  userDir: string,
+): Promise<string[]> {
+  await mkdir(userDir, { recursive: true });
+  const installed: string[] = [];
+  for (const entry of entries) {
+    const fileName = entry.entryName.split(/[\\/]/).pop()!;
+    const tmpFile = join(tmpRoot, fileName);
+    await writeFile(tmpFile, entry.getData());
+    // Destination sous `%LOCALAPPDATA%` : chemin Windows, cf. plus bas.
+    const dest = winPath.join(userDir, fileName);
+    await copyFile(tmpFile, dest);
+    installed.push(dest);
+  }
+  return installed;
+}
+
+async function pinFamilyVersion(packageId: string, latest: string): Promise<void> {
+  const lock = await readLockfile();
+  lock[packageId] = latest;
+  await writeLockfile(lock);
 }
 
 // ---------------------------------------------------------------------------
@@ -270,20 +297,21 @@ async function readLockfile(): Promise<Record<string, string>> {
   const path = lockfilePath();
   if (!existsSync(path)) return {};
   try {
-    const raw = await readFile(path, "utf8");
-    const data = JSON.parse(raw);
-    if (data && typeof data === "object" && !Array.isArray(data)) {
-      // Filter to string values only — drop garbage gracefully.
-      const out: Record<string, string> = {};
-      for (const [k, v] of Object.entries(data)) {
-        if (typeof v === "string") out[k] = v;
-      }
-      return out;
-    }
-    return {};
+    const data: unknown = JSON.parse(await readFile(path, "utf8"));
+    if (!data || typeof data !== "object" || Array.isArray(data)) return {};
+    return onlyStringValues(data as Record<string, unknown>);
   } catch {
     return {};
   }
+}
+
+/** Garde les entrées dont la valeur est une chaîne, ignore le reste. */
+function onlyStringValues(data: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (typeof v === "string") out[k] = v;
+  }
+  return out;
 }
 
 async function writeLockfile(data: Record<string, string>): Promise<void> {
@@ -307,24 +335,31 @@ function isSafeFamilyName(name: string): boolean {
  * Win11/10 reconnaît automatiquement ces entrées comme polices per-user — pas
  * besoin de UAC ni d'écrire dans `HKLM`.
  */
+const FONTS_KEY_PARENT = String.raw`HKCU:\Software\Microsoft\Windows NT\CurrentVersion`;
+const FONTS_KEY = `${FONTS_KEY_PARENT}\\Fonts`;
+
+/** Une commande `New-ItemProperty` par police, valeurs échappées pour PowerShell. */
+function registryCommandFor(fontPath: string): string {
+  const baseName = fontPath.split(/[\\/]/).pop()!;
+  const suffix = /\.otf$/i.test(baseName) ? " (OpenType)" : " (TrueType)";
+  const valueName = baseName.replace(/\.(ttf|otf)$/i, "") + suffix;
+  // PowerShell single-quoted string: ' → ''
+  const psPath = fontPath.replace(/'/g, "''");
+  const psName = valueName.replace(/'/g, "''");
+  return (
+    `New-ItemProperty -Path '${FONTS_KEY}' -Name '${psName}' ` +
+    `-PropertyType String -Value '${psPath}' -Force | Out-Null`
+  );
+}
+
 async function registerFontsInHKCU(filePaths: string[]): Promise<boolean> {
   if (filePaths.length === 0) return true;
-  const entries = filePaths
-    .map((p) => {
-      const baseName = p.split(/[\\/]/).pop()!;
-      const suffix = /\.otf$/i.test(baseName) ? " (OpenType)" : " (TrueType)";
-      const valueName = baseName.replace(/\.(ttf|otf)$/i, "") + suffix;
-      // PowerShell single-quoted string: ' → ''
-      const psPath = p.replace(/'/g, "''");
-      const psName = valueName.replace(/'/g, "''");
-      return `New-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts' -Name '${psName}' -PropertyType String -Value '${psPath}' -Force | Out-Null`;
-    })
-    .join("; ");
+  const entries = filePaths.map(registryCommandFor).join("; ");
 
   const script =
     `$ErrorActionPreference = 'Stop'; ` +
-    `if (-not (Test-Path 'HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts')) { ` +
-    `New-Item -Path 'HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion' -Name 'Fonts' -Force | Out-Null }; ` +
+    `if (-not (Test-Path '${FONTS_KEY}')) { ` +
+    `New-Item -Path '${FONTS_KEY_PARENT}' -Name 'Fonts' -Force | Out-Null }; ` +
     entries;
 
   const res = await runInherit("powershell.exe", [

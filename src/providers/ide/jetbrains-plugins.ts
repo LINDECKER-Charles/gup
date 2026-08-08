@@ -40,24 +40,7 @@ export class JetBrainsPluginsProvider implements Provider {
     const allPlugins = await scanAllPlugins();
     if (allPlugins.length === 0) return [];
 
-    // Dedupe: same plugin installed in multiple IDEs — keep the oldest
-    // version (an update there helps everyone) and merge ideHosts.
-    const byId = new Map<string, PluginMeta>();
-    for (const plugin of allPlugins) {
-      if (isPlatformPlugin(plugin.vendor, plugin.version)) continue;
-      const existing = byId.get(plugin.id);
-      if (!existing) {
-        byId.set(plugin.id, { ...plugin });
-        continue;
-      }
-      for (const host of plugin.ideHosts) {
-        if (!existing.ideHosts.includes(host)) existing.ideHosts.push(host);
-      }
-      if (compareVersions(plugin.version, existing.version) < 0) {
-        existing.version = plugin.version;
-      }
-    }
-
+    const byId = dedupeAcrossIdes(allPlugins);
     const limit = pLimit(4);
     const results = await Promise.all(
       Array.from(byId.values()).map((plugin) =>
@@ -225,21 +208,46 @@ function extractFromJar(
   }
 }
 
+/**
+ * Dedupe: same plugin installed in multiple IDEs — keep the oldest version (an
+ * update there helps everyone) and merge ideHosts. Les plugins de plateforme
+ * sont écartés : ils suivent la version de l'IDE, pas la leur.
+ */
+function dedupeAcrossIdes(plugins: PluginMeta[]): Map<string, PluginMeta> {
+  const byId = new Map<string, PluginMeta>();
+  for (const plugin of plugins) {
+    if (isPlatformPlugin(plugin.vendor, plugin.version)) continue;
+    const existing = byId.get(plugin.id);
+    if (!existing) {
+      byId.set(plugin.id, { ...plugin });
+      continue;
+    }
+    for (const host of plugin.ideHosts) {
+      if (!existing.ideHosts.includes(host)) existing.ideHosts.push(host);
+    }
+    if (compareVersions(plugin.version, existing.version) < 0) {
+      existing.version = plugin.version;
+    }
+  }
+  return byId;
+}
+
+/** Contenu du premier `<tag>…</tag>`, ou null. */
+function tagText(xml: string, pattern: RegExp): string | null {
+  return xml.match(pattern)?.[1]?.trim() || null;
+}
+
 function parsePluginXml(
   xml: string,
 ): { id: string; name: string; version: string; vendor: string | null } | null {
-  const idMatch = xml.match(/<id>([^<]+)<\/id>/);
-  const nameMatch = xml.match(/<name>([^<]+)<\/name>/);
-  const versionMatch = xml.match(/<version>([^<]+)<\/version>/);
-  const vendorMatch = xml.match(/<vendor[^>]*>([^<]+)<\/vendor>/);
-  const id = idMatch?.[1]?.trim();
-  const version = versionMatch?.[1]?.trim();
+  const id = tagText(xml, /<id>([^<]+)<\/id>/);
+  const version = tagText(xml, /<version>([^<]+)<\/version>/);
   if (!id || !version) return null;
   return {
     id,
-    name: nameMatch?.[1]?.trim() ?? id,
+    name: tagText(xml, /<name>([^<]+)<\/name>/) ?? id,
     version,
-    vendor: vendorMatch?.[1]?.trim() ?? null,
+    vendor: tagText(xml, /<vendor[^>]*>([^<]+)<\/vendor>/),
   };
 }
 

@@ -37,63 +37,9 @@ export class ArduinoCliProvider implements Provider {
   }
 
   async listOutdated(): Promise<OutdatedPackage[]> {
-    const out: OutdatedPackage[] = [];
-
-    const ver = await run("arduino-cli", ["version", "--format", "json"]);
-    if (!ver.failed) {
-      try {
-        const parsed = JSON.parse(ver.stdout) as ArduinoVersion;
-        const current = parsed.VersionString;
-        if (current) {
-          const latest = await fetchGitHubReleaseLatest("arduino/arduino-cli");
-          if (latest && latest !== current) {
-            out.push({
-              id: "arduino-cli",
-              name: "Arduino CLI",
-              current,
-              latest,
-            });
-          }
-        }
-      } catch {
-        /* swallow */
-      }
-    }
-
-    const outdated = await run("arduino-cli", ["outdated", "--format", "json"]);
-    if (!outdated.failed && outdated.stdout.trim()) {
-      try {
-        const parsed = JSON.parse(outdated.stdout) as ArduinoOutdatedEntry;
-        for (const p of parsed.Platforms ?? []) {
-          if (p.ID && p.Installed && p.Latest && p.Installed !== p.Latest) {
-            out.push({
-              id: `platform:${p.ID}`,
-              name: p.ID,
-              current: p.Installed,
-              latest: p.Latest,
-              note: "platform",
-            });
-          }
-        }
-        for (const l of parsed.Libraries ?? []) {
-          const name = l.Library?.Name;
-          const current = l.Library?.Version;
-          const latest = l.Release?.Version;
-          if (name && current && latest && current !== latest) {
-            out.push({
-              id: `lib:${name}`,
-              name,
-              current,
-              latest,
-              note: "library",
-            });
-          }
-        }
-      } catch {
-        /* swallow */
-      }
-    }
-    return out;
+    const self = await selfUpdate();
+    const entries = await outdatedEntries();
+    return [...self, ...platformUpdates(entries), ...libraryUpdates(entries)];
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
@@ -119,5 +65,80 @@ export class ArduinoCliProvider implements Provider {
     if (packages.length === 0) return [];
     const res = await runInherit("arduino-cli", ["upgrade"]);
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// listOutdated — étapes
+//
+// Trois sources indépendantes (le binaire lui-même, les plateformes, les
+// bibliothèques) plutôt qu'une seule méthode : chacune a son propre parsing et
+// son propre mode d'échec, et aucune ne doit faire tomber les autres.
+
+/** Le binaire arduino-cli lui-même, comparé à la dernière release GitHub. */
+async function selfUpdate(): Promise<OutdatedPackage[]> {
+  const ver = await run("arduino-cli", ["version", "--format", "json"]);
+  if (ver.failed) return [];
+  const current = parseJson<ArduinoVersion>(ver.stdout)?.VersionString;
+  if (!current) return [];
+  const latest = await fetchGitHubReleaseLatest("arduino/arduino-cli");
+  if (!latest || latest === current) return [];
+  return [{ id: "arduino-cli", name: "Arduino CLI", current, latest }];
+}
+
+async function outdatedEntries(): Promise<ArduinoOutdatedEntry | null> {
+  const res = await run("arduino-cli", ["outdated", "--format", "json"]);
+  if (res.failed || !res.stdout.trim()) return null;
+  return parseJson<ArduinoOutdatedEntry>(res.stdout);
+}
+
+function platformUpdates(entry: ArduinoOutdatedEntry | null): OutdatedPackage[] {
+  return (entry?.Platforms ?? [])
+    .filter((p) => p.ID && p.Installed && p.Latest && p.Installed !== p.Latest)
+    .map((p) => ({
+      id: `platform:${p.ID!}`,
+      name: p.ID!,
+      current: p.Installed!,
+      latest: p.Latest!,
+      note: "platform",
+    }));
+}
+
+interface LibraryVersions {
+  name?: string | undefined;
+  current?: string | undefined;
+  latest?: string | undefined;
+}
+
+/** Une bibliothèque n'est proposée que si les trois champs sont là et diffèrent. */
+function isUpgradableLibrary(
+  v: LibraryVersions,
+): v is { name: string; current: string; latest: string } {
+  return Boolean(v.name && v.current && v.latest && v.current !== v.latest);
+}
+
+function libraryUpdates(entry: ArduinoOutdatedEntry | null): OutdatedPackage[] {
+  return (entry?.Libraries ?? [])
+    .map((l) => ({
+      name: l.Library?.Name,
+      current: l.Library?.Version,
+      latest: l.Release?.Version,
+    }))
+    .filter(isUpgradableLibrary)
+    .map(({ name, current, latest }) => ({
+      id: `lib:${name}`,
+      name,
+      current,
+      latest,
+      note: "library",
+    }));
+}
+
+/** JSON tolérant : une sortie illisible vaut « rien à signaler ». */
+function parseJson<T>(raw: string): T | null {
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
   }
 }

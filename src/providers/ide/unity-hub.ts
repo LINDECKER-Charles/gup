@@ -89,25 +89,8 @@ function editorsConfigFile(): string {
 
 async function listInstalledEditors(): Promise<InstalledEditor[]> {
   // Prefer the JSON the Hub maintains — no process spawn, no GUI dance.
-  const cfg = editorsConfigFile();
-  if (existsSync(cfg)) {
-    try {
-      const raw = await readFile(cfg, "utf8");
-      const data = JSON.parse(raw) as Record<
-        string,
-        { version?: string; location?: string[] }
-      >;
-      const out: InstalledEditor[] = [];
-      for (const [version, info] of Object.entries(data)) {
-        if (!version) continue;
-        const loc = info?.location?.[0];
-        out.push(loc ? { version, path: loc } : { version });
-      }
-      if (out.length > 0) return out;
-    } catch {
-      /* fall through to CLI */
-    }
-  }
+  const fromConfig = await editorsFromConfig();
+  if (fromConfig.length > 0) return fromConfig;
 
   const exe = unityHubExe();
   if (!exe) return [];
@@ -118,6 +101,31 @@ async function listInstalledEditors(): Promise<InstalledEditor[]> {
   );
   if (failed) return [];
   return parseHubEditorList(stdout);
+}
+
+/**
+ * Éditeurs listés dans le JSON maintenu par le Hub. Renvoie un tableau vide
+ * — et non une erreur — dès que le fichier manque ou n'est pas lisible :
+ * l'appelant retombe alors sur le CLI du Hub.
+ */
+async function editorsFromConfig(): Promise<InstalledEditor[]> {
+  const cfg = editorsConfigFile();
+  if (!existsSync(cfg)) return [];
+  try {
+    const raw = await readFile(cfg, "utf8");
+    const data = JSON.parse(raw) as Record<
+      string,
+      { version?: string; location?: string[] }
+    >;
+    return Object.entries(data)
+      .filter(([version]) => Boolean(version))
+      .map(([version, info]) => {
+        const loc = info?.location?.[0];
+        return loc ? { version, path: loc } : { version };
+      });
+  } catch {
+    return []; /* fall through to CLI */
+  }
 }
 
 function parseHubEditorList(stdout: string): InstalledEditor[] {

@@ -32,26 +32,9 @@ export class MiseProvider implements Provider {
     const { stdout, failed } = await run("mise", ["outdated", "--json"]);
     if (failed || !stdout.trim()) return [];
 
-    let parsed: MiseOutdatedEntry[] | Record<string, MiseOutdatedEntry>;
-    try {
-      parsed = JSON.parse(stdout);
-    } catch {
-      return [];
-    }
-
-    const entries: MiseOutdatedEntry[] = Array.isArray(parsed)
-      ? parsed
-      : Object.entries(parsed).map(([k, v]) => ({ name: k, ...v }));
-
-    const out: OutdatedPackage[] = [];
-    for (const e of entries) {
-      const plugin = e.plugin ?? e.name;
-      const current = e.current ?? e.requested;
-      const latest = e.latest;
-      if (!plugin || !current || !latest || current === latest) continue;
-      out.push({ id: plugin, name: plugin, current, latest });
-    }
-    return out;
+    return parseMiseEntries(stdout)
+      .map(toOutdatedPackage)
+      .filter((p): p is OutdatedPackage => p !== null);
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
@@ -64,4 +47,29 @@ export class MiseProvider implements Provider {
     const res = await runInherit("mise", ["upgrade"]);
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
   }
+}
+
+/**
+ * `mise outdated --json` a changé de forme entre versions : tableau d'entrées
+ * dans les récentes, objet indexé par nom d'outil dans les anciennes. On
+ * normalise les deux vers un tableau ; une sortie illisible vaut « rien ».
+ */
+function parseMiseEntries(stdout: string): MiseOutdatedEntry[] {
+  let parsed: MiseOutdatedEntry[] | Record<string, MiseOutdatedEntry>;
+  try {
+    parsed = JSON.parse(stdout);
+  } catch {
+    return [];
+  }
+  return Array.isArray(parsed)
+    ? parsed
+    : Object.entries(parsed).map(([k, v]) => ({ name: k, ...v }));
+}
+
+function toOutdatedPackage(e: MiseOutdatedEntry): OutdatedPackage | null {
+  const plugin = e.plugin ?? e.name;
+  const current = e.current ?? e.requested;
+  const latest = e.latest;
+  if (!plugin || !current || !latest || current === latest) return null;
+  return { id: plugin, name: plugin, current, latest };
 }

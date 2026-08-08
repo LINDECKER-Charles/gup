@@ -3,11 +3,11 @@ import { existsSync } from "node:fs";
 import { posix as posixPath, win32 as winPath } from "node:path";
 import pLimit from "p-limit";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { packageIdsFor, productSlug } from "./jetbrains-catalog.js";
 import {
   runPmUpdate,
   describeSource,
   type InstallSource,
-  type PackageIds,
 } from "../../core/install-source.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -90,43 +90,46 @@ export class JetBrainsProvider implements Provider {
         message: `IDE ${packageId} introuvable — re-scanner ?`,
       };
     }
-
-    switch (target.source) {
-      case "toolbox":
-        return {
-          id: packageId,
-          success: false,
-          skipped: true,
-          message: "Géré par Toolbox — ouvrir Toolbox pour appliquer.",
-        };
-      case "scoop":
-      case "choco":
-      case "winget":
-      // macOS: `brew upgrade --cask <token>` is the supported path for an IDE
-      // installed with `brew install --cask`; runPmUpdate picks the cask form
-      // as soon as packageIdsFor returns a brewCask token.
-      case "brew":
-        return runPmUpdate(
-          packageId,
-          target.source,
-          packageIdsFor(target.productCode),
-          `Pas de mapping ${target.source} pour ${target.productCode}.`,
-        );
-      case "manual":
-      default:
-        return {
-          id: packageId,
-          success: false,
-          skipped: true,
-          message: `Installation manuelle — https://www.jetbrains.com/${productSlug(target.productCode)}/download/`,
-        };
-    }
+    return updateBySource(target);
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
     const outcomes: UpdateOutcome[] = [];
     for (const pkg of packages) outcomes.push(await this.update(pkg.id));
     return outcomes;
+  }
+}
+
+const TOOLBOX_SKIP = "Géré par Toolbox — ouvrir Toolbox pour appliquer.";
+const JETBRAINS_SITE = "https://www.jetbrains.com";
+
+/** Route l'update vers le canal qui possède réellement l'install. */
+async function updateBySource(target: ProductInfo): Promise<UpdateOutcome> {
+  const id = target.productCode;
+  switch (target.source) {
+    case "toolbox":
+      return { id, success: false, skipped: true, message: TOOLBOX_SKIP };
+    case "scoop":
+    case "choco":
+    case "winget":
+    // macOS: `brew upgrade --cask <token>` is the supported path for an IDE
+    // installed with `brew install --cask`; runPmUpdate picks the cask form
+    // as soon as packageIdsFor returns a brewCask token.
+    case "brew":
+      return runPmUpdate(
+        id,
+        target.source,
+        packageIdsFor(id),
+        `Pas de mapping ${target.source} pour ${id}.`,
+      );
+    case "manual":
+    default:
+      return {
+        id,
+        success: false,
+        skipped: true,
+        message: `Installation manuelle — ${JETBRAINS_SITE}/${productSlug(id)}/download/`,
+      };
   }
 }
 
@@ -263,66 +266,75 @@ function isPrunedBundleChild(current: string, child: string): boolean {
 async function findLatestProductInfo(
   rootPath: string,
 ): Promise<Omit<ProductInfo, "source"> | null> {
-  let best: Omit<ProductInfo, "source"> | null = null;
   const maxDepth = maxWalkDepth();
-  const pruneBundles = process.platform === "darwin";
-
   const queue: Array<{ path: string; depth: number }> = [
     { path: rootPath, depth: 0 },
   ];
   const visited = new Set<string>();
+  let best: Omit<ProductInfo, "source"> | null = null;
 
   while (queue.length > 0) {
     const { path: current, depth } = queue.shift()!;
     if (visited.has(current) || depth > maxDepth) continue;
     visited.add(current);
 
-    const candidate = joinPath(current, "product-info.json");
-    try {
-      const raw = await readFile(candidate, "utf8");
-      const parsed = JSON.parse(raw) as Partial<
-        Omit<ProductInfo, "installPath" | "source">
-      >;
-      if (
-        parsed.buildNumber &&
-        parsed.productCode &&
-        parsed.version &&
-        parsed.name
-      ) {
-        const info: Omit<ProductInfo, "source"> = {
-          name: parsed.name,
-          version: parsed.version,
-          buildNumber: parsed.buildNumber,
-          productCode: parsed.productCode,
-          installPath: current,
-        };
-        if (!best || compareBuilds(info.buildNumber, best.buildNumber) > 0) {
-          best = info;
-        }
-      }
-    } catch {
-      /* no product-info.json here */
+    const info = await readProductInfo(current);
+    if (info && (!best || compareBuilds(info.buildNumber, best.buildNumber) > 0)) {
+      best = info;
     }
 
-    let children: string[];
-    try {
-      children = await readdir(current);
-    } catch {
-      continue;
-    }
-    for (const child of children) {
-      if (pruneBundles && isPrunedBundleChild(current, child)) continue;
-      const childPath = joinPath(current, child);
-      try {
-        const s = await stat(childPath);
-        if (s.isDirectory()) queue.push({ path: childPath, depth: depth + 1 });
-      } catch {
-        /* skip */
-      }
+    for (const child of await childDirectories(current)) {
+      queue.push({ path: child, depth: depth + 1 });
     }
   }
 
   return best;
+}
+
+/** Lit le `product-info.json` de `dir`, ou null s'il est absent ou incomplet. */
+async function readProductInfo(
+  dir: string,
+): Promise<Omit<ProductInfo, "source"> | null> {
+  try {
+    const raw = await readFile(joinPath(dir, "product-info.json"), "utf8");
+    const parsed = JSON.parse(raw) as Partial<
+      Omit<ProductInfo, "installPath" | "source">
+    >;
+    const { name, version, buildNumber, productCode } = parsed;
+    if (!name || !version || !buildNumber || !productCode) return null;
+    return { name, version, buildNumber, productCode, installPath: dir };
+  } catch {
+    return null; /* pas de product-info.json lisible ici */
+  }
+}
+
+/**
+ * Sous-dossiers directs de `dir`, bundles macOS élagués. Un dossier illisible
+ * (permission, lien cassé) est ignoré plutôt que de faire échouer le scan.
+ */
+async function childDirectories(dir: string): Promise<string[]> {
+  const pruneBundles = process.platform === "darwin";
+  let children: string[];
+  try {
+    children = await readdir(dir);
+  } catch {
+    return [];
+  }
+  const out: string[] = [];
+  for (const child of children) {
+    if (pruneBundles && isPrunedBundleChild(dir, child)) continue;
+    const childPath = joinPath(dir, child);
+    if (await isDirectory(childPath)) out.push(childPath);
+  }
+  return out;
+}
+
+async function isDirectory(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 export function detectSourceFromPath(installPath: string): ProductInfo["source"] {
@@ -371,130 +383,4 @@ async function fetchJetBrainsLatest(productCode: string): Promise<JetBrainsRelea
   } catch {
     return null;
   }
-}
-
-/**
- * Package IDs per package manager, keyed by JetBrains product code.
- * Mappings reflect the canonical names on each PM's repository.
- *
- * JetBrains ships every IDE as a Homebrew *cask*, never a formula, so the
- * macOS ids all go under `brewCask` (`brew upgrade --cask <token>`). AQ (Aqua)
- * has no verified cask token and is deliberately left without one.
- */
-function packageIdsFor(productCode: string): PackageIds {
-  const map: Record<string, PackageIds> = {
-    IU: {
-      winget: "JetBrains.IntelliJIDEA.Ultimate",
-      scoop: "intellij-idea-ultimate",
-      choco: "intellijidea-ultimate",
-      brewCask: "intellij-idea",
-    },
-    IC: {
-      winget: "JetBrains.IntelliJIDEA.Community",
-      scoop: "intellij-idea",
-      choco: "intellijidea-community",
-      brewCask: "intellij-idea-ce",
-    },
-    WS: {
-      winget: "JetBrains.WebStorm",
-      scoop: "webstorm",
-      choco: "webstorm",
-      brewCask: "webstorm",
-    },
-    PS: {
-      winget: "JetBrains.PhpStorm",
-      scoop: "phpstorm",
-      choco: "phpstorm",
-      brewCask: "phpstorm",
-    },
-    PY: {
-      winget: "JetBrains.PyCharm.Professional",
-      scoop: "pycharm-professional",
-      choco: "pycharm",
-      brewCask: "pycharm",
-    },
-    PCP: {
-      winget: "JetBrains.PyCharm.Professional",
-      scoop: "pycharm-professional",
-      choco: "pycharm",
-      brewCask: "pycharm",
-    },
-    PC: {
-      winget: "JetBrains.PyCharm.Community",
-      scoop: "pycharm",
-      choco: "pycharm-community",
-      brewCask: "pycharm-ce",
-    },
-    PCC: {
-      winget: "JetBrains.PyCharm.Community",
-      scoop: "pycharm",
-      choco: "pycharm-community",
-      brewCask: "pycharm-ce",
-    },
-    GO: {
-      winget: "JetBrains.GoLand",
-      scoop: "goland",
-      choco: "goland",
-      brewCask: "goland",
-    },
-    RD: {
-      winget: "JetBrains.Rider",
-      scoop: "rider",
-      choco: "jetbrains-rider",
-      brewCask: "rider",
-    },
-    DB: {
-      winget: "JetBrains.DataGrip",
-      scoop: "datagrip",
-      choco: "datagrip",
-      brewCask: "datagrip",
-    },
-    DG: {
-      winget: "JetBrains.DataGrip",
-      scoop: "datagrip",
-      choco: "datagrip",
-      brewCask: "datagrip",
-    },
-    RM: {
-      winget: "JetBrains.RubyMine",
-      scoop: "rubymine",
-      choco: "rubymine",
-      brewCask: "rubymine",
-    },
-    CL: {
-      winget: "JetBrains.CLion",
-      scoop: "clion",
-      choco: "clion",
-      brewCask: "clion",
-    },
-    AQ: { winget: "JetBrains.Aqua", scoop: "aqua" },
-    RR: {
-      winget: "JetBrains.RustRover",
-      scoop: "rustrover",
-      brewCask: "rustrover",
-    },
-  };
-  return map[productCode] ?? {};
-}
-
-function productSlug(productCode: string): string {
-  const map: Record<string, string> = {
-    IU: "idea",
-    IC: "idea",
-    WS: "webstorm",
-    PS: "phpstorm",
-    PY: "pycharm",
-    PCP: "pycharm",
-    PC: "pycharm",
-    PCC: "pycharm",
-    GO: "go",
-    RD: "rider",
-    DB: "datagrip",
-    DG: "datagrip",
-    RM: "ruby",
-    CL: "clion",
-    AQ: "aqua",
-    RR: "rust",
-  };
-  return map[productCode] ?? "products";
 }

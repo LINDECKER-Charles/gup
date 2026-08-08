@@ -106,32 +106,22 @@ function packageControlSettingsFile(): string {
 function stripJsonComments(input: string): string {
   let out = "";
   let i = 0;
-  let inString = false;
-  let escape = false;
   while (i < input.length) {
     const c = input[i];
-    if (inString) {
-      out += c;
-      if (escape) escape = false;
-      else if (c === "\\") escape = true;
-      else if (c === '"') inString = false;
-      i++;
-      continue;
-    }
     if (c === '"') {
-      inString = true;
-      out += c;
-      i++;
+      // Un commentaire à l'intérieur d'une chaîne n'en est pas un : on recopie
+      // le littéral tel quel plutôt que de l'analyser caractère par caractère.
+      const literal = readStringLiteral(input, i);
+      out += literal.text;
+      i = literal.next;
       continue;
     }
     if (c === "/" && input[i + 1] === "/") {
-      while (i < input.length && input[i] !== "\n") i++;
+      i = skipToLineEnd(input, i);
       continue;
     }
     if (c === "/" && input[i + 1] === "*") {
-      i += 2;
-      while (i < input.length && !(input[i] === "*" && input[i + 1] === "/")) i++;
-      i += 2;
+      i = skipBlockComment(input, i);
       continue;
     }
     out += c;
@@ -139,4 +129,35 @@ function stripJsonComments(input: string): string {
   }
   // Drop trailing commas before `}` / `]`.
   return out.replace(/,(\s*[}\]])/g, "$1");
+}
+
+/** Littéral chaîne depuis le guillemet ouvrant `start`, échappements compris. */
+function readStringLiteral(
+  input: string,
+  start: number,
+): { text: string; next: number } {
+  let text = input[start] ?? "";
+  let i = start + 1;
+  let escape = false;
+  while (i < input.length) {
+    const c = input[i]!;
+    text += c;
+    i++;
+    if (escape) escape = false;
+    else if (c === "\\") escape = true;
+    else if (c === '"') break;
+  }
+  return { text, next: i };
+}
+
+function skipToLineEnd(input: string, start: number): number {
+  let i = start;
+  while (i < input.length && input[i] !== "\n") i++;
+  return i;
+}
+
+function skipBlockComment(input: string, start: number): number {
+  let i = start + 2;
+  while (i < input.length && !(input[i] === "*" && input[i + 1] === "/")) i++;
+  return i + 2;
 }

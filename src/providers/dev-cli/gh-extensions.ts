@@ -64,26 +64,30 @@ export class GhExtensionsProvider implements Provider {
 }
 
 function parseGhExtList(output: string): InstalledExt[] {
-  const out: InstalledExt[] = [];
-  for (const rawLine of output.split(/\r?\n/)) {
-    const line = rawLine.replace(/^\*\s*/, "").trim();
-    if (!line) continue;
-    if (/^NAME\s+(REPO|VERSION)/i.test(line)) continue;
-    if (/^-+/.test(line)) continue;
+  return output
+    .split(/\r?\n/)
+    .map(parseGhExtLine)
+    .filter((e): e is InstalledExt => e !== null);
+}
 
-    const parts = line.split(/\s{2,}|\t+/);
-    if (parts.length < 2) continue;
+/**
+ * `gh extension list` préfixe l'extension active d'une astérisque et intercale
+ * en-têtes et séparateurs. null pour tout ce qui n'est pas une extension.
+ */
+function parseGhExtLine(rawLine: string): InstalledExt | null {
+  const line = rawLine.replace(/^\*\s*/, "").trim();
+  if (!line || /^-+/.test(line)) return null;
+  if (/^NAME\s+(REPO|VERSION)/i.test(line)) return null;
 
-    const [name, repo, version] = parts;
-    if (!name || !repo || !/\S+\/\S+/.test(repo)) continue;
+  const parts = line.split(/\s{2,}|\t+/);
+  const [name, repo, version] = parts;
+  if (!name || !repo || !/\S+\/\S+/.test(repo)) return null;
 
-    out.push({
-      name: name.trim(),
-      repo: repo.trim(),
-      current: (version ?? "").trim() || "?",
-    });
-  }
-  return out;
+  return {
+    name: name.trim(),
+    repo: repo.trim(),
+    current: (version ?? "").trim() || "?",
+  };
 }
 
 async function fetchGhRepoLatest(repo: string): Promise<string | null> {

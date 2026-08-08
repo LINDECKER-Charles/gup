@@ -35,15 +35,8 @@ export class KubectlProvider implements Provider {
     ]);
     if (failed) return [];
 
-    let payload: KubectlVersion;
-    try {
-      payload = JSON.parse(stdout) as KubectlVersion;
-    } catch {
-      return [];
-    }
-    const raw = payload.clientVersion?.gitVersion;
-    if (!raw) return [];
-    const current = raw.replace(/^v/, "");
+    const current = parseClientVersion(stdout);
+    if (!current) return [];
 
     const latest = await fetchKubectlLatest();
     if (!latest || latest === current) return [];
@@ -91,6 +84,20 @@ async function fetchKubectlLatest(): Promise<string | null> {
     if (!res.ok) return null;
     const text = (await res.text()).trim();
     return text.replace(/^v/, "");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Version cliente issue de `kubectl version --client -o json`, préfixe `v`
+ * retiré. null si la sortie n'est pas du JSON exploitable.
+ */
+function parseClientVersion(stdout: string): string | null {
+  try {
+    const payload = JSON.parse(stdout) as KubectlVersion;
+    const raw = payload.clientVersion?.gitVersion;
+    return raw ? raw.replace(/^v/, "") : null;
   } catch {
     return null;
   }

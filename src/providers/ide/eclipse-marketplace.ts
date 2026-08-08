@@ -128,15 +128,25 @@ async function findEclipseHome(): Promise<string | null> {
     // installs (e.g. multiple Eclipse profiles under Eclipse Foundation).
     const direct = await checkEclipseHome(root);
     if (direct) return direct;
-    try {
-      const children = await readdir(root);
-      for (const child of children) {
-        const candidate = await checkEclipseHome(joinPath(root, child));
-        if (candidate) return candidate;
-      }
-    } catch {
-      /* ignore */
+    const nested = await firstEclipseHomeUnder(root);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+/**
+ * Balaie les enfants directs de `root`. Le `try` couvre aussi l'inspection des
+ * enfants, pas seulement le `readdir` : un `stat` qui lève sur un candidat
+ * (lien cassé, permission) doit faire abandonner cette racine, pas remonter.
+ */
+async function firstEclipseHomeUnder(root: string): Promise<string | null> {
+  try {
+    for (const child of await readdir(root)) {
+      const candidate = await checkEclipseHome(joinPath(root, child));
+      if (candidate) return candidate;
     }
+  } catch {
+    /* ignore */
   }
   return null;
 }

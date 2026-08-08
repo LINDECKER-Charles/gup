@@ -43,13 +43,7 @@ export class ObsidianPluginsProvider implements Provider {
     const vaults = await listObsidianVaults();
     if (vaults.length === 0) return [];
 
-    const installed = new Map<string, InstalledPlugin>();
-    for (const vault of vaults) {
-      const plugins = await scanVaultPlugins(vault);
-      for (const p of plugins) {
-        if (!installed.has(p.id)) installed.set(p.id, p);
-      }
-    }
+    const installed = await collectVaultPlugins(vaults);
     if (installed.size === 0) return [];
 
     const index = await fetchCommunityIndex();
@@ -185,4 +179,20 @@ async function fetchCommunityIndex(): Promise<Map<string, string> | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Plugins de tous les coffres, dédupliqués par id : le premier coffre qui
+ * porte un plugin gagne, les suivants n'écrasent pas sa version.
+ */
+async function collectVaultPlugins(
+  vaults: string[],
+): Promise<Map<string, InstalledPlugin>> {
+  const installed = new Map<string, InstalledPlugin>();
+  for (const vault of vaults) {
+    for (const p of await scanVaultPlugins(vault)) {
+      if (!installed.has(p.id)) installed.set(p.id, p);
+    }
+  }
+  return installed;
 }

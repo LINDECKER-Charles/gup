@@ -64,10 +64,9 @@ export async function updateVsCodeLikeExtension(
   return { id: packageId, success: !res.failed };
 }
 
-export async function fetchMicrosoftMarketplaceLatest(
-  extensionId: string,
-): Promise<string | null> {
-  const body = {
+/** Requête de la Gallery API : filtre par cible VS Code puis par id d'extension. */
+function marketplaceQuery(extensionId: string): unknown {
+  return {
     filters: [
       {
         criteria: [
@@ -78,6 +77,12 @@ export async function fetchMicrosoftMarketplaceLatest(
     ],
     flags: 0x100,
   };
+}
+
+export async function fetchMicrosoftMarketplaceLatest(
+  extensionId: string,
+): Promise<string | null> {
+  const body = marketplaceQuery(extensionId);
   try {
     const res = await fetch(
       "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",

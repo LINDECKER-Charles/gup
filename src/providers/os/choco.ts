@@ -95,21 +95,28 @@ export function chocoOutcome(id: string, exitCode: number): UpdateOutcome {
 }
 
 export function parseChocoOutdated(stdout: string): OutdatedPackage[] {
-  const out: OutdatedPackage[] = [];
-  for (const line of stdout.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("Chocolatey")) continue;
-    const parts = trimmed.split("|");
-    if (parts.length < 3) continue;
-    const [name, current, latest, pinned] = parts;
-    if (!name || !current || !latest || current === latest) continue;
-    out.push({
-      id: name,
-      name,
-      current,
-      latest,
-      ...(pinned?.toLowerCase() === "true" && { note: "pinned" }),
-    });
-  }
-  return out;
+  return stdout
+    .split(/\r?\n/)
+    .map(parseChocoLine)
+    .filter((p): p is OutdatedPackage => p !== null);
+}
+
+/**
+ * Format `name|current|latest|pinned`. null pour les lignes de bannière et
+ * pour tout ce qui n'est pas une vraie mise à jour.
+ */
+function parseChocoLine(line: string): OutdatedPackage | null {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith("Chocolatey")) return null;
+  const parts = trimmed.split("|");
+  if (parts.length < 3) return null;
+  const [name, current, latest, pinned] = parts;
+  if (!name || !current || !latest || current === latest) return null;
+  return {
+    id: name,
+    name,
+    current,
+    latest,
+    ...(pinned?.toLowerCase() === "true" && { note: "pinned" }),
+  };
 }

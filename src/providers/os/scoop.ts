@@ -64,19 +64,28 @@ export function parseScoopStatus(output: string): OutdatedPackage[] {
   const out: OutdatedPackage[] = [];
   for (let i = headerIdx + 2; i < lines.length; i++) {
     const line = lines[i] ?? "";
+    // Une ligne vide clôt la table — contrairement aux autres parseurs, on
+    // sort au lieu de continuer, `scoop status` pouvant enchaîner d'autres
+    // sections après celle-ci.
     if (!line.trim()) break;
-    // Columns are whitespace-separated; package names are not allowed to contain spaces.
-    const parts = line.trim().split(/\s{2,}/);
-    if (parts.length < 3) continue;
-    const [name, current, latest, ...rest] = parts;
-    if (!name || !current || !latest || current === latest) continue;
-    out.push({
-      id: name,
-      name,
-      current,
-      latest,
-      ...(rest.length > 0 && { note: rest.join(" ") }),
-    });
+    const row = parseScoopRow(line);
+    if (row) out.push(row);
   }
   return out;
+}
+
+/** null quand la ligne n'a pas ses trois colonnes ou n'annonce aucun écart. */
+function parseScoopRow(line: string): OutdatedPackage | null {
+  // Columns are whitespace-separated; package names are not allowed to contain spaces.
+  const parts = line.trim().split(/\s{2,}/);
+  if (parts.length < 3) return null;
+  const [name, current, latest, ...rest] = parts;
+  if (!name || !current || !latest || current === latest) return null;
+  return {
+    id: name,
+    name,
+    current,
+    latest,
+    ...(rest.length > 0 && { note: rest.join(" ") }),
+  };
 }

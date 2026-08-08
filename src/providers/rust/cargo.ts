@@ -18,22 +18,15 @@ export class CargoProvider implements Provider {
 
   async listOutdated(): Promise<OutdatedPackage[]> {
     const { stdout } = await run("cargo", ["install-update", "-l"]);
-    const out: OutdatedPackage[] = [];
     const lines = stdout.split(/\r?\n/);
-    const headerIdx = lines.findIndex((l) => /Package\s+Installed\s+Latest/i.test(l));
+    const headerIdx = lines.findIndex((l) =>
+      /Package\s+Installed\s+Latest/i.test(l),
+    );
     if (headerIdx === -1) return [];
-
-    for (let i = headerIdx + 2; i < lines.length; i++) {
-      const line = lines[i] ?? "";
-      if (!line.trim() || /^-+/.test(line)) continue;
-      const parts = line.trim().split(/\s+/);
-      if (parts.length < 4) continue;
-      const [name, , current, latest] = parts;
-      if (!name || !current || !latest || current === latest) continue;
-      if (!/^v?\d/.test(latest)) continue;
-      out.push({ id: name, name, current, latest });
-    }
-    return out;
+    return lines
+      .slice(headerIdx + 2)
+      .map(parseCargoRow)
+      .filter((p): p is OutdatedPackage => p !== null);
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
@@ -46,4 +39,20 @@ export class CargoProvider implements Provider {
     const res = await runInherit("cargo", ["install-update", "-a"]);
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
   }
+}
+
+/**
+ * Une ligne du tableau `cargo install-update -l`, ou null quand ce n'est pas
+ * un paquet à proposer : séparateur, colonnes manquantes, versions identiques,
+ * ou « Latest » qui n'est pas un numéro de version (`cargo` y écrit parfois
+ * `Yes`/`No` selon la version du plugin).
+ */
+function parseCargoRow(line: string): OutdatedPackage | null {
+  if (!line.trim() || /^-+/.test(line)) return null;
+  const parts = line.trim().split(/\s+/);
+  if (parts.length < 4) return null;
+  const [name, , current, latest] = parts;
+  if (!name || !current || !latest || current === latest) return null;
+  if (!/^v?\d/.test(latest)) return null;
+  return { id: name, name, current, latest };
 }
