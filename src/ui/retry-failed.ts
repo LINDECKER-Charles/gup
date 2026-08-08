@@ -1,7 +1,8 @@
 import { select } from "@inquirer/prompts";
 import chalk from "chalk";
 import { getProvider } from "../core/registry.js";
-import { finalizeOutcome, isAbortRequested } from "./skip-controller.js";
+import { applyUpdate } from "./apply-update.js";
+import { isAbortRequested } from "./skip-controller.js";
 import type { UpdateOptions, UpdateOutcome } from "../core/types.js";
 
 export interface OutcomeWithProvider {
@@ -156,7 +157,10 @@ async function retryAll(
       if (isAbortRequested()) break;
       retried.set(
         `${providerId}:${id}`,
-        finalizeOutcome(await provider.update(id, spec.options)),
+        await applyUpdate(provider, id, {
+          update: spec.options,
+          retry: spec.label,
+        }),
       );
     }
   }

@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import ora, { type Ora } from "ora";
 import type { Provider, ProviderScanResult } from "../core/types.js";
+import { recordScan } from "../core/history/store.js";
 import {
   detectAvailableProviders,
   scanAll,
@@ -47,6 +48,7 @@ export async function scanWithProgress(
     ...progressCallbacks(spinner, total),
   });
 
+  recordScan({ results, durationMs: Date.now() - startedAt, options: baseOptions });
   reportScanDone(spinner, { results, total, startedAt });
   return { results, detectedCount: detected.length };
 }

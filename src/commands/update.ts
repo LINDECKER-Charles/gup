@@ -11,8 +11,9 @@ import {
 import {
   beginSkipSession,
   discardPendingInterrupt,
-  finalizeOutcome,
 } from "../ui/skip-controller.js";
+import { applyEach, applyUpdate } from "../ui/apply-update.js";
+import { recordUpdate } from "../core/history/store.js";
 import type {
   OutdatedPackage,
   Provider,
@@ -135,8 +136,7 @@ async function runTargets(
     for (const { providerId, provider, packageId } of resolved) {
       if (session.isAbortRequested()) break;
       process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
-      const outcome = finalizeOutcome(await provider.update(packageId));
-      entries.push({ providerId, outcome });
+      entries.push({ providerId, outcome: await applyUpdate(provider, packageId) });
     }
     return summarize(await maybeRetryFailures(entries, yesFlag(opts)));
   } finally {
@@ -185,7 +185,7 @@ async function applyGrouped(
     process.stdout.write(
       chalk.bold(`\n→ ${provider.displayName} (${pkgs.length})\n`),
     );
-    const done = await updateEach(provider, pkgs, session);
+    const done = await applyEach(provider, pkgs, session);
     entries.push(...done.map((outcome) => ({ providerId, outcome })));
     if (session.isAbortRequested()) break;
   }
@@ -202,24 +202,6 @@ function groupByProvider(
     grouped.set(sel.providerId, list);
   }
   return grouped;
-}
-
-/**
- * One package at a time (not provider.updateAll) so a timeout / Ctrl+C maps
- * cleanly to a single package: the rest of the batch keeps going. Extracted so
- * the caller's loop does not need a labelled break to unwind two levels.
- */
-async function updateEach(
-  provider: Provider,
-  pkgs: OutdatedPackage[],
-  session: { isAbortRequested: () => boolean },
-): Promise<UpdateOutcome[]> {
-  const outcomes: UpdateOutcome[] = [];
-  for (const pkg of pkgs) {
-    if (session.isAbortRequested()) break;
-    outcomes.push(finalizeOutcome(await provider.update(pkg.id)));
-  }
-  return outcomes;
 }
 
 /**
@@ -286,7 +268,11 @@ async function runAdminBatch(
   );
 
   const elevate = opts.yes || (await confirmElevation(adminSelection.length));
-  if (!elevate) return elevationDeclined(adminSelection);
+  if (!elevate) {
+    const declined = elevationDeclined(adminSelection);
+    recordAdminBatch(declined, adminSelection, false);
+    return declined;
+  }
 
   // runElevatedBatch enforces 1-to-1 ordering with `targets` (see
   // src/core/elevation.ts: readBatchOutput rejects length mismatches and
@@ -295,10 +281,40 @@ async function runAdminBatch(
   // entry and recover providerId from that — no need to thread it through
   // the IPC payload.
   const outcomes = await runElevatedBatch(targets);
-  return outcomes.map((outcome, i) => ({
+  const entries = outcomes.map((outcome, i) => ({
     providerId: providerIdOf(targets[i] ?? ""),
     outcome,
   }));
+  recordAdminBatch(entries, adminSelection, true);
+  return entries;
+}
+
+/**
+ * History for the elevated path. The child process stays a pure executor — it
+ * never touches the history — so the parent logs what came back. That keeps
+ * every record in the *invoking* user's profile, which is not necessarily the
+ * one UAC elevated into, and rules out double-logging the same attempt.
+ *
+ * Per-attempt durations are lost in the round-trip and deliberately left out
+ * rather than faked from the batch total.
+ */
+function recordAdminBatch(
+  entries: readonly OutcomeWithProvider[],
+  selection: readonly SelectedPackage[],
+  elevated: boolean,
+): void {
+  const scanned = new Map(
+    selection.map((s) => [`${s.providerId}:${s.pkg.id}`, s.pkg]),
+  );
+  for (const { providerId, outcome } of entries) {
+    const pkg = scanned.get(`${providerId}:${outcome.id}`);
+    recordUpdate({
+      providerId,
+      outcome,
+      ...(pkg && { pkg }),
+      ...(elevated && { elevated: true }),
+    });
+  }
 }
 
 function confirmElevation(count: number): Promise<boolean> {

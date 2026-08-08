@@ -12,10 +12,8 @@ import {
   maybeRetryFailures,
   type OutcomeWithProvider,
 } from "../ui/retry-failed.js";
-import {
-  beginSkipSession,
-  finalizeOutcome,
-} from "../ui/skip-controller.js";
+import { applyEach, applyUpdate } from "../ui/apply-update.js";
+import { beginSkipSession } from "../ui/skip-controller.js";
 import { gupVersion } from "../core/version.js";
 import { runOptions } from "./menu-options.js";
 import { dim, pad, type MenuState } from "./menu-state.js";
@@ -188,7 +186,7 @@ async function applyGrouped(
       const provider = getProvider(providerId);
       if (!provider) continue;
       printSectionHeader(provider.displayName, pkgs.length);
-      const done = await updateEach(provider, pkgs, session);
+      const done = await applyEach(provider, pkgs, session);
       entries.push(...done.map((outcome) => ({ providerId, outcome })));
       if (session.isAbortRequested()) break;
     }
@@ -196,24 +194,6 @@ async function applyGrouped(
     session.dispose();
   }
   return entries;
-}
-
-/**
- * Update packages one by one, stopping as soon as the batch is aborted. Split
- * out of {@link applyGrouped} so neither loop needs a labelled break to unwind
- * two levels at once.
- */
-async function updateEach(
-  provider: Provider,
-  pkgs: OutdatedPackage[],
-  session: { isAbortRequested: () => boolean },
-): Promise<UpdateOutcome[]> {
-  const outcomes: UpdateOutcome[] = [];
-  for (const pkg of pkgs) {
-    if (session.isAbortRequested()) break;
-    outcomes.push(finalizeOutcome(await provider.update(pkg.id)));
-  }
-  return outcomes;
 }
 
 async function runAll(state: MenuState): Promise<void> {
@@ -255,8 +235,7 @@ async function runTarget(): Promise<void> {
       if (!parsed) continue;
       const { providerId, provider, packageId } = parsed;
       printSectionHeader(`${provider.displayName} : ${packageId}`, 1);
-      const outcome = finalizeOutcome(await provider.update(packageId));
-      entries.push({ providerId, outcome });
+      entries.push({ providerId, outcome: await applyUpdate(provider, packageId) });
     }
   } finally {
     session.dispose();
