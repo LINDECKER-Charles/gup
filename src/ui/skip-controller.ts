@@ -45,7 +45,6 @@ export function beginSkipSession(): SkipSession {
     return { isAbortRequested: () => outer.abortRequested, dispose: () => {} };
   }
 
-  let lastPress = 0;
   const session: ActiveSession = {
     abortRequested: false,
     dispose() {
@@ -53,31 +52,7 @@ export function beginSkipSession(): SkipSession {
       if (active === session) active = null;
     },
   };
-
-  const onSigint = (): void => {
-    const now = Date.now();
-    const isDouble = now - lastPress < DOUBLE_PRESS_MS;
-    lastPress = now;
-
-    const skipped = skipCurrent();
-    if (isDouble) {
-      session.abortRequested = true;
-      process.stdout.write(
-        chalk.red("\n  arrêt demandé — fin du paquet en cours puis stop\n"),
-      );
-    } else if (skipped) {
-      process.stdout.write(
-        chalk.yellow(
-          "\n  skip de l'install en cours… (Ctrl+C ×2 pour tout arrêter)\n",
-        ),
-      );
-    } else {
-      // No install running (between packages / during a prompt) — treat the
-      // keypress as intent to stop the batch.
-      session.abortRequested = true;
-      process.stdout.write(chalk.red("\n  arrêt demandé…\n"));
-    }
-  };
+  const onSigint = makeSigintHandler(session);
 
   process.on("SIGINT", onSigint);
   active = session;
@@ -86,6 +61,45 @@ export function beginSkipSession(): SkipSession {
     isAbortRequested: () => session.abortRequested,
     dispose: () => session.dispose(),
   };
+}
+
+/** Handler SIGINT propre à une session — il porte son propre horodatage. */
+function makeSigintHandler(session: ActiveSession): () => void {
+  let lastPress = 0;
+  return (): void => {
+    const now = Date.now();
+    const isDouble = now - lastPress < DOUBLE_PRESS_MS;
+    lastPress = now;
+    // A single press with an install in flight only skips that package; a
+    // double press, or a press with nothing running, stops the whole batch.
+    if (announceInterrupt(isDouble, skipCurrent())) session.abortRequested = true;
+  };
+}
+
+/**
+ * Écrit le message correspondant au Ctrl+C reçu. Renvoie true quand
+ * l'interruption doit arrêter le batch entier, false quand elle se limite à
+ * l'install en cours.
+ */
+function announceInterrupt(isDouble: boolean, skipped: boolean): boolean {
+  if (isDouble) {
+    process.stdout.write(
+      chalk.red("\n  arrêt demandé — fin du paquet en cours puis stop\n"),
+    );
+    return true;
+  }
+  if (skipped) {
+    process.stdout.write(
+      chalk.yellow(
+        "\n  skip de l'install en cours… (Ctrl+C ×2 pour tout arrêter)\n",
+      ),
+    );
+    return false;
+  }
+  // No install running (between packages / during a prompt) — treat the
+  // keypress as intent to stop the batch.
+  process.stdout.write(chalk.red("\n  arrêt demandé…\n"));
+  return true;
 }
 
 function printHint(): void {

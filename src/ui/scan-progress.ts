@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import ora from "ora";
+import ora, { type Ora } from "ora";
 import type { Provider, ProviderScanResult } from "../core/types.js";
 import {
   detectAvailableProviders,
@@ -31,44 +31,52 @@ export async function scanWithProgress(
   }).start();
 
   const detected = await detectAvailableProviders();
-  const planned = detected.filter((p) => {
-    if (baseOptions.only?.length && !baseOptions.only.includes(p.id)) return false;
-    if (baseOptions.fast && p.slow) return false;
-    return true;
-  });
-  const total = planned.length;
-
+  const total = countPlanned(detected, baseOptions);
   if (total === 0) {
-    spinner.stopAndPersist({
-      symbol: chalk.dim("·"),
-      text: chalk.dim("aucun provider disponible"),
-    });
+    const text = chalk.dim("aucun provider disponible");
+    spinner.stopAndPersist({ symbol: chalk.dim("·"), text });
     return { results: [], detectedCount: detected.length };
   }
 
   spinner.text = chalk.dim(`scan [0/${total}]`);
-
-  const inFlight = new Set<string>();
-  let done = 0;
   const startedAt = Date.now();
-
-  const render = (): void => {
-    const active = [...inFlight];
-    let suffix = "";
-    if (active.length > 0) {
-      const head = active.slice(0, 3);
-      const overflow = active.length - head.length;
-      suffix =
-        chalk.dim(" — ") +
-        head.join(chalk.dim(" · ")) +
-        (overflow > 0 ? chalk.dim(` +${overflow}`) : "");
-    }
-    spinner.text = chalk.dim(`scan [${done}/${total}]`) + suffix;
-  };
 
   const results = await scanAll({
     ...baseOptions,
     detected,
+    ...progressCallbacks(spinner, total),
+  });
+
+  reportScanDone(spinner, { results, total, startedAt });
+  return { results, detectedCount: detected.length };
+}
+
+function reportScanDone(
+  spinner: Ora,
+  run: { results: ProviderScanResult[]; total: number; startedAt: number },
+): void {
+  const elapsed = ((Date.now() - run.startedAt) / 1000).toFixed(1);
+  const updates = run.results.reduce((n, r) => n + r.packages.length, 0);
+  spinner.stopAndPersist({
+    symbol: chalk.dim("·"),
+    text: chalk.dim(
+      `scan terminé en ${elapsed}s — ${run.total} provider(s), ${updates} mise(s) à jour`,
+    ),
+  });
+}
+
+/**
+ * Callbacks de progression pour `scanAll`. Elles referment sur le compteur et
+ * l'ensemble des providers en vol, pour que l'appelant n'ait pas à les porter.
+ */
+function progressCallbacks(spinner: Ora, total: number) {
+  const inFlight = new Set<string>();
+  let done = 0;
+  const render = (): void => {
+    spinner.text = chalk.dim(`scan [${done}/${total}]`) + inFlightSuffix(inFlight);
+  };
+
+  return {
     onProviderStart: (provider: Provider) => {
       inFlight.add(provider.displayName);
       render();
@@ -77,24 +85,35 @@ export async function scanWithProgress(
       inFlight.delete(provider.displayName);
       done++;
       // Hold the failure briefly so it's visible before the next render.
-      if (result.error) {
-        spinner.text =
-          chalk.dim(`scan [${done}/${total}] — `) +
-          chalk.red(`${provider.displayName}: ${result.error}`);
-      } else {
-        render();
-      }
+      if (!result.error) return render();
+      spinner.text =
+        chalk.dim(`scan [${done}/${total}] — `) +
+        chalk.red(`${provider.displayName}: ${result.error}`);
     },
-  });
+  };
+}
 
-  const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
-  const updates = results.reduce((n, r) => n + r.packages.length, 0);
-  spinner.stopAndPersist({
-    symbol: chalk.dim("·"),
-    text: chalk.dim(
-      `scan terminé en ${elapsed}s — ${total} provider(s), ${updates} mise(s) à jour`,
-    ),
-  });
+/** Combien de providers détectés survivent aux filtres `only` / `fast`. */
+function countPlanned(
+  detected: Provider[],
+  options: Pick<ScanOptions, "only" | "fast">,
+): number {
+  return detected.filter((p) => {
+    if (options.only?.length && !options.only.includes(p.id)) return false;
+    if (options.fast && p.slow) return false;
+    return true;
+  }).length;
+}
 
-  return { results, detectedCount: detected.length };
+/** « — a · b · c +2 » : les providers en cours, tronqués à trois. */
+function inFlightSuffix(inFlight: Set<string>): string {
+  const active = [...inFlight];
+  if (active.length === 0) return "";
+  const head = active.slice(0, 3);
+  const overflow = active.length - head.length;
+  return (
+    chalk.dim(" — ") +
+    head.join(chalk.dim(" · ")) +
+    (overflow > 0 ? chalk.dim(` +${overflow}`) : "")
+  );
 }

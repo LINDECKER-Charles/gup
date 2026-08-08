@@ -3,8 +3,12 @@ import chalk from "chalk";
 import { ALL_PROVIDERS } from "../core/registry.js";
 import type { ProviderScanResult } from "../core/types.js";
 
-export function renderScanTable(results: ProviderScanResult[]): string {
-  const table = new Table({
+function providerName(id: string): string {
+  return ALL_PROVIDERS.find((p) => p.id === id)?.displayName ?? id;
+}
+
+function newScanTable(): Table.Table {
+  return new Table({
     head: [
       chalk.bold("Provider"),
       chalk.bold("Package"),
@@ -15,41 +19,40 @@ export function renderScanTable(results: ProviderScanResult[]): string {
     style: { head: [], border: ["gray"] },
     wordWrap: true,
   });
+}
 
-  const providerName = (id: string): string =>
-    ALL_PROVIDERS.find((p) => p.id === id)?.displayName ?? id;
+/** Lignes d'un provider : soit son erreur de scan, soit un paquet par ligne. */
+function scanRows(result: ProviderScanResult): string[][] {
+  const name = chalk.cyan(providerName(result.providerId));
+  if (result.error) {
+    return [[name, chalk.red(`scan error: ${result.error}`), "", "", ""]];
+  }
+  return result.packages.map((pkg) => [
+    name,
+    pkg.name ?? pkg.id,
+    chalk.yellow(pkg.current),
+    chalk.green(pkg.latest),
+    pkg.note ? chalk.gray(pkg.note) : "",
+  ]);
+}
 
-  const sorted = [...results].sort((a, b) => a.providerId.localeCompare(b.providerId));
+export function renderScanTable(results: ProviderScanResult[]): string {
+  const table = newScanTable();
+  const sorted = [...results].sort((a, b) =>
+    a.providerId.localeCompare(b.providerId),
+  );
+
   let total = 0;
-
   for (const result of sorted) {
-    if (result.error) {
-      table.push([
-        chalk.cyan(providerName(result.providerId)),
-        chalk.red(`scan error: ${result.error}`),
-        "",
-        "",
-        "",
-      ]);
-      continue;
-    }
-    if (result.packages.length === 0) continue;
-    total += result.packages.length;
-    for (const pkg of result.packages) {
-      table.push([
-        chalk.cyan(providerName(result.providerId)),
-        pkg.name ?? pkg.id,
-        chalk.yellow(pkg.current),
-        chalk.green(pkg.latest),
-        pkg.note ? chalk.gray(pkg.note) : "",
-      ]);
-    }
+    for (const row of scanRows(result)) table.push(row);
+    if (!result.error) total += result.packages.length;
   }
 
   if (total === 0) {
     return chalk.green("  à jour — aucune mise à jour disponible");
   }
-  return `${table.toString()}\n  ${chalk.bold(`${total} mise(s) à jour disponible(s)`)}`;
+  const footer = chalk.bold(`${total} mise(s) à jour disponible(s)`);
+  return `${table.toString()}\n  ${footer}`;
 }
 
 export function renderProvidersStatus(

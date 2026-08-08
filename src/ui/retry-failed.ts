@@ -65,41 +65,65 @@ export async function maybeRetryFailures(
   const flat = entries.map((e) => e.outcome);
   if (opts.yes) return flat;
 
-  const retryByProvider = new Map<string, string[]>();
-  for (const e of entries) {
-    if (
-      !e.outcome.success &&
-      !e.outcome.skipped &&
-      e.outcome.retryable === true
-    ) {
-      const list = retryByProvider.get(e.providerId) ?? [];
-      list.push(e.outcome.id);
-      retryByProvider.set(e.providerId, list);
-    }
-  }
+  const retryByProvider = groupRetryables(entries);
   if (retryByProvider.size === 0) return flat;
 
   const excluded = new Set(opts.excludeStrategies ?? []);
   const remaining = STRATEGIES.filter((s) => !excluded.has(s.value));
   if (remaining.length === 0) return flat;
 
+  announceRetryables(retryByProvider);
+  const spec = await promptStrategy(remaining);
+  if (!spec) return flat;
+
+  const retried = await retryAll(retryByProvider, spec);
+  const nextEntries: OutcomeWithProvider[] = entries.map((e) => {
+    const r = retried.get(`${e.providerId}:${e.outcome.id}`);
+    return r ? { providerId: e.providerId, outcome: r } : e;
+  });
+
+  return maybeRetryFailures(nextEntries, {
+    ...opts,
+    excludeStrategies: [...excluded, spec.value],
+  });
+}
+
+/** Ids des échecs marqués `retryable`, regroupés par provider. */
+function groupRetryables(
+  entries: OutcomeWithProvider[],
+): Map<string, string[]> {
+  const byProvider = new Map<string, string[]>();
+  for (const e of entries) {
+    const { success, skipped, retryable, id } = e.outcome;
+    if (success || skipped || retryable !== true) continue;
+    const list = byProvider.get(e.providerId) ?? [];
+    list.push(id);
+    byProvider.set(e.providerId, list);
+  }
+  return byProvider;
+}
+
+function announceRetryables(retryByProvider: Map<string, string[]>): void {
   const summary = Array.from(retryByProvider.entries())
-    .map(([pid, ids]) => {
-      const provider = getProvider(pid);
-      return `${provider?.displayName ?? pid}: ${ids.length}`;
-    })
+    .map(([pid, ids]) => `${getProvider(pid)?.displayName ?? pid}: ${ids.length}`)
     .join(", ");
   const total = Array.from(retryByProvider.values()).reduce(
     (sum, ids) => sum + ids.length,
     0,
   );
-
   process.stdout.write(
     chalk.dim(
-      `\n  ${total} échec(s) récupérable(s) (${summary}) — typiquement hash d'installeur, manifest locale, ou changement de technologie d'installation.\n`,
+      `\n  ${total} échec(s) récupérable(s) (${summary}) — typiquement hash ` +
+        `d'installeur, manifest locale, ou changement de technologie ` +
+        `d'installation.\n`,
     ),
   );
+}
 
+/** Stratégie choisie par l'utilisateur, ou null s'il décline. */
+async function promptStrategy(
+  remaining: typeof STRATEGIES,
+): Promise<(typeof STRATEGIES)[number] | null> {
   const strategy = await select<RetryStrategy>({
     message: "Stratégie de réessai",
     default: "none",
@@ -113,32 +137,28 @@ export async function maybeRetryFailures(
     ],
     loop: false,
   });
+  if (strategy === "none") return null;
+  return STRATEGIES.find((s) => s.value === strategy) ?? null;
+}
 
-  if (strategy === "none") return flat;
-  const spec = STRATEGIES.find((s) => s.value === strategy);
-  if (!spec) return flat;
-
+/** Rejoue chaque échec récupérable, indexé sur `providerId:packageId`. */
+async function retryAll(
+  retryByProvider: Map<string, string[]>,
+  spec: (typeof STRATEGIES)[number],
+): Promise<Map<string, UpdateOutcome>> {
   const retried = new Map<string, UpdateOutcome>();
   for (const [providerId, ids] of retryByProvider) {
     const provider = getProvider(providerId);
     if (!provider) continue;
-    process.stdout.write(
-      `\n${chalk.bold(`  ↻ ${provider.displayName} (${spec.label})`)} ${chalk.dim(`(${ids.length})`)}\n`,
-    );
+    const head = chalk.bold(`  ↻ ${provider.displayName} (${spec.label})`);
+    process.stdout.write(`\n${head} ${chalk.dim(`(${ids.length})`)}\n`);
     for (const id of ids) {
       if (isAbortRequested()) break;
-      const out = finalizeOutcome(await provider.update(id, spec.options));
-      retried.set(`${providerId}:${id}`, out);
+      retried.set(
+        `${providerId}:${id}`,
+        finalizeOutcome(await provider.update(id, spec.options)),
+      );
     }
   }
-
-  const nextEntries: OutcomeWithProvider[] = entries.map((e) => {
-    const r = retried.get(`${e.providerId}:${e.outcome.id}`);
-    return r ? { providerId: e.providerId, outcome: r } : e;
-  });
-
-  return maybeRetryFailures(nextEntries, {
-    ...opts,
-    excludeStrategies: [...excluded, strategy],
-  });
+  return retried;
 }
