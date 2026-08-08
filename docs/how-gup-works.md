@@ -32,20 +32,12 @@ Observation: **no native tool covers the entire surface**. The practical consequ
 
 `gup` reduces this to **one command** + a parallel scan loop + a coherent UI.
 
-### What `gup` is NOT
+### Boundaries
 
-- Not a package manager. It does not *publish* anything, does not *resolve* any dependency, holds no shared state.
-- Not a permanent agent. No daemon, no tray, no background polling. Everything is on-demand.
-- Not a project-scoped tool. `package.json`, `requirements.txt`, `Cargo.toml`, `composer.json` — out of scope. `gup` exclusively targets the **global** installs on a machine.
-- Not an OS-update tool. Windows Update / drivers / kernel are covered by `PSWindowsUpdate`; macOS releases and XProtect are covered by `softwareupdate`. Same rule on both platforms.
-
-### Explicit out-of-scope (cf. `README.md` §❌)
-
-- Windows Update OS / OEM drivers / SYSTEM services / DISM / provisioned Appx.
-- macOS system updates (`softwareupdate`, XProtect/MRT, Command Line Tools).
-- Apple's system Ruby (`/usr/bin/gem`): frozen under SIP, `gem update` cannot succeed there, so the `gem` provider hides itself rather than reporting ~40 unfixable gems.
-- Project-scoped lockfiles (Maven, Gradle, sbt, bundler, `npm ci`, `pip-tools sync`).
-- JetBrains Toolbox-managed IDEs (the Toolbox ships its own updater).
+What `gup` is *not*, and the sources it deliberately leaves alone — Windows
+Update, macOS system updates, Apple's SIP-frozen Ruby, project lockfiles,
+Toolbox-managed IDEs — each with the reasoning behind the exclusion:
+[`scope.md`](scope.md).
 
 ---
 

@@ -1,15 +1,26 @@
 # Documentation
 
-Index of the detailed `gup` documentation. The root [`README.md`](../README.md) stays light; technical content lives here.
+Index of the detailed `gup` documentation. The root [`README.md`](../README.md)
+stays light; everything dense lives here.
 
-| Document | Audience | Content |
-|---|---|---|
-| [`architecture.md`](architecture.md) | Contributors, maintainers, security review | Layers & responsibilities, data model, provider lifecycle, parallel scan, update pipeline + retry, security — **mermaid diagrams**. |
-| [`how-gup-works.md`](how-gup-works.md) | Intermediate/advanced developers | End-to-end technical walkthrough: motivation, model, internal contracts, resilience patterns, build. Source document for an explanatory site. |
-| [`providers-catalog.md`](providers-catalog.md) | Users, maintainers | Exhaustive catalog of the 130+ providers, implementation status (✅ 🚧 ⬜ ➡️ ❌), out-of-scope items. |
-| [`releases/`](releases/) | Users, maintainers | Per-version release notes — what shipped, what broke, how it was verified. Source text for the GitHub Release body. |
-| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Contributors | Provider-addition workflow, mandatory conventions, edge cases, PR checklist — **mermaid diagrams**. |
-| [`../SECURITY.md`](../SECURITY.md) | Security review, reporters | Threat model, CI/local mitigations, vulnerability reporting. |
+## For users
+
+| Document | Content |
+|---|---|
+| [`installation.md`](installation.md) | Install methods (npm, from source), requirements, per-platform support, updating and removing `gup`. |
+| [`cli-reference.md`](cli-reference.md) | Every command and flag, the interactive menu, targeting syntax, stuck-install timeouts, retry strategies, JSON output, environment variables, exit codes, activity history. |
+| [`scope.md`](scope.md) | Why `gup` exists, what belongs in it, and what is deliberately excluded — with the reasoning. |
+| [`providers-catalog.md`](providers-catalog.md) | Exhaustive catalog of the 134 providers, implementation status (✅ 🚧 ⬜ ➡️ ❌), and evaluated candidates. |
+
+## For contributors
+
+| Document | Content |
+|---|---|
+| [`architecture.md`](architecture.md) | Layers & responsibilities, data model, provider lifecycle, parallel scan, update pipeline + retry, security — **mermaid diagrams**. |
+| [`how-gup-works.md`](how-gup-works.md) | End-to-end technical walkthrough: motivation, model, internal contracts, resilience patterns, build. |
+| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Provider-addition workflow, mandatory conventions, edge cases, PR checklist — **mermaid diagrams**. |
+| [`../SECURITY.md`](../SECURITY.md) | Threat model, CI/local mitigations, vulnerability reporting. |
+| [`releases/`](releases/) | Per-version release notes — what shipped, what broke, how it was verified. Source text for the GitHub Release body. |
 
 ## Mermaid diagrams
 
@@ -22,10 +33,12 @@ Mermaid diagrams render natively on GitHub. Locally:
 
 ```mermaid
 flowchart LR
-    A[README] --> B[architecture.md<br/>overview]
-    B --> C{Goal?}
-    C -->|Contribute| D[CONTRIBUTING.md]
-    C -->|List providers| E[providers-catalog.md]
-    C -->|Deep dive| G[how-gup-works.md]
-    C -->|Report vuln| F[SECURITY.md]
+    A[README] --> B{Goal?}
+    B -->|Install it| I[installation.md]
+    B -->|Use it| C[cli-reference.md]
+    B -->|Know its limits| S[scope.md]
+    B -->|List providers| E[providers-catalog.md]
+    B -->|Contribute| D[architecture.md] --> F[CONTRIBUTING.md]
+    B -->|Deep dive| G[how-gup-works.md]
+    B -->|Report a vuln| H[SECURITY.md]
 ```

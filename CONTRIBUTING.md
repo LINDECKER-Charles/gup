@@ -1,5 +1,10 @@
 # Contributing
 
+[![CI](https://github.com/LINDECKER-Charles/gup/actions/workflows/ci.yml/badge.svg)](https://github.com/LINDECKER-Charles/gup/actions/workflows/ci.yml)
+[![Pages](https://github.com/LINDECKER-Charles/gup/actions/workflows/pages.yml/badge.svg)](https://lindecker-charles.github.io/gup/)
+[![TypeScript](https://img.shields.io/badge/typescript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
+
 Thanks for contributing. The typical contribution is **adding a provider** — an isolated module that knows how to scan and update one package source.
 
 > Before diving in: read [`docs/architecture.md`](docs/architecture.md) for context (lifecycle, runner, parallel scan, data model).
@@ -47,7 +52,7 @@ Both show up in `npm outdated`; neither is an oversight, so please don't "fix" t
 ```mermaid
 flowchart TD
     Start([Source to integrate]) --> Scope{In scope?}
-    Scope -->|no| OutOfScope[read 'Out of scope'<br/>in README]
+    Scope -->|no| OutOfScope[read docs/scope.md]
     Scope -->|yes| Copy[Copy _template.ts<br/>into the right category]
     Copy --> Impl[Implement the 4 methods<br/>isAvailable / listOutdated / update / updateAll]
     Impl --> Register[Import + add to<br/>ALL_PROVIDERS in registry.ts]
@@ -55,7 +60,7 @@ flowchart TD
     Smoke --> Pass{Detected?<br/>Scan ok?<br/>Update ok?}
     Pass -->|no| Impl
     Pass -->|yes| Tests[npm run typecheck<br/>npm run lint<br/>npm run security]
-    Tests --> Doc[Update docs/providers-catalog.md<br/>+ README if new category]
+    Tests --> Doc[Update docs/providers-catalog.md<br/>+ the provider count in README.md]
     Doc --> PR([Pull Request])
 ```
 
