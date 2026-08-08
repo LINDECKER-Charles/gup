@@ -21,19 +21,14 @@ import {
   setInstallTimeoutSeconds,
 } from "../core/runner.js";
 import { gupVersion } from "../core/version.js";
+import { runOptions } from "./menu-options.js";
+import { describeFilter, dim, pad, type MenuState } from "./menu-state.js";
 import type {
   OutdatedPackage,
-  ProviderScanResult,
+  Provider,
   UpdateOutcome,
 } from "../core/types.js";
 
-
-interface MenuState {
-  scans: ProviderScanResult[];
-  fast: boolean;
-  filter: string[];
-  detectedCount: number;
-}
 
 type MenuAction =
   | "scan"
@@ -58,66 +53,68 @@ export async function menuCommand(): Promise<number> {
 
   for (;;) {
     printStatus(state);
-
-    const total = totalUpdates(state);
     const action = await select<MenuAction>({
       message: "Action",
-      choices: [
-        { name: pad("Scan", "rescanne tous les providers"), value: "scan" },
-        {
-          name: pad("Review", "voir la liste détaillée"),
-          value: "review",
-          disabled: total === 0 ? dim("aucune mise à jour") : false,
-        },
-        {
-          name: pad("Update selected", "choix multiple"),
-          value: "select",
-          disabled: total === 0 ? dim("aucune mise à jour") : false,
-        },
-        {
-          name: pad("Update all", `${total} paquet(s)`),
-          value: "all",
-          disabled: total === 0 ? dim("aucune mise à jour") : false,
-        },
-        new Separator(dim("  ─")),
-        {
-          name: pad("Update target", "provider:package"),
-          value: "target",
-        },
-        { name: pad("Providers", "status / install hints"), value: "doctor" },
-        { name: pad("Options", "fast mode, filtre providers"), value: "options" },
-        new Separator(dim("  ─")),
-        { name: pad("Quit", ""), value: "quit" },
-      ],
+      choices: mainMenuChoices(totalUpdates(state)),
       pageSize: 14,
       loop: false,
     });
+    if (action === "quit") return 0;
+    await runAction(action, state);
+  }
+}
 
-    switch (action) {
-      case "scan":
-        await initialScan(state);
-        break;
-      case "review":
-        process.stdout.write(`\n${renderScanTable(state.scans)}\n`);
-        break;
-      case "select":
-        await runSelect(state);
-        break;
-      case "all":
-        await runAll(state);
-        break;
-      case "target":
-        await runTarget();
-        break;
-      case "doctor":
-        await runDoctor();
-        break;
-      case "options":
-        await runOptions(state);
-        break;
-      case "quit":
-        return 0;
-    }
+function mainMenuChoices(total: number) {
+  const noUpdate = total === 0 ? dim("aucune mise à jour") : false;
+  return [
+    { name: pad("Scan", "rescanne tous les providers"), value: "scan" as const },
+    {
+      name: pad("Review", "voir la liste détaillée"),
+      value: "review" as const,
+      disabled: noUpdate,
+    },
+    {
+      name: pad("Update selected", "choix multiple"),
+      value: "select" as const,
+      disabled: noUpdate,
+    },
+    {
+      name: pad("Update all", `${total} paquet(s)`),
+      value: "all" as const,
+      disabled: noUpdate,
+    },
+    new Separator(dim("  ─")),
+    { name: pad("Update target", "provider:package"), value: "target" as const },
+    { name: pad("Providers", "status / install hints"), value: "doctor" as const },
+    {
+      name: pad("Options", "fast mode, filtre providers"),
+      value: "options" as const,
+    },
+    new Separator(dim("  ─")),
+    { name: pad("Quit", ""), value: "quit" as const },
+  ];
+}
+
+async function runAction(
+  action: Exclude<MenuAction, "quit">,
+  state: MenuState,
+): Promise<void> {
+  switch (action) {
+    case "scan":
+      return initialScan(state);
+    case "review":
+      process.stdout.write(`\n${renderScanTable(state.scans)}\n`);
+      return;
+    case "select":
+      return runSelect(state);
+    case "all":
+      return runAll(state);
+    case "target":
+      return runTarget();
+    case "doctor":
+      return runDoctor();
+    case "options":
+      return runOptions(state);
   }
 }
 
@@ -191,20 +188,36 @@ async function applyGrouped(
   const entries: OutcomeWithProvider[] = [];
   const session = beginSkipSession();
   try {
-    outer: for (const [providerId, pkgs] of grouped) {
+    for (const [providerId, pkgs] of grouped) {
       const provider = getProvider(providerId);
       if (!provider) continue;
       printSectionHeader(provider.displayName, pkgs.length);
-      for (const pkg of pkgs) {
-        if (session.isAbortRequested()) break outer;
-        const outcome = finalizeOutcome(await provider.update(pkg.id));
-        entries.push({ providerId, outcome });
-      }
+      const done = await updateEach(provider, pkgs, session);
+      entries.push(...done.map((outcome) => ({ providerId, outcome })));
+      if (session.isAbortRequested()) break;
     }
   } finally {
     session.dispose();
   }
   return entries;
+}
+
+/**
+ * Update packages one by one, stopping as soon as the batch is aborted. Split
+ * out of {@link applyGrouped} so neither loop needs a labelled break to unwind
+ * two levels at once.
+ */
+async function updateEach(
+  provider: Provider,
+  pkgs: OutdatedPackage[],
+  session: { isAbortRequested: () => boolean },
+): Promise<UpdateOutcome[]> {
+  const outcomes: UpdateOutcome[] = [];
+  for (const pkg of pkgs) {
+    if (session.isAbortRequested()) break;
+    outcomes.push(finalizeOutcome(await provider.update(pkg.id)));
+  }
+  return outcomes;
 }
 
 async function runAll(state: MenuState): Promise<void> {
@@ -242,18 +255,9 @@ async function runTarget(): Promise<void> {
   try {
     for (const target of targets) {
       if (session.isAbortRequested()) break;
-      const idx = target.indexOf(":");
-      if (idx === -1) {
-        process.stderr.write(chalk.red(`  format invalide: ${target}\n`));
-        continue;
-      }
-      const providerId = target.slice(0, idx);
-      const packageId = target.slice(idx + 1);
-      const provider = getProvider(providerId);
-      if (!provider) {
-        process.stderr.write(chalk.red(`  provider inconnu: ${providerId}\n`));
-        continue;
-      }
+      const parsed = parseTarget(target);
+      if (!parsed) continue;
+      const { providerId, provider, packageId } = parsed;
       printSectionHeader(`${provider.displayName} : ${packageId}`, 1);
       const outcome = finalizeOutcome(await provider.update(packageId));
       entries.push({ providerId, outcome });
@@ -263,6 +267,28 @@ async function runTarget(): Promise<void> {
   }
   const outcomes = await maybeRetryFailures(entries);
   summarize(outcomes);
+}
+
+interface ParsedTarget {
+  providerId: string;
+  provider: Provider;
+  packageId: string;
+}
+
+/** Split `provider:packageId` and resolve the provider, or report why not. */
+function parseTarget(target: string): ParsedTarget | null {
+  const idx = target.indexOf(":");
+  if (idx === -1) {
+    process.stderr.write(chalk.red(`  format invalide: ${target}\n`));
+    return null;
+  }
+  const providerId = target.slice(0, idx);
+  const provider = getProvider(providerId);
+  if (!provider) {
+    process.stderr.write(chalk.red(`  provider inconnu: ${providerId}\n`));
+    return null;
+  }
+  return { providerId, provider, packageId: target.slice(idx + 1) };
 }
 
 async function runDoctor(): Promise<void> {
@@ -277,79 +303,6 @@ async function runDoctor(): Promise<void> {
   process.stdout.write(`\n${renderProvidersStatus(detected, missing)}\n`);
 }
 
-type OptionAction = "fast" | "filter" | "timeout" | "back";
-
-async function runOptions(state: MenuState): Promise<void> {
-  const timeout = getInstallTimeoutSeconds();
-  const choice = await select<OptionAction>({
-    message: "Options",
-    choices: [
-      {
-        name: pad(
-          `Fast mode  [${state.fast ? "ON" : "OFF"}]`,
-          "skip pwsh-modules & vscode-ext",
-        ),
-        value: "fast",
-      },
-      {
-        name: pad(
-          "Filtre providers",
-          state.filter.length === 0 ? "tous" : state.filter.join(", "),
-        ),
-        value: "filter",
-      },
-      {
-        name: pad(
-          `Timeout install  [${timeout > 0 ? `${timeout}s` : "OFF"}]`,
-          "skip auto si une install bloque",
-        ),
-        value: "timeout",
-      },
-      new Separator(dim("  ─")),
-      { name: pad("Retour", ""), value: "back" },
-    ],
-    loop: false,
-  });
-
-  if (choice === "fast") {
-    state.fast = !state.fast;
-    process.stdout.write(
-      dim(`  fast mode ${state.fast ? "activé" : "désactivé"} — rescanne pour appliquer\n`),
-    );
-  } else if (choice === "filter") {
-    const available = await detectAvailableProviders();
-    state.filter = await checkbox<string>({
-      message: "Providers à inclure (vide = tous)",
-      choices: available.map((p) => ({
-        name: `${p.displayName.padEnd(22)} ${dim(`(${p.id})`)}`,
-        value: p.id,
-        checked: state.filter.length === 0 ? false : state.filter.includes(p.id),
-      })),
-      loop: false,
-      pageSize: 12,
-    });
-    process.stdout.write(
-      dim(
-        `  filtre: ${state.filter.length === 0 ? "tous" : state.filter.join(", ")} — rescanne pour appliquer\n`,
-      ),
-    );
-  } else if (choice === "timeout") {
-    const raw = await input({
-      message: "Timeout par install en secondes (0 = désactivé)",
-      default: String(getInstallTimeoutSeconds()),
-      validate: (v) => {
-        const n = Number(v.trim());
-        return (Number.isFinite(n) && n >= 0) || "saisir un nombre de secondes >= 0";
-      },
-    });
-    setInstallTimeoutSeconds(Number(raw.trim()));
-    const next = getInstallTimeoutSeconds();
-    process.stdout.write(
-      dim(`  timeout install: ${next > 0 ? `${next}s` : "désactivé"}\n`),
-    );
-  }
-}
-
 function summarize(outcomes: UpdateOutcome[]): void {
   if (outcomes.length === 0) return;
   const succeeded = outcomes.filter((o) => o.success);
@@ -362,29 +315,25 @@ function summarize(outcomes: UpdateOutcome[]): void {
       chalk.green(`  OK   ${succeeded.length} mise(s) à jour effectuée(s)\n`),
     );
   }
-  if (skipped.length > 0) {
-    process.stdout.write(
-      chalk.yellow(`  SKIP ${skipped.length} action(s) manuelle(s) requise(s)\n`),
-    );
-    for (const s of skipped) {
-      process.stdout.write(
-        chalk.yellow(`       - ${s.id}`) +
-          (s.message ? chalk.dim(` — ${s.message}`) : "") +
-          "\n",
-      );
-    }
-  }
-  if (failed.length > 0) {
-    process.stdout.write(
-      chalk.red(`  FAIL ${failed.length}/${outcomes.length} échec(s)\n`),
-    );
-    for (const f of failed) {
-      process.stdout.write(
-        chalk.red(`       - ${f.id}`) +
-          (f.message ? chalk.dim(` — ${f.message}`) : "") +
-          "\n",
-      );
-    }
+  writeGroup(
+    skipped,
+    chalk.yellow,
+    `  SKIP ${skipped.length} action(s) manuelle(s) requise(s)\n`,
+  );
+  writeGroup(failed, chalk.red, `  FAIL ${failed.length}/${outcomes.length} échec(s)\n`);
+}
+
+/** En-tête coloré puis une ligne `- <id> — <message>` par élément. */
+function writeGroup(
+  outcomes: UpdateOutcome[],
+  color: (s: string) => string,
+  header: string,
+): void {
+  if (outcomes.length === 0) return;
+  process.stdout.write(color(header));
+  for (const o of outcomes) {
+    const detail = o.message ? chalk.dim(` — ${o.message}`) : "";
+    process.stdout.write(color(`       - ${o.id}`) + detail + "\n");
   }
 }
 
@@ -396,11 +345,3 @@ function totalUpdates(state: MenuState): number {
   return state.scans.reduce((sum, s) => sum + s.packages.length, 0);
 }
 
-function pad(label: string, hint: string): string {
-  const padded = label.padEnd(22);
-  return hint ? `${padded} ${dim(hint)}` : padded;
-}
-
-function dim(s: string): string {
-  return chalk.dim(s);
-}

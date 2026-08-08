@@ -13,7 +13,12 @@ import {
   discardPendingInterrupt,
   finalizeOutcome,
 } from "../ui/skip-controller.js";
-import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
+import type {
+  OutdatedPackage,
+  Provider,
+  ProviderScanResult,
+  UpdateOutcome,
+} from "../core/types.js";
 
 export interface UpdateOptions {
   only?: string[];
@@ -23,9 +28,14 @@ export interface UpdateOptions {
   targets?: string[];
 }
 
+/** `{ yes }` seulement quand l'option a été passée, pour ne pas écraser un défaut. */
+function yesFlag(options: { yes?: boolean }): { yes?: boolean } {
+  return { ...(options.yes !== undefined && { yes: options.yes }) };
+}
+
 export async function updateCommand(options: UpdateOptions): Promise<number> {
   if (options.targets?.length) {
-    return runTargets(options.targets, { ...(options.yes !== undefined && { yes: options.yes }) });
+    return runTargets(options.targets, yesFlag(options));
   }
 
   const { results: scans } = await scanWithProgress({
@@ -42,48 +52,82 @@ export async function updateCommand(options: UpdateOptions): Promise<number> {
     return 0;
   }
 
-  let selection: SelectedPackage[];
-  if (options.all) {
-    selection = allPackages;
-    if (!options.yes) {
-      const ok = await confirm({
-        message: `${selection.length} paquets à mettre à jour. Continuer ?`,
-        default: true,
-      });
-      if (!ok) return 1;
-    }
-  } else {
-    selection = await promptPackageSelection(scans);
-    if (selection.length === 0) {
+  const chosen = await chooseSelection(allPackages, scans, options);
+  if (chosen.kind === "declined") return 1;
+  if (chosen.kind === "empty") return 0;
+  return runSelection(chosen.packages, yesFlag(options));
+}
+
+type SelectionResult =
+  | { kind: "selection"; packages: SelectedPackage[] }
+  | { kind: "declined" }
+  | { kind: "empty" };
+
+/**
+ * `--all` prend tout (sous réserve de confirmation), sinon on ouvre le
+ * sélecteur interactif. Les deux issues « rien à faire » sont distinguées :
+ * un refus de confirmation sort en 1, une sélection vide en 0.
+ */
+async function chooseSelection(
+  allPackages: SelectedPackage[],
+  scans: ProviderScanResult[],
+  options: UpdateOptions,
+): Promise<SelectionResult> {
+  if (!options.all) {
+    const packages = await promptPackageSelection(scans);
+    if (packages.length === 0) {
       process.stdout.write("Aucune sélection.\n");
-      return 0;
+      return { kind: "empty" };
     }
+    return { kind: "selection", packages };
   }
 
-  return runSelection(selection, { ...(options.yes !== undefined && { yes: options.yes }) });
+  if (!options.yes) {
+    const ok = await confirm({
+      message: `${allPackages.length} paquets à mettre à jour. Continuer ?`,
+      default: true,
+    });
+    if (!ok) return { kind: "declined" };
+  }
+  return { kind: "selection", packages: allPackages };
+}
+
+interface ResolvedTarget {
+  providerId: string;
+  provider: Provider;
+  packageId: string;
+}
+
+/**
+ * Résout tous les `provider:packageId` d'un coup, avant d'ouvrir une session de
+ * skip : une coquille ne doit pas laisser une session ouverte derrière elle.
+ * Renvoie null après avoir écrit le diagnostic sur stderr.
+ */
+function resolveTargets(targets: string[]): ResolvedTarget[] | null {
+  const resolved: ResolvedTarget[] = [];
+  for (const target of targets) {
+    const idx = target.indexOf(":");
+    if (idx === -1) {
+      process.stderr.write(formatBadTargetMessage(target, ALL_PROVIDERS));
+      return null;
+    }
+    const providerId = target.slice(0, idx);
+    const provider = getProvider(providerId);
+    if (!provider) {
+      process.stderr.write(`Provider inconnu: ${providerId}\n`);
+      return null;
+    }
+    resolved.push({ providerId, provider, packageId: target.slice(idx + 1) });
+  }
+  return resolved;
 }
 
 async function runTargets(
   targets: string[],
   opts: { yes?: boolean } = {},
 ): Promise<number> {
-  // Validate every target up front so a typo doesn't open a skip session.
-  const resolved: { providerId: string; provider: Provider; packageId: string }[] = [];
-  for (const target of targets) {
-    const idx = target.indexOf(":");
-    if (idx === -1) {
-      process.stderr.write(formatBadTargetMessage(target, ALL_PROVIDERS));
-      return 2;
-    }
-    const providerId = target.slice(0, idx);
-    const packageId = target.slice(idx + 1);
-    const provider = getProvider(providerId);
-    if (!provider) {
-      process.stderr.write(`Provider inconnu: ${providerId}\n`);
-      return 2;
-    }
-    resolved.push({ providerId, provider, packageId });
-  }
+  const resolved = resolveTargets(targets);
+  if (!resolved) return 2;
 
   const entries: OutcomeWithProvider[] = [];
   const session = beginSkipSession();
@@ -94,8 +138,7 @@ async function runTargets(
       const outcome = finalizeOutcome(await provider.update(packageId));
       entries.push({ providerId, outcome });
     }
-    const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
-    return summarize(outcomes);
+    return summarize(await maybeRetryFailures(entries, yesFlag(opts)));
   } finally {
     session.dispose();
   }
@@ -109,51 +152,74 @@ async function runSelection(
   // UAC prompt instead of letting each provider SKIP them at update time.
   // `requiresAdmin` is set at scan time (see ChocoProvider.listOutdated),
   // and is only true when the current process is NOT already elevated.
-  const adminSelection: SelectedPackage[] = [];
-  const normalSelection: SelectedPackage[] = [];
-  for (const sel of selection) {
-    if (sel.pkg.requiresAdmin) adminSelection.push(sel);
-    else normalSelection.push(sel);
-  }
+  const adminSelection = selection.filter((s) => s.pkg.requiresAdmin);
+  const grouped = groupByProvider(selection.filter((s) => !s.pkg.requiresAdmin));
 
-  const grouped = new Map<string, OutdatedPackage[]>();
-  for (const sel of normalSelection) {
-    const list = grouped.get(sel.providerId) ?? [];
-    list.push(sel.pkg);
-    grouped.set(sel.providerId, list);
-  }
-
-  const entries: OutcomeWithProvider[] = [];
   const session = beginSkipSession();
   try {
-    // One package at a time (not provider.updateAll) so a timeout / Ctrl+C
-    // maps cleanly to a single package: the rest of the batch keeps going.
-    outer: for (const [providerId, pkgs] of grouped) {
-      const provider = getProvider(providerId);
-      if (!provider) continue;
-      process.stdout.write(
-        chalk.bold(`\n→ ${provider.displayName} (${pkgs.length})\n`),
-      );
-      for (const pkg of pkgs) {
-        if (session.isAbortRequested()) break outer;
-        const outcome = finalizeOutcome(await provider.update(pkg.id));
-        entries.push({ providerId, outcome });
-      }
-    }
+    const entries = await applyGrouped(grouped, session);
 
     if (!session.isAbortRequested() && adminSelection.length > 0) {
-      const adminEntries = await runAdminBatch(adminSelection, { ...(opts.yes !== undefined && { yes: opts.yes }) });
+      const adminEntries = await runAdminBatch(adminSelection, yesFlag(opts));
       // The elevated PowerShell wait goes through runInherit too; drop any
       // interrupt flag it left so it can't mislabel a later retried package.
       discardPendingInterrupt();
       entries.push(...adminEntries);
     }
 
-    const outcomes = await maybeRetryFailures(entries, { ...(opts.yes !== undefined && { yes: opts.yes }) });
-    return summarize(outcomes);
+    return summarize(await maybeRetryFailures(entries, yesFlag(opts)));
   } finally {
     session.dispose();
   }
+}
+
+/** Applique un map provider→paquets, un provider après l'autre, sous session. */
+async function applyGrouped(
+  grouped: Map<string, OutdatedPackage[]>,
+  session: { isAbortRequested: () => boolean },
+): Promise<OutcomeWithProvider[]> {
+  const entries: OutcomeWithProvider[] = [];
+  for (const [providerId, pkgs] of grouped) {
+    const provider = getProvider(providerId);
+    if (!provider) continue;
+    process.stdout.write(
+      chalk.bold(`\n→ ${provider.displayName} (${pkgs.length})\n`),
+    );
+    const done = await updateEach(provider, pkgs, session);
+    entries.push(...done.map((outcome) => ({ providerId, outcome })));
+    if (session.isAbortRequested()) break;
+  }
+  return entries;
+}
+
+function groupByProvider(
+  selection: SelectedPackage[],
+): Map<string, OutdatedPackage[]> {
+  const grouped = new Map<string, OutdatedPackage[]>();
+  for (const sel of selection) {
+    const list = grouped.get(sel.providerId) ?? [];
+    list.push(sel.pkg);
+    grouped.set(sel.providerId, list);
+  }
+  return grouped;
+}
+
+/**
+ * One package at a time (not provider.updateAll) so a timeout / Ctrl+C maps
+ * cleanly to a single package: the rest of the batch keeps going. Extracted so
+ * the caller's loop does not need a labelled break to unwind two levels.
+ */
+async function updateEach(
+  provider: Provider,
+  pkgs: OutdatedPackage[],
+  session: { isAbortRequested: () => boolean },
+): Promise<UpdateOutcome[]> {
+  const outcomes: UpdateOutcome[] = [];
+  for (const pkg of pkgs) {
+    if (session.isAbortRequested()) break;
+    outcomes.push(finalizeOutcome(await provider.update(pkg.id)));
+  }
+  return outcomes;
 }
 
 /**
@@ -181,25 +247,27 @@ export function formatBadTargetMessage(
     providers.find((p) => p.id.toLowerCase() === key) ??
     providers.find((p) => p.displayName.toLowerCase() === key);
 
-  const lines: string[] = [head];
-  if (hint) {
-    lines.push(
-      `"${trimmed}" est un nom de provider, pas un identifiant de paquet.`,
-      `Pour ce provider, essaie :`,
-      `  gup list --provider ${hint.id}`,
-      `  gup update --provider ${hint.id} --all`,
-      `  gup                            # menu interactif`,
-    );
-  } else {
-    lines.push(
-      `Exemples : gup update winget:Microsoft.VisualStudioCode`,
-      `           gup update npm-global:typescript`,
-      `Pour mettre à jour tout un provider sans cibler un paquet :`,
-      `           gup update --provider <id> --all`,
-    );
-  }
-  return lines.join("\n") + "\n";
+  const body = hint ? providerNameHint(trimmed, hint.id) : GENERIC_TARGET_EXAMPLES;
+  return [head, ...body].join("\n") + "\n";
 }
+
+/** L'utilisateur a tapé un nom de provider : on lui montre les bonnes commandes. */
+function providerNameHint(typed: string, providerId: string): string[] {
+  return [
+    `"${typed}" est un nom de provider, pas un identifiant de paquet.`,
+    `Pour ce provider, essaie :`,
+    `  gup list --provider ${providerId}`,
+    `  gup update --provider ${providerId} --all`,
+    `  gup                            # menu interactif`,
+  ];
+}
+
+const GENERIC_TARGET_EXAMPLES = [
+  `Exemples : gup update winget:Microsoft.VisualStudioCode`,
+  `           gup update npm-global:typescript`,
+  `Pour mettre à jour tout un provider sans cibler un paquet :`,
+  `           gup update --provider <id> --all`,
+];
 
 /**
  * Group every admin-required package behind a single UAC prompt and dispatch
@@ -217,36 +285,48 @@ async function runAdminBatch(
       chalk.dim(`  ${targets.join(", ")}\n`),
   );
 
-  const elevate =
-    opts.yes ||
-    (await confirm({
-      message: `${adminSelection.length} paquet(s) nécessitent les droits administrateur. Ouvrir une invite UAC pour les traiter en bloc ?`,
-      default: true,
-    }));
-  if (!elevate) {
-    return adminSelection.map((s) => ({
-      providerId: s.providerId,
-      outcome: {
-        id: s.pkg.id,
-        success: false,
-        skipped: true,
-        message: "Élévation refusée par l'utilisateur",
-      },
-    }));
-  }
+  const elevate = opts.yes || (await confirmElevation(adminSelection.length));
+  if (!elevate) return elevationDeclined(adminSelection);
 
-  const outcomes = await runElevatedBatch(targets);
   // runElevatedBatch enforces 1-to-1 ordering with `targets` (see
   // src/core/elevation.ts: readBatchOutput rejects length mismatches and
   // produces fallback failures rather than letting the indexes drift).
   // We can therefore zip outcomes with the corresponding `provider:packageId`
   // entry and recover providerId from that — no need to thread it through
   // the IPC payload.
-  return outcomes.map((outcome, i) => {
-    const target = targets[i] ?? "";
-    const providerId = target.includes(":") ? target.slice(0, target.indexOf(":")) : "";
-    return { providerId, outcome };
+  const outcomes = await runElevatedBatch(targets);
+  return outcomes.map((outcome, i) => ({
+    providerId: providerIdOf(targets[i] ?? ""),
+    outcome,
+  }));
+}
+
+function confirmElevation(count: number): Promise<boolean> {
+  return confirm({
+    message:
+      `${count} paquet(s) nécessitent les droits administrateur. ` +
+      `Ouvrir une invite UAC pour les traiter en bloc ?`,
+    default: true,
   });
+}
+
+function elevationDeclined(
+  adminSelection: SelectedPackage[],
+): OutcomeWithProvider[] {
+  return adminSelection.map((s) => ({
+    providerId: s.providerId,
+    outcome: {
+      id: s.pkg.id,
+      success: false,
+      skipped: true,
+      message: "Élévation refusée par l'utilisateur",
+    },
+  }));
+}
+
+function providerIdOf(target: string): string {
+  const idx = target.indexOf(":");
+  return idx === -1 ? "" : target.slice(0, idx);
 }
 
 function summarize(outcomes: UpdateOutcome[]): number {
@@ -271,29 +351,25 @@ function summarize(outcomes: UpdateOutcome[]): number {
       );
     }
   }
-  if (skipped.length > 0) {
-    process.stdout.write(
-      chalk.yellow(`SKIP ${skipped.length} action(s) manuelle(s) requise(s):\n`),
-    );
-    for (const s of skipped) {
-      process.stdout.write(
-        chalk.yellow(`     - ${s.id}`) +
-          (s.message ? chalk.dim(` — ${s.message}`) : "") +
-          "\n",
-      );
-    }
-  }
-  if (failed.length > 0) {
-    process.stdout.write(
-      chalk.red(`FAIL ${failed.length}/${outcomes.length} échec(s):\n`),
-    );
-    for (const f of failed) {
-      process.stdout.write(
-        chalk.red(`     - ${f.id}`) +
-          (f.message ? chalk.dim(` — ${f.message}`) : "") +
-          "\n",
-      );
-    }
-  }
+  writeGroup(
+    skipped,
+    chalk.yellow,
+    `SKIP ${skipped.length} action(s) manuelle(s) requise(s):\n`,
+  );
+  writeGroup(failed, chalk.red, `FAIL ${failed.length}/${outcomes.length} échec(s):\n`);
   return failed.length === 0 ? 0 : 1;
+}
+
+/** En-tête coloré, puis une ligne `- <id> — <message>` par élément. */
+function writeGroup(
+  outcomes: UpdateOutcome[],
+  color: (s: string) => string,
+  header: string,
+): void {
+  if (outcomes.length === 0) return;
+  process.stdout.write(color(header));
+  for (const o of outcomes) {
+    const detail = o.message ? chalk.dim(` — ${o.message}`) : "";
+    process.stdout.write(color(`     - ${o.id}`) + detail + "\n");
+  }
 }
