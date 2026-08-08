@@ -1,4 +1,4 @@
-import { select, input, confirm, checkbox, Separator } from "@inquirer/prompts";
+import { select, input, confirm, Separator } from "@inquirer/prompts";
 import chalk from "chalk";
 import {
   ALL_PROVIDERS,
@@ -16,13 +16,9 @@ import {
   beginSkipSession,
   finalizeOutcome,
 } from "../ui/skip-controller.js";
-import {
-  getInstallTimeoutSeconds,
-  setInstallTimeoutSeconds,
-} from "../core/runner.js";
 import { gupVersion } from "../core/version.js";
 import { runOptions } from "./menu-options.js";
-import { describeFilter, dim, pad, type MenuState } from "./menu-state.js";
+import { dim, pad, type MenuState } from "./menu-state.js";
 import type {
   OutdatedPackage,
   Provider,
