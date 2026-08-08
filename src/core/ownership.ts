@@ -36,31 +36,47 @@ export async function detectBinaryOwner(binary: string): Promise<BinaryOwner> {
  * managers too. Falls back to the install-source detector first so the
  * existing scoop/choco/winget paths win when present.
  */
+/**
+ * Toolchain managers reconnaissables à un segment de chemin, dans l'ordre où
+ * ils doivent être testés : `nvm-windows` avant `nvm` (le second est un
+ * préfixe du premier), `pyenv-win` avant `pyenv`.
+ *
+ * Chaque entrée est un prédicat plutôt qu'un simple segment, parce que
+ * plusieurs de ces outils ont une racine alternative qui ne suit pas la forme
+ * `<sep><nom><sep>`.
+ */
+const TOOLCHAIN_OWNERS: Array<[BinaryOwner, (lower: string) => boolean]> = [
+  // nvm-windows lives under Windows-specific roots (nvm4w, %ProgramData%\nvm).
+  // POSIX nvm uses ~/.nvm and is a distinct project — surface it as "nvm" so
+  // the actualOwner reported in exclusions is accurate across platforms.
+  [
+    "nvm-windows",
+    (l) =>
+      hasSegment(l, "nvm4w") ||
+      l.includes("\\programdata\\nvm\\") ||
+      l.includes("/programdata/nvm/"),
+  ],
+  ["nvm", (l) => hasSegment(l, "nvm")],
+  ["fnm", (l) => hasSegment(l, "fnm") || hasSegment(l, "fnm-multishells")],
+  ["volta", (l) => hasSegment(l, "volta")],
+  ["mise", (l) => hasSegment(l, "mise") || l.includes("/.local/share/mise/")],
+  ["pyenv-win", (l) => hasSegment(l, "pyenv-win") || hasSegment(l, "pyenv")],
+  // uv ships as a cargo-installed binary on both Windows and POSIX:
+  //   Windows  %USERPROFILE%\.cargo\bin\uv.exe
+  //   POSIX    ~/.cargo/bin/uv
+  ["uv", (l) => l.includes("\\.cargo\\bin\\uv") || l.includes("/.cargo/bin/uv")],
+  ["asdf", (l) => hasSegment(l, "asdf")],
+  ["proto", (l) => hasSegment(l, "proto")],
+];
+
 export function inferBinaryOwnerFromPath(path: string): BinaryOwner {
   const lower = path.toLowerCase();
   const fromInstallSource = inferSourceFromPath(lower);
   if (fromInstallSource !== "manual") return fromInstallSource;
 
-  // nvm-windows lives under Windows-specific roots (nvm4w, %ProgramData%\nvm).
-  // POSIX nvm uses ~/.nvm and is a distinct project — surface it as "nvm" so
-  // the actualOwner reported in exclusions is accurate across platforms.
-  if (
-    hasSegment(lower, "nvm4w") ||
-    lower.includes("\\programdata\\nvm\\") ||
-    lower.includes("/programdata/nvm/")
-  )
-    return "nvm-windows";
-  if (hasSegment(lower, "nvm")) return "nvm";
-  if (hasSegment(lower, "fnm") || hasSegment(lower, "fnm-multishells")) return "fnm";
-  if (hasSegment(lower, "volta")) return "volta";
-  if (hasSegment(lower, "mise") || lower.includes("/.local/share/mise/")) return "mise";
-  if (hasSegment(lower, "pyenv-win") || hasSegment(lower, "pyenv")) return "pyenv-win";
-  // uv ships as a cargo-installed binary on both Windows and POSIX:
-  //   Windows  %USERPROFILE%\.cargo\bin\uv.exe
-  //   POSIX    ~/.cargo/bin/uv
-  if (lower.includes("\\.cargo\\bin\\uv") || lower.includes("/.cargo/bin/uv")) return "uv";
-  if (hasSegment(lower, "asdf")) return "asdf";
-  if (hasSegment(lower, "proto")) return "proto";
+  for (const [owner, matches] of TOOLCHAIN_OWNERS) {
+    if (matches(lower)) return owner;
+  }
   return "manual";
 }
 
@@ -186,18 +202,7 @@ export async function filterByOwnership(
 ): Promise<{ results: ProviderScanResult[]; exclusions: OwnershipExclusion[] }> {
   const exclusions: OwnershipExclusion[] = [];
   const filtered: ProviderScanResult[] = [];
-  // Cache `detect` results per binary: the default detector shells out to
-  // `where`/`which`, and many packageIds map to the same binary (e.g. choco's
-  // python / python3 / python311 / python312 all resolve to `python`). Without
-  // this cache `scanAll` paid the PATH-probe cost N times per scan.
-  const ownerCache = new Map<string, BinaryOwner>();
-  const detectCached = async (binary: string): Promise<BinaryOwner> => {
-    const cached = ownerCache.get(binary);
-    if (cached !== undefined) return cached;
-    const owner = await detect(binary);
-    ownerCache.set(binary, owner);
-    return owner;
-  };
+  const detectCached = memoizeOwner(detect);
 
   for (const r of results) {
     const table = POLYGLOT_OWNERSHIP[r.providerId];
@@ -205,26 +210,72 @@ export async function filterByOwnership(
       filtered.push(r);
       continue;
     }
-    const kept: typeof r.packages = [];
-    for (const pkg of r.packages) {
-      const binary = table[pkg.id];
-      if (!binary) {
-        kept.push(pkg);
-        continue;
-      }
-      const owner = await detectCached(binary);
-      if (owner === r.providerId || owner === "manual") {
-        kept.push(pkg);
-      } else {
-        exclusions.push({
-          providerId: r.providerId,
-          packageId: pkg.id,
-          binary,
-          actualOwner: owner,
-        });
-      }
-    }
-    filtered.push({ ...r, packages: kept });
+    const split = await splitOwned(r, table, detectCached);
+    exclusions.push(...split.excluded);
+    filtered.push({ ...r, packages: split.kept });
   }
   return { results: filtered, exclusions };
+}
+
+/**
+ * Cache `detect` results per binary: the default detector shells out to
+ * `where`/`which`, and many packageIds map to the same binary (e.g. choco's
+ * python / python3 / python311 / python312 all resolve to `python`). Without
+ * this cache `scanAll` paid the PATH-probe cost N times per scan.
+ */
+function memoizeOwner(
+  detect: (binary: string) => Promise<BinaryOwner>,
+): (binary: string) => Promise<BinaryOwner> {
+  const cache = new Map<string, BinaryOwner>();
+  return async (binary: string): Promise<BinaryOwner> => {
+    const cached = cache.get(binary);
+    if (cached !== undefined) return cached;
+    const owner = await detect(binary);
+    cache.set(binary, owner);
+    return owner;
+  };
+}
+
+/** Sépare les paquets d'un provider entre ceux qu'il possède et les autres. */
+async function splitOwned(
+  result: ProviderScanResult,
+  table: Record<string, string>,
+  detect: (binary: string) => Promise<BinaryOwner>,
+): Promise<{
+  kept: ProviderScanResult["packages"];
+  excluded: OwnershipExclusion[];
+}> {
+  const kept: ProviderScanResult["packages"] = [];
+  const excluded: OwnershipExclusion[] = [];
+  for (const pkg of result.packages) {
+    const exclusion = await classifyPackage(pkg, {
+      providerId: result.providerId,
+      binary: table[pkg.id],
+      detect,
+    });
+    if (exclusion) excluded.push(exclusion);
+    else kept.push(pkg);
+  }
+  return { kept, excluded };
+}
+
+/**
+ * Renvoie l'exclusion à enregistrer si un autre gestionnaire possède le
+ * binaire, ou null quand le paquet doit être conservé. Un binaire non mappé ou
+ * sans propriétaire identifié (`manual`) est toujours conservé : mieux vaut
+ * proposer une mise à jour de trop que d'en masquer une vraie.
+ */
+async function classifyPackage(
+  pkg: { id: string },
+  ctx: {
+    providerId: string;
+    binary: string | undefined;
+    detect: (binary: string) => Promise<BinaryOwner>;
+  },
+): Promise<OwnershipExclusion | null> {
+  const { providerId, binary, detect } = ctx;
+  if (!binary) return null;
+  const owner = await detect(binary);
+  if (owner === providerId || owner === "manual") return null;
+  return { providerId, packageId: pkg.id, binary, actualOwner: owner };
 }

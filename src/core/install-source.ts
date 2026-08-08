@@ -174,61 +174,79 @@ export interface PackageIds {
  * is already known (e.g. JetBrains provider that detected it during scan)
  * and re-probing would be wasteful or incorrect.
  */
+interface UpgradeCommand {
+  command: string;
+  args: string[];
+  shell?: boolean;
+}
+
+/**
+ * Commande d'upgrade par gestionnaire, ou null quand `packageIds` ne porte pas
+ * l'identifiant qu'il faut — auquel cas l'appelant retombe sur le message
+ * manuel. Table plutôt que `switch` : chaque gestionnaire se lit d'un bloc, et
+ * en ajouter un ne rallonge aucune fonction.
+ */
+const UPGRADE_COMMANDS: Record<
+  Exclude<InstallSource, "manual">,
+  (ids: PackageIds) => UpgradeCommand | null
+> = {
+  scoop: (ids) =>
+    ids.scoop
+      ? { command: "scoop", args: ["update", ids.scoop], shell: true }
+      : null,
+  choco: (ids) =>
+    ids.choco ? { command: "choco", args: ["upgrade", ids.choco, "-y"] } : null,
+  winget: (ids) =>
+    ids.winget
+      ? {
+          command: "winget",
+          args: [
+            "upgrade",
+            "--id",
+            ids.winget,
+            "--silent",
+            "--accept-package-agreements",
+            "--accept-source-agreements",
+          ],
+        }
+      : null,
+  // A cask and a formula of the same name are different installs with
+  // different upgrade commands, so the cask token wins when present.
+  brew: (ids) => {
+    if (ids.brewCask) {
+      return { command: "brew", args: ["upgrade", "--cask", ids.brewCask] };
+    }
+    if (!ids.brew) return null;
+    return { command: "brew", args: ["upgrade", "--formula", ids.brew] };
+  },
+  // `install --only-upgrade` rather than `upgrade <pkg>`: the latter is not a
+  // real apt-get subcommand and would upgrade the whole system on apt(8).
+  apt: (ids) =>
+    ids.apt
+      ? {
+          command: "sudo",
+          args: ["apt-get", "install", "--only-upgrade", "-y", ids.apt],
+        }
+      : null,
+  dnf: (ids) =>
+    ids.dnf
+      ? { command: "sudo", args: ["dnf", "upgrade", "-y", ids.dnf] }
+      : null,
+};
+
+// eslint-disable-next-line max-params -- signature publique appelée depuis ~40 providers ; les 4 arguments sont cohésifs et `delegateUpdate` offre déjà la variante objet.
 export async function runPmUpdate(
   id: string,
   source: InstallSource,
   packageIds: PackageIds,
   manualMessage: string,
 ): Promise<UpdateOutcome> {
-  switch (source) {
-    case "scoop":
-      if (!packageIds.scoop) break;
-      return runDelegated(id, "scoop", ["update", packageIds.scoop], { shell: true });
-    case "choco":
-      if (!packageIds.choco) break;
-      return runDelegated(id, "choco", ["upgrade", packageIds.choco, "-y"]);
-    case "winget":
-      if (!packageIds.winget) break;
-      return runDelegated(id, "winget", [
-        "upgrade",
-        "--id",
-        packageIds.winget,
-        "--silent",
-        "--accept-package-agreements",
-        "--accept-source-agreements",
-      ]);
-    case "brew":
-      // A cask and a formula of the same name are different installs with
-      // different upgrade commands, so the cask token wins when present.
-      if (packageIds.brewCask) {
-        return runDelegated(id, "brew", ["upgrade", "--cask", packageIds.brewCask]);
-      }
-      if (!packageIds.brew) break;
-      return runDelegated(id, "brew", ["upgrade", "--formula", packageIds.brew]);
-    case "apt":
-      if (!packageIds.apt) break;
-      // `install --only-upgrade` rather than `upgrade <pkg>`: the latter is not
-      // a real apt-get subcommand and would upgrade the whole system on apt(8).
-      return runDelegated(id, "sudo", [
-        "apt-get",
-        "install",
-        "--only-upgrade",
-        "-y",
-        packageIds.apt,
-      ]);
-    case "dnf":
-      if (!packageIds.dnf) break;
-      return runDelegated(id, "sudo", ["dnf", "upgrade", "-y", packageIds.dnf]);
-    case "manual":
-      break;
+  const build = source === "manual" ? null : UPGRADE_COMMANDS[source];
+  const spec = build?.(packageIds);
+  if (!spec) {
+    return { id, success: false, skipped: true, message: manualMessage };
   }
-
-  return {
-    id,
-    success: false,
-    skipped: true,
-    message: manualMessage,
-  };
+  return runDelegated(id, spec);
 }
 
 export interface DelegateUpdateOptions {
@@ -253,11 +271,10 @@ export async function delegateUpdate(
 
 async function runDelegated(
   id: string,
-  command: string,
-  args: string[],
-  options: { shell?: boolean } = {},
+  spec: UpgradeCommand,
 ): Promise<UpdateOutcome> {
-  const res = await runInherit(command, args, options);
+  const options = spec.shell === undefined ? {} : { shell: spec.shell };
+  const res = await runInherit(spec.command, spec.args, options);
   return { id, success: !res.failed };
 }
 

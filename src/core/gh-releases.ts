@@ -70,14 +70,9 @@ export async function fetchGitHubReleaseTagMatching(
     );
     if (!res.ok) return null;
     const data = (await res.json()) as GitHubReleaseJson[];
-    for (const release of data) {
-      const tag = release.tag_name;
-      if (!tag) continue;
-      if (predicate(tag)) {
-        return stripVPrefix ? tag.replace(/^v/, "") : tag;
-      }
-    }
-    return null;
+    const tag = data.map((r) => r.tag_name).find((t) => t && predicate(t));
+    if (!tag) return null;
+    return stripVPrefix ? tag.replace(/^v/, "") : tag;
   } catch {
     return null;
   }

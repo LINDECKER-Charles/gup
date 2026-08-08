@@ -246,11 +246,31 @@ export async function runInherit(
     ...execaOptions,
   }) as ResultPromise;
 
-  let manuallyAborted = false;
-  let timedOut = false;
+  const interrupts = armInterrupts(proc, controller, timeoutMs);
+  try {
+    const result = await proc;
+    if (interrupts.flags.timedOut) pendingInterrupt.timedOut = true;
+    if (interrupts.flags.aborted) pendingInterrupt.aborted = true;
+    return inheritResult(result, interrupts.flags);
+  } finally {
+    interrupts.dispose();
+  }
+}
+
+/**
+ * Wire both skip levers — the wall-clock timer and the Ctrl+C handler — onto
+ * the child's abort controller. Returns the flags they set plus the teardown
+ * that clears the timer and restores the previous interruptible child.
+ */
+function armInterrupts(
+  proc: ResultPromise,
+  controller: AbortController,
+  timeoutMs: number,
+): { flags: InterruptFlags; dispose: () => void } {
+  const flags: InterruptFlags = { timedOut: false, aborted: false };
   const abort = (reason: "manual" | "timeout"): void => {
-    if (reason === "manual") manuallyAborted = true;
-    else timedOut = true;
+    if (reason === "manual") flags.aborted = true;
+    else flags.timedOut = true;
     try {
       controller.abort();
     } catch {
@@ -264,23 +284,32 @@ export async function runInherit(
   const timer =
     timeoutMs > 0 ? setTimeout(() => abort("timeout"), timeoutMs) : null;
 
-  try {
-    const result = await proc;
-    if (timedOut) pendingInterrupt.timedOut = true;
-    if (manuallyAborted) pendingInterrupt.aborted = true;
-    const out: RunResult = {
-      stdout: "",
-      stderr: "",
-      exitCode: typeof result.exitCode === "number" ? result.exitCode : -1,
-      failed: Boolean(result.failed) || result.exitCode !== 0,
-    };
-    if (timedOut) out.timedOut = true;
-    if (manuallyAborted) out.aborted = true;
-    return out;
-  } finally {
-    if (timer) clearTimeout(timer);
-    abortCurrent = previous;
-  }
+  return {
+    flags,
+    dispose: () => {
+      if (timer) clearTimeout(timer);
+      abortCurrent = previous;
+    },
+  };
+}
+
+/**
+ * `stdio: "inherit"` means the child wrote straight to the terminal, so there
+ * is nothing to hand back but the exit status and the interrupt cause.
+ */
+function inheritResult(
+  result: { exitCode?: unknown; failed?: unknown },
+  flags: InterruptFlags,
+): RunResult {
+  const out: RunResult = {
+    stdout: "",
+    stderr: "",
+    exitCode: typeof result.exitCode === "number" ? result.exitCode : -1,
+    failed: Boolean(result.failed) || result.exitCode !== 0,
+  };
+  if (flags.timedOut) out.timedOut = true;
+  if (flags.aborted) out.aborted = true;
+  return out;
 }
 
 export async function commandExists(command: string): Promise<boolean> {
