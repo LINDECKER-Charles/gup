@@ -18,6 +18,12 @@ export default [
   },
   {
     files: ["src/**/*.ts"],
+    // The security ruleset lives in a separate config, so every
+    // `eslint-disable security/*` in source looks unused from here — and every
+    // `eslint-disable max-params` looks unused from there. Nine permanently
+    // unactionable warnings train people to ignore lint output, which is worse
+    // than losing the (real but rare) signal of a genuinely dead directive.
+    linterOptions: { reportUnusedDisableDirectives: "off" },
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -33,6 +39,22 @@ export default [
       security,
     },
     rules: {
+      // Dead imports and locals. Not cosmetic: an import left behind by a
+      // refactor still pulls its module into the bundle, and a stale symbol
+      // reads as "this is used somewhere" to the next person. Neither
+      // `tsc --noEmit` nor the security ruleset caught these — CodeQL did,
+      // after the fact, which is too late to be a gate.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          // `catch {}` bindings are frequently intentional here (a failed probe
+          // means "not installed"), and the codebase already omits the binding
+          // where it can.
+          caughtErrors: "none",
+        },
+      ],
       "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
       "max-lines-per-function": [
         "error",

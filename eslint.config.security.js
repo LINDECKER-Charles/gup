@@ -17,6 +17,11 @@ export default [
   security.configs.recommended,
   {
     files: ["src/**/*.ts"],
+    // Mirror of the switch in eslint.config.js: the size/complexity rules live
+    // in the main config, so every `eslint-disable max-params` in source reads
+    // as unused from here. Neither half sees the other's rules, so unused-
+    // directive reporting can only produce false positives across the split.
+    linterOptions: { reportUnusedDisableDirectives: "off" },
     languageOptions: {
       parser: tsparser,
       parserOptions: {
