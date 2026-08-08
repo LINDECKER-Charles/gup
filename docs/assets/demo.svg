@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 692 370" width="692" height="370" role="img" aria-labelledby="t d">
+<title id="t">gup list --fast</title>
+<desc id="d">A terminal running "gup list --fast": 12 providers scanned in 5.7 seconds, 6 outdated packages listed across pip and winget.</desc>
+<style>
+:root{--bg:#0d1117;--bar:#161b22;--edge:#21262d;--fg:#c9d1d9;--dim:#6e7681;
+        --cyan:#39c5cf;--green:#3fb950;--yellow:#e3b341;--red:#f85149;--bold:#f0f6fc}
+  .bg{fill:var(--bg)}.bar{fill:var(--bar)}.edge{stroke:var(--edge);stroke-width:1}
+  text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+       font-size:12.5px;fill:var(--fg)}
+  .title{font-size:11.5px;fill:var(--dim);letter-spacing:.4px}
+  .cmd{fill:var(--bold);font-weight:600}
+  .c{fill:var(--cyan)}.g{fill:var(--green)}.y{fill:var(--yellow)}
+  .d{fill:var(--dim)}.r{fill:var(--red)}.b{fill:var(--bold);font-weight:600}
+  .s0,.s1,.s2{opacity:0}
+  .caret{display:none}.caret rect{fill:var(--fg)}
+  @keyframes k0{0%,1.071%{opacity:0}1.214%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes type{0%,2.5%{transform:scaleX(0)}10.357%,100%{transform:scaleX(1)}}
+  @keyframes ride{0%,2.5%{transform:translateX(0)}10.357%,100%{transform:translateX(108px)}}
+  @keyframes blink{0%,2.143%{opacity:0}2.5%,11.429%{opacity:.85}11.786%,100%{opacity:0}}
+  @keyframes ks0{0%,10.714%{opacity:0}10.857%,15.429%{opacity:1}15.571%,100%{opacity:0}}
+  @keyframes ks1{0%,15.714%{opacity:0}15.857%,20.429%{opacity:1}20.571%,100%{opacity:0}}
+  @keyframes ks2{0%,20.714%{opacity:0}20.857%,25.429%{opacity:1}25.571%,100%{opacity:0}}
+  @keyframes ks3{0%,25.714%{opacity:0}25.857%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt0{0%,27.5%{opacity:0}27.643%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt1{0%,27.821%{opacity:0}27.964%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt2{0%,28.143%{opacity:0}28.286%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt3{0%,28.464%{opacity:0}28.607%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt4{0%,28.786%{opacity:0}28.929%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt5{0%,29.107%{opacity:0}29.25%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt6{0%,29.429%{opacity:0}29.571%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt7{0%,29.75%{opacity:0}29.893%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt8{0%,30.071%{opacity:0}30.214%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt9{0%,30.393%{opacity:0}30.536%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt10{0%,30.714%{opacity:0}30.857%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt11{0%,31.036%{opacity:0}31.179%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt12{0%,31.357%{opacity:0}31.5%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt13{0%,31.679%{opacity:0}31.821%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt14{0%,32%{opacity:0}32.143%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @keyframes kt15{0%,32.321%{opacity:0}32.464%,90%{opacity:1}93.214%,100%{opacity:0}}
+  @media (prefers-reduced-motion:no-preference){
+    .l0{animation:k0 14s linear infinite}
+    .cw{transform-origin:36.4px 0;animation:type 14s steps(15,start) infinite}
+    .caret{display:inline;animation:ride 14s steps(15,start) infinite}.caret rect{animation:blink 14s steps(1) infinite}
+    .s0{animation:ks0 14s linear infinite}
+    .s1{animation:ks1 14s linear infinite}
+    .s2{animation:ks2 14s linear infinite}
+    .s3{animation:ks3 14s linear infinite}
+    .t0{animation:kt0 14s linear infinite}
+    .t1{animation:kt1 14s linear infinite}
+    .t2{animation:kt2 14s linear infinite}
+    .t3{animation:kt3 14s linear infinite}
+    .t4{animation:kt4 14s linear infinite}
+    .t5{animation:kt5 14s linear infinite}
+    .t6{animation:kt6 14s linear infinite}
+    .t7{animation:kt7 14s linear infinite}
+    .t8{animation:kt8 14s linear infinite}
+    .t9{animation:kt9 14s linear infinite}
+    .t10{animation:kt10 14s linear infinite}
+    .t11{animation:kt11 14s linear infinite}
+    .t12{animation:kt12 14s linear infinite}
+    .t13{animation:kt13 14s linear infinite}
+    .t14{animation:kt14 14s linear infinite}
+    .t15{animation:kt15 14s linear infinite}
+  }
+</style>
+<rect class="bg" width="692" height="370" rx="10"/>
+<rect class="bar" width="692" height="34" rx="10"/>
+<rect class="bar" y="24" width="692" height="10"/>
+<line class="edge" x1="0" y1="34" x2="692" y2="34"/>
+<circle cx="22" cy="17" r="5.5" fill="#ff5f57"/>
+<circle cx="40" cy="17" r="5.5" fill="#febc2e"/>
+<circle cx="58" cy="17" r="5.5" fill="#28c840"/>
+<text class="title" x="346" y="21" text-anchor="middle">gup — global updater</text>
+<text class="l0" x="22" y="59" textLength="14.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="g">$ </tspan></text>
+<clipPath id="typing"><rect class="cw" x="36.4" y="46" width="108" height="17"/></clipPath>
+<g clip-path="url(#typing)"><text class="cmd" x="36.4" y="59" textLength="108" lengthAdjust="spacingAndGlyphs" xml:space="preserve">gup list --fast</text></g>
+<g class="caret"><rect x="36.4" y="47.5" width="7.2" height="15.5"/></g>
+<text class="s0" x="22" y="76" textLength="187.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="c">- </tspan><tspan class="d">détection des providers…</tspan></text>
+<text class="s1" x="22" y="76" textLength="345.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="c">\ </tspan><tspan class="d">scan [2/12]</tspan><tspan class="d"> — </tspan>Winget<tspan class="d"> · </tspan>Scoop<tspan class="d"> · </tspan>npm (global)<tspan class="d"> +3</tspan></text>
+<text class="s2" x="22" y="76" textLength="338.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="c">| </tspan><tspan class="d">scan [8/12]</tspan><tspan class="d"> — </tspan>Composer (global)<tspan class="d"> · </tspan>Symfony CLI</text>
+<text class="s3" x="22" y="76" textLength="410.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">· </tspan><tspan class="d">scan terminé en 5.7s — 12 provider(s), 6 mise(s) à jour</tspan></text>
+<text class="t0" x="22" y="93" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">┌────────────┬──────────────────────┬──────────────────────┬──────────────────────┬──────┐</tspan></text>
+<text class="t1" x="22" y="110" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">│</tspan> <tspan class="b">Provider</tspan>   <tspan class="d">│</tspan> <tspan class="b">Package</tspan>              <tspan class="d">│</tspan> <tspan class="b">Current</tspan>              <tspan class="d">│</tspan> <tspan class="b">Latest</tspan>               <tspan class="d">│</tspan> <tspan class="b">Note</tspan> <tspan class="d">│</tspan></text>
+<text class="t2" x="22" y="127" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">├────────────┼──────────────────────┼──────────────────────┼──────────────────────┼──────┤</tspan></text>
+<text class="t3" x="22" y="144" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">│</tspan> <tspan class="c">pip (user)</tspan> <tspan class="d">│</tspan> pip                  <tspan class="d">│</tspan> <tspan class="y">26.2</tspan>                 <tspan class="d">│</tspan> <tspan class="g">26.2.1</tspan>               <tspan class="d">│</tspan>      <tspan class="d">│</tspan></text>
+<text class="t4" x="22" y="161" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">├────────────┼──────────────────────┼──────────────────────┼──────────────────────┼──────┤</tspan></text>
+<text class="t5" x="22" y="178" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">│</tspan> <tspan class="c">Winget</tspan>     <tspan class="d">│</tspan> Battle.net           <tspan class="d">│</tspan> <tspan class="y">Unknown</tspan>              <tspan class="d">│</tspan> <tspan class="g">1.19.3.3219</tspan>          <tspan class="d">│</tspan>      <tspan class="d">│</tspan></text>
+<text class="t6" x="22" y="195" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">├────────────┼──────────────────────┼──────────────────────┼──────────────────────┼──────┤</tspan></text>
+<text class="t7" x="22" y="212" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">│</tspan> <tspan class="c">Winget</tspan>     <tspan class="d">│</tspan> Epic Online Services <tspan class="d">│</tspan> <tspan class="y">2.9.0</tspan>                <tspan class="d">│</tspan> <tspan class="g">4.3.1</tspan>                <tspan class="d">│</tspan>      <tspan class="d">│</tspan></text>
+<text class="t8" x="22" y="229" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">├────────────┼──────────────────────┼──────────────────────┼──────────────────────┼──────┤</tspan></text>
+<text class="t9" x="22" y="246" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">│</tspan> <tspan class="c">Winget</tspan>     <tspan class="d">│</tspan> Parsec               <tspan class="d">│</tspan> <tspan class="y">&lt; 150.104.1.0</tspan>        <tspan class="d">│</tspan> <tspan class="g">150.104.1.0</tspan>          <tspan class="d">│</tspan>      <tspan class="d">│</tspan></text>
+<text class="t10" x="22" y="263" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">├────────────┼──────────────────────┼──────────────────────┼──────────────────────┼──────┤</tspan></text>
+<text class="t11" x="22" y="280" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">│</tspan> <tspan class="c">Winget</tspan>     <tspan class="d">│</tspan> Spotify              <tspan class="d">│</tspan> <tspan class="y">1.2.93.667.g7b5cc0ce</tspan> <tspan class="d">│</tspan> <tspan class="g">1.2.95.453.g0eeebbed</tspan> <tspan class="d">│</tspan>      <tspan class="d">│</tspan></text>
+<text class="t12" x="22" y="297" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">├────────────┼──────────────────────┼──────────────────────┼──────────────────────┼──────┤</tspan></text>
+<text class="t13" x="22" y="314" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">│</tspan> <tspan class="c">Winget</tspan>     <tspan class="d">│</tspan> WinDirStat 2.7.0     <tspan class="d">│</tspan> <tspan class="y">2.7.0</tspan>                <tspan class="d">│</tspan> <tspan class="g">2.8.0</tspan>                <tspan class="d">│</tspan>      <tspan class="d">│</tspan></text>
+<text class="t14" x="22" y="331" textLength="648.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"><tspan class="d">└────────────┴──────────────────────┴──────────────────────┴──────────────────────┴──────┘</tspan></text>
+<text class="t15" x="22" y="348" textLength="230.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  <tspan class="b">6 mise(s) à jour disponible(s)</tspan></text>
+</svg>
