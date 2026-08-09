@@ -70,6 +70,19 @@ describe("fetchGitHubReleaseLatest", () => {
     expect(await fetchGitHubReleaseLatest("owner/repo")).toBeNull();
   });
 
+  it("refuses a slug that is not a bare owner/repo, without hitting the network", async () => {
+    for (const slug of [
+      "owner/repo/../../other",
+      "owner/repo?ref=main",
+      "owner",
+      "https://api.github.com/repos/owner/repo",
+      "",
+    ]) {
+      expect(await fetchGitHubReleaseLatest(slug)).toBeNull();
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("calls api.github.com with the correct accept header", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ tag_name: "1.0.0" }));
     await fetchGitHubReleaseLatest("owner/repo");
@@ -163,6 +176,13 @@ describe("fetchGitHubReleaseTagMatching", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse([]));
     await fetchGitHubReleaseTagMatching("o/r", () => true, { perPage: 50 });
     const [url] = fetchMock.mock.calls[0]!;
-    expect(url).toContain("per_page=50");
+    expect(url).toBe("https://api.github.com/repos/o/r/releases?per_page=50");
+  });
+
+  it("refuses a slug that is not a bare owner/repo, without hitting the network", async () => {
+    expect(
+      await fetchGitHubReleaseTagMatching("o/r/../../other", () => true),
+    ).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
