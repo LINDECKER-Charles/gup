@@ -12,7 +12,7 @@
  * both regenerate it. The output IS committed: it must exist for a bare
  * `vite build` and for editor tooling.
  */
-import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 

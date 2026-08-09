@@ -8,7 +8,7 @@
  * missing one means the publicDir wiring broke, which would silently 404 an
  * SEO-critical URL that is already indexed.
  */
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { lastContentChange } from "./last-change.mjs";
@@ -31,14 +31,21 @@ const tokens = buildTokens(lastContentChange(root));
 
 for (const relative of TARGETS) {
   const path = resolve(dist, relative);
-  if (!existsSync(path)) {
+  // Read first, diagnose on failure — rather than `existsSync()` then read.
+  // The two-step form is a check-then-use race (the file can vanish in
+  // between) and it reports "missing" for a file that is merely unreadable.
+  let source;
+  try {
+    source = readFileSync(path, "utf8");
+  } catch (cause) {
     throw new Error(
-      `stamp-static: dist/${relative} is missing. It should have been copied ` +
-        "from static/ by Vite's publicDir — check vite.config.js publicDir " +
-        "and that the file exists under static/.",
+      `stamp-static: dist/${relative} could not be read. It should have been ` +
+        "copied from static/ by Vite's publicDir — check vite.config.js " +
+        "publicDir and that the file exists under static/.",
+      { cause },
     );
   }
-  writeFileSync(path, applyTokens(readFileSync(path, "utf8"), tokens, relative), "utf8");
+  writeFileSync(path, applyTokens(source, tokens, relative), "utf8");
 }
 
 process.stdout.write(
