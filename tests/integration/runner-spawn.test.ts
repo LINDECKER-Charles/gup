@@ -26,6 +26,22 @@ import {
  * which is exactly the code path that changed.
  */
 
+/**
+ * Spawn budget for this file. Vitest's 5 s default is a workstation figure:
+ * `where node` and `where <missing>` both answer in ~60 ms on a developer
+ * machine. On `windows-latest` the three bare-name lookups here blew straight
+ * through 5 s while every absolute-path spawn in the same file stayed under
+ * 200 ms — Defender inspects each image, the runner's PATH is several times
+ * longer than a workstation's, and `commandExists`/`whichFirst` walk all of it
+ * twice: once for execa to locate `where.exe`, once for `where.exe` to scan for
+ * its argument.
+ *
+ * Raised per suite rather than globally: this is the only file that spawns real
+ * children, so every other suite keeps failing fast on the 5 s default. A
+ * genuine hang still fails the build, 30 s later instead of 5.
+ */
+const SPAWN_TIMEOUT_MS = 30_000;
+
 let dir: string;
 /** Prints its own argv as JSON so a caller can assert an exact round-trip. */
 let echoScript: string;
@@ -135,7 +151,7 @@ describe("runner: real process spawn", () => {
       runInherit(process.execPath, ["-e", "process.exit(2)"]),
     ).resolves.toMatchObject({ failed: true, exitCode: 2 });
   });
-});
+}, SPAWN_TIMEOUT_MS);
 
 describe("runner: real PATH resolution", () => {
   it("finds the node binary and returns an absolute path", async () => {
@@ -153,7 +169,7 @@ describe("runner: real PATH resolution", () => {
       whichFirst("gup-definitely-not-a-real-binary"),
     ).resolves.toBeNull();
   });
-});
+}, SPAWN_TIMEOUT_MS);
 
 // ---------------------------------------------------------------------------
 // Windows-only: the `.cmd` shim path
@@ -211,4 +227,4 @@ describe.runIf(process.platform === "win32")("runner: Windows .cmd shims", () =>
       else process.env["PATH"] = previous;
     }
   });
-});
+}, SPAWN_TIMEOUT_MS);
