@@ -8,7 +8,7 @@
 
 ## 0. Elevator pitch
 
-`gup` ("Global Updater") is a **unified CLI** that scans, in parallel, ~130 different installation sources (OS package managers, runtimes, dev tools, IDE extensions, cloud / IaC / K8s registries…), lists everything that is outdated, then runs each source's native update commands.
+`gup` ("Global Updater") is a **unified CLI** that scans, in parallel, ~150 different installation sources (OS package managers, runtimes, dev tools, IDE extensions, cloud / IaC / K8s registries…), lists everything that is outdated, then runs each source's native update commands.
 
 It is deliberately an **orchestrator of existing tools**. `gup` does not invent an update protocol, ships no version cache, and downloads nothing itself: it **shells out** to `winget upgrade`, `npm outdated -g --json`, `helm repo update`, `pip list --outdated --format json`, etc., and homogenizes their heterogeneous outputs behind a single user interface.
 
@@ -265,7 +265,7 @@ No scan, no update: only answers the question "what is detectable on this machin
 
 ## 5. The **Provider** contract — anatomy in detail
 
-The heart of `gup`. The entire value of the project lies in the quality and isolation of the ~130 implementations of this interface.
+The heart of `gup`. The entire value of the project lies in the quality and isolation of the ~150 implementations of this interface.
 
 ```ts
 export interface Provider {
@@ -444,7 +444,7 @@ export const ALL_PROVIDERS: Provider[] = [
   new WingetProvider(), new ScoopProvider(), new ChocoProvider(),
   new WslProvider(), new WslAptProvider(), /* ... */
   new NpmGlobalProvider(), /* ... */
-  // ~130 entries total
+  // ~150 entries total
   new SelfProvider(), // always last
 ];
 ```
@@ -706,30 +706,31 @@ Typical list of `slow`s: `pwsh-modules` (PowerShell Gallery HTTP per module), `v
 
 ## 13. Providers catalog (snapshot)
 
-Canonical source: [`docs/providers-catalog.md`](./providers-catalog.md). Current distribution (~130 entries):
+Canonical source: [`docs/providers-catalog.md`](./providers-catalog.md). Current distribution (~150 entries):
 
 | Category | # | Examples |
 |---|---:|---|
-| OS / Windows | 3 | winget, scoop, choco |
-| OS / macOS | 4 | brew, brew-cask, mas, macports |
+| OS / Windows | 6 | winget, scoop, choco, msys2, cygwin, npackd |
+| OS / macOS | 6 | brew, brew-cask, mas, macports, sparkle, fink |
+| OS / POSIX | 3 | nix, pkgx, pkgin |
 | WSL | 7 | wsl, wsl-apt, wsl-dnf, wsl-pacman, wsl-brew, wsl-flatpak, wsl-nix |
-| Node.js / JS | 9 | npm-g, pnpm-g, yarn-g, bun-g, deno, corepack, fnm, volta, nvm-windows |
-| Python | 8 | pip, pipx, uv-tools, poetry, pdm, rye, pyenv-win, conda |
-| .NET / PHP | 5 | dotnet-tools, composer-self, composer-g, symfony-cli, phive |
+| Node.js / JS | 10 | npm-g, pnpm-g, yarn-g, bun-g, deno, corepack, fnm, volta, nvm-windows, nvm |
+| Python | 9 | pip, pipx, uv-tools, poetry, pdm, rye, pyenv-win, pyenv, conda |
+| .NET / PHP | 7 | dotnet-tools, dotnet-sdk, nuget, composer-self, composer-g, symfony-cli, phive |
 | JVM | 2 | jbang, coursier-cs |
 | Rust | 2 | rustup, cargo |
-| Other languages | 12 | gem, opam, hex, mix-archive, luarocks, cabal, stack, nimble, julia-pkg, r-packages, flutter, pub-global |
-| Polyglot toolchain | 5 | mise, asdf, proto, sdkman, goenv |
+| Other languages | 14 | gem, opam, hex, mix-archive, luarocks, cabal, stack, nimble, julia-pkg, r-packages, flutter, pub-global, vcpkg, mint |
+| Polyglot toolchain | 6 | mise, asdf, proto, sdkman, goenv, swiftly |
 | Cloud CLIs | 12 | az, gcloud, aws, oci, scw, hcloud, linode, doctl, supabase, heroku, railway, flyctl |
 | IaC | 10 | terraform, opentofu, terragrunt, vault, consul, nomad, packer, boundary, tflint, pulumi |
 | Kubernetes / Helm | 13 | helm, helm-repo, helm-plugins, kubectl, krew, kustomize, flux, argocd, k3d, kind, minikube, skaffold, tilt |
 | Containers | 6 | nerdctl, oras, dive, docker-desktop, podman-desktop, rancher-desktop |
 | Security scanning | 10 | trivy, grype, syft, cosign, rekor, gitsign, nuclei, nuclei-templates, pdtm, semgrep |
-| Dev CLIs | 7 | lazygit, lazydocker, jj, delta, glab, tea, gh-extensions |
-| IDEs / Extensions | 5 | vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains |
+| Dev CLIs | 8 | lazygit, lazydocker, jj, delta, glab, tea, gh-extensions, git-for-windows |
+| IDEs / Extensions | 6 | vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains, visual-studio |
 | Editor plugins | 4 | nvim-lazy, nvim-packer, nvim-mason, vim-plug |
-| Embedded / Mobile | 5 | arduino-cli, platformio, android-sdk, expo, fastlane |
-| Shell / cosmetic | 4 | oh-my-posh, starship, nerd-fonts, pwsh-modules |
+| Embedded / Mobile | 6 | arduino-cli, platformio, android-sdk, xcodes, expo, fastlane |
+| Shell / cosmetic | 5 | oh-my-posh, starship, nerd-fonts, pwsh-modules, psresource |
 | Meta | 1 | self (auto-update of the PMs themselves) |
 
 The `providers-catalog.md` doc details for each one: ID, upstream source, status (✅ integrated, 🚧 code present / not wired because manual-only, ⬜ candidate, ➡️ absorbed, ❌ out of scope).
@@ -776,7 +777,7 @@ The providers `jetbrains-plugins`, `zed-ext`, `sublime-pc`, `obsidian-plugins`, 
 
 ## 15. Security
 
-Significant attack surface (shell-out to ~130 third-party tools). See `SECURITY.md`.
+Significant attack surface (shell-out to ~150 third-party tools). See `SECURITY.md`.
 
 ### Threat model
 
@@ -886,7 +887,7 @@ Conventions to follow:
 
 ## 19. Summary — the mental map in one sentence
 
-> **`gup`** is an **orchestrator CLI** that aggregates ~130 **Providers** (one file = one installation source), each implementing a 4-method contract (`isAvailable` / `listOutdated` / `update` / `updateAll`); the Providers are **fan-out scanned** in parallel via `pLimit(4)` behind a live spinner; results are **fail-soft** (a broken provider only affects its own cell); updates are **stream-inherit** to the user's terminal; recoverable failures go through a **progressively aggressive opt-in retry menu**; the entire shell-out surface is locked down by security tests + SAST + dependency audit + secret scanning.
+> **`gup`** is an **orchestrator CLI** that aggregates ~150 **Providers** (one file = one installation source), each implementing a 4-method contract (`isAvailable` / `listOutdated` / `update` / `updateAll`); the Providers are **fan-out scanned** in parallel via `pLimit(4)` behind a live spinner; results are **fail-soft** (a broken provider only affects its own cell); updates are **stream-inherit** to the user's terminal; recoverable failures go through a **progressively aggressive opt-in retry menu**; the entire shell-out surface is locked down by security tests + SAST + dependency audit + secret scanning.
 
 ---
 

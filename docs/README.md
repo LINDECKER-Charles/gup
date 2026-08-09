@@ -10,7 +10,7 @@ stays light; everything dense lives here.
 | [`installation.md`](installation.md) | Install methods (npm, from source), requirements, per-platform support, updating and removing `gup`. |
 | [`cli-reference.md`](cli-reference.md) | Every command and flag, the interactive menu, targeting syntax, stuck-install timeouts, retry strategies, JSON output, environment variables, exit codes, activity history. |
 | [`scope.md`](scope.md) | Why `gup` exists, what belongs in it, and what is deliberately excluded — with the reasoning. |
-| [`providers-catalog.md`](providers-catalog.md) | Exhaustive catalog of the 134 providers, implementation status (✅ 🚧 ⬜ ➡️ ❌), and evaluated candidates. |
+| [`providers-catalog.md`](providers-catalog.md) | Exhaustive catalog of the 153 providers, implementation status (✅ 🚧 ⬜ ➡️ ❌), and evaluated candidates. |
 
 ## For contributors
 

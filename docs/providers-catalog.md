@@ -1,6 +1,6 @@
 # Providers catalog
 
-Unified overview — implementation status, sources, and out-of-scope items. Source: `src/core/registry.ts` (`ALL_PROVIDERS`, 134 entries). Snapshot: 2026-08-05.
+Unified overview — implementation status, sources, and out-of-scope items. Source: `src/core/registry.ts` (`ALL_PROVIDERS`, 153 entries). Snapshot: 2026-08-09.
 
 ## Legend
 
@@ -23,6 +23,13 @@ Unified overview — implementation status, sources, and out-of-scope items. Sou
 | `winget` | Windows Package Manager | ✅ |
 | `scoop` | Scoop | ✅ |
 | `choco` | Chocolatey | ✅ |
+| `msys2` | MSYS2 pacman set (`pacman -Qu` against the root's own DB) | ✅ |
+| `cygwin` | Cygwin (refresh action through `setup-x86_64.exe`) | ✅ |
+| `npackd` | Npackd (`npackdcl`/`ncl`) | ✅ |
+
+`msys2` covers the packages *inside* an MSYS2 root — winget only ever knows
+about the installer. See §25.3 for the detection and update contract of the
+three, and §25.4 for the Windows sources deliberately left out.
 
 ## 1b. OS / macOS
 
@@ -32,10 +39,29 @@ Unified overview — implementation status, sources, and out-of-scope items. Sou
 | `brew-cask` | Homebrew casks (GUI apps, `/Applications`) | ✅ |
 | `mas` | Mac App Store, via the `mas` CLI | ✅ |
 | `macports` | MacPorts (`port outdated`, upgrades via `sudo`) | ✅ |
+| `sparkle` | Sparkle appcasts (`SUFeedURL` in each app bundle) | ✅ scan-only |
+| `fink` | Fink (`fink list --outdated`, upgrades via `sudo`) | ✅ |
 | `softwareupdate` | macOS releases / XProtect / CLT | ❌ out of scope (OS-level) |
 
 `brew` also covers **Linuxbrew**, so it is not gated on darwin. `brew-cask`,
-`mas` and `macports` are macOS-only and report themselves unavailable elsewhere.
+`mas`, `macports`, `sparkle` and `fink` are macOS-only and report themselves
+unavailable elsewhere.
+
+`sparkle` is the blind-spot filler: `brew-cask` runs without `--greedy` and so
+hides every cask flagged `auto_updates true`, and `mas` only sees the App Store.
+Reading `SUFeedURL` out of each bundle reaches the rest. It reports but never
+applies — the app's own updater owns that half.
+
+## 1c. OS / POSIX (macOS + Linux)
+
+| ID | Source | Status |
+|---|---|---|
+| `nix` | Nix binary + user profile (`nix profile upgrade --all`) | ✅ |
+| `pkgx` | pkgx binary | ✅ |
+| `pkgin` | pkgin (pkgsrc binaries, upgrades via `sudo`) | ✅ |
+
+Gated on `process.platform !== "win32"`: under Windows, Nix lives in WSL and is
+covered by `wsl-nix` (§2).
 
 Native Linux distro packages are not standalone providers: `apt` and `dnf` are
 reachable as **delegation targets** (`InstallSource`), so a tool installed by
@@ -67,6 +93,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | `fnm` | fnm | ✅ |
 | `volta` | Volta | ✅ |
 | `nvm-windows` | nvm-windows | ✅ |
+| `nvm` | nvm (nvm-sh, POSIX) | ✅ |
 | `vercel` | Vercel | ➡️ `npm-g` |
 | `netlify` | Netlify | ➡️ `npm-g` |
 | `firebase-tools` | Firebase | ➡️ `npm-g` |
@@ -83,6 +110,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | `pdm` | PDM self-update | ✅ |
 | `rye` | Rye self-update | ✅ |
 | `pyenv-win` | pyenv-win | ✅ |
+| `pyenv` | pyenv (POSIX) | ✅ |
 | `conda` | Conda (base env) | ✅ |
 
 ## 5. Ruby / .NET / PHP
@@ -91,6 +119,8 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 |---|---|---|
 | `gem` | RubyGems | ✅ |
 | `dotnet-tools` | .NET global tools | ✅ |
+| `dotnet-sdk` | .NET SDK, compared within its own channel | ✅ |
+| `nuget` | NuGet CLI binary (`nuget update -self`) | ✅ |
 | `composer-self` | Composer (binary) | ✅ |
 | `composer-g` | Composer global | ✅ |
 | `symfony-cli` | Symfony CLI | ✅ |
@@ -119,6 +149,8 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | `R-packages` | R / CRAN | ✅ |
 | `pub-global` | Dart pub global | ✅ |
 | `flutter` | Flutter SDK | ✅ |
+| `vcpkg` | vcpkg, classic mode (`vcpkg update`) | ✅ |
+| `mint` | Mint — global Swift CLI tools | ✅ |
 
 ## 8. Rust / PowerShell
 
@@ -126,7 +158,12 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 |---|---|---|
 | `rustup` | rustup toolchains | ✅ |
 | `cargo` | cargo-update | ✅ |
-| `pwsh-modules` | PSGallery (CurrentUser) | ✅ |
+| `pwsh-modules` | PSGallery via `Get-InstalledModule` (PowerShellGet v2) | ✅ |
+| `psresource` | PSGallery via `Get-InstalledPSResource` (PSResourceGet v3) | ✅ |
+
+`pwsh-modules` and `psresource` are complementary, not redundant: a resource
+installed with `Install-PSResource` — the default installer since PowerShell
+7.4 — is not reported by `Get-InstalledModule`.
 
 ## 9. Polyglot toolchain
 
@@ -136,6 +173,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | `asdf` | asdf-vm | ✅ |
 | `proto` | proto (moonrepo) | ✅ |
 | `goenv` | goenv | ✅ |
+| `swiftly` | swiftly — Swift toolchain manager (`swiftly self-update`) | ✅ |
 
 ## 10. Cloud CLIs
 
@@ -227,6 +265,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | `glab` | GitLab CLI | ✅ |
 | `tea` | Gitea CLI | ✅ |
 | `gh-ext` | GitHub CLI extensions | ✅ |
+| `git-for-windows` | Git for Windows (delegates when a PM owns the binary) | ✅ |
 
 ## 16. Embedded / Mobile
 
@@ -235,6 +274,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | `arduino-cli` | Arduino CLI | ✅ |
 | `platformio` | PlatformIO Core | ✅ |
 | `android-sdk` | Android SDK Manager | ✅ |
+| `xcodes` | `xcodes` binary (not the Xcode releases it installs) | ✅ |
 | `expo` | Expo CLI | ✅ |
 | `fastlane` | Fastlane | ✅ |
 
@@ -255,6 +295,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | `windsurf-ext` | Windsurf | ✅ |
 | `vscodium-ext` | VSCodium + Open VSX | ✅ |
 | `jetbrains` | JetBrains IDEs (Toolbox + standalone) | ✅ |
+| `visual-studio` | Visual Studio (`vswhere` + release channel manifest) | ✅ |
 | `jetbrains-plugins` | JetBrains plugins | 🚧 |
 | `zed-ext` | Zed extensions | 🚧 |
 | `sublime-pc` | Sublime Package Control | 🚧 |
@@ -1394,7 +1435,124 @@ Complements to the tools already on winget/scoop. A dedicated provider only when
 
 ---
 
-## 25. Implementation priority order
+## 25. OS sources — the macOS / Windows gap, closed
+
+Before this pass §1 and §1b listed three Windows sources (`winget`, `scoop`,
+`choco`) and four macOS ones (`brew`, `brew-cask`, `mas`, `macports`), and
+nothing else on either platform. The nineteen providers below closed that: they
+are all wired in `ALL_PROVIDERS` and indexed in their domain sections above.
+This section keeps the *contract* for each — how the "is something newer"
+question is answered and how the upgrade is applied — plus the sources
+deliberately turned down. Same legend as §22 (✅ integrated · ➡️ absorbed ·
+❌ out of scope).
+
+### 25.1 macOS — implemented
+
+| ID | Latest source | Update path | Status |
+|---|---|---|---|
+| `nix` | `nix --version` vs the GitHub tag list, per flavour (upstream `NixOS/nix` vs `DeterminateSystems/nix-src`) | `nix upgrade-nix`; profile row → `nix profile upgrade --all`, falling back to `nix-env -u` only on a `manifest.nix` profile | ✅ |
+| `sparkle` | `SUFeedURL` read from each `/Applications/*.app/Contents/Info.plist` with `plutil -extract`, then the appcast XML (`sparkle:shortVersionString`, element or enclosure-attribute form) vs `CFBundleShortVersionString` | the app's own updater — scan-only, `update()` returns `skipped` | ✅ |
+| `xcodes` | `xcodes version` vs GH `XcodesOrg/xcodes` | delegated (`brew upgrade xcodes`) | ✅ |
+| `swiftly` | `swiftly --version` vs GH `swiftlang/swiftly` | `swiftly self-update` | ✅ |
+| `pyenv` | `pyenv --version` vs GH `pyenv/pyenv` | `git pull --ff-only` on a checkout, else delegated | ✅ |
+| `nvm` | `nvm --version` through `bash -c` sourcing `nvm.sh`, vs GH `nvm-sh/nvm` | `git fetch --tags` + `git checkout v<latest>` | ✅ |
+| `mint` | `mint list` → GH latest per installed tool | `mint install <owner/repo>@<latest>` | ✅ |
+| `pkgx` | `pkgx --version` vs GH `pkgxdev/pkgx` | delegated (`brew upgrade pkgx`) | ✅ |
+| `fink` | `fink list --outdated`, counted | `sudo fink update-all` | ✅ |
+| `pkgin` | dry-run upgrade plan | `sudo pkgin full-upgrade` | ✅ |
+| `cocoapods` | RubyGems | ➡️ `gem` | absorbed |
+| `colima`, `orbstack`, `utm`, `tart` | Homebrew formula or cask | ➡️ `brew` / `brew-cask` | absorbed |
+
+**`nix` and `sparkle` are the two that mattered.** Nix is the third
+general-purpose package manager on macOS after Homebrew and MacPorts, and
+`wsl-nix` (§2) already proved the parsing side — what was missing was the
+non-WSL host. Sparkle is the macOS analogue of §21's `gh-releases`: one
+convention (`SUFeedURL` → appcast) reaches most non-App-Store GUI apps at once,
+including the ones `brew-cask` installed and no longer tracks.
+
+Two shapes recur in the ten above, and both are deliberate. Where the tool
+exposes no cheap per-package "latest" (`fink`, `pkgin`), the provider emits one
+aggregate row rather than fabricating per-package versions — the `wsl-pacman`
+pattern. Where the tool manages heavyweight artefacts (`xcodes` and the Xcode
+releases it installs, `swiftly` and its toolchains), the provider scopes itself
+to the binary: a multi-gigabyte download behind an interactive Apple ID login
+does not belong in "update all".
+
+**Asymmetries with providers already shipped, now resolved.** `pyenv-win` (§4)
+and `nvm-windows` (§3) had no Unix counterpart; `pyenv` and `nvm` are those
+counterparts, each gated so the two halves never both fire. Still open: §24.1
+tags `rbenv`, `jenv`, `nodenv`, `phpenv` and `swiftenv` "(WSL)" although macOS
+is their primary platform. `sdkman` is the reverse case: §6 labels it "(WSL)"
+but the provider activates on any host with `~/.sdkman` and `bash` on PATH,
+macOS included.
+
+### 25.2 macOS — turned down
+
+| Source | Why not |
+|---|---|
+| `softwareupdate`, XProtect, Command Line Tools | OS-level — already excluded in §1b and in [`scope.md`](scope.md). |
+| `nix-darwin`, `home-manager` | Declarative host config: the truth lives in a `.nix` file under version control, so bumping it is a reviewed commit — the rule that excludes project manifests. |
+| `brew bundle` / `Brewfile` | Project-scoped by construction. |
+| Munki, AutoPkg, Installomator, Jamf | Fleet management: they push software *to* machines from a server. Not a source installed on the machine `gup` runs on. |
+| Setapp, MacUpdater, Latest.app | GUI/subscription updaters with no listing CLI — and they sit on `gup`'s own layer, not below it. |
+| `pkgutil`, `installer` | Receipt and installer plumbing; no notion of "a newer version exists". |
+
+### 25.3 Windows — implemented
+
+| ID | Latest source | Update path | Status |
+|---|---|---|---|
+| `msys2` | `pacman -Qu` against the root's local sync DB — **no `-Sy` at scan time** | `pacman -S --needed --noconfirm <targets>`, never `-Syu` | ✅ |
+| `vcpkg` | `vcpkg update` (classic mode) | `vcpkg upgrade --no-dry-run` | ✅ |
+| `visual-studio` | `vswhere -all -products * -format json` vs the release channel manifest under `aka.ms/vs/<major>/release/channel` | `vs_installer.exe update --passive --norestart --installPath "<path>"`, row flagged `requiresAdmin` | ✅ |
+| `psresource` | `Get-InstalledPSResource` vs `Find-PSResource` | `Update-PSResource -Scope CurrentUser` | ✅ |
+| `dotnet-sdk` | `dotnet --list-sdks` vs Microsoft's release index, **within the installed channel** | delegated (`Microsoft.DotNet.SDK.<major>` on winget, `dotnet-sdk` on brew) | ✅ (macOS too) |
+| `cygwin` | refresh row — the "what is newer" answer lives in the mirror's `setup.ini`, not in any installed binary | `setup-x86_64.exe --quiet-mode --upgrade-also --no-shortcuts --wait --root <root>` | ✅ |
+| `git-for-windows` | `git --version` (the `.windows.` segment identifies the build) vs GH `git-for-windows/git` | delegated when scoop/choco/winget owns the binary, else `git update-git-for-windows` | ✅ |
+| `nuget` | `nuget help` banner vs the nuget.org flat-container index | `nuget update -self -NonInteractive` — the binary only | ✅ |
+| `npackd` | `ncl search --status updateable --json` (`--bare-format` fallback) | `ncl update --non-interactive` | ✅ |
+| `conan` | PyPI | ➡️ `pip` / `pipx` | absorbed |
+| Sysinternals, PowerToys, Windows Terminal, AutoHotkey | winget / Store | ➡️ `winget` | absorbed |
+
+**`msys2` was the clear first one.** It is the standard MinGW/GCC toolchain host
+on Windows, it is not reachable through `winget` (winget installs the MSYS2
+*installer*, never the package set inside it), and `wsl-pacman` (§2) already
+parses the exact same `pacman -Qu` output.
+
+Two decisions there are worth restating because they look like omissions and are
+not. gup never runs `pacman -Sy` during a scan: refreshing the sync DB is a
+mutation, and a refreshed DB with an unapplied upgrade is the classic
+partial-upgrade footgun — so every row carries a note saying the answer comes
+from the local database. And updates go through `-S`, never `-Syu`: in the MSYS2
+pacman fork a `-Su` transaction touching a core package upgrades that subset
+alone, then asks to close every MSYS2 process — a question `--noconfirm` answers
+*yes* to, killing the user's running shells and still exiting zero with most
+packages un-upgraded. `-S <targets>` never enters that branch.
+
+**`psresource` was the narrowest fix.** `pwsh-modules` (§8) lists through
+`Get-InstalledModule`, so resources installed with `Install-PSResource` — the
+default installer shipped with PowerShell 7.4+ — fall outside what it reports.
+A second pass over `Get-InstalledPSResource` closes that without a new scan
+strategy.
+
+`cygwin` is the one that stayed a refresh row: Cygwin ships no package-manager
+binary at all, and `setup-x86_64.exe` is not installed anywhere by the
+distribution — the provider locates the copy the user downloaded, and returns
+`skipped` with instructions when it cannot.
+
+### 25.4 Windows — turned down
+
+| Source | Why not |
+|---|---|
+| Windows Update, WSUS, `PSWindowsUpdate`, DISM, OEM drivers, SYSTEM services | OS-level — already excluded in the global note and in [`scope.md`](scope.md). |
+| Microsoft Store, provisioned Appx / MSIX | Store-managed and OS-adjacent; user-installed Store apps are already reachable through `winget upgrade --source msstore`. |
+| Microsoft 365 Click-to-Run | Ships its own updater, on the OS release cadence. |
+| ClickOnce apps, Squirrel / `electron-updater` apps | Per-app self-updaters with no shared manifest key and no listing surface — Sparkle's problem (§25.1) minus the convention that makes Sparkle implementable. |
+| Ninite, Patch My PC, SUMo, UniGetUI (WingetUI), topgrade | Meta-updaters wrapping winget/choco/scoop — same layer as `gup`, not below it. |
+| Steam, Epic, game launchers | Self-updating GUI clients for workload, not toolchain (see §23.20). |
+
+---
+
+## 26. Implementation priority order
 
 1. **`gh-releases` meta-provider (§21)** — unlocks ~70% of the candidates below in the form of TOML config.
 2. **Security**: `gitleaks`, `trufflehog`, `osv-scanner`, `checkov`, `conftest`, `opa`, `infracost`.
@@ -1406,3 +1564,10 @@ Complements to the tools already on winget/scoop. A dedicated provider only when
 8. **LLM**: `ollama`, `huggingface-cli`, `aider`.
 9. **Languages**: `ghcup`, `foundry`, `solana`, `tauri-cli`.
 10. **Tunneling / web**: `cloudflared`, `tailscale`, `caddy`.
+~~11. **OS gaps (§25)**~~ — **done.** The nineteen macOS/Windows sources of §25
+shipped together: `msys2`, `nix`, `sparkle`, `vcpkg`, `psresource`,
+`visual-studio`, `dotnet-sdk`, `pyenv`, `nvm`, `xcodes`, `swiftly`, `mint`,
+`pkgx`, `fink`, `pkgin`, `cygwin`, `git-for-windows`, `nuget`, `npackd`. They
+were taken out of order on purpose: `gh-releases` unlocks none of them, each
+needing its own host plumbing rather than a TOML block, so nothing above was
+blocking them.

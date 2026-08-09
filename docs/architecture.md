@@ -36,7 +36,7 @@ flowchart LR
     CLI --> Doctor[doctor.ts]
 
     Menu & List & Update & Doctor --> Registry[(registry.ts<br/>ALL_PROVIDERS)]
-    Registry -->|parallel scan<br/>pLimit| Providers[Providers<br/>~130 modules]
+    Registry -->|parallel scan<br/>pLimit| Providers[Providers<br/>~150 modules]
     Providers -->|run / runInherit| Runner[runner.ts<br/>execa wrapper]
     Runner --> Tools[(winget · scoop · npm<br/>cargo · pipx · helm · …)]
 

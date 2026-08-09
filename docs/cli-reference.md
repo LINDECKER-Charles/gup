@@ -119,7 +119,7 @@ gup update winget
 
 ## Fast mode
 
-31 of the 134 providers are marked `slow`: their scan does per-package HTTP
+36 of the 153 providers are marked `slow`: their scan does per-package HTTP
 lookups or walks the filesystem. `--fast` skips them.
 
 That set is the WSL bridge, the editor-extension providers (VS Code, Cursor,

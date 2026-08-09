@@ -4,7 +4,7 @@
 
 **One command to scan and update everything installed on your machine.**
 
-[**Homepage**](https://lindecker-charles.github.io/gup/) · [**Documentation**](docs/) · [**Providers (134)**](docs/providers-catalog.md) · [**npm**](https://www.npmjs.com/package/@charles_lindecker/gup)
+[**Homepage**](https://lindecker-charles.github.io/gup/) · [**Documentation**](docs/) · [**Providers (153)**](docs/providers-catalog.md) · [**npm**](https://www.npmjs.com/package/@charles_lindecker/gup)
 
 [![npm](https://img.shields.io/npm/v/@charles_lindecker/gup?logo=npm&color=CB3837)](https://www.npmjs.com/package/@charles_lindecker/gup)
 [![npm downloads](https://img.shields.io/npm/dm/@charles_lindecker/gup?logo=npm&color=CB3837&label=downloads)](https://www.npmjs.com/package/@charles_lindecker/gup)
@@ -15,7 +15,7 @@
 
 <img src="https://raw.githubusercontent.com/LINDECKER-Charles/gup/main/docs/assets/demo.svg" alt="Terminal running gup list --fast: 12 providers scanned in 5.7 seconds, 6 outdated packages listed" width="692">
 
-<sub>winget · scoop · choco · brew · casks · Mac App Store · MacPorts · apt · dnf · npm · pnpm · yarn · bun · pip · pipx · uv · cargo · gem · composer · dotnet tools · helm · kubectl · terraform · VS Code · JetBrains · WSL distros — **134 providers**</sub>
+<sub>winget · scoop · choco · MSYS2 · brew · casks · Mac App Store · MacPorts · Sparkle · Nix · apt · dnf · npm · pnpm · yarn · bun · pip · pipx · uv · cargo · gem · composer · dotnet SDK &amp; tools · vcpkg · helm · kubectl · terraform · VS Code · JetBrains · Visual Studio · WSL distros — **153 providers**</sub>
 
 </div>
 
@@ -65,7 +65,7 @@ JSON schema: [**CLI reference →**](docs/cli-reference.md)
 | [Installation](docs/installation.md) | Install methods, requirements, per-platform support |
 | [CLI reference](docs/cli-reference.md) | Every command, flag, environment variable, exit code |
 | [Scope](docs/scope.md) | What `gup` covers — and what it deliberately doesn't |
-| [Providers catalog](docs/providers-catalog.md) | The 134 providers, their status, and what's next |
+| [Providers catalog](docs/providers-catalog.md) | The 153 providers, their status, and what's next |
 | [Architecture](docs/architecture.md) | Layers, data model, parallel scan, update pipeline |
 | [How `gup` works](docs/how-gup-works.md) | End-to-end technical walkthrough |
 | [Contributing](CONTRIBUTING.md) | Adding a provider, conventions, PR checklist |
