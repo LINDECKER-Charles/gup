@@ -1,303 +1,190 @@
-// Faithful reproduction of the actual `gup` CLI output.
-// Source of truth: src/commands/menu.ts, src/ui/scan-progress.ts,
-// src/ui/table.ts, src/commands/list.ts, src/commands/update.ts.
-//
-// Line shape:
-//   { t: string, c?: className }                  -- whole-line color
-//   { segs: [{ t: string, c?: className }, ...] } -- inline segments
-//
-// Color classes map to the real chalk colors used in the CLI:
-//   term-c-bold   -> chalk.bold
-//   term-c-dim    -> chalk.dim       (borders, secondary text)
-//   term-c-muted  -> default fg slightly subdued
-//   term-c-green  -> chalk.green     (success, latest version)
-//   term-c-yellow -> chalk.yellow    (current version, warnings)
-//   term-c-red    -> chalk.red       (errors, FAIL)
-//   term-c-cyan   -> chalk.cyan      (provider name in scan table)
-//   term-c-blue   -> chalk.blue      (JSON keys)
-//   term-c-accent -> highlight (inquirer pointer / selected entry)
+/**
+ * Terminal scenes replayed by ui/Terminal.jsx.
+ *
+ * A scene is a list of lines; a line is a list of `{ t, c, b }` segments where
+ * `c` is a colour class from styles/terminal.css (mapped 1:1 onto the chalk
+ * colours the real CLI uses) and `b` marks bold. Output is ASCII-aligned on
+ * purpose — the segments keep `white-space: pre` so columns survive.
+ *
+ * Provider ids are the real ones from src/core/registry.ts (`brew`,
+ * `brew-cask`, `npm-g`, `cargo`, `helm`, `pip`). There is no `apt` provider:
+ * apt only exists as a delegation target, so it never appears as a
+ * `providerId` in `gup list --json`.
+ *
+ * Package versions and timings are illustrative sample output.
+ */
+import { facts } from "./facts.js";
 
-// ora's "line" spinner — what the CLI actually uses (scan-progress.ts:31).
-const LINE_SPIN = ["-", "\\", "|", "/"];
-const sp = (i) => LINE_SPIN[i % LINE_SPIN.length];
+const seg = (t, c, b) => ({ t, c, b });
+const line = (...segs) => segs;
+const blank = () => [seg(" ")];
 
-const L = (t, c) => ({ t, c });
-const S = (segs) => ({ segs });
-const seg = (t, c) => ({ t, c });
-const Empty = () => ({ t: "" });
-
-// printHeader() — src/commands/menu.ts:117
-const HEADER_LINES = [
-  S([
-    seg("  "),
-    seg("gup", "term-c-bold"),
-    seg("  "),
-    seg("global updater                          ", "term-c-dim"),
-    seg("v0.1.0", "term-c-dim"),
-  ]),
-  L("  ────────────────────────────────────────────────────────────", "term-c-dim"),
-];
-
-// printStatus() — src/commands/menu.ts:125
-const statusBlock = ({ providers, updates, mode = "normal", filter = "tous" }) => [
-  Empty(),
-  S([
-    seg("  status   ", "term-c-dim"),
-    seg(`${providers} provider(s) détecté(s)  ·  `),
-    updates === 0
-      ? seg("à jour", "term-c-green")
-      : seg(`${updates} mise(s) à jour disponible(s)`, "term-c-yellow"),
-  ]),
-  S([
-    seg("  mode     ", "term-c-dim"),
-    seg(`${mode}  ·  ${filter}`, "term-c-dim"),
-  ]),
-  Empty(),
-];
-
-// scan-progress spinner line — matches scan-progress.ts render().
-const scanLine = (spinIdx, done, total, active = [], overflow = 0) =>
-  S([
-    seg(`${sp(spinIdx)} `, "term-c-accent"),
-    seg(`scan [${done}/${total}]`, "term-c-dim"),
-    active.length > 0
-      ? seg(
-          ` — ${active.join(" · ")}${overflow > 0 ? ` +${overflow}` : ""}`,
-          "term-c-dim",
-        )
-      : seg(""),
-  ]);
-
-// === SCENARIO 1: gup (interactive menu) =================================
-const SCENE_MENU = [
-  {
-    delay: 500,
-    lines: [
-      S([seg("$ ", "term-c-green"), seg("gup", "term-c-bold")]),
-    ],
-  },
-  ...[0, 1, 2, 3].map((i) => ({
-    delay: 220,
-    lines: [
-      S([seg("$ ", "term-c-green"), seg("gup", "term-c-bold")]),
-      Empty(),
-      ...HEADER_LINES,
-      Empty(),
-      S([
-        seg(`${sp(i)} `, "term-c-accent"),
-        seg("détection des providers…", "term-c-dim"),
-      ]),
-    ],
-  })),
-  ...[
-    { done: 0,  active: ["Winget"] },
-    { done: 3,  active: ["Winget", "npm", "pip"] },
-    { done: 8,  active: ["Cargo", "Helm", "kubectl"], overflow: 2 },
-    { done: 16, active: ["pwsh modules", "VSCode ext", "JetBrains Toolbox"], overflow: 5 },
-    { done: 28, active: ["Krew", "Symfony CLI", "Composer global"], overflow: 3 },
-    { done: 41, active: ["Self"] },
-  ].map((step, i) => ({
-    delay: 280,
-    lines: [
-      S([seg("$ ", "term-c-green"), seg("gup", "term-c-bold")]),
-      Empty(),
-      ...HEADER_LINES,
-      Empty(),
-      scanLine(i + 4, step.done, 47, step.active, step.overflow || 0),
-    ],
-  })),
-  {
-    delay: 700,
-    lines: [
-      S([seg("$ ", "term-c-green"), seg("gup", "term-c-bold")]),
-      Empty(),
-      ...HEADER_LINES,
-      Empty(),
-      L("· scan terminé en 4.2s — 47 provider(s), 23 mise(s) à jour", "term-c-dim"),
-      ...statusBlock({ providers: 47, updates: 23 }),
-      S([
-        seg("? ", "term-c-green"),
-        seg("Action", "term-c-bold"),
-        seg(" (Use arrow keys)", "term-c-dim"),
-      ]),
-      S([
-        seg("❯ ", "term-c-accent"),
-        seg("Scan                  ", "term-c-accent"),
-        seg(" rescanne tous les providers", "term-c-dim"),
-      ]),
-      S([
-        seg("  Review                "),
-        seg(" voir la liste détaillée", "term-c-dim"),
-      ]),
-      S([
-        seg("  Update selected       "),
-        seg(" choix multiple", "term-c-dim"),
-      ]),
-      S([
-        seg("  Update all            "),
-        seg(" 23 paquet(s)", "term-c-dim"),
-      ]),
-      L("  ──", "term-c-dim"),
-      S([
-        seg("  Update target         "),
-        seg(" provider:package", "term-c-dim"),
-      ]),
-      S([
-        seg("  Providers             "),
-        seg(" status / install hints", "term-c-dim"),
-      ]),
-      S([
-        seg("  Options               "),
-        seg(" fast mode, filtre providers", "term-c-dim"),
-      ]),
-      L("  ──", "term-c-dim"),
-      L("  Quit"),
-    ],
-  },
-];
-
-// === SCENARIO 2: gup list --json --fast =================================
-const SCENE_LIST = [
-  {
-    delay: 500,
-    lines: [
-      S([seg("$ ", "term-c-green"), seg("gup list --json --fast", "term-c-bold")]),
-    ],
-  },
-  ...[0, 1, 2].map((i) => ({
-    delay: 240,
-    lines: [
-      S([seg("$ ", "term-c-green"), seg("gup list --json --fast", "term-c-bold")]),
-      S([
-        seg(`${sp(i)} `, "term-c-accent"),
-        seg("détection des providers…", "term-c-dim"),
-      ]),
-    ],
-  })),
-  ...[
-    { done: 6,  active: ["Winget", "npm", "pip"] },
-    { done: 18, active: ["Cargo", "Helm", "kubectl"], overflow: 2 },
-    { done: 30, active: ["Self"] },
-  ].map((step, i) => ({
-    delay: 260,
-    lines: [
-      S([seg("$ ", "term-c-green"), seg("gup list --json --fast", "term-c-bold")]),
-      scanLine(i + 3, step.done, 38, step.active, step.overflow || 0),
-    ],
-  })),
-  {
-    delay: 0,
-    lines: [
-      S([seg("$ ", "term-c-green"), seg("gup list --json --fast", "term-c-bold")]),
-      Empty(),
-      L("["),
-      L("  {"),
-      S([seg("    \"providerId\""), seg(": "), seg("\"winget\"", "term-c-green"), seg(",")]),
-      S([seg("    \"available\""), seg(": "), seg("true", "term-c-purple"), seg(",")]),
-      L("    \"packages\": ["),
-      L("      {"),
-      S([seg("        \"id\""), seg(": "), seg("\"Microsoft.PowerShell\"", "term-c-green"), seg(",")]),
-      S([seg("        \"name\""), seg(": "), seg("\"PowerShell\"", "term-c-green"), seg(",")]),
-      S([seg("        \"current\""), seg(": "), seg("\"7.4.1\"", "term-c-green"), seg(",")]),
-      S([seg("        \"latest\""), seg(": "), seg("\"7.4.6\"", "term-c-green")]),
-      L("      },"),
-      L("      {"),
-      S([seg("        \"id\""), seg(": "), seg("\"Git.Git\"", "term-c-green"), seg(",")]),
-      S([seg("        \"current\""), seg(": "), seg("\"2.43.0\"", "term-c-green"), seg(",")]),
-      S([seg("        \"latest\""), seg(": "), seg("\"2.46.2\"", "term-c-green")]),
-      L("      }"),
-      L("    ]"),
-      L("  },"),
-      L("  {"),
-      S([seg("    \"providerId\""), seg(": "), seg("\"npm-g\"", "term-c-green"), seg(",")]),
-      S([seg("    \"available\""), seg(": "), seg("true", "term-c-purple"), seg(",")]),
-      L("    \"packages\": ["),
-      L("      { \"id\": \"typescript\", \"current\": \"5.4.2\", \"latest\": \"5.6.3\" },", "term-c-muted"),
-      L("      { \"id\": \"pnpm\",       \"current\": \"9.4.0\", \"latest\": \"9.12.1\" }", "term-c-muted"),
-      L("    ]"),
-      L("  },"),
-      L("  { \"providerId\": \"pip\",   \"available\": true,  \"packages\": [/* 1 */] },", "term-c-muted"),
-      L("  { \"providerId\": \"cargo\", \"available\": true,  \"packages\": [/* 2 */] },", "term-c-muted"),
-      L("  { \"providerId\": \"helm\",  \"available\": true,  \"packages\": [/* 1 */] }", "term-c-muted"),
-      L("]"),
-    ],
-  },
-];
-
-// === SCENARIO 3: gup update <targets…> ==================================
-const SCENE_TARGET = [
-  {
-    delay: 500,
-    lines: [
-      S([
-        seg("$ ", "term-c-green"),
-        seg("gup update winget:Git.Git npm-g:typescript", "term-c-bold"),
-      ]),
-    ],
-  },
-  {
-    delay: 500,
-    lines: [
-      S([
-        seg("$ ", "term-c-green"),
-        seg("gup update winget:Git.Git npm-g:typescript", "term-c-bold"),
-      ]),
-      Empty(),
-      S([seg("→ Winget: Git.Git", "term-c-bold")]),
-    ],
-  },
-  {
-    delay: 700,
-    lines: [
-      S([
-        seg("$ ", "term-c-green"),
-        seg("gup update winget:Git.Git npm-g:typescript", "term-c-bold"),
-      ]),
-      Empty(),
-      S([seg("→ Winget: Git.Git", "term-c-bold")]),
-      L("Found Git [Git.Git] Version 2.46.2", "term-c-muted"),
-      L("This application is licensed to you by its owner.", "term-c-dim"),
-      L("Downloading https://github.com/git-for-windows/git/releases/…", "term-c-muted"),
-      L("  ██████████████████████████████  100%", "term-c-green"),
-      L("Successfully installed", "term-c-green"),
-    ],
-  },
-  {
-    delay: 500,
-    lines: [
-      S([
-        seg("$ ", "term-c-green"),
-        seg("gup update winget:Git.Git npm-g:typescript", "term-c-bold"),
-      ]),
-      Empty(),
-      S([seg("→ Winget: Git.Git", "term-c-bold")]),
-      L("Successfully installed", "term-c-green"),
-      Empty(),
-      S([seg("→ npm: typescript", "term-c-bold")]),
-      L("changed 1 package in 1.8s", "term-c-muted"),
-    ],
-  },
-  {
-    delay: 600,
-    lines: [
-      S([
-        seg("$ ", "term-c-green"),
-        seg("gup update winget:Git.Git npm-g:typescript", "term-c-bold"),
-      ]),
-      Empty(),
-      S([seg("→ Winget: Git.Git", "term-c-bold")]),
-      L("Successfully installed", "term-c-green"),
-      Empty(),
-      S([seg("→ npm: typescript", "term-c-bold")]),
-      L("changed 1 package in 1.8s", "term-c-muted"),
-      Empty(),
-      L("OK   2 mise(s) à jour effectuée(s)", "term-c-green"),
-    ],
-  },
+const banner = [
+  line(
+    seg("  gup", "t-fg", true),
+    seg("  global updater", "t-dim"),
+    seg(`                        v${facts.version}`, "t-dim"),
+  ),
+  line(
+    seg(
+      "  ──────────────────────────────────────────────────────",
+      "t-dim",
+    ),
+  ),
 ];
 
 export const scenes = {
-  menu:   { key: "menu",   tab: "menu",  title: "gup",                                        frames: SCENE_MENU   },
-  list:   { key: "list",   tab: "list",  title: "gup list --json --fast",                     frames: SCENE_LIST   },
-  target: { key: "target", tab: "ciblé", title: "gup update winget:Git.Git npm-g:typescript", frames: SCENE_TARGET },
+  menu: {
+    label: "menu",
+    title: "gup",
+    lines: [
+      line(seg("$ ", "t-green"), seg("gup", "t-fg", true)),
+      blank(),
+      ...banner,
+      blank(),
+      line(
+        seg(
+          "· scan terminé en 4.2s — 47 provider(s), 23 mise(s) à jour",
+          "t-dim",
+        ),
+      ),
+      blank(),
+      line(
+        seg("  status   ", "t-dim"),
+        seg("47 provider(s) détecté(s)  ·  ", "t-fg"),
+        seg("23 mise(s) à jour", "t-amber"),
+      ),
+      line(seg("  mode     ", "t-dim"), seg("normal  ·  tous", "t-dim")),
+      blank(),
+      line(
+        seg("? ", "t-green"),
+        seg("Action", "t-fg", true),
+        seg("  (Use arrow keys)", "t-dim"),
+      ),
+      line(
+        seg("❯ ", "t-accent"),
+        seg("Scan             ", "t-accent"),
+        seg(" rescanne tous les providers", "t-dim"),
+      ),
+      line(
+        seg("  Review           ", "t-fg"),
+        seg(" voir la liste détaillée", "t-dim"),
+      ),
+      line(
+        seg("  Update selected  ", "t-fg"),
+        seg(" choix multiple", "t-dim"),
+      ),
+      line(seg("  Update all       ", "t-fg"), seg(" 23 paquet(s)", "t-dim")),
+      line(seg("  ──", "t-dim")),
+      line(
+        seg("  Update target    ", "t-fg"),
+        seg(" provider:package", "t-dim"),
+      ),
+      line(
+        seg("  Providers        ", "t-fg"),
+        seg(" status / install hints", "t-dim"),
+      ),
+      line(
+        seg("  Options          ", "t-fg"),
+        seg(" fast mode, filtre providers", "t-dim"),
+      ),
+      line(seg("  Quit", "t-fg")),
+    ],
+  },
+
+  list: {
+    label: "json",
+    title: "gup list --json --fast",
+    lines: [
+      line(seg("$ ", "t-green"), seg("gup list --json --fast", "t-fg", true)),
+      blank(),
+      line(seg("[", "t-fg")),
+      line(seg("  {", "t-fg")),
+      line(
+        seg('    "providerId"', "t-muted"),
+        seg(": ", "t-fg"),
+        seg('"brew"', "t-green"),
+        seg(",", "t-fg"),
+      ),
+      line(
+        seg('    "available"', "t-muted"),
+        seg(": ", "t-fg"),
+        seg("true", "t-lilac"),
+        seg(",", "t-fg"),
+      ),
+      line(seg('    "packages"', "t-muted"), seg(": [", "t-fg")),
+      line(
+        seg(
+          '      { "id": "ripgrep",    "current": "14.1.0", "latest": "14.1.1" },',
+          "t-dim",
+        ),
+      ),
+      line(
+        seg(
+          '      { "id": "fzf",        "current": "0.54.0", "latest": "0.55.0" }',
+          "t-dim",
+        ),
+      ),
+      line(seg("    ]", "t-fg")),
+      line(seg("  },", "t-fg")),
+      line(
+        seg(
+          '  { "providerId": "brew-cask", "available": true,  "packages": [/* 4 */] },',
+          "t-dim",
+        ),
+      ),
+      line(
+        seg(
+          '  { "providerId": "npm-g",     "available": true,  "packages": [/* 2 */] },',
+          "t-dim",
+        ),
+      ),
+      line(
+        seg(
+          '  { "providerId": "cargo",     "available": true,  "packages": [/* 2 */] },',
+          "t-dim",
+        ),
+      ),
+      line(
+        seg(
+          '  { "providerId": "helm",      "available": true,  "packages": [/* 1 */] }',
+          "t-dim",
+        ),
+      ),
+      line(seg("]", "t-fg")),
+      blank(),
+      line(seg("exit 0", "t-green")),
+    ],
+  },
+
+  target: {
+    label: "ciblé",
+    title: "gup update brew:ripgrep npm-g:typescript",
+    lines: [
+      line(
+        seg("$ ", "t-green"),
+        seg("gup update brew:ripgrep npm-g:typescript", "t-fg", true),
+      ),
+      blank(),
+      line(seg("→ Homebrew: ripgrep", "t-fg", true)),
+      line(
+        seg(
+          "==> Downloading https://ghcr.io/v2/homebrew/core/ripgrep/…",
+          "t-dim",
+        ),
+      ),
+      line(seg("  ██████████████████████████████  100%", "t-green")),
+      line(
+        seg("==> Pouring ripgrep--14.1.1.arm64_sonoma.bottle.tar.gz", "t-dim"),
+      ),
+      line(seg("Successfully installed", "t-green")),
+      blank(),
+      line(seg("→ npm: typescript", "t-fg", true)),
+      line(seg("changed 1 package in 1.8s", "t-dim")),
+      blank(),
+      line(seg("OK   2 mise(s) à jour effectuée(s)", "t-green")),
+    ],
+  },
 };
+
+export const SCENE_KEYS = Object.keys(scenes);

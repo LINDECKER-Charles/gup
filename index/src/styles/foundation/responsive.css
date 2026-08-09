@@ -1,0 +1,58 @@
+/* Shared breakpoints and the reduced-motion contract. */
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1080px) {
+  :root {
+    --gap-section: 118px;
+    --shell-pad: 24px;
+  }
+  .sec-split {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    align-items: start;
+    margin-bottom: 40px;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --gap-section: 92px;
+    --shell-pad: 18px;
+  }
+  .sec-label {
+    margin-bottom: 26px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .display--card {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  :root {
+    --shell-pad: 14px;
+  }
+  .btn--primary,
+  .btn--ghost {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Honour the OS-level preference: kill the ambient loops and the reveal
+   choreography. The JS layer reads the same query (see lib/motion.jsx) so the
+   scroll-driven sequences stop too, not just the CSS ones. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

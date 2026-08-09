@@ -3,23 +3,35 @@
   Single-page landing — only the canonical /gup/ URL belongs here.
 
   Removed (and why):
-    - Fragment URLs (#problem, #modes, ...): Google strips fragments before
+    - Fragment URLs (#pourquoi, #usage, …): Google strips fragments before
       deduplication, so each entry resolved to /gup/ and surfaced as
       "Page with duplicate URL" in Search Console.
     - External URLs (github.com, npmjs.com): a sitemap declares pages YOU
       control. External URLs are ignored by all major crawlers.
-    - <image:image> blocks: the referenced /gup/screenshots/*.png files
-      are not committed yet — add them back once the screenshots land.
 
-  lastmod is rewritten at deploy time by .github/workflows/pages.yml
-  (see "Inject build metadata" step) — the @@LASTMOD@@ placeholder
-  stays in source so local builds remain deterministic.
+  <image:image> declares the social card rendered by scripts/og-image.mjs, so
+  the one real image on the page is discoverable through Google Images too.
+
+  lastmod comes from the last git commit touching index/, stamped into the build
+  output by scripts/stamp-static.mjs — NOT from the deploy clock. The previous
+  pipeline wrote `date -u` on every deploy, so lastmod always said "today" even
+  when nothing had changed, which is a freshness signal engines learn to
+  discount. The @@LASTMOD@@ placeholder stays in source so local builds and
+  diffs remain deterministic.
 -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+>
   <url>
     <loc>https://lindecker-charles.github.io/gup/</loc>
     <lastmod>@@LASTMOD@@</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://lindecker-charles.github.io/gup/public/og-image.png</image:loc>
+      <image:title>gup — une commande, @@PROVIDERS@@ sources à jour</image:title>
+      <image:caption>CLI open source qui scanne et met à jour winget, Homebrew, npm, pip, cargo, helm et le reste des @@PROVIDERS@@ sources d'installation.</image:caption>
+    </image:image>
   </url>
 </urlset>

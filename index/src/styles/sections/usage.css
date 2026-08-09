@@ -1,0 +1,140 @@
+/* 03 · Usage — the three mode cards, and the `$ command` block they share
+   with the install examples and the architecture nodes. */
+/* 05 · Lifecycle rides along: both are simple card grids in the same idiom. */
+
+/* ---------- 03 · Usage modes ---------- */
+
+.mode-grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 30px 26px;
+}
+.mode-ix {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--violet-text-soft);
+  white-space: nowrap;
+}
+.mode-card h3 {
+  margin: 0;
+}
+.mode-desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--fg-soft);
+}
+
+/* Shared `$ command` block. */
+.cmd-block {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--bg-deep);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: oklch(0.88 0.006 265);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cmd-prompt {
+  color: var(--green);
+  margin-right: 8px;
+}
+
+@media (max-width: 1080px) {
+  .mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- 05 · Lifecycle ---------- */
+
+.life-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: life;
+}
+.life-step {
+  position: relative;
+  padding: 30px 22px 28px;
+  border-right: 1px solid var(--line-faint);
+  background: var(--surface-raised);
+  transition: background 0.3s ease;
+}
+.life-step:last-child {
+  border-right: 0;
+}
+.life-step:hover {
+  background: var(--surface-hover);
+}
+/* Cumulative progress bar: each step's rule is wider than the previous one. */
+.life-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--violet), var(--amber));
+  animation: gFill 1.4s var(--ease-out) both;
+}
+.life-num {
+  margin-bottom: 15px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--violet-text-soft);
+  white-space: nowrap;
+}
+.life-title {
+  margin: 0 0 11px;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--fg);
+}
+.life-desc {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: oklch(0.58 0.01 265);
+}
+
+@media (max-width: 1080px) {
+  .life-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .life-step:nth-child(2n) {
+    border-right: 0;
+  }
+}
+@media (max-width: 620px) {
+  .life-grid {
+    grid-template-columns: 1fr;
+  }
+  .life-step {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-faint);
+  }
+  .life-step:last-child {
+    border-bottom: 0;
+  }
+}

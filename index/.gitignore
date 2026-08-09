@@ -1,4 +1,7 @@
 node_modules/
 dist/
+# SSR bundle produced by the prerender pass and deleted right after — never deployed.
+dist-ssr/
 .vite/
 *.log
+.verify/

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page introuvable — gup</title>
+  <!--
+    GitHub Pages serves this for any unmatched path under /gup/. Without it the
+    account-level 404 answers instead, which crawlers read as a soft 404 and
+    which loses anyone who guessed /gup/install or /gup/docs.
+
+    noindex, follow: the page itself must never be indexed, but its links should
+    still be crawled back into the site.
+  -->
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://lindecker-charles.github.io/gup/" />
+  <meta name="theme-color" content="#06070a" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" type="image/svg+xml" href="/gup/public/favicon.svg" />
+  <link rel="icon" type="image/x-icon" href="/gup/public/favicon.ico" />
+  <style>
+    :root { color-scheme: dark }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+      background: #06070a;
+      color: #f4f5f8;
+      font: 16px/1.6 ui-sans-serif, system-ui, sans-serif;
+      text-align: center;
+    }
+    main { max-width: 46ch }
+    h1 { margin: 0 0 8px; font-size: clamp(48px, 12vw, 96px); letter-spacing: -0.02em }
+    p { margin: 0 0 24px; color: #a9abb6 }
+    code {
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      font-size: 14px;
+      color: #b9c0ff;
+    }
+    ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center }
+    a {
+      display: inline-block;
+      padding: 11px 18px;
+      border-radius: 9px;
+      border: 1px solid #2a2c3a;
+      color: #f4f5f8;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    a:hover { border-color: #7887ff; color: #b9c0ff }
+    a.primary { background: #7887ff; border-color: #7887ff; color: #0b0b12; font-weight: 600 }
+    a.primary:hover { background: #8f9bff; color: #0b0b12 }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>404</h1>
+    <p>
+      Cette page n'existe pas. <strong>gup</strong> est une CLI qui scanne et met
+      à jour @@PROVIDERS@@ sources d'installation en une commande —
+      <code>npm install -g @@PACKAGE@@</code>
+    </p>
+    <ul>
+      <li><a class="primary" href="https://lindecker-charles.github.io/gup/">Retour à l'accueil</a></li>
+      <li><a href="https://github.com/LINDECKER-Charles/gup">Code source</a></li>
+      <li><a href="https://github.com/LINDECKER-Charles/gup/blob/main/docs/cli-reference.md">Référence CLI</a></li>
+      <li><a href="https://github.com/LINDECKER-Charles/gup/blob/main/docs/providers-catalog.md">Catalogue des providers</a></li>
+    </ul>
+  </main>
+</body>
+</html>

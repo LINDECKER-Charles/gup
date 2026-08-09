@@ -1,21 +1,47 @@
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { lastContentChange } from "./scripts/last-change.mjs";
+import { applyTokens, buildTokens } from "./scripts/tokens.mjs";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 // GitHub Pages base path. Must stay aligned with package.json "homepage" at the
 // repo root (https://lindecker-charles.github.io/gup/) and with every absolute
-// URL hardcoded in index.html, sitemap.xml, llms.txt, and the JSON-LD blocks.
+// URL hardcoded in index.html, sitemap.xml, llms.txt, and the JSON-LD @graph.
 const BASE = "/gup/";
 
 // `static/` is the publicDir. Its content is copied verbatim to the build root,
 // preserving SEO-critical URLs already indexed by Google/Bing — notably the
 // /gup/public/* asset paths referenced by sitemap.xml, OG tags, manifest icons
-// and JSON-LD logo entries. Renaming this dir to anything other than "public"
-// avoids colliding with Vite's default convention while keeping the subfolder
+// and JSON-LD image entries, plus /gup/robots.txt, /gup/sitemap.xml and
+// /gup/llms.txt. Renaming this dir to anything other than "public" avoids
+// colliding with Vite's default convention while keeping the subfolder
 // structure (static/public/* → /gup/public/*).
+const PUBLIC_DIR = "static";
+
+/**
+ * Substitutes the double-at placeholders in index.html from the generated facts
+ * module, in dev and in build alike. Static text assets under `static/` get the
+ * same treatment after the build — see scripts/stamp-static.mjs.
+ */
+function htmlFacts() {
+  return {
+    name: "gup-html-facts",
+    transformIndexHtml: {
+      order: "pre",
+      handler(html) {
+        return applyTokens(html, buildTokens(lastContentChange(HERE)), "index.html");
+      },
+    },
+  };
+}
+
 export default defineConfig({
   base: BASE,
-  publicDir: "static",
-  plugins: [react()],
+  publicDir: PUBLIC_DIR,
+  plugins: [react(), htmlFacts()],
   build: {
     outDir: "dist",
     sourcemap: false,

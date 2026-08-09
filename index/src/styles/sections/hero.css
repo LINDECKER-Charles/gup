@@ -1,0 +1,380 @@
+/* Hero: headline column, the live "parallel scan" panel, and the stat bar. */
+
+.hero {
+  padding: 76px 0 0;
+  min-height: calc(100vh - var(--nav-h));
+  position: relative;
+}
+/* Wipes upward as the intro curtain leaves, so the hero is revealed rather
+   than simply uncovered. */
+.hero-wipe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 3;
+  background: var(--bg-deeper);
+  transform-origin: 50% 0;
+  animation: gBar 0.55s var(--ease-inout) 0.9s both;
+  pointer-events: none;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  gap: 56px;
+  align-items: center;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  padding: 7px 15px;
+  margin-bottom: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  background: oklch(0.16 0.01 265 / 0.6);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: oklch(0.71 0.008 265);
+  animation: gFadeIn 0.6s ease 0.92s both;
+}
+.pulse {
+  position: relative;
+  display: inline-flex;
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+}
+.pulse::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--green);
+  animation: gRing 2.2s ease-out infinite;
+}
+.pulse::after {
+  content: "";
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+/* Each headline line rides up out of its own mask. */
+.hero-line {
+  display: block;
+  overflow: hidden;
+}
+.hero-line > span {
+  display: block;
+  animation: gRise 0.7s var(--ease-out) both;
+}
+.hero-line:nth-child(1) > span {
+  animation-delay: 0.93s;
+}
+.hero-line:nth-child(2) > span {
+  animation-delay: 1s;
+}
+.hero-line:nth-child(3) > span {
+  animation-delay: 1.07s;
+}
+/* `background-image`, never the `background` shorthand: Vite's minifier
+   duplicates each colour-bearing declaration for display-p3 and lab, and a
+   repeated `background` shorthand resets `background-clip` to border-box —
+   which turns this line into a solid gradient bar with invisible text. */
+.hero-line--gradient > span {
+  background-image: linear-gradient(
+    100deg,
+    oklch(0.7 0.2 275) 0%,
+    var(--fg-bright) 52%,
+    var(--amber) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-lead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  margin: 26px 0 0;
+  max-width: 540px;
+  text-wrap: pretty;
+  animation: gFadeIn 0.65s ease 1.18s both;
+}
+.hero-lead strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+  animation: gFadeIn 0.65s ease 1.26s both;
+}
+.hero-copy-state {
+  color: var(--violet-text-soft);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hero-trust {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  animation: gFadeIn 0.65s ease 1.33s both;
+}
+
+/* ---------- Live scan panel ---------- */
+
+.scan {
+  position: relative;
+  padding: 26px 26px 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: var(--bg-deep);
+  overflow: hidden;
+  box-shadow: 0 40px 100px -40px oklch(0.68 0.2 275 / 0.6);
+  animation:
+    gFadeIn 0.8s var(--ease-out) 1.15s both,
+    gFloat 7s ease-in-out 2s infinite;
+}
+.scan-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 140px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    oklch(0.68 0.2 275 / 0.1),
+    transparent
+  );
+  animation: gSweep 5.5s linear infinite;
+}
+.scan-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 22px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+}
+.scan-head-title {
+  color: var(--violet-text-soft);
+}
+.scan-head-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.1em;
+  color: var(--fg-dim);
+}
+.spinner {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.6px solid var(--violet);
+  border-top-color: transparent;
+  animation: gSpin 0.85s linear infinite;
+}
+/* One cell per provider — 18 columns, so the grid reads as a scan front
+   sweeping left-to-right, row by row. */
+.scan-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(18, 1fr);
+  gap: 6px;
+  margin-bottom: 22px;
+}
+.scan-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  opacity: 0.12;
+  animation: gDot 3.4s ease-in-out infinite;
+}
+.scan-rail {
+  position: relative;
+  height: 1px;
+  margin-bottom: 18px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+.scan-rail > span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 1px;
+  width: 10%;
+  background: var(--violet-text-soft);
+  box-shadow: 0 0 10px var(--violet);
+  animation: gBeam 3.4s linear infinite;
+}
+.scan-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.scan-rotator {
+  height: 22px;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: oklch(0.88 0.006 265);
+}
+.scan-rotator > div {
+  animation: gRotate 9s steps(9) infinite;
+}
+.scan-rotator span {
+  display: block;
+  height: 22px;
+  line-height: 22px;
+  white-space: nowrap;
+}
+.scan-count {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--amber);
+  white-space: nowrap;
+}
+
+/* ---------- Stat bar ---------- */
+
+.stats {
+  padding: 96px 0 0;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stat {
+  position: relative;
+  padding: 32px 26px 26px;
+  border-right: 1px solid var(--line-faint);
+  overflow: hidden;
+}
+.stat:last-child {
+  border-right: 0;
+}
+.stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  opacity: 0.6;
+  background: linear-gradient(90deg, transparent, var(--violet), transparent);
+}
+.stat-value {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  font-family: var(--display);
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--fg-strong);
+}
+.stat-prefix {
+  color: var(--fg-soft);
+}
+.stat-label {
+  display: block;
+  margin-top: 11px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1080px) {
+  .hero {
+    padding-top: 56px;
+    min-height: 0;
+  }
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 44px;
+  }
+  .hero-lead {
+    max-width: none;
+  }
+  .stats {
+    padding-top: 64px;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stat:nth-child(2n) {
+    border-right: 0;
+  }
+  .stat:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line-faint);
+  }
+}
+
+@media (max-width: 720px) {
+  .scan-grid {
+    grid-template-columns: repeat(12, 1fr);
+  }
+  .stat {
+    padding: 24px 18px 20px;
+  }
+  .stat-value {
+    font-size: 36px;
+  }
+  .stat-label {
+    white-space: normal;
+  }
+  .hero-trust {
+    gap: 14px;
+    font-size: 10.5px;
+  }
+}
+
+@media (max-width: 420px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-faint);
+  }
+  .stat:last-child {
+    border-bottom: 0;
+  }
+}

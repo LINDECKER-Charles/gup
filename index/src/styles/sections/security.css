@@ -1,0 +1,68 @@
+/* 07 · Security — three cards with a slow green sweep. */
+
+/* ---------- 07 · Security ---------- */
+
+.sec-grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.sec-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 30px 26px;
+}
+.sec-card:hover {
+  border-color: oklch(0.8 0.17 150 / 0.5);
+  box-shadow: 0 26px 60px -26px oklch(0.8 0.17 150 / 0.4);
+}
+.sec-card-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 90px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    oklch(0.8 0.17 150 / 0.1),
+    transparent
+  );
+  animation: gSweep 7s linear infinite;
+}
+.sec-card h3 {
+  position: relative;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.sec-card p {
+  position: relative;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+.sec-card-tags {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: auto 0 0;
+  padding: 8px 0 0;
+  list-style: none;
+}
+
+@media (max-width: 1080px) {
+  .sec-grid {
+    grid-template-columns: 1fr;
+  }
+}

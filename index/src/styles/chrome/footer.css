@@ -1,0 +1,93 @@
+/* Footer — carries the documentation link graph. */
+
+/* ---------- Footer ---------- */
+
+.foot {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--gap-section);
+  border-top: 1px solid var(--line-soft);
+  padding: 64px 0 100px;
+}
+.foot-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+.foot-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.foot-brand:hover {
+  color: inherit;
+}
+.foot-mark {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+.foot-word {
+  font-family: var(--display);
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+.foot-tagline {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: oklch(0.55 0.01 265);
+  max-width: 360px;
+}
+.foot-col-title {
+  margin: 0 0 16px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--fg-faint);
+}
+.foot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13.5px;
+  color: oklch(0.66 0.008 265);
+}
+.foot-list a:hover {
+  color: var(--violet-text);
+}
+.foot-bottom {
+  margin-top: 52px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-faint);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--fg-faint);
+}
+
+@media (max-width: 900px) {
+  .foot-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+}
+@media (max-width: 560px) {
+  .foot-grid {
+    grid-template-columns: 1fr;
+  }
+  .foot {
+    padding-bottom: 120px;
+  }
+}

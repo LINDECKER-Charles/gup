@@ -1,0 +1,222 @@
+# gup — Global Updater CLI (extended)
+
+The long form of https://lindecker-charles.github.io/gup/llms.txt. Everything
+below is generated from, or checked against, the repository at build time:
+version @@VERSION@@, @@PROVIDERS@@ providers, Node.js >= @@NODE@@. Last content
+change: @@MODIFIED@@.
+
+Repository: https://github.com/LINDECKER-Charles/gup
+Package: https://www.npmjs.com/package/@@PACKAGE@@
+Homepage: https://lindecker-charles.github.io/gup/
+License: MIT
+
+## One paragraph
+
+On a developer machine, binaries arrive from dozens of competing sources and no
+native tool covers them all: `winget upgrade --all` silently skips pinned
+packages, `brew upgrade` never sees npm globals or VS Code extensions, `ncu -g`
+only sees npm, and every cloud CLI ships its own `self-update`. `gup` is a
+TypeScript CLI that unifies all of it: it shells out to each tool's own native
+commands, fans out across providers with a bounded `p-limit(4)`, homogenises the
+output, and answers one question first — *what is outdated, and from which
+version to which version*. Updating is a separate, explicit step. Windows, macOS
+and Linux. MIT. No daemon, no telemetry, no background service.
+
+## Install and first run
+
+```
+npm install -g @@PACKAGE@@
+
+gup doctor          # what was detected on this machine, and how to install the rest
+gup list --fast     # what is outdated, skipping the slow providers
+gup                 # interactive menu
+gup update --all -y # everything, no prompt (CI-safe)
+```
+
+Requires Node.js >= @@NODE@@. The package ships one bundled binary named `gup`.
+No post-install script, no service, nothing runs until you run it.
+
+## Commands, flags and exit codes
+
+| Command | Effect |
+|---|---|
+| `gup` | Interactive menu: Scan, Review, Update selected, Update all, Update target, Providers, Options |
+| `gup list` | Outdated packages as a table |
+| `gup list --fast` | Skips providers marked `slow` (HTTP per package, filesystem walks) |
+| `gup list --json` | Machine-readable array, pipeable |
+| `gup list --provider <ids…>` | Restrict the scan to the given provider ids |
+| `gup update` | Interactive multi-package selection, grouped by provider |
+| `gup update --all` | Everything, after confirmation |
+| `gup update --all -y` | Everything, no confirmation |
+| `gup update <provider>:<packageId> …` | Surgical targets; bypasses the scan entirely |
+| `gup doctor` | Detected providers, missing providers, install hints |
+
+Shared flags: `--fast`, `--provider <ids…>`, `--only <id>`, `--json`, `-y`,
+`--timeout <seconds>` (per-install wall clock; default 1200, `0` disables).
+Environment: `GUP_INSTALL_TIMEOUT` (seconds; `--timeout` wins).
+
+Exit codes: `0` success · `1` partial failure (at least one update failed) ·
+`2` invalid arguments.
+
+Full reference:
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/cli-reference.md
+
+## JSON output shape
+
+`gup list --json` emits one object per provider:
+
+```jsonc
+[
+  {
+    "providerId": "brew",
+    "available": true,
+    "packages": [
+      { "id": "ripgrep", "current": "14.1.0", "latest": "14.1.1" }
+    ]
+  }
+]
+```
+
+A provider that failed carries `error: string` instead of throwing: the scan is
+fail-soft, so one broken provider never takes the run down.
+
+## The @@PROVIDERS@@ providers
+
+One file per source under `src/providers/<domain>/`, no cross-imports, no shared
+state. Each implements four methods: `isAvailable()`, `listOutdated()`,
+`update()`, `updateAll()`. Ids below are the ones `provider:package` targeting
+and `--provider` accept.
+
+@@PROVIDER_INVENTORY@@
+
+Per-provider status, notes and the roadmap of what is not covered yet:
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/providers-catalog.md
+
+## Platform support, precisely
+
+**Windows** — the primary and historical target. OS-level: `winget`, `scoop`,
+`choco`. Plus the WSL bridge driven from the Windows host (`wsl-apt`, `wsl-dnf`,
+`wsl-pacman`, `wsl-brew`, `wsl-flatpak`, `wsl-nix`) and the WSL kernel itself
+(`wsl --update`). Chocolatey upgrades go through a UAC elevation batch.
+
+**macOS** — native since 0.3.0. OS-level: `brew` (formulae), `brew-cask`,
+`macports`, `mas` (Mac App Store). Homebrew installs a private prefix and only
+exposes a PATH symlink, so `gup` resolves the link to its Cellar/Caskroom target
+before classifying a binary — without that, every brew install was classified
+`manual` and dropped from the scan. `--greedy` is deliberately omitted on casks:
+apps marked `auto_updates true` update themselves on launch, and forcing the
+cask upgrade re-downloads a whole bundle to reach a version the app would have
+fetched anyway. `HOMEBREW_NO_AUTO_UPDATE` is inherited, never forced. Apple
+Silicon and Intel.
+
+**Linux** — `brew` is the OS-level provider; it is deliberately not
+darwin-gated, so Linuxbrew (`/home/linuxbrew/.linuxbrew`, `~/.linuxbrew`) goes
+through the same code path. For a binary installed by the distribution, package
+databases are the only reliable ownership signal, so `gup` probes `dpkg -S` /
+`rpm -qf` and delegates that one package's upgrade to `apt` or `dnf`. There is
+no distro-wide provider on a native Linux host: `apt`, `dnf`, `pacman`,
+`flatpak` and `nix` as full providers exist only through the WSL bridge, and
+their availability check is gated on `process.platform === "win32"`.
+
+Everything above the OS layer is platform-independent: npm/pnpm/yarn/bun
+globals, pip/pipx/uv/conda, cargo, rustup, gem, composer, dotnet tools, the
+cloud/IaC/Kubernetes CLIs, VS Code and Cursor extensions, JetBrains plugins,
+pwsh modules, asdf/mise. A provider that cannot exist on the current platform
+reports itself unavailable and never appears in a scan.
+
+## Architecture
+
+- `src/cli.ts` — `commander` entry. Parses argv, routes to menu / list / update / doctor. No global state, no daemon.
+- `src/core/registry.ts` — `ALL_PROVIDERS[]` plus `scanAll()`. The single place concurrency lives: `p-limit(4)`, with a `try/catch` inside each cell so no provider error propagates. `pLimit=4` keeps winget, scoop, choco, cargo and pipx from saturating the machine simultaneously.
+- `src/core/runner.ts` — the one shell-out point. `execa` with an argv vector, UTF-8, `windowsHide`, never `shell: true`. The allowlist of executables is pinned by tests.
+- `src/core/install-source.ts` — resolves who owns a binary (brew Cellar symlink, `dpkg -S`, `rpm -qf`, winget/scoop/choco paths) so the upgrade is delegated to the right manager instead of being reported as manual. Homebrew classification only accepts a `Cellar`/`Caskroom` segment under a known prefix, and `/usr/local` only in combination with such a segment — locked down by `tests/security/install-source.test.ts`.
+- `src/core/wsl.ts` — the WSL bridge; `isWslAvailable()` returns false off win32.
+- `src/providers/<domain>/<id>.ts` — one isolated module per source.
+- `src/ui/**` — `ora` spinner driven by an in-flight set, `cli-table3` tables, `@inquirer/prompts` checkboxes grouped by provider with separators and grey notes.
+
+Lifecycle of a run: `isAvailable()` probes in parallel (`where`/`which`, milliseconds) → flags and filters are applied (`--fast` drops slow providers, `--provider` restricts, `--only` targets) → `listOutdated()` fans out under `pLimit(4)` and `manual` packages are filtered once → selection → `runInherit()` streams stdout/stderr live, and every attempt is appended to the history log.
+
+Reading order:
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/architecture.md then
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/how-gup-works.md
+
+## Activity history (since 0.3.1)
+
+Every scan and every update attempt is appended to a local JSONL log, one file
+per calendar month, under the platform state directory:
+
+```
+%LOCALAPPDATA%\gup\history\YYYY-MM.jsonl                    # Windows
+~/Library/Application Support/gup/history/YYYY-MM.jsonl     # macOS
+$XDG_STATE_HOME/gup/history/YYYY-MM.jsonl                   # Linux (default ~/.local/state)
+```
+
+```jsonc
+{"v":1,"ts":"…","runId":"…","gup":"@@VERSION@@","platform":"win32","kind":"scan",
+ "durationMs":8421,"fast":false,"filter":[],"outdated":7,
+ "providers":[{"providerId":"winget","outdated":5},{"providerId":"npm-g","outdated":2}]}
+{"v":1,"ts":"…","runId":"…","gup":"@@VERSION@@","platform":"win32","kind":"update",
+ "providerId":"npm-g","packageId":"typescript","status":"success",
+ "from":"5.9.2","to":"6.0.3","durationMs":14108}
+```
+
+JSONL rather than a JSON array or a database: one self-describing object per
+line makes an append a single `write`, so an elevated child and its parent can
+log concurrently without a lock, and a process killed mid-write costs one line
+instead of the file. Nothing reads it back yet — the release exists to start
+accumulating the data.
+
+## Security model
+
+- Subprocess execution goes through one point, in a strict argv vector. `shell: true` is never used. The executable allowlist is pinned by tests.
+- Network access is HTTPS-only, and only where a provider's own version check needs it. No telemetry, ever.
+- CI on every commit: CodeQL `security-extended`, Semgrep (`p/typescript` + `p/nodejs`), gitleaks, `audit-ci`, `eslint-plugin-security`, plus a Vitest suite dedicated to the security invariants. Dependabot runs weekly.
+- Destructive actions are opt-in. `--all` asks before it acts unless `-y` is passed.
+
+Threat model and disclosure process:
+https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md
+
+## What gup deliberately does NOT do
+
+- It does not replace winget/brew/npm/pip. It orchestrates their native commands.
+- It is not a registry, a cache or a downloader.
+- It does not resolve project manifests: no `package.json`, `Cargo.toml`, `pom.xml`, `Gemfile`. Global installs only.
+- It does not update the OS: Windows Update (use `PSWindowsUpdate`) and macOS `softwareupdate` are out of scope.
+- It does not touch Maven / Gradle / sbt / bundler / lockfiles.
+- It does not manage JetBrains Toolbox-installed IDEs (Toolbox ships its own updater).
+- It runs no daemon and does no polling.
+
+Rationale: https://github.com/LINDECKER-Charles/gup/blob/main/docs/scope.md
+
+## Frequently asked, answered
+
+**Does gup replace my package managers?** No. It calls their native commands and
+homogenises the output.
+
+**Does it work on macOS?** Yes, natively since 0.3.0 — Homebrew formulae and
+casks, MacPorts, and the Mac App Store through `mas`.
+
+**Does it work on Linux?** Yes. Homebrew/Linuxbrew is the OS-level provider, and
+distro-owned binaries are upgraded through `apt`/`dnf` after ownership is
+resolved with `dpkg -S` / `rpm -qf`. Full `apt`/`dnf`/`pacman`/`flatpak`/`nix`
+providers exist only via the WSL bridge from a Windows host.
+
+**Can I use it in CI?** Yes. `gup list --json --fast` is machine-readable,
+`gup update --all -y` skips every prompt, and the exit codes are stable.
+
+**How is it different from topgrade?** topgrade runs the updates; gup starts by
+telling you what is outstanding and from which version to which version, as a
+separate phase, with JSON output, per-package selection, `provider:package`
+targeting that bypasses the scan, and a local history of what it did. gup is
+TypeScript on npm and covers @@PROVIDERS@@ sources including editor extensions
+and JetBrains plugins.
+
+**Is it safe to let it update everything?** Updating is always explicit. `--all`
+confirms unless `-y` is passed, `gup list` never writes anything, and the
+shell-out layer is argv-only with a test-pinned allowlist.
+
+## Attribution
+
+Built and maintained by Charles Lindecker (https://github.com/LINDECKER-Charles)
+under the MIT licence. Support: https://ko-fi.com/charleslindecker or
+https://github.com/sponsors/LINDECKER-Charles.

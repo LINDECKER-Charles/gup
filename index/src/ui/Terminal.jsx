@@ -1,65 +1,95 @@
-// Animated terminal — renders one scene from data/scenes.js.
-import { useState } from "react";
-import { Play } from "../lib/icons.jsx";
-import { useTerminalAnimation } from "../lib/hooks.jsx";
-import { scenes } from "../data/scenes.js";
+/**
+ * The terminal demo: a tab strip over a replaying pane of real `gup` output.
+ *
+ * Follows the ARIA tabs pattern: arrow keys move between tabs, only the active
+ * tab is in the tab order, and the output pane is the labelled `tabpanel` —
+ * focusable, since it holds no focusable children of its own. It is
+ * deliberately NOT a live region: the reveal types the scene out one line per
+ * 95ms, and announcing each line would turn a decorative replay into a wall of
+ * speech. The complete text is present in the DOM from the first render.
+ */
+import { useRef, useState } from "react";
+import { scenes, SCENE_KEYS } from "../data/scenes.js";
+import { useSceneReveal } from "../lib/hooks.jsx";
 
-function TerminalTabs({ scenes, activeKey, onSelect }) {
+function Tabs({ active, onSelect }) {
+  const refs = useRef([]);
+
+  // Arrow keys cycle tabs, per the ARIA tabs pattern.
+  const onKeyDown = (event) => {
+    const delta = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+    if (!delta) return;
+    event.preventDefault();
+    const i = SCENE_KEYS.indexOf(active);
+    const next = SCENE_KEYS[(i + delta + SCENE_KEYS.length) % SCENE_KEYS.length];
+    onSelect(next);
+    refs.current[SCENE_KEYS.indexOf(next)]?.focus();
+  };
+
   return (
-    <div className="tabs">
-      {Object.entries(scenes).map(([key, s]) => (
+    <div className="term-tabs" role="tablist" aria-label="Exemples de sortie gup">
+      {SCENE_KEYS.map((key, i) => (
         <button
           key={key}
-          className={`tab ${activeKey === key ? "active" : ""}`}
+          type="button"
+          role="tab"
+          id={`term-tab-${key}`}
+          className="term-tab"
+          aria-selected={key === active}
+          aria-controls="term-panel"
+          tabIndex={key === active ? 0 : -1}
+          ref={(node) => {
+            refs.current[i] = node;
+          }}
           onClick={() => onSelect(key)}
+          onKeyDown={onKeyDown}
         >
-          {s.tab}
+          {scenes[key].label}
         </button>
       ))}
     </div>
   );
 }
 
-function TerminalLine({ line }) {
-  const cls = `term-line ${line.c || ""}`.trim();
-  if (line.segs) {
-    return (
-      <div className={cls}>
-        {line.segs.map((s, j) => (
-          <span key={j} className={s.c || ""}>{s.t}</span>
-        ))}
-      </div>
-    );
-  }
-  return <div className={cls}>{line.t || " "}</div>;
-}
-
-function ReplayBar({ onReplay }) {
+function Line({ segments }) {
   return (
-    <div className="term-footer">
-      <button className="term-replay" onClick={onReplay}>
-        <Play size={10} /> rejouer
-      </button>
-      <span className="term-c-dim term-hint">ou choisis un autre mode ↗</span>
+    <div className="term-line">
+      {segments.map((s, i) => (
+        <span key={i} className={`${s.c ?? "t-fg"}${s.b ? " t-bold" : ""}`}>
+          {s.t}
+        </span>
+      ))}
     </div>
   );
 }
 
-export function Terminal({ initialScene = "menu" }) {
-  const [sceneKey, setSceneKey] = useState(initialScene);
-  const current = scenes[sceneKey];
-  const { lines, isLastFrame, replay } = useTerminalAnimation(current.frames);
+export function Terminal({ initial = "menu" }) {
+  const [key, setKey] = useState(initial);
+  const scene = scenes[key];
+  const { visible } = useSceneReveal(scene.lines);
 
   return (
-    <div className="term">
+    <div className="term" data-reveal="7" data-cam="1">
+      <span className="term-sweep" aria-hidden="true" />
       <div className="term-head">
-        <div className="dots"><span /><span /><span /></div>
-        <span className="title">~ · {current.title}</span>
-        <TerminalTabs scenes={scenes} activeKey={sceneKey} onSelect={setSceneKey} />
+        <span className="term-rec-dot" aria-hidden="true" />
+        <span className="term-rec">REC</span>
+        <span className="term-title">~ · {scene.title}</span>
+        <Tabs active={key} onSelect={setKey} />
       </div>
-      <div className="term-body term-bg-pattern">
-        {lines.map((ln, i) => <TerminalLine key={i} line={ln} />)}
-        {isLastFrame && <ReplayBar onReplay={replay} />}
+      <div
+        className="term-body"
+        id="term-panel"
+        role="tabpanel"
+        aria-labelledby={`term-tab-${key}`}
+        tabIndex={0}
+      >
+        {visible.map((segments, i) => (
+          <Line key={i} segments={segments} />
+        ))}
+        <div className="term-caret" aria-hidden="true">
+          <span />
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,179 @@
+/* Buttons, chips, cards, and the scroll-reveal contract. */
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  border-radius: var(--radius-md);
+  font-family: var(--mono);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.08s ease;
+  overflow: hidden;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn > * {
+  position: relative;
+}
+
+.btn--primary {
+  padding: 16px 28px;
+  font-size: 14px;
+  background: var(--violet);
+  color: var(--fg-bright);
+  box-shadow: 0 14px 44px -10px oklch(0.68 0.2 275 / 0.75);
+}
+.btn--primary:hover {
+  background: var(--violet-lit);
+  color: var(--fg-bright);
+}
+
+.btn--ghost {
+  padding: 16px 22px;
+  font-size: 13.5px;
+  border-color: oklch(0.28 0.012 265);
+  background: var(--bg-deep);
+  color: oklch(0.88 0.006 265);
+}
+.btn--ghost:hover {
+  border-color: var(--violet);
+  color: var(--fg-bright);
+}
+
+.btn--compact {
+  padding: 14px 24px;
+  font-size: 13px;
+  background: var(--violet);
+  color: var(--fg-bright);
+  box-shadow: 0 12px 36px -12px oklch(0.68 0.2 275 / 0.8);
+}
+.btn--compact:hover {
+  background: var(--violet-lit);
+  color: var(--fg-bright);
+}
+
+.btn--amber {
+  padding: 14px 24px;
+  font-size: 13px;
+  background: var(--amber);
+  color: var(--amber-ink);
+  flex-shrink: 0;
+}
+.btn--amber:hover {
+  background: var(--amber-lit);
+  color: var(--amber-ink);
+}
+
+/* Light sweep that reads as "this button is live". Purely decorative. */
+.btn-sheen {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(1 0 0 / 0.35),
+    transparent
+  );
+  animation: gTrace 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ---------- Chips / tags ---------- */
+
+.chip {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: oklch(0.11 0.008 265);
+  color: oklch(0.86 0.006 265);
+  white-space: nowrap;
+}
+.chip--quiet {
+  font-size: 11.5px;
+  padding: 6px 11px;
+  color: var(--fg-soft);
+  border-color: var(--line-soft);
+}
+.chip--badge {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  color: oklch(0.86 0.006 265);
+  background: var(--line);
+}
+.chip--badge-new {
+  color: var(--amber-ink);
+  background: var(--amber);
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* Hover lift shared by every tiltable card. The pointer-following glow is
+   painted through --tilt-x / --tilt-y, set by the motion layer. */
+.card--tilt {
+  transition:
+    transform 0.3s var(--ease-out),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.card--tilt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    260px 260px at var(--tilt-x, 50%) var(--tilt-y, 50%),
+    oklch(0.68 0.2 275 / 0.12),
+    transparent 70%
+  );
+}
+.card--tilt[data-tilt-active="1"]::after {
+  opacity: 1;
+}
+.card--tilt:hover {
+  transform: translateY(-6px);
+  border-color: oklch(0.68 0.2 275 / 0.6);
+  box-shadow: 0 26px 60px -26px oklch(0.68 0.2 275 / 0.7);
+}
+
+/* ---------- Reveal-on-scroll ---------- */
+
+/* Applied by the motion layer, not by default: without JS (and for crawlers)
+   the content must stay visible. */
+[data-reveal][data-reveal-armed="1"] {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 0.8s var(--ease-out),
+    transform 0.8s var(--ease-out);
+}
+[data-reveal][data-reveal-shown="1"] {
+  opacity: 1;
+  transform: none;
+}
