@@ -5,10 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <!--
-    Canonical URL. The site is served from GitHub Pages on the LINDECKER-Charles/gup repo.
-    If you change the deploy target (custom domain, docs folder, gh-pages branch), update
-    these absolute URLs everywhere they appear: <link rel="canonical">, OG/Twitter,
-    JSON-LD, robots.txt and sitemap.xml.
+    BUILD-TIME FACTS — the double-at placeholders below (PROVIDERS, VERSION,
+    NODE, MODIFIED) are substituted by the `htmlFacts` plugin in
+    vite.config.js, in dev and in build alike, from src/data/facts.js (itself
+    generated from the repo root package.json and src/core/registry.ts) plus
+    the last git commit date for index/. An unresolved one fails the build.
+
+    They exist because this head previously hardcoded "v0.1.0", "~130 sources"
+    and "Node >= 20" while the CLI was at 0.3.1, 134 providers and Node 22 —
+    forty-odd hand-maintained copies of three facts, every stale one of them a
+    wrong answer served to Google and to AI answer engines.
+  -->
+
+  <!--
+    Canonical URL. The site is served from GitHub Pages on the
+    LINDECKER-Charles/gup repo. If you change the deploy target (custom domain,
+    docs folder, gh-pages branch), these absolute URLs must all move together:
+    <link rel="canonical">, the hreflang pair, OG/Twitter, every @id and url in
+    the JSON-LD @graph below, src/data/site.js, static/robots.txt,
+    static/sitemap.xml, static/llms.txt and static/public/site.webmanifest.
   -->
   <link rel="canonical" href="https://lindecker-charles.github.io/gup/" />
   <link rel="alternate" hreflang="fr" href="https://lindecker-charles.github.io/gup/" />
@@ -20,264 +35,289 @@
   <meta name="bingbot" content="index, follow" />
 
   <!-- Google Search Console ownership verification (URL-prefix property:
-       https://lindecker-charles.github.io/gup/). Do NOT remove — required for
-       the property to stay verified. -->
+       https://lindecker-charles.github.io/gup/). Do NOT remove — without it the
+       property unverifies and the whole measurement loop (Performance, Index
+       Coverage, sitemap submission, rich-result reports) goes dark. -->
   <meta name="google-site-verification" content="YsysVCbPPuBg9QDIPs77j60iMD7xcG4OUQ3yRIh6l_E" />
 
   <!--
-    Primary SEO. Keep title ≤ 60 chars (Google SERP cutoff ≈ 600px) and
-    description ≤ 160 chars (mobile snippet cap). Differentiator stays
-    in the title so it survives truncation; long-tail keywords live in
-    the body, JSON-LD `keywords`, and llms.txt.
+    Primary SEO. Title ≤ 60 chars (Google SERP cutoff ≈ 600px) and description
+    ≤ 160 (mobile snippet cap). The head terms people actually type — the
+    package-manager names — are front-loaded so they survive truncation;
+    long-tail keywords live in the body copy, in the JSON-LD `keywords`, and in
+    llms.txt.
   -->
-  <title>gup — winget, npm, pip, helm, cargo à jour en 1 commande</title>
+  <title>gup — winget, brew, npm, pip, helm à jour en 1 commande</title>
   <meta
     name="description"
-    content="CLI TypeScript open source qui scanne et met à jour ~130 sources : winget, npm, pip, helm, cargo, kubectl. Scan parallèle, fail-soft, JSON, mode --fast."
+    content="CLI open source qui scanne et met à jour @@PROVIDERS@@ sources : winget, scoop, brew, npm, pip, cargo, helm, kubectl. Scan parallèle, fail-soft, JSON, mode --fast."
   />
   <meta name="author" content="Charles Lindecker" />
   <meta name="application-name" content="gup" />
-  <meta name="theme-color" content="#1c1a18" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#1c1a18" />
+  <!-- Matches --bg, oklch(0.13 0.008 265), in src/styles/tokens.css. -->
+  <meta name="theme-color" content="#06070a" />
   <meta name="color-scheme" content="dark" />
-  <!-- @@BUILD_DATE@@ -->
+
+  <!-- Installable-web-app hints, matching the standalone display mode declared
+       in public/site.webmanifest. -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="gup" />
+
+  <!-- Last content change, taken from the last git commit touching index/ —
+       not from the deploy clock. A lastmod that always says "today" is a
+       freshness signal engines learn to discount. -->
+  <meta property="article:modified_time" content="@@MODIFIED@@" />
 
   <!--
-    Open Graph. The hero screenshot (1600x900) is not committed yet — once
-    it lands at /gup/screenshots/01-v3-hero.png, promote it to the primary
-    og:image and switch the Twitter card back to `summary_large_image`.
-    Until then the 512x512 logo is the primary image so socials render a
-    clean square preview instead of a 404 fallback.
+    Open Graph / Twitter. og-image.png is a real 1200x630 card rendered from
+    this design by scripts/og-image.mjs (`npm run og`) — regenerate it whenever
+    the brand or the headline changes. It replaces the 512x512 logo that stood
+    in while no social image existed, and is why the Twitter card is
+    summary_large_image rather than summary.
   -->
   <meta property="og:site_name" content="gup — Global Updater" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="fr_FR" />
   <meta property="og:url" content="https://lindecker-charles.github.io/gup/" />
-  <meta property="og:title" content="gup — une commande, ~130 sources à jour" />
+  <meta property="og:title" content="gup — une commande, @@PROVIDERS@@ sources à jour" />
   <meta
     property="og:description"
-    content="CLI TypeScript open source qui orchestre winget, npm, pip, helm, cargo, kubectl et ~125 autres package managers derrière une seule interface — scan parallèle, fail-soft, sortie JSON, ciblage chirurgical."
+    content="Un seul binaire scanne winget, scoop, chocolatey, Homebrew, MacPorts, npm, pip, cargo, helm, kubectl, VS Code, JetBrains — @@PROVIDERS@@ sources au total, en parallèle, fail-soft, avec une sortie JSON."
   />
-  <meta property="og:image" content="https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png" />
-  <meta property="og:image:secure_url" content="https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png" />
+  <meta property="og:image" content="https://lindecker-charles.github.io/gup/public/og-image.png" />
+  <meta property="og:image:secure_url" content="https://lindecker-charles.github.io/gup/public/og-image.png" />
   <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:width" content="512" />
-  <meta property="og:image:height" content="512" />
-  <meta property="og:image:alt" content="Logo gup — Global Updater" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="gup — une commande, @@PROVIDERS@@ sources à jour. CLI open source pour winget, Homebrew, npm, pip, cargo et helm." />
 
-  <!-- Twitter Card. `summary` (square) until the 1600x900 hero screenshot
-       is committed; switch back to `summary_large_image` then. -->
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="gup — une commande, ~130 sources à jour" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="gup — une commande, @@PROVIDERS@@ sources à jour" />
   <meta
     name="twitter:description"
-    content="CLI TypeScript qui orchestre winget, npm, pip, helm, cargo et ~125 autres package managers derrière une seule interface."
+    content="CLI TypeScript qui orchestre winget, Homebrew, npm, pip, cargo, helm et le reste des @@PROVIDERS@@ sources derrière une seule interface."
   />
   <meta name="twitter:url" content="https://lindecker-charles.github.io/gup/" />
-  <meta name="twitter:image" content="https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png" />
-  <meta name="twitter:image:alt" content="Logo gup — Global Updater" />
+  <meta name="twitter:image" content="https://lindecker-charles.github.io/gup/public/og-image.png" />
+  <meta name="twitter:image:alt" content="gup — une commande, @@PROVIDERS@@ sources à jour." />
   <meta name="twitter:creator" content="@LINDECKERCharles" />
   <meta name="twitter:site" content="@LINDECKERCharles" />
 
-  <!-- Favicons / app icons (rooted paths — Vite rewrites them through the configured `base`). -->
+  <!-- Favicons / app icons (rooted paths — Vite rewrites them through `base`). -->
   <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
   <link rel="icon" type="image/png" sizes="96x96" href="/public/favicon-96x96.png" />
   <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png" />
   <link rel="manifest" href="/public/site.webmanifest" />
-  <meta name="apple-mobile-web-app-title" content="gup" />
-  <meta name="msapplication-TileColor" content="#1c1a18" />
+  <meta name="msapplication-TileColor" content="#06070a" />
   <meta name="msapplication-TileImage" content="https://lindecker-charles.github.io/gup/public/web-app-manifest-192x192.png" />
 
   <!--
-    Performance hints. Fonts are self-hosted (see /gup/fonts/*.woff2 + the
-    @font-face block in styles.css). Preloading the two variable woff2 files
-    used in the initial paint removes them from the critical-path waterfall
-    behind the bundled CSS request and eliminates the previous 770ms Google
-    Fonts render-block + ~940ms LCP critical-path edge.
+    All three faces are self-hosted (see src/styles/tokens.css) and preloaded:
+    the previous Google Fonts <link> cost a 770ms render-block and a ~940ms LCP
+    critical-path edge. Anton is the display face and paints the H1 — the LCP
+    element — so it is preloaded first. Do NOT reintroduce a font CDN.
   -->
-  <link
-    rel="preload"
-    href="/gup/fonts/geist-latin-wght-normal.woff2"
-    as="font"
-    type="font/woff2"
-    crossorigin="anonymous"
-  />
-  <link
-    rel="preload"
-    href="/gup/fonts/geist-mono-latin-wght-normal.woff2"
-    as="font"
-    type="font/woff2"
-    crossorigin="anonymous"
-  />
+  <link rel="preload" href="/gup/fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+  <link rel="preload" href="/gup/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+  <link rel="preload" href="/gup/fonts/geist-mono-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
 
   <!-- ============================================================
-       Structured data (schema.org JSON-LD)
-       Blocks: SoftwareApplication (the CLI), WebSite (search action),
-       Organization (project entity), FAQPage (rich result eligible).
-       Multiple @type entries help Google, Bing and AI engines pick
-       the right facet.
+       Structured data — ONE @graph rather than several disconnected
+       top-level nodes.
+
+       The previous markup emitted SoftwareApplication, WebSite and
+       Organization separately with no @id, so nothing tied them to the same
+       entity, and they contradicted each other (WebSite.publisher was a
+       Person while a sibling Organization claimed to be the site). Now every
+       node has an @id and they reference each other, so an engine resolves one
+       entity described from five angles. The Organization node is gone on
+       purpose: a solo MIT project is honestly a Person, and inventing an
+       organisation weakens entity resolution rather than strengthening it.
+
+       Deliberately absent:
+         - BreadcrumbList — every item URL was a fragment of /gup/, and Google
+           strips fragments before deduplication, so it resolved to one page
+           repeated six times and surfaced as "Page with duplicate URL" in
+           Search Console. Re-add only if real sub-pages appear.
+         - HowTo — Google deprecated HowTo rich results in Aug 2023
+           (ineligible on desktop and mobile). Pure payload.
+         - SearchAction / sitelinks searchbox — the page has no search input,
+           so declaring one described an action that did not work.
        ============================================================ -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "gup",
-    "alternateName": ["Global Updater", "gup CLI", "@charles_lindecker/gup"],
-    "url": "https://lindecker-charles.github.io/gup/",
-    "downloadUrl": "https://www.npmjs.com/package/@charles_lindecker/gup",
-    "installUrl": "https://www.npmjs.com/package/@charles_lindecker/gup",
-    "applicationCategory": "DeveloperApplication",
-    "applicationSubCategory": "Package Manager",
-    "operatingSystem": "Windows, Linux, macOS, WSL",
-    "softwareVersion": "0.1.0",
-    "softwareRequirements": "Node.js >= 20",
-    "programmingLanguage": "TypeScript",
-    "license": "https://spdx.org/licenses/MIT.html",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "description": "CLI qui orchestre winget, npm, pip, helm, cargo, kubectl, terraform, dotnet tools, vscode extensions, JetBrains, pwsh modules et ~125 autres gestionnaires de paquets derrière une seule interface unifiée — scan parallèle, fail-soft, mode --fast, sortie JSON, ciblage chirurgical provider:package.",
-    "image": "https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png",
-    "author": {
-      "@type": "Person",
-      "name": "Charles Lindecker",
-      "url": "https://github.com/LINDECKER-Charles",
-      "sameAs": [
-        "https://github.com/LINDECKER-Charles",
-        "https://www.npmjs.com/~charles_lindecker",
-        "https://ko-fi.com/charleslindecker"
-      ]
-    },
-    "maintainer": {
-      "@type": "Person",
-      "name": "Charles Lindecker",
-      "url": "https://github.com/LINDECKER-Charles"
-    },
-    "codeRepository": "https://github.com/LINDECKER-Charles/gup",
-    "issueTracker": "https://github.com/LINDECKER-Charles/gup/issues",
-    "discussionUrl": "https://github.com/LINDECKER-Charles/gup/discussions",
-    "keywords": "cli, updater, package-manager, global-updater, winget, scoop, chocolatey, npm, pnpm, yarn, pip, pipx, cargo, helm, kubectl, terraform, dotnet tools, pwsh modules, vscode extensions, jetbrains, windows, wsl, typescript, devops",
-    "featureList": [
-      "Scan parallèle (pLimit=4) de ~130 sources d'installation",
-      "Sortie JSON machine-readable pour CI/CD",
-      "Menu interactif (@inquirer/prompts) avec sélection multiple",
-      "Mode --fast qui skip les providers lents (HTTP par paquet)",
-      "Ciblage chirurgical provider:packageId — bypass complet du scan",
-      "Fail-soft : un provider défaillant n'affecte pas les autres"
-    ]
-  }
-  </script>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "gup — Global Updater",
-    "alternateName": "gup",
-    "url": "https://lindecker-charles.github.io/gup/",
-    "inLanguage": "fr-FR",
-    "description": "Documentation et site officiel de gup, la CLI TypeScript qui unifie winget, npm, pip, helm, cargo, kubectl et ~125 autres gestionnaires de paquets.",
-    "publisher": {
-      "@type": "Person",
-      "name": "Charles Lindecker",
-      "url": "https://github.com/LINDECKER-Charles"
-    },
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": "https://lindecker-charles.github.io/gup/#providers?q={search_term_string}"
-      },
-      "query-input": "required name=search_term_string"
-    }
-  }
-  </script>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "gup — Global Updater",
-    "url": "https://lindecker-charles.github.io/gup/",
-    "logo": "https://lindecker-charles.github.io/gup/public/web-app-manifest-512x512.png",
-    "founder": {
-      "@type": "Person",
-      "name": "Charles Lindecker",
-      "url": "https://github.com/LINDECKER-Charles"
-    },
-    "sameAs": [
-      "https://github.com/LINDECKER-Charles/gup",
-      "https://www.npmjs.com/package/@charles_lindecker/gup",
-      "https://ko-fi.com/charleslindecker"
-    ]
-  }
-  </script>
-
-  <!--
-    BreadcrumbList removed: every item URL was a fragment of /gup/. Google
-    strips fragments before deduplication, so the list resolved to a single
-    page repeated 6 times — flagged as "page with duplicate URL" in Search
-    Console with no rich-result benefit. The visible <nav> already covers
-    in-page navigation.
-  -->
-
-  <!--
-    HowTo schema removed: Google deprecated HowTo rich results in Aug 2023
-    (no longer eligible on desktop or mobile). The install steps live in
-    the visible Install section and in llms.txt for AI engines instead.
-  -->
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
+    "@graph": [
       {
-        "@type": "Question",
-        "name": "gup remplace-t-il winget, npm ou les autres package managers ?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Non. gup orchestre les commandes natives de chaque outil (winget upgrade, npm update -g, pip list --outdated, etc.) derrière une seule interface. Aucun protocole inventé, aucun cache de versions, aucun téléchargement direct — il shell-out, fan-out, homogénéise les sorties."
+        "@type": "Person",
+        "@id": "https://lindecker-charles.github.io/gup/#person",
+        "name": "Charles Lindecker",
+        "url": "https://github.com/LINDECKER-Charles",
+        "sameAs": [
+          "https://github.com/LINDECKER-Charles",
+          "https://www.npmjs.com/~charles_lindecker",
+          "https://ko-fi.com/charleslindecker"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://lindecker-charles.github.io/gup/#website",
+        "url": "https://lindecker-charles.github.io/gup/",
+        "name": "gup — Global Updater",
+        "alternateName": "gup",
+        "description": "Site officiel de gup, la CLI TypeScript qui unifie winget, scoop, chocolatey, Homebrew, npm, pip, cargo, helm, kubectl et le reste des @@PROVIDERS@@ sources d'installation qu'elle couvre.",
+        "inLanguage": "fr-FR",
+        "publisher": { "@id": "https://lindecker-charles.github.io/gup/#person" },
+        "license": "https://spdx.org/licenses/MIT.html"
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://lindecker-charles.github.io/gup/#webpage",
+        "url": "https://lindecker-charles.github.io/gup/",
+        "name": "gup — winget, brew, npm, pip, helm à jour en 1 commande",
+        "isPartOf": { "@id": "https://lindecker-charles.github.io/gup/#website" },
+        "about": { "@id": "https://lindecker-charles.github.io/gup/#software" },
+        "mainEntity": { "@id": "https://lindecker-charles.github.io/gup/#software" },
+        "inLanguage": "fr-FR",
+        "datePublished": "2026-05-15",
+        "dateModified": "@@MODIFIED@@",
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "@id": "https://lindecker-charles.github.io/gup/#primaryimage",
+          "url": "https://lindecker-charles.github.io/gup/public/og-image.png",
+          "contentUrl": "https://lindecker-charles.github.io/gup/public/og-image.png",
+          "width": 1200,
+          "height": 630,
+          "caption": "gup — une commande, @@PROVIDERS@@ sources à jour"
         }
       },
       {
-        "@type": "Question",
-        "name": "Quels systèmes d'exploitation sont supportés ?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Cible principale Windows + WSL. macOS et Linux fonctionnent pour la sous-partie pertinente du registry (npm, pip, cargo, helm, kubectl, etc.). Node.js >= 20 requis."
-        }
+        "@type": "SoftwareApplication",
+        "@id": "https://lindecker-charles.github.io/gup/#software",
+        "name": "gup",
+        "alternateName": ["Global Updater", "gup CLI", "@charles_lindecker/gup"],
+        "url": "https://lindecker-charles.github.io/gup/",
+        "downloadUrl": "https://www.npmjs.com/package/@charles_lindecker/gup",
+        "installUrl": "https://www.npmjs.com/package/@charles_lindecker/gup",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Package Manager",
+        "operatingSystem": "Windows, macOS, Linux, WSL",
+        "softwareVersion": "@@VERSION@@",
+        "softwareRequirements": "Node.js >= @@NODE@@",
+        "releaseNotes": "https://github.com/LINDECKER-Charles/gup/tree/main/docs/releases",
+        "softwareHelp": {
+          "@type": "CreativeWork",
+          "url": "https://github.com/LINDECKER-Charles/gup/blob/main/docs/cli-reference.md",
+          "name": "Référence CLI de gup"
+        },
+        "license": "https://spdx.org/licenses/MIT.html",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "description": "CLI qui orchestre winget, scoop, chocolatey, Homebrew (formules et casks), MacPorts, Mac App Store, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, composer, dotnet tools, helm, kubectl, terraform, les extensions VS Code et JetBrains, les modules pwsh et le reste des @@PROVIDERS@@ sources, derrière une seule interface — scan parallèle borné à pLimit(4), fail-soft, mode --fast, sortie JSON, ciblage chirurgical provider:package.",
+        "image": "https://lindecker-charles.github.io/gup/public/og-image.png",
+        "author": { "@id": "https://lindecker-charles.github.io/gup/#person" },
+        "maintainer": { "@id": "https://lindecker-charles.github.io/gup/#person" },
+        "publisher": { "@id": "https://lindecker-charles.github.io/gup/#person" },
+        "mainEntityOfPage": { "@id": "https://lindecker-charles.github.io/gup/#webpage" },
+        "keywords": "cli, updater, package-manager, global-updater, winget, scoop, chocolatey, homebrew, brew, brew cask, macports, mas, mac app store, apt, dnf, npm, pnpm, yarn, bun, pip, pipx, uv, cargo, rustup, gem, composer, dotnet tools, pwsh modules, vscode extensions, jetbrains, helm, kubectl, krew, terraform, pulumi, windows, macos, linux, wsl, typescript, devops, alternative a topgrade",
+        "featureList": [
+          "Scan parallèle borné à pLimit(4) de @@PROVIDERS@@ sources d'installation",
+          "Windows : winget, scoop, chocolatey, et pont WSL vers apt, dnf, pacman, Flatpak, Nix",
+          "macOS en natif : Homebrew, casks, MacPorts, Mac App Store",
+          "Linux : Homebrew/Linuxbrew, avec délégation apt/dnf résolue par dpkg -S et rpm -qf",
+          "Sortie JSON machine-readable pour la CI/CD, exit codes stables",
+          "Menu interactif @inquirer avec sélection multiple groupée par provider",
+          "Mode --fast qui skip les providers lents",
+          "Ciblage chirurgical provider:packageId, sans scan préalable",
+          "Fail-soft : un provider défaillant n'affecte pas les autres",
+          "Historique local en JSONL de chaque scan et de chaque mise à jour"
+        ]
       },
       {
-        "@type": "Question",
-        "name": "Comment installer gup ?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "npm install -g @charles_lindecker/gup, puis gup doctor pour voir les providers détectés. Le binaire s'appelle gup."
-        }
+        "@type": "SoftwareSourceCode",
+        "@id": "https://lindecker-charles.github.io/gup/#source",
+        "name": "gup — code source",
+        "codeRepository": "https://github.com/LINDECKER-Charles/gup",
+        "programmingLanguage": "TypeScript",
+        "runtimePlatform": "Node.js >= @@NODE@@",
+        "license": "https://spdx.org/licenses/MIT.html",
+        "author": { "@id": "https://lindecker-charles.github.io/gup/#person" },
+        "targetProduct": { "@id": "https://lindecker-charles.github.io/gup/#software" }
       },
       {
-        "@type": "Question",
-        "name": "gup est-il utilisable en CI ?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Oui. gup list --json --fast produit une sortie machine-readable. gup update --all -y skip les prompts. Les exit codes sont stables : 0 succès, 1 échec partiel, 2 invalid args."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Quels gestionnaires de paquets gup supporte-t-il ?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "winget, scoop, chocolatey, npm-g, pnpm-g, yarn-g, bun, pip, pipx, uv, cargo, gem, dotnet tools, composer global, helm, kubectl, krew, terraform, pulumi, az extensions, gcloud components, vscode extensions, JetBrains plugins, pwsh modules, gh extensions, symfony-cli, WSL distros — ~130 sources au total, catalogue complet dans docs/providers-catalog.md."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "gup est-il sécurisé ?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Oui. Subprocess en argv-vector strict (jamais shell: true), allowlist pinnée par tests, fetch HTTPS-only, CodeQL security-extended, Semgrep p/typescript+p/nodejs, gitleaks, audit-ci, eslint-plugin-security et Dependabot weekly. Voir SECURITY.md."
-        }
+        "@type": "FAQPage",
+        "@id": "https://lindecker-charles.github.io/gup/#faq",
+        "isPartOf": { "@id": "https://lindecker-charles.github.io/gup/#webpage" },
+        "inLanguage": "fr-FR",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "gup remplace-t-il winget, brew, npm ou les autres package managers ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Non. gup orchestre les commandes natives de chaque outil (winget upgrade, brew outdated, npm update -g, pip list --outdated…) derrière une seule interface. Aucun protocole inventé, aucun cache de versions, aucun téléchargement direct : il shell-out, fan-out et homogénéise les sorties."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "gup fonctionne-t-il sur macOS ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Oui, en natif depuis la version 0.3.0. Quatre providers macOS : Homebrew (formules), Homebrew casks, MacPorts et le Mac App Store via mas. Un binaire installé par brew est reconnu comme tel grâce à la résolution du symlink vers le Cellar, au lieu d'être classé manual et masqué du scan. Apple Silicon et Intel."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Et sur Linux ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Homebrew/Linuxbrew est le provider OS natif sur Linux. Au-dessus, tout ce qui est indépendant de la distribution fonctionne à l'identique : npm, pnpm, yarn, bun, pip, pipx, uv, cargo, gem, composer, helm, kubectl, terraform, VS Code, JetBrains. Pour un binaire installé par la distribution, gup résout son propriétaire avec dpkg -S ou rpm -qf et rend la mise à jour à apt ou dnf plutôt que de la déclarer manuelle. apt, dnf, pacman, Flatpak et Nix comme providers complets existent uniquement via le pont WSL, depuis un hôte Windows."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Comment installer gup ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "npm install -g @charles_lindecker/gup, puis gup doctor pour voir les providers détectés sur la machine. Le binaire s'appelle gup. Node.js >= @@NODE@@ requis."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "gup est-il utilisable en CI ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Oui. gup list --json --fast produit une sortie machine-readable, et gup update --all -y skip les prompts. Les exit codes sont stables : 0 succès, 1 échec partiel, 2 arguments invalides."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Combien de gestionnaires de paquets gup couvre-t-il ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "@@PROVIDERS@@ providers, un fichier par source, sans import croisé ni état partagé : winget, scoop, chocolatey, Homebrew et ses casks, MacPorts, Mac App Store, npm, pnpm, yarn, bun, pip, pipx, uv, conda, cargo, rustup, gem, composer, dotnet tools, helm, kubectl, krew, terraform, pulumi, az, gcloud, extensions VS Code et Cursor, plugins JetBrains, modules pwsh, extensions gh, symfony-cli, distributions WSL. Catalogue complet dans docs/providers-catalog.md."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "gup est-il sécurisé, alors qu'il lance des commandes privilégiées ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Le shell-out passe par un point unique, en argv-vector strict — jamais shell: true — avec une allowlist pinnée par les tests. S'y ajoutent fetch HTTPS-only, CodeQL security-extended, Semgrep p/typescript et p/nodejs, gitleaks, audit-ci, eslint-plugin-security, une suite Vitest dédiée aux invariants de sécurité et Dependabot en hebdomadaire. Détails dans SECURITY.md."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quelle différence avec topgrade ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "topgrade lance les mises à jour ; gup commence par répondre à « qu'est-ce qui est en retard, et de quelle version à quelle version ». Le scan est une phase séparée, avec une sortie JSON, un menu de sélection paquet par paquet, un ciblage provider:package qui bypasse le scan, et un historique JSONL local de ce qui a été fait. gup est écrit en TypeScript, distribué sur npm, et couvre @@PROVIDERS@@ sources dont les extensions d'éditeurs et les plugins JetBrains."
+            }
+          }
+        ]
       }
     ]
   }
@@ -285,91 +325,23 @@
 </head>
 <body>
   <!--
-    Static skeleton inside #root. Crawlers and AI fetchers that don't run JS
-    (or fetch before hydration) still see a complete H1, hero paragraph,
-    primary CTA and install snippet here. React replaces this content on
-    hydration via createRoot().render() from /src/app.jsx.
+    Mount point. Kept EMPTY and on one line in source: scripts/prerender.mjs
+    matches this exact string and replaces it with the server-rendered page, so
+    the deployed HTML carries the real H1, every section, the terminal output
+    and the whole footer link graph before a single byte of JavaScript runs.
+    That is what non-rendering crawlers and AI answer engines read.
   -->
-  <div id="root">
-    <main style="max-width: 880px; margin: 60px auto; padding: 24px; font-family: system-ui, sans-serif; color: #eee; line-height: 1.6;">
-      <h1 style="font-size: 36px; margin: 0 0 16px;">gup — Global Updater CLI</h1>
-      <p style="font-size: 18px; color: #bbb; margin: 0 0 28px;">
-        Une commande pour scanner et mettre à jour ~130 sources d'installation sur votre machine —
-        <strong>winget, scoop, chocolatey, npm-g, pnpm-g, pip, pipx, cargo, helm, kubectl, terraform,
-        dotnet tools, vscode extensions, JetBrains, pwsh modules</strong> et 115+ autres.
-      </p>
+  <div id="root"></div>
 
-      <h2 style="font-size: 22px; margin: 28px 0 12px;">Installation</h2>
-      <pre style="background: #111; padding: 14px 18px; border-radius: 8px; overflow-x: auto;"><code>npm install -g @charles_lindecker/gup
-gup doctor
-gup list --fast
-gup update --all -y</code></pre>
-
-      <h2 style="font-size: 22px; margin: 28px 0 12px;">Pourquoi gup ?</h2>
-      <p>
-        Sur une machine dev, les binaires viennent de dizaines de sources. Aucun outil natif ne les
-        couvre toutes : <code>winget upgrade --all</code> skip silencieusement les pinned, <code>ncu -g</code>
-        ne voit que npm, chaque CLI cloud/IaC/K8s embarque son propre <code>self-update</code>. gup unifie
-        tout derrière une CLI plus un menu interactif. Scan parallèle (pLimit=4), fail-soft, mode <code>--fast</code>,
-        sortie JSON pipeable, ciblage chirurgical <code>provider:package</code>.
-      </p>
-
-      <h2 style="font-size: 22px; margin: 28px 0 12px;">Liens</h2>
-      <ul>
-        <li><a href="https://github.com/LINDECKER-Charles/gup" style="color: #f5a623;">Code source · GitHub</a></li>
-        <li><a href="https://www.npmjs.com/package/@charles_lindecker/gup" style="color: #f5a623;">Package · npm</a></li>
-        <li><a href="https://github.com/LINDECKER-Charles/gup/blob/main/docs/providers-catalog.md" style="color: #f5a623;">Catalogue des ~130 providers</a></li>
-        <li><a href="https://github.com/LINDECKER-Charles/gup/blob/main/docs/architecture.md" style="color: #f5a623;">Architecture interne</a></li>
-        <li><a href="https://ko-fi.com/charleslindecker" style="color: #f5a623;">Soutenir le projet · Ko-fi</a></li>
-      </ul>
-
-      <p style="margin-top: 32px; color: #888; font-size: 14px;">Chargement de la version interactive…</p>
-    </main>
-  </div>
-
-  <!--
-    No-JS fallback. Bilingual on purpose: French primary content + English
-    summary so crawlers and AI engines that hit this page from EN queries
-    surface useful snippets.
-  -->
+  <!-- Everything on the page is present without JavaScript thanks to the
+       prerender; scripts only add the terminal replay, the copy button and the
+       scroll choreography. -->
   <noscript>
-    <div style="max-width: 720px; margin: 60px auto; padding: 24px; font-family: system-ui, sans-serif; color: #eee;">
-      <h2>gup — Global Updater CLI (no-JS view)</h2>
-      <p>
-        gup est une CLI TypeScript qui orchestre winget, npm, pip, helm, cargo
-        et ~125 autres gestionnaires de paquets derrière une seule interface
-        unifiée. Scan parallèle, fail-soft, mode <code>--fast</code>, sortie
-        JSON, ciblage chirurgical.
-      </p>
-      <p>
-        Installation : <code>npm install -g @charles_lindecker/gup</code>.
-        Documentation et code source sur
-        <a href="https://github.com/LINDECKER-Charles/gup">GitHub</a>.
-        Package npm :
-        <a href="https://www.npmjs.com/package/@charles_lindecker/gup">@charles_lindecker/gup</a>.
-        Soutenir le projet sur
-        <a href="https://ko-fi.com/charleslindecker">Ko-fi</a>.
-      </p>
-      <hr />
-      <h2>English summary</h2>
-      <p>
-        gup (Global Updater) is an open-source TypeScript CLI that scans and updates
-        every package installed on your machine — winget, scoop, chocolatey, npm-g,
-        pnpm, pip, pipx, cargo, helm, kubectl, terraform, dotnet tools, vscode extensions,
-        JetBrains, pwsh modules — about 130 sources behind a single interface.
-        Parallel scan, fail-soft, JSON output, <code>--fast</code> mode,
-        surgical <code>provider:package</code> targeting. Requires Node.js ≥ 20.
-        Works on Windows / WSL / Linux / macOS.
-      </p>
-      <p>
-        Install: <code>npm install -g @charles_lindecker/gup</code> then run
-        <code>gup doctor</code>.
-      </p>
-      <p>
-        This page needs JavaScript for the full rendering (terminal demo,
-        interactive ~130-provider catalog).
-      </p>
-    </div>
+    <p style="max-width:60ch;margin:24px auto;padding:0 24px;font:14px/1.6 system-ui,sans-serif;color:#9a9aa4;text-align:center">
+      JavaScript est désactivé : la page reste entièrement lisible, seules
+      l'animation du terminal et le bouton « copier » sont inactifs. La commande
+      d'installation est <code>npm install -g @charles_lindecker/gup</code>.
+    </p>
   </noscript>
 
   <!-- Vite entry — bundled, tree-shaken, minified, code-split (react in its own chunk). -->

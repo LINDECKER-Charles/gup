@@ -1,0 +1,75 @@
+/* Type scale: the Anton display sizes and the shared text roles. */
+
+/* ---------- Typography scale ---------- */
+
+.display {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  line-height: 1.06;
+  text-transform: uppercase;
+  letter-spacing: 0.004em;
+}
+/* Sized to keep each of the three lines on ONE line inside the hero's 1.12fr
+   column: they are individually masked, so a wrap breaks the reveal. The
+   1.12 line-height is not slack — Anton's uppercase À and É need the headroom,
+   and the mask (overflow: hidden) clips the accent at anything tighter. */
+.display--hero {
+  font-size: clamp(38px, 6vw, 94px);
+  line-height: 1.12;
+  letter-spacing: -0.004em;
+}
+.display--section {
+  font-size: clamp(30px, 5.2vw, 72px);
+}
+.display--cta {
+  font-size: clamp(34px, 6.4vw, 88px);
+  line-height: 1.04;
+}
+.display--card {
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  line-height: 1.08;
+}
+
+/* A section heading that stands on its own line above a content grid. Headings
+   inside .sec-split deliberately keep margin 0 — there the grid owns the
+   spacing, and doubling it would push the lead paragraph out of alignment. */
+.sec-title {
+  margin-bottom: 52px;
+}
+@media (max-width: 720px) {
+  .sec-title {
+    margin-bottom: 32px;
+  }
+}
+
+.mono-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--violet-text-soft);
+  white-space: nowrap;
+}
+
+.lead {
+  margin: 0;
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
+.muted {
+  color: var(--fg-muted);
+}
+.dim {
+  color: var(--fg-dim);
+}
+
+/* Inline `<code>` inside prose. */
+.code-inline {
+  font-family: var(--mono);
+  color: var(--violet-text);
+}

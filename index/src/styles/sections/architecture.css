@@ -1,0 +1,269 @@
+/* 04 · Architecture — a scroll stage rather than a section.
+
+   The outer element is 340vh tall and its inner panel is sticky, so scrolling
+   through it advances a 5-beat narration in place (argv → registry → fan-out →
+   runner). The beat index is computed in lib/motion.jsx from the stage's own
+   bounding rect; every state below is driven by data attributes so the CSS
+   stays declarative.
+
+   Below 1080px the stage degrades to a normal static section: a 3.4-viewport
+   scroll hijack is hostile on a phone, and the same information reads fine as
+   a plain diagram with every beat lit. */
+
+.stage {
+  position: relative;
+  height: 340vh;
+  margin-top: var(--gap-section);
+  scroll-margin-top: calc(var(--nav-h) + 24px);
+  /* Read by useStageProgress: the single declaration of whether the stage is
+     scroll-driven. Flipped to 0 by the breakpoint below, so the layout and the
+     behaviour can never disagree. */
+  --stage-interactive: 1;
+}
+.stage-sticky {
+  position: sticky;
+  top: var(--nav-h);
+  min-height: calc(100vh - var(--nav-h));
+  display: flex;
+  align-items: center;
+  padding: 24px 0;
+}
+.stage-label {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  margin-bottom: 26px;
+}
+.stage-beat-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+.stage-title {
+  font-size: clamp(28px, 4.2vw, 58px);
+  margin-bottom: 10px;
+}
+.stage-hint {
+  color: var(--violet-text-soft);
+}
+.stage-narration {
+  margin: 0 0 40px;
+  max-width: 680px;
+  min-height: 52px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  transition: opacity 0.4s ease;
+}
+
+.pipeline {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--bg-deep);
+  padding: 44px 40px;
+  overflow: hidden;
+}
+.pipeline::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    90deg,
+    oklch(0.32 0.02 275 / 0.09) 1px,
+    transparent 1px
+  );
+  background-size: 52px 100%;
+}
+.pipeline-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(40px, 1fr) auto minmax(40px, 1fr) auto;
+  align-items: center;
+}
+.pipeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+}
+.pipeline-box {
+  padding: 15px 21px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--fg-soft);
+  font-family: var(--mono);
+  font-size: 13px;
+  white-space: nowrap;
+  transition:
+    border-color 0.45s ease,
+    background 0.45s ease,
+    color 0.45s ease,
+    box-shadow 0.45s ease;
+}
+.pipeline-box--wide {
+  padding: 17px 24px;
+}
+.pipeline-box[data-on="1"] {
+  border-color: oklch(0.68 0.2 275 / 0.7);
+  background: var(--surface-lit);
+  color: oklch(0.93 0.06 275);
+  box-shadow: 0 0 46px oklch(0.68 0.2 275 / 0.35);
+}
+.pipeline-caption {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+.pipeline-wire {
+  height: 1px;
+  background: var(--line);
+  position: relative;
+}
+.pipeline-wire > span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 1px;
+  width: 0%;
+  box-shadow: 0 0 12px var(--violet);
+  background: linear-gradient(90deg, var(--violet), var(--amber));
+  transition: width 0.3s linear;
+}
+.pipeline-wire--warm > span {
+  box-shadow: 0 0 12px var(--green);
+  background: linear-gradient(90deg, var(--amber), var(--green));
+}
+
+.pipeline-fan {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 40px 0 0;
+  padding: 34px 0 0;
+  border-top: 1px solid var(--line-faint);
+  list-style: none;
+}
+.pipeline-fan li {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: var(--bg);
+  color: var(--fg-faint);
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0.35;
+  transition:
+    opacity 0.35s ease,
+    color 0.35s ease,
+    border-color 0.35s ease;
+}
+.pipeline-fan li[data-on="1"] {
+  opacity: 1;
+  color: oklch(0.9 0.006 265);
+  border-color: oklch(0.68 0.2 275 / 0.55);
+}
+.pipeline-fan-rest {
+  padding: 8px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--violet-text-soft);
+  white-space: nowrap;
+  border: 0;
+  background: none;
+  opacity: 1;
+}
+
+/* ---------- Architecture contract cards ---------- */
+
+.arch-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.arch-card {
+  border-radius: 16px;
+  border-color: var(--line-soft);
+  background: oklch(0.145 0.01 265);
+  padding: 26px 22px;
+}
+.arch-card:hover {
+  transform: translateY(-5px);
+  border-color: oklch(0.68 0.2 275 / 0.55);
+}
+.arch-card h3 {
+  margin: 0 0 13px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--violet-text);
+}
+.arch-card p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--fg-soft);
+}
+
+@media (max-width: 1080px) {
+  .stage {
+    height: auto;
+    padding-bottom: 0;
+    --stage-interactive: 0;
+  }
+  .stage-sticky {
+    position: static;
+    min-height: 0;
+    padding: 0;
+  }
+  .stage-narration {
+    min-height: 0;
+  }
+  .stage-beat-label {
+    display: none;
+  }
+  .pipeline {
+    padding: 28px 20px;
+  }
+  .pipeline-row {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 18px;
+  }
+  .pipeline-wire {
+    width: 1px;
+    height: 34px;
+    background: var(--line);
+  }
+  /* Vertical wire: the width the stage would animate becomes the full 1px
+     track, and the fill runs top-to-bottom instead. The stage reports itself
+     complete at this breakpoint (--stage-interactive: 0), so the inline width
+     is always 100%. */
+  .pipeline-wire > span {
+    height: 100%;
+    background: linear-gradient(180deg, var(--violet), var(--amber));
+  }
+  .arch-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 620px) {
+  .arch-cards {
+    grid-template-columns: 1fr;
+  }
+}

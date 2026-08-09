@@ -1,0 +1,94 @@
+/* Scroll progress bar and the sticky install bar. */
+
+/* ---------- Scroll progress ---------- */
+
+.progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 90;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--violet), var(--amber));
+  pointer-events: none;
+}
+
+/* ---------- Sticky install bar ---------- */
+
+.sticky-cta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  padding: 14px 20px;
+  background: oklch(0.11 0.008 265 / 0.9);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid oklch(0.68 0.2 275 / 0.35);
+  transform: translateY(140%);
+  opacity: 0;
+  transition:
+    transform 0.5s var(--ease-out),
+    opacity 0.5s ease;
+}
+.sticky-cta[data-shown="1"] {
+  transform: translateY(0);
+  opacity: 1;
+}
+.sticky-cta-inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.sticky-cta-title {
+  font-family: var(--display);
+  font-size: 19px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.sticky-cta-cmd {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-deeper);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 13px;
+  overflow: hidden;
+}
+.sticky-cta-cmd code {
+  font: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sticky-cta .btn {
+  padding: 12px 22px;
+  font-size: 13px;
+  box-shadow: 0 0 30px oklch(0.68 0.2 275 / 0.5);
+}
+
+@media (max-width: 860px) {
+  .sticky-cta-title {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .sticky-cta-cmd {
+    display: none;
+  }
+  .sticky-cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

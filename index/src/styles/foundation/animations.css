@@ -1,0 +1,284 @@
+/* Every keyframe used on the page, in one place.
+   Names are prefixed `g` to keep them out of any future third-party CSS.
+   All of them animate `opacity` / `transform` / `background-*` only, so the
+   compositor can run them off the main thread — the exception is gDraw, which
+   animates stroke-dashoffset on small icons that draw once and stop. */
+
+@keyframes gBlink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Vertical light sweep across a panel. */
+@keyframes gSweep {
+  0% {
+    transform: translateY(-140%);
+  }
+  100% {
+    transform: translateY(900%);
+  }
+}
+
+/* Marquee pairs: the track holds the list twice, so a -50% shift loops
+   seamlessly. gMarqueeRev runs the same track the other way. */
+@keyframes gMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+@keyframes gMarqueeRev {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Ambient grid drift — 72px is the grid pitch, so the loop is invisible. */
+@keyframes gDrift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, -72px, 0);
+  }
+}
+
+@keyframes gRing {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* One cell of the 134-provider scan grid lighting up. */
+@keyframes gDot {
+  0%,
+  72%,
+  100% {
+    opacity: 0.12;
+    transform: scale(1);
+  }
+  82% {
+    opacity: 1;
+    transform: scale(1.55);
+  }
+}
+
+@keyframes gBeam {
+  0% {
+    transform: translateX(-12%);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(1012%);
+    opacity: 0;
+  }
+}
+
+/* Vertical rotator: the track holds 10 lines of 22px, stepped 9 times. */
+@keyframes gRotate {
+  to {
+    transform: translateY(-90%);
+  }
+}
+
+@keyframes gFill {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* The struck-through "old way" commands: the rule draws, the row dims. */
+@keyframes gStrike {
+  0%,
+  42% {
+    transform: scaleX(0);
+  }
+  62%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+@keyframes gDim {
+  0%,
+  42% {
+    opacity: 1;
+  }
+  62%,
+  100% {
+    opacity: 0.34;
+  }
+}
+
+@keyframes gFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes gGlow {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes gSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gTrace {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  30%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Intro curtain: holds, then lifts out of the way. */
+@keyframes gCurtain {
+  0%,
+  52% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-101%);
+  }
+}
+@keyframes gCurtainIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  46% {
+    opacity: 1;
+  }
+  58%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes gLoad {
+  0% {
+    transform: scaleX(0);
+  }
+  70%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* Headline lines rising out of their overflow-hidden mask.
+ *
+ * Deliberately NO opacity: the mask already hides the line completely, so
+ * fading it as well was redundant — and actively harmful. Chromium excludes an
+ * element from Largest Contentful Paint if its first paint had zero opacity,
+ * permanently. With the H1 fading in, and every other element above the fold
+ * fading in too, the page produced *no LCP candidate at all* — measured with
+ * Playwright: 0 entries. A page with no LCP is a page with no Core Web Vitals
+ * story, on a site whose whole purpose is to rank. Translating a fully-opaque
+ * line out of a clipping mask reads identically and keeps the H1 as the
+ * candidate it should be.
+ */
+@keyframes gRise {
+  0% {
+    transform: translateY(112%) skewY(4deg);
+  }
+  100% {
+    transform: translateY(0) skewY(0);
+  }
+}
+
+@keyframes gFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Wipes the bar covering the hero as the curtain leaves. */
+@keyframes gBar {
+  0% {
+    transform: scaleY(1);
+  }
+  100% {
+    transform: scaleY(0);
+  }
+}
+
+/* --len is the path length, set inline per shape. */
+@keyframes gDraw {
+  0% {
+    stroke-dashoffset: var(--len);
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes gGrain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-4%, 3%);
+  }
+  40% {
+    transform: translate(3%, -4%);
+  }
+  60% {
+    transform: translate(-3%, -3%);
+  }
+  80% {
+    transform: translate(4%, 2%);
+  }
+}

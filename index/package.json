@@ -3,11 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Landing page for gup — built with Vite + React, deployed to GitHub Pages.",
+  "description": "Landing page for gup — built with Vite + React, prerendered, deployed to GitHub Pages.",
   "scripts": {
+    "sync:facts": "node scripts/sync-facts.mjs",
+    "predev": "npm run sync:facts",
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "prebuild": "npm run sync:facts",
+    "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/stamp-static.mjs",
+    "og": "node scripts/og-image.mjs",
+    "preview": "vite preview",
+    "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -16,6 +21,7 @@
   "devDependencies": {
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/geist-mono": "^5.2.8",
+    "@fontsource/anton": "^5.3.0",
     "@vitejs/plugin-react": "^6.0.2",
     "vite": "^8.0.16"
   }

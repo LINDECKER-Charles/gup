@@ -1,39 +1,25 @@
-// Composition root — mounts <App /> on #root.
-// Stylesheet is imported here so Vite can bundle and hash it; the <link>
-// tag was removed from index.html in the build-tool migration.
+/**
+ * Browser entry.
+ *
+ * `npm run build` prerenders <Page /> into #root (see scripts/prerender.mjs),
+ * so in production the markup is already there and this hydrates it; in dev
+ * the container is empty and it mounts from scratch. Branching on
+ * `hasChildNodes` keeps one entry file for both.
+ */
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { Nav } from "./sections/Nav.jsx";
-import { Hero } from "./sections/Hero.jsx";
-import { Problem } from "./sections/Problem.jsx";
-import { Modes } from "./sections/Modes.jsx";
-import { Architecture } from "./sections/Architecture.jsx";
-import { Lifecycle } from "./sections/Lifecycle.jsx";
-import { Providers } from "./sections/Providers.jsx";
-import { Install } from "./sections/Install.jsx";
-import { Footer } from "./sections/Footer.jsx";
-import "../styles.css";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import { Page } from "./Page.jsx";
+import "./styles/index.css";
 
-function App() {
-  return (
-    <>
-      <Nav />
-      <main>
-        <Hero />
-        <Problem />
-        <Modes />
-        <Architecture />
-        <Lifecycle />
-        <Providers />
-        <Install />
-      </main>
-      <Footer />
-    </>
-  );
-}
-
-createRoot(document.getElementById("root")).render(
+const container = document.getElementById("root");
+const tree = (
   <StrictMode>
-    <App />
-  </StrictMode>,
+    <Page />
+  </StrictMode>
 );
+
+if (container.hasChildNodes()) {
+  hydrateRoot(container, tree);
+} else {
+  createRoot(container).render(tree);
+}

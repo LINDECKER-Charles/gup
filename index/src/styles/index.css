@@ -1,0 +1,33 @@
+/* Stylesheet entry — imported once from src/app.jsx so Vite bundles, hashes and
+   inlines the whole cascade into a single hashed CSS file.
+
+   Order matters: tokens and keyframes must precede anything referencing them,
+   and `responsive` comes last so its breakpoints and the reduced-motion
+   contract win over every component's own rules.
+
+   foundation/ = tokens, keyframes, reset, type scale, layout, controls
+   chrome/     = intro curtain, overlays, header, footer
+   sections/   = one file per numbered section of the page */
+@import "./foundation/tokens.css";
+@import "./foundation/animations.css";
+@import "./foundation/reset.css";
+@import "./foundation/typography.css";
+@import "./foundation/layout.css";
+@import "./foundation/controls.css";
+
+@import "./chrome/intro.css";
+@import "./chrome/overlays.css";
+@import "./chrome/nav.css";
+@import "./chrome/footer.css";
+
+@import "./sections/hero.css";
+@import "./sections/terminal.css";
+@import "./sections/why.css";
+@import "./sections/platforms.css";
+@import "./sections/usage.css";
+@import "./sections/architecture.css";
+@import "./sections/coverage.css";
+@import "./sections/security.css";
+@import "./sections/install.css";
+
+@import "./foundation/responsive.css";

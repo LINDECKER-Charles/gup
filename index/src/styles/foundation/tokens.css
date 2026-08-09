@@ -1,0 +1,150 @@
+/* ----------------------------------------------------------------------------
+   Design tokens + typography + reset.
+
+   Self-hosted Anton (display), Geist (sans) and Geist Mono (mono), latin
+   subset only, served from /gup/fonts/. Local hosting is deliberate: the
+   previous Google Fonts <link> cost a 770ms render-block and a ~940ms LCP
+   critical-path edge. The three faces used in the first paint are also
+   <link rel="preload">ed from index.html.
+
+   The "* Fallback" faces exist to keep CLS at ~0 across the font swap: the
+   system font is forced to occupy the same box as the webfont, so nothing
+   reflows when the real face lands. Geist metrics are derived from its
+   em-square (UPM 1000, ascent 960, descent 250) matched against Arial
+   (UPM 2048, ascent 1854, descent 434).
+---------------------------------------------------------------------------- */
+
+/* Latin-1 + the punctuation/symbol ranges the copy actually uses. Declaring
+   the range lets the browser skip the download entirely on pages that never
+   hit it, and keeps the subset honest. */
+@font-face {
+  font-family: "Anton";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("/gup/fonts/anton-latin-400-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/gup/fonts/geist-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/gup/fonts/geist-mono-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Anton is a tall condensed grotesque; Impact and Arial Narrow are the closest
+   widely-installed metric proxies. The overrides pin the line box so the
+   headline block keeps its height across the swap. */
+@font-face {
+  font-family: "Anton Fallback";
+  src: local("Impact"), local("Haettenschweiler"), local("Arial Narrow Bold"),
+    local("Arial Narrow"), local("DejaVu Sans Condensed");
+  ascent-override: 102%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial"), local("Helvetica"), local("Liberation Sans");
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+@font-face {
+  font-family: "Geist Mono Fallback";
+  src: local("Consolas"), local("Menlo"), local("Liberation Mono"),
+    local("Courier New");
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+
+:root {
+  /* Surfaces — a single violet-leaning neutral ramp (hue 265). */
+  --bg: oklch(0.13 0.008 265);
+  --bg-deep: oklch(0.1 0.008 265);
+  --bg-deeper: oklch(0.09 0.008 265);
+  --bg-abyss: oklch(0.08 0.008 265);
+  --bg-vignette: oklch(0.04 0.006 265 / 0.75);
+  --surface: oklch(0.155 0.01 265);
+  --surface-alt: oklch(0.145 0.01 265);
+  --surface-raised: oklch(0.15 0.01 265);
+  --surface-hover: oklch(0.18 0.014 265);
+  --surface-lit: oklch(0.18 0.035 275 / 0.55);
+
+  /* Hairlines, darkest to lightest. */
+  --line-faint: oklch(0.2 0.01 265);
+  --line-soft: oklch(0.22 0.01 265);
+  --line: oklch(0.24 0.012 265);
+  --line-strong: oklch(0.26 0.012 265);
+  --line-bright: oklch(0.3 0.012 265);
+
+  /* Text ramp. */
+  --fg-bright: oklch(0.99 0.004 265);
+  --fg: oklch(0.97 0.004 265);
+  --fg-strong: oklch(0.98 0.004 265);
+  --fg-muted: oklch(0.72 0.008 265);
+  --fg-soft: oklch(0.62 0.01 265);
+  --fg-dim: oklch(0.5 0.01 265);
+  --fg-faint: oklch(0.42 0.01 265);
+  --fg-ghost: oklch(0.38 0.01 265);
+
+  /* Accents. Violet carries the brand, amber marks what is new, green marks
+     the shell prompt and anything that succeeded, red marks what is dropped. */
+  --violet: oklch(0.68 0.2 275);
+  --violet-lit: oklch(0.75 0.19 275);
+  --violet-text: oklch(0.8 0.17 275);
+  --violet-text-soft: oklch(0.78 0.17 275);
+  --violet-deep: oklch(0.44 0.08 275);
+  --amber: oklch(0.85 0.15 75);
+  --amber-lit: oklch(0.9 0.14 75);
+  --amber-warm: oklch(0.87 0.15 85);
+  --amber-ink: oklch(0.17 0.02 75);
+  --green: oklch(0.8 0.17 150);
+  --red: oklch(0.68 0.19 25);
+  --red-lit: oklch(0.7 0.19 25);
+  --lilac: oklch(0.75 0.15 305);
+
+  --display: "Anton", "Anton Fallback", "Impact", ui-sans-serif, sans-serif;
+  --sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, "SFMono-Regular",
+    monospace;
+
+  --radius-xs: 4px;
+  --radius-sm: 7px;
+  --radius: 9px;
+  --radius-md: 11px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+
+  /* Section rhythm. Collapses on small viewports (see base.css). */
+  --gap-section: 150px;
+  --shell-max: 1280px;
+  --shell-pad: 32px;
+  --nav-h: 68px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-inout: cubic-bezier(0.76, 0, 0.24, 1);
+}

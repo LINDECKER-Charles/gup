@@ -1,0 +1,99 @@
+/* 06 · Coverage — the provider count, and the two counter-rotating rails. */
+
+/* ---------- 06 · Coverage ---------- */
+
+.cover {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--bg-deep);
+  padding: 78px 40px 0;
+  text-align: center;
+  overflow: hidden;
+}
+.cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    560px 320px at 50% 0%,
+    oklch(0.68 0.2 275 / 0.26),
+    transparent 70%
+  );
+}
+.cover > * {
+  position: relative;
+}
+.cover-number {
+  margin: 14px 0 4px;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(90px, 20vw, 280px);
+  line-height: 0.94;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  /* `background-image`, not the shorthand — see the note on
+     .hero-line--gradient in hero.css. */
+  background-image: linear-gradient(
+    180deg,
+    var(--fg-bright),
+    var(--violet-deep)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.cover-caption {
+  margin-bottom: 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.cover-lead {
+  font-size: 15.5px;
+  color: oklch(0.58 0.01 265);
+  max-width: 560px;
+  margin: 0 auto 42px;
+  line-height: 1.6;
+}
+.cover-lead a {
+  color: var(--violet-text);
+  border-bottom: 1px solid oklch(0.8 0.17 275 / 0.4);
+}
+.cover-rail {
+  border-top: 1px solid var(--line-faint);
+  padding: 20px 0;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    black 12%,
+    black 88%,
+    transparent
+  );
+}
+.cover-rail .rail-track {
+  animation-duration: 34s;
+}
+.cover-rail .rail-track--rev {
+  animation-duration: 30s;
+}
+.cover-rail .rail-item {
+  font-size: 12px;
+  padding: 7px 14px;
+  border-color: var(--line-faint);
+  background: transparent;
+  color: oklch(0.52 0.01 265);
+}
+
+@media (max-width: 720px) {
+  .cover {
+    padding: 48px 18px 0;
+  }
+  .cover-lead {
+    margin-bottom: 28px;
+  }
+}
