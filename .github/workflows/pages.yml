@@ -39,6 +39,13 @@ jobs:
         working-directory: index
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The build derives `lastmod` / `dateModified` from the last commit
+          # touching index/ (scripts/last-change.mjs). Two commits of history is
+          # enough for `git log -1 -- .` to answer, and it falls back to HEAD's
+          # own date when the trigger was a workflow_dispatch on a commit that
+          # did not touch index/.
+          fetch-depth: 2
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -50,21 +57,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (Vite)
-        # Outputs to index/dist/. Tree-shaken, minified, code-split (react in
-        # its own chunk via vite.config.js manualChunks). All assets under
-        # static/ are copied verbatim, preserving /gup/public/* SEO paths.
+      - name: Build (Vite + prerender)
+        # Four steps behind one script:
+        #   1. sync-facts   — regenerates src/data/facts.js from the repo root
+        #                     package.json and src/core/registry.ts, so the
+        #                     version and the provider count cannot drift.
+        #   2. vite build   — client bundle, tree-shaken, minified, code-split
+        #                     (react in its own chunk via manualChunks). All of
+        #                     static/ is copied verbatim, preserving the already
+        #                     indexed /gup/public/*, /gup/robots.txt,
+        #                     /gup/sitemap.xml and /gup/llms.txt URLs.
+        #   3. prerender    — renders the React tree into dist/index.html, so
+        #                     the deployed HTML carries the real content for
+        #                     crawlers and AI fetchers that do not run JS.
+        #   4. stamp-static — writes the facts and the git-derived lastmod into
+        #                     the built llms.txt, sitemap.xml, 404.html and
+        #                     manifest.
+        # Every step fails loudly: a silent prerender failure would ship a blank
+        # page to every non-rendering crawler, and that is invisible in a
+        # browser.
         run: npm run build
-
-      - name: Inject build metadata
-        # Stamp the deploy timestamp into the built HTML + sitemap so cache
-        # busting and freshness signals reach search engines. Runs against
-        # the build output, not the source — keeps the source clean.
-        run: |
-          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          BUILD_DAY=$(date -u +"%Y-%m-%d")
-          sed -i "s|<!-- @@BUILD_DATE@@ -->|<meta name=\"build-date\" content=\"$BUILD_DATE\" />|" dist/index.html
-          sed -i "s|@@LASTMOD@@|$BUILD_DAY|" dist/sitemap.xml
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
