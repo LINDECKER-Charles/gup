@@ -547,6 +547,7 @@ describe("toGitHubRepo", () => {
     );
     expect(toGitHubRepo("https://github.com/alice/tool/")).toBe("alice/tool");
     expect(toGitHubRepo("HTTPS://GITHUB.COM/Alice/Tool.git")).toBe("Alice/Tool");
+    expect(toGitHubRepo("ssh://git@github.com/alice/tool.git")).toBe("alice/tool");
   });
 
   it("returns null for anything that is not GitHub", () => {
@@ -554,6 +555,16 @@ describe("toGitHubRepo", () => {
     expect(toGitHubRepo("git@git.corp.internal:alice/tool.git")).toBeNull();
     expect(toGitHubRepo("")).toBeNull();
     expect(toGitHubRepo("https://github.com/onlyowner")).toBeNull();
+  });
+
+  it("does not treat a host that merely contains github.com as GitHub", () => {
+    expect(toGitHubRepo("https://git.corp/mirrors/github.com/alice/tool.git")).toBeNull();
+    expect(toGitHubRepo("https://github.com.evil.test/alice/tool.git")).toBeNull();
+  });
+
+  it("rejects a slug carrying characters GitHub does not allow", () => {
+    expect(toGitHubRepo("https://github.com/alice/tool/../../other")).toBeNull();
+    expect(toGitHubRepo("https://github.com/al ice/tool")).toBeNull();
   });
 });
 
@@ -1580,7 +1591,9 @@ describe("NugetProvider.update / updateAll", () => {
     runInheritMock.mockResolvedValueOnce(mkRun("", true));
     const res = await new NugetProvider().update("nuget");
     expect(res).toMatchObject({ id: "nuget", success: false, skipped: true });
-    expect(res.message).toMatch(/dist\.nuget\.org/);
+    expect(res.message).toContain(
+      "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe",
+    );
   });
 
   it("does nothing at all for an empty set", async () => {

@@ -493,14 +493,38 @@ function gitBasename(gitUrl: string): string {
 }
 
 /**
+ * Scheme, the `git@` SSH user, then the host — anchored at the start of the
+ * string. Matching `github.com` *anywhere* instead would accept a self-hosted
+ * URL that merely contains the substring
+ * (`https://git.corp/mirrors/github.com/owner/repo.git`) and turn it into a
+ * GitHub slug, i.e. a release lookup for somebody else's repository.
+ *
+ * `git` is the only SSH user GitHub accepts, and credentials embedded in an
+ * https URL are a CI artefact rather than something mint writes into its
+ * metadata — so no general userinfo is allowed here. The cost of being wrong
+ * about that is a dropped row, never a request to the wrong repository.
+ *
+ * Schemes are spelled out rather than written `https?`: an optional quantifier
+ * nested inside the optional group is what safe-regex counts as star height 2.
+ */
+const GITHUB_PREFIX = /^(?:(?:https|http|ssh|git):\/\/)?(?:git@)?github\.com[/:]/i;
+
+/** `<owner>/<repo>`, with the `.git` suffix and trailing slash mint may store. */
+const GITHUB_SLUG =
+  /^([A-Za-z0-9][A-Za-z0-9-]{0,38})\/([A-Za-z0-9][A-Za-z0-9._-]{0,99}?)(?:\.git)?\/?$/;
+
+/**
  * Accepts every shape mint stores — `https://github.com/owner/repo.git`,
- * `git@github.com:owner/repo.git`, or the bare form — and returns null for any
- * other host, which is how non-GitHub packages get filtered out.
+ * `git@github.com:owner/repo.git`, `ssh://git@github.com/owner/repo`, or the
+ * bare form — and returns null for any other host, which is how non-GitHub
+ * packages get filtered out.
  */
 export function toGitHubRepo(gitUrl: string): string | null {
-  const m = /github\.com[/:]([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/i.exec(gitUrl);
-  const owner = m?.[1];
-  const repo = m?.[2];
+  const host = GITHUB_PREFIX.exec(gitUrl);
+  if (!host) return null;
+  const slug = GITHUB_SLUG.exec(gitUrl.slice(host[0].length));
+  const owner = slug?.[1];
+  const repo = slug?.[2];
   if (!owner || !repo) return null;
   return `${owner}/${repo}`;
 }
