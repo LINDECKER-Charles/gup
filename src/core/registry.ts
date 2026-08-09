@@ -6,12 +6,20 @@ import { filterByOwnership } from "./ownership.js";
 import { WingetProvider } from "../providers/os/winget.js";
 import { ScoopProvider } from "../providers/os/scoop.js";
 import { ChocoProvider } from "../providers/os/choco.js";
+import { Msys2Provider } from "../providers/os/msys2.js";
+import { CygwinProvider } from "../providers/os/cygwin.js";
+import { NpackdProvider } from "../providers/os/npackd.js";
 
-// --- OS-level / macOS -------------------------------------------------------
+// --- OS-level / macOS (brew also covers Linuxbrew; nix/pkgx/pkgin are POSIX) --
 import { BrewProvider } from "../providers/os/brew.js";
 import { BrewCaskProvider } from "../providers/os/brew-cask.js";
 import { MasProvider } from "../providers/os/mas.js";
 import { MacPortsProvider } from "../providers/os/macports.js";
+import { NixProvider } from "../providers/os/nix.js";
+import { SparkleProvider } from "../providers/os/sparkle.js";
+import { PkgxProvider } from "../providers/os/pkgx.js";
+import { FinkProvider } from "../providers/os/fink.js";
+import { PkginProvider } from "../providers/os/pkgin.js";
 
 // --- WSL --------------------------------------------------------------------
 import { WslProvider } from "../providers/wsl/wsl.js";
@@ -32,6 +40,7 @@ import { CorepackProvider } from "../providers/node/corepack.js";
 import { FnmProvider } from "../providers/node/fnm.js";
 import { VoltaProvider } from "../providers/node/volta.js";
 import { NvmWindowsProvider } from "../providers/node/nvm-windows.js";
+import { NvmProvider } from "../providers/node/nvm.js";
 
 // --- Python -----------------------------------------------------------------
 import { PipProvider } from "../providers/python/pip.js";
@@ -41,10 +50,13 @@ import { PoetryProvider } from "../providers/python/poetry.js";
 import { PdmProvider } from "../providers/python/pdm.js";
 import { RyeProvider } from "../providers/python/rye.js";
 import { PyenvWinProvider } from "../providers/python/pyenv-win.js";
+import { PyenvProvider } from "../providers/python/pyenv.js";
 import { CondaProvider } from "../providers/python/conda.js";
 
 // --- .NET / PHP -------------------------------------------------------------
 import { DotnetToolsProvider } from "../providers/dotnet-php/dotnet-tools.js";
+import { DotnetSdkProvider } from "../providers/dotnet-php/dotnet-sdk.js";
+import { NugetProvider } from "../providers/dotnet-php/nuget.js";
 import { ComposerSelfProvider } from "../providers/dotnet-php/composer-self.js";
 import { ComposerGlobalProvider } from "../providers/dotnet-php/composer-global.js";
 import { SymfonyCliProvider } from "../providers/dotnet-php/symfony-cli.js";
@@ -71,6 +83,8 @@ import { JuliaPkgProvider } from "../providers/lang-other/julia-pkg.js";
 import { RPackagesProvider } from "../providers/lang-other/r-packages.js";
 import { FlutterProvider } from "../providers/lang-other/flutter.js";
 import { PubGlobalProvider } from "../providers/lang-other/pub-global.js";
+import { MintProvider } from "../providers/lang-other/mint.js";
+import { VcpkgProvider } from "../providers/lang-other/vcpkg.js";
 
 // --- Polyglot toolchain managers -------------------------------------------
 import { MiseProvider } from "../providers/toolchain/mise.js";
@@ -78,6 +92,7 @@ import { AsdfProvider } from "../providers/toolchain/asdf.js";
 import { ProtoProvider } from "../providers/toolchain/proto.js";
 import { SdkmanProvider } from "../providers/toolchain/sdkman.js";
 import { GoenvProvider } from "../providers/toolchain/goenv.js";
+import { SwiftlyProvider } from "../providers/toolchain/swiftly.js";
 
 // --- Cloud CLIs -------------------------------------------------------------
 import { AzProvider } from "../providers/cloud/az.js";
@@ -148,6 +163,7 @@ import { DeltaProvider } from "../providers/dev-cli/delta.js";
 import { GlabProvider } from "../providers/dev-cli/glab.js";
 import { TeaProvider } from "../providers/dev-cli/tea.js";
 import { GhExtensionsProvider } from "../providers/dev-cli/gh-extensions.js";
+import { GitForWindowsProvider } from "../providers/dev-cli/git-for-windows.js";
 
 // --- IDEs / Editor extensions ----------------------------------------------
 import { VsCodeExtProvider } from "../providers/ide/vscode-ext.js";
@@ -155,6 +171,7 @@ import { CursorExtProvider } from "../providers/ide/cursor-ext.js";
 import { WindsurfExtProvider } from "../providers/ide/windsurf-ext.js";
 import { VsCodiumExtProvider } from "../providers/ide/vscodium-ext.js";
 import { JetBrainsProvider } from "../providers/ide/jetbrains.js";
+import { VisualStudioProvider } from "../providers/ide/visual-studio.js";
 // Manual-only providers — every result they produce is `manual: true`, so
 // scanAll filters them out and registering them would just add scan latency
 // for no UI win. They live as code references in:
@@ -179,12 +196,14 @@ import { PlatformIoProvider } from "../providers/embedded-mobile/platformio.js";
 import { AndroidSdkProvider } from "../providers/embedded-mobile/android-sdk.js";
 import { ExpoProvider } from "../providers/embedded-mobile/expo.js";
 import { FastlaneProvider } from "../providers/embedded-mobile/fastlane.js";
+import { XcodesProvider } from "../providers/embedded-mobile/xcodes.js";
 
 // --- Shell / cosmetic + PowerShell modules ---------------------------------
 import { OhMyPoshProvider } from "../providers/shell/oh-my-posh.js";
 import { StarshipProvider } from "../providers/shell/starship.js";
 import { NerdFontsProvider } from "../providers/shell/nerd-fonts.js";
 import { PwshModulesProvider } from "../providers/shell/pwsh-modules.js";
+import { PsResourceProvider } from "../providers/shell/psresource.js";
 
 // --- Meta -------------------------------------------------------------------
 import { SelfProvider } from "../providers/self.js";
@@ -201,12 +220,22 @@ export const ALL_PROVIDERS: Provider[] = [
   new WingetProvider(),
   new ScoopProvider(),
   new ChocoProvider(),
+  new Msys2Provider(),
+  new CygwinProvider(),
+  new NpackdProvider(),
 
   // OS-level / macOS
   new BrewProvider(),
   new BrewCaskProvider(),
   new MasProvider(),
   new MacPortsProvider(),
+  new SparkleProvider(),
+  new FinkProvider(),
+
+  // OS-level / POSIX, both macOS and Linux
+  new NixProvider(),
+  new PkgxProvider(),
+  new PkginProvider(),
 
   new WslProvider(),
   new WslAptProvider(),
@@ -228,6 +257,7 @@ export const ALL_PROVIDERS: Provider[] = [
   new FnmProvider(),
   new VoltaProvider(),
   new NvmWindowsProvider(),
+  new NvmProvider(),
 
   // Python
   new PipProvider(),
@@ -237,6 +267,7 @@ export const ALL_PROVIDERS: Provider[] = [
   new PdmProvider(),
   new RyeProvider(),
   new PyenvWinProvider(),
+  new PyenvProvider(),
   new GoenvProvider(),
   new CondaProvider(),
 
@@ -245,6 +276,8 @@ export const ALL_PROVIDERS: Provider[] = [
 
   // .NET / PHP
   new DotnetToolsProvider(),
+  new DotnetSdkProvider(),
+  new NugetProvider(),
   new ComposerSelfProvider(),
   new ComposerGlobalProvider(),
   new SymfonyCliProvider(),
@@ -265,16 +298,22 @@ export const ALL_PROVIDERS: Provider[] = [
   new JuliaPkgProvider(),
   new RPackagesProvider(),
 
+  // C / C++ / Swift package managers
+  new VcpkgProvider(),
+  new MintProvider(),
+
   // Rust / PowerShell
   new RustupProvider(),
   new CargoProvider(),
   new PwshModulesProvider(),
+  new PsResourceProvider(),
 
   // Polyglot toolchain
   new MiseProvider(),
   new AsdfProvider(),
   new ProtoProvider(),
   new SdkmanProvider(),
+  new SwiftlyProvider(),
 
   // Dart / Flutter
   new FlutterProvider(),
@@ -349,6 +388,7 @@ export const ALL_PROVIDERS: Provider[] = [
   new ArduinoCliProvider(),
   new PlatformIoProvider(),
   new AndroidSdkProvider(),
+  new XcodesProvider(),
   new ExpoProvider(),
   new FastlaneProvider(),
 
@@ -359,11 +399,13 @@ export const ALL_PROVIDERS: Provider[] = [
 
   // Dev tools / IDEs
   new GhExtensionsProvider(),
+  new GitForWindowsProvider(),
   new VsCodeExtProvider(),
   new CursorExtProvider(),
   new WindsurfExtProvider(),
   new VsCodiumExtProvider(),
   new JetBrainsProvider(),
+  new VisualStudioProvider(),
 
   // Editor plugin managers (headless-driven)
   new NvimLazyProvider(),
