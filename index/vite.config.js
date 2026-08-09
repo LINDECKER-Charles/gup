@@ -45,7 +45,12 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
-    minify: "esbuild",
+    // Oxc, not esbuild. Vite 8 dropped esbuild from its dependency tree: asking
+    // for `minify: "esbuild"` re-enables the `vite:esbuild-transpile` plugin,
+    // whose `transformWithEsbuild` now requires esbuild to be installed
+    // separately — which fails the build outright on a clean `npm ci`. `target`
+    // is unaffected: Rolldown lowers to it natively through `transform.target`.
+    minify: "oxc",
     target: "es2020",
     assetsInlineLimit: 0,
     rollupOptions: {
