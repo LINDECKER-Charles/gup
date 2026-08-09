@@ -81,7 +81,7 @@ export const content = {
 
   providers: {
     sectionLabel: "§ 05 — Catalogue",
-    title: "~130 providers, organisés par catégorie.",
+    title: "153 providers, organisés par catégorie.",
     allLabel: "Tous",
     emptyLabel: "Aucun provider ne matche cette requête.",
     searchPlaceholder: "grep providers…",
@@ -119,7 +119,7 @@ export const content = {
     support: {
       title: "Le projet t'est utile ?",
       lead:
-        "gup est gratuit, MIT, et maintenu sur mon temps libre. Si l'outil t'a fait gagner du temps, tu peux me payer un café — ça aide à garder le rythme sur les ~130 providers.",
+        "gup est gratuit, MIT, et maintenu sur mon temps libre. Si l'outil t'a fait gagner du temps, tu peux me payer un café — ça aide à garder le rythme sur les 153 providers.",
       cta: "Offrir un café sur Ko-fi",
       kofiUrl: "https://ko-fi.com/charleslindecker",
     },
