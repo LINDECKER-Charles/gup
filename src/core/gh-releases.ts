@@ -64,6 +64,18 @@ function repoApiUrl(ownerRepo: string, suffix: string): string | null {
  * slug OWNER_REPO rejects, a non-2xx status, a timeout, a socket error, a body
  * that is not JSON — collapses to null: a release lookup enriches a scan, it
  * must never be able to abort one.
+ *
+ * CodeQL reports `js/file-access-to-http` here ("outbound network request
+ * depends on file data") and it is right about the flow: the mint provider
+ * derives `ownerRepo` from mint's own `metadata.json`. That flow is the
+ * feature — knowing which repository to ask about is the entire point of
+ * reading that file — and it is bounded on both ends. What leaves the process
+ * is one `<owner>/<repo>` slug that passed OWNER_REPO, in a path segment of a
+ * hardcoded api.github.com URL; no file *content* is sent, no header, no body,
+ * and the host is not derived from anything on disk (a rule
+ * tests/security/http-targets.test.ts enforces across all of src/). Reviewed
+ * and dismissed as a false positive in the Security tab — if the alert
+ * reappears after a refactor here, re-read this note before "fixing" it.
  */
 async function fetchReleasesJson<T>(
   ownerRepo: string,
