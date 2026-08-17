@@ -23,10 +23,12 @@ jobs:
         # macOS and Linux are first-class since the Homebrew/apt/dnf
         # delegation landed.
         os: [windows-latest, macos-latest, ubuntu-latest]
-        # The two Node lines still under support: 22 (Maintenance LTS, until
-        # 2027-04) and 24 (Active LTS, until 2028-04). Node 20 reached EOL on
-        # 2026-04-30 — testing it advertised support for an unpatched runtime.
-        node: ["22", "24"]
+        # Tracks `engines.node` (>=24.11.0), so only the 24 line is tested:
+        # 24 is Active LTS until 2028-04. Node 22 was dropped when the floor
+        # moved — testing below the declared floor proves nothing the floor
+        # allows. Node 26 becomes LTS on 2026-10-28 and is a candidate to add
+        # then, which would restore the two-line shape this matrix used to have.
+        node: ["24"]
 
     steps:
       - name: Checkout

@@ -75,7 +75,7 @@ updates:
         update-types: [minor, patch]
 
     ignore:
-      # Pinned to the 22.x line to match `engines: node >=22.13.0`. Bumping the
+      # Pinned to the 24.x line to match `engines: node >=24.11.0`. Bumping the
       # types past the minimum supported runtime lets code typecheck against
       # APIs that do not exist for our users. Safe to ignore outright: a
       # types-only dev dependency ships no runtime code.

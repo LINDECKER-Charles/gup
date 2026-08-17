@@ -34,7 +34,7 @@ npm run build
 npm link            # exposes gup globally (optional)
 ```
 
-Requirements: **Node ≥ 22**, any shell. To iterate without rebuilding: `npm run dev -- <args>` (uses `tsx`).
+Requirements: **Node ≥ 24**, any shell. To iterate without rebuilding: `npm run dev -- <args>` (uses `tsx`).
 
 ### Two deliberate version pins
 

@@ -91,7 +91,7 @@
     "security": "npm run audit:deps:ci && npm run lint:security && npm run test:security"
   },
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=24.11.0"
   },
   "os": [
     "win32",
@@ -110,7 +110,7 @@
     "semver": "^7.8.5"
   },
   "devDependencies": {
-    "@types/node": "^22.20.1",
+    "@types/node": "^24.13.3",
     "@types/semver": "^7.8.0",
     "@typescript-eslint/eslint-plugin": "^8.66.0",
     "@typescript-eslint/parser": "^8.66.0",
