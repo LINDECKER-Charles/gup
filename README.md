@@ -68,6 +68,7 @@ JSON schema: [**CLI reference →**](docs/cli-reference.md)
 | [Providers catalog](docs/providers-catalog.md) | The 153 providers, their status, and what's next |
 | [Architecture](docs/architecture.md) | Layers, data model, parallel scan, update pipeline |
 | [How `gup` works](docs/how-gup-works.md) | End-to-end technical walkthrough |
+| [Roadmap](docs/roadmap.md) | Decided changes waiting on a date or an upstream release |
 | [Contributing](CONTRIBUTING.md) | Adding a provider, conventions, PR checklist |
 | [Security](SECURITY.md) | Threat model, mitigations, reporting a vulnerability |
 
