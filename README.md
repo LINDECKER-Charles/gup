@@ -9,7 +9,7 @@
 [![npm](https://img.shields.io/npm/v/@charles_lindecker/gup?logo=npm&color=CB3837)](https://www.npmjs.com/package/@charles_lindecker/gup)
 [![npm downloads](https://img.shields.io/npm/dm/@charles_lindecker/gup?logo=npm&color=CB3837&label=downloads)](https://www.npmjs.com/package/@charles_lindecker/gup)
 [![CI](https://github.com/LINDECKER-Charles/gup/actions/workflows/ci.yml/badge.svg)](https://github.com/LINDECKER-Charles/gup/actions/workflows/ci.yml)
-[![Node](https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20WSL-4c6ef5)](docs/installation.md#platform-support)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -34,7 +34,7 @@ the whole thing behind one CLI and an interactive menu.
 npm install -g @charles_lindecker/gup
 ```
 
-Node ≥ 22 · Windows, macOS, Linux, WSL. [Other install methods →](docs/installation.md)
+Node ≥ 24 · Windows, macOS, Linux, WSL. [Other install methods →](docs/installation.md)
 
 ## Use
 

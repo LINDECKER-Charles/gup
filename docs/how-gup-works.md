@@ -2,7 +2,7 @@
 
 > Source document for the explanatory site. Aimed at intermediate / advanced developers. Covers **the entirety** of `gup`'s operation: motivation, model, architecture, command lifecycle, internal contracts, resilience patterns, security, build.
 >
-> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 22), ESM, `execa`, `commander`, `@inquirer/prompts`, `chalk`, `cli-table3`, `ora`, `p-limit`. No browser runtime, no UI framework: this is a pure CLI.
+> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 24), ESM, `execa`, `commander`, `@inquirer/prompts`, `chalk`, `cli-table3`, `ora`, `p-limit`. No browser runtime, no UI framework: this is a pure CLI.
 
 ---
 

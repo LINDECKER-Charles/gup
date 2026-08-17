@@ -38,7 +38,7 @@ npm run dev -- list --fast
 
 | | |
 |---|---|
-| **Node** | ≥ 22.13.0 — matches `engines.node`, the current LTS floor |
+| **Node** | ≥ 24.11.0 — matches `engines.node`, the current LTS floor |
 | **Shell** | any: PowerShell, cmd, bash, zsh, fish |
 | **OS** | Windows, macOS, Linux |
 
