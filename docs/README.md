@@ -18,6 +18,7 @@ stays light; everything dense lives here.
 |---|---|
 | [`architecture.md`](architecture.md) | Layers & responsibilities, data model, provider lifecycle, parallel scan, update pipeline + retry, security — **mermaid diagrams**. |
 | [`how-gup-works.md`](how-gup-works.md) | End-to-end technical walkthrough: motivation, model, internal contracts, resilience patterns, build. |
+| [`roadmap.md`](roadmap.md) | Changes already decided but waiting on an external trigger — a date or an upstream release. Each entry carries its trigger, the exact edits, and what must not change. |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Provider-addition workflow, mandatory conventions, edge cases, PR checklist — **mermaid diagrams**. |
 | [`../SECURITY.md`](../SECURITY.md) | Threat model, CI/local mitigations, vulnerability reporting. |
 | [`releases/`](releases/) | Per-version release notes — what shipped, what broke, how it was verified. Source text for the GitHub Release body. |
@@ -40,5 +41,6 @@ flowchart LR
     B -->|List providers| E[providers-catalog.md]
     B -->|Contribute| D[architecture.md] --> F[CONTRIBUTING.md]
     B -->|Deep dive| G[how-gup-works.md]
+    B -->|Know what's coming| R[roadmap.md]
     B -->|Report a vuln| H[SECURITY.md]
 ```
