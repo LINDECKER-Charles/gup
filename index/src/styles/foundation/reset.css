@@ -26,11 +26,11 @@ body {
   color: var(--fg);
   font-family: var(--sans);
   font-feature-settings: "ss01", "cv11";
-  /* Ligatures OFF, page-wide (inherited). Geist and Geist Mono both fuse `--`
-     into a single long dash, so `pip list --outdated` rendered as
-     `pip list--outdated` and `--fast` as `–fast`: a command a reader cannot
-     retype from what they see. This page is mostly shell commands; correctness
-     of the glyphs beats the flourish. */
+  /* Ligatures OFF, page-wide (inherited). Geist fuses `--` into a single
+     long dash (Geist Mono did too before 1.701 dropped its ligatures), so
+     `pip list --outdated` rendered as `pip list--outdated` and `--fast` as
+     `–fast`: a command a reader cannot retype from what they see. This page
+     is mostly shell commands; correctness of the glyphs beats the flourish. */
   font-variant-ligatures: none;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
