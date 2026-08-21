@@ -5,13 +5,16 @@ version: 2
 # Two mechanisms run here, and they are deliberately tuned in opposite
 # directions:
 #
-#   - Version updates (this file, `schedule`) — routine housekeeping. Slowed
-#     down on purpose: monthly cadence + a `cooldown` window so a freshly
-#     published release is never proposed on the day it lands. Most npm
-#     supply-chain compromises (event-stream, ua-parser-js, node-ipc,
-#     chalk/debug) were caught and unpublished within hours to a few days;
-#     sitting out that window turns "latest" into "latest that survived
-#     scrutiny".
+#   - Version updates (this file, `schedule`) — routine housekeeping. Checked
+#     weekly so batches stay small, but gated by a `cooldown` window so a
+#     freshly published release is never proposed on the day it lands: a
+#     release still inside its window is skipped and picked up by a later
+#     run once it has aged out. The cadence is not the safety net, the
+#     cooldown is; weekly runs only trim the dead time after it expires.
+#     Most npm supply-chain compromises (event-stream, ua-parser-js,
+#     node-ipc, chalk/debug) were caught and unpublished within hours to a
+#     few days; sitting out that window turns "latest" into "latest that
+#     survived scrutiny".
 #
 #   - Security updates (repo setting, not this file) — fixes for a published
 #     advisory. These deliberately bypass everything below: `cooldown` is
@@ -30,7 +33,8 @@ updates:
   - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: monthly
+      interval: weekly
+      day: monday
       time: "05:00"
       timezone: "Europe/Paris"
 
@@ -40,8 +44,10 @@ updates:
       semver-minor-days: 14
       semver-major-days: 30
 
-    # Monthly + grouping keeps this well under the limit. Security PRs are
-    # exempt from it, so a low cap never delays a fix.
+    # Grouping, not cadence, bounds this: a group holds one open PR at a time,
+    # so the five groups below plus the occasional ungrouped major is the
+    # ceiling whatever the schedule says. Security PRs are exempt from it, so
+    # a low cap never delays a fix.
     open-pull-requests-limit: 5
 
     versioning-strategy: increase
@@ -93,7 +99,8 @@ updates:
   - package-ecosystem: npm
     directory: "/index"
     schedule:
-      interval: monthly
+      interval: weekly
+      day: monday
       time: "05:00"
       timezone: "Europe/Paris"
 
@@ -127,7 +134,8 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: monthly
+      interval: weekly
+      day: monday
       time: "05:00"
       timezone: "Europe/Paris"
 
