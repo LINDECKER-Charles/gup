@@ -11,7 +11,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js"
 
 /**
  * Meta-provider that surfaces self-updates of the package managers themselves
- * (the binaries `gup` orchestrates). Per `docs/providers-catalog.md` § 10:
+ * (the binaries `gup` orchestrates). Per `docs/guide/providers-catalog.md` § 10:
  * tracks winget, scoop, choco, npm, pnpm, yarn, pip, pipx and gh — plus brew,
  * the same role on macOS/Linuxbrew.
  *

@@ -98,7 +98,7 @@ gup update --all -y       # CI-safe: everything, no prompt
 - **Embedded / mobile**: arduino-cli, android-sdk, flutter, expo, fastlane
 
 Full catalogue with per-provider status:
-https://github.com/LINDECKER-Charles/gup/blob/main/docs/providers-catalog.md
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.md
 
 ## Commands
 
@@ -114,7 +114,7 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/providers-catalog.md
 - Exit codes: `0` success, `1` partial failure, `2` invalid arguments
 
 Full reference, flags, retry strategies, install timeout, environment variables:
-https://github.com/LINDECKER-Charles/gup/blob/main/docs/cli-reference.md
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/cli-reference.md
 
 ## Architecture
 
@@ -126,19 +126,19 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/cli-reference.md
 - `src/ui/**` — ora spinner with an in-flight set, cli-table3 output, `@inquirer/prompts` selection grouped by provider.
 - History: every scan and every update attempt is appended to a local JSONL log, one file per calendar month, under the platform state directory (`%LOCALAPPDATA%\gup\history`, `~/Library/Application Support/gup/history`, `$XDG_STATE_HOME/gup/history`).
 
-Details: https://github.com/LINDECKER-Charles/gup/blob/main/docs/architecture.md
-Walkthrough: https://github.com/LINDECKER-Charles/gup/blob/main/docs/how-gup-works.md
+Details: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/architecture.md
+Walkthrough: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/how-gup-works.md
 
 ## Documentation
 
 - README: https://github.com/LINDECKER-Charles/gup/blob/main/README.md
 - Docs index: https://github.com/LINDECKER-Charles/gup/blob/main/docs/README.md
-- Installation: https://github.com/LINDECKER-Charles/gup/blob/main/docs/installation.md
-- CLI reference: https://github.com/LINDECKER-Charles/gup/blob/main/docs/cli-reference.md
-- Scope — what is deliberately out: https://github.com/LINDECKER-Charles/gup/blob/main/docs/scope.md
-- Providers catalogue: https://github.com/LINDECKER-Charles/gup/blob/main/docs/providers-catalog.md
-- Architecture: https://github.com/LINDECKER-Charles/gup/blob/main/docs/architecture.md
-- How gup works: https://github.com/LINDECKER-Charles/gup/blob/main/docs/how-gup-works.md
+- Installation: https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/installation.md
+- CLI reference: https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/cli-reference.md
+- Scope — what is deliberately out: https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/scope.md
+- Providers catalogue: https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.md
+- Architecture: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/architecture.md
+- How gup works: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/how-gup-works.md
 - Release notes: https://github.com/LINDECKER-Charles/gup/tree/main/docs/releases
 - Contributing: https://github.com/LINDECKER-Charles/gup/blob/main/CONTRIBUTING.md
 - Security policy: https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md

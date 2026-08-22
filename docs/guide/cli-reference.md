@@ -17,7 +17,7 @@
 
 > **CLI output is French.** That is deliberate: the interface language is
 > French, the documentation language is English. See the language rule in
-> [`CONTRIBUTING.md`](../CONTRIBUTING.md#7-code-style).
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md#7-code-style).
 
 ## Commands
 

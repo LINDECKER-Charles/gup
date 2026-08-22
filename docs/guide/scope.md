@@ -27,7 +27,7 @@ which one forgot what. `gup` collapses that into one parallel scan and one
 update pipeline, behind a single CLI and an interactive menu.
 
 How that is built — the provider contract, the scan engine, the fail-soft rules
-— is in [`how-gup-works.md`](how-gup-works.md).
+— is in [`how-gup-works.md`](../development/how-gup-works.md).
 
 ## In scope
 
@@ -67,7 +67,7 @@ Each exclusion below is a decision, not a gap.
 ## Missing a source?
 
 If a source meets the two conditions above and no provider covers it yet, it is
-one file away — see [`CONTRIBUTING.md`](../CONTRIBUTING.md) for the workflow.
+one file away — see [`CONTRIBUTING.md`](../../CONTRIBUTING.md) for the workflow.
 
 Check [`providers-catalog.md`](providers-catalog.md) first: alongside the
 implemented providers it tracks candidates that were evaluated, and the ones
