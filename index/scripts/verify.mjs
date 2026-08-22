@@ -237,7 +237,7 @@ async function checkNoScript(browser) {
     (await page.textContent("body")).includes(String(facts.providerCount)),
   );
   check("install section present", (await page.$("#install")) !== null);
-  check("footer doc links present", (await page.$$('a[href*="docs/cli-reference.md"]')).length > 0);
+  check("footer doc links present", (await page.$$('a[href*="docs/guide/cli-reference.md"]')).length > 0);
   check(
     "content is actually visible, not left hidden by the reveal layer",
     await page.locator("#pourquoi h2").isVisible(),

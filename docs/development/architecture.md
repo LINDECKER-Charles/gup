@@ -2,8 +2,8 @@
 
 Technical view of `gup`. Audience: contributors, maintainers, security review.
 
-> For the full provider list and implementation status: [`providers-catalog.md`](providers-catalog.md).
-> To add a provider: [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
+> For the full provider list and implementation status: [`providers-catalog.md`](../guide/providers-catalog.md).
+> To add a provider: [`../CONTRIBUTING.md`](../../CONTRIBUTING.md).
 
 ---
 
@@ -405,7 +405,7 @@ Four decisions worth stating:
 
 ## 10. Security
 
-Summary diagram — operational details in [`../SECURITY.md`](../SECURITY.md).
+Summary diagram — operational details in [`../SECURITY.md`](../../SECURITY.md).
 
 ```mermaid
 flowchart TB

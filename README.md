@@ -4,13 +4,13 @@
 
 **One command to scan and update everything installed on your machine.**
 
-[**Homepage**](https://lindecker-charles.github.io/gup/) · [**Documentation**](docs/) · [**Providers (153)**](docs/providers-catalog.md) · [**npm**](https://www.npmjs.com/package/@charles_lindecker/gup)
+[**Homepage**](https://lindecker-charles.github.io/gup/) · [**Documentation**](docs/) · [**Providers (153)**](docs/guide/providers-catalog.md) · [**npm**](https://www.npmjs.com/package/@charles_lindecker/gup)
 
 [![npm](https://img.shields.io/npm/v/@charles_lindecker/gup?logo=npm&color=CB3837)](https://www.npmjs.com/package/@charles_lindecker/gup)
 [![npm downloads](https://img.shields.io/npm/dm/@charles_lindecker/gup?logo=npm&color=CB3837&label=downloads)](https://www.npmjs.com/package/@charles_lindecker/gup)
 [![CI](https://github.com/LINDECKER-Charles/gup/actions/workflows/ci.yml/badge.svg)](https://github.com/LINDECKER-Charles/gup/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/node-%E2%89%A524-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20WSL-4c6ef5)](docs/installation.md#platform-support)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20WSL-4c6ef5)](docs/guide/installation.md#platform-support)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 <img src="https://raw.githubusercontent.com/LINDECKER-Charles/gup/main/docs/assets/demo.svg" alt="Terminal running gup list --fast: 12 providers scanned in 5.7 seconds, 6 outdated packages listed" width="692">
@@ -26,7 +26,7 @@ covers them all: `winget upgrade --all` silently skips pinned packages,
 `brew upgrade` never sees your npm globals or your VS Code extensions, `ncu -g`
 only sees npm, and every cloud CLI ships its own `self-update`. `gup` unifies
 the whole thing behind one CLI and an interactive menu.
-[Why, and what's deliberately out of scope →](docs/scope.md)
+[Why, and what's deliberately out of scope →](docs/guide/scope.md)
 
 ## Install
 
@@ -34,7 +34,7 @@ the whole thing behind one CLI and an interactive menu.
 npm install -g @charles_lindecker/gup
 ```
 
-Node ≥ 24 · Windows, macOS, Linux, WSL. [Other install methods →](docs/installation.md)
+Node ≥ 24 · Windows, macOS, Linux, WSL. [Other install methods →](docs/guide/installation.md)
 
 ## Use
 
@@ -56,19 +56,21 @@ gup update --all   # update everything
 | `gup doctor` | Detected providers, plus install hints for the rest |
 
 Every flag, the retry strategies, the stuck-install timeout, exit codes and the
-JSON schema: [**CLI reference →**](docs/cli-reference.md)
+JSON schema: [**CLI reference →**](docs/guide/cli-reference.md)
 
 ## Documentation
 
 | Document | What's in it |
 |---|---|
-| [Installation](docs/installation.md) | Install methods, requirements, per-platform support |
-| [CLI reference](docs/cli-reference.md) | Every command, flag, environment variable, exit code |
-| [Scope](docs/scope.md) | What `gup` covers — and what it deliberately doesn't |
-| [Providers catalog](docs/providers-catalog.md) | The 153 providers, their status, and what's next |
-| [Architecture](docs/architecture.md) | Layers, data model, parallel scan, update pipeline |
-| [How `gup` works](docs/how-gup-works.md) | End-to-end technical walkthrough |
-| [Roadmap](docs/roadmap.md) | Decided changes waiting on a date or an upstream release |
+| [Installation](docs/guide/installation.md) | Install methods, requirements, per-platform support |
+| [CLI reference](docs/guide/cli-reference.md) | Every command, flag, environment variable, exit code |
+| [Scope](docs/guide/scope.md) | What `gup` covers — and what it deliberately doesn't |
+| [Providers catalog](docs/guide/providers-catalog.md) | The 153 providers, their status, and what's next |
+| [Architecture](docs/development/architecture.md) | Layers, data model, parallel scan, update pipeline |
+| [How `gup` works](docs/development/how-gup-works.md) | End-to-end technical walkthrough |
+| [Roadmap](docs/development/roadmap.md) | Decided changes waiting on a date or an upstream release |
+| [Changelog](docs/changelog/README.md) | Every change since the first commit, per version, with commit and PR links |
+| [Release notes](docs/releases/README.md) | Per-version notes — what shipped, what broke, how it was verified |
 | [Contributing](CONTRIBUTING.md) | Adding a provider, conventions, PR checklist |
 | [Security](SECURITY.md) | Threat model, mitigations, reporting a vulnerability |
 

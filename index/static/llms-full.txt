@@ -59,7 +59,7 @@ Exit codes: `0` success · `1` partial failure (at least one update failed) ·
 `2` invalid arguments.
 
 Full reference:
-https://github.com/LINDECKER-Charles/gup/blob/main/docs/cli-reference.md
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/cli-reference.md
 
 ## JSON output shape
 
@@ -90,7 +90,7 @@ and `--provider` accept.
 @@PROVIDER_INVENTORY@@
 
 Per-provider status, notes and the roadmap of what is not covered yet:
-https://github.com/LINDECKER-Charles/gup/blob/main/docs/providers-catalog.md
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.md
 
 ## Platform support, precisely
 
@@ -137,8 +137,8 @@ reports itself unavailable and never appears in a scan.
 Lifecycle of a run: `isAvailable()` probes in parallel (`where`/`which`, milliseconds) → flags and filters are applied (`--fast` drops slow providers, `--provider` restricts, `--only` targets) → `listOutdated()` fans out under `pLimit(4)` and `manual` packages are filtered once → selection → `runInherit()` streams stdout/stderr live, and every attempt is appended to the history log.
 
 Reading order:
-https://github.com/LINDECKER-Charles/gup/blob/main/docs/architecture.md then
-https://github.com/LINDECKER-Charles/gup/blob/main/docs/how-gup-works.md
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/architecture.md then
+https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/how-gup-works.md
 
 ## Activity history (since 0.3.1)
 
@@ -186,7 +186,7 @@ https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md
 - It does not manage JetBrains Toolbox-installed IDEs (Toolbox ships its own updater).
 - It runs no daemon and does no polling.
 
-Rationale: https://github.com/LINDECKER-Charles/gup/blob/main/docs/scope.md
+Rationale: https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/scope.md
 
 ## Frequently asked, answered
 

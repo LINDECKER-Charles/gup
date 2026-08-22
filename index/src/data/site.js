@@ -18,12 +18,12 @@ export const AUTHOR_URL = "https://github.com/LINDECKER-Charles";
 const doc = (path) => `${REPO_URL}/blob/main/${path}`;
 
 export const DOCS = {
-  installation: doc("docs/installation.md"),
-  cli: doc("docs/cli-reference.md"),
-  providers: doc("docs/providers-catalog.md"),
-  architecture: doc("docs/architecture.md"),
-  howItWorks: doc("docs/how-gup-works.md"),
-  scope: doc("docs/scope.md"),
+  installation: doc("docs/guide/installation.md"),
+  cli: doc("docs/guide/cli-reference.md"),
+  providers: doc("docs/guide/providers-catalog.md"),
+  architecture: doc("docs/development/architecture.md"),
+  howItWorks: doc("docs/development/how-gup-works.md"),
+  scope: doc("docs/guide/scope.md"),
   security: doc("SECURITY.md"),
   contributing: doc("CONTRIBUTING.md"),
   releases: `${REPO_URL}/tree/main/docs/releases`,

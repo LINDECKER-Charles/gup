@@ -7,7 +7,7 @@ Each entry names its trigger, the exact edits, and what must *not* change. The
 point is that when the trigger fires, nobody has to re-derive the decision or
 rediscover why it was postponed. This is not a wish list: an idea with no
 concrete trigger and no known set of edits does not belong here — that
-discussion lives in [`scope.md`](scope.md).
+discussion lives in [`scope.md`](../guide/scope.md).
 
 ---
 
@@ -18,7 +18,7 @@ discussion lives in [`scope.md`](scope.md).
 **Trigger:** Node 26 becomes Active LTS on **2026-10-28**.
 
 The CI matrix dropped to a single Node line when the floor moved to 24.11.0
-(see [`releases/`](releases/)), because 22 was the only other line and it fell
+(see [`releases/`](../releases/)), because 22 was the only other line and it fell
 below the new floor. Testing one line means a regression that only shows up on
 a newer V8 has no way to surface before a user hits it. Adding 26 restores the
 two-line shape the matrix was designed around.
@@ -28,7 +28,7 @@ two-line shape the matrix was designed around.
 | 24 | 2025-10-28 | 2028-04-30 |
 | 26 | 2026-10-28 | 2029-04-30 |
 
-**The edit** — one line in [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml):
+**The edit** — one line in [`../.github/workflows/ci.yml`](../../.github/workflows/ci.yml):
 
 ```yaml
 node: ["24"]          # →  node: ["24", "26"]
@@ -51,7 +51,7 @@ all track the **oldest supported line**, never the newest:
 | `tsup` `target: "node24"` | emitting for the newest line would produce syntax the floor cannot parse |
 
 That distinction is the whole reason a `@types/node` major bump is held back in
-[`../.github/dependabot.yml`](../.github/dependabot.yml). The floor only moves
+[`../.github/dependabot.yml`](../../.github/dependabot.yml). The floor only moves
 to 26 if and when 24 is dropped, which is a separate, breaking decision.
 
 ---
@@ -94,7 +94,7 @@ not coming.
 The source itself is already TS 7 clean, and TS 7.1 is in the `next` dist-tag.
 Nothing here needs migrating — only the flip.
 
-**The edit** — two `devDependencies` in [`../package.json`](../package.json):
+**The edit** — two `devDependencies` in [`../package.json`](../../package.json):
 
 ```
 typescript             ^6.0.3  →  ^7.x

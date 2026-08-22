@@ -37,7 +37,7 @@ Observation: **no native tool covers the entire surface**. The practical consequ
 What `gup` is *not*, and the sources it deliberately leaves alone — Windows
 Update, macOS system updates, Apple's SIP-frozen Ruby, project lockfiles,
 Toolbox-managed IDEs — each with the reasoning behind the exclusion:
-[`scope.md`](scope.md).
+[`scope.md`](../guide/scope.md).
 
 ---
 
@@ -706,7 +706,7 @@ Typical list of `slow`s: `pwsh-modules` (PowerShell Gallery HTTP per module), `v
 
 ## 13. Providers catalog (snapshot)
 
-Canonical source: [`docs/providers-catalog.md`](./providers-catalog.md). Current distribution (~150 entries):
+Canonical source: [`docs/guide/providers-catalog.md`](../guide/providers-catalog.md). Current distribution (~150 entries):
 
 | Category | # | Examples |
 |---|---:|---|

@@ -8,7 +8,7 @@ coverage/
 .idea/
 .vscode/
 *.tsbuildinfo
-release
 CLAUDE.md
-docs/reports/
+docs/archived/*
+!docs/archived/README.md
 design

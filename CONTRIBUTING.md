@@ -7,7 +7,7 @@
 
 Thanks for contributing. The typical contribution is **adding a provider** — an isolated module that knows how to scan and update one package source.
 
-> Before diving in: read [`docs/architecture.md`](docs/architecture.md) for context (lifecycle, runner, parallel scan, data model).
+> Before diving in: read [`docs/development/architecture.md`](docs/development/architecture.md) for context (lifecycle, runner, parallel scan, data model).
 
 ---
 
@@ -52,7 +52,7 @@ Both show up in `npm outdated`; neither is an oversight, so please don't "fix" t
 ```mermaid
 flowchart TD
     Start([Source to integrate]) --> Scope{In scope?}
-    Scope -->|no| OutOfScope[read docs/scope.md]
+    Scope -->|no| OutOfScope[read docs/guide/scope.md]
     Scope -->|yes| Copy[Copy _template.ts<br/>into the right category]
     Copy --> Impl[Implement the 4 methods<br/>isAvailable / listOutdated / update / updateAll]
     Impl --> Register[Import + add to<br/>ALL_PROVIDERS in registry.ts]
@@ -60,13 +60,13 @@ flowchart TD
     Smoke --> Pass{Detected?<br/>Scan ok?<br/>Update ok?}
     Pass -->|no| Impl
     Pass -->|yes| Tests[npm run typecheck<br/>npm run lint<br/>npm run security]
-    Tests --> Doc[Update docs/providers-catalog.md<br/>+ the provider count in README.md]
+    Tests --> Doc[Update docs/guide/providers-catalog.md<br/>+ the provider count in README.md]
     Doc --> PR([Pull Request])
 ```
 
 ### 2.1 Pick the category
 
-The file goes into `src/providers/<category>/`. Existing categories: `os/`, `wsl/`, `node/`, `python/`, `rust/`, `dotnet-php/`, `jvm/`, `lang-other/`, `toolchain/`, `cloud/`, `iac/`, `kubernetes/`, `containers/`, `security/`, `dev-cli/`, `ide/`, `editor-plugins/`, `embedded-mobile/`, `shell/`. See [`docs/architecture.md`](docs/architecture.md#11-tree-layout) for the full map.
+The file goes into `src/providers/<category>/`. Existing categories: `os/`, `wsl/`, `node/`, `python/`, `rust/`, `dotnet-php/`, `jvm/`, `lang-other/`, `toolchain/`, `cloud/`, `iac/`, `kubernetes/`, `containers/`, `security/`, `dev-cli/`, `ide/`, `editor-plugins/`, `embedded-mobile/`, `shell/`. See [`docs/development/architecture.md`](docs/development/architecture.md#11-tree-layout) for the full map.
 
 Only create a new category if **3+ providers** would logically fall into it — otherwise drop the file into `lang-other/` or `dev-cli/`.
 
