@@ -112,14 +112,14 @@
   "devDependencies": {
     "@types/node": "^24.13.3",
     "@types/semver": "^7.8.0",
-    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/eslint-plugin": "^8.69.0",
     "@typescript-eslint/parser": "^8.66.0",
     "@vitest/coverage-v8": "^4.1.11",
     "audit-ci": "^7.1.0",
     "eslint": "^10.9.1",
     "eslint-plugin-security": "^4.0.1",
     "tsup": "^8.3.5",
-    "tsx": "^4.23.12",
+    "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
   },
