@@ -176,9 +176,16 @@ Suite mistakes fail at collection: duplicate case labels, a waiver without a rea
 
 ## 8. Notes for the next branches
 
-- **Foundation.** The runner mock replaces the exports of `src/core/runner.ts`. If `whichFirst` /
-  `commandExists` move to `src/core/process/which.ts` and a module imports them from there
-  instead of through the runner, `install.ts` must mock that module too.
+- **Foundation** (merged with this branch at `int/wave-1`). `whichFirst` / `commandExists` now
+  live in `src/core/process/which.ts` and resolve PATH in-process; `src/core/runner.ts`
+  re-exports them, and every `src` module imports them through the runner, which is what
+  `install.ts` mocks. Keep it that way: a module importing `process/which.js` directly bypasses
+  the fake `bin` map. The foundation also added two runner exports the fake does not replace,
+  both of which spawn for real: `launchDetached` (detached child) and `killProcessTree`
+  (`taskkill` on win32). Nothing a provider reaches calls them today; a module that does and
+  runs under the `providers` project needs a fake in `fake-runner.ts` first. `isElevated()` is
+  `process.getuid() === 0` on POSIX (F-4), so the fake's `false` default matches a non-root user
+  on every OS; a case that needs root sets `elevated: true`.
 - **Provider contracts.** Cases go in `tests/providers/<domain>/<domain>.cases.ts` (no vitest
   import: the recorder loads them). Knowledge tests use `system` directly. Goldens:
   `golden(domain, name)`; update them only with `-u`, and review the diff.
@@ -186,6 +193,6 @@ Suite mistakes fail at collection: duplicate case labels, a waiver without a rea
   (`tests/support/tui/frame-contrast.ts`, reference palettes) build on it.
 - **Observability.** `syntheticHistory()` and `writeHistoryShards()` feed the insights and reader
   suites; a test writing shards uses its own `mkdtemp`.
-- **`.gitignore`.** Its bare `design` pattern (the local design workspace) also matches
-  `docs/development/design/`: this note was added with `git add -f`. Anchoring the pattern
-  (`/design`) on the integration branch makes later design notes addable normally.
+- **`.gitignore`.** This note was first added with `git add -f`, because the bare `design`
+  pattern also matched `docs/development/design/`. The foundation anchored it to `/design/`, so
+  from `int/wave-1` on, design notes are added normally.
