@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { commandExists, runInherit } from "../../core/runner.js";
 import { nvimDataDir } from "../../core/nvim-paths.js";
+import { pathFlavour } from "../../core/platform/path-flavour.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -21,7 +21,8 @@ export class NvimMasonProvider implements Provider {
 
   async isAvailable(): Promise<boolean> {
     if (!(await commandExists("nvim"))) return false;
-    return existsSync(join(nvimDataDir(), "mason"));
+    // nvim-paths hands back a target-platform path: extend it in kind.
+    return existsSync(pathFlavour().join(nvimDataDir(), "mason"));
   }
 
   async listOutdated(): Promise<OutdatedPackage[]> {

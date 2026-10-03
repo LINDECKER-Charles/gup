@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { commandExists, runInherit } from "../../core/runner.js";
 import { nvimDataDir } from "../../core/nvim-paths.js";
+import { pathFlavour } from "../../core/platform/path-flavour.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -17,6 +17,8 @@ export class NvimPackerProvider implements Provider {
 
   async isAvailable(): Promise<boolean> {
     if (!(await commandExists("nvim"))) return false;
+    // nvim-paths hands back target-platform paths: extend them in kind.
+    const { join } = pathFlavour();
     const dir = join(
       nvimDataDir(),
       "site",
