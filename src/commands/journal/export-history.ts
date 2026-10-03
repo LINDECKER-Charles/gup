@@ -1,10 +1,12 @@
 import { updatesToCsv, type CsvDelimiter } from "../../core/export/csv.js";
 import { toJsonExport } from "../../core/export/json-export.js";
+import { openExternal, type OpenResult } from "../../core/export/open-external.js";
 import {
   writeOutputFile,
   type OutputExtension,
   type OutputKind,
 } from "../../core/export/output-file.js";
+import { buildReportModel, MAX_REPORT_UPDATES } from "../../core/export/report-model.js";
 import { readHistory, type HistoryRead } from "../../core/history/reader.js";
 import { buildInsights } from "../../core/insights/build-insights.js";
 import type { Insights } from "../../core/insights/types.js";
@@ -12,20 +14,24 @@ import { log } from "../../core/log/log.js";
 import { getProvider } from "../../core/registry.js";
 import type { Period } from "../../core/time/period.js";
 import { gupVersion } from "../../core/version.js";
+import { renderReportHtml } from "../../report/render-report.js";
 import { linesToAnsi, linesToText } from "../../ui/charts/ansi-lines.js";
 import { chartGlyphs } from "../../ui/charts/chart-glyphs.js";
 import { renderTextReport } from "../../ui/charts/text-report.js";
+import { periodLabel, periodLead } from "../../ui/text/activity-labels.js";
 import type { GlyphMode } from "../../ui/theme/glyphs.js";
 
 /**
  * The history of a period exported: read, aggregated, serialised by format,
  * then written to standard output or to a file (the user's `--out`, or a
- * dated name in the reports directory). Shared by `gup report` and the
- * journal view's export. Adding a format is one entry of {@link SERIALIZERS}.
+ * dated name in the reports directory), and opened with the user's default
+ * application when asked (the HTML report: the browser). Shared by `gup
+ * report` and the journal view's export. Adding a format is one entry of
+ * {@link SERIALIZERS}.
  */
 
-export type HistoryFormat = "json" | "csv" | "text";
-export const HISTORY_FORMATS: readonly HistoryFormat[] = ["json", "csv", "text"];
+export type HistoryFormat = "html" | "json" | "csv" | "text";
+export const HISTORY_FORMATS: readonly HistoryFormat[] = ["html", "json", "csv", "text"];
 
 export type ExportTarget =
   | { readonly kind: "stdout" }
@@ -40,6 +46,8 @@ export interface HistoryExportRequest {
   /** Columns of the text report. */
   readonly width?: number;
   readonly glyphMode?: GlyphMode;
+  /** Open the file written with the default application (the HTML report: the browser). */
+  readonly open?: boolean;
 }
 
 export interface HistoryExportResult {
@@ -49,11 +57,16 @@ export interface HistoryExportResult {
   /** Records the export holds: every event, or every update attempt for a CSV. */
   readonly records: number;
   readonly read: HistoryRead;
+  /** Update attempts the HTML report counts but does not detail (its cap); 0 otherwise. */
+  readonly truncated: number;
+  /** How opening the file went; null when it was not asked for or nothing was written. */
+  readonly opened: OpenResult | null;
 }
 
 export interface ExportDeps {
   readonly readHistory: typeof readHistory;
   readonly writeOutputFile: typeof writeOutputFile;
+  readonly openExternal: (file: string) => Promise<OpenResult>;
   readonly stdout: (text: string) => void;
   readonly now: () => Date;
   readonly nameOf: (providerId: string) => string;
@@ -64,6 +77,7 @@ const DEFAULT_TEXT_WIDTH = 100;
 const DEFAULT_DEPS: ExportDeps = {
   readHistory,
   writeOutputFile,
+  openExternal: (file) => openExternal(file),
   stdout: (text) => void process.stdout.write(text),
   now: () => new Date(),
   nameOf: (providerId) => getProvider(providerId)?.displayName ?? providerId,
@@ -82,13 +96,24 @@ interface Serializer {
   serialize(input: SerializeInput): string;
   /** How many records of `read` the output holds. */
   records(read: HistoryRead): number;
+  /** How many update attempts of `read` the output leaves out. */
+  truncated?(read: HistoryRead): number;
 }
 
 const everyEvent = (read: HistoryRead): number => read.events.length;
 const updatesOnly = (read: HistoryRead): number =>
   read.events.filter((event) => event.kind === "update").length;
+const beyondReportCap = (read: HistoryRead): number =>
+  Math.max(0, updatesOnly(read) - MAX_REPORT_UPDATES);
 
 const SERIALIZERS: Readonly<Record<HistoryFormat, Serializer>> = {
+  html: {
+    kind: "report",
+    extension: "html",
+    serialize: serializeHtml,
+    records: everyEvent,
+    truncated: beyondReportCap,
+  },
   json: { kind: "history", extension: "json", serialize: serializeJson, records: everyEvent },
   csv: { kind: "history", extension: "csv", serialize: serializeCsv, records: updatesOnly },
   text: { kind: "report", extension: "txt", serialize: serializeText, records: everyEvent },
@@ -108,7 +133,16 @@ export async function exportHistory(
   const bytes = Buffer.byteLength(content);
   const records = serializer.records(read);
   log.info("report.export", { format: request.format, records, bytes, path });
-  return { path, bytes, records, read };
+  const opened = request.open === true && path !== null ? await openWritten(path, deps) : null;
+  return { path, bytes, records, read, truncated: serializer.truncated?.(read) ?? 0, opened };
+}
+
+/** Never rejects: a file that could not be opened is still written. */
+async function openWritten(path: string, deps: ExportDeps): Promise<OpenResult> {
+  const result = await deps.openExternal(path);
+  const { opened, launcher, reason } = result;
+  log.info("report.open", { opened, launcher, ...(reason !== undefined && { reason }) });
+  return result;
 }
 
 async function deliver(
@@ -131,13 +165,32 @@ async function deliver(
   });
 }
 
+/** The self-contained HTML report: its data model, rendered with its script and styles. */
+function serializeHtml({ request, read, insights, deps }: SerializeInput): string {
+  const { period } = request;
+  const model = buildReportModel({
+    events: read.events,
+    insights,
+    stats: read.stats,
+    context: {
+      now: deps.now(),
+      nameOf: deps.nameOf,
+      period: { label: periodLabel(period), lead: periodLead(period) },
+      gup: gupVersion(),
+      platform: process.platform,
+      timeZone: localTimeZone(),
+    },
+  });
+  return renderReportHtml(model);
+}
+
 function serializeJson({ request, read, insights, deps }: SerializeInput): string {
   return toJsonExport({
     meta: {
       generatedAt: deps.now(),
       gup: gupVersion(),
       platform: process.platform,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timeZone: localTimeZone(),
       period: request.period,
       stats: read.stats,
     },
@@ -160,4 +213,8 @@ function serializeText({ request, insights, deps }: SerializeInput): string {
   };
   const lines = renderTextReport(insights, context);
   return request.target.kind === "stdout" ? linesToAnsi(lines, mode) : linesToText(lines, mode);
+}
+
+function localTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }

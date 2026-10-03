@@ -4,6 +4,8 @@ import {
   MAX_DEBUG_RECORDS,
   MAX_JOURNAL_EVENTS,
 } from "../../../src/commands/journal/journal-source.js";
+import type { HistoryExportResult } from "../../../src/commands/journal/export-history.js";
+import type { OpenResult } from "../../../src/core/export/open-external.js";
 import type { HistoryRead } from "../../../src/core/history/reader.js";
 import { parsePeriod } from "../../../src/core/time/period.js";
 import { scanEvent, updateEvent } from "../../support/history-fixtures.js";
@@ -14,6 +16,11 @@ const STATS = { files: 1, lines: 2, malformed: 0, unsupported: 0 };
 
 function historyRead(events = [scanEvent(), updateEvent("pip", "rich")]): HistoryRead {
   return { dir: "history", events, stats: STATS };
+}
+
+/** What exportHistory answers for a file written at `path`. */
+function written(path: string, opened: OpenResult | null): HistoryExportResult {
+  return { path, bytes: 1, records: 1, read: historyRead(), truncated: 0, opened };
 }
 
 const noLog = vi.fn(async () => ({ records: [], files: [], malformed: 0 }));
@@ -74,7 +81,7 @@ describe("journal source", () => {
   });
 
   it("writes JSON and CSV through the history export, the archive through the diagnostic", async () => {
-    const exportHistory = vi.fn(async () => ({ path: "C:\\r\\h.csv", bytes: 1, records: 1, read: historyRead() }));
+    const exportHistory = vi.fn(async () => written("C:\\r\\h.csv", null));
     const writeDiagnostic = vi.fn(async () => "C:\\r\\d.zip");
     const source = createJournalSource({ exportHistory, writeDiagnostic });
 
