@@ -8,7 +8,6 @@ import {
 } from "../../../src/ui/theme/color/quantize-256.js";
 import {
   contrastRatio,
-  formatRatio,
   mix,
   parseHex,
   relativeLuminance,
@@ -77,13 +76,6 @@ describe("WCAG contrast", () => {
     expect(tuple(mix(hex("#000000"), hex("#FFFFFF"), 0.5))).toEqual(
       wcag.mix([0, 0, 0], [255, 255, 255], 0.5),
     );
-  });
-
-  it("formats a ratio with a decimal comma, truncated, never rounded up", () => {
-    expect(formatRatio(6.14)).toBe("6,1:1");
-    expect(formatRatio(4.499)).toBe("4,4:1");
-    expect(formatRatio(4.5)).toBe("4,5:1");
-    expect(formatRatio(21)).toBe("21,0:1");
   });
 });
 

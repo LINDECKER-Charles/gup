@@ -23,8 +23,8 @@ const GREY_STEPS = 24;
 const GREY_START = 8;
 const GREY_STEP = 10;
 /** The cube's corners: the fallbacks when nothing in between reaches a target. */
-export const XTERM_BLACK_SLOT = 16;
-export const XTERM_WHITE_SLOT = 231;
+const XTERM_BLACK_SLOT = 16;
+const XTERM_WHITE_SLOT = 231;
 
 function cubeLevel(index: number): number {
   return CUBE_LEVELS[index] ?? 0;

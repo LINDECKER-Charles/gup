@@ -1,5 +1,4 @@
 import type { HexColor } from "../../../core/config/field-reader.js";
-import { formatDecimal } from "../../text/fr-format.js";
 
 /**
  * 8-bit sRGB colours and the WCAG 2.x contrast maths. Every check runs on
@@ -30,8 +29,6 @@ const GAMMA = 2.4;
 const LUMINANCE_WEIGHTS = { r: 0.2126, g: 0.7152, b: 0.0722 } as const;
 /** Flare term of the WCAG contrast ratio. */
 const FLARE = 0.05;
-/** Ratio digits shown: one, truncated so a displayed "4,5" is never a rounded-up 4.46. */
-const RATIO_SCALE = 10;
 
 export const BLACK: Rgb = Object.freeze({ r: 0, g: 0, b: 0 });
 export const WHITE: Rgb = Object.freeze({ r: CHANNEL_MAX, g: CHANNEL_MAX, b: CHANNEL_MAX });
@@ -40,7 +37,7 @@ export const WHITE: Rgb = Object.freeze({ r: CHANNEL_MAX, g: CHANNEL_MAX, b: CHA
  * The luminance where black and white text tie (≈ 0.179): a ground below it
  * is dark. On any single ground, black or white reaches at least 4.58:1.
  */
-export const MID_LUMINANCE = Math.sqrt((1 + FLARE) * FLARE) - FLARE;
+const MID_LUMINANCE = Math.sqrt((1 + FLARE) * FLARE) - FLARE;
 
 /** A colour from three channels, each clamped to 0..255 and rounded. */
 export function rgb(r: number, g: number, b: number): Rgb {
@@ -62,7 +59,10 @@ export function parseHex(text: string): Rgb | undefined {
   return rgb(r, g, b);
 }
 
-/** `#RRGGBB`, upper case — the form the settings file stores. */
+/**
+ * `#RRGGBB`, upper case — the form the settings file stores. Exported for
+ * tests, which compare colours in that form.
+ */
 export function toHex(color: Rgb): HexColor {
   const pair = (channel: number): string => channel.toString(HEX_RADIX).padStart(2, "0");
   return `#${pair(color.r)}${pair(color.g)}${pair(color.b)}`.toUpperCase() as HexColor;
@@ -118,9 +118,4 @@ export function worstRatio(color: Rgb, grounds: readonly Rgb[]): number {
 /** True for a ground where white text reads better than black. */
 export function isDark(color: Rgb): boolean {
   return relativeLuminance(color) < MID_LUMINANCE;
-}
-
-/** `6.14` → "6,1:1": one decimal, truncated, French decimal comma. */
-export function formatRatio(ratio: number): string {
-  return `${formatDecimal(Math.floor(ratio * RATIO_SCALE) / RATIO_SCALE, 1)}:1`;
 }

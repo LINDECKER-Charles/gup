@@ -71,7 +71,7 @@ function searchLightness(
 }
 
 /** Black or white, whichever contrasts more with the worst of the grounds. */
-export function bestExtreme(grounds: readonly Rgb[]): Rgb {
+function bestExtreme(grounds: readonly Rgb[]): Rgb {
   return worstRatio(WHITE, grounds) >= worstRatio(BLACK, grounds) ? WHITE : BLACK;
 }
 

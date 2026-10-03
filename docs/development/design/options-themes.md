@@ -95,7 +95,8 @@ custom accent also colours the accent fill (title bar, active button) and the fo
 
 `SettingsService` (`get`, `update(key, patch)`, `reset(keys)`, `status`, `subscribe`) is the typed
 façade over the store for the four sections; `settingsService()` is the process-wide one over
-`configStore()`. `status()` reads every section first, so the issue list is complete.
+`configStore()`, the one the settings module and the Options view share. `status()` reads every
+section first, so the issue list is complete.
 
 `settings-sources.ts` adapts it to the foundation's ports: `menuPreferencesSource(settings,
 isKnownProvider)` (a `UiPreferencesSource`; filtered provider ids unknown to this build are
@@ -108,9 +109,9 @@ one of its sections changed — the menu asks for its preferences on every frame
 into the elevated child) runs, before every command:
 
 1. `NO_COLOR` → `chalk.level = 0` (chalk 6 honours only `FORCE_COLOR`);
-2. `applyPersistedInstallTimeout(store, env)` — skipped when `GUP_INSTALL_TIMEOUT` is set and not
-   empty, as the runner reads it; the `--timeout` flag, applied by the update action afterwards,
-   wins over both;
+2. `applyPersistedInstallTimeout(settings.get("install"), env)` — skipped when
+   `GUP_INSTALL_TIMEOUT` is set and not empty, as the runner reads it; the `--timeout` flag,
+   applied by the update action afterwards, wins over both;
 3. the file's problems (field issues, recovery, unknown filtered providers), once, through
    `installConsole.warn` (stderr, dim) — before any screen, so they never paint over a frame;
 4. `configureScreens({ createAppearance: themedAppearance(appearanceSource(settings)),
@@ -140,8 +141,7 @@ as `strong` (see §7), so no (tone, fill) combination can reach a ground it was 
 ### 4.2 Colour science (`color/`)
 
 - `rgb.ts`: 8-bit sRGB, strict hex parsing (never `RGBA.fromHex` on user data), WCAG relative
-  luminance and ratio, `formatRatio` (French decimal comma, truncated: a shown "4,5" is never a
-  rounded-up 4.46). All checks run on the 8-bit values that are painted, no epsilon.
+  luminance and ratio. All checks run on the 8-bit values that are painted, no epsilon.
 - `oklch.ts`: Ottosson's OKLab/OKLCH; out-of-gamut colours keep hue and lightness, chroma is
   bisected into sRGB.
 - `contrast.ts`: `correctLightness(color, grounds, target)` — identity when passing, else a
@@ -252,7 +252,8 @@ oracle; a cell on the terminal's default background counts as the ground).
 | D9 | `Appearance` (class) in `runtime/appearance.ts`, `AppearanceFactory` param on `createScreenHost` | `ThemedAppearance` in `runtime/themed-appearance.ts` + `themedAppearance(settings)` factory installed through `configureScreens` | Foundation seam (F-16); `ui/theme/appearance.ts` is the foundation's interface file. |
 | D10 | `ChunkStyle`/RGBA conversion in the appearance | `runtime/screen-look.ts` | One responsibility per file: the appearance is a state machine, the look a conversion. |
 | D11 | The test host's default appearance = terminal theme, trusted | unchanged (`configureScreens` default, legacy); suites pass `createAppearance` | `tests/support/tui/test-host.ts` is the foundation's file. |
-| D12 | Theme labels and status strings in part 1 | in part 2, with the picker that shows them | No consumer in part 1 (dead-code rule). |
+| D12 | Theme labels, status strings and `formatRatio` in part 1 | in part 2, with the picker that shows them | No consumer in part 1 (dead-code rule). |
+| D13 | `applyPersistedInstallTimeout(store, env)` | `(installSettings, env)` | The module reads every section through the shared `SettingsService`; the function keeps the one precedence rule. |
 
 ---
 
@@ -260,9 +261,10 @@ oracle; a cell on the terminal's default background counts as the ground).
 
 - **Options view (part 2):** reach the engine through `screen.appearance instanceof
   ThemedAppearance` (`resolved`, `preview`, `endPreview`, `availability`); settings through
-  `settingsService()` (same store as the module's); file row through `describeConfigStatus`; ratios
-  through `formatRatio`. A mouse change applies to the next screen through `rendererOptions`; the
-  live switch sets `screen.renderer.useMouse`.
+  `settingsService()` (the module's own); file row through `describeConfigStatus`. Part 2 adds
+  `formatRatio` to `color/rgb.ts` (French decimal comma, truncated: a shown "4,5" is never a
+  rounded-up 4.46) with the picker that shows ratios. A mouse change applies to the next screen
+  through `rendererOptions`; the live switch sets `screen.renderer.useMouse`.
 - **In-TUI updates (IT-6):** the embedded terminal panes must sit on `RGBA.defaultBackground()`
   (the terminal's own), never on the theme's background: subprocess output uses the host
   palette, which gup does not check. The contrast audit gains a case asserting it when the panes

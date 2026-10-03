@@ -55,7 +55,7 @@ export function depthOf(capabilities: TerminalCapabilities | null): ColorDepth {
   return capabilities.ansi256 ? "256" : "16";
 }
 
-/** A probe whose facts never change (tests, screens without a terminal). */
+/** A probe whose facts never change. Exported for tests: they paint against fixed facts. */
 export function staticProbe(facts: TerminalFacts): TerminalProbe {
   return {
     facts: () => facts,
