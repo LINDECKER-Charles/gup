@@ -23,12 +23,12 @@ jobs:
         # macOS and Linux are first-class since the Homebrew/apt/dnf
         # delegation landed.
         os: [windows-latest, macos-latest, ubuntu-latest]
-        # Tracks `engines.node` (>=24.11.0), so only the 24 line is tested:
-        # 24 is Active LTS until 2028-04. Node 22 was dropped when the floor
-        # moved — testing below the declared floor proves nothing the floor
-        # allows. Node 26 becomes LTS on 2026-10-28 and is a candidate to add
-        # then, which would restore the two-line shape this matrix used to have.
-        node: ["24"]
+        # Tracks `engines.node` (>=26.9.0), so only the 26 line is tested. The
+        # floor is 26.9 because the interactive UI is OpenTUI, whose native
+        # renderer loads through `node:ffi` — on by default from 26.9 only.
+        # Node 24 was dropped with that move: testing below the declared floor
+        # proves nothing the floor allows.
+        node: ["26"]
 
     steps:
       - name: Checkout
@@ -51,11 +51,11 @@ jobs:
       # Restricted to one leg: eslint output does not vary by OS or Node line,
       # so running it six times would only slow the matrix down.
       - name: Lint
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '26'
         run: npm run lint
 
       - name: Lint (security ruleset)
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
+        if: matrix.os == 'ubuntu-latest' && matrix.node == '26'
         run: npm run lint:security
 
       - name: Build

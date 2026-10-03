@@ -11,51 +11,6 @@ discussion lives in [`scope.md`](../guide/scope.md).
 
 ---
 
-## Waiting on a date
-
-### Add Node 26 to the CI matrix — from 2026-10-28
-
-**Trigger:** Node 26 becomes Active LTS on **2026-10-28**.
-
-The CI matrix dropped to a single Node line when the floor moved to 24.11.0
-(see [`releases/`](../releases/)), because 22 was the only other line and it fell
-below the new floor. Testing one line means a regression that only shows up on
-a newer V8 has no way to surface before a user hits it. Adding 26 restores the
-two-line shape the matrix was designed around.
-
-| Line | Active LTS from | End of life |
-|---|---|---|
-| 24 | 2025-10-28 | 2028-04-30 |
-| 26 | 2026-10-28 | 2029-04-30 |
-
-**The edit** — one line in [`../.github/workflows/ci.yml`](../../.github/workflows/ci.yml):
-
-```yaml
-node: ["24"]          # →  node: ["24", "26"]
-```
-
-Then update the comment above it, which currently explains why the matrix is
-down to one line.
-
-**Leave the lint steps alone.** They are pinned to `matrix.node == '24'` on
-`ubuntu-latest` on purpose — linting is runtime-independent, so running it on
-every leg only slows the matrix down. Adding a line must not duplicate it.
-
-**Do not touch the floor.** `engines.node`, `@types/node` and the `tsup` target
-all track the **oldest supported line**, never the newest:
-
-| Stays at | Why |
-|---|---|
-| `engines.node: ">=24.11.0"` | the promise made to users; 24 is supported until 2028-04-30 |
-| `@types/node: "^24"` | types describe the floor — on `^26` the compiler would accept APIs a Node 24 user does not have |
-| `tsup` `target: "node24"` | emitting for the newest line would produce syntax the floor cannot parse |
-
-That distinction is the whole reason a `@types/node` major bump is held back in
-[`../.github/dependabot.yml`](../../.github/dependabot.yml). The floor only moves
-to 26 if and when 24 is dropped, which is a separate, breaking decision.
-
----
-
 ## Waiting on an upstream release
 
 ### TypeScript 7 — when typescript-eslint supports TS ≥ 7.1

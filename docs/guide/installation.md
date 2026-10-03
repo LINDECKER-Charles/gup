@@ -38,7 +38,7 @@ npm run dev -- list --fast
 
 | | |
 |---|---|
-| **Node** | ≥ 24.11.0 — matches `engines.node`, the current LTS floor |
+| **Node** | ≥ 26.9.0 — matches `engines.node`; the interactive UI (OpenTUI) loads its native renderer through `node:ffi`, on by default from 26.9 |
 | **Shell** | any: PowerShell, cmd, bash, zsh, fish |
 | **OS** | Windows, macOS, Linux |
 

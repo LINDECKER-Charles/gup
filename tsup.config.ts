@@ -6,7 +6,7 @@ export default defineConfig({
   // Must track `engines.node` in package.json: emitting for an older target
   // silently down-levels syntax the supported runtimes handle natively, and
   // lets code that needs a newer runtime build without complaint.
-  target: "node24",
+  target: "node26",
   platform: "node",
   outDir: "dist",
   clean: true,

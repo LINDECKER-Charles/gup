@@ -7,10 +7,10 @@ export const facts = {
   version: "0.3.2",
   /** Number of entries in ALL_PROVIDERS (src/core/registry.ts). */
   providerCount: 153,
-  /** Minimum Node major, from engines.node (">=24.11.0"). */
-  nodeMajor: 24,
+  /** Minimum Node major, from engines.node (">=26.9.0"). */
+  nodeMajor: 26,
   /** Exact minimum Node version — used by the JSON-LD softwareRequirements. */
-  nodeEngine: "24.11.0",
+  nodeEngine: "26.9.0",
   /** npm package name, used by every install snippet on the page. */
   packageName: "@charles_lindecker/gup",
 };

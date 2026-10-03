@@ -34,7 +34,7 @@ the whole thing behind one CLI and an interactive menu.
 npm install -g @charles_lindecker/gup
 ```
 
-Node ≥ 24 · Windows, macOS, Linux, WSL. [Other install methods →](docs/guide/installation.md)
+Node ≥ 26.9 · Windows, macOS, Linux, WSL. [Other install methods →](docs/guide/installation.md)
 
 ## Use
 
