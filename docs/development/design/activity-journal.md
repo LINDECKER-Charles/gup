@@ -52,7 +52,7 @@ flowchart LR
 
 | Folder | Files | Role |
 |---|---|---|
-| `core/time/` | `period.ts`, `calendar.ts` | Periods (`7d 12w 6m 1y all YYYY-MM-DD`, presets `30d 90d 12m all`, `--until`) with a `scope` the interface words; local `YYYY-MM-DD` day keys, Monday weeks, DST-safe arithmetic (UTC noon). |
+| `core/time/` | `period.ts`, `calendar.ts` | Periods (`7d 12w 6m 1y all YYYY-MM-DD`, presets `30d 90d 12m all`, `--until`) with a `scope` the interface words and `hasFixedEnd` (an explicit `--until`); local `YYYY-MM-DD` day keys, Monday weeks, DST-safe arithmetic (UTC noon). |
 | `core/history/` | `reader.ts`, `parse-event.ts` (+ `store.ts` exports `isHistoryEnabled`) | Strict reader of the monthly shards. |
 | `core/insights/` | `types`, `stats`, `activity`, `recurrence`, `providers`, `trend`, `failures`, `runs`, `totals`, `build-insights` | Pure aggregation, one pass per builder. |
 | `core/export/` | `csv.ts`, `json-export.ts` (+ `diagnostic-bundle.ts`, `output-file.ts` extended) | Serialisers. |
@@ -71,7 +71,11 @@ flowchart LR
   record: known fields only, types checked, never a spread of the parsed object, strings cut to
   4 KiB, `ts` normalised to ISO UTC. Unknown fields (additive v1 fields of a newer gup) are
   dropped; an unknown `trigger` is dropped, the record kept.
-- Verdicts: `malformed` (not JSON, a known field of the wrong type, a torn last line),
+- `ts` must fall between the Unix epoch and 9999-01-01: outside, no gup wrote the line, and a
+  local day with a three- or five-digit year would break every day key downstream (a single
+  such line used to make the whole journal unreadable).
+- Verdicts: `malformed` (not JSON, a known field of the wrong type, an instant out of range, a
+  torn last line),
   `unsupported` (`v > 1`, an unknown record `kind` or `status` — a newer gup's well-formed record).
   Both are counted (`HistoryReadStats`) and never stop the read.
 - Strings come back display-safe: escape sequences dropped, other controls removed (a `message`
@@ -87,7 +91,7 @@ updates and scans once, then runs each builder:
 | Builder | Rule |
 |---|---|
 | `dailyActivity` / `weeklyActivity` | success / failed / skipped / scans per local day (days with activity only) and per Monday week |
-| `packageRecurrence` | per `provider:package`: counts, first/last attempt, last installed version, **median interval between successes with successes < 1 h apart merged**, cadence (`weekly` ≤ 10 d, `monthly` ≤ 45 d, `quarterly` ≤ 120 d, `rare`, `once`, `none` = never succeeded), the 20 latest version steps; most successes first, then most recent |
+| `packageRecurrence` | per `provider:package`: counts, first/last attempt, last installed version, **median interval between successes with successes < 1 h after the previous one merged** (the merge chains; an update dates from its first success), cadence (`weekly` ≤ 10 d, `monthly` ≤ 45 d, `quarterly` ≤ 120 d, `rare`, `once`, `none` = never succeeded), the 20 latest version steps; most successes first, then most recent |
 | `providerStats` | attempts and outcomes, median update ms, **median own scan ms** (from `ScanProviderRecord.durationMs`), scan errors and the last one; providers only scanned are listed too |
 | `outdatedTrend` | the last **full** scan (`!fast && filter = []`) of each day |
 | `failureGroups` | failed attempts grouped by provider, package and the first line of the message (whitespace collapsed, 160 chars) |
@@ -104,12 +108,16 @@ Performance: 100 000 synthetic events written as shards are read **and** aggrega
   their own (F-16). The ASCII set is its own (`. : + * #`, `#` bars, `_ . - ~ = ^`), not a
   translation: `toAscii` maps every block to `#`, which would flatten the levels. Every Unicode
   mark is in the foundation's glyph map, so the TUI's translation still applies to the rest.
-- Heatmap: GitHub's layout (week columns, Monday rows, last column = current week, future days
-  blank), cell width 2 when every wanted week fits, else 1; weeks = the period's, 53 at most;
-  month names over the week of the 1st unless they would touch the previous one; levels by
-  quartiles of the non-zero days (0 stays 0); **density carries the meaning, tone doubles it**.
-- Bars: eighth blocks (whole cells in ASCII), a non-zero value always shows. Sparkline: 0 to max,
-  resampled by bucket mean; the outdated series repeats the last value on days without a full scan.
+- Heatmap: GitHub's layout (week columns, Monday rows, last column = the week of the period's
+  last day — today, or the `--until` day — later days blank), cell width 2 when every wanted
+  week fits, else 1; weeks = from the Monday of the period's first day to that last week, 53 at
+  most; month names over the week of the 1st unless they would touch the previous one; levels by
+  quartiles of the **distinct** non-zero daily counts (0 stays 0); **density carries the
+  meaning, tone doubles it**.
+- Bars: eighth blocks (whole cells in ASCII), a non-zero value always shows; the Récurrence
+  table's bars count the successes, or the failures while the tab is sorted by them.
+  Sparkline: 0 to max, resampled by bucket mean; the outdated series runs to the period's last
+  day and repeats the last value on days without a full scan.
 - `kpiLines`, `heatmapSection`, `trendLine`, `slowProvidersLine` are shared by the Activité tab and
   the text report; numbers, dates and durations go through `fr-format.ts` (F-16).
 
@@ -123,6 +131,10 @@ Performance: 100 000 synthetic events written as shards are read **and** aggrega
   banner, list window with cursor row, filter line, hints, click mapping, `nextOf`).
 - `BrowsableList<T>`: items, a scope (type/level filter), a typed text filter (precomputed
   lowercase search text), a cursor stopping at both ends, a scrollable detail.
+- Details never cut text at the panel's edge: a title, a field value, a message or a debug
+  record's data wider than a row wraps, a word wider than a row (a long package id, a path, a
+  command's error output) continuing on the next. A debug record's time reads in local time,
+  as in the list, followed by the logged instant.
 - The Activité tab stacks its blocks with blank lines when they fit, without them otherwise, and
   drops trailing blocks last: the view fits 80 × 24 (50 × 19 inside the panel) and 120 × 30
   (tested through `bootMenu`, in Unicode and ASCII).
@@ -176,7 +188,17 @@ format, records, bytes, path.
   render). `feat/html-report` flips the default.
 - **`describePeriod` is not in `core/time`:** it is French text, so it lives in
   `ui/text/activity-labels.ts` (`periodLabel`), reading the period's `scope` (F-10). `Period`
-  carries `scope` for that reason.
+  carries `scope` for that reason, and `hasFixedEnd` so that a `--until` period reads
+  "depuis le 01/01/2026 jusqu'au 31/03/2026".
+- **Heatmap weeks are counted between Mondays**, not as the spec's `ceil(periodDays / 7)`, which
+  dropped up to six days of a period starting late in its week; the heatmap and the trend end
+  on the period's last day, not today.
+- **Heatmap levels use the quartiles of the distinct daily counts**, not of every day: counts
+  repeat so much that raw quartiles collapse (1, 1, 2 for a history of one-update days), leaving
+  levels unused and a busy day drawn like an ordinary one.
+- **The Récurrence bars follow the failure sort:** sorted by failures, the bars, counts and
+  column title show the failures (the spec's table always shows the successes, which made that
+  order unreadable).
 - **Cadence `none`** (never succeeded) is added to the spec's `Cadence`: a package that only
   failed must not read "une fois".
 - **Unknown `kind`/`status` are `unsupported`, not `malformed`:** a newer gup may add a record
@@ -206,7 +228,7 @@ format, records, bytes, path.
 | `core/history/store.ts` | exports `isHistoryEnabled()` (was private) | the view's "recording off" banner reads the same switch |
 | `core/export/output-file.ts` | `OutputExtension` gains `txt` | `gup report --format text -o x.txt` |
 | `core/export/diagnostic-bundle.ts` | `DiagnosticInput.history?`, `DiagnosticContents.history?`, `DIAGNOSTIC_ENTRIES.history` | the activity summary of the archive |
-| `ui/log-line.ts` | exports `printable()` | detail views make tool text safe the same way |
+| `ui/log-line.ts` | exports `printable()` and `recordTime()` | detail views make tool text safe, and date a record, the same way as the list |
 | `commands/journal/diagnostic.ts` | `writeDiagnostic(request)` split from the command | the view writes the archive without printing |
 | `tests/commands/menu-views.test.ts`, `tests/commands/cli/cli-modules.test.ts` | Journal in the sidebar; `report` in the command list | companions of the registration lines |
 

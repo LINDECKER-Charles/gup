@@ -60,7 +60,7 @@ history each time it comes to the front, and has four tabs:
 | Tab | Shows | Keys |
 |---|---|---|
 | **1 Activité** | the headline numbers; a calendar of successful updates (one mark per day, Monday at the top, the current week in the last column; the denser the mark, the busier the day); the number of outdated packages day after day; the providers whose scan is the slowest | — |
-| **2 Récurrence** | one bar per package — how many times it was updated, its typical interval (`~14 j`) and pace (`hebdo.`, `mensuel`, `trim.`, `rare`, `une fois`) | `s` sort: most updated, most failed, most recent · `entrée` details: counts, first and last attempt, the latest versions installed |
+| **2 Récurrence** | one bar per package — how many times it was updated, its typical interval (`~14 j`) and pace (`hebdo.`, `mensuel`, `trim.`, `rare`, `une fois`) | `s` sort: most updated, most failed (the bars then count the failures), most recent · `entrée` details: counts, first and last attempt, the latest versions installed |
 | **3 Événements** | every scan and update attempt, newest first, each with a mark *and* a word (`✔ réussie`, `✖ échec`, `↷ ignorée`, `⟳ scan`) | `f` type: all, updates, failures, skips, scans · `/` filter on provider, package, status or message · `entrée` the full record (versions, duration, message, retry, admin rights, what started the run) |
 | **4 Debug** | the newest lines of the [debug log](#debug-log), under the level this run writes and where that came from | `l` levels shown · `/` filter · `entrée` the record's context and data · `x` write a diagnostic archive |
 
@@ -85,7 +85,7 @@ gup report --format csv --delimiter ";" -o maj.csv   # Excel in a French locale
 |---|---|
 | `-f, --format` | `text` (default: the charts above, then the most updated packages and the recurring failures), `json` (every event of the period plus the computed figures) or `csv` (one row per update attempt) |
 | `-s, --since` | the period: `7d`, `30d`, `12w`, `6m`, `1y`, `all` or a date `AAAA-MM-JJ`; default `12m` |
-| `--until` | last day included (`AAAA-MM-JJ`); default: now |
+| `--until` | last day included (`AAAA-MM-JJ`); default: now. The charts then stop on that day, and the title names it |
 | `-o, --out` | write to a file instead of the standard output (`-` keeps the standard output); `--force` replaces an existing file |
 | `--delimiter` | CSV separator: `,` (default), `;` or `tab` |
 
@@ -102,14 +102,18 @@ whatever the language of the interface; the JSON document says which schema it f
 
 - **Success rate**: successes / (successes + failures). A skipped update (by you, or by a
   provider deferring on purpose) is not a failure.
-- **Typical interval** of a package: the median time between its successful updates. Two
-  successes less than an hour apart count as one update (a retry, a second run right after).
+- **Typical interval** of a package: the median time between its successful updates. A
+  success less than an hour after the previous one belongs to the same update (a retry, a
+  second run right after).
   The pace follows from it: weekly up to 10 days, monthly up to 45, quarterly up to 120, rare
   beyond; `une fois` for a single success.
 - **Outdated packages**: the last *full* scan of each day — a `--fast` scan or a scan of a few
   providers would show a drop that never happened. A day without a full scan repeats the last
   known value.
 - **Slowest scans**: the median of each provider's own scan time, recorded since gup 0.5.0.
+- **Calendar marks**: the busiest days get the densest mark, ranked among the different daily
+  counts of the period, so a day of 8 updates stands out from a day of 3 even when most days
+  have just one.
 - Days are your local days; a week starts on Monday.
 
 The journal only reads the history: nothing it shows ever decides what gup updates.
@@ -125,8 +129,9 @@ The journal only reads the history: nothing it shows ever decides what gup updat
   so opening the file never runs anything.
 - Messages printed by tools are shown without their escape sequences: the journal never changes
   your terminal's colours, title or clipboard.
-- A history line written by a newer gup, or damaged (a crash in the middle of a write), is
-  skipped and counted, never fatal: the Debug tab and `gup report` say how many.
+- A history line written by a newer gup, or damaged (a crash in the middle of a write, a date
+  no gup could have written), is skipped and counted, never fatal: the Debug tab and
+  `gup report` say how many.
 
 ## Debug log
 
