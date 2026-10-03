@@ -18,6 +18,8 @@ const DRAWER_FACTS = [
 ];
 const COPIED_MS = 2000;
 const VISIBLE_VERSIONS = 8;
+/** What the focus may go back to when the drawer closes. */
+const FOCUS_RETURNS = "button, a[href], input, select, summary";
 let rowsByPackage = null;
 
 function initDrawer() {
@@ -35,7 +37,11 @@ function initDrawer() {
 
 function openPackage(index) {
   state.drawerReturn = { element: document.activeElement, index: index };
-  navigate(routeHash(state.route.page, { pkg: String(index), day: state.route.query.get("day") }));
+  const day = state.route.query.get("day");
+  const address = routeHash(state.route.page, { pkg: String(index), day: day });
+  // A history entry of the page's own making: closing the drawer takes it back.
+  state.drawerEntry = location.hash === address ? null : address;
+  navigate(address);
 }
 
 /** Opens, refills or closes the drawer to match the address. */
@@ -63,10 +69,23 @@ function onDrawerClosed() {
   // Closed by its button or Échap: the address forgets the package, and the
   // route, once the page is drawn again, gives the focus back.
   if (drawerPackage(state.route) !== null) {
-    navigate(routeHash(state.route.page, { day: state.route.query.get("day") }));
+    leaveDrawerAddress();
     return;
   }
+  state.drawerEntry = null;
   restoreFocus();
+}
+
+/**
+ * Back to the entry before the drawer when the page added it, so that Back
+ * then leaves the page instead of opening the drawer again; otherwise (an
+ * address typed or reloaded) a new entry without the package.
+ */
+function leaveDrawerAddress() {
+  const isOwnEntry = state.drawerEntry !== null && state.drawerEntry === location.hash;
+  state.drawerEntry = null;
+  if (isOwnEntry) window.history.back();
+  else navigate(routeHash(state.route.page, { day: state.route.query.get("day") }));
 }
 
 /** Back to what opened the drawer, or to the same package's button if the page was redrawn. */
@@ -74,14 +93,20 @@ function restoreFocus() {
   const origin = state.drawerReturn;
   state.drawerReturn = null;
   if (origin === null) return;
-  // A row clicked outside its button leaves the focus on the page itself: use the button then.
-  const element = origin.element;
-  const isControl = element && element !== document.body && element.isConnected;
-  const target = isControl
-    ? element
+  const target = isFocusReturn(origin.element)
+    ? origin.element
     : document.querySelector("[data-page-section]:not([hidden]) .package-link[data-package=\"" +
       origin.index + "\"]");
-  if (target && typeof target.focus === "function") target.focus();
+  if (target !== null) target.focus();
+}
+
+/**
+ * A control still on screen. A row clicked outside its button leaves the
+ * focus on the page or its main region, which the package's button replaces.
+ */
+function isFocusReturn(element) {
+  return element instanceof HTMLElement && element.isConnected &&
+    element.matches(FOCUS_RETURNS) && element.closest("[hidden]") === null;
 }
 
 function fillDrawer(index) {

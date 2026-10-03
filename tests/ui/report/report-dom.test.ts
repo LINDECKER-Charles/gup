@@ -294,6 +294,38 @@ describe("report page: packages", () => {
     expect(page.window.document.activeElement).toBe(button);
   });
 
+  it("gives the focus to the package's button when a row was clicked outside it", async () => {
+    const page = await openReport(reportModelOf(EVENTS), "#/packages");
+    const row = page.$$("#packages-body tr").find((item) => item.textContent?.includes("typescript"));
+    // Clicking a cell of the row focuses the main region, which can take the focus.
+    (page.$("main") as unknown as { focus(): void }).focus();
+    (row?.querySelector("td") as unknown as { click(): void }).click();
+    await page.settle();
+    expect(page.text("#drawer-title")).toBe("typescript");
+
+    click(page, "#drawer-close");
+    await page.settle();
+
+    expect(page.window.document.activeElement).toBe(row?.querySelector(".package-link"));
+  });
+
+  it("forgets a closed drawer in the history: Back then leaves the page", async () => {
+    const page = await openReport();
+    await go(page, "#/packages");
+    click(page, "#packages-body .package-link");
+    await page.settle();
+    expect(isOpen(page)).toBe(true);
+
+    click(page, "#drawer-close");
+    await page.settle();
+    expect(page.window.location.hash).toBe("#/packages");
+    page.window.history.back();
+    await page.settle();
+
+    expect(page.window.location.hash).toBe("#/overview");
+    expect(isOpen(page)).toBe(false);
+  });
+
   it("opens the drawer from its address, and Back closes it", async () => {
     const page = await openReport(reportModelOf(EVENTS), "#/failures?pkg=1");
 

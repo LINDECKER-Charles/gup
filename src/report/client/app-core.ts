@@ -59,6 +59,7 @@ const state = {
   focusPage: false,
   drawerReturn: null,
   drawerPackage: null,
+  drawerEntry: null,
 };
 
 function readJson(id) {
