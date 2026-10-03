@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Provider } from "../../../src/core/types.js";
 import { WslNixProvider } from "../../../src/providers/wsl/wsl-nix.js";
 import { system } from "../../support/system/fake-system.js";
+import { probeArgvs } from "../../support/system/trace.js";
 import type { CommandAnswer } from "../../support/system/types.js";
 import {
   APT,
@@ -13,6 +14,7 @@ import {
   managedDistro,
   PACMAN,
 } from "./distros.cases.js";
+import { RECORDED_WSL_MACHINE } from "./recorded.cases.js";
 
 /**
  * What the six WSL distribution providers share: they exist only when WSL
@@ -32,6 +34,13 @@ describe("WSL distribution providers", () => {
   it.each(DISTRO_PROVIDERS)("%s stays hidden when WSL lists no distribution", async (_id, create) => {
     await system.load(distrosMachine([]));
     await expect(create().isAvailable()).resolves.toBe(false);
+  });
+
+  // Recorded: a machine whose only distribution is Docker Desktop's, which gup never starts.
+  it.each(DISTRO_PROVIDERS)("%s stays hidden next to Docker Desktop alone", async (_id, create) => {
+    await system.load(RECORDED_WSL_MACHINE);
+    await expect(create().isAvailable()).resolves.toBe(false);
+    expect(probeArgvs().filter((argv) => argv.includes("-d"))).toEqual([]);
   });
 
   const COUNTERS: readonly (readonly [string, CountingManager])[] = [

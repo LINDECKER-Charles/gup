@@ -5,7 +5,7 @@ import { PnpmGlobalProvider } from "../../../src/providers/node/pnpm-global.js";
 import { YarnGlobalProvider } from "../../../src/providers/node/yarn-global.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
 import { npmLatestRoute } from "../../support/system/releases.js";
-import type { CommandScript, HttpRoute, SystemSpec } from "../../support/system/types.js";
+import type { CommandScript, HttpRoute, SystemSpec, Text } from "../../support/system/types.js";
 
 /**
  * The global packages of the JavaScript package managers (the runtimes and
@@ -21,7 +21,7 @@ const NODE_DIR = "C:\\Program Files\\nodejs";
 export const NPM_OUTDATED_ARGV = ["npm", "outdated", "-g", "--json", "--long"];
 
 /** npm printing `report` for `npm outdated -g --json`. */
-export function npmMachine(report: string): SystemSpec {
+export function npmMachine(report: Text): SystemSpec {
   return {
     platform: "win32",
     bin: { npm: `${NODE_DIR}\\npm.cmd` },

@@ -1,0 +1,37 @@
+{
+  "fixtures": [
+    {
+      "file": "list-quiet.win32.txt",
+      "argv": [
+        "wsl",
+        "-l",
+        "-q"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      }
+    },
+    {
+      "file": "version.win32.txt",
+      "argv": [
+        "wsl",
+        "--version"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      }
+    }
+  ]
+}

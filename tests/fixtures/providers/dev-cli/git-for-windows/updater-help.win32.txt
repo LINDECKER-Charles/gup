@@ -1,0 +1,8 @@
+Usage: git update-git-for-windows [options]
+Options:
+	-g, --gui Use GUI instead of terminal to prompt
+	-y, --yes Automatic yes to download and install prompt
+Return code:
+ 0: no update available
+	 1: update available and user selected not to update
+	 2: update available and it was started

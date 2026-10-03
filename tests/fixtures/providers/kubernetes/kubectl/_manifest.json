@@ -1,0 +1,23 @@
+{
+  "fixtures": [
+    {
+      "file": "version-client.win32.json",
+      "argv": [
+        "kubectl",
+        "version",
+        "--client",
+        "-o",
+        "json"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      }
+    }
+  ]
+}

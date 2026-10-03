@@ -1,0 +1,31 @@
+Nom                                 ID                               Version              Disponible          Source
+--------------------------------------------------------------------------------------------------------------------
+App 01                              Vendor01.App01                   Unknown              1.19.3.3219         winget
+App 02                              Vendor02.App02                   1.1.2                1.1.6               winget
+App 03                              Vendor03.App03                   2.9.0                4.3.1               winget
+App 04                              Vendor04.App04                   126.9.10             126.9.11            winget
+App 05                              Vendor05.App05                   126.8.16             126.9.12            winget
+App 06                              Vendor06.App06                   2.101.0              2.102.0             winget
+App 07                              Vendor07.App07                   12.4.0               12.5.0              winget
+App 08                              Vendor08.App08                   154.0.8037.94        154.0.8037.98       winget
+App 09                              Vendor09.App09                   5.6.1.257            5.7.2.358           winget
+App 10                              Vendor10.App10                   3.5.274.0            3.5.283             winget
+App 11 Sample Application Suite Edi Vendor11.App11                   1.139.0              1.140.0             winget
+App 12                              Vendor12.App12                   0.34.4               0.35.1              winget
+App 13                              Vendor13.App13                   1.4.218              1.4.219             winget
+App 14                              Vendor14.App14                   < 150.104.1.0        150.104.1.0         winget
+App 15                              Vendor15.App15                   17.11-4              17.11-5             winget
+App 16                              Vendor16.App16                   1.2.93.667.g7b5cc0ce 1.3.3.264.gdaf3b824 winget
+App 17                              Vendor17.App17                   1.24.12741.0         1.25.2733.0         winget
+App 18                              Vendor18.App18                   < 174.0.0.13368      174.0.0.13368       winget
+App 19                              Vendor19.App19                   3.21.3.65535         3.22.2.65535        winget
+App 20                              Vendor20.App20                   0.12.19              0.12.23             winget
+App 21                              Vendor21.App21.SampleApplication 18.10.2              18.10.3             winget
+App 22                              Vendor22.App22                   3.0.23               3.0.24              winget
+App 23                              Vendor23.App23                   2.7.0                2.8.0               winget
+24 mises à niveau disponibles.
+
+Les packages suivants ont une mise à niveau disponible, mais nécessitent un ciblage explicite pour la mise à niveau :
+Nom            ID                   Version Disponible Source
+-------------------------------------------------------------
+App 24 Samples Vendor24.App24.Sampl 2026.1  2026.2.1.8 winget

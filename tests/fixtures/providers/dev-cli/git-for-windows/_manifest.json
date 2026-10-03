@@ -1,0 +1,37 @@
+{
+  "fixtures": [
+    {
+      "file": "updater-help.win32.txt",
+      "argv": [
+        "git",
+        "update-git-for-windows",
+        "-h"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      }
+    },
+    {
+      "file": "version.win32.txt",
+      "argv": [
+        "git",
+        "--version"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      }
+    }
+  ]
+}

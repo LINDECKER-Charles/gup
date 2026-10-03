@@ -10,7 +10,7 @@ import type { CommandScript, SystemSpec } from "../../support/system/types.js";
  * knowledge test starts from are exported; the rest stays private.
  */
 
-const CARGO_HOME_BIN = `${WIN_HOME}\\.cargo\\bin`;
+export const CARGO_HOME_BIN = `${WIN_HOME}\\.cargo\\bin`;
 
 // --- cargo (cargo-update plugin) ------------------------------------------------
 

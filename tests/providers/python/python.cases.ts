@@ -105,14 +105,14 @@ const PYENV_WIN: SelfUpdatingTool = {
 
 // --- pip (user site) ------------------------------------------------------------
 
-const PIP_LIST_ARGS = [
+export const PIP_LIST_ARGS = [
   "list",
   "--outdated",
   "--user",
   "--format=json",
   "--disable-pip-version-check",
 ];
-const PIP_INSTALL_ARGS = ["install", "--user", "--upgrade", "--disable-pip-version-check"];
+export const PIP_INSTALL_ARGS = ["install", "--user", "--upgrade", "--disable-pip-version-check"];
 
 const PIP_REPORT = JSON.stringify([
   { name: "requests", version: "2.30.0", latest_version: "2.32.3", latest_filetype: "wheel" },
