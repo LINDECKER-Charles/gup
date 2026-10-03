@@ -59,13 +59,14 @@ function spawnFault(argv: readonly string[]): SpawnFaultMode | undefined {
 
 function record(mode: SpawnRecord["mode"], argv: readonly string[], options: Options): void {
   const cwd = options.cwd === undefined ? undefined : String(options.cwd);
-  const { timeout } = options;
+  const { timeout, env } = options;
   machine().spawns.push({
     mode,
     argv,
     shell: Boolean(options.shell),
     ...(cwd && { cwd }),
     ...(timeout !== undefined && { timeout }),
+    ...(env !== undefined && { env: { ...env } }),
   });
 }
 

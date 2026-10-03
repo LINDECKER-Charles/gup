@@ -185,6 +185,15 @@ describe("fake runner: run()", () => {
     ]);
   });
 
+  it("traces the environment a probe handed its child", async () => {
+    await system.load(WINDOWS_TOFU);
+
+    await run("tofu", ["version"], { env: { TF_LOG: "off" } });
+    await run("tofu", ["version"]);
+
+    expect(system.trace.spawns.map((spawn) => spawn.env)).toEqual([{ TF_LOG: "off" }, undefined]);
+  });
+
   it("refuses two scripts for the same argv", async () => {
     await expect(
       system.load({

@@ -100,6 +100,8 @@ export interface SpawnRecord {
   readonly cwd?: string;
   /** The wall-clock cap (ms) the code under test asked the runner for, if any. */
   readonly timeout?: number;
+  /** The environment the code under test handed the child, when it passed one. */
+  readonly env?: Readonly<Record<string, string | undefined>>;
 }
 
 export interface RequestRecord {
