@@ -47,6 +47,8 @@ export class CygwinProvider implements Provider {
     win32: "https://cygwin.com/setup-x86_64.exe — lancer l'installeur puis relancer gup",
     fallback: "Cygwin est un environnement Windows — inexistant sur cette plateforme.",
   });
+  /** Cygwin setup elevates itself through UAC unless the tree was installed with --no-admin. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     return findCygwinRoot(process.env) !== null;
@@ -59,6 +61,7 @@ export class CygwinProvider implements Provider {
     return [
       {
         id: ROW_ID,
+        aggregate: true,
         name: "Cygwin (paquets)",
         current: "?",
         latest: "refresh",

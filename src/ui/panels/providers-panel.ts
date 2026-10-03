@@ -10,16 +10,28 @@ export interface ProviderInfo {
 
 const NAME_WIDTH = 30;
 
-/** Which providers gup found on this machine, and how to get the others. */
+/**
+ * Which providers gup found on this machine, and how to get the others.
+ * Detection is slow, so it starts the first time the panel is shown: `load`
+ * fetches the data and hands it to {@link setData}.
+ */
 export class ProvidersPanel implements Panel {
   readonly title = "Providers";
   readonly isCapturingText = false;
+  readonly #load: () => void;
+  #isLoadRequested = false;
   #detected: readonly ProviderInfo[] | null = null;
   #missing: readonly ProviderInfo[] = [];
   #offset = 0;
 
-  get hasData(): boolean {
-    return this.#detected !== null;
+  constructor(load: () => void) {
+    this.#load = load;
+  }
+
+  onShow(): void {
+    if (this.#isLoadRequested) return;
+    this.#isLoadRequested = true;
+    this.#load();
   }
 
   setData(detected: readonly ProviderInfo[], missing: readonly ProviderInfo[]): void {

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ProviderScanResult } from "../../../src/core/types.js";
 import { pickPackages } from "../../../src/ui/prompts/package-picker.js";
-import { createTestHost, frame, press } from "../tui-test-host.js";
+import { createTestHost, frame, press } from "../../support/tui/test-host.js";
 
 const SCANS: ProviderScanResult[] = [
   {

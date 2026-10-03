@@ -1,12 +1,23 @@
 import type { StyledText, TextChunk } from "@opentui/core";
-import type { Tui } from "./load-tui.js";
+import type { Screen } from "./screen-host.js";
 
 /**
  * What a piece of text means, not which color it is. Every screen paints
- * through these tones, so panels, dialogs and bars read the same.
+ * through these tones, so panels, dialogs and bars read the same; the
+ * screen's {@link Screen.appearance} decides what each one looks like.
+ * `disabled` is something that exists but cannot be acted on here (a provider
+ * foreign to this OS), distinct from `muted` secondary information.
  */
 export type Tone =
-  "plain" | "strong" | "muted" | "accent" | "success" | "warning" | "danger" | "onAccent";
+  | "plain"
+  | "strong"
+  | "muted"
+  | "disabled"
+  | "accent"
+  | "success"
+  | "warning"
+  | "danger"
+  | "onAccent";
 
 /** Background behind a segment: the title bar, or the row under the cursor. */
 export type Fill = "accent" | "highlight";
@@ -24,36 +35,27 @@ export function seg(text: string, tone: Tone = "plain", fill?: Fill): Segment {
 }
 
 /**
- * ANSI palette slots rather than RGB values: the terminal maps them through
- * its own theme, exactly like chalk does for the rest of gup's output. OpenTUI's
- * named colors are fixed RGB (`cyan` is #00FFFF), unreadable on a light theme.
+ * Lines → one StyledText, ready for a TextRenderable's `content`, painted and
+ * glyph-translated by the screen's appearance.
  */
-const FG_SLOT: Partial<Record<Tone, number>> = {
-  accent: 6,
-  success: 2,
-  warning: 3,
-  danger: 1,
-  onAccent: 0,
-};
-const BG_SLOT: Record<Fill, number> = { accent: 6, highlight: 8 };
-
-/** Lines → one StyledText, ready for a TextRenderable's `content`. */
-export function toStyledText(tui: Tui, lines: readonly Line[]): StyledText {
+export function toStyledText(
+  screen: Pick<Screen, "tui" | "appearance">,
+  lines: readonly Line[],
+): StyledText {
   const chunks: TextChunk[] = [];
   lines.forEach((line, index) => {
     if (index > 0) chunks.push({ __isChunk: true, text: "\n" });
-    for (const segment of line) chunks.push(paint(tui, segment));
+    for (const segment of line) chunks.push(paint(screen, segment));
   });
-  return new tui.StyledText(chunks);
+  return new screen.tui.StyledText(chunks);
 }
 
-function paint(tui: Tui, { text, tone, fill }: Segment): TextChunk {
-  const painted: TextChunk = { __isChunk: true, text };
-  const fg = FG_SLOT[tone];
-  if (fg !== undefined) painted.fg = tui.RGBA.fromIndex(fg);
-  if (fill) painted.bg = tui.RGBA.fromIndex(BG_SLOT[fill]);
-  if (tone === "strong" || tone === "onAccent") painted.attributes = tui.TextAttributes.BOLD;
-  if (tone === "muted") painted.attributes = tui.TextAttributes.DIM;
+function paint({ appearance }: Pick<Screen, "appearance">, segment: Segment): TextChunk {
+  const style = appearance.style(segment.tone, segment.fill);
+  const painted: TextChunk = { __isChunk: true, text: appearance.glyphs(segment.text) };
+  if (style.fg) painted.fg = style.fg;
+  if (style.bg) painted.bg = style.bg;
+  if (style.attributes !== 0) painted.attributes = style.attributes;
   return painted;
 }
 

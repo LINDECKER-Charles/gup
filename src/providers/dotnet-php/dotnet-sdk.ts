@@ -1,6 +1,11 @@
+import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
-import { delegateUpdate } from "../../core/install-source.js";
+import {
+  delegateUpdate,
+  detectInstallSource,
+  upgradeNeedsRoot,
+} from "../../core/install-source.js";
 import type { PackageIds } from "../../core/install-source.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -62,9 +67,11 @@ interface ReleasesIndex {
  *    would hide a real pending upgrade on most machines. The row stays visible
  *    and update() degrades to a SKIP carrying the download link.
  *
- * `requiresAdmin` stays unset too: each delegated command raises its own
- * elevation (UAC for winget/choco, `sudo` for apt/dnf), so routing this through
- * the elevation batch would only add a second prompt.
+ * `requiresAdmin` is set only for a distro-packaged SDK on Linux, whose update
+ * runs `sudo apt-get`/`sudo dnf`: the CLI folds it into its single `sudo`
+ * batch, where that inner `sudo` no longer prompts. winget and choco raise
+ * their own UAC prompt, so routing them through the batch would only add a
+ * second one.
  */
 export class DotnetSdkProvider implements Provider {
   readonly id = "dotnet-sdk";
@@ -92,15 +99,15 @@ export class DotnetSdkProvider implements Provider {
     if (latest === null || !isUpgrade(current, latest)) return [];
 
     const note = describeChannel(entry);
-    return [
-      {
-        id: channel,
-        name: `.NET SDK ${channel}`,
-        current,
-        latest,
-        ...(note !== "" && { note }),
-      },
-    ];
+    const row: OutdatedPackage = {
+      id: channel,
+      name: `.NET SDK ${channel}`,
+      current,
+      latest,
+      ...(note !== "" && { note }),
+    };
+    const needsRoot = await upgradeGoesThroughSudo(channel, isPreviewChannel(entry));
+    return needsRoot ? flagForElevation([row]) : [row];
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
@@ -365,12 +372,29 @@ async function dotnetPackageIds(channel: string): Promise<PackageIds> {
     winget: wingetSdkId(channel, preview),
     ...(choco !== null && { choco }),
     brew: await installedBrewFormula(channel),
-    // Linux naming is standardized across distributions as
-    // {product}-{type}-{version}; `dotnet-sdk-3.1` … `dotnet-sdk-9.0` are all
-    // present in the packages.microsoft.com feed. Preview SDKs are not shipped
-    // there at all.
-    ...(preview ? {} : { apt: `dotnet-sdk-${channel}`, dnf: `dotnet-sdk-${channel}` }),
+    ...distroSdkIds(channel, preview),
   };
+}
+
+/**
+ * Linux naming is standardized across distributions as
+ * {product}-{type}-{version}; `dotnet-sdk-3.1` … `dotnet-sdk-9.0` are all
+ * present in the packages.microsoft.com feed. Preview SDKs are not shipped
+ * there at all.
+ */
+function distroSdkIds(channel: string, preview: boolean): Pick<PackageIds, "apt" | "dnf"> {
+  return preview ? {} : { apt: `dotnet-sdk-${channel}`, dnf: `dotnet-sdk-${channel}` };
+}
+
+/**
+ * True when update() would go through `sudo apt-get` / `sudo dnf`: only a
+ * distro-packaged SDK on Linux, the one platform where a package database can
+ * claim the binary. Probed nowhere else, so no other scan pays for it.
+ */
+async function upgradeGoesThroughSudo(channel: string, preview: boolean): Promise<boolean> {
+  if (process.platform !== "linux") return false;
+  const source = await detectInstallSource("dotnet");
+  return upgradeNeedsRoot(source, distroSdkIds(channel, preview));
 }
 
 /**

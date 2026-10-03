@@ -23,6 +23,23 @@ describe("registry: ALL_PROVIDERS catalogue", () => {
     }
   });
 
+  it("lists exactly the providers an unattended run can never update", () => {
+    // Each of these always needs UAC or sudo; changing the set is a decision
+    // about what a scheduled run may touch, so it takes a test edit. The flag
+    // is only ever declared `false`: omitted already means true.
+    const adminOnly = ALL_PROVIDERS.filter((p) => p.canUpdateUnattended === false);
+    expect(adminOnly.map((p) => p.id)).toEqual([
+      "choco",
+      "cygwin",
+      "npackd",
+      "macports",
+      "fink",
+      "pkgin",
+      "visual-studio",
+    ]);
+    expect(ALL_PROVIDERS.filter((p) => p.canUpdateUnattended === true)).toEqual([]);
+  });
+
   it("getProvider returns the matching entry and undefined for unknown ids", () => {
     expect(getProvider("winget")?.id).toBe("winget");
     expect(getProvider("does-not-exist")).toBeUndefined();

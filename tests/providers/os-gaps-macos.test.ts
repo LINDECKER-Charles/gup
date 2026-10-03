@@ -9,21 +9,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * the runner, `fetch`) is mocked here and no test touches the real machine.
  */
 
-const { commandExistsMock, runMock, runInheritMock, whichFirstMock } = vi.hoisted(
-  () => ({
+const { commandExistsMock, runMock, runInheritMock, whichFirstMock, isElevatedMock } =
+  vi.hoisted(() => ({
     commandExistsMock: vi.fn(),
     runMock: vi.fn(),
     runInheritMock: vi.fn(),
     whichFirstMock: vi.fn(),
-  }),
-);
+    isElevatedMock: vi.fn(),
+  }));
 
 vi.mock("../../src/core/runner.js", () => ({
   commandExists: commandExistsMock,
   run: runMock,
   runInherit: runInheritMock,
   whichFirst: whichFirstMock,
-  isElevated: vi.fn(),
+  isElevated: isElevatedMock,
 }));
 
 const { fetchGitHubReleaseLatestMock, fetchGitHubReleaseTagMatchingMock } = vi.hoisted(
@@ -165,6 +165,9 @@ beforeEach(() => {
   runMock.mockReset();
   runInheritMock.mockReset();
   whichFirstMock.mockReset();
+  // A regular user by default: rows whose update needs sudo get flagged.
+  isElevatedMock.mockReset();
+  isElevatedMock.mockResolvedValue(false);
   fetchGitHubReleaseLatestMock.mockReset();
   fetchGitHubReleaseTagMatchingMock.mockReset();
   delegateUpdateMock.mockReset();
@@ -1297,12 +1300,21 @@ describe("FinkProvider", () => {
     expect(rows).toEqual([
       {
         id: "fink",
+        aggregate: true,
+        requiresAdmin: true,
         name: "Fink (paquets installés)",
         current: "?",
         latest: "2 pkg",
         note: "sudo fink --yes update-all — d'après le dernier fink selfupdate",
       },
     ]);
+  });
+
+  it("leaves the row to update in place when gup already runs as root", async () => {
+    runMock.mockResolvedValueOnce(mkRun(FINK_OUTDATED_TAB));
+    isElevatedMock.mockResolvedValue(true);
+    const [row] = await new FinkProvider().listOutdated();
+    expect(row?.requiresAdmin).toBeUndefined();
   });
 
   it("returns [] when fink fails or times out", async () => {
@@ -1473,15 +1485,32 @@ describe("PkginProvider.listOutdated", () => {
       PKGIN_SCAN_OPTIONS,
     );
     expect(rows).toEqual([
-      { id: "nginx", name: "nginx", current: "1.24.0", latest: "1.26.2" },
+      {
+        id: "nginx",
+        name: "nginx",
+        current: "1.24.0",
+        latest: "1.26.2",
+        requiresAdmin: true,
+      },
       {
         id: "php",
         name: "php",
         current: "8.1.0",
         latest: "8.3.1",
         note: "2 candidates — preferred.conf peut en imposer une autre",
+        requiresAdmin: true,
       },
     ]);
+  });
+
+  it("leaves rows to update in place when gup already runs as root", async () => {
+    runMock
+      .mockResolvedValueOnce(mkRun(PKGIN_LIST))
+      .mockResolvedValueOnce(mkRun(PKGIN_LESSER));
+    isElevatedMock.mockResolvedValue(true);
+    const rows = await new PkginProvider().listOutdated();
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row) => row.requiresAdmin === undefined)).toBe(true);
   });
 
   it("returns [] when the installed listing fails", async () => {
@@ -1532,10 +1561,12 @@ describe("PkginProvider.listOutdated", () => {
     await expect(new PkginProvider().listOutdated()).resolves.toEqual([
       {
         id: "pkgin:refresh",
+        aggregate: true,
         name: "pkgin (catalogue distant)",
         current: "?",
         latest: "refresh",
         note: "catalogue distant vide — sudo pkgin -y upgrade le reconstruit",
+        requiresAdmin: true,
       },
     ]);
   });

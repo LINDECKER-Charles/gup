@@ -1,5 +1,6 @@
 import { createTestRenderer, type TestRendererSetup } from "@opentui/core/testing";
-import { createScreenHost, type ScreenHost } from "../../src/ui/tui/screen-host.js";
+import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
+import { createScreenHost, type ScreenHost } from "../../../src/ui/tui/screen-host.js";
 
 /**
  * A screen host backed by OpenTUI's in-memory renderer: same lifecycle as the
@@ -12,17 +13,33 @@ export interface TestHost {
   next(): Promise<TestRendererSetup>;
 }
 
-export function createTestHost(width = 100, height = 30): TestHost {
+export interface TestHostOptions {
+  /** Terminal size; default 100 × 30. */
+  readonly size?: { readonly cols: number; readonly rows: number };
+  /** The screens' look; default: whatever `configureScreens` installed (legacy). */
+  readonly createAppearance?: AppearanceFactory;
+}
+
+const DEFAULT_SIZE = { cols: 100, rows: 30 };
+
+export function createTestHost(options: TestHostOptions = {}): TestHost {
+  const { cols, rows } = options.size ?? DEFAULT_SIZE;
   const pending: TestRendererSetup[] = [];
   const waiting: Array<(setup: TestRendererSetup) => void> = [];
 
   const host = createScreenHost(async () => {
-    const setup = await createTestRenderer({ width, height });
+    // Configured like the real renderer: Ctrl+C and signals belong to the screen host.
+    const setup = await createTestRenderer({
+      width: cols,
+      height: rows,
+      exitOnCtrlC: false,
+      exitSignals: [],
+    });
     const waiter = waiting.shift();
     if (waiter) waiter(setup);
     else pending.push(setup);
     return setup.renderer;
-  });
+  }, options.createAppearance);
 
   const created = (): Promise<TestRendererSetup> => {
     const ready = pending.shift();

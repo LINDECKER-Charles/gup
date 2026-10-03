@@ -1,7 +1,18 @@
-import { constants } from "node:fs";
-import { access, lstat, stat } from "node:fs/promises";
-import path from "node:path";
 import { execa, type Options, type ResultPromise } from "execa";
+import type { Readable } from "node:stream";
+import { traceCommand } from "./process/command-tracer.js";
+import {
+  activeInheritSink,
+  type InheritExit,
+  type InheritProcess,
+  type InheritRequest,
+  type InheritSink,
+} from "./process/inherit-sink.js";
+import { LineSplitter } from "./process/line-splitter.js";
+
+// PATH resolution lives in process/which.ts; providers keep importing it from
+// here, next to the spawn functions it serves.
+export { commandExists, whichFirst } from "./process/which.js";
 
 export interface RunResult {
   stdout: string;
@@ -106,10 +117,13 @@ function sanitizeArgs(args: readonly string[]): string[] {
 // without touching any of them.
 // ---------------------------------------------------------------------------
 
-/** Wall-clock cap per install, in seconds. 0 disables. Overridable at runtime. */
-// 20 min: long enough for big installers, short enough that a wedged one
-// doesn't hang the whole run forever.
-const DEFAULT_INSTALL_TIMEOUT_S = 1200;
+/**
+ * Wall-clock cap per install, in seconds, when nothing overrides it
+ * (GUP_INSTALL_TIMEOUT, `--timeout`, the persisted install setting, which
+ * uses it as its default). 0 disables. 20 min: long enough for big
+ * installers, short enough that a wedged one doesn't hang the whole run.
+ */
+export const DEFAULT_INSTALL_TIMEOUT_S = 1200;
 
 function readEnvTimeoutSeconds(): number {
   const raw = process.env.GUP_INSTALL_TIMEOUT;
@@ -132,7 +146,7 @@ export function getInstallTimeoutSeconds(): number {
 }
 
 // The currently-running interruptible child, if any. Updates are sequential
-// (never concurrent — see commands/update.ts and ui/retry-failed.ts), so a
+// (never concurrent — see core/update/update-pipeline.ts), so a
 // single slot is enough; nested runInherit calls save/restore it.
 let abortCurrent: (() => void) | null = null;
 
@@ -171,9 +185,10 @@ export function consumeInterrupt(): InterruptFlags {
  * installer children (msiexec, setup.exe) that a SIGTERM to the direct child
  * leaves orphaned; `taskkill /T` takes the tree down. Fire-and-forget — we
  * never await it and swallow any error. No-op when there's no pid (e.g. the
- * mocked child in tests) or off Windows (cancelSignal already SIGTERMs there).
+ * mocked child in tests) or off Windows, where the caller signals the child
+ * (execa's cancelSignal) or its process group itself.
  */
-function treeKillWindows(pid: number | undefined): void {
+export function killProcessTree(pid: number | undefined): void {
   if (process.platform !== "win32" || !pid || pid <= 0) return;
   void execa("taskkill", ["/pid", String(pid), "/t", "/f"], {
     reject: false,
@@ -223,6 +238,7 @@ export async function run(
 ): Promise<RunResult> {
   const safeCommand = sanitizeCommand(command);
   const safeArgs = sanitizeArgs(args);
+  const trace = traceCommand("probe", safeCommand, safeArgs);
   const proc = execa(safeCommand, safeArgs, {
     reject: false,
     encoding: "utf8",
@@ -235,17 +251,32 @@ export async function run(
   }) as ResultPromise;
 
   const result = await proc;
-  return {
+  const runResult: RunResult = {
     stdout: String(result.stdout ?? ""),
     stderr: String(result.stderr ?? ""),
-    exitCode: typeof result.exitCode === "number" ? result.exitCode : -1,
+    exitCode: exitCodeOf(result.exitCode),
     failed: Boolean(result.failed) || result.exitCode !== 0,
     ...(result.timedOut === true && { timedOut: true }),
   };
+  trace.end(runResult);
+  return runResult;
 }
 
 /**
- * Stream output to the user's terminal (used during interactive updates).
+ * Every option a `runInherit` caller uses: scoop's PowerShell shim needs the
+ * shell, the Visual Studio and Cygwin installers a working directory. Narrower
+ * than execa's options on purpose — whatever is accepted here must make sense
+ * for every install sink, not only for the terminal.
+ */
+export interface InheritOptions {
+  readonly cwd?: string;
+  readonly shell?: boolean;
+  /** Per-call cap in ms; 0 disables it. Defaults to the install timeout. */
+  readonly timeout?: number;
+}
+
+/**
+ * Run an install with the user's terminal attached (used during updates).
  *
  * Unlike {@link run}, this path:
  * - applies the per-install wall-clock timeout (so a wedged installer can't
@@ -253,66 +284,104 @@ export async function run(
  * - registers the child as interruptible so the Ctrl+C handler can skip it,
  * - does NOT pass `windowsHide`: an installer that ignores `--silent` and
  *   falls back to its GUI must show its window, otherwise it waits on a click
- *   to an invisible window and blocks indefinitely.
+ *   to an invisible window and blocks indefinitely,
+ * - hands the child to the active install sink instead of the terminal when
+ *   one is routed (`process/inherit-sink.ts`). The request a sink receives has
+ *   already been through both sanitisers.
  */
 export async function runInherit(
   command: string,
   args: string[] = [],
-  options: Options = {},
+  options: InheritOptions = {},
 ): Promise<RunResult> {
-  const safeCommand = sanitizeCommand(command);
-  const safeArgs = sanitizeArgs(args);
-
-  // We manage the timeout ourselves (own timer + tree-kill), so strip any
-  // caller `timeout` from the execa options to avoid double-arming execa's
-  // native timeout alongside ours.
-  const { timeout: timeoutOverride, ...execaOptions } = options;
-  const timeoutMs =
-    typeof timeoutOverride === "number"
-      ? timeoutOverride
-      : installTimeoutSeconds * 1000;
-
-  // One controller drives both skip levers — the timeout timer and the manual
-  // Ctrl+C handler both abort it, which makes execa kill the child.
-  const controller = new AbortController();
-  const proc = execa(safeCommand, safeArgs, {
-    reject: false,
-    stdio: "inherit",
-    cancelSignal: controller.signal,
-    ...execaOptions,
-  }) as ResultPromise;
-
-  const interrupts = armInterrupts(proc, controller, timeoutMs);
+  const request = inheritRequest(command, args, options);
+  const sink = activeInheritSink();
+  const trace = traceCommand(sink?.mode ?? "inherit", request.command, request.args);
+  const child = sink ? sink.start(request) : startInTerminal(request);
+  const interrupts = armInterrupts(() => child.kill(), timeoutMsOf(options.timeout));
   try {
-    const result = await proc;
+    const exit = await child.exited;
     if (interrupts.flags.timedOut) pendingInterrupt.timedOut = true;
     if (interrupts.flags.aborted) pendingInterrupt.aborted = true;
-    return inheritResult(result, interrupts.flags);
+    const result = inheritResult(exit, interrupts.flags);
+    trace.end({ ...result, ...(exit.outputTail !== undefined && { stdout: exit.outputTail }) });
+    return result;
   } finally {
     interrupts.dispose();
   }
 }
 
+function inheritRequest(command: string, args: string[], options: InheritOptions): InheritRequest {
+  return {
+    command: sanitizeCommand(command),
+    args: sanitizeArgs(args),
+    ...(options.cwd !== undefined && { cwd: options.cwd }),
+    ...(options.shell !== undefined && { shell: options.shell }),
+  };
+}
+
+function timeoutMsOf(timeout: number | undefined): number {
+  return typeof timeout === "number" ? timeout : installTimeoutSeconds * 1000;
+}
+
+/** The execa options that place a request: its working directory and shell routing. */
+function placementOf(request: InheritRequest): Options {
+  return {
+    ...(request.cwd !== undefined && { cwd: request.cwd }),
+    ...(request.shell !== undefined && { shell: request.shell }),
+  };
+}
+
+/**
+ * No sink routed: the child gets the user's terminal. One abort controller
+ * serves both skip levers (timeout timer, Ctrl+C); on Windows the tree kill
+ * also takes down the installer's own children.
+ */
+function startInTerminal(request: InheritRequest): InheritProcess {
+  const controller = new AbortController();
+  try {
+    const proc = execa(request.command, [...request.args], {
+      reject: false,
+      stdio: "inherit",
+      cancelSignal: controller.signal,
+      ...placementOf(request),
+    }) as ResultPromise;
+    return { exited: settled(proc), kill: () => killStarted(controller, proc.pid) };
+  } catch {
+    return exitedProcess();
+  }
+}
+
+/** The exit of an execa child, as a promise that never rejects. */
+function settled(proc: ResultPromise): Promise<InheritExit> {
+  return proc.then(
+    (result) => ({
+      exitCode: typeof result.exitCode === "number" ? result.exitCode : NO_EXIT_CODE,
+      failed: Boolean(result.failed) || result.exitCode !== 0,
+    }),
+    () => ({ exitCode: NO_EXIT_CODE, failed: true }),
+  );
+}
+
+/** A child that could not even be started: already exited, failed. */
+function exitedProcess(): InheritProcess {
+  return { exited: Promise.resolve({ exitCode: NO_EXIT_CODE, failed: true }), kill: () => {} };
+}
+
 /**
  * Wire both skip levers — the wall-clock timer and the Ctrl+C handler — onto
- * the child's abort controller. Returns the flags they set plus the teardown
- * that clears the timer and restores the previous interruptible child.
+ * the child's kill. Returns the flags they set plus the teardown that clears
+ * the timer and restores the previous interruptible child.
  */
 function armInterrupts(
-  proc: ResultPromise,
-  controller: AbortController,
+  kill: () => void,
   timeoutMs: number,
 ): { flags: InterruptFlags; dispose: () => void } {
   const flags: InterruptFlags = { timedOut: false, aborted: false };
   const abort = (reason: "manual" | "timeout"): void => {
     if (reason === "manual") flags.aborted = true;
     else flags.timedOut = true;
-    try {
-      controller.abort();
-    } catch {
-      /* AbortController.abort doesn't throw; stay defensive anyway */
-    }
-    treeKillWindows((proc as { pid?: number }).pid);
+    kill();
   };
 
   const previous = abortCurrent;
@@ -330,109 +399,162 @@ function armInterrupts(
 }
 
 /**
- * `stdio: "inherit"` means the child wrote straight to the terminal, so there
- * is nothing to hand back but the exit status and the interrupt cause.
+ * The child wrote to the terminal (or into a sink), so there is nothing to
+ * hand back but the exit status and the interrupt cause.
  */
-function inheritResult(
-  result: { exitCode?: unknown; failed?: unknown },
-  flags: InterruptFlags,
-): RunResult {
+function inheritResult(exit: InheritExit, flags: InterruptFlags): RunResult {
   const out: RunResult = {
     stdout: "",
     stderr: "",
-    exitCode: typeof result.exitCode === "number" ? result.exitCode : -1,
-    failed: Boolean(result.failed) || result.exitCode !== 0,
+    exitCode: normalizeExitCode(exit.exitCode),
+    failed: exit.failed,
   };
   if (flags.timedOut) out.timedOut = true;
   if (flags.aborted) out.aborted = true;
   return out;
 }
 
-export async function commandExists(command: string): Promise<boolean> {
-  return (await whichFirst(command)) !== null;
+export interface PipeSinkOptions {
+  /** One whole line of a child's output (or a note from gup, on "stdout"). */
+  readonly onLine: (line: string, stream: "stdout" | "stderr") => void;
+  /** Bytes of lines kept per install and per stream; then one "sortie tronquée" line. */
+  readonly capBytes: number;
 }
 
 /**
- * Return the absolute path of the first PATH resolution of `command`, or null
- * if not found. Used when the *location* matters (e.g. to verify which install
- * a binary belongs to), not just whether the binary exists.
- *
- * Resolved in-process, never by spawning `where` / `which`. Detection probes
- * ~140 binaries at once, and on Windows each spawn is synchronous main-thread
- * work (execa's command lookup, then CreateProcess): the burst froze the event
- * loop for seconds, and with it the spinner, every timer and Ctrl+C. Async
- * `stat` runs on the libuv threadpool and leaves the loop free.
- *
- * Same answers as the tools it replaces, with one deliberate exception: unlike
- * `where`, the current directory is not searched — a binary that happens to
- * sit in cwd doesn't mean the tool is installed.
+ * An install sink for runs nobody watches (a scheduled run): no terminal, the
+ * keyboard closed (`stdin: "ignore"` — a prompt reads EOF instead of hanging
+ * forever), the output split into capped lines for a log. It lives here so
+ * that execa stays imported by this module only. Like the terminal path, it
+ * does not hide windows: a GUI installer that ignores its silent flag must be
+ * visible rather than wait on an invisible window.
  */
-export async function whichFirst(command: string): Promise<string | null> {
-  if (!isBareCommandName(command)) return null;
-  const isWindows = process.platform === "win32";
-  // `where` order: per PATH entry, the bare name first (`npm`), then the name
-  // plus each PATHEXT extension (`npm.cmd`).
-  const suffixes = isWindows ? ["", ...pathExtensions()] : [""];
-  for (const dir of pathEntries()) {
-    for (const suffix of suffixes) {
-      const candidate = path.join(dir, command + suffix);
-      if (await isCommandFile(candidate, isWindows)) return candidate;
-    }
-  }
-  return null;
+export function createPipeSink(options: PipeSinkOptions): InheritSink {
+  return {
+    mode: "pipe",
+    start: (request) => startPiped(request, options),
+    note: (line) => options.onLine(line, "stdout"),
+  };
 }
 
-/** Path separators or wildcards mean a path or a pattern, never a PATH lookup. */
-function isBareCommandName(command: string): boolean {
-  return command.length > 0 && !/[\\/:*?"<>|]/.test(command);
-}
-
-function pathEntries(): string[] {
-  const entries = (process.env.PATH ?? "")
-    .split(path.delimiter)
-    .map((entry) => entry.trim().replace(/^"(.*)"$/, "$1"))
-    .filter((entry) => entry.length > 0);
-  return [...new Set(entries)];
-}
-
-const DEFAULT_PATHEXT = ".COM;.EXE;.BAT;.CMD";
-
-function pathExtensions(): string[] {
-  return (process.env.PATHEXT || DEFAULT_PATHEXT)
-    .split(";")
-    .map((ext) => ext.trim().toLowerCase())
-    .filter((ext) => ext.startsWith("."));
-}
-
-/**
- * Windows: any non-directory entry counts, as with `where`. `lstat` rather
- * than `stat` is load-bearing: App Execution Aliases (`WindowsApps\winget.exe`,
- * `python.exe`) are reparse points that `stat` rejects with EACCES.
- * POSIX: a regular file (symlinks followed) with the exec bit, as with `which`.
- */
-async function isCommandFile(candidate: string, isWindows: boolean): Promise<boolean> {
+function startPiped(request: InheritRequest, options: PipeSinkOptions): InheritProcess {
+  const controller = new AbortController();
   try {
-    if (isWindows) {
-      // eslint-disable-next-line security/detect-non-literal-fs-filename -- read-only metadata probe; candidate is a PATH entry joined with a name that isBareCommandName() cleared of separators
-      return !(await lstat(candidate)).isDirectory();
-    }
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- same as above
-    if (!(await stat(candidate)).isFile()) return false;
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- same as above
-    await access(candidate, constants.X_OK);
-    return true;
+    const proc = execa(request.command, [...request.args], {
+      reject: false,
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe",
+      buffer: false,
+      cancelSignal: controller.signal,
+      ...placementOf(request),
+    }) as ResultPromise;
+    const flushers = [
+      pipeLines(proc.stdout, (line) => options.onLine(line, "stdout"), options.capBytes),
+      pipeLines(proc.stderr, (line) => options.onLine(line, "stderr"), options.capBytes),
+    ];
+    const exited = settled(proc).then((exit) => {
+      for (const flush of flushers) flush();
+      return exit;
+    });
+    return { exited, kill: () => killStarted(controller, proc.pid) };
+  } catch {
+    return exitedProcess();
+  }
+}
+
+/** Split a child stream into lines; returns the flush to call once the child is gone. */
+function pipeLines(
+  stream: Readable | null,
+  onLine: (line: string) => void,
+  capBytes: number,
+): () => void {
+  const splitter = new LineSplitter({ capBytes, onLine });
+  stream?.setEncoding("utf8");
+  stream?.on("data", (chunk: string) => splitter.push(chunk));
+  return () => splitter.end();
+}
+
+function killStarted(controller: AbortController, pid: number | undefined): void {
+  controller.abort();
+  killProcessTree(pid);
+}
+
+/**
+ * Start a GUI or helper process that must outlive gup (the browser opening a
+ * report) and leave it. Resolves true once it spawned, false when it could
+ * not be started. The command and argv go through the same sanitisers as
+ * every other spawn.
+ *
+ * On Windows execa hands a command it cannot resolve to cmd.exe, which spawns
+ * fine and exits 1: there a missing binary reads as launched. Callers pass an
+ * absolute path they have checked (explorer.exe under %SystemRoot%).
+ */
+export async function launchDetached(
+  command: string,
+  args: readonly string[] = [],
+): Promise<boolean> {
+  const safeCommand = sanitizeCommand(command);
+  const safeArgs = sanitizeArgs(args);
+  try {
+    const child = execa(safeCommand, safeArgs, {
+      detached: true,
+      cleanup: false,
+      stdio: "ignore",
+      reject: false,
+      // explorer.exe is a GUI-subsystem binary: there is no console to hide,
+      // and SW_HIDE could be handed down to the window it opens.
+      windowsHide: process.platform !== "win32",
+    }) as ResultPromise;
+    // execa's subprocess is no ChildProcess any more: the Node events and
+    // unref() live on its documented `nodeChildProcess` escape hatch.
+    const node = child.nodeChildProcess;
+    const spawned = new Promise<boolean>((resolve) => node.once("spawn", () => resolve(true)));
+    const isLaunched = await Promise.race([spawned, child.then(() => false, () => false)]);
+    node.unref();
+    return isLaunched;
   } catch {
     return false;
   }
 }
 
+/** Reported when the child has no exit code (killed by a signal, never spawned). */
+const NO_EXIT_CODE = -1;
+
+/** The child's exit code in its normalised form, or {@link NO_EXIT_CODE}. */
+function exitCodeOf(exitCode: unknown): number {
+  return typeof exitCode === "number" ? normalizeExitCode(exitCode) : NO_EXIT_CODE;
+}
+
 /**
+ * One representation for an exit code, whoever reports it. A Windows exit
+ * code is a 32-bit value that execa reports unsigned (`-1` comes back as
+ * 4294967295, STATUS_CONTROL_C_EXIT as 3221225786), while `%ERRORLEVEL%`,
+ * node-pty and installer documentation show it signed — Visual Studio's
+ * "cancelled" is -1073741510. Reading it as signed makes those documented
+ * values match; small codes (2, 1641, 3010) are the same either way. POSIX
+ * exit statuses are 0..255 and pass through.
+ */
+export function normalizeExitCode(
+  code: number,
+  platform: NodeJS.Platform = process.platform,
+): number {
+  return platform === "win32" ? code | 0 : code;
+}
+
+const ROOT_UID = 0;
+
+/**
+ * Whether this process already holds administrator rights.
+ *
  * Windows: `net session` requires admin privileges, so its exit code is a
- * reliable cheap probe for elevation. Non-Windows always reports true since
- * the providers that care about this (choco) are Windows-only anyway.
+ * reliable cheap probe. POSIX: running as root — the sudo'd elevated batch
+ * child, or a user who started gup with sudo. Providers whose update needs
+ * UAC or sudo flag their rows `requiresAdmin` only when this is false, so a
+ * single prompt covers the whole batch.
  */
 export async function isElevated(): Promise<boolean> {
-  if (process.platform !== "win32") return true;
+  if (process.platform !== "win32") return process.getuid?.() === ROOT_UID;
   const result = await run("net", ["session"]);
   return !result.failed;
 }

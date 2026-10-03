@@ -1,3 +1,4 @@
+import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
@@ -8,10 +9,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  * every other provider here.
  *
  * Every write operation needs root (the whole tree lives under `/opt/local`,
- * owned by root), so updates go through an explicit `sudo`. That mirrors the
- * apt/dnf delegation in core/install-source.ts rather than the Windows
- * elevation batch: `isElevated()` reports true on POSIX, so the
- * `requiresAdmin` path would never trigger here.
+ * owned by root), so updates go through an explicit `sudo`. Rows carry
+ * `requiresAdmin` unless gup already runs as root: the CLI then batches them
+ * into one `sudo gup __admin-batch` child, where this `sudo` no longer
+ * prompts — one password for the whole selection instead of one per port.
  */
 export class MacPortsProvider implements Provider {
   readonly id = "macports";
@@ -20,6 +21,8 @@ export class MacPortsProvider implements Provider {
     darwin: "https://www.macports.org/install.php",
     fallback: "macOS uniquement — https://www.macports.org/",
   });
+  /** Every write to the /opt/local tree goes through sudo. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform !== "darwin") return false;
@@ -29,7 +32,7 @@ export class MacPortsProvider implements Provider {
   async listOutdated(): Promise<OutdatedPackage[]> {
     const { stdout, failed } = await run("port", ["outdated"]);
     if (failed) return [];
-    return parsePortOutdated(stdout);
+    return flagForElevation(parsePortOutdated(stdout));
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {

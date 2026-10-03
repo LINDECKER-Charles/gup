@@ -514,12 +514,13 @@ describe("JuliaPkgProvider", () => {
     );
     const rows = await new JuliaPkgProvider().listOutdated();
     expect(rows).toEqual([
-      { id: "Plots", name: "Plots", current: "1.2.3", latest: "1.3.0" },
+      { id: "Plots", name: "Plots", current: "1.2.3", latest: "1.3.0", aggregate: true },
       {
         id: "DataFrames",
         name: "DataFrames",
         current: "0.22.0",
         latest: "0.23.0",
+        aggregate: true,
       },
     ]);
   });

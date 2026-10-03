@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { confirm } from "../../../src/ui/prompts/confirm.js";
 import { select } from "../../../src/ui/prompts/select.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
-import { createTestHost, frame, press } from "../tui-test-host.js";
+import { createTestHost, frame, press } from "../../support/tui/test-host.js";
 
 afterEach(() => {
   vi.restoreAllMocks();

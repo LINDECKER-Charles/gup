@@ -1,4 +1,10 @@
+import { constants } from "node:os";
 import type { CliRenderer, KeyEvent } from "@opentui/core";
+import { log } from "../../core/log/log.js";
+import { setFullScreen } from "../../core/process/output-router.js";
+import { skipCurrent } from "../../core/runner.js";
+import type { Appearance, AppearanceFactory } from "../theme/appearance.js";
+import { legacyAppearance } from "../theme/legacy-appearance.js";
 import { loadTui, type Tui } from "./load-tui.js";
 import { PromptCancelledError } from "./prompt-cancelled.js";
 import { destroyRenderer } from "./teardown.js";
@@ -10,6 +16,12 @@ export type KeyPress = Pick<KeyEvent, "name" | "ctrl" | "sequence">;
 export interface Screen {
   readonly renderer: CliRenderer;
   readonly tui: Tui;
+  readonly appearance: Appearance;
+  /**
+   * Ctrl+C calls `handler` instead of cancelling the screen until the returned
+   * release runs. The latest interception wins; releasing is idempotent.
+   */
+  interceptCtrlC(handler: () => void): () => void;
 }
 
 /**
@@ -22,28 +34,181 @@ export interface ScreenHost {
 
 export type RendererFactory = (tui: Tui) => Promise<CliRenderer>;
 
+/** What every screen gets unless its host says otherwise. */
+export interface ScreenDefaults {
+  readonly createAppearance: AppearanceFactory;
+  readonly rendererOptions: () => { readonly useMouse: boolean };
+}
+
+const BUILTIN_DEFAULTS: ScreenDefaults = {
+  createAppearance: legacyAppearance,
+  rendererOptions: () => ({ useMouse: true }),
+};
+
+let defaults: ScreenDefaults = BUILTIN_DEFAULTS;
+
+/**
+ * Composition only — a CLI module's `beforeAction` (the settings module
+ * installs the theme engine and the mouse preference here). Applies to the
+ * screens opened afterwards; `null` restores the built-in defaults.
+ */
+export function configureScreens(next: Partial<ScreenDefaults> | null): void {
+  defaults = next === null ? BUILTIN_DEFAULTS : { ...defaults, ...next };
+}
+
 /**
  * Build a host around a renderer factory. The renderer lives for one `run`
  * only and is destroyed whatever happens, so nothing keeps stdin in raw mode
  * once the session is over — in particular not while an installer runs with
- * the terminal inherited. Ctrl+C rejects with {@link PromptCancelledError}.
+ * the terminal inherited. Ctrl+C rejects with {@link PromptCancelledError}
+ * unless the screen intercepts it.
+ *
+ * Order matters: once the renderer exists, everything runs inside the `try`
+ * whose `finally` first settles the appearance (a late reply to a palette
+ * query must not reach the shell), then destroys the renderer. An appearance
+ * factory that throws falls back to the legacy look instead of leaving the
+ * terminal on the alternate screen in raw mode.
+ *
+ * A signal that ends gup while the screen is up (the console window closing,
+ * Ctrl+Break, a kill) takes the same way out before the process exits.
+ *
+ * While the renderer is up, the output router holds back gup's own console
+ * lines (a history warning, a provider's progress note): written now, they
+ * would paint over the frame. They are printed once the process exits.
  */
-export function createScreenHost(createRenderer: RendererFactory): ScreenHost {
+export function createScreenHost(
+  createRenderer: RendererFactory,
+  createAppearance?: AppearanceFactory,
+): ScreenHost {
   return {
     async run(mount) {
       const tui = await loadTui();
       const renderer = await createRenderer(tui);
+      let appearance: Appearance | undefined;
+      let stopWatching = (): void => {};
+      const release = once(() => releaseScreen(renderer, appearance));
       try {
-        return await untilCancelled(renderer, mount({ renderer, tui }));
+        stopWatching = watchExitSignals((signal) => endOnSignal(signal, release));
+        appearance = appearanceOf(renderer, tui, createAppearance ?? defaults.createAppearance);
+        setFullScreen(true);
+        return await mountScreen({ renderer, tui, appearance }, mount);
       } finally {
-        await destroyRenderer(renderer);
+        await release().finally(() => stopWatching());
       }
     },
   };
 }
 
-/** True when both ends are a terminal, i.e. when a screen can be shown at all. */
+/** Exit status of a process ended by a signal: 128 + the signal number. */
+const SIGNAL_EXIT_BASE = 128;
+const WINDOWS_EXIT_SIGNALS: readonly NodeJS.Signals[] = ["SIGBREAK", "SIGTERM", "SIGHUP"];
+const POSIX_EXIT_SIGNALS: readonly NodeJS.Signals[] = ["SIGTERM", "SIGHUP", "SIGINT"];
+
+/**
+ * The signals that end gup from outside while a screen holds the terminal:
+ * the console closing (SIGHUP), a kill (SIGTERM), Ctrl+Break on Windows
+ * (SIGBREAK) and, on POSIX, an external SIGINT. In raw mode Ctrl+C itself is
+ * a key, handled by the screen. The renderer is created without OpenTUI's
+ * own handlers, which destroy it in the order that crashes conhost (see
+ * teardown.ts) and do not end the process.
+ */
+function watchExitSignals(onSignal: (signal: NodeJS.Signals) => void): () => void {
+  const signals = process.platform === "win32" ? WINDOWS_EXIT_SIGNALS : POSIX_EXIT_SIGNALS;
+  const handlers = signals.map((signal) => ({ signal, handle: () => onSignal(signal) }));
+  for (const { signal, handle } of handlers) process.on(signal, handle);
+  return () => {
+    for (const { signal, handle } of handlers) process.off(signal, handle);
+  };
+}
+
+/**
+ * Stop the install in flight, give the terminal back exactly like a normal
+ * exit, then end. The update batch lock needs no release here: it is an OS
+ * handle (core/update/batch-lock.ts), freed by the exit itself.
+ */
+function endOnSignal(signal: NodeJS.Signals, release: () => Promise<void>): void {
+  skipCurrent();
+  const code = SIGNAL_EXIT_BASE + (constants.signals[signal] ?? 0);
+  void release()
+    .catch(() => undefined)
+    .then(() => process.exit(code));
+}
+
+/** `work` run on the first call only; later calls share its promise. */
+function once(work: () => Promise<void>): () => Promise<void> {
+  let pending: Promise<void> | undefined;
+  return () => (pending ??= work());
+}
+
+function appearanceOf(renderer: CliRenderer, tui: Tui, factory: AppearanceFactory): Appearance {
+  try {
+    return factory(renderer, tui);
+  } catch (error) {
+    log.warn("ui.appearance-failed", { error: messageOf(error) });
+    return legacyAppearance(renderer, tui);
+  }
+}
+
+async function releaseScreen(
+  renderer: CliRenderer,
+  appearance: Appearance | undefined,
+): Promise<void> {
+  try {
+    await appearance?.dispose?.();
+  } catch (error) {
+    log.warn("ui.appearance-dispose-failed", { error: messageOf(error) });
+  }
+  try {
+    await destroyRenderer(renderer);
+  } finally {
+    setFullScreen(false);
+  }
+}
+
+/**
+ * Mount on a screen whose Ctrl+C rejects the run — or goes to the latest
+ * interception. The listener is registered before the mount, so it hears
+ * Ctrl+C before any view does: it is the single owner of that key.
+ */
+function mountScreen<T>(
+  parts: Omit<Screen, "interceptCtrlC">,
+  mount: (screen: Screen) => Promise<T>,
+): Promise<T> {
+  const interceptors: Array<() => void> = [];
+  const screen: Screen = {
+    ...parts,
+    interceptCtrlC(handler) {
+      const entry = (): void => handler();
+      interceptors.push(entry);
+      return () => {
+        const index = interceptors.indexOf(entry);
+        if (index !== -1) interceptors.splice(index, 1);
+      };
+    },
+  };
+  return new Promise<T>((resolve, reject) => {
+    parts.renderer.keyInput.on("keypress", (key: KeyEvent) => {
+      if (!key.ctrl || key.name !== "c") return;
+      const intercept = interceptors.at(-1);
+      if (intercept) intercept();
+      else reject(new PromptCancelledError());
+    });
+    mount(screen).then(resolve, reject);
+  });
+}
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * True when a screen can be shown at all: both ends are a terminal, and the
+ * run is not unattended. A scheduled run sets `GUP_NONINTERACTIVE=1`: under
+ * `conhost --headless` both ends ARE terminals that nobody watches, so an
+ * accidental prompt must fail fast instead of waiting forever.
+ */
 export function canPrompt(): boolean {
+  if (process.env["GUP_NONINTERACTIVE"] === "1") return false;
   return Boolean(process.stdin.isTTY && process.stdout.isTTY);
 }
 
@@ -64,16 +229,8 @@ export const screenHost = createScreenHost(async (tui) => {
   return tui.createCliRenderer({
     screenMode: "alternate-screen",
     exitOnCtrlC: false,
-    useMouse: true,
+    exitSignals: [],
+    useMouse: defaults.rendererOptions().useMouse,
     consoleMode: "disabled",
   });
 });
-
-function untilCancelled<T>(renderer: CliRenderer, work: Promise<T>): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    renderer.keyInput.on("keypress", (key: KeyEvent) => {
-      if (key.ctrl && key.name === "c") reject(new PromptCancelledError());
-    });
-    work.then(resolve, reject);
-  });
-}

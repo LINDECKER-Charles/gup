@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ProviderScanResult } from "../../../src/core/types.js";
 import { PackageList } from "../../../src/ui/panels/package-list.js";
-import { PackagesPanel } from "../../../src/ui/panels/packages-panel.js";
+import type { PackageAction } from "../../../src/ui/app/view-definition.js";
+import {
+  PackagesPanel,
+  type PackagesOptions,
+} from "../../../src/ui/panels/packages-panel.js";
 import type { KeyPress } from "../../../src/ui/tui/screen-host.js";
 
 const key = (name: string, sequence = name): KeyPress => ({ name, sequence, ctrl: false });
@@ -19,11 +23,23 @@ const SCANS: ProviderScanResult[] = [
   },
 ];
 
-function panel() {
+function panel(options: PackagesOptions = {}) {
   const onSubmit = vi.fn();
-  const view = new PackagesPanel(onSubmit);
+  const onRescan = vi.fn();
+  const view = new PackagesPanel({ onLaunch: onSubmit, onRescan }, options);
   view.setList(new PackageList(SCANS, () => "Winget"));
-  return { view, onSubmit };
+  return { view, onSubmit, onRescan };
+}
+
+function scheduleAction() {
+  const run = vi.fn<PackageAction["run"]>();
+  const action: PackageAction = {
+    key: "p",
+    hint: "p planifier",
+    emptyNotice: "cochez d'abord des paquets",
+    run,
+  };
+  return { ...action, run };
 }
 
 describe("PackagesPanel", () => {
@@ -76,8 +92,52 @@ describe("PackagesPanel", () => {
   });
 
   it("says when everything is up to date", () => {
-    const view = new PackagesPanel(vi.fn());
+    const view = new PackagesPanel({ onLaunch: vi.fn() });
     view.setList(new PackageList([], (id) => id));
     expect(text(view.render(VIEW))).toContain("Tout est à jour.");
+  });
+
+  it("rescans on r", () => {
+    const { view, onRescan } = panel();
+    view.press(key("r"));
+    expect(onRescan).toHaveBeenCalledOnce();
+    expect(view.hints()).toContain("r rescanner");
+  });
+
+  it("runs another view's action on the checked packages only", () => {
+    const action = scheduleAction();
+    const { view } = panel({ actions: () => [action] });
+    expect(view.hints()).toContain("p planifier");
+    view.press(key("p"));
+    expect(action.run).not.toHaveBeenCalled();
+    expect(text(view.render(VIEW))).toContain("cochez d'abord des paquets");
+    view.press(key("down"));
+    expect(text(view.render(VIEW))).not.toContain("cochez d'abord des paquets");
+    for (const k of ["space", "p"]) view.press(key(k));
+    expect(action.run.mock.calls[0]![0].map((s) => s.pkg.id)).toEqual(["Git.Git"]);
+  });
+
+  it("never lets an action take a key of the table", () => {
+    const action = { ...scheduleAction(), key: "a", hint: "a voler" };
+    const { view } = panel({ actions: () => [action] });
+    view.press(key("down"));
+    view.press(key("a"));
+    expect(action.run).not.toHaveBeenCalled();
+    expect(view.hints()).not.toContain("a voler");
+  });
+
+  it("adds a mark column only when a package has a mark", () => {
+    const scheduled = {
+      glyphFor: (_id: string, pkg: { id: string }) => (pkg.id === "Git.Git" ? "◷" : null),
+    };
+    const marked = text(panel({ markers: () => [scheduled] }).view.render(VIEW));
+    expect(marked).toContain("[ ] ◷ Git.Git");
+    expect(marked).toContain("[ ]   7zip.7zip");
+    const none = { glyphFor: () => null };
+    expect(text(panel({ markers: () => [none] }).view.render(VIEW))).toContain("[ ] Git.Git");
+  });
+
+  it("hides the Note column when the preference says so", () => {
+    expect(text(panel({ noteColumn: () => "hidden" }).view.render(VIEW))).not.toContain("pinned");
   });
 });

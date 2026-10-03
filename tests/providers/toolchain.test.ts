@@ -446,6 +446,23 @@ describe("ProtoProvider", () => {
 
 /* ---------------------------------------------------------------- sdkman */
 describe("SdkmanProvider", () => {
+  const originalPlatform = process.platform;
+  const setPlatform = (value: NodeJS.Platform): void => {
+    Object.defineProperty(process, "platform", { value, configurable: true });
+  };
+  afterEach(() => setPlatform(originalPlatform));
+
+  it.each([
+    ["darwin", "/Users/u", "/Users/u/.sdkman/bin/sdkman-init.sh"],
+    ["win32", "C:\\Users\\u", "C:\\Users\\u\\.sdkman\\bin\\sdkman-init.sh"],
+  ] as const)("looks for the init script with %s separators", async (platform, home, script) => {
+    setPlatform(platform);
+    homedirMock.mockReturnValue(home);
+    existsSyncMock.mockReturnValueOnce(false);
+    await new SdkmanProvider().isAvailable();
+    expect(existsSyncMock).toHaveBeenCalledWith(script);
+  });
+
   it("isAvailable false when init script missing", async () => {
     existsSyncMock.mockReturnValueOnce(false);
     await expect(new SdkmanProvider().isAvailable()).resolves.toBe(false);

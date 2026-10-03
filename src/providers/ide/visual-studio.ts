@@ -41,6 +41,8 @@ export class VisualStudioProvider implements Provider {
     fallback:
       "Windows uniquement — Visual Studio (l'IDE) n'existe pas sur cette plateforme.",
   });
+  /** The Visual Studio Installer refuses to update unelevated. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     return vswhereExe() !== null;

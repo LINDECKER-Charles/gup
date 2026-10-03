@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { join } from "node:path";
+import { join, posix, win32 } from "node:path";
 
 /**
  * historyLocation() picks the platform data root, so `process.platform` and
- * `homedir()` both have to be forced. Expectations are built with the *host*
- * joiner (plain `join`), which is what the source uses too — unlike the
- * Windows-only providers, the history has no reason to emit Windows
- * separators from a Linux process.
+ * `homedir()` both have to be forced. Platform-derived paths follow the
+ * *simulated* platform's separators (`win32.join` / `posix.join`), exactly as
+ * at runtime on that platform; an override is used verbatim, so those cases
+ * build it with the host joiner.
  */
 const { homedirMock } = vi.hoisted(() => ({ homedirMock: vi.fn(() => "/home/u") }));
 vi.mock("node:os", () => ({ homedir: homedirMock }));
@@ -57,9 +57,10 @@ describe("historyLocation", () => {
   it("anchors on %LOCALAPPDATA% on Windows", () => {
     setPlatform("win32");
     process.env["LOCALAPPDATA"] = "C:\\Users\\u\\AppData\\Local";
-    expect(historyLocation(REFERENCE_DATE)?.dir).toBe(
-      join("C:\\Users\\u\\AppData\\Local", "gup", "history"),
-    );
+    expect(historyLocation(REFERENCE_DATE)).toEqual({
+      dir: win32.join("C:\\Users\\u\\AppData\\Local", "gup", "history"),
+      file: win32.join("C:\\Users\\u\\AppData\\Local", "gup", "history", "2026-08.jsonl"),
+    });
   });
 
   it("disables itself on Windows when %LOCALAPPDATA% is missing", () => {
@@ -69,23 +70,24 @@ describe("historyLocation", () => {
 
   it("anchors on ~/Library/Application Support on macOS", () => {
     setPlatform("darwin");
-    expect(historyLocation(REFERENCE_DATE)?.dir).toBe(
-      join("/home/u", "Library", "Application Support", "gup", "history"),
-    );
+    expect(historyLocation(REFERENCE_DATE)).toEqual({
+      dir: posix.join("/home/u", "Library", "Application Support", "gup", "history"),
+      file: posix.join("/home/u", "Library", "Application Support", "gup", "history", "2026-08.jsonl"),
+    });
   });
 
   it("prefers $XDG_STATE_HOME elsewhere", () => {
     setPlatform("linux");
-    process.env["XDG_STATE_HOME"] = join("/home/u", ".state");
+    process.env["XDG_STATE_HOME"] = posix.join("/home/u", ".state");
     expect(historyLocation(REFERENCE_DATE)?.dir).toBe(
-      join("/home/u", ".state", "gup", "history"),
+      posix.join("/home/u", ".state", "gup", "history"),
     );
   });
 
   it("falls back to ~/.local/state without $XDG_STATE_HOME", () => {
     setPlatform("linux");
     expect(historyLocation(REFERENCE_DATE)?.dir).toBe(
-      join("/home/u", ".local", "state", "gup", "history"),
+      posix.join("/home/u", ".local", "state", "gup", "history"),
     );
   });
 
@@ -94,7 +96,7 @@ describe("historyLocation", () => {
     homedirMock.mockReturnValue("");
     process.env["HOME"] = "/mnt/u";
     expect(historyLocation(REFERENCE_DATE)?.dir).toBe(
-      join("/mnt/u", ".local", "state", "gup", "history"),
+      posix.join("/mnt/u", ".local", "state", "gup", "history"),
     );
   });
 

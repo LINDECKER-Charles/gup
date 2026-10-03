@@ -1,6 +1,3 @@
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -12,15 +9,22 @@ const { execaMock } = vi.hoisted(() => ({ execaMock: vi.fn() }));
 vi.mock("execa", () => ({ execa: execaMock }));
 
 import {
-  commandExists,
+  routeInheritTo,
+  type InheritExit,
+  type InheritProcess,
+  type InheritSink,
+} from "../../src/core/process/inherit-sink.js";
+import {
   consumeInterrupt,
+  DEFAULT_INSTALL_TIMEOUT_S,
   getInstallTimeoutSeconds,
   isElevated,
+  killProcessTree,
+  normalizeExitCode,
   run,
   runInherit,
   setInstallTimeoutSeconds,
   skipCurrent,
-  whichFirst,
 } from "../../src/core/runner.js";
 
 const originalPlatform = process.platform;
@@ -197,6 +201,164 @@ describe("runner.runInherit", () => {
     await expect(runInherit("foo;bar")).rejects.toThrow(/runner:/);
     expect(execaMock).not.toHaveBeenCalled();
   });
+
+  it("forwards the working directory and the shell routing, nothing else", async () => {
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    await runInherit("scoop", ["update", "x"], { cwd: "C:\\tmp", shell: true, timeout: 0 });
+    const [, , opts] = execaMock.mock.calls[0]!;
+    expect(opts).toMatchObject({ cwd: "C:\\tmp", shell: true });
+    expect(opts).not.toHaveProperty("timeout");
+  });
+
+  it("reports a failed exit when the spawn itself throws", async () => {
+    execaMock.mockImplementationOnce(() => {
+      throw new Error("spawn EINVAL");
+    });
+    await expect(runInherit("foo")).resolves.toMatchObject({ exitCode: -1, failed: true });
+  });
+});
+
+describe("runner.runInherit with an install sink", () => {
+  interface FakeChild {
+    readonly process: InheritProcess;
+    readonly kill: ReturnType<typeof vi.fn>;
+    exit(result: InheritExit): void;
+  }
+
+  function fakeChild(): FakeChild {
+    let resolveExit!: (exit: InheritExit) => void;
+    const exited = new Promise<InheritExit>((resolve) => {
+      resolveExit = resolve;
+    });
+    const kill = vi.fn();
+    return { process: { exited, kill }, kill, exit: (result) => resolveExit(result) };
+  }
+
+  function sinkStarting(child: FakeChild): InheritSink & { start: ReturnType<typeof vi.fn> } {
+    return { mode: "pty", start: vi.fn(() => child.process), note: vi.fn() };
+  }
+
+  let restore: () => void = () => {};
+  afterEach(() => {
+    restore();
+    consumeInterrupt();
+    setInstallTimeoutSeconds(1200);
+  });
+
+  it("hands the sanitised request to the sink and never spawns through execa", async () => {
+    const child = fakeChild();
+    const sink = sinkStarting(child);
+    restore = routeInheritTo(sink);
+    const pending = runInherit("winget", ["upgrade", "--id", "Git.Git"], { cwd: "C:\\x" });
+    child.exit({ exitCode: 0, failed: false });
+    await expect(pending).resolves.toEqual({ stdout: "", stderr: "", exitCode: 0, failed: false });
+    expect(sink.start).toHaveBeenCalledWith({
+      command: "winget",
+      args: ["upgrade", "--id", "Git.Git"],
+      cwd: "C:\\x",
+    });
+    expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses an unsafe command before the sink sees it", async () => {
+    const sink = sinkStarting(fakeChild());
+    restore = routeInheritTo(sink);
+    await expect(runInherit("a&b")).rejects.toThrow(/runner:/);
+    expect(sink.start).not.toHaveBeenCalled();
+  });
+
+  it("kills the sink's process on skipCurrent and flags the result aborted", async () => {
+    const child = fakeChild();
+    restore = routeInheritTo(sinkStarting(child));
+    const pending = runInherit("winget", ["upgrade"]);
+    expect(skipCurrent()).toBe(true);
+    expect(child.kill).toHaveBeenCalledTimes(1);
+    child.exit({ exitCode: 1, failed: true });
+    await expect(pending).resolves.toMatchObject({ aborted: true, failed: true });
+    expect(consumeInterrupt().aborted).toBe(true);
+  });
+
+  it("kills the sink's process when the install timeout fires", async () => {
+    vi.useFakeTimers();
+    try {
+      const child = fakeChild();
+      restore = routeInheritTo(sinkStarting(child));
+      setInstallTimeoutSeconds(1);
+      const pending = runInherit("winget", ["upgrade"]);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(child.kill).toHaveBeenCalledTimes(1);
+      child.exit({ exitCode: -1, failed: true });
+      await expect(pending).resolves.toMatchObject({ timedOut: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("normalises the sink's exit code like the terminal path's", async () => {
+    setPlatform("win32");
+    const child = fakeChild();
+    restore = routeInheritTo(sinkStarting(child));
+    const pending = runInherit("vs_installer.exe");
+    child.exit({ exitCode: 3221225786, failed: true });
+    await expect(pending).resolves.toMatchObject({ exitCode: -1073741510 });
+  });
+
+  it("spawns through execa again once the route is restored", async () => {
+    restore = routeInheritTo(sinkStarting(fakeChild()));
+    restore();
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    await runInherit("foo");
+    expect(execaMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("runner.killProcessTree", () => {
+  it("runs taskkill on the whole tree on Windows", () => {
+    setPlatform("win32");
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    killProcessTree(4242);
+    expect(execaMock).toHaveBeenCalledWith("taskkill", ["/pid", "4242", "/t", "/f"], {
+      reject: false,
+      windowsHide: true,
+    });
+  });
+
+  it("does nothing off Windows or without a pid", () => {
+    setPlatform("linux");
+    killProcessTree(4242);
+    setPlatform("win32");
+    killProcessTree(undefined);
+    expect(execaMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("runner exit codes", () => {
+  it("reads Windows exit codes as signed 32-bit integers", () => {
+    expect(normalizeExitCode(4294967295, "win32")).toBe(-1);
+    expect(normalizeExitCode(3221225786, "win32")).toBe(-1073741510);
+    expect(normalizeExitCode(2316632107, "win32")).toBe(-1978335189);
+    expect(normalizeExitCode(3010, "win32")).toBe(3010);
+    expect(normalizeExitCode(-1, "win32")).toBe(-1);
+  });
+
+  it("leaves POSIX exit statuses untouched", () => {
+    expect(normalizeExitCode(130, "linux")).toBe(130);
+    expect(normalizeExitCode(255, "darwin")).toBe(255);
+  });
+
+  it("reports the signed code from both spawn paths on Windows", async () => {
+    setPlatform("win32");
+    // Visual Studio's "cancelled", as execa reports it.
+    execaMock.mockReturnValue(mkExecaResult({ exitCode: 3221225786, failed: true }));
+    await expect(runInherit("vs_installer.exe")).resolves.toMatchObject({
+      exitCode: -1073741510,
+      failed: true,
+    });
+    await expect(run("vs_installer.exe")).resolves.toMatchObject({
+      exitCode: -1073741510,
+      failed: true,
+    });
+  });
 });
 
 describe("runner install-timeout config", () => {
@@ -206,6 +368,7 @@ describe("runner install-timeout config", () => {
 
   it("defaults to 1200s and is settable", () => {
     expect(getInstallTimeoutSeconds()).toBe(1200);
+    expect(DEFAULT_INSTALL_TIMEOUT_S).toBe(1200);
     setInstallTimeoutSeconds(30);
     expect(getInstallTimeoutSeconds()).toBe(30);
   });
@@ -283,120 +446,31 @@ describe("runner skip + interrupt channel", () => {
   });
 });
 
-/**
- * PATH lookup runs against a real temporary PATH: the point of the feature is
- * that it touches the filesystem instead of spawning `where` / `which`, so the
- * filesystem is what these tests exercise. Platform-specific rules run on the
- * matching CI leg only.
- */
-describe("runner.whichFirst / commandExists", () => {
-  const isWindows = originalPlatform === "win32";
-  const binaryName = isWindows ? "tool.exe" : "tool";
-  const savedPath = process.env.PATH;
-  const savedPathext = process.env.PATHEXT;
-  let root: string;
-
-  beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "gup-which-"));
-  });
-
-  afterEach(async () => {
-    process.env.PATH = savedPath;
-    if (savedPathext === undefined) delete process.env.PATHEXT;
-    else process.env.PATHEXT = savedPathext;
-    await rm(root, { recursive: true, force: true });
-  });
-
-  /** Create `<root>/<dir>/<name>` (executable on POSIX) and return its path. */
-  async function placeBinary(dir: string, name: string): Promise<string> {
-    await mkdir(join(root, dir), { recursive: true });
-    const file = join(root, dir, name);
-    await writeFile(file, "");
-    await chmod(file, 0o755);
-    return file;
-  }
-
-  function usePath(...dirs: string[]): void {
-    process.env.PATH = dirs.map((dir) => join(root, dir)).join(delimiter);
-  }
-
-  it("resolves in-process, without spawning where/which", async () => {
-    const file = await placeBinary("bin", binaryName);
-    usePath("bin");
-    await expect(whichFirst("tool")).resolves.toBe(file);
-    await expect(commandExists("tool")).resolves.toBe(true);
-    expect(execaMock).not.toHaveBeenCalled();
-  });
-
-  it("returns the hit from the earliest PATH entry", async () => {
-    await placeBinary("late", binaryName);
-    const early = await placeBinary("early", binaryName);
-    usePath("early", "late");
-    await expect(whichFirst("tool")).resolves.toBe(early);
-  });
-
-  it("returns null when nothing on PATH matches", async () => {
-    await placeBinary("bin", isWindows ? "other.exe" : "other");
-    usePath("bin", "no-such-dir");
-    await expect(whichFirst("tool")).resolves.toBeNull();
-    await expect(commandExists("tool")).resolves.toBe(false);
-  });
-
-  it("ignores a directory that carries the command's name", async () => {
-    await mkdir(join(root, "bin", binaryName), { recursive: true });
-    usePath("bin");
-    await expect(whichFirst("tool")).resolves.toBeNull();
-  });
-
-  it.each(["../tool", "bin/tool", "..\\tool", "to*l", ""])(
-    "refuses %j, a path or a pattern rather than a command name",
-    async (name) => {
-      // `<root>/tool` is exactly where "../tool" would land from `<root>/bin`.
-      await placeBinary(".", "tool");
-      await mkdir(join(root, "bin"), { recursive: true });
-      usePath("bin");
-      await expect(whichFirst(name)).resolves.toBeNull();
-    },
-  );
-
-  it.runIf(isWindows)("checks the bare name before PATHEXT extensions, like where", async () => {
-    await placeBinary("bin", "tool.cmd");
-    const bare = await placeBinary("bin", "tool");
-    usePath("bin");
-    process.env.PATHEXT = ".EXE;.CMD";
-    await expect(whichFirst("tool")).resolves.toBe(bare);
-  });
-
-  it.runIf(isWindows)("tries PATHEXT extensions in their declared order", async () => {
-    await placeBinary("bin", "tool.cmd");
-    const exe = await placeBinary("bin", "tool.exe");
-    usePath("bin");
-    process.env.PATHEXT = ".EXE;.CMD";
-    await expect(whichFirst("tool")).resolves.toBe(exe);
-  });
-
-  it.runIf(!isWindows)("skips a file without the exec bit, like which", async () => {
-    const plain = await placeBinary("first", "tool");
-    await chmod(plain, 0o644);
-    const executable = await placeBinary("second", "tool");
-    usePath("first", "second");
-    await expect(whichFirst("tool")).resolves.toBe(executable);
-  });
-
-  it.runIf(!isWindows)("reports the symlink on PATH, not its target", async () => {
-    const target = await placeBinary("cellar", "tool");
-    await mkdir(join(root, "bin"));
-    await symlink(target, join(root, "bin", "tool"));
-    usePath("bin");
-    await expect(whichFirst("tool")).resolves.toBe(join(root, "bin", "tool"));
-  });
-});
-
 describe("runner.isElevated", () => {
-  it("returns true on non-win32 platforms without probing", async () => {
+  const originalGetuid = process.getuid;
+  const setGetuid = (getuid: (() => number) | undefined): void => {
+    Object.defineProperty(process, "getuid", { value: getuid, configurable: true, writable: true });
+  };
+  afterEach(() => setGetuid(originalGetuid));
+
+  it("reports root as elevated on POSIX, without probing", async () => {
     setPlatform("linux");
+    setGetuid(() => 0);
     await expect(isElevated()).resolves.toBe(true);
     expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a regular POSIX user as not elevated", async () => {
+    setPlatform("darwin");
+    setGetuid(() => 501);
+    await expect(isElevated()).resolves.toBe(false);
+    expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it("reports not elevated when the platform has no uid to check", async () => {
+    setPlatform("linux");
+    setGetuid(undefined);
+    await expect(isElevated()).resolves.toBe(false);
   });
 
   it("returns true on win32 when `net session` succeeds", async () => {

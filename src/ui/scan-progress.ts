@@ -2,7 +2,7 @@ import chalk from "chalk";
 import type { Provider, ProviderScanResult } from "../core/types.js";
 import { recordScan } from "../core/history/store.js";
 import { detectAvailableProviders, scanAll, type ScanOptions } from "../core/registry.js";
-import { SILENT_SCAN, type ScanEvents } from "./panels/scan-panel.js";
+import { SILENT_SCAN, type ScanEvents, type ScanObserver } from "./panels/scan-panel.js";
 import { withScanScreen } from "./prompts/scan-screen.js";
 import { canPrompt } from "./tui/screen-host.js";
 
@@ -93,4 +93,77 @@ function countPlanned(detected: Provider[], options: Pick<ScanOptions, "only" | 
     if (options.fast && p.slow) return false;
     return true;
   }).length;
+}
+
+/**
+ * The session's scans, fanned out to the views: one scan at a time, its
+ * progress to every observer (the Scan view draws it), then a "results
+ * changed" notification once `state.scans` holds them (Paquets rebuilds its
+ * table).
+ */
+export class ScanBus {
+  readonly #scan: (events: ScanEvents) => Promise<void>;
+  readonly #observers = new Set<ScanObserver>();
+  readonly #resultListeners = new Set<() => void>();
+  #isRunning = false;
+
+  /** `scan` runs one scan, reporting to `events`, and stores its results. */
+  constructor(scan: (events: ScanEvents) => Promise<void>) {
+    this.#scan = scan;
+  }
+
+  get isRunning(): boolean {
+    return this.#isRunning;
+  }
+
+  observe(observer: ScanObserver): () => void {
+    this.#observers.add(observer);
+    return () => void this.#observers.delete(observer);
+  }
+
+  onResults(listener: () => void): () => void {
+    this.#resultListeners.add(listener);
+    return () => void this.#resultListeners.delete(listener);
+  }
+
+  /**
+   * One scan — none while another runs — then its results announced. A scan
+   * that breaks (not one provider: the whole run) is reported as failed.
+   */
+  async run(): Promise<void> {
+    if (this.#isRunning) return;
+    this.#isRunning = true;
+    try {
+      await this.#scan(this.events());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      for (const observer of this.#observers) observer.failed(message);
+    } finally {
+      this.#isRunning = false;
+    }
+    this.announceResults();
+  }
+
+  /** One animation frame to every observer. */
+  tick(): void {
+    for (const observer of this.#observers) observer.tick();
+  }
+
+  /** `state.scans` holds results the views have not seen. */
+  announceResults(): void {
+    for (const listener of [...this.#resultListeners]) listener();
+  }
+
+  private events(): ScanEvents {
+    const each = (notify: (observer: ScanObserver) => void): void => {
+      for (const observer of this.#observers) notify(observer);
+    };
+    return {
+      detecting: () => each((o) => o.detecting()),
+      planned: (total) => each((o) => o.planned(total)),
+      started: (provider) => each((o) => o.started(provider)),
+      finished: (provider, outcome) => each((o) => o.finished(provider, outcome)),
+      completed: (elapsedMs) => each((o) => o.completed(elapsedMs)),
+    };
+  }
 }

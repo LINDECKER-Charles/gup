@@ -1,99 +1,113 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * doctorCommand probes every provider's isAvailable() in parallel and
- * partitions the result into detected/missing for the status renderer.
- * We feed a hand-crafted ALL_PROVIDERS so the test is deterministic.
+ * doctorCommand reads the provider status through the bounded detection
+ * (readProviderStatus, tested on its own), hands the detected/missing groups
+ * to the status renderer, then prints the "Système" section the CLI modules
+ * contribute.
  */
-const { fakeProviders, renderProvidersStatusMock } = vi.hoisted(() => {
-  const fakeProviders = [
-    {
-      id: "winget",
-      displayName: "winget",
-      isAvailable: vi.fn(),
-      installHint: "Microsoft Store",
-      listOutdated: vi.fn(),
-      update: vi.fn(),
-      updateAll: vi.fn(),
-    },
-    {
-      id: "scoop",
-      displayName: "Scoop",
-      isAvailable: vi.fn(),
-      // no installHint → covers the falsy branch of the {installHint} spread
-      listOutdated: vi.fn(),
-      update: vi.fn(),
-      updateAll: vi.fn(),
-    },
-    {
-      id: "choco",
-      displayName: "Chocolatey",
-      isAvailable: vi.fn(),
-      installHint: "https://chocolatey.org",
-      listOutdated: vi.fn(),
-      update: vi.fn(),
-      updateAll: vi.fn(),
-    },
-  ];
-  return { fakeProviders, renderProvidersStatusMock: vi.fn() };
-});
-
-vi.mock("../../src/core/registry.js", () => ({
-  ALL_PROVIDERS: fakeProviders,
-  getProvider: vi.fn(),
-  scanAll: vi.fn(),
+const { readProviderStatusMock, renderProvidersStatusMock } = vi.hoisted(() => ({
+  readProviderStatusMock: vi.fn(),
+  renderProvidersStatusMock: vi.fn(() => "PROVIDERS"),
 }));
-
+vi.mock("../../src/core/platform/provider-status.js", () => ({
+  readProviderStatus: readProviderStatusMock,
+}));
 vi.mock("../../src/ui/table.js", () => ({
   renderProvidersStatus: renderProvidersStatusMock,
   renderScanTable: vi.fn(),
 }));
 
-import { doctorCommand } from "../../src/commands/doctor.js";
+import type { CliModule } from "../../src/commands/cli/cli-module.js";
+import { DIAGNOSTIC_TIMEOUT_MS, doctorCommand } from "../../src/commands/doctor.js";
 
-const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+let stdout: ReturnType<typeof vi.spyOn>;
+const ANSI = new RegExp(String.raw`\x1b\[[0-9;]*m`, "g");
+const printed = (): string =>
+  stdout.mock.calls.map((call: unknown[]) => String(call[0])).join("").replace(ANSI, "");
 
 beforeEach(() => {
-  for (const p of fakeProviders) p.isAvailable.mockReset();
-  renderProvidersStatusMock.mockReset();
-  writeSpy.mockClear();
-});
-
-describe("doctorCommand", () => {
-  it("splits providers into detected/missing, drops installHint when absent, and writes the rendered output", async () => {
-    fakeProviders[0]!.isAvailable.mockResolvedValueOnce(true); // winget
-    fakeProviders[1]!.isAvailable.mockResolvedValueOnce(false); // scoop (no hint)
-    fakeProviders[2]!.isAvailable.mockResolvedValueOnce(false); // choco
-    renderProvidersStatusMock.mockReturnValueOnce("OUT");
-
-    const code = await doctorCommand();
-    expect(code).toBe(0);
-
-    expect(renderProvidersStatusMock).toHaveBeenCalledTimes(1);
-    const [detected, missing] = renderProvidersStatusMock.mock.calls[0]!;
-    expect(detected).toEqual(["winget"]);
-    expect(missing).toEqual([
+  stdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+  readProviderStatusMock.mockResolvedValue({
+    platform: "win32",
+    detected: [{ id: "winget", displayName: "winget" }],
+    missing: [
       { id: "scoop", displayName: "Scoop" },
       { id: "choco", displayName: "Chocolatey", installHint: "https://chocolatey.org" },
+    ],
+    incompatible: [],
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
+
+function reporting(id: string, diagnostics: CliModule["diagnostics"]): CliModule {
+  return { id, order: 100, ...(diagnostics && { diagnostics }) };
+}
+
+describe("doctorCommand", () => {
+  it("renders the detected and missing groups from the bounded detection", async () => {
+    await expect(doctorCommand()).resolves.toBe(0);
+    expect(readProviderStatusMock).toHaveBeenCalledOnce();
+    expect(renderProvidersStatusMock).toHaveBeenCalledWith(
+      ["winget"],
+      [
+        { id: "scoop", displayName: "Scoop" },
+        { id: "choco", displayName: "Chocolatey", installHint: "https://chocolatey.org" },
+      ],
+    );
+    expect(printed()).toBe("PROVIDERS\n");
+  });
+
+  it("prints no Système section when no module reports anything", async () => {
+    await doctorCommand([reporting("list", undefined)]);
+    expect(printed()).not.toContain("Système");
+  });
+
+  it("prints every module's lines under Système, with a mark per status", async () => {
+    const terminal = reporting("embedded-terminal", async () => [
+      { label: "Terminal intégré", value: "disponible", status: "ok" },
     ]);
-    expect(writeSpy).toHaveBeenCalledWith("OUT\n");
+    const scheduler = reporting("schedule", async () => [
+      { label: "Planification", value: "désactivée", status: "off" },
+      { label: "Déclencheur", value: "absent", status: "warn" },
+    ]);
+    await doctorCommand([terminal, scheduler]);
+    const lines = printed().split("\n");
+    const section = lines.slice(lines.indexOf("  Système"));
+    expect(section).toEqual([
+      "  Système",
+      `  ${"─".repeat(40)}`,
+      `  ● ${"Terminal intégré".padEnd(24)} disponible`,
+      `  ○ ${"Planification".padEnd(24)} désactivée`,
+      `  ▲ ${"Déclencheur".padEnd(24)} absent`,
+      "",
+    ]);
   });
 
-  it("all-detected: missing array is empty", async () => {
-    for (const p of fakeProviders) p.isAvailable.mockResolvedValueOnce(true);
-    renderProvidersStatusMock.mockReturnValueOnce("ALL");
-    await doctorCommand();
-    const [detected, missing] = renderProvidersStatusMock.mock.calls[0]!;
-    expect(detected).toEqual(["winget", "scoop", "choco"]);
-    expect(missing).toEqual([]);
+  it("reports a module whose diagnostics fail, and keeps the others", async () => {
+    const broken = reporting("journal", async () => {
+      throw new Error("dossier illisible");
+    });
+    const fine = reporting("settings", async () => [
+      { label: "Configuration", value: "chargée", status: "ok" },
+    ]);
+    await doctorCommand([broken, fine]);
+    expect(printed()).toContain(
+      `▲ ${"journal".padEnd(24)} diagnostic indisponible (dossier illisible)`,
+    );
+    expect(printed()).toContain("Configuration");
   });
 
-  it("none-detected: detected array is empty", async () => {
-    for (const p of fakeProviders) p.isAvailable.mockResolvedValueOnce(false);
-    renderProvidersStatusMock.mockReturnValueOnce("");
-    await doctorCommand();
-    const [detected, missing] = renderProvidersStatusMock.mock.calls[0]!;
-    expect(detected).toEqual([]);
-    expect(missing.map((m: { id: string }) => m.id)).toEqual(["winget", "scoop", "choco"]);
+  it("does not wait for a module whose diagnostics never answer", async () => {
+    vi.useFakeTimers();
+    const stuck = reporting("schedule", () => new Promise(() => {}));
+    const done = doctorCommand([stuck]);
+    await vi.advanceTimersByTimeAsync(DIAGNOSTIC_TIMEOUT_MS);
+    await expect(done).resolves.toBe(0);
+    expect(printed()).toContain("diagnostic indisponible (délai dépassé)");
   });
 });

@@ -16,6 +16,8 @@ export class ChocoProvider implements Provider {
     fallback:
       "Chocolatey est un gestionnaire Windows — il n'existe pas sur cette plateforme (utiliser Homebrew).",
   });
+  /** Chocolatey upgrades need an elevated shell, which no unattended run gets. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     return commandExists("choco");

@@ -878,6 +878,7 @@ describe("CygwinProvider.listOutdated", () => {
     await expect(new CygwinProvider().listOutdated()).resolves.toEqual([
       {
         id: "cygwin",
+        aggregate: true,
         name: "Cygwin (paquets)",
         current: "?",
         latest: "refresh",

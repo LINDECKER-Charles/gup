@@ -1,52 +1,83 @@
 import type { KeyEvent } from "@opentui/core";
-import type { MenuState } from "../../commands/menu-state.js";
-import { setInstallTimeoutSeconds, getInstallTimeoutSeconds } from "../../core/runner.js";
-import { OptionsPanel } from "../panels/options-panel.js";
-import { PackageList } from "../panels/package-list.js";
-import { PackagesPanel } from "../panels/packages-panel.js";
-import type { Panel, Viewport } from "../panels/panel.js";
-import { ProvidersPanel, type ProviderInfo } from "../panels/providers-panel.js";
-import { ScanPanel, type ScanEvents } from "../panels/scan-panel.js";
-import type { SelectedPackage } from "../select.js";
+import { countPackages, withoutUpdated, type MenuState } from "../../commands/menu-state.js";
+import type { SelectedPackage } from "../../core/types.js";
+import type { UpdateReport } from "../../core/update/update-report.js";
+import type { Viewport } from "../panels/panel.js";
+import type { ScanEvents } from "../panels/scan-panel.js";
+import { ScanBus } from "../scan-progress.js";
+import {
+  PANEL_HINTS_TAIL,
+  providerCountFact,
+  SIDEBAR_HINTS,
+  SIDEBAR_TITLE,
+} from "../text/menu-labels.js";
 import { Chrome, CHROME_ROWS } from "../tui/chrome.js";
 import { DialogLayer } from "../tui/dialog.js";
 import type { KeyPress, Screen } from "../tui/screen-host.js";
-import { PANEL_FRAME, TextPanel } from "../tui/text-panel.js";
-import {
-  entryAtRow,
-  NAV,
-  renderSidebar,
-  SIDEBAR_WIDTH,
-  type NavEntry,
-  type ViewId,
-} from "./sidebar.js";
+import { panelFrame, TextPanel } from "../tui/text-panel.js";
+import { MenuNav } from "./menu-nav.js";
+import { SIDEBAR_WIDTH } from "./sidebar.js";
+import { uiPreferences, type UiPreferences } from "./ui-preferences.js";
+import { launcherFactory, type LaunchRequest, type LauncherContext } from "./update-launcher.js";
+import type {
+  Takeover,
+  TakeoverSurface,
+  ViewContext,
+  ViewDefinition,
+  ViewId,
+} from "./view-definition.js";
+import { ViewRegistry } from "./view-registry.js";
 
 /** What the menu needs from the rest of gup. Implemented by the menu command. */
 export interface MenuController {
   scan(state: MenuState, events: ScanEvents): Promise<void>;
-  providersStatus(): Promise<{ detected: ProviderInfo[]; missing: ProviderInfo[] }>;
-  updatePackages(packages: SelectedPackage[]): Promise<void>;
-  updateTargets(targets: string[]): Promise<void>;
-  validateTargets(raw: string): true | string;
   displayName(providerId: string): string;
+  /**
+   * Update on the plain terminal, once the screen is gone: the pipeline and
+   * console output of `gup update`. Resolves with what happened.
+   */
+  updateOutside(
+    packages: readonly SelectedPackage[],
+    request?: LaunchRequest,
+  ): Promise<UpdateReport>;
 }
 
-/** How a session ends: the user quits, or a job needs the terminal back. */
-export type SessionExit = { kind: "quit" } | { kind: "outside"; run: () => Promise<void> };
+/**
+ * How a session ends: the user quits, or an update needs the terminal back —
+ * the app runs it after the screen is gone, then mounts a new session on
+ * `returnTo` (default Paquets).
+ */
+export type SessionExit =
+  | { readonly kind: "quit" }
+  | {
+      readonly kind: "outside";
+      readonly run: () => Promise<UpdateReport>;
+      readonly returnTo?: ViewId;
+    };
 
 export interface SessionDeps {
   readonly state: MenuState;
   readonly controller: MenuController;
+  /** The menu's views; the sidebar lists them by group and order. */
+  readonly views: readonly ViewDefinition[];
   readonly scanOnStart: boolean;
+  /** The view in front at start, when registered (default: Scan); else the first one. */
+  readonly initialView?: ViewId;
 }
 
 const FRAME_MS = 100;
 
 /**
- * One mounted run of the menu: sidebar, main panel, dialogs, live scan. It
- * ends when the user quits, or when an update must run with the terminal to
- * itself — the app then tears the screen down, runs it, and mounts a new
- * session.
+ * One mounted run of the menu: sidebar, the registered views, dialogs, live
+ * scans. It knows no view in particular beyond the Scan → Paquets landing:
+ * each view is built from its definition and reaches the menu through a
+ * ViewContext. The session ends when the user quits, or when an update must
+ * run with the terminal to itself — the app then tears the screen down, runs
+ * it, and mounts a new session.
+ *
+ * Keys go, in order, to: an open dialog, a takeover, the focused panel when
+ * it captures text or claims the key, the global bindings (q, Tab, ←), then
+ * the focused panel or the sidebar.
  */
 export class MenuSession {
   readonly #deps: SessionDeps;
@@ -55,13 +86,10 @@ export class MenuSession {
   readonly #sidebar: TextPanel;
   readonly #main: TextPanel;
   readonly #dialogs: DialogLayer;
-  readonly #panels: Record<ViewId, Panel>;
-  readonly #scan: ScanPanel;
-  readonly #packages: PackagesPanel;
-  readonly #providers = new ProvidersPanel();
-  #current: ViewId = "scan";
-  #focus: "sidebar" | "main" = "main";
-  #navCursor = 0;
+  readonly #views: ViewRegistry;
+  readonly #nav: MenuNav;
+  readonly #scans: ScanBus;
+  #takeover: Takeover | null = null;
   #exit: (exit: SessionExit) => void = () => {};
 
   constructor(screen: Screen, deps: SessionDeps) {
@@ -70,37 +98,87 @@ export class MenuSession {
     this.#chrome = new Chrome(screen);
     this.#sidebar = new TextPanel(screen, this.#chrome.body, {
       id: "gup-nav",
-      title: "Menu",
+      title: SIDEBAR_TITLE,
       width: SIDEBAR_WIDTH,
     });
-    this.#main = new TextPanel(screen, this.#chrome.body, { id: "gup-main", title: "Scan" });
+    this.#main = new TextPanel(screen, this.#chrome.body, { id: "gup-main", title: "" });
     this.#dialogs = new DialogLayer(screen);
-    this.#scan = new ScanPanel(() => void this.rescan());
-    this.#packages = new PackagesPanel((packages) => void this.confirmUpdate(packages));
-    const options = new OptionsPanel(deps.state, {
-      onEditTimeout: () => void this.editTimeout(),
-      onRescan: () => void this.rescan(),
-    });
-    this.#panels = {
-      scan: this.#scan,
-      packages: this.#packages,
-      providers: this.#providers,
-      options,
-    };
+    this.#views = new ViewRegistry(deps.views, deps.initialView ?? "scan");
+    this.#nav = new MenuNav(this.#views, () => this.#exit({ kind: "quit" }));
+    this.#scans = new ScanBus((events) => deps.controller.scan(deps.state, events));
+    this.#views.mount(this.createContext());
   }
 
   run(): Promise<SessionExit> {
     return new Promise<SessionExit>((resolve) => {
-      const timer = setInterval(() => this.tick(), FRAME_MS);
+      const stopDrawing = this.startDrawing();
+      // A screen torn down under the session (Ctrl+C, a signal) takes the
+      // clock with it: a frame drawn on a destroyed renderer throws.
+      this.#screen.renderer.once("destroy", stopDrawing);
       this.#exit = (exit) => {
-        clearInterval(timer);
+        stopDrawing();
         resolve(exit);
       };
       this.wireInput();
-      if (this.#deps.scanOnStart) void this.rescan();
-      else this.refreshPackages();
+      this.#views.panel?.onShow?.();
+      if (this.#deps.scanOnStart) void this.scan();
+      else if (this.#deps.state.scans.length > 0) this.#scans.announceResults();
       this.draw();
     });
+  }
+
+  /** Start the frame clock and the redraws on change; returns an idempotent stop. */
+  private startDrawing(): () => void {
+    const timer = setInterval(() => this.tick(), FRAME_MS);
+    const redraw = (): void => this.draw();
+    const unsubscribe = [
+      this.#screen.appearance.onChange(redraw),
+      uiPreferences().subscribe(redraw),
+    ];
+    let isStopped = false;
+    return () => {
+      if (isStopped) return;
+      isStopped = true;
+      clearInterval(timer);
+      for (const stop of unsubscribe) stop();
+    };
+  }
+
+  private createContext(): ViewContext {
+    const { state, controller } = this.#deps;
+    return {
+      screen: this.#screen,
+      state,
+      dialogs: this.#dialogs,
+      updates: launcherFactory()(this.launcherContext()),
+      preferences,
+      packageActions: () => this.#views.packageActions(),
+      packageMarkers: () => this.#views.packageMarkers(),
+      displayName: (providerId) => controller.displayName(providerId),
+      redraw: () => this.draw(),
+      show: (view) => {
+        this.#views.show(view);
+        this.draw();
+      },
+      rescan: () => this.rescan(),
+      isScanning: () => this.#scans.isRunning,
+      onScansChanged: (listener) => this.#scans.onResults(listener),
+      observeScan: (observer) => this.#scans.observe(observer),
+      takeOver: (start) => this.takeOver(start),
+    };
+  }
+
+  private launcherContext(): LauncherContext {
+    return {
+      screen: this.#screen,
+      dialogs: this.#dialogs,
+      state: this.#deps.state,
+      controller: this.#deps.controller,
+      preferences,
+      takeOver: (start) => this.takeOver(start),
+      exit: (exit) => this.#exit(exit),
+      afterUpdate: (report, returnTo) => this.afterUpdate(report, returnTo),
+    };
   }
 
   private wireInput(): void {
@@ -113,213 +191,168 @@ export class MenuSession {
     // The mouse reaches what is under the pointer, dialog or not: ignore it
     // while a dialog is open, or a click beside it would tick a package hidden
     // behind it.
-    this.#sidebar.onRowClick((row) => this.unlessDialog(() => this.clickNav(row)));
+    this.#sidebar.onRowClick((row) =>
+      this.whenBrowsing(() => this.#nav.click(row, this.#screen.appearance.density)),
+    );
     this.#main.onRowClick((row) =>
-      this.unlessDialog(() => {
-        this.#focus = "main";
-        this.panel().click(row, this.viewport());
+      this.whenBrowsing(() => {
+        this.#nav.focusMain();
+        this.#views.panel?.click(row, this.viewport());
       }),
     );
-    this.#main.onScroll((step) => this.unlessDialog(() => this.panel().scroll(step)));
+    this.#main.onScroll((step) => this.whenBrowsing(() => this.#views.panel?.scroll(step)));
   }
 
-  private unlessDialog(action: () => void): void {
-    if (this.#dialogs.isOpen) return;
+  /** Run a mouse action unless a dialog or a takeover owns the screen. */
+  private whenBrowsing(action: () => void): void {
+    if (this.#dialogs.isOpen || this.#takeover) return;
     action();
     this.draw();
   }
 
-  private clickNav(row: number): void {
-    const index = entryAtRow(row);
-    if (index !== null) this.activate(index);
+  private onKey(key: KeyEvent): void {
+    const overlay = this.overlayFor(key);
+    if (overlay) return overlay(key);
+    if (this.isClaimedByPanel(key)) return this.#views.panel?.press(key);
+    const global = this.globalKeys()[key.name];
+    if (global) return global();
+    if (this.#nav.isSidebarFocused) return this.#nav.press(key);
+    this.#views.panel?.press(key);
   }
 
-  private onKey(key: KeyPress): void {
-    if (this.#dialogs.isOpen) return this.#dialogs.press(key);
-    if (this.#focus === "main" && this.panel().isCapturingText) return this.panel().press(key);
-    const global: Record<string, () => void> = {
+  /** Who hears `key` before the menu: the screen (Ctrl+C), an open dialog, a takeover. */
+  private overlayFor(key: KeyPress): ((key: KeyEvent) => void) | null {
+    if (key.ctrl && key.name === "c") return () => {};
+    if (this.#dialogs.isOpen) return (pressed) => this.#dialogs.press(pressed);
+    const takeover = this.#takeover;
+    return takeover ? (pressed) => takeover.press(pressed) : null;
+  }
+
+  /** The focused panel takes the key before the global bindings: text input, or a claim. */
+  private isClaimedByPanel(key: KeyPress): boolean {
+    const panel = this.#views.panel;
+    if (this.#nav.isSidebarFocused || !panel) return false;
+    if (panel.isCapturingText) return true;
+    const isReserved = key.name === "q" || key.name === "tab";
+    return !isReserved && panel.wantsKey?.(key) === true;
+  }
+
+  private globalKeys(): Record<string, () => void> {
+    return {
       q: () => this.#exit({ kind: "quit" }),
-      tab: () => (this.#focus === "main" ? this.focusSidebar() : (this.#focus = "main")),
-      left: () => this.focusSidebar(),
+      tab: () => this.#nav.toggle(),
+      left: () => this.#nav.focusSidebar(),
     };
-    const handled = global[key.name];
-    if (handled) return handled();
-    if (this.#focus === "main") return this.panel().press(key);
-    if (key.name === "right") this.#focus = "main";
-    else this.navKey(key);
   }
 
-  /** Give the sidebar the focus, its cursor on the view on screen. */
-  private focusSidebar(): void {
-    this.#focus = "sidebar";
-    this.#navCursor = NAV.findIndex((entry) => entry.id === this.#current);
+  /** A scan the user asked for: the Scan view comes to the front. */
+  private rescan(): void {
+    if (this.#scans.isRunning) return;
+    this.#views.show("scan");
+    void this.scan();
+    this.draw();
   }
 
-  private navKey(key: KeyPress): void {
-    if (key.name === "up" || key.name === "k") this.moveNav(-1);
-    else if (key.name === "down" || key.name === "j") this.moveNav(1);
-    else if (["return", "enter", "space"].includes(key.name)) this.activate(this.#navCursor);
+  /** Scan, then land on Paquets when the Scan view is in front and there is something to update. */
+  private async scan(): Promise<void> {
+    await this.#scans.run();
+    if (this.#views.current === "scan" && countPackages(this.#deps.state.scans) > 0) {
+      this.#views.show("packages");
+    }
+    this.draw();
   }
 
-  private moveNav(step: number): void {
-    this.#navCursor = Math.max(0, Math.min(NAV.length - 1, this.#navCursor + step));
-    const entry = NAV[this.#navCursor];
-    if (entry && !entry.isAction) this.show(entry.id as ViewId);
+  private takeOver(start: (surface: TakeoverSurface) => Takeover): () => void {
+    this.setBrowsing(false);
+    const takeover = start({
+      screen: this.#screen,
+      body: this.#chrome.body,
+      dialogs: this.#dialogs,
+      setFacts: (facts) => this.#chrome.setFacts(facts),
+      setHints: (hints) => this.#chrome.setHints(hints),
+    });
+    this.#takeover = takeover;
+    this.draw();
+    return () => {
+      if (this.#takeover !== takeover) return;
+      this.#takeover = null;
+      this.setBrowsing(true);
+      this.draw();
+    };
   }
 
-  private activate(index: number): void {
-    const entry: NavEntry | undefined = NAV[index];
-    if (!entry) return;
-    this.#navCursor = index;
-    if (!entry.isAction) {
-      this.show(entry.id as ViewId);
-      this.#focus = "main";
-    } else if (entry.id === "update-all") {
-      void this.confirmUpdate(this.allPackages());
-    } else if (entry.id === "target") {
-      void this.askTarget();
+  private setBrowsing(isVisible: boolean): void {
+    this.#sidebar.box.visible = isVisible;
+    this.#main.box.visible = isVisible;
+  }
+
+  /**
+   * An update ran inside the screen. Rescan when the preferences ask for it
+   * (the Scan view comes to the front unless the update was launched from
+   * another view); otherwise drop what was updated, and go back.
+   */
+  private afterUpdate(report: UpdateReport, returnTo?: ViewId): void {
+    if (!preferences().rescanAfterUpdate) {
+      const { state } = this.#deps;
+      state.scans = withoutUpdated(state.scans, report);
+      this.#scans.announceResults();
+      this.#views.show(returnTo ?? "packages");
+    } else if (returnTo) {
+      this.#views.show(returnTo);
+      void this.scan();
     } else {
-      this.#exit({ kind: "quit" });
-    }
-  }
-
-  private show(view: ViewId): void {
-    this.#current = view;
-    if (view === "providers" && !this.#providers.hasData) void this.loadProviders();
-  }
-
-  private panel(): Panel {
-    return this.#panels[this.#current];
-  }
-
-  private async rescan(): Promise<void> {
-    if (this.#scan.isRunning) return;
-    this.show("scan");
-    try {
-      await this.#deps.controller.scan(this.#deps.state, this.#scan);
-    } catch (err) {
-      this.#scan.failed(err instanceof Error ? err.message : String(err));
-    }
-    this.refreshPackages();
-    if (this.#current === "scan" && this.allPackages().length > 0) this.show("packages");
-    this.draw();
-  }
-
-  private refreshPackages(): void {
-    const { controller, state } = this.#deps;
-    this.#packages.setList(new PackageList(state.scans, (id) => controller.displayName(id)));
-  }
-
-  private async loadProviders(): Promise<void> {
-    try {
-      const { detected, missing } = await this.#deps.controller.providersStatus();
-      this.#providers.setData(detected, missing);
-    } catch {
-      this.#providers.setData([], []);
+      this.rescan();
     }
     this.draw();
-  }
-
-  private async confirmUpdate(packages: SelectedPackage[]): Promise<void> {
-    if (packages.length === 0) return;
-    const shown = packages
-      .slice(0, 8)
-      .map((p) => `• ${p.pkg.name ?? p.pkg.id}  ${p.pkg.current} → ${p.pkg.latest}`);
-    const more =
-      packages.length > shown.length ? [`… et ${packages.length - shown.length} autre(s)`] : [];
-    const isConfirmed = await this.#dialogs.confirm({
-      title: "Mettre à jour",
-      text: [`${packages.length} paquet(s) vont être mis à jour :`, "", ...shown, ...more],
-    });
-    this.draw();
-    if (isConfirmed) {
-      this.#exit({ kind: "outside", run: () => this.#deps.controller.updatePackages(packages) });
-    }
-  }
-
-  private async askTarget(): Promise<void> {
-    const { controller } = this.#deps;
-    const raw = await this.#dialogs.ask({
-      title: "Mettre à jour une cible",
-      text: ["provider:package — plusieurs cibles séparées par des espaces ou des virgules."],
-      validate: (value) => controller.validateTargets(value),
-    });
-    this.draw();
-    if (!raw) return;
-    const targets = raw.split(/[\s,]+/).filter(Boolean);
-    this.#exit({ kind: "outside", run: () => controller.updateTargets(targets) });
-  }
-
-  private async editTimeout(): Promise<void> {
-    const value = await this.#dialogs.ask({
-      title: "Timeout par install",
-      text: ["En secondes. Une install bloquée au-delà est ignorée ; 0 désactive le timeout."],
-      default: String(getInstallTimeoutSeconds()),
-      validate: (v) =>
-        (v !== "" && Number.isFinite(Number(v)) && Number(v) >= 0) || "un nombre de secondes >= 0",
-    });
-    if (value !== undefined) setInstallTimeoutSeconds(Number(value));
-    this.draw();
-  }
-
-  private allPackages(): SelectedPackage[] {
-    return this.#deps.state.scans.flatMap((scan) =>
-      scan.packages.map((pkg) => ({ providerId: scan.providerId, pkg })),
-    );
   }
 
   private tick(): void {
-    if (!this.#scan.isRunning) return;
-    this.#scan.tick();
+    if (this.#takeover) {
+      this.#takeover.tick();
+      return this.draw();
+    }
+    if (!this.#scans.isRunning) return;
+    // Animations off: the spinner stands still, the progress still redraws.
+    if (preferences().animations) this.#scans.tick();
     this.draw();
   }
 
   private viewport(): Viewport {
     const { terminalWidth, terminalHeight } = this.#screen.renderer;
+    const frame = panelFrame(this.#screen.appearance.density);
     return {
-      width: Math.max(10, terminalWidth - SIDEBAR_WIDTH - PANEL_FRAME.cols),
-      height: Math.max(3, terminalHeight - CHROME_ROWS - PANEL_FRAME.rows),
+      width: Math.max(10, terminalWidth - SIDEBAR_WIDTH - frame.cols),
+      height: Math.max(3, terminalHeight - CHROME_ROWS - frame.rows),
     };
   }
 
   private draw(): void {
-    const panel = this.panel();
-    this.#main.setTitle(panel.title);
-    this.#main.show(panel.render(this.viewport()));
-    this.#main.setFocused(this.#focus === "main");
-    this.#sidebar.setFocused(this.#focus === "sidebar");
-    this.#sidebar.show(renderSidebar(this.sidebarState(), SIDEBAR_WIDTH - PANEL_FRAME.cols));
-    this.#chrome.setFacts(this.facts());
-    this.#chrome.setHints(this.hints(panel));
+    if (this.#takeover) return this.#takeover.draw();
+    const panel = this.#views.panel;
+    this.#main.setTitle(panel?.title ?? "");
+    this.#main.show(panel?.render(this.viewport()) ?? []);
+    this.#main.setFocused(!this.#nav.isSidebarFocused);
+    this.#sidebar.setFocused(this.#nav.isSidebarFocused);
+    this.drawSidebar();
+    const { detectedCount } = this.#deps.state;
+    this.#chrome.setFacts([providerCountFact(detectedCount), ...this.#views.facts()]);
+    this.#chrome.setHints(this.hints());
   }
 
-  private sidebarState() {
-    const total = this.allPackages().length;
-    return {
-      current: this.#current,
-      cursor: this.#navCursor,
-      isFocused: this.#focus === "sidebar",
-      badges: total > 0 ? { packages: String(total) } : {},
-    };
+  private drawSidebar(): void {
+    const { density } = this.#screen.appearance;
+    const width = SIDEBAR_WIDTH - panelFrame(density).cols;
+    this.#sidebar.show(this.#nav.render(density, width));
   }
 
-  private facts(): string[] {
-    const { state } = this.#deps;
-    const total = this.allPackages().length;
-    const filter =
-      state.filter.length === 0
-        ? "tous les providers"
-        : `${state.filter.length} provider(s) filtrés`;
-    return [
-      `${state.detectedCount} provider(s)`,
-      total === 0 ? "à jour" : `${total} mise(s) à jour`,
-      `${state.fast ? "mode rapide" : "mode normal"} · ${filter}`,
-    ];
-  }
-
-  private hints(panel: Panel): string {
+  private hints(): string {
+    const panel = this.#views.panel;
     if (this.#dialogs.isOpen) return "";
-    if (this.#focus === "sidebar") return "↑↓ naviguer · entrée ouvrir · tab contenu · q quitter";
-    return `${panel.hints()} · tab menu · q quitter`;
+    if (this.#nav.isSidebarFocused || !panel) return SIDEBAR_HINTS;
+    return `${panel.hints()} · ${PANEL_HINTS_TAIL}`;
   }
+}
+
+function preferences(): UiPreferences {
+  return uiPreferences().current();
 }

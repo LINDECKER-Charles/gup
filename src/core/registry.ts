@@ -1,6 +1,9 @@
 import pLimit from "p-limit";
 
+import { log } from "./log/log.js";
 import { filterByOwnership } from "./ownership.js";
+import { isSupportedOn } from "./platform/is-supported-on.js";
+import { withOperation } from "./state/run-context.js";
 
 // --- OS-level / Windows -----------------------------------------------------
 import { WingetProvider } from "../providers/os/winget.js";
@@ -451,12 +454,25 @@ const DETECTION_CONCURRENCY = 8;
 /** A probe still pending after this reads as "not installed". */
 const DETECTION_TIMEOUT_MS = 15_000;
 
-export async function detectAvailableProviders(): Promise<Provider[]> {
+/**
+ * The installed providers among `candidates` (every registered provider by
+ * default; a scheduled run passes only the ones its targets need).
+ *
+ * A provider gup does not support on this platform is never probed: no spawn,
+ * and no chance for a same-named shim (`brew.cmd` → WSL, the NCAR `ncl`) to
+ * light it up.
+ */
+export async function detectAvailableProviders(
+  candidates: readonly Provider[] = ALL_PROVIDERS,
+): Promise<Provider[]> {
+  const supported = candidates.filter((p) => isSupportedOn(p));
   const limit = pLimit(DETECTION_CONCURRENCY);
   const checks = await Promise.all(
-    ALL_PROVIDERS.map((p) => limit(() => probeAvailability(p))),
+    supported.map((p) =>
+      limit(() => withOperation({ op: "detect", providerId: p.id }, () => probeAvailability(p))),
+    ),
   );
-  return ALL_PROVIDERS.filter((_, i) => checks[i]);
+  return supported.filter((_, i) => checks[i]);
 }
 
 /**
@@ -482,12 +498,16 @@ async function probeAvailability(provider: Provider): Promise<boolean> {
  * Returns the filtered list of providers that will be scanned, without
  * actually running the scans. Useful for UI that needs to know the total
  * upfront (e.g. progress counters).
+ *
+ * The platform gate applies to an injected `detected` list too, so no caller
+ * (a scheduled run, a test, a stale list) can scan an unsupported provider.
  */
 export async function getProvidersToScan(
   options: ScanOptions = {},
 ): Promise<Provider[]> {
   const available = options.detected ?? (await detectAvailableProviders());
   return available.filter((p) => {
+    if (!isSupportedOn(p)) return false;
     if (options.only?.length && !options.only.includes(p.id)) return false;
     if (options.fast && p.slow) return false;
     return true;
@@ -498,30 +518,11 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
   const filtered = await getProvidersToScan(options);
 
   const limit = pLimit(options.concurrency ?? 4);
+  // Each task runs under its own operation context, so whatever a concurrent
+  // scan spawns or logs is attributed to the right provider.
   const raw = await Promise.all(
     filtered.map((p) =>
-      limit(async (): Promise<ProviderScanResult> => {
-        options.onProviderStart?.(p);
-        let result: ProviderScanResult;
-        try {
-          const all = await p.listOutdated();
-          // The tool only surfaces actionable updates — items the provider
-          // flagged as `manual: true` (Toolbox-managed IDEs, manual binary
-          // installs, plugins behind GUI managers, ...) are dropped here so
-          // they never appear in lists, prompts, or "update all" flows.
-          const packages = all.filter((pkg) => !pkg.manual);
-          result = { providerId: p.id, available: true, packages };
-        } catch (err) {
-          result = {
-            providerId: p.id,
-            available: true,
-            packages: [],
-            error: err instanceof Error ? err.message : String(err),
-          };
-        }
-        options.onProviderEnd?.(p, result);
-        return result;
-      }),
+      limit(() => withOperation({ op: "scan", providerId: p.id }, () => scanProvider(p, options))),
     ),
   );
 
@@ -530,12 +531,38 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
   // `node` on PATH would shadow the nvm shim on next shell). See
   // src/core/ownership.ts for the polyglot table and detection heuristic.
   //
-  // The `exclusions` list returned by filterByOwnership is intentionally
-  // discarded here for now: surfacing per-package advisories ("hidden by
-  // ownership filter") would change list/menu output shape and warrants
-  // a separate UX pass. Until then, scanAll honours the existing contract
-  // (returns only the kept ProviderScanResult[]). The filter itself stays
-  // observable through src/core/ownership.ts unit tests.
-  const { results } = await filterByOwnership(raw);
+  // The `exclusions` are not surfaced in list/menu output: per-package
+  // advisories ("hidden by ownership filter") would change its shape and
+  // warrant a separate UX pass, so scanAll keeps returning only the kept
+  // ProviderScanResult[]. They go to the debug log instead, where "why is
+  // this update missing?" gets its answer.
+  const { results, exclusions } = await filterByOwnership(raw);
+  for (const { providerId, packageId, binary, actualOwner } of exclusions) {
+    log.debug("scan.ownership-excluded", { providerId, packageId, binary, owner: actualOwner });
+  }
   return results;
+}
+
+/** One provider's scan, fail-soft: a provider that throws becomes an error row. */
+async function scanProvider(p: Provider, options: ScanOptions): Promise<ProviderScanResult> {
+  options.onProviderStart?.(p);
+  let result: ProviderScanResult;
+  try {
+    const all = await p.listOutdated();
+    // The tool only surfaces actionable updates — items the provider
+    // flagged as `manual: true` (Toolbox-managed IDEs, manual binary
+    // installs, plugins behind GUI managers, ...) are dropped here so
+    // they never appear in lists, prompts, or "update all" flows.
+    const packages = all.filter((pkg) => !pkg.manual);
+    result = { providerId: p.id, available: true, packages };
+  } catch (err) {
+    result = {
+      providerId: p.id,
+      available: true,
+      packages: [],
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+  options.onProviderEnd?.(p, result);
+  return result;
 }

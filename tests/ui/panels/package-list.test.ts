@@ -76,3 +76,32 @@ describe("PackageList", () => {
     expect(list.cursor).toBe(5);
   });
 });
+
+describe("PackageList order", () => {
+  const scans: ProviderScanResult[] = [
+    {
+      providerId: "winget",
+      available: true,
+      packages: [
+        { id: "b-patch", current: "1.0.0", latest: "1.0.1" },
+        { id: "a-major", current: "1.0.0", latest: "2.0.0" },
+        { id: "c-minor", current: "1.0.0", latest: "1.1.0" },
+      ],
+    },
+  ];
+  const packageIds = (list: PackageList) =>
+    list.rows.flatMap((row) => (row.kind === "package" ? [row.pkg.id] : []));
+
+  it("follows the preferred sort as soon as it changes, checks kept", () => {
+    let sort: "provider" | "name" | "bump" = "provider";
+    const list = new PackageList(scans, (id) => id, { sort: () => sort });
+    expect(packageIds(list)).toEqual(["b-patch", "a-major", "c-minor"]);
+    list.moveTo(1);
+    list.toggleCurrent();
+    sort = "name";
+    expect(packageIds(list)).toEqual(["a-major", "b-patch", "c-minor"]);
+    sort = "bump";
+    expect(packageIds(list)).toEqual(["a-major", "c-minor", "b-patch"]);
+    expect(list.selection.map((s) => s.pkg.id)).toEqual(["b-patch"]);
+  });
+});

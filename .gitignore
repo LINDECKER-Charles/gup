@@ -11,4 +11,4 @@ coverage/
 CLAUDE.md
 docs/archived/*
 !docs/archived/README.md
-design
+/design/

@@ -1,4 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
+import { isSupportedOn } from "../../src/core/platform/is-supported-on.js";
+import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import {
   ALL_PROVIDERS,
   detectAvailableProviders,
@@ -6,6 +8,7 @@ import {
   getProvidersToScan,
   scanAll,
 } from "../../src/core/registry.js";
+import { currentOperation, type OperationContext } from "../../src/core/state/run-context.js";
 import type {
   OutdatedPackage,
   Provider,
@@ -17,9 +20,39 @@ interface FakeProviderConfig {
   id: string;
   displayName?: string;
   slow?: boolean;
+  platforms?: Provider["platforms"];
   available?: boolean;
   packages?: OutdatedPackage[];
   throwOnList?: unknown;
+}
+
+/**
+ * Detection only probes the providers supported on the running platform, and
+ * the CI matrix runs this suite on Windows, macOS and Linux: assertions over
+ * "every probe" use this list, and single providers are picked by id among
+ * the ones declared everywhere.
+ */
+const SUPPORTED_HERE = ALL_PROVIDERS.filter((p) => isSupportedOn(p));
+
+function registered(id: string): Provider {
+  const provider = getProvider(id);
+  if (!provider) throw new Error(`no provider registered as ${id}`);
+  return provider;
+}
+
+/** Every registered probe mocked to "not installed"; the ones in `available` to "installed". */
+function stubDetection(available: readonly string[] = []) {
+  const spies = new Map(
+    ALL_PROVIDERS.map((p) => [p.id, vi.spyOn(p, "isAvailable").mockResolvedValue(false)]),
+  );
+  for (const id of available) spies.get(id)!.mockResolvedValue(true);
+  return {
+    spyOf: (id: string) => spies.get(id)!,
+    supportedSpies: () => SUPPORTED_HERE.map((p) => spies.get(p.id)!),
+    restore: () => {
+      for (const spy of spies.values()) spy.mockRestore();
+    },
+  };
 }
 
 function makeProvider(cfg: FakeProviderConfig): Provider {
@@ -27,6 +60,7 @@ function makeProvider(cfg: FakeProviderConfig): Provider {
     id: cfg.id,
     displayName: cfg.displayName ?? cfg.id,
     ...(cfg.slow === undefined ? {} : { slow: cfg.slow }),
+    ...(cfg.platforms === undefined ? {} : { platforms: cfg.platforms }),
     async isAvailable() {
       return cfg.available ?? true;
     },
@@ -91,74 +125,60 @@ describe("registry: getProvidersToScan", () => {
   it("falls back to detectAvailableProviders() when `detected` is omitted", async () => {
     // Mark every registered provider as unavailable so we get a deterministic
     // empty result without spawning subprocesses.
-    const spies = ALL_PROVIDERS.map((p) =>
-      vi.spyOn(p, "isAvailable").mockResolvedValue(false),
-    );
+    const detection = stubDetection();
     try {
       const out = await getProvidersToScan({});
       expect(out).toEqual([]);
-      for (const s of spies) expect(s).toHaveBeenCalledTimes(1);
+      for (const s of detection.supportedSpies()) expect(s).toHaveBeenCalledTimes(1);
     } finally {
-      for (const s of spies) s.mockRestore();
+      detection.restore();
     }
   });
 });
 
 describe("registry: detectAvailableProviders", () => {
-  it("queries every registered provider and returns only the available ones", async () => {
-    const spies = ALL_PROVIDERS.map((p) =>
-      vi.spyOn(p, "isAvailable").mockResolvedValue(false),
-    );
+  it("queries every supported provider and returns only the available ones", async () => {
     // Mark exactly two providers as available — verify only those survive.
-    spies[0]!.mockResolvedValue(true);
-    spies[3]!.mockResolvedValue(true);
+    const detection = stubDetection(["npm-g", "pip"]);
     try {
       const out = await detectAvailableProviders();
-      expect(out).toEqual([ALL_PROVIDERS[0], ALL_PROVIDERS[3]]);
-      for (const s of spies) expect(s).toHaveBeenCalledTimes(1);
+      expect(out).toEqual([registered("npm-g"), registered("pip")]);
+      for (const s of detection.supportedSpies()) expect(s).toHaveBeenCalledTimes(1);
     } finally {
-      for (const s of spies) s.mockRestore();
+      detection.restore();
     }
   });
 
   it("returns an empty array when no provider is available", async () => {
-    const spies = ALL_PROVIDERS.map((p) =>
-      vi.spyOn(p, "isAvailable").mockResolvedValue(false),
-    );
+    const detection = stubDetection();
     try {
       expect(await detectAvailableProviders()).toEqual([]);
     } finally {
-      for (const s of spies) s.mockRestore();
+      detection.restore();
     }
   });
 
   it("reads a probe that throws as unavailable instead of failing detection", async () => {
-    const spies = ALL_PROVIDERS.map((p) =>
-      vi.spyOn(p, "isAvailable").mockResolvedValue(false),
-    );
-    spies[0]!.mockRejectedValue(new Error("boom"));
-    spies[1]!.mockResolvedValue(true);
+    const detection = stubDetection(["pip"]);
+    detection.spyOf("npm-g").mockRejectedValue(new Error("boom"));
     try {
-      expect(await detectAvailableProviders()).toEqual([ALL_PROVIDERS[1]]);
+      expect(await detectAvailableProviders()).toEqual([registered("pip")]);
     } finally {
-      for (const s of spies) s.mockRestore();
+      detection.restore();
     }
   });
 
   it("gives up on a probe that never settles", async () => {
     vi.useFakeTimers();
-    const spies = ALL_PROVIDERS.map((p) =>
-      vi.spyOn(p, "isAvailable").mockResolvedValue(false),
-    );
-    spies[0]!.mockReturnValue(new Promise<boolean>(() => {}));
-    spies[1]!.mockResolvedValue(true);
+    const detection = stubDetection(["pip"]);
+    detection.spyOf("npm-g").mockReturnValue(new Promise<boolean>(() => {}));
     try {
-      const detection = detectAvailableProviders();
+      const pending = detectAvailableProviders();
       await vi.advanceTimersByTimeAsync(60_000);
-      await expect(detection).resolves.toEqual([ALL_PROVIDERS[1]]);
+      await expect(pending).resolves.toEqual([registered("pip")]);
     } finally {
       vi.useRealTimers();
-      for (const s of spies) s.mockRestore();
+      detection.restore();
     }
   });
 
@@ -183,6 +203,73 @@ describe("registry: detectAvailableProviders", () => {
     } finally {
       for (const s of spies) s.mockRestore();
     }
+  });
+
+  it("runs each probe under a detect operation naming its provider", async () => {
+    const seen: Array<OperationContext | undefined> = [];
+    const probed = (id: string) =>
+      Object.assign(makeProvider({ id }), {
+        isAvailable: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 1));
+          seen.push(currentOperation());
+          return true;
+        },
+      });
+    await detectAvailableProviders([probed("a"), probed("b")]);
+    expect(seen).toEqual(
+      expect.arrayContaining([
+        { op: "detect", providerId: "a" },
+        { op: "detect", providerId: "b" },
+      ]),
+    );
+  });
+});
+
+describe("registry: platform gate", () => {
+  const originalPlatform = process.platform;
+  const setPlatform = (value: NodeJS.Platform): void => {
+    Object.defineProperty(process, "platform", { value, configurable: true });
+  };
+  afterEach(() => setPlatform(originalPlatform));
+
+  const everywhere = makeProvider({ id: "everywhere" });
+  const macOnly = makeProvider({ id: "mac-only", platforms: PLATFORMS.macos });
+  const posix = makeProvider({ id: "posix", platforms: PLATFORMS.notWindows });
+
+  it("never probes a candidate foreign to the running platform", async () => {
+    setPlatform("win32");
+    const probes = [everywhere, macOnly, posix].map((p) => vi.spyOn(p, "isAvailable"));
+    const out = await detectAvailableProviders([everywhere, macOnly, posix]);
+    expect(out).toEqual([everywhere]);
+    expect(probes[0]).toHaveBeenCalledTimes(1);
+    expect(probes[1]).not.toHaveBeenCalled();
+    expect(probes[2]).not.toHaveBeenCalled();
+  });
+
+  it("probes only the candidates it is given", async () => {
+    setPlatform("darwin");
+    const detection = stubDetection();
+    try {
+      const out = await detectAvailableProviders([macOnly, posix]);
+      expect(out).toEqual([macOnly, posix]);
+      for (const spy of detection.supportedSpies()) expect(spy).not.toHaveBeenCalled();
+    } finally {
+      detection.restore();
+    }
+  });
+
+  it("drops an unsupported provider from an injected detected list", async () => {
+    setPlatform("linux");
+    const out = await getProvidersToScan({ detected: [everywhere, macOnly, posix] });
+    expect(out.map((p) => p.id)).toEqual(["everywhere", "posix"]);
+  });
+
+  it("never scans an unsupported provider handed to scanAll", async () => {
+    setPlatform("win32");
+    const listed = vi.spyOn(macOnly, "listOutdated");
+    const results = await scanAll({ detected: [everywhere, macOnly] });
+    expect(results.map((r) => r.providerId)).toEqual(["everywhere"]);
+    expect(listed).not.toHaveBeenCalled();
   });
 });
 
@@ -325,5 +412,21 @@ describe("registry: scanAll", () => {
     const b = makeProvider({ id: "default-c-b" });
     const results = await scanAll({ detected: [a, b] });
     expect(results.map((r) => r.providerId)).toEqual(["default-c-a", "default-c-b"]);
+  });
+
+  it("runs each concurrent scan under a scan operation naming its provider", async () => {
+    const seen = new Map<string, OperationContext | undefined>();
+    const scanned = (id: string, delayMs: number) =>
+      Object.assign(makeProvider({ id }), {
+        listOutdated: async () => {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          seen.set(id, currentOperation());
+          return [];
+        },
+      });
+    await scanAll({ detected: [scanned("slow", 5), scanned("quick", 1)], concurrency: 2 });
+    expect(seen.get("slow")).toEqual({ op: "scan", providerId: "slow" });
+    expect(seen.get("quick")).toEqual({ op: "scan", providerId: "quick" });
+    expect(currentOperation()).toBeUndefined();
   });
 });

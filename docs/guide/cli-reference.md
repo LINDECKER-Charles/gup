@@ -71,8 +71,10 @@ an installer integrity check and that needs a human to say yes.
 ### `gup doctor`
 
 Prints every provider detected on the machine, then the ones that are missing
-or off `PATH` with a hint on how to install them. Run it first when a package
-you expected never shows up in a scan.
+or off `PATH` with a hint on how to install them, then a **Système** section
+where each part of gup reports its own state. Detection runs a few probes at a
+time, each capped, so one stuck tool cannot hang the command. Run it first when
+a package you expected never shows up in a scan.
 
 ## Interactive app
 
@@ -83,9 +85,7 @@ start and opens the package table when there is something to update.
 | Menu entry | Effect |
 |---|---|
 | **Scan** | Live progress, then the result per provider; `r` rescans |
-| **Paquets** | The outdated packages, grouped by provider, one checkbox each |
-| **Tout mettre à jour** | Everything from the last scan, after confirmation |
-| **Cible…** | Asks for `provider:packageId` (space- or comma-separated) |
+| **Paquets** | The outdated packages, grouped by provider, one checkbox each; `r` rescans |
 | **Providers** | Same information as `gup doctor` |
 | **Options** | Fast mode, install timeout, provider filter |
 | **Quitter** | Exit `0` (also `q`) |
@@ -95,12 +95,16 @@ on a provider's row it checks the whole provider. `a` checks everything shown,
 `/` filters by name or provider, and checked packages stay checked while you
 filter. `Enter` updates what is checked — or, with nothing checked, the package
 (or provider) under the cursor. A confirmation lists what will be updated.
+To update everything, press `a` then `Enter`; to update one known package
+without scanning, use `gup update provider:packageId`.
 
 **While it updates**, gup leaves the full-screen view: installers need the
 terminal, and their output stays visible. Press `Enter` afterwards to come
-back; gup rescans so the table shows what is left.
+back: the packages that were updated are gone from the table, without a new
+scan. Press `r` in **Paquets** to rescan everything.
 
-**Keys:** `↑↓` move · `Tab` / `←` switch between the menu and the view ·
+**Keys:** `↑↓` move · `Tab` / `←` switch between the menu and the view (the
+one with the keyboard has a heavy border) ·
 `Enter` open or confirm · `Esc` close a dialog or clear the filter · `q` quit ·
 `Ctrl+C` exit at once. The mouse works too: click menu entries and rows,
 scroll the lists with the wheel.
@@ -184,7 +188,10 @@ integrity check is ever bypassed without an explicit answer.
 Packages that need administrator rights are detected **at scan time**, not when
 the install fails. Instead of letting each one hit you with its own prompt,
 `gup` groups them and runs a single elevated batch behind one UAC prompt, then
-folds the results back into the normal summary.
+folds the results back into the normal summary. The interactive app does the
+same. On macOS and Linux, packages whose update needs `sudo` (MacPorts, Fink,
+pkgin, the apt/dnf delegations) share one `sudo` batch: the password is asked
+once, not once per package.
 
 Declining the elevation marks the whole batch `SKIP` — a deliberate choice, not
 a crash. The elevated child is a pure executor: history is written by the
@@ -234,6 +241,7 @@ they cannot corrupt the payload.
 | `GUP_INSTALL_TIMEOUT` | Per-install wall-clock cap, in seconds. Default `1200`; `0` disables it. `--timeout` takes precedence |
 | `GUP_HISTORY` | `0`, `false`, `off` or `no` turns the activity history off |
 | `GUP_HISTORY_DIR` | Writes the history shards somewhere else |
+| `GUP_ASCII` | `1` draws the interactive screens with ASCII symbols and borders (automatic on `TERM=linux` or `dumb`, and on macOS/Linux without a UTF-8 locale) |
 
 ## Exit codes
 

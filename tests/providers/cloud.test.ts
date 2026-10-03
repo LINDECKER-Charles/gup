@@ -532,8 +532,8 @@ describe("GcloudProvider", () => {
     );
     const rows = await new GcloudProvider().listOutdated();
     expect(rows).toEqual([
-      { id: "kubectl", name: "kubectl", current: "1.28.0", latest: "1.29.0" },
-      { id: "bq", name: "bq", current: "2.0.95", latest: "2.0.99" },
+      { id: "kubectl", name: "kubectl", current: "1.28.0", latest: "1.29.0", aggregate: true },
+      { id: "bq", name: "bq", current: "2.0.95", latest: "2.0.99", aggregate: true },
     ]);
   });
 

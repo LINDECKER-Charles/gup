@@ -58,6 +58,55 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("detection paths follow the target platform's separators", () => {
+  const originalPlatform = process.platform;
+  const setPlatform = (value: NodeJS.Platform): void => {
+    Object.defineProperty(process, "platform", { value, configurable: true });
+  };
+  afterEach(() => setPlatform(originalPlatform));
+
+  const probedPaths = async (platform: NodeJS.Platform): Promise<string[]> => {
+    setPlatform(platform);
+    commandExistsMock.mockResolvedValue(true);
+    existsSyncMock.mockReturnValue(false);
+    for (const provider of [
+      new NvimLazyProvider(),
+      new NvimMasonProvider(),
+      new NvimPackerProvider(),
+      new VimPlugProvider(),
+    ]) {
+      await provider.isAvailable();
+    }
+    return existsSyncMock.mock.calls.map(([path]) => String(path));
+  };
+
+  it("on macOS and Linux", async () => {
+    nvimConfigDirMock.mockReturnValue("/home/u/.config/nvim");
+    nvimDataDirMock.mockReturnValue("/home/u/.local/share/nvim");
+    expect(await probedPaths("darwin")).toEqual([
+      "/home/u/.local/share/nvim/lazy",
+      "/home/u/.config/nvim/lazy-lock.json",
+      "/home/u/.local/share/nvim/mason",
+      "/home/u/.local/share/nvim/site/pack/packer/start/packer.nvim",
+      "/home/u/.config/nvim/autoload/plug.vim",
+      "/home/u/.local/share/nvim/site/autoload/plug.vim",
+      "/home/u/.local/share/nvim/plugged",
+    ]);
+  });
+
+  it("on Windows", async () => {
+    expect(await probedPaths("win32")).toEqual([
+      "C:\\nvim-data\\lazy",
+      "C:\\nvim-config\\lazy-lock.json",
+      "C:\\nvim-data\\mason",
+      "C:\\nvim-data\\site\\pack\\packer\\start\\packer.nvim",
+      "C:\\nvim-config\\autoload\\plug.vim",
+      "C:\\nvim-data\\site\\autoload\\plug.vim",
+      "C:\\nvim-data\\plugged",
+    ]);
+  });
+});
+
 describe("NvimLazyProvider", () => {
   it("isAvailable returns false when nvim binary is missing", async () => {
     commandExistsMock.mockResolvedValueOnce(false);
@@ -91,6 +140,7 @@ describe("NvimLazyProvider", () => {
     expect(pkgs[0]).toMatchObject({
       id: "all",
       latest: "refresh",
+      aggregate: true,
       note: expect.stringMatching(/Synchronise/i),
     });
   });
@@ -150,7 +200,7 @@ describe("NvimMasonProvider", () => {
   it("listOutdated returns synthetic mason update entry", async () => {
     const pkgs = await new NvimMasonProvider().listOutdated();
     expect(pkgs).toHaveLength(1);
-    expect(pkgs[0]).toMatchObject({ id: "all", latest: "refresh" });
+    expect(pkgs[0]).toMatchObject({ id: "all", latest: "refresh", aggregate: true });
     expect(pkgs[0]?.note).toMatch(/Mason/i);
   });
 
@@ -210,6 +260,7 @@ describe("NvimPackerProvider", () => {
     const pkgs = await new NvimPackerProvider().listOutdated();
     expect(pkgs).toHaveLength(1);
     expect(pkgs[0]?.note).toMatch(/PackerSync/);
+    expect(pkgs[0]?.aggregate).toBe(true);
   });
 
   it("update invokes PackerSync with autocmd to quit on completion", async () => {
@@ -282,6 +333,7 @@ describe("VimPlugProvider", () => {
     const pkgs = await new VimPlugProvider().listOutdated();
     expect(pkgs).toHaveLength(1);
     expect(pkgs[0]?.note).toMatch(/PlugUpdate/);
+    expect(pkgs[0]?.aggregate).toBe(true);
   });
 
   it("update invokes nvim --headless +PlugUpdate", async () => {

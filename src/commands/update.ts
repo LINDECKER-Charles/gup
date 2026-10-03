@@ -1,25 +1,20 @@
-import { confirm } from "../ui/prompts/confirm.js";
 import chalk from "chalk";
-import { runElevatedBatch } from "../core/elevation.js";
-import { ALL_PROVIDERS, getProvider } from "../core/registry.js";
+import type { Command } from "commander";
+import { isSupportedOn } from "../core/platform/is-supported-on.js";
+import { lookupProvider } from "../core/platform/lookup-provider.js";
+import { ALL_PROVIDERS } from "../core/registry.js";
+import type { Provider, ProviderScanResult, SelectedPackage } from "../core/types.js";
+import { setInstallTimeoutSeconds } from "../core/runner.js";
+import { requestsFrom } from "../core/update/update-plan.js";
+import { runUpdates } from "../core/update/update-pipeline.js";
+import type { UpdateRequest } from "../core/update/update-ports.js";
+import { exitCodeOf, type UpdateReport } from "../core/update/update-report.js";
+import { confirm } from "../ui/prompts/confirm.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
-import { promptPackageSelection, type SelectedPackage } from "../ui/select.js";
-import {
-  maybeRetryFailures,
-  type OutcomeWithProvider,
-} from "../ui/retry-failed.js";
-import {
-  beginSkipSession,
-  discardPendingInterrupt,
-} from "../ui/skip-controller.js";
-import { applyEach, applyUpdate } from "../ui/apply-update.js";
-import { recordUpdate } from "../core/history/store.js";
-import type {
-  OutdatedPackage,
-  Provider,
-  ProviderScanResult,
-  UpdateOutcome,
-} from "../core/types.js";
+import { promptPackageSelection } from "../ui/select.js";
+import { beginSkipSession } from "../ui/skip-controller.js";
+import { consolePorts, printReport } from "../ui/update-console.js";
+import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 
 export interface UpdateOptions {
   only?: string[];
@@ -93,115 +88,71 @@ async function chooseSelection(
   return { kind: "selection", packages: allPackages };
 }
 
-interface ResolvedTarget {
-  providerId: string;
-  provider: Provider;
-  packageId: string;
-}
-
 /**
- * Resolve every `provider:packageId` up front, before opening a skip session:
+ * Validate every `provider:packageId` up front, before opening a skip session:
  * a typo must not leave a session dangling behind it. Returns null after
  * writing the diagnostic to stderr.
  */
-function resolveTargets(targets: string[]): ResolvedTarget[] | null {
-  const resolved: ResolvedTarget[] = [];
+function resolveTargets(targets: string[]): UpdateRequest[] | null {
+  const requests: UpdateRequest[] = [];
   for (const target of targets) {
     const idx = target.indexOf(":");
     if (idx === -1) {
-      process.stderr.write(formatBadTargetMessage(target, ALL_PROVIDERS));
+      // Only suggest providers that can act here: never
+      // `gup list --provider winget` on a Mac.
+      const actionable = ALL_PROVIDERS.filter((p) => isSupportedOn(p));
+      process.stderr.write(formatBadTargetMessage(target, actionable));
       return null;
     }
     const providerId = target.slice(0, idx);
-    const provider = getProvider(providerId);
-    if (!provider) {
-      process.stderr.write(`Provider inconnu: ${providerId}\n`);
+    const lookup = lookupProvider(providerId);
+    if (!lookup.isFound) {
+      process.stderr.write(`${lookup.error}\n`);
       return null;
     }
-    resolved.push({ providerId, provider, packageId: target.slice(idx + 1) });
+    requests.push({ providerId, packageId: target.slice(idx + 1) });
   }
-  return resolved;
+  return requests;
 }
 
-async function runTargets(
-  targets: string[],
-  opts: { yes?: boolean } = {},
-): Promise<number> {
-  const resolved = resolveTargets(targets);
-  if (!resolved) return 2;
-
-  const entries: OutcomeWithProvider[] = [];
-  const session = beginSkipSession();
-  try {
-    for (const { providerId, provider, packageId } of resolved) {
-      if (session.isAbortRequested()) break;
-      process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
-      entries.push({ providerId, outcome: await applyUpdate(provider, packageId) });
-    }
-    return summarize(await maybeRetryFailures(entries, yesFlag(opts)));
-  } finally {
-    session.dispose();
-  }
+async function runTargets(targets: string[], opts: { yes?: boolean } = {}): Promise<number> {
+  const requests = resolveTargets(targets);
+  if (!requests) return 2;
+  return runWithConsole(requests, opts);
 }
 
-async function runSelection(
+function runSelection(
   selection: SelectedPackage[],
   opts: { yes?: boolean } = {},
 ): Promise<number> {
-  // Split admin-required packages out so we can batch them behind a single
-  // UAC prompt instead of letting each provider SKIP them at update time.
-  // `requiresAdmin` is set at scan time (see ChocoProvider.listOutdated),
-  // and is only true when the current process is NOT already elevated.
-  const adminSelection = selection.filter((s) => s.pkg.requiresAdmin);
-  const grouped = groupByProvider(selection.filter((s) => !s.pkg.requiresAdmin));
+  return runWithConsole(requestsFrom(selection), opts);
+}
 
+/** `updateOnConsole`, as an exit code: 1 when anything failed. */
+async function runWithConsole(
+  requests: readonly UpdateRequest[],
+  opts: { yes?: boolean } = {},
+): Promise<number> {
+  return exitCodeOf(await updateOnConsole(requests, opts));
+}
+
+/**
+ * Run updates on the plain terminal: a Ctrl+C skip session as the gate, the
+ * console prompts for elevation and retries (none with `yes`), the summary
+ * at the end. Shared by `gup update` and the menu's outside updates.
+ */
+export async function updateOnConsole(
+  requests: readonly UpdateRequest[],
+  opts: { yes?: boolean } = {},
+): Promise<UpdateReport> {
   const session = beginSkipSession();
   try {
-    const entries = await applyGrouped(grouped, session);
-
-    if (!session.isAbortRequested() && adminSelection.length > 0) {
-      const adminEntries = await runAdminBatch(adminSelection, yesFlag(opts));
-      // The elevated PowerShell wait goes through runInherit too; drop any
-      // interrupt flag it left so it can't mislabel a later retried package.
-      discardPendingInterrupt();
-      entries.push(...adminEntries);
-    }
-
-    return summarize(await maybeRetryFailures(entries, yesFlag(opts)));
+    const report = await runUpdates(requests, consolePorts({ gate: session, ...yesFlag(opts) }));
+    printReport(report);
+    return report;
   } finally {
     session.dispose();
   }
-}
-
-/** Apply a provider→packages map, one provider at a time, under a session. */
-async function applyGrouped(
-  grouped: Map<string, OutdatedPackage[]>,
-  session: { isAbortRequested: () => boolean },
-): Promise<OutcomeWithProvider[]> {
-  const entries: OutcomeWithProvider[] = [];
-  for (const [providerId, pkgs] of grouped) {
-    const provider = getProvider(providerId);
-    if (!provider) continue;
-    process.stdout.write(
-      chalk.bold(`\n→ ${provider.displayName} (${pkgs.length})\n`),
-    );
-    const done = await applyEach(provider, pkgs, session);
-    entries.push(...done.map((outcome) => ({ providerId, outcome })));
-    if (session.isAbortRequested()) break;
-  }
-  return entries;
-}
-
-function groupByProvider(
-  selection: SelectedPackage[],
-): Map<string, OutdatedPackage[]> {
-  const grouped = new Map<string, OutdatedPackage[]>();
-  for (const sel of selection) {
-    const list = grouped.get(sel.providerId) ?? [];
-    list.push(sel.pkg);
-    grouped.set(sel.providerId, list);
-  }
-  return grouped;
 }
 
 /**
@@ -251,141 +202,50 @@ const GENERIC_TARGET_EXAMPLES = [
   `           gup update --provider <id> --all`,
 ];
 
-/**
- * Group every admin-required package behind a single UAC prompt and dispatch
- * the elevated batch through {@link runElevatedBatch}. When the user declines
- * the elevation we surface the whole batch as skipped (not failed) — they made
- * a deliberate choice, not a runtime crash.
- */
-async function runAdminBatch(
-  adminSelection: SelectedPackage[],
-  opts: { yes?: boolean } = {},
-): Promise<OutcomeWithProvider[]> {
-  const targets = adminSelection.map((s) => `${s.providerId}:${s.pkg.id}`);
-  process.stdout.write(
-    chalk.bold(`\n→ Admin (${adminSelection.length})\n`) +
-      chalk.dim(`  ${targets.join(", ")}\n`),
-  );
+interface UpdateFlags {
+  all?: boolean;
+  yes?: boolean;
+  provider?: string[];
+  fast?: boolean;
+  timeout?: string;
+}
 
-  const elevate = opts.yes || (await confirmElevation(adminSelection.length));
-  if (!elevate) {
-    const declined = elevationDeclined(adminSelection);
-    recordAdminBatch(declined, adminSelection, false);
-    return declined;
+export const updateModule: CliModule = {
+  id: "update",
+  order: MODULE_ORDER.commands,
+  register(program: Command) {
+    program
+      .command("update [targets...]")
+      .description("Mise à jour directe (sans menu). Cibles au format provider:packageId.")
+      .option("-a, --all", "Tout mettre à jour")
+      .option("-y, --yes", "Skip la confirmation en mode --all")
+      .option("-p, --provider <ids...>", "Restreint à certains providers")
+      .option("--fast", "Skip les scans lents")
+      .option(
+        "--timeout <seconds>",
+        "Timeout par install en secondes — l'install bloquée est skippée (0 = désactivé)",
+      )
+      .action(async (targets: string[], opts: UpdateFlags) => {
+        applyTimeoutFlag(opts.timeout);
+        const code = await updateCommand({
+          ...(targets.length > 0 && { targets }),
+          ...(opts.all !== undefined && { all: opts.all }),
+          ...(opts.yes !== undefined && { yes: opts.yes }),
+          ...(opts.provider && { only: opts.provider }),
+          ...(opts.fast !== undefined && { fast: opts.fast }),
+        });
+        process.exit(code);
+      });
+  },
+};
+
+/** `--timeout <seconds>` wins over GUP_INSTALL_TIMEOUT; a bad value exits 2. */
+function applyTimeoutFlag(raw: string | undefined): void {
+  if (raw === undefined) return;
+  const seconds = Number(raw);
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    process.stderr.write(`${chalk.red("Error:")} --timeout attend un nombre de secondes >= 0\n`);
+    process.exit(2);
   }
-
-  // runElevatedBatch enforces 1-to-1 ordering with `targets` (see
-  // src/core/elevation.ts: readBatchOutput rejects length mismatches and
-  // produces fallback failures rather than letting the indexes drift).
-  // We can therefore zip outcomes with the corresponding `provider:packageId`
-  // entry and recover providerId from that — no need to thread it through
-  // the IPC payload.
-  const outcomes = await runElevatedBatch(targets);
-  const entries = outcomes.map((outcome, i) => ({
-    providerId: providerIdOf(targets[i] ?? ""),
-    outcome,
-  }));
-  recordAdminBatch(entries, adminSelection, true);
-  return entries;
-}
-
-/**
- * History for the elevated path. The child process stays a pure executor — it
- * never touches the history — so the parent logs what came back. That keeps
- * every record in the *invoking* user's profile, which is not necessarily the
- * one UAC elevated into, and rules out double-logging the same attempt.
- *
- * Per-attempt durations are lost in the round-trip and deliberately left out
- * rather than faked from the batch total.
- */
-function recordAdminBatch(
-  entries: readonly OutcomeWithProvider[],
-  selection: readonly SelectedPackage[],
-  elevated: boolean,
-): void {
-  const scanned = new Map(
-    selection.map((s) => [`${s.providerId}:${s.pkg.id}`, s.pkg]),
-  );
-  for (const { providerId, outcome } of entries) {
-    const pkg = scanned.get(`${providerId}:${outcome.id}`);
-    recordUpdate({
-      providerId,
-      outcome,
-      ...(pkg && { pkg }),
-      ...(elevated && { elevated: true }),
-    });
-  }
-}
-
-function confirmElevation(count: number): Promise<boolean> {
-  return confirm({
-    message:
-      `${count} paquet(s) nécessitent les droits administrateur. ` +
-      `Ouvrir une invite UAC pour les traiter en bloc ?`,
-    default: true,
-  });
-}
-
-function elevationDeclined(
-  adminSelection: SelectedPackage[],
-): OutcomeWithProvider[] {
-  return adminSelection.map((s) => ({
-    providerId: s.providerId,
-    outcome: {
-      id: s.pkg.id,
-      success: false,
-      skipped: true,
-      message: "Élévation refusée par l'utilisateur",
-    },
-  }));
-}
-
-function providerIdOf(target: string): string {
-  const idx = target.indexOf(":");
-  return idx === -1 ? "" : target.slice(0, idx);
-}
-
-function summarize(outcomes: UpdateOutcome[]): number {
-  const succeeded = outcomes.filter((o) => o.success);
-  const skipped = outcomes.filter((o) => !o.success && o.skipped);
-  const failed = outcomes.filter((o) => !o.success && !o.skipped);
-
-  process.stdout.write("\n");
-  if (succeeded.length > 0) {
-    process.stdout.write(
-      chalk.green(`OK   ${succeeded.length} mise(s) à jour effectuée(s)\n`),
-    );
-    // Surface advisory messages attached to successful outcomes (e.g. choco
-    // exit 3010 = installed, reboot required). Without this branch the
-    // reboot-required information stays in the data model but never reaches
-    // the user, who would only see "OK" and miss the action they need to
-    // take. Skipped/failed messages already had their own branch below.
-    for (const s of succeeded) {
-      if (!s.message) continue;
-      process.stdout.write(
-        chalk.green(`     - ${s.id}`) + chalk.dim(` — ${s.message}`) + "\n",
-      );
-    }
-  }
-  writeGroup(
-    skipped,
-    chalk.yellow,
-    `SKIP ${skipped.length} action(s) manuelle(s) requise(s):\n`,
-  );
-  writeGroup(failed, chalk.red, `FAIL ${failed.length}/${outcomes.length} échec(s):\n`);
-  return failed.length === 0 ? 0 : 1;
-}
-
-/** Coloured header, then one `- <id> — <message>` line per entry. */
-function writeGroup(
-  outcomes: UpdateOutcome[],
-  color: (s: string) => string,
-  header: string,
-): void {
-  if (outcomes.length === 0) return;
-  process.stdout.write(color(header));
-  for (const o of outcomes) {
-    const detail = o.message ? chalk.dim(` — ${o.message}`) : "";
-    process.stdout.write(color(`     - ${o.id}`) + detail + "\n");
-  }
+  setInstallTimeoutSeconds(seconds);
 }

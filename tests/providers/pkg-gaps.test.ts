@@ -9,28 +9,39 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * here, so the suite is identical on Windows, macOS and Linux CI.
  */
 
-const { commandExistsMock, runMock, runInheritMock } = vi.hoisted(() => ({
+const { commandExistsMock, runMock, runInheritMock, isElevatedMock } = vi.hoisted(() => ({
   commandExistsMock: vi.fn(),
   runMock: vi.fn(),
   runInheritMock: vi.fn(),
+  isElevatedMock: vi.fn(),
 }));
 
 vi.mock("../../src/core/runner.js", () => ({
   commandExists: commandExistsMock,
   run: runMock,
   runInherit: runInheritMock,
-  isElevated: vi.fn(),
+  isElevated: isElevatedMock,
   whichFirst: vi.fn(),
 }));
 
-const { delegateUpdateMock } = vi.hoisted(() => ({ delegateUpdateMock: vi.fn() }));
-
-vi.mock("../../src/core/install-source.js", () => ({
-  delegateUpdate: delegateUpdateMock,
-  detectInstallSource: vi.fn(),
-  runPmUpdate: vi.fn(),
-  describeSource: vi.fn(),
+const { delegateUpdateMock, detectInstallSourceMock } = vi.hoisted(() => ({
+  delegateUpdateMock: vi.fn(),
+  detectInstallSourceMock: vi.fn(),
 }));
+
+// upgradeNeedsRoot stays real: it reads the same command table runPmUpdate uses.
+vi.mock("../../src/core/install-source.js", async () => {
+  const actual = await vi.importActual<typeof import("../../src/core/install-source.js")>(
+    "../../src/core/install-source.js",
+  );
+  return {
+    delegateUpdate: delegateUpdateMock,
+    detectInstallSource: detectInstallSourceMock,
+    runPmUpdate: vi.fn(),
+    describeSource: vi.fn(),
+    upgradeNeedsRoot: actual.upgradeNeedsRoot,
+  };
+});
 
 const { fetchGitHubReleaseLatestMock } = vi.hoisted(() => ({
   fetchGitHubReleaseLatestMock: vi.fn(),
@@ -108,7 +119,9 @@ beforeEach(() => {
   commandExistsMock.mockReset();
   runMock.mockReset();
   runInheritMock.mockReset();
+  isElevatedMock.mockReset();
   delegateUpdateMock.mockReset();
+  detectInstallSourceMock.mockReset();
   fetchGitHubReleaseLatestMock.mockReset();
   readFileMock.mockReset();
   // Default: mint's metadata.json does not exist. Never falls through to real I/O.
@@ -1016,6 +1029,10 @@ describe("DotnetSdkProvider.isAvailable", () => {
 });
 
 describe("DotnetSdkProvider.listOutdated", () => {
+  // Off Linux the row never depends on the install source (see the sudo batch
+  // cases below), so these describe the same row on every CI leg.
+  beforeEach(() => setPlatform("darwin"));
+
   it("compares inside the installed channel and ignores newer majors", async () => {
     runMock.mockResolvedValueOnce(mkRun(LIST_SDKS_STDOUT));
     fetchMock.mockResolvedValueOnce(jsonResponse(releasesIndex()));
@@ -1166,6 +1183,50 @@ describe("DotnetSdkProvider.listOutdated", () => {
       }),
     );
     await expect(new DotnetSdkProvider().listOutdated()).resolves.toEqual([]);
+  });
+});
+
+describe("DotnetSdkProvider.listOutdated: the single sudo batch", () => {
+  const SDK_8 = "8.0.404 [/usr/share/dotnet/sdk]";
+
+  beforeEach(() => {
+    setPlatform("linux");
+    isElevatedMock.mockResolvedValue(false);
+  });
+
+  it("flags a distro-packaged SDK whose upgrade runs sudo apt-get", async () => {
+    runMock.mockResolvedValueOnce(mkRun(SDK_8));
+    fetchMock.mockResolvedValueOnce(jsonResponse(releasesIndex()));
+    detectInstallSourceMock.mockResolvedValueOnce("apt");
+    const rows = await new DotnetSdkProvider().listOutdated();
+    expect(detectInstallSourceMock).toHaveBeenCalledWith("dotnet");
+    expect(rows).toEqual([expect.objectContaining({ id: "8.0", requiresAdmin: true })]);
+  });
+
+  it("leaves the row unflagged when gup already runs as root", async () => {
+    runMock.mockResolvedValueOnce(mkRun(SDK_8));
+    fetchMock.mockResolvedValueOnce(jsonResponse(releasesIndex()));
+    detectInstallSourceMock.mockResolvedValueOnce("dnf");
+    isElevatedMock.mockResolvedValue(true);
+    const [row] = await new DotnetSdkProvider().listOutdated();
+    expect(row?.requiresAdmin).toBeUndefined();
+  });
+
+  it("leaves an SDK no distro package owns unflagged", async () => {
+    runMock.mockResolvedValueOnce(mkRun(SDK_8));
+    fetchMock.mockResolvedValueOnce(jsonResponse(releasesIndex()));
+    detectInstallSourceMock.mockResolvedValueOnce("manual");
+    const [row] = await new DotnetSdkProvider().listOutdated();
+    expect(row?.requiresAdmin).toBeUndefined();
+  });
+
+  it("never probes the install source outside Linux", async () => {
+    setPlatform("darwin");
+    runMock.mockResolvedValueOnce(mkRun(SDK_8));
+    fetchMock.mockResolvedValueOnce(jsonResponse(releasesIndex()));
+    const [row] = await new DotnetSdkProvider().listOutdated();
+    expect(row?.requiresAdmin).toBeUndefined();
+    expect(detectInstallSourceMock).not.toHaveBeenCalled();
   });
 });
 

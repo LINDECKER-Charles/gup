@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { appendFileSync, mkdirSync } from "node:fs";
-import chalk from "chalk";
+import { installConsole } from "../process/output-router.js";
+import { RUN_ID, runTrigger } from "../state/run-context.js";
 import { gupVersion } from "../version.js";
 import { historyLocation } from "./paths.js";
 import {
@@ -37,13 +37,6 @@ import type {
 const ENABLED_ENV = "GUP_HISTORY";
 const DISABLED_VALUES = new Set(["0", "false", "off", "no"]);
 
-/**
- * One id per gup process, stamped on every record it emits. Cheap enough to
- * compute unconditionally, and it makes "which updates followed this scan"
- * answerable without relying on timestamp proximity.
- */
-const RUN_ID = randomUUID();
-
 let warned = false;
 
 export interface ScanRecord {
@@ -51,6 +44,8 @@ export interface ScanRecord {
   durationMs: number;
   /** Filters the scan ran under, so a reader can tell a fast scan from a full one. */
   options?: { only?: string[] | undefined; fast?: boolean | undefined };
+  /** Wall-clock time of each provider's scan, by provider id, when the caller measured it. */
+  providerDurations?: ReadonlyMap<string, number>;
 }
 
 export interface UpdateRecord {
@@ -63,19 +58,24 @@ export interface UpdateRecord {
   retry?: string;
   /** True when the attempt ran inside the elevated batch. */
   elevated?: boolean;
+  /** The schedule this attempt belongs to, when it runs one. */
+  scheduleId?: string;
 }
+
+type AttemptDetails = Pick<
+  UpdateEvent,
+  "durationMs" | "message" | "retry" | "elevated" | "scheduleId"
+>;
 
 /** Append one completed scan of the machine. */
 export function recordScan(record: ScanRecord): void {
-  const providers: ScanProviderRecord[] = record.results.map((result) => ({
-    providerId: result.providerId,
-    outdated: result.packages.length,
-    ...(result.error !== undefined && { error: result.error }),
-  }));
+  const providers = record.results.map((result) =>
+    providerRecord(result, record.providerDurations),
+  );
 
   const event: ScanEvent = {
     ...envelope("scan"),
-    durationMs: Math.max(0, Math.round(record.durationMs)),
+    durationMs: wholeMs(record.durationMs),
     fast: record.options?.fast === true,
     filter: [...(record.options?.only ?? [])],
     providers,
@@ -86,22 +86,54 @@ export function recordScan(record: ScanRecord): void {
 
 /** Append one update attempt, whatever its outcome. */
 export function recordUpdate(record: UpdateRecord): void {
-  const { outcome, pkg } = record;
+  const { outcome } = record;
   const event: UpdateEvent = {
     ...envelope("update"),
     providerId: record.providerId,
     packageId: outcome.id,
     status: statusOf(outcome),
-    ...(pkg?.current !== undefined && { from: pkg.current }),
-    ...(pkg?.latest !== undefined && { to: pkg.latest }),
-    ...(record.durationMs !== undefined && {
-      durationMs: Math.max(0, Math.round(record.durationMs)),
-    }),
-    ...(outcome.message !== undefined && { message: outcome.message }),
-    ...(record.retry !== undefined && { retry: record.retry }),
-    ...(record.elevated === true && { elevated: true }),
+    ...versionsOf(record.pkg),
+    ...attemptDetails(record),
   };
   append(event);
+}
+
+function providerRecord(
+  result: ProviderScanResult,
+  durations: ReadonlyMap<string, number> | undefined,
+): ScanProviderRecord {
+  const durationMs = durations?.get(result.providerId);
+  return {
+    providerId: result.providerId,
+    outdated: result.packages.length,
+    ...(result.error !== undefined && { error: result.error }),
+    ...(durationMs !== undefined && { durationMs: wholeMs(durationMs) }),
+  };
+}
+
+/** `from` / `to`, when the scan behind the attempt knew them. */
+function versionsOf(pkg: OutdatedPackage | undefined): Pick<UpdateEvent, "from" | "to"> {
+  return {
+    ...(pkg?.current !== undefined && { from: pkg.current }),
+    ...(pkg?.latest !== undefined && { to: pkg.latest }),
+  };
+}
+
+/** The optional facts of one attempt, each written only when known. */
+function attemptDetails(record: UpdateRecord): AttemptDetails {
+  const { durationMs, outcome, retry, elevated, scheduleId } = record;
+  return {
+    ...(durationMs !== undefined && { durationMs: wholeMs(durationMs) }),
+    ...(outcome.message !== undefined && { message: outcome.message }),
+    ...(retry !== undefined && { retry }),
+    ...(elevated === true && { elevated: true }),
+    ...(scheduleId !== undefined && { scheduleId }),
+  };
+}
+
+/** Durations are stored as whole, non-negative milliseconds. */
+function wholeMs(ms: number): number {
+  return Math.max(0, Math.round(ms));
 }
 
 /**
@@ -116,6 +148,7 @@ function statusOf(outcome: UpdateOutcome): UpdateStatus {
 function envelope<K extends HistoryEvent["kind"]>(
   kind: K,
 ): HistoryEnvelope & { kind: K } {
+  const trigger = runTrigger();
   return {
     v: HISTORY_SCHEMA_VERSION,
     ts: new Date().toISOString(),
@@ -123,6 +156,7 @@ function envelope<K extends HistoryEvent["kind"]>(
     gup: gupVersion(),
     platform: process.platform,
     kind,
+    ...(trigger !== undefined && { trigger }),
   };
 }
 
@@ -149,11 +183,14 @@ function isEnabled(): boolean {
 
 /**
  * Warn on stderr, never stdout: `gup list --json` pipes stdout into other
- * tools and a warning there would corrupt the payload.
+ * tools and a warning there would corrupt the payload. Through the output
+ * router: during an in-app update the warning lands in the install pane, and
+ * while a full screen is mounted it waits for the exit instead of painting
+ * over the frame.
  */
 function warnOnce(err: unknown): void {
   if (warned) return;
   warned = true;
   const reason = err instanceof Error ? err.message : String(err);
-  process.stderr.write(chalk.dim(`  historique non écrit — ${reason}\n`));
+  installConsole.warn(`  historique non écrit — ${reason}`);
 }
