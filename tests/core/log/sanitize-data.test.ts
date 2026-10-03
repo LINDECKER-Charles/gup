@@ -1,3 +1,5 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   MAX_DEPTH,
@@ -51,6 +53,14 @@ describe("sanitizeData", () => {
         nested: { password: { anything: 1 }, Authorization: "Basic dXNlcjpwYXNz" },
       }),
     ).toEqual({ line: "push https://***@example.com", nested: { password: "***", Authorization: "***" } });
+  });
+
+  it("redacts keys like values", () => {
+    const home = homedir();
+    expect(sanitizeData({ [join(home, "cache")]: 1, "npm_token=abc": 2 })).toEqual({
+      [join("~", "cache")]: 1,
+      "npm_token=***": 2,
+    });
   });
 
   it("turns an Error into its name, message and stack", () => {

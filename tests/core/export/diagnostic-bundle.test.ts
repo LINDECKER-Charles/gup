@@ -1,4 +1,6 @@
 import AdmZip from "adm-zip";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildDiagnosticZip } from "../../../src/core/export/diagnostic-bundle.js";
 import type { LogRecord } from "../../../src/core/log/types.js";
@@ -58,6 +60,28 @@ describe("buildDiagnosticZip", () => {
     expect(log).not.toContain("hunter2");
     expect(JSON.parse(log)).toMatchObject({ data: { stderrTail: "fatal: https://***@git.example.com", token: "***" } });
     expect(files.get("system.json")).not.toContain("bob:pw");
+  });
+
+  it("leaves neither the home directory nor a known secret anywhere in the archive", () => {
+    const home = homedir();
+    const older = line({
+      ctx: { op: "update", providerId: "npm-g", packageId: join(home, "pkg") },
+      data: {
+        [join(home, "npmrc")]: "//registry.npmjs.org/:_authToken=4f8a1c2e-9b3d-4e5f-8a7b-1c2d3e4f5a6b",
+        stderrTail: `EACCES ${join(home, "AppData", "x")} AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG`,
+      },
+    });
+    const archive = buildDiagnosticZip({
+      generatedAt: new Date(),
+      system: { ...SYSTEM, env: { GUP_LOG_DIR: join(home, "logs") } },
+      logs: [{ name: "gup-2026-10-03.jsonl", content: `${older}\n` }],
+    });
+    const everything = [...entries(archive.zip).values()].join("\n").toLowerCase();
+    const escapedHome = JSON.stringify(home).slice(1, -1);
+    for (const leak of [home, escapedHome, "4f8a1c2e-9b3d", "wJalrXUtnFEMI"]) {
+      expect(everything).not.toContain(leak.toLowerCase());
+    }
+    expect(archive.records).toBe(1);
   });
 
   it("drops what is not a record, says how many lines in the README, and skips foreign file names", () => {

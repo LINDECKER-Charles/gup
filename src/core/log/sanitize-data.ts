@@ -1,11 +1,11 @@
 import type { OperationContext } from "../state/run-context.js";
-import { clip, isSecretName, REDACTED, redactedHead } from "./redact.js";
+import { isSecretName, REDACTED, redactedHead } from "./redact.js";
 import type { LogData, LogRecord, LogValue } from "./types.js";
 
 /**
  * A log record's `data`, made safe to write: a bounded deep copy holding JSON
- * values only, every string through `redactText` (secrets, home), values under a
- * secret-looking key masked whatever their shape. Callers pass whatever they
+ * values only, every string — keys included — through `redactText` (secrets,
+ * home), values under a secret-looking key masked whatever their shape. Callers pass whatever they
  * have (an Error, a Date, a nested object); nothing they pass can make a line
  * huge, leak a token, or smuggle a prototype.
  */
@@ -112,7 +112,8 @@ function sanitizeEntries(
   for (const key of Object.keys(value).slice(0, MAX_KEYS)) {
     if (UNSAFE_KEYS.has(key)) continue;
     const item = isSecretName(key) ? REDACTED : sanitizeValue(value[key], depth + 1, budget);
-    if (item !== undefined) entries.push([clip(key, MAX_STRING), item]);
+    // A key is data too (a path, an id): it is redacted like a value.
+    if (item !== undefined) entries.push([redactedHead(key, MAX_STRING), item]);
   }
   return Object.fromEntries(entries);
 }
