@@ -1,16 +1,23 @@
 import type { CapturedFrame } from "@opentui/core";
 import { describe, expect, it, vi } from "vitest";
 import type { MenuState } from "../../../src/commands/menu-state.js";
+import { ConfigStore } from "../../../src/core/config/store.js";
 import type { ProviderScanResult } from "../../../src/core/types.js";
+import type { ViewDefinition } from "../../../src/ui/app/view-definition.js";
 import type { ScanEvents } from "../../../src/ui/panels/scan-panel.js";
-import type { ThemeSettings } from "../../../src/ui/settings/theme-section.js";
+import { SettingsService } from "../../../src/ui/settings/settings-service.js";
+import { appearanceSource } from "../../../src/ui/settings/settings-sources.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
-import { RGB_THEME_IDS } from "../../../src/ui/theme/palette.js";
+import { RGB_THEME_IDS, type ThemeId } from "../../../src/ui/theme/palette.js";
 import type { TerminalFacts } from "../../../src/ui/theme/resolve-theme.js";
 import { staticProbe } from "../../../src/ui/theme/runtime/terminal-probe.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
 import { detectedColorsFrom, type ReportedColors } from "../../../src/ui/theme/terminal-palette.js";
+import { optionsView } from "../../../src/ui/views/options-view.js";
+import { packagesView } from "../../../src/ui/views/packages-view.js";
+import { providersView } from "../../../src/ui/views/providers-view.js";
+import { scanView } from "../../../src/ui/views/scan-view.js";
 import type * as wcag from "../../support/contrast/wcag.js";
 import { frameContrastViolations } from "../../support/tui/frame-contrast.js";
 import { bootMenu, type MenuDriver } from "../../support/tui/menu-driver.js";
@@ -18,9 +25,9 @@ import { CAMPBELL, TERMINAL_APP_BASIC } from "../../support/tui/reference-palett
 
 /**
  * The end-to-end guarantee: the whole menu, driven through every registered
- * view and dialog, paints no text below 4.5:1 and no border below 3:1, for
- * every RGB theme and for the terminal theme on real palettes. Whatever code
- * path paints a cell, if it escapes the theme, it fails here.
+ * view and every dialog, paints no text below 4.5:1 and no border below
+ * 3:1, for every RGB theme and for the terminal theme on real palettes.
+ * Whatever code path paints a cell, if it escapes the theme, it fails here.
  */
 
 const pkg = (id: string, current: string, latest: string) => ({ id, current, latest });
@@ -46,13 +53,6 @@ async function scanWithFailure(state: MenuState, events: ScanEvents): Promise<vo
   state.detectedCount = SCANS.length + 1;
 }
 
-interface Audited {
-  readonly label: string;
-  readonly createAppearance: AppearanceFactory;
-  /** What shows through a cell gup leaves unpainted. */
-  readonly ground: wcag.Rgb;
-}
-
 const UNKNOWN: TerminalFacts = {
   colors: null,
   themeMode: null,
@@ -60,63 +60,81 @@ const UNKNOWN: TerminalFacts = {
   detection: "done",
 };
 
-function rgbTheme(id: ThemeSettings["id"]): Audited {
-  let ground: wcag.Rgb = [0, 0, 0];
-  const createAppearance: AppearanceFactory = (_renderer, tui) => {
-    const appearance = new ThemedAppearance({
-      tui,
-      probe: staticProbe(UNKNOWN),
-      settings: settingsOf(id),
-      env: {},
-    });
-    const background = appearance.resolved.palette!.background;
-    ground = [background.r, background.g, background.b];
-    return appearance;
-  };
+interface Audited {
+  readonly label: string;
+  readonly theme: ThemeId;
+  /** What the terminal reports. */
+  readonly terminal: TerminalFacts;
+  /** What shows through a cell gup leaves unpainted (an RGB theme paints its own). */
+  readonly ground: wcag.Rgb;
+}
+
+const toOracle = (color: { r: number; g: number; b: number }): wcag.Rgb => [
+  color.r,
+  color.g,
+  color.b,
+];
+
+function onTerminal(
+  label: string,
+  theme: ThemeId,
+  reported: { readonly palette: ReportedColors; readonly mode: "dark" | "light" },
+): Audited {
+  const colors = detectedColorsFrom(reported.palette)!;
   return {
-    label: id,
-    createAppearance,
-    get ground() {
-      return ground;
-    },
+    label,
+    theme,
+    terminal: { ...UNKNOWN, colors, themeMode: reported.mode },
+    ground: toOracle(colors.background),
   };
 }
 
-function terminalTheme(label: string, reported: ReportedColors): Audited {
-  const colors = detectedColorsFrom(reported)!;
-  return {
-    label: `terminal on ${label}`,
-    ground: [colors.background.r, colors.background.g, colors.background.b],
-    createAppearance: (_renderer, tui) =>
-      new ThemedAppearance({
-        tui,
-        probe: staticProbe({ ...UNKNOWN, colors }),
-        settings: settingsOf("terminal"),
-        env: {},
-      }),
-  };
+const CAMPBELL_DARK = { palette: CAMPBELL, mode: "dark" } as const;
+const BASIC_LIGHT = { palette: TERMINAL_APP_BASIC, mode: "light" } as const;
+
+const AUDITED: readonly Audited[] = [
+  ...RGB_THEME_IDS.map(
+    (theme): Audited => ({ label: theme, theme, terminal: UNKNOWN, ground: [0, 0, 0] }),
+  ),
+  onTerminal("terminal on Campbell", "terminal", CAMPBELL_DARK),
+  onTerminal("terminal on Terminal.app Basic", "terminal", BASIC_LIGHT),
+];
+
+/** The menu's registered views, Options editing `settings`. */
+function viewsOf(settings: SettingsService): ViewDefinition[] {
+  const status = async () => ({
+    platform: "win32" as const,
+    detected: [],
+    missing: [],
+    incompatible: [],
+  });
+  return [
+    optionsView({ settings: () => settings }),
+    packagesView(),
+    providersView({ status }),
+    scanView(),
+  ];
 }
 
-function settingsOf(id: ThemeSettings["id"]) {
-  const current = {
-    theme: { id, contrast: "AA" as const, custom: {} },
-    glyphs: "unicode" as const,
-    density: "comfortable" as const,
-  };
-  return { current: () => current, subscribe: () => () => {} };
+/** The terminal parser holds a lone Escape for 20 ms: let it through. */
+const ESCAPE_SETTLE_MS = 100;
+/** An input dialog takes the focus on the next turn. */
+const FOCUS_SETTLE_MS = 10;
+
+type Capture = (state: string, shows: string) => Promise<void>;
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function escape(menu: MenuDriver): Promise<void> {
+  await menu.press("escape");
+  await pause(ESCAPE_SETTLE_MS);
 }
 
 /**
- * Every screen state the menu can show, in order, each captured once it is
- * on screen. No Escape: the terminal parser holds it back to tell it from an
- * Alt sequence, and would merge it with the next key.
+ * Paquets, the filter, the update confirmation, Scan with a failure,
+ * Providers. No Escape here: the parser would merge it with the next key.
  */
-async function walkTheMenu(menu: MenuDriver): Promise<Array<[string, CapturedFrame]>> {
-  const frames: Array<[string, CapturedFrame]> = [];
-  const capture = async (state: string, shows: string): Promise<void> => {
-    await menu.waitForText(shows);
-    frames.push([state, menu.screen.captureSpans()]);
-  };
+async function walkTheViews(menu: MenuDriver, capture: Capture): Promise<void> {
   await capture("Paquets, cursor row", "Git.Git");
   await menu.press("space", "down");
   await capture("Paquets, checked packages", "■");
@@ -128,46 +146,91 @@ async function walkTheMenu(menu: MenuDriver): Promise<Array<[string, CapturedFra
   await capture("Scan results with a failure", "délai dépassé");
   await menu.press("down", "down");
   await capture("Providers", "╭─ Providers");
-  await menu.press("down", "enter", "down", "enter");
-  await new Promise((resolve) => setTimeout(resolve, 10));
-  await capture("Options, timeout dialog", "Timeout par install");
-  return frames;
 }
 
-async function violationsOf(audited: Audited): Promise<string[]> {
+/** Options: the list, the timeout dialog, the reset dialogs. */
+async function walkTheOptions(menu: MenuDriver, capture: Capture): Promise<void> {
+  await menu.press("down", "enter", "down", "enter");
+  await pause(FOCUS_SETTLE_MS);
+  await capture("Options, timeout dialog", "Timeout par install");
+  await escape(menu);
+  await capture("Options, list", "CONFORT");
+  await menu.press("END", "up", "enter");
+  await capture("Options, reset choice", "Scan & installation");
+  await menu.press("enter");
+  await capture("Options, reset confirmation", "aux valeurs par défaut");
+  await menu.press("n");
+}
+
+/**
+ * The theme engine over `settings` on `audited`'s terminal. A cell left
+ * unpainted shows the terminal's background: on a terminal that does not say
+ * which, an RGB theme's own stands in for it (it paints every cell anyway).
+ */
+function themedFactory(audited: Audited, settings: SettingsService, painted: { ground: wcag.Rgb }) {
+  const factory: AppearanceFactory = (_renderer, tui) => {
+    const appearance = new ThemedAppearance({
+      tui,
+      probe: staticProbe(audited.terminal),
+      settings: appearanceSource(settings),
+      env: {},
+    });
+    const { mode, palette } = appearance.resolved;
+    const isGroundUnknown = audited.terminal.colors === null;
+    if (isGroundUnknown && mode === "rgb" && palette) painted.ground = toOracle(palette.background);
+    return appearance;
+  };
+  return factory;
+}
+
+async function violationsOf(audited: Audited, legacy?: AppearanceFactory): Promise<string[]> {
+  const settings = new SettingsService(new ConfigStore({ file: null, isDisabled: true }));
+  settings.update("theme", { id: audited.theme });
+  const painted = { ground: audited.ground };
   const menu = await bootMenu({
     scans: SCANS,
     size: { cols: 110, rows: 30 },
     controller: { scan: vi.fn(scanWithFailure) },
-    createAppearance: audited.createAppearance,
+    views: viewsOf(settings),
+    createAppearance: legacy ?? themedFactory(audited, settings, painted),
   });
-  const frames = await walkTheMenu(menu);
+  const frames: Array<[string, CapturedFrame]> = [];
+  const capture: Capture = async (state, shows) => {
+    await menu.waitForText(shows);
+    frames.push([state, menu.screen.captureSpans()]);
+  };
+  await walkTheViews(menu, capture);
+  await walkTheOptions(menu, capture);
   return frames.flatMap(([state, frame]) =>
-    frameContrastViolations(frame, { ground: audited.ground }).map(
+    frameContrastViolations(frame, { ground: painted.ground }).map(
       (v) => `${state}: "${v.text.trim()}" ${v.ratio.toFixed(2)} < ${v.needed}`,
     ),
   );
 }
 
+/** Generous: each walk drives one screen through a dozen states, on a loaded machine. */
+const AUDIT_TIMEOUT_MS = 60_000;
+
 describe("contrast audit of the menu", () => {
-  it.each([
-    ...RGB_THEME_IDS.map(rgbTheme),
-    terminalTheme("Campbell", CAMPBELL),
-    terminalTheme("Terminal.app Basic", TERMINAL_APP_BASIC),
-  ].map((audited) => [audited.label, audited] as const))(
+  it.each(AUDITED.map((audited) => [audited.label, audited] as const))(
     "%s: every text ≥ 4.5:1, every border ≥ 3:1",
     async (_label, audited) => {
       expect(await violationsOf(audited)).toEqual([]);
     },
-    30_000,
+    AUDIT_TIMEOUT_MS,
   );
 
-  it("catches what the theme does not paint: the legacy look on a light terminal", async () => {
-    const violations = await violationsOf({
-      label: "legacy",
-      createAppearance: legacyAppearance,
-      ground: [255, 255, 255],
-    });
-    expect(violations.length).toBeGreaterThan(0);
-  });
+  it(
+    "catches what the theme does not paint: the legacy look on a light terminal",
+    async () => {
+      const onWhite: Audited = {
+        label: "legacy",
+        theme: "terminal",
+        terminal: UNKNOWN,
+        ground: [255, 255, 255],
+      };
+      expect((await violationsOf(onWhite, legacyAppearance)).length).toBeGreaterThan(0);
+    },
+    AUDIT_TIMEOUT_MS,
+  );
 });

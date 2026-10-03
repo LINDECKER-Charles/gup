@@ -14,7 +14,7 @@ export interface InstallSettings {
 }
 
 /** One day: the same ceiling the elevated batch payload accepts. */
-const TIMEOUT_BOUNDS = { min: 0, max: 86_400 } as const;
+export const INSTALL_TIMEOUT_BOUNDS = { min: 0, max: 86_400 } as const;
 const TIMEOUT_ENV = "GUP_INSTALL_TIMEOUT";
 
 const DEFAULTS: InstallSettings = Object.freeze({ timeoutSeconds: DEFAULT_INSTALL_TIMEOUT_S });
@@ -24,7 +24,11 @@ export const INSTALL_SECTION = defineSection<InstallSettings>({
   version: 1,
   defaults: DEFAULTS,
   parse: (read) => ({
-    timeoutSeconds: read.integer("timeoutSeconds", TIMEOUT_BOUNDS, DEFAULTS.timeoutSeconds),
+    timeoutSeconds: read.integer(
+      "timeoutSeconds",
+      INSTALL_TIMEOUT_BOUNDS,
+      DEFAULTS.timeoutSeconds,
+    ),
   }),
 });
 
