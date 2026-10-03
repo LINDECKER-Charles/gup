@@ -48,5 +48,6 @@ export const LOCALES = Object.freeze([
     ogLocale: "fr_FR",
     endonym: "Français",
     script: "latin",
+    ogImage: "public/og/fr.png",
   }),
 ]);
