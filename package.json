@@ -84,7 +84,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage",
     "test:coverage:ci": "vitest run --coverage --reporter=default --reporter=junit --outputFile=coverage/junit.xml",
-    "lint": "eslint src",
+    "lint": "eslint --no-error-on-unmatched-pattern src tests scripts",
     "lint:security": "eslint src --config eslint.config.security.js",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
     "audit:deps:ci": "audit-ci --config audit-ci.json",
