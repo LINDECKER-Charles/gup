@@ -88,6 +88,18 @@ describe("ManualRun", () => {
       { target: "winget:Git.Git", status: "skipped", message: MANUAL_STOP_MESSAGE },
     ]);
   });
+
+  it("plans in one step and records in another, for a launcher in between", async () => {
+    const { manual, state, scanned } = setup();
+    const prepared = await manual.prepare(schedule());
+    expect(scanned).toEqual([["winget"]]);
+    expect(prepared.plan.updates.map((update) => update.pkg.id)).toEqual(["Git.Git"]);
+    expect(state.current.schedules["a1b2c3d4"]).toEqual({ lastAttemptAt: ANCHOR });
+    const report = await succeedAll([{ providerId: "winget", packageId: "Git.Git" }]);
+    const record = manual.settle(prepared, report);
+    expect(record).toMatchObject({ kind: "manual", status: "success" });
+    expect(state.current.schedules["a1b2c3d4"]?.lastRun).toEqual(record);
+  });
 });
 
 describe("ManualRun with a state file that cannot be written", () => {
