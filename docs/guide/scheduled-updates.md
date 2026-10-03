@@ -3,7 +3,8 @@
 Keep chosen packages up to date without thinking about it: a **schedule** names
 packages — `provider:packageId`, the ids `gup list` shows — and when to update
 them. A schedule never designates a whole provider: `winget:Git.Git` yes,
-`winget` no.
+`winget` no. Manage schedules with `gup schedule`, or in the menu: check
+packages in Paquets and press `p`.
 
 ```bash
 gup schedule add winget:Git.Git npm-g:typescript --every weekly --on lun --name "Outils dev"
@@ -20,6 +21,7 @@ gup schedule list
 - [Recurrences](#recurrences)
 - [What a scheduled run never does](#what-a-scheduled-run-never-does)
 - [Commands](#commands)
+- [In the menu](#in-the-menu)
 - [The OS trigger](#the-os-trigger)
 - [Where things live](#where-things-live)
 - [Troubleshooting](#troubleshooting)
@@ -135,6 +137,113 @@ run had failures (schedules are always saved first), `2` invalid arguments.
 
 `gup doctor` reports the trigger in its "Système" section.
 
+## In the menu
+
+`gup` with no argument opens the interactive menu; its **Planification** view,
+under Paquets, does everything `gup schedule` does except removing the trigger.
+
+```text
+┏━ Planification ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Déclencheur : actif · Planificateur de tâches Windows · dernier passage il y a 4 min       ┃
+┃                                                                                            ┃
+┃     Nom            Fréquence              Paquets Prochaine           Dernière             ┃
+┃ › ● Outils dev     chaque lundi à 09:00         2 lun. 12 oct. 09:00  ◐ 1/2 — 1 échec(s)   ┃
+┃   ○ Python         cron : 0 */6 * * *           1 désactivée          —                    ┃
+┃                                                                                            ┃
+┃ Prochaine : lun. 12 oct. 09:00 · cron 0 9 * * 1                                            ┃
+┃ Dernière exécution · Outils dev · il y a 54 min · 2 min 14 s · à l'heure                   ┃
+┃   ✔ Winget         Git.Git              2.46.0 → 2.47.0                                    ┃
+┃   ✖ npm (global)   pnpm                 échec — code 1                                     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+```
+
+The first line is the trigger's state, as in
+[Troubleshooting](#troubleshooting), with `i` as the repair. Below the
+table, the schedule under the cursor: its next run, then what its last run
+did package by package — or, if it never ran, the packages it covers. The
+package count and next-run columns appear from a 120-column terminal.
+
+| Key | In the list |
+|---|---|
+| `↑` `↓` `j` `k` | move |
+| `entrée` | edit the schedule |
+| `espace` | switch it on or off (switching on never replays past occurrences) |
+| `x` | run it now — see below |
+| `suppr` `d` | delete it, after a confirmation |
+| `i` | register or repair the OS trigger for this gup |
+
+### Scheduling from Paquets
+
+Check the packages (`espace`, `a`), then press **`p`**. Like `entrée`, `p`
+acts on the checked packages only — never on the row under the cursor, and
+never on a provider: with nothing checked, Paquets only says to check
+packages first.
+
+- With no schedule yet, the editor opens on a new schedule of those packages:
+  every day at 09:00, named after the first one. Otherwise gup asks whether
+  to start a new schedule or to add the packages to an existing one.
+- A row that stands for a whole provider ("Tous les plugins") and a package
+  of a provider that needs an administrator for every update are left out,
+  with the reason. A package the scan says needs administrator rights is
+  kept, with a warning: a scheduled run will skip it.
+- The first time a schedule needs the OS trigger, gup says what it will
+  register, for whom and how to remove it, and registers nothing unless you
+  answer *Oui*.
+
+In Paquets, `◷` marks the packages an enabled schedule covers. The sidebar
+shows how many schedules are enabled — or `!` when a scheduled run failed
+since you last opened Planification — and the title bar counts the runs you
+have not seen yet (`planif. : 2 exécution(s) · 1 échec`).
+
+### The editor
+
+```text
+┏━ Nouvelle planification ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃   Nom              [Git.Git +1]                                                            ┃
+┃   Fréquence        [Personnalisée (cron)]                                                  ┃
+┃ › Expression cron  0 9 * * 1-5█                                                            ┃
+┃   Rattrapage       [oui]   relance à la prochaine occasion si l'heure est manquée          ┃
+┃                                                                                            ┃
+┃   cron 0 9 * * 1-5 · prochaines : demain 09:00 · mer. 7 oct. 09:00 · jeu. 8 oct. 09:00     ┃
+┃                                                                                            ┃
+┃   Paquets (2)                                                                              ┃
+┃     Winget         Git.Git                                                                 ┃
+┃     Winget         Mozilla.Firefox                                                         ┃
+┃   + Ajouter un paquet…                                                                     ┃
+┃     note : un paquet winget installé pour tous les utilisateurs peut demander l'UAC — il   ┃
+┃     sera alors ignoré (jamais d'élévation sans surveillance)                               ┃
+┃                                                                                            ┃
+┃   [ Enregistrer ]                                                                          ┃
+┃   [ Annuler ]                                                                              ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+```
+
+| Field | How |
+|---|---|
+| Nom | `entrée`, type, `entrée` (`échap` drops what was typed) |
+| Fréquence | `entrée`: chaque jour, chaque semaine, chaque mois, personnalisée (cron) |
+| Jour | weekly: pick a day; monthly: type `1` to `28`, or `dernier` |
+| Heure | `entrée`, type `HH:MM` |
+| Expression cron | custom frequency: type the 5 fields |
+| Rattrapage | `espace`: run once at the next opportunity when the time was missed |
+| Paquets | `suppr` or `d` removes the package under the cursor; *+ Ajouter un paquet…* takes a `provider:paquet` id |
+
+The line under the fields shows the cron expression and the next three runs,
+recomputed at every keystroke, or why the recurrence is refused (`✖ Fréquence
+trop élevée — au plus une exécution par heure`). Each problem shows under its
+field and *Enregistrer* stays muted until there is none. `ctrl+s` saves from
+anywhere, `échap` leaves (asking first when something changed). The note
+under a winget package is the UAC caveat of
+[What a scheduled run never does](#what-a-scheduled-run-never-does).
+
+### Run now
+
+`x`, then *Oui*: gup scans the providers the schedule needs, then updates its
+outdated packages where the menu runs updates — in its run view, or on the
+plain terminal when the embedded terminal is unavailable — and comes back to
+Planification. The result becomes the schedule's last run (`manuelle`) and its
+history attempts carry the schedule id; the next occurrence is unchanged.
+
 ## The OS trigger
 
 Registered for your user only, without administrator rights, by absolute path
@@ -187,7 +296,8 @@ only in a shell is not seen by it (gup warns when that happens).
 
 ## Troubleshooting
 
-`gup schedule list` and `gup schedule status` start with the trigger's state:
+`gup schedule list`, `gup schedule status` and the menu's Planification view (where
+`i` does what `gup schedule install` does) start with the trigger's state:
 
 | Line | Meaning, and what to do |
 |---|---|

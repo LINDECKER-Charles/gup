@@ -1,10 +1,9 @@
 # Design note — scheduled updates (`feat/scheduled-updates`)
 
-Status: **part 1 of 2 shipped — core and command line.** Part 2 (same branch)
-adds the menu: the Planification view, the `p` package action, the `◷`
-marker, the editor and run-now in the run view. Sources: the scheduler spec,
-the integrated plan §6.8 and amendments S-1…S-5, F-5, F-13, F-15, W2-4, W2-7.
-The user guide is [`../../guide/scheduled-updates.md`](../../guide/scheduled-updates.md).
+Status: **shipped — core, command line (part 1) and menu (part 2).** Sources:
+the scheduler spec, the integrated plan §6.8, §8, §10 and amendments S-1…S-5,
+F-5, F-6, F-10, F-13, F-15, C13, C22, W2-4, W2-7. The user guide is
+[`../../guide/scheduled-updates.md`](../../guide/scheduled-updates.md).
 
 A **schedule** is an explicit list of `provider:packageId` targets plus a
 recurrence; it can never designate a whole provider. Execution is OS-native
@@ -39,23 +38,29 @@ the normalised XML.
 ## 2. Layout
 
 ```
-src/core/scheduler/                    5 files + 4 folders
+src/core/scheduler/                    6 files + 4 folders
   scheduler-timing.ts   the time budget (one place: the values only make sense together)
   target-resolver.ts    targeted scan → planTick; requestsOf(plan)
   scheduled-run.ts      ScheduledRun.tick() / stop()
-  manual-run.ts         ManualRun.run(schedule, execute) — CLI and menu run-now
-  run-summary.ts        report → per-schedule ScheduleRunRecord + RunStatus
+  manual-run.ts         ManualRun: prepare (scan + plan) / settle (record) — CLI and menu run-now
+  manual-run-tracker.ts ManualRunTracker: records a menu run-now from the pipeline's attempts
+  run-summary.ts        report → per-schedule ScheduleRunRecord + RunStatus; unseenRuns
   model/       (7)      types, schedule-target, recurrence, cron (only croner importer),
                         validate-schedule, due, tick-plan — all pure
   persistence/ (5)      scheduler-files, schedules-section, schedule-repo, run-state, install-record
   artifacts/   (4)      windows-task-xml, launchd-plist, crontab-block, xml-text — pure builders
   trigger/     (9)      os-trigger (types), trigger-factory, task-command, captured-env,
                         windows-task, launchd-agent, crontab-trigger, trigger-sync, trigger-health
-src/commands/schedule/ (9)            schedule-module, scheduler-services, schedule-args,
+src/commands/schedule/ (10, full)     schedule-module, scheduler-services, schedule-args,
                                       crud-commands, report-commands, trigger-commands,
-                                      run-now, run-deps, tick — one slot left (part 2's controller)
-src/ui/text/schedule-labels.ts        vocabulary shared with the menu
+                                      run-now, run-deps, tick, schedules-controller
+src/ui/panels/schedules/ (9)          schedules-port (types), schedules-panel, schedule-editor,
+                                      schedule-list-lines, schedule-editor-lines, flow-context,
+                                      schedule-flows, editor-flows, package-flow
+src/ui/views/schedules-view.ts        schedulesView(port): sidebar entry, badge, facts, p, ◷
+src/ui/text/schedule-labels.ts        vocabulary shared by the command line and the menu
 src/ui/text/schedule-cli-labels.ts    what `gup schedule` prints
+src/ui/text/schedule-menu-labels.ts   what the Planification view says
 ```
 
 Names follow the plan (C26): `ScheduledTarget` / `TickPlan`, never the
@@ -114,17 +119,19 @@ trimmed past 1 MiB (macOS), clamped timeout, SIGTERM/SIGINT/SIGHUP (+SIGBREAK
 on Windows) → `stop()` with a 30 s grace, watchdog. Never used: scan
 progress UI, skip session, retry prompts, elevation, anything under `ui/tui`.
 
-**Run now** (`ManualRun`): same resolver and plan; the updates run where the
-user watches — on the CLI `updateOnConsole(requests, { yes: true })`, which
-enters the interactive batch guard (waits, with a message, for a running
-tick) — and the record becomes the last run (`kind: "manual"`); the anchor is
-untouched. A state file that cannot be written costs a log line, not the run.
+**Run now** (`ManualRun`): `prepare` (same resolver and plan) then `settle`
+(summary stored as the last run, `kind: "manual"`); the anchor is untouched.
+The updates run where the user watches: on the CLI
+`updateOnConsole(requests, { yes: true })`, which enters the interactive
+batch guard (waits, with a message, for a running tick); in the menu, the
+menu's launcher (§12). A state file that cannot be written costs a log line,
+not the run.
 
 ## 5. Persistence (machine-local, `stateDir("scheduler")`)
 
 | File | Writer | Notes |
 |---|---|---|
-| `schedules.json` | interactive commands | `ConfigStore({ file, maxBytes: 4 MiB })`, section `scheduler` v1 (C3); re-read under the file lock before every change; a malformed schedule is dropped whole; a missing `enabled` reads as disabled |
+| `schedules.json` | interactive commands | `ConfigStore({ file, maxBytes: 4 MiB })`, section `scheduler` v1 (C3): `schedules` and `seenRunsUntil` (null until the menu marks runs seen); re-read under the file lock before every change; a malformed schedule is dropped whole; a missing `enabled` reads as disabled. `ScheduleRepo.reload()` rebuilds the store, whose reads are cached, for the long-lived menu |
 | `state.json` | runs | `RunStateStore`: atomic write inside `withFileLock`; corrupt → empty (logged) |
 | `install.json` | `TriggerSync` | argv, launcher, captured env, date, gup version |
 | `agent-stderr.log` | launchd | macOS only |
@@ -172,13 +179,16 @@ measured from the install when no tick ever ran) / active — one verdict for
 - `beforeAction`: installs `createBatchGuard(location)` for every command but
   the tick (interactive runs wait for a scheduled batch); heals the trigger
   before `schedule list|status|run-now` (printing a repair notice) and, in
-  the background and silently, when the menu starts;
+  the background and silently, when the menu starts; for the menu only,
+  installs the Planification view's run tracker as an update observer
+  (`observeUpdates`, §12);
 - `diagnostics()`: one "Planification" line for `gup doctor` (W2-7).
 
 Commands take `SchedulerServices` (stores, trigger, sync, registry facts,
 scanner, clock) and a `CommandOutput`, so tests run them on sandboxed stores
 with an in-memory trigger; nothing in a unit test registers a real trigger or
-scans the machine (W2-4).
+scans the machine (W2-4). The module and the menu share one set of services
+per process (`processSchedulerServices()`).
 
 ## 8. Security
 
@@ -192,8 +202,12 @@ scans the machine (W2-4).
   characters everywhere (`tests/security/scheduler-injection.test.ts`).
 - Config is data: a tampered `schedules.json` can only select among rows the
   provider itself reports outdated; option-like ids are dropped at load.
-- Never provider-wide, enforced at the model (parse/validate) and at execution
-  (`aggregate` rows, admin-only providers); the menu gesture is part 2.
+- Never provider-wide, enforced three times: the model (parse/validate), the
+  menu gesture (`p` acts on checked packages only, leaves `aggregate` rows
+  and admin-only providers out with the reason, never treats a provider row
+  as its packages) and execution (`aggregate` rows, admin-only providers).
+- The OS trigger is registered from the menu only after the user consented
+  (once: while no install record exists).
 - Never elevated, never forced, never prompting.
 - Files: owner-only modes (temp-then-rename 0600), XML in a private `mkdtemp`
   dir; env captured from an allowlist; child output capped per install.
@@ -206,6 +220,16 @@ scripted runner (exact argv, unreadable crontab never overwritten, status
 mapping). Behavioural tables cover due evaluation, planning, summaries and
 validation; `ScheduledRun` is tested with fakes (idle, busy, consume-before-
 work, deferrals, deadline, stop, orphan pruning, skipped history).
+
+The menu is tested at three levels: the editor and the panel as plain objects
+(`tests/ui/panels/schedules/`, over `FakeSchedulesPort` — real validation,
+in-memory schedules and trigger); the view inside a real `MenuSession` on
+OpenTUI's test renderer through `bootMenu` (`tests/ui/views/schedules-view.test.ts`:
+sidebar, badge, facts, `◷`, `p` and its refusals, consent, editor dialogs,
+run-now with a scripted launcher and with the outside one); the controller
+over the sandboxed scheduler services (`tests/commands/schedule/`). The built
+bundle was driven once through a real ConPTY with every `GUP_*_DIR` in a temp
+dir and only a disabled schedule (no trigger registered): list, editor, quit.
 
 **Real system, opt-in (`GUP_MUTATE=1`, Windows):**
 `tests/integration/scheduler-windows.test.ts` registers a uniquely named
@@ -232,6 +256,15 @@ deletes it whatever happened. Green on this machine.
 - `eslint.config.security.js`: a justified `detect-non-literal-fs-filename`
   override for `trigger/task-command.ts` (realpath of the running node and gup,
   their package.json, the temp dir).
+- `src/commands/menu-views.ts`: `schedulesView(menuSchedules())`, last in
+  module order, and its two imports (§8 of the plan).
+- `tests/commands/menu-views.test.ts`: the pinned sidebar gains
+  `["Planification", 0]` after Paquets.
+
+Part 2 extends no foundation contract: the view uses `ViewDefinition`
+(`badge`, `facts`, `packageActions`, `packageMarkers`), `ViewContext`
+(`dialogs`, `updates.launch(packages, { scheduleId, returnTo })`, `show`,
+`redraw`, `onScansChanged`) and `observeUpdates` as they are.
 
 ## 11. Deviations from the spec and the plan
 
@@ -239,7 +272,7 @@ deletes it whatever happened. Green on this machine.
 |---|---|---|
 | D1 | No `LOCK_STALE_MINUTES`; S-1's inequality uses the tick watchdog | F-13's lock is OS-released and never broken by age |
 | D2 | The heartbeat is written before taking the batch | a long interactive update must not make a working trigger look stale |
-| D3 | `ScheduleRepo.enable/disable` instead of `setEnabled(ids, flag)`; no `replace`/`markSeen` yet | no flag parameters; no caller before part 2 (the editor, the unseen-runs banner) |
+| D3 | `ScheduleRepo.enable/disable` instead of `setEnabled(ids, flag)`; `replace`/`markSeen` arrived with part 2, plus `seenUntil` and `reload` | no flag parameters; no dead code before their caller |
 | D4 | `SyncResult` gains `foreign`; `reconcile` keeps a foreign registration too | S-3 applied consistently: two installations never take the trigger from each other implicitly |
 | D5 | Environment drift alone does not re-register | the POSIX env lives in install.json and is applied by the tick; re-registering on every start from a shell with another `PATH` would re-announce the macOS background item |
 | D6 | Plist written owner-only (atomic write) instead of 0644 | launchd refuses group/world-writable plists only; owner-only is stricter |
@@ -252,16 +285,81 @@ deletes it whatever happened. Green on this machine.
 | D13 | `GUP_SCHEDULER_DIR` is not captured; `add`/`install` warn when it is set | the directory must be known before `install.json` is read |
 | D14 | The opt-in Linux crontab integration test is not written | it cannot run here; the pure block and the adapter's argv are unit-tested |
 | D15 | Cron nicknames (`@daily`) accepted | croner accepts them in 5-part mode; validation still applies |
+| D16 | A menu run-now that falls back to the plain terminal is recorded by `ManualRunTracker`, an update observer the scheduler module installs for the menu | F-6: `launch` resolves `null` both when declined and when it ran outside, so the view never gets that report; S-5's `recordManualRun(report)` still records the in-screen report |
+| D17 | Run-now asks twice when the launcher confirms updates (`confirmBeforeUpdate`): "Exécuter « X » maintenant ?" before the scan, then the launcher's list of packages | the first gates a scan of the machine, the second says what will actually be updated; the second follows the user's preference |
+| D18 | `p` also leaves out packages of admin-only providers (and any target `validateDraft` refuses), with the reason, not only `aggregate` rows | one rule, the validation's, at the gesture as at saving; the user learns it before the editor opens |
+| D19 | The monthly day is typed (`1`–`28` or `dernier`) instead of chosen in a 29-entry list | the dialog layer does not scroll: 29 entries do not fit on a 24-row terminal |
+| D20 | Unseen runs count each schedule's *last* run, scheduled ones only (not `manual`, not `missed`); `seenRunsUntil` is written when the view is shown and something is unseen | the state keeps one run per schedule; a run-now happened under the user's eyes; a missed occurrence ran nothing |
+| D21 | No "Notification" field; the catch-up reads `[oui]`/`[non]`; the buttons sit on two lines | S-4; French UI; one cursor stop per line keeps clicks and keys simple |
+| D22 | The table drops the package count and next-run columns below a 120-column terminal; the details under it give the next run | a 100-column terminal leaves 70 columns to the panel |
+| D23 | `q` quits the menu even with an editor open | `q` is global in the foundation's session unless a panel captures text; a panel cannot claim it |
 
-## 12. Hand-off to part 2 (menu)
+## 12. Menu (part 2)
 
-Ready to consume: `SchedulerServices` / `schedulerServices()` (one per
-process), `readTriggerReport(services)` + `triggerLine(health, { repair: "i" })`
-for the status line, `ManualRun.run(schedule, (requests) => launch(...))` for
-S-5 (the launcher returns the report, `null` when declined), `validateDraft`
-for live editor validation, `upcomingRuns` for previews, `recurrenceLabel`,
-`runStatusLabel`, `targetResultLabel`, `STATUS_GLYPHS.scheduled` for the
-marker, `NEVER_A_PROVIDER` for the gesture's notice, `ScheduleTarget.label`
-for display names captured from the scan. `commands/schedule/` has one slot
-left (the controller); labels go to `src/ui/text/`, the panel and flows to
-`src/ui/panels/schedules/`, the view to `src/ui/views/schedules-view.ts`.
+```mermaid
+flowchart LR
+  P["Paquets · p"] --> PF["PackageScheduling"]
+  PF -- "new" --> ED["editor (Planification)"]
+  PF -- "add to" --> C
+  ED --> EF["EditorFlows · save"] --> C["SchedulesController<br/>(port)"]
+  L["list keys"] --> SF["ScheduleFlows"] --> C
+  SF -- "x" --> LA["ctx.updates.launch(packages,<br/>{ scheduleId, returnTo })"]
+  C --> R[("schedules.json · state.json")] & T["TriggerSync"]
+  LA -. "outside: no report" .-> TR["ManualRunTracker<br/>(update observer)"] --> R
+```
+
+**View** (`schedulesView(port)`, order 30, group 0, between Paquets and
+Providers): the panel, a sidebar badge (enabled count in `muted`, or `!` in
+`warning` while an unseen scheduled run failed), a title-bar fact while runs
+are unseen (`planif. : 2 exécution(s) · 1 échec`), the `p` package action and
+the `◷` marker (enabled schedules' targets, matched case-insensitively like a
+run; the key set is rebuilt once per snapshot because Paquets asks at every
+frame). The view reloads the files when the view is shown and after each scan.
+
+**Port** (`schedules-port.ts`, type-only): `ScheduleBook` (cached snapshot,
+reload, markSeen, validate, create/replace/remove/enable/disable, names,
+clock), `TriggerControl` (summary, mechanism, needsConsent, repair) and
+`RunControl` (prepareRun, recordRun). `SchedulesController`
+(`commands/schedule/`) implements it over the services; every change saves
+first, then `reconcileTrigger` — the same path as `gup schedule`. A file that
+cannot be written saves nothing and says why; a schedule removed meanwhile
+by another terminal is reported, not recreated.
+
+**Panel** (`SchedulesPanel`, a plain object): list mode — trigger line (the
+CLI's `triggerLine` with `i` as the repair, tone by health), table, details of
+the schedule under the cursor (next run and cron, last run per package, or
+its packages when it never ran) — and editor mode (`ScheduleEditor`: fields
+by recurrence, text typed in place with the draft following every keystroke,
+`ownIssues` for a time that is not `HH:MM`, then `validateDraft` rendered
+under each field; *Enregistrer* muted while anything is wrong). The cursor
+follows a schedule by id across reloads. Everything with a side effect is a
+handler: `ScheduleFlows` (list), `EditorFlows` (dialogs, save, leave),
+`PackageScheduling` (`p`), sharing a `FlowContext` (consent, change notices,
+trigger refresh, "is the screen still there" after each await).
+
+**Consent.** Saving or switching on a schedule, or `i`, while no install
+record exists asks first (per mechanism: Task Scheduler, launchd agent,
+crontab line; what runs, every 15 minutes, nothing resident, how to remove).
+*Non* saves nothing.
+
+**Run now (S-5).** `x` → confirm → `prepareRun` (targeted scan, plan; the
+tracker is armed when something is outdated) → nothing outdated: recorded at
+once; otherwise `ctx.updates.launch(scan rows, { scheduleId, returnTo:
+"schedules" })`. A report (in-screen run view) is recorded through
+`recordRun`, which disarms the tracker. `null` means declined or run outside
+the screen: the session may be ending, so the view does nothing more, and the
+tracker — an `UpdateObserver` installed by the scheduler module for the menu
+— records the outside run from its attempts: after each `finished` (latest
+outcome per package, so a retry replaces the first attempt) and on
+`cancelled`, an update not attempted yet counting as stopped. A declined run
+sends no attempt and records nothing.
+
+## 13. Integration notes
+
+- Merge order puts `feat/in-tui-updates` before this branch: with its
+  in-screen launcher, run-now returns a report; with `GUP_PTY=off` or no
+  node-pty it falls back and the tracker records the run.
+- `menu-views.ts` and its test, `cli-modules.ts` and its test: adjacent-line
+  conflicts with other wave-2 branches; keep every line, sorted.
+- The Planification view joins the contrast audit and the screenshot scenes
+  in wave 3 (`test/e2e-coverage-ci`, `docs/feature-guides`).
