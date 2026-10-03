@@ -47,7 +47,11 @@ export interface UpdateExpectation {
 export interface ProviderContractCase {
   /** Several scenarios per provider are fine; label = `${id} · ${scenario}`. */
   readonly scenario?: string;
-  /** Called after the machine is loaded: install hints depend on the platform. */
+  /**
+   * Called after the machine is loaded, since install hints depend on the
+   * platform; also once at collection, on the real host, to label the case.
+   * A constructor must therefore not probe anything.
+   */
   readonly create: () => Provider;
   readonly system: SystemSpec;
   /** Exact rows, or a golden for fixture-backed scenarios. */
