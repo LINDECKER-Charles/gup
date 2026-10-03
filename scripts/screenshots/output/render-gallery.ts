@@ -11,15 +11,25 @@ const HEADER = [
   "[Documentation conventions](../../development/documentation.md#screenshots) to add one.",
 ];
 
+/** Punctuation that would end an image's text or open inline markup inside `![…]` or `**…**`. */
+const MARKDOWN_SPECIAL = /[\\`*_[\]<>]/g;
+/** A line break inside an image's text, a blank line especially, would end the paragraph. */
+const LINE_BREAK = /\s*[\r\n]+\s*/g;
+
+/** `text` as literal inline Markdown: one line, its markup characters escaped. */
+function inlineText(text: string): string {
+  return text.replace(LINE_BREAK, " ").replace(MARKDOWN_SPECIAL, "\\$&");
+}
+
 function section(scene: Scene): string[] {
   const { cols, rows } = scene.size;
   return [
     "",
     `## ${scene.id}`,
     "",
-    `**${scene.title}** · ${cols} × ${rows}`,
+    `**${inlineText(scene.title)}** · ${cols} × ${rows}`,
     "",
-    `![${scene.alt}](${scene.id}.svg)`,
+    `![${inlineText(scene.alt)}](${scene.id}.svg)`,
   ];
 }
 

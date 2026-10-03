@@ -3,7 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { findOrphans } from "../../../scripts/screenshots/output/find-orphans.js";
+import { renderGallery } from "../../../scripts/screenshots/output/render-gallery.js";
 import { syncFile } from "../../../scripts/screenshots/output/sync-file.js";
+import type { Scene } from "../../../scripts/screenshots/scenes/scene.js";
 
 let dir: string;
 
@@ -48,5 +50,23 @@ describe("findOrphans", () => {
     );
     await expect(findOrphans(dir, ["kept"])).resolves.toEqual([join(dir, "gone.svg"), join(dir, "older.svg")]);
     await expect(findOrphans(join(dir, "absent"), ["kept"])).resolves.toEqual([]);
+  });
+});
+
+describe("renderGallery", () => {
+  it("keeps a title or an alt text from breaking out of its markup", () => {
+    const scene: Scene = {
+      id: "tricky",
+      title: "gup — *Paquets*",
+      alt: "Rows [x] checked,\n\nthen ] and <b>",
+      size: { cols: 100, rows: 28 },
+      fixture: () => {
+        throw new Error("the gallery never mounts a scene");
+      },
+      play: async () => {},
+    };
+    const page = renderGallery([scene]);
+    expect(page).toContain("**gup — \\*Paquets\\*** · 100 × 28");
+    expect(page).toContain("![Rows \\[x\\] checked, then \\] and \\<b\\>](tricky.svg)");
   });
 });
