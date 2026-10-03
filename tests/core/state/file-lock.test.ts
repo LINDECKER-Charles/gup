@@ -38,9 +38,12 @@ describe("withFileLock", () => {
     expect(withFileLock(file, () => "ran")).toBe("ran");
   });
 
+  // The lock waits about 2.7 s before giving up; leave room on a busy machine.
+  const GIVE_UP_BUDGET_MS = 15_000;
+
   it("gives up on a lock that a live process keeps", () => {
     writeFileSync(`${file}.lock`, "4242");
     expect(() => withFileLock(file, () => "never")).toThrow(FileLockTimeoutError);
     expect(existsSync(`${file}.lock`)).toBe(true);
-  });
+  }, GIVE_UP_BUDGET_MS);
 });

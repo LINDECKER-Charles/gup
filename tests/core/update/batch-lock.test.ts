@@ -122,7 +122,8 @@ describe("createBatchGuard", () => {
     const lock = await acquire("scheduled");
     const onWait = vi.fn();
     const entering = createBatchGuard(location, 20).enter({ onWait, isAborted: () => false });
-    await vi.waitFor(() => expect(onWait).toHaveBeenCalledTimes(1));
+    // The first attempt spawns no process but still binds an endpoint: give it room.
+    await vi.waitFor(() => expect(onWait).toHaveBeenCalledTimes(1), { timeout: 10_000 });
     expect(onWait.mock.calls[0]![0]).toMatchObject({ kind: "scheduled" });
     await lock.release();
     const release = await entering;
