@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { buildInsights } from "../../../../src/core/insights/build-insights.js";
+import { parsePeriod } from "../../../../src/core/time/period.js";
 import type { GlyphMode } from "../../../../src/ui/theme/glyphs.js";
 import { JournalPanel, type JournalPanelDeps } from "../../../../src/ui/panels/journal/journal-panel.js";
 import type { JournalData, JournalSource } from "../../../../src/ui/panels/journal/journal-source.js";
@@ -168,6 +170,15 @@ describe("JournalPanel", () => {
       journal.press(key(tab));
       expect(text(journal.render(WIDE)).join("\n")).toContain(expected);
     }
+  });
+
+  it("does not offer to widen a period that already covers the whole history", async () => {
+    const insights = buildInsights([], { period: parsePeriod("all", JOURNAL_NOW)! });
+    const { journal } = await shown(scriptedSource(journalData([], { history: { insights } })));
+
+    const screen = text(journal.render(WIDE)).join("\n");
+    expect(screen).toContain(EMPTY_ACTIVITY);
+    expect(screen).not.toContain(JOURNAL_LABELS.widenHint);
   });
 
   it.each([

@@ -39,12 +39,14 @@ export const CURSOR_GUTTER = 2;
 
 /**
  * What the history tabs show instead of their content: the read error, or an
- * empty period with the way to widen it. Null when there is content.
+ * empty period with the way to widen it — unless it already covers the whole
+ * history. Null when there is content.
  */
 export function historyPlaceholder(history: JournalHistory): Line[] | null {
   if (history.error !== undefined) return placeholder(JOURNAL_LABELS.unreadable(history.error));
-  const { attempts, scans } = history.insights.totals;
-  if (attempts > 0 || scans > 0) return null;
+  const { totals, period } = history.insights;
+  if (totals.attempts > 0 || totals.scans > 0) return null;
+  if (period.since === null) return placeholder(EMPTY_ACTIVITY);
   return [...placeholder(EMPTY_ACTIVITY), [seg(`  ${JOURNAL_LABELS.widenHint}`, "muted")]];
 }
 
