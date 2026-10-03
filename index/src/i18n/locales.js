@@ -75,6 +75,18 @@ export const LOCALES = Object.freeze([
     ogImage: "public/og/es.png",
   }),
   Object.freeze({
+    id: "ar",
+    path: "ar",
+    isDefault: false,
+    htmlLang: "ar",
+    hreflang: "ar",
+    dir: "rtl",
+    ogLocale: "ar_AR",
+    endonym: "العربية",
+    script: "arabic",
+    ogImage: "public/og/ar.png",
+  }),
+  Object.freeze({
     id: "fr",
     path: "fr",
     isDefault: false,

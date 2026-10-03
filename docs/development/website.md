@@ -76,7 +76,9 @@ Catalog strings may use:
   of the locale (ar: zero/one/two/few/many/other; es/fr/pt: one/many/other; en/hi/bn: one/other;
   zh: other). Use one only where the counted noun changes within a realistic provider count:
   French, Spanish and Portuguese keep plain strings (their noun only changes for 0–1 and for
-  millions), Hindi, Bengali and Chinese do not inflect after a numeral;
+  millions), Hindi, Bengali and Chinese do not inflect after a numeral. Arabic does — 103
+  مصادر, 153 مصدرًا, 200 مصدر — so `ar.js` builds every count phrase from one grammar table
+  (`countingSources`), pinned by a test;
 - three inline markups, never nested: `` `code` `` (commands, flags, ids — never translated),
   `**strong**`, `[[Key]]` (key caps; the key name may be translated). `meta.*`, `common.*` and
   `nav.*` are plain text only.
@@ -110,8 +112,7 @@ versions and CLI output stays on 0–9 in every language.
 5. Back-translate the new catalog into English in a separate pass and fix meaning drift.
 6. `npm run og`, then set `ogImage: "public/og/<id>.png"` on the registry entry.
 7. `npm run build && npm run verify -- --shots` and look at the screenshots (wrapping, clipping,
-   right-to-left). `npm run lhci` audits one page per script family (en, ar, zh, hi) as soon as
-   those locales exist.
+   right-to-left). `npm run lhci` audits one page per script family: en, ar, zh and hi.
 
 Non-Latin scripts render from system fonts (`src/styles/foundation/scripts.css`): no webfont
 download, no uppercase, no letter-spacing (it breaks Arabic joining and the Devanagari/Bengali
@@ -121,8 +122,9 @@ headline bar), taller line height. Only Latin faces are self-hosted.
 
 Protected terms (product, tool and standard names, plus gup's own word *provider*) must appear
 verbatim in Latin script whenever the English string contains them; the list lives in
-`build/i18n/glossary.mjs` and is enforced by the catalog tests. Recommended renderings of the
-recurring concepts (consistency is checked in review, not by tests):
+`build/i18n/glossary.mjs` and is enforced by the catalog tests on Latin word boundaries ("brew"
+never matches inside "Homebrew", but Arabic may attach و to it: "وbrew"). Recommended renderings
+of the recurring concepts (consistency is checked in review, not by tests):
 
 | EN | fr | es | pt | zh | hi | ar | bn |
 |---|---|---|---|---|---|---|---|
@@ -150,7 +152,9 @@ recurring concepts (consistency is checked in review, not by tests):
   between Han and Latin/digits, placeholders, code and key caps (`更新 153 个来源`) — both
   tested.
 - **hi** — standard Hindi, formal *आप*; danda `।` (tested); *कमांड* is feminine.
-- **ar** — Modern Standard Arabic, formal; `، ؛ ؟`; Western digits.
+- **ar** — Modern Standard Arabic, formal; `، ؛ ؟` (tested); Western digits; the conjunction و
+  attaches to Latin names (`وbrew`); *provider* never takes the article ال (`وحدات provider`,
+  `حسب provider`).
 - **bn** — standard written Bengali, *আপনি*; danda `।` (tested); case endings join Latin words
   with a hyphen (`gup-এর`); counts take the classifier টি (`153টি উৎস`).
 
@@ -163,9 +167,10 @@ looked at and what it changed. A native speaker has not reviewed these yet: one
 
 | Locale | Key risks | Back-translation notes |
 |---|---|---|
-| es | *registro* means both a package registry and a log; *terminal* has both genders across regions; Enter is *Intro* on Spanish keyboards. | Clean except one fix: "Sin registro" read as "no logging", contradicting the journal — now "Sin registro de paquetes". "one full-screen terminal app" shortened to "una app de terminal" in `meta.description` for the 160-column budget, as in French. "opt-in scheduling" reads "optional scheduling": same meaning for a reader. |
 | zh | Idiomatic headings drift easily ("know everything" vs "in control"); spacing between Han and Latin runs; colloquial verbs in marketing copy. | One fix: the install title "一切尽在掌握" read "everything under control" — now "一切了然" ("everything is clear"). "折腾" (fiddle with) in the lead is informal but common in Chinese developer copy: kept. The terminal caption adds "目前" (for now), consistent with the FAQ. "updates reviewed weekly" made explicit as dependency updates. |
 | hi | Symlink "resolved" has no settled Hindi verb; gender of *कमांड*; English-heavy loanwords. | One fix: "सिमलिंक … हल होते हैं" read "symlinks get solved" — now "फ़ॉलो किए जाते हैं" (followed). The hero adds "हमेशा" (always) before *अप-टू-डेट*: idiomatic headline, accepted. *कमांड* kept feminine throughout. |
+| es | *registro* means both a package registry and a log; *terminal* has both genders across regions; Enter is *Intro* on Spanish keyboards. | Clean except one fix: "Sin registro" read as "no logging", contradicting the journal — now "Sin registro de paquetes". "one full-screen terminal app" shortened to "una app de terminal" in `meta.description` for the 160-column budget, as in French. "opt-in scheduling" reads "optional scheduling": same meaning for a reader. |
+| ar | The counted noun changes with the number; *سجل* means both a log and a registry; Latin names inside right-to-left sentences; *shell* and *commit* have no single settled term. | Count phrases are plural objects built from one table (few/many/other verified for 103/153/200). One fix: "لا سجل حزم" (no package registry) collided with "سجل النشاط" (activity journal) — now "لا مستودع حزم". The hero's last line is "كلها محدَّثة" (all of them updated), which avoids an agreement error after the accusative count noun. *shell* is "صدفة الأوامر", *commit* "إيداع" (Microsoft terminology). Bidi of mixed runs, punctuation placement and mirroring checked on the 1440 and 390 px screenshots. |
 | bn | Same symlink issue; "enforces" weakened to "maintains"; Latin words need hyphenated case endings. | Two fixes: "সিমলিংক … শনাক্ত হয়" read "symlinks are detected" — now "অনুসরণ করা হয়" (followed); "WCAG AA কনট্রাস্ট বজায় রাখে" read "maintains" — now "নিশ্চিত করে" (ensures). Hero "সবসময়" (always) accepted as in Hindi. |
 | pt | "built accordingly" is easy to turn into "built for that"; *registry* is often left in English in Brazil. | One fix: "E foi construído para isso" read as "built to run privileged commands" — now "com isso em mente". "Sem registry" became "Sem registro de pacotes" (clearer, distinct from *registro de atividades*). "keeps the providers moving" reads "keeps the providers up to date": accepted. |
 
@@ -173,10 +178,10 @@ looked at and what it changed. A native speaker has not reviewed these yet: one
 
 | Gate | What it pins |
 |---|---|
-| `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda). |
+| `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda, Arabic punctuation), Arabic count agreement. |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
 | `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`. |
-| `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no-JS and reduced-motion rendering, overflow at 1440/820/390 px, RTL geometry (on a forced-RTL page until an RTL locale exists). Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu. |
+| `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no-JS and reduced-motion rendering, overflow at 1440/820/390 px. Every right-to-left locale: brand on the right, arrows mirrored, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu. |
 | `npm run lhci` | Lighthouse mobile ≥ 0.95 on performance (best of 3), accessibility, best practices and SEO (median of 3). |
 
 Budgets: HTML ≤ 30 KB gzipped per locale, JavaScript ≤ 62 KB, CSS ≤ 12 KB, preloaded fonts

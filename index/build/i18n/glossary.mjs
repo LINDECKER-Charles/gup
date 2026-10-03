@@ -7,7 +7,9 @@
  * transliteration of it. Everything inside backticks is protected separately
  * (the code-span multiset must match the English one).
  *
- * `terms` match case-sensitively on word boundaries. `nouns` are gup's own
+ * `terms` match case-sensitively on Latin word boundaries: "brew" never
+ * matches inside "Homebrew", but may touch a letter of another script (Arabic
+ * attaches the conjunction و to the next word: "وbrew"). `nouns` are gup's own
  * vocabulary — the labels its interface prints — and match regardless of
  * case and plural ("Providers", "providers").
  *

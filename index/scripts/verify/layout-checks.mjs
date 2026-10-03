@@ -1,11 +1,9 @@
 /**
  * Geometry: no horizontal overflow at desktop, tablet and phone widths on
- * every locale, and the right-to-left layout mirrored where it should be
- * (header brand on the right, terminal kept left-to-right). The RTL check
- * runs on the first registered right-to-left locale, or — until one exists —
- * on the default page with `dir="rtl"` forced, so the logical-property layout
- * is exercised either way. `--shots` saves top and bottom screenshots per
- * locale and viewport into .verify/.
+ * every locale, and every right-to-left locale mirrored where it should be:
+ * header brand on the right, arrows pointing along the reading direction,
+ * while the terminal, commands and key caps stay left-to-right. `--shots`
+ * saves top and bottom screenshots per locale and viewport into .verify/.
  *
  * @typedef {import("../../build/page-context.mjs").PageContext} PageContext
  * @typedef {{ report: ReturnType<import("./report.mjs").createReport>,
@@ -54,40 +52,46 @@ async function checkViewports(ctx, target) {
 function rtlGeometry(page) {
   return page.evaluate(() => {
     const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+    const style = (selector) => getComputedStyle(document.querySelector(selector));
     return {
       dir: document.documentElement.dir,
-      brandIsRight: box(".nav-brand").left > box(".nav-cta").left,
-      terminal: getComputedStyle(document.querySelector(".term")).direction,
-      code: getComputedStyle(document.querySelector(".cmd-line code")).direction,
-      isLinkRowFaded: getComputedStyle(document.querySelector(".nav-links")).maskImage !== "none",
+      isBrandRight: box(".nav-brand").left > box(".nav-cta").left,
+      ltrRuns: [".term", ".cmd-line code", "kbd"].map((selector) => style(selector).direction),
+      isArrowMirrored: style(".icon--directional").transform.startsWith("matrix(-1,"),
+      isLinkRowFaded: style(".nav-links").maskImage !== "none",
     };
   });
 }
 
+function reportRightToLeft(report, name, { geometry, overflow, isNarrow }) {
+  report.check(`${name}: html dir is rtl`, geometry.dir === "rtl");
+  report.check(`${name}: brand sits on the right of Install`, geometry.isBrandRight);
+  report.check(
+    `${name}: terminal, commands and key caps stay ltr`,
+    geometry.ltrRuns.every((direction) => direction === "ltr"),
+    geometry.ltrRuns.join(" "),
+  );
+  report.check(`${name}: arrows point along the reading direction`, geometry.isArrowMirrored);
+  report.check(`${name}: no overflow`, overflow <= OVERFLOW_TOLERANCE_PX, `${overflow}px`);
+  report.check(
+    `${name}: header links faded only where they scroll`,
+    geometry.isLinkRowFaded === isNarrow,
+  );
+}
+
 /** @param {Context} ctx @param {readonly PageContext[]} pages */
 async function checkRightToLeft({ report, browser, origin }, pages) {
-  const native = pages.find((page) => page.locale.dir === "rtl");
-  const target = native ?? pages.find((page) => page.locale.isDefault);
-  const label = native ? target.locale.id : `${target.locale.id} forced rtl`;
-  for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
-    const options = { viewport, reducedMotion: "reduce" };
-    const { context, page } = await openPage(browser, origin + localeHref(target.locale), options);
-    if (!native) await page.evaluate(() => document.documentElement.setAttribute("dir", "rtl"));
-    const geometry = await rtlGeometry(page);
-    const overflow = await overflowOf(page);
-    const name = `${label} @ ${viewport.width}px`;
-    report.check(`${name}: html dir is rtl`, geometry.dir === "rtl");
-    report.check(`${name}: brand sits on the right of Install`, geometry.brandIsRight);
-    report.check(
-      `${name}: terminal and commands stay ltr`,
-      geometry.terminal === "ltr" && geometry.code === "ltr",
-    );
-    report.check(`${name}: no overflow`, overflow <= OVERFLOW_TOLERANCE_PX, `${overflow}px`);
-    report.check(
-      `${name}: header links faded only where they scroll`,
-      geometry.isLinkRowFaded === viewport.width <= NARROW_HEADER_MAX_PX,
-    );
-    await context.close();
+  for (const target of pages.filter((page) => page.locale.dir === "rtl")) {
+    for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
+      const options = { viewport, reducedMotion: "reduce" };
+      const url = origin + localeHref(target.locale);
+      const { context, page } = await openPage(browser, url, options);
+      const measured = { geometry: await rtlGeometry(page), overflow: await overflowOf(page) };
+      const isNarrow = viewport.width <= NARROW_HEADER_MAX_PX;
+      const name = `${target.locale.id} @ ${viewport.width}px`;
+      reportRightToLeft(report, name, { ...measured, isNarrow });
+      await context.close();
+    }
   }
 }
 

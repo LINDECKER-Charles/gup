@@ -2,15 +2,17 @@
 
 ## Added
 
-- **landing:** the site is translated and prerendered per language, English at `/gup/`
-  (`x-default`), then Simplified Chinese, Hindi, Spanish, French, Bengali and Brazilian
-  Portuguese under `/gup/<code>/`, with a language menu, reciprocal `hreflang` in every head and
-  in the sitemap, per-language Open Graph cards and a per-language JSON-LD graph whose FAQ is
-  now visible on the page.
+- **landing:** the site is prerendered in eight languages, English at `/gup/` (`x-default`),
+  then Simplified Chinese, Hindi, Spanish, Arabic, French, Bengali and Brazilian Portuguese under
+  `/gup/<code>/`, with a language menu, reciprocal `hreflang` in every head and in the sitemap,
+  per-language Open Graph cards and a per-language JSON-LD graph whose FAQ is now visible on the
+  page. Each translation was back-translated and checked against the English source; native
+  review is still to come.
 - **landing:** build-time i18n: catalogs resolved in Node (placeholders, CLDR plurals, inline
   markup), shipped to the client as resolved strings — no i18n runtime, no catalog in the bundle.
-- **landing:** right-to-left layout and system font stacks for Han, Devanagari, Bengali and
-  Arabic scripts, ready for the remaining languages.
+- **landing:** right-to-left Arabic page (mirrored layout and arrows; commands, key caps and the
+  terminal kept left-to-right) and system font stacks for Han, Devanagari, Bengali and Arabic
+  scripts.
 - **landing:** production Content-Security-Policy, generated 404 linking every language.
 
 ## Changed

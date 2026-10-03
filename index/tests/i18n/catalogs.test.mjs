@@ -77,10 +77,24 @@ function varsFor(locale) {
 }
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/*
+ * Word boundaries are Latin-only: "brew" must not match inside "Homebrew", but
+ * a protected term may touch a letter of another script — Arabic attaches the
+ * conjunction و ("and") to the next word, Latin names included ("وbrew").
+ */
+const LATIN = "\\p{Script=Latin}";
 const matchesTerm = (text, term) =>
-  new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(term)}(?![\\p{L}\\p{N}])`, "u").test(text);
+  new RegExp(`(?<![${LATIN}\\p{N}])${escapeRegExp(term)}(?![${LATIN}\\p{N}])`, "u").test(text);
 const matchesNoun = (text, noun) =>
-  new RegExp(`(?<![\\p{L}])${noun}s?(?![\\p{L}])`, "iu").test(text);
+  new RegExp(`(?<!${LATIN})${noun}s?(?!${LATIN})`, "iu").test(text);
+
+test("glossary terms are matched on Latin word boundaries only", () => {
+  assert.equal(matchesTerm("Homebrew", "brew"), false);
+  assert.equal(matchesTerm("pip3", "pip"), false);
+  assert.equal(matchesTerm("winget وbrew", "brew"), true);
+  assert.equal(matchesNoun("每个 providers", "provider"), true);
+  assert.equal(matchesNoun("subproviders", "provider"), false);
+});
 
 test("every registered locale has a catalog, and nothing else does", () => {
   assert.deepEqual(Object.keys(CATALOGS).sort(), LOCALES.map((l) => l.id).sort());
@@ -197,6 +211,9 @@ const REGISTER_DEFECTS = {
   ],
   hi: [["a full stop instead of the danda", matching(FULL_STOP)]],
   bn: [["a full stop instead of the danda", matching(FULL_STOP)]],
+  ar: [
+    ["a Latin comma, semicolon or question mark", matching(/\p{Script=Arabic}\p{M}*[,;?]/u)],
+  ],
 };
 
 for (const [id, defects] of Object.entries(REGISTER_DEFECTS)) {
@@ -210,6 +227,18 @@ for (const [id, defects] of Object.entries(REGISTER_DEFECTS)) {
     assert.deepEqual(offences, []);
   });
 }
+
+test("ar: the counted noun agrees with the provider count", () => {
+  const arabic = LOCALES.find((locale) => locale.id === "ar");
+  const accentFor = (count) => {
+    const vars = { ...varsFor(arabic), providers: String(count) };
+    const options = { vars, pluralLocale: arabic.htmlLang, localeId: arabic.id };
+    return resolveMessages(CATALOGS.ar, options).hero.title.accent;
+  };
+  assert.equal(accentFor(103), "103 مصادر");
+  assert.equal(accentFor(153), "153 مصدرًا");
+  assert.equal(accentFor(200), "200 مصدر");
+});
 
 test("every provider domain of the registry has a label", () => {
   const labels = Object.keys(english.coverage.domains);

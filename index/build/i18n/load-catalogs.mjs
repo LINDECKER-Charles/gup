@@ -8,6 +8,7 @@
  * src/i18n/locales.js. build/page-context.mjs refuses to build when they
  * disagree.
  */
+import ar from "../../src/i18n/catalogs/ar.js";
 import bn from "../../src/i18n/catalogs/bn.js";
 import en from "../../src/i18n/catalogs/en.js";
 import es from "../../src/i18n/catalogs/es.js";
@@ -16,4 +17,4 @@ import hi from "../../src/i18n/catalogs/hi.js";
 import pt from "../../src/i18n/catalogs/pt.js";
 import zh from "../../src/i18n/catalogs/zh.js";
 
-export const CATALOGS = Object.freeze({ en, zh, hi, es, fr, bn, pt });
+export const CATALOGS = Object.freeze({ en, zh, hi, es, ar, fr, bn, pt });

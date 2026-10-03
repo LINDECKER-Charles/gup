@@ -60,9 +60,10 @@ const STYLE = `
   .word { font-family: "Anton"; font-size: 34px; letter-spacing: 0.05em; line-height: 1; }
   .badge { font-size: 16px; padding: 6px 12px; border-radius: 6px; color: oklch(0.8 0.15 275);
     border: 1px solid oklch(0.68 0.2 275 / 0.5); }
-  .accent { background-image: linear-gradient(100deg, oklch(0.75 0.19 275),
-      oklch(0.97 0.004 265) 54%, oklch(0.85 0.15 75));
+  .accent { --accent-angle: 100deg; background-image: linear-gradient(var(--accent-angle),
+      oklch(0.75 0.19 275), oklch(0.97 0.004 265) 54%, oklch(0.85 0.15 75));
     -webkit-background-clip: text; background-clip: text; color: transparent; }
+  [dir="rtl"] .accent { --accent-angle: 260deg; }
   .cmd { display: inline-flex; gap: 14px; margin-block-start: 28px; padding: 16px 24px;
     border-radius: 12px; background: oklch(0.08 0.008 265);
     border: 1px solid oklch(0.3 0.02 275); font-size: 25px; direction: ltr; }
