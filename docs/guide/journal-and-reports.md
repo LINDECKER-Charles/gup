@@ -95,9 +95,11 @@ needs no network and no gup.
   has an icon and a word, failures are hatched and skips dotted in the charts.
 - Everything works with the keyboard; every chart has a *Voir les données* button showing the same
   numbers as a table.
-- *Imprimer* prints every page, light, without the controls.
+- *Imprimer* prints every page, light, without the controls; the packages table leaves out the
+  last version and the median interval to fit the paper.
 - The page addresses follow the browser's history: Back closes a package panel or returns to the
-  previous page.
+  previous page; a panel closed with its button or `échap` is not reopened by Back.
+- On a phone, the calendar and the charts scroll sideways and open on the latest weeks.
 - Very long histories: the report details the 50 000 most recent attempts and says so at the top;
   its figures always cover the whole period.
 

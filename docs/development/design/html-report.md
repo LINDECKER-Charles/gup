@@ -90,18 +90,31 @@ JSON blocks (`gup-report-labels`, `gup-report-data`) and `<script>REPORT_JS</scr
   DOM builders), `ui` (cards, figures with their data tables, tooltip, pills, controls),
   `charts` (stacked columns, step line with a crosshair, heat grid), the five pages, `drawer`,
   `main` (hash router, header, search, theme, print, `boot()`). Pages render on first visit;
-  lists show 100 rows (50 for failures and sessions) at a time.
+  lists show 100 rows (50 for failures and sessions) at a time, each list's "Afficher … de plus"
+  naming and applying its own step.
 - **Routing**: `#/overview`, `#/calendar`, `#/packages[/<n>]`, `#/failures`, `#/sessions[?day=]`,
   and `?pkg=<n>` on any page for the drawer — Back closes it, focus returns to the control that
-  opened it (or the package's button when a row was clicked outside it). A visit redraws a list
-  only when what it shows changed (the search, the day asked for), so closing a drawer leaves
-  the page as it was, opened sessions included. Addresses not starting with `#/` (the skip link's
-  `#main`) are anchors, not routes.
+  opened it (or the package's button when a row was clicked outside it: the click focused the
+  `<main>` region, which is not a control). Closing the drawer with its button or Échap goes back
+  over the history entry the page added to open it, so the next Back leaves the page rather than
+  reopening the package; an address typed or reloaded with `?pkg=` gets a new entry instead. A
+  visit redraws a list only when what it shows changed (the search, the day asked for), so
+  closing a drawer leaves the page as it was, opened sessions included.
+- **Moving between pages**: a page reached from another one opens at its top; its heading takes
+  the focus when the focus was inside the old page (a key number, *Tous les paquets*, a calendar
+  day) or the move came from the navigation, while a focus in the header — the search box being
+  typed in — stays put. The sticky header (120 to 180 px as it wraps) sets the page's
+  `scroll-padding-top` through a `--masthead-height` property updated on resize, so a control
+  reached with Tab or Shift+Tab is never under it. The skip link moves the focus to `<main>`
+  without touching the address; an address not starting with `#/` (a typed `#main`) is an
+  anchor, not a route.
 - **Styles**: system fonts only, a token table per theme (`THEME_TOKENS`) emitted as custom
   properties under `:root`, `prefers-color-scheme: dark` (unless *Clair*), `[data-theme="dark"]`,
   and `@media print` (always light). Narrow screens stack the header, keep charts and the packages
-  table readable by scrolling them sideways, and hide two optional columns. Reduced motion and
-  forced colours are handled.
+  table readable by scrolling them sideways — opened on their latest weeks —, give the package
+  column a readable width, put the drawer's buttons above its title, and hide two optional
+  columns. Print hides the same columns (the table then fits A4) and every control. Reduced
+  motion and forced colours are handled.
 
 ### Data-visualisation choices
 
@@ -149,12 +162,17 @@ skips dotted — the spec's patterns, kept on by default for that reason.
 | `tests/ui/report/render-report.test.ts` | CSP hashes equal the SHA-256 of the inline style and script, no external resource/handler/`style=`, the only URL is the icon's namespace, the JSON blocks read back intact, hostile text escaped in the data block and absent from the markup, the title escaped |
 | `tests/ui/report/report-client-lint.test.ts` | the ESLint pass and the token search above, classic-script compilation, no `</script` in the script, every label key the script asks for exists |
 | `tests/ui/report/contrast.test.ts` | the custom properties parsed from the shipped stylesheet: dark under the media query equals the explicit dark theme, print equals light; text pairs ≥ 4.5:1, marks ≥ 3:1 on surface and page, heat levels ordered — with the shared oracle `tests/support/contrast/wcag.ts` |
-| `tests/ui/report/report-dom.test.ts` | the generated file loaded in a happy-dom `Window` running the page's own script: hero sentence and key numbers, nav counts, chart table toggle, empty period, truncation banner, 366 calendar cells in two year grids, arrow keys and Entrée to the day's sessions, heat levels 1,1,2,3,4,8 → 1,1,1,2,3,4, search (live count, failure messages, from another page), sorting with `aria-sort`, drawer open/close with focus back and address sync, Back closing it, failures, sessions filters and lazy attempts, hostile text as text, theme switch and memory, `/` and Échap, every page rendered before printing — and no console error |
-| `tests/commands/journal/report-command.test.ts` | html by default to the reports directory and opened (mocked), `--no-open`, no terminal or CI → not opened, open failure → exit 0 with the address, `--out -`, `report.export` and `report.open` logged |
+| `tests/ui/report/report-dom.test.ts` | the generated file loaded in a happy-dom `Window` running the page's own script: hero sentence and key numbers, nav counts, chart table toggle, empty period, truncation banner, 366 calendar cells in two year grids, arrow keys and Entrée to the day's sessions, heat levels 1,1,2,3,4,8 → 1,1,1,2,3,4, search (live count, failure messages, from another page), sorting with `aria-sort`, drawer open/close with focus back (also after a click outside the row's button) and address sync, Back closing it, a closed drawer leaving no entry for Back, failures, sessions filters, 50 at a time and lazy attempts, hostile text as text, theme switch and memory, `/` and Échap, the search keeping the focus while it changes the page, a link to another page focusing its heading, the skip link keeping the address, every page and row rendered before printing and the first rows after — and no console error |
+| `tests/commands/journal/report-command.test.ts` | html by default to the reports directory and opened (mocked), `--no-open`, no terminal or CI → not opened, open failure → exit 0 with the address, `--out -`, the truncation notice past 50 000 attempts, `report.export` and `report.open` logged |
 | `tests/commands/journal/journal-source.test.ts`, `tests/ui/panels/journal/journal-panel.test.ts`, `tests/ui/views/journal-view.test.ts` | `html` export asks to open and reports `opened`; `o` on every tab; the dialog's first choice; the not-opened warning line; `o` through `bootMenu` |
 | `tests/ui/text/activity-labels.test.ts` | `periodLead` for every period form |
 
 No unit test starts a browser: `openExternal` is injected or module-mocked (W2-4).
+
+happy-dom computes no layout, so what depends on it — the sideways charts opening on their latest
+weeks, the scroll padding under the sticky header, the phone and print layouts — was checked in
+headless Chromium through CDP (390 × 844 and 1280 × 900, light and dark, print media emulation
+after `beforeprint`, real mouse and key events for the focus paths), not by the unit suites.
 
 ## 6. Decisions and deviations
 
@@ -175,6 +193,8 @@ No unit test starts a browser: `openExternal` is injected or module-mocked (W2-4
   installs window listeners, and a fresh window per test is the isolation a fresh tab gives.
 - **Print**: `beforeprint` renders the pages not yet visited and lifts the row limits; CSS shows
   every page one after the other. No `#print-root` copy (it would duplicate ids and patterns).
+  The packages table drops its two optional columns on paper (the median interval and the last
+  version, both in the drawer): with eight columns it ran past an A4 page's right margin.
 - **Patterns always on** for failures and skips (§2), not only in print.
 - **Empty calendar days are a dot** at 3:1, not an outlined square: a year of outlined squares
   is noisy; the dot echoes the terminal's `·`.
@@ -187,7 +207,9 @@ No unit test starts a browser: `openExternal` is injected or module-mocked (W2-4
 - **One search box** in the header for the whole report (packages, providers, versions, failure
   messages); typing elsewhere goes to Paquets.
 - **The drawer's address** also works as `?pkg=<n>` on every page, so opening a package from
-  Échecs or Sessions keeps that page underneath.
+  Échecs or Sessions keeps that page underneath. Closing it pops the entry the page pushed
+  (`history.back()`, only when the address is still that entry) rather than pushing the page
+  again, which made Back reopen the package before leaving.
 - **Weekly columns become monthly** beyond 60 weeks (an "all" period over years).
 - **Calendar detail panel**: the focused or hovered day is described in a live region and links
   to its sessions; it starts on the last active day.
