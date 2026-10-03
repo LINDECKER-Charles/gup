@@ -114,6 +114,14 @@ function initHeader() {
   });
 }
 
+/** The skip link moves the focus only: the address keeps the page, for Back and reloads. */
+function initSkipLink() {
+  on(document.querySelector(".skip-link"), "click", (event) => {
+    event.preventDefault();
+    byId(IDS.main).focus();
+  });
+}
+
 function periodText() {
   if (META.period.firstDay === null && MODEL.days.length === 0) return META.period.label;
   const range = periodRange();
@@ -259,6 +267,7 @@ function limitLists(limitOf) {
 function boot() {
   initTheme();
   initHeader();
+  initSkipLink();
   trackHeaderHeight();
   initFooter();
   initSearch();

@@ -441,6 +441,16 @@ describe("report page: safety and comfort", () => {
     expect(page.$("[data-page-section='overview']")?.hasAttribute("hidden")).toBe(true);
   });
 
+  it("moves the focus with the skip link and keeps the page in the address", async () => {
+    const page = await openReport(reportModelOf(EVENTS), "#/failures");
+
+    click(page, ".skip-link");
+    await page.settle();
+
+    expect(page.window.document.activeElement).toBe(page.$("main"));
+    expect(page.window.location.hash).toBe("#/failures");
+  });
+
   it("focuses the search with / and clears it with Échap", async () => {
     const page = await openReport();
     const input = page.$("#search");
