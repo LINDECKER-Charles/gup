@@ -7,6 +7,7 @@ import {
 } from "../../core/wsl.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Linuxbrew inside any WSL distro that has Homebrew installed.
@@ -26,6 +27,8 @@ export class WslBrewProvider implements Provider {
     fallback:
       "Provider spécifique à WSL (Windows) — sur macOS/Linux, Homebrew est géré par le provider `brew`.",
   });
+  /** Reaches into WSL distros, a Windows feature; elsewhere `brew` covers Homebrew. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

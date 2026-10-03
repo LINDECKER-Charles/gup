@@ -6,6 +6,7 @@ import pLimit from "p-limit";
 import { commandExists, run } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Sparkle — the de-facto self-update framework for macOS apps distributed
@@ -60,6 +61,8 @@ export class SparkleProvider implements Provider {
       "Rien à installer : gup lit le flux Sparkle (SUFeedURL) des apps de /Applications.",
     fallback: "macOS uniquement — https://sparkle-project.org",
   });
+  /** Reads the Sparkle feeds of the macOS app bundles in /Applications. */
+  readonly platforms = PLATFORMS.macos;
   // Filesystem walk over every .app bundle plus one HTTP request per app that
   // declares a feed.
   readonly slow = true;

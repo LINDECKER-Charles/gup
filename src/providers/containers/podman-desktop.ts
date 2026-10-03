@@ -4,6 +4,7 @@ import { run } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Podman Desktop ships its own auto-updater (Electron `autoUpdater` against
@@ -21,6 +22,11 @@ export class PodmanDesktopProvider implements Provider {
     darwin: "brew install --cask podman-desktop (suivi gup : Windows uniquement)",
     fallback: "Suivi par gup sous Windows uniquement.",
   });
+  /**
+   * Tracked from its Windows install paths and VersionInfo only, though the
+   * app exists on macOS too.
+   */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     return podmanDesktopExe() !== null;

@@ -2,6 +2,7 @@ import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * pkgin — the binary package manager for pkgsrc: NetBSD and SmartOS/illumos
@@ -56,6 +57,8 @@ export class PkginProvider implements Provider {
       "Bootstrapper pkgsrc puis `pkg_add pkgin` — https://pkgsrc.smartos.org/install-on-macos/",
     fallback: "Fourni par pkgsrc — https://pkgin.net/",
   });
+  /** pkgsrc covers NetBSD, SmartOS, macOS and Linux, never Windows. */
+  readonly platforms = PLATFORMS.notWindows;
   /** pkgin writes the pkgsrc prefix through sudo unless gup runs as root. */
   readonly canUpdateUnattended = false;
 

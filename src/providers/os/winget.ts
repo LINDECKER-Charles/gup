@@ -6,6 +6,7 @@ import type {
   UpdateOptions,
   UpdateOutcome,
 } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Winget has no machine-readable output for `upgrade`.
@@ -20,6 +21,8 @@ export class WingetProvider implements Provider {
     fallback:
       "Winget est un composant Windows — il n'existe pas sur cette plateforme.",
   });
+  /** Winget is a Windows component: a `winget` found elsewhere is not it. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     return commandExists("winget");

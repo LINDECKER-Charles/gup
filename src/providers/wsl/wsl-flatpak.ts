@@ -7,6 +7,7 @@ import {
 } from "../../core/wsl.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Flatpak inside any WSL distro. Both --user and --system installs are
@@ -23,6 +24,8 @@ export class WslFlatpakProvider implements Provider {
     fallback:
       "Provider spécifique à WSL (Windows) — inexistant sur cette plateforme.",
   });
+  /** Reaches into WSL distros, a Windows feature. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

@@ -3,6 +3,7 @@ import { win32 as winPath } from "node:path";
 import { run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * MSYS2 — the pacman package set living *inside* an MSYS2 root (msys2-runtime,
@@ -75,6 +76,8 @@ export class Msys2Provider implements Provider {
     win32: "https://www.msys2.org/ — installeur officiel (racine par défaut C:\\msys64)",
     fallback: "Windows uniquement — https://www.msys2.org/",
   });
+  /** MSYS2 is a Windows distribution of the pacman toolchain. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     return findPacmanExe(process.env) !== null;

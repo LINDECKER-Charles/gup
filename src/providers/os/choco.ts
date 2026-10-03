@@ -1,6 +1,7 @@
 import { commandExists, isElevated, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 const NOT_ADMIN_MESSAGE =
   "Chocolatey nécessite un terminal admin. Relancer gup depuis PowerShell ou Terminal lancé en « Exécuter en tant qu'administrateur ».";
@@ -16,6 +17,8 @@ export class ChocoProvider implements Provider {
     fallback:
       "Chocolatey est un gestionnaire Windows — il n'existe pas sur cette plateforme (utiliser Homebrew).",
   });
+  /** Chocolatey is a Windows package manager. */
+  readonly platforms = PLATFORMS.windows;
   /** Chocolatey upgrades need an elevated shell, which no unattended run gets. */
   readonly canUpdateUnattended = false;
 

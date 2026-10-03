@@ -4,6 +4,7 @@ import { win32 as winPath } from "node:path";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { isElevated, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Visual Studio — the Windows IDE, not VS Code (that one is `vscode-like`) and
@@ -41,6 +42,8 @@ export class VisualStudioProvider implements Provider {
     fallback:
       "Windows uniquement — Visual Studio (l'IDE) n'existe pas sur cette plateforme.",
   });
+  /** Visual Studio (the IDE) exists on Windows only. */
+  readonly platforms = PLATFORMS.windows;
   /** The Visual Studio Installer refuses to update unelevated. */
   readonly canUpdateUnattended = false;
 

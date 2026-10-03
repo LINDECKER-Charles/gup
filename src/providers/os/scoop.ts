@@ -1,6 +1,7 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Scoop ships no JSON output for `status`. We invoke its PS module directly
@@ -15,6 +16,8 @@ export class ScoopProvider implements Provider {
     fallback:
       "Scoop est un gestionnaire Windows — il n'existe pas sur cette plateforme (utiliser Homebrew).",
   });
+  /** Scoop is a Windows package manager. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     return commandExists("scoop");

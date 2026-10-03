@@ -8,6 +8,7 @@ import type { InstallSource } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * swiftly (swiftlang/swiftly) — the official Swift toolchain installer and
@@ -52,6 +53,8 @@ export class SwiftlyProvider implements Provider {
     fallback:
       "macOS et Linux uniquement — swiftly ne cible pas Windows : https://www.swift.org/install/",
   });
+  /** swiftly ships no Windows build. */
+  readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform === "win32") return false;

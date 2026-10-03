@@ -3,6 +3,7 @@ import { win32 as winPath } from "node:path";
 import { run } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 interface GitHubReleaseJson {
   tag_name?: string;
@@ -27,6 +28,11 @@ export class DockerDesktopProvider implements Provider {
     darwin: "brew install --cask docker-desktop (suivi gup : Windows uniquement)",
     fallback: "Suivi par gup sous Windows uniquement.",
   });
+  /**
+   * Tracked from its Windows install paths and VersionInfo only, though the
+   * app exists on macOS too.
+   */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     return dockerDesktopExe() !== null;
