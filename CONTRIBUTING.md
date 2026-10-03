@@ -7,6 +7,8 @@
 
 Thanks for contributing. The typical contribution is **adding a provider** — an isolated module that knows how to scan and update one package source.
 
+By participating in this project — issues, pull requests, reviews — you agree to abide by its [Code of Conduct](CODE_OF_CONDUCT.md).
+
 > Before diving in: read [`docs/development/architecture.md`](docs/development/architecture.md) for context (lifecycle, runner, parallel scan, data model).
 >
 > Looking for help rather than contributing code? See [SUPPORT.md](SUPPORT.md). How the project is run and who decides what: [GOVERNANCE.md](GOVERNANCE.md).

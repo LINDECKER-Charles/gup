@@ -40,6 +40,7 @@ the repository and in `.github/`.
 | Document | Content |
 |---|---|
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Ways to contribute, local setup, provider-addition workflow, conventions and enforced code limits, branches, commits and the scope map, the pull request flow and its required checks — **mermaid diagrams**. |
+| [`../CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md) | The Contributor Covenant 2.1: expected behaviour, the private contact for reports, the enforcement guidelines. |
 | [`../SUPPORT.md`](../SUPPORT.md) | Where to ask for help, what to include, what to expect from a single-maintainer project. |
 | [`../SECURITY.md`](../SECURITY.md) | Supported versions, private vulnerability reporting and response aims, scope, threat model, CI/local mitigations. |
 | [`../GOVERNANCE.md`](../GOVERNANCE.md) | Maintainer-led model, roles, how decisions are made, dependency and release policies, continuity. |

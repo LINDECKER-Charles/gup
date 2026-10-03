@@ -29,6 +29,7 @@ to ask for help and what to include so a question gets an answer quickly.
 | Propose a change to how `gup` behaves | The [*Feature request*](https://github.com/LINDECKER-Charles/gup/issues/new?template=feature_request.yml) form |
 | Ask how to do something with `gup` | The [*Question*](https://github.com/LINDECKER-Charles/gup/issues/new?template=question.yml) form |
 | Report a security vulnerability | A [private security advisory](https://github.com/LINDECKER-Charles/gup/security/advisories/new) — **never a public issue**. See [SECURITY.md](SECURITY.md). |
+| Report behaviour that breaks the code of conduct | The private e-mail contact in [CODE_OF_CONDUCT.md § Enforcement](CODE_OF_CONDUCT.md#enforcement) — not a public issue. |
 
 Blank issues are disabled: the forms ask for exactly what is needed to
 reproduce a problem on someone else's machine.
@@ -62,6 +63,8 @@ publish** before pasting or attaching them.
   may be closed. It can be reopened at any time with the missing details.
 - A request outside the [scope](docs/guide/scope.md) is closed with a link to
   the reasoning, not ignored.
+- Every thread follows the [Code of Conduct](CODE_OF_CONDUCT.md), whoever
+  asks and whoever answers.
 
 ## Helping the project
 

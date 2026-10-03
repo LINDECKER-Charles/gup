@@ -49,6 +49,11 @@ or by request. Nobody needs a role to send a pull request.
   Only a maintainer tags and publishes.
 - **Security reports** are handled privately, as described in
   [SECURITY.md](SECURITY.md).
+- **Conduct.** Everyone taking part follows the
+  [Code of Conduct](CODE_OF_CONDUCT.md). The maintainers enforce it: reports
+  go privately to the contact in
+  [its Enforcement section](CODE_OF_CONDUCT.md#enforcement), and consequences
+  follow its enforcement guidelines.
 - **Conventions** (branches, commits, code limits, tests, language) are
   documented in [CONTRIBUTING.md](CONTRIBUTING.md) and enforced by the required
   checks, not by reviewer preference.

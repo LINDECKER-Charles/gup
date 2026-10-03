@@ -78,6 +78,7 @@ JSON schema: [**CLI reference →**](docs/guide/cli-reference.md)
 | Document | What's in it |
 |---|---|
 | [Contributing](CONTRIBUTING.md) | Ways to contribute, adding a provider, branches and commits, the pull request flow |
+| [Code of conduct](CODE_OF_CONDUCT.md) | The Contributor Covenant 2.1, and where to report a breach privately |
 | [Support](SUPPORT.md) | Where to ask, what to include, what to expect |
 | [Security](SECURITY.md) | Supported versions, private vulnerability reporting, threat model |
 | [Governance](GOVERNANCE.md) | Who decides, roles, dependency and release policies |
