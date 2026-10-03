@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from "node:util";
 import type { RunTrigger } from "../state/run-context.js";
 import {
   HISTORY_SCHEMA_VERSION,
@@ -14,6 +15,10 @@ import {
  * record, type-checked and copied into a fresh object — never the parsed
  * object itself, never a spread of it, so an unknown key (a field a newer
  * gup added) is dropped and nothing on a prototype is ever read.
+ *
+ * Strings come back display-safe: the escape sequences a tool's colourful
+ * error carried are dropped, other control characters too — except the line
+ * breaks and tabs of a message or a scan error, the only multi-line fields.
  *
  * A line is `malformed` when it is not a record gup wrote (not JSON, a
  * known field of the wrong type, a torn last line, a line no writer would
@@ -37,7 +42,17 @@ const UNSUPPORTED: ParsedLine = { kind: "unsupported" };
 const TRIGGERS: ReadonlySet<string> = new Set<RunTrigger>(["menu", "cli", "schedule"]);
 const STATUSES: ReadonlySet<string> = new Set<UpdateStatus>(["success", "failed", "skipped"]);
 
+/** Any C0 or C1 control character: the fast check before any cleaning. */
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
+const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
+const LINE_CONTROLS = /[\u0000-\u001f\u007f-\u009f]+/g;
+/** Control characters but tab, line feed and carriage return. */
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
+const BLOCK_CONTROLS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]+/g;
+
 type JsonObject = { readonly [key: string]: unknown };
+type TextShape = "line" | "block";
 
 /** Thrown inside the parser to abandon a line; never leaves this module. */
 class LineRejected extends Error {
@@ -80,7 +95,7 @@ function envelopeOf(record: JsonObject): Omit<HistoryEnvelope, "kind"> {
   const ts = requiredText(record, "ts");
   const at = Date.parse(ts);
   if (Number.isNaN(at)) throw new LineRejected(MALFORMED);
-  const trigger = optionalText(record, "trigger");
+  const trigger = optionalText(record, "trigger", "line");
   return {
     v: HISTORY_SCHEMA_VERSION,
     ts: new Date(at).toISOString(),
@@ -101,7 +116,8 @@ function updateOf(record: JsonObject): UpdateEvent {
     providerId: requiredText(record, "providerId"),
     packageId: requiredText(record, "packageId"),
     status: status as UpdateStatus,
-    ...optionalTexts(record, ["from", "to", "message", "retry", "scheduleId"]),
+    ...optionalTexts(record, ["from", "to", "retry", "scheduleId"], "line"),
+    ...optionalTexts(record, ["message"], "block"),
     ...optionalCounts(record, ["durationMs"]),
     ...(optionalFlag(record, "elevated") && { elevated: true }),
   };
@@ -126,7 +142,7 @@ function providerOf(record: JsonObject): ScanProviderRecord {
   return {
     providerId: requiredText(record, "providerId"),
     outdated: requiredCount(record, "outdated"),
-    ...optionalTexts(record, ["error"]),
+    ...optionalTexts(record, ["error"], "block"),
     ...optionalCounts(record, ["durationMs"]),
   };
 }
@@ -138,34 +154,44 @@ function asObject(value: unknown): JsonObject {
   return value as JsonObject;
 }
 
-/** A non-empty string, cut to {@link MAX_FIELD_LENGTH}. */
+/** A non-empty one-line string, cleaned and cut to {@link MAX_FIELD_LENGTH}. */
 function textOf(value: unknown): string {
   if (typeof value !== "string" || value.length === 0) throw new LineRejected(MALFORMED);
-  return value.slice(0, MAX_FIELD_LENGTH);
+  return cleanText(value, "line");
 }
 
 function requiredText(record: JsonObject, key: string): string {
   return textOf(record[key]);
 }
 
-function optionalText(record: JsonObject, key: string): string | undefined {
+function optionalText(record: JsonObject, key: string, shape: TextShape): string | undefined {
   const value = record[key];
   if (value === undefined) return undefined;
   if (typeof value !== "string") throw new LineRejected(MALFORMED);
-  return value.slice(0, MAX_FIELD_LENGTH);
+  return cleanText(value, shape);
 }
 
 /** The optional string fields that are present, under their own names. */
 function optionalTexts<K extends string>(
   record: JsonObject,
   keys: readonly K[],
+  shape: TextShape,
 ): Partial<Record<K, string>> {
   const texts: Partial<Record<K, string>> = {};
   for (const key of keys) {
-    const value = optionalText(record, key);
+    const value = optionalText(record, key, shape);
     if (value !== undefined) texts[key] = value;
   }
   return texts;
+}
+
+/** Escape sequences dropped; other controls removed from a block, turned into spaces on a line. */
+function cleanText(text: string, shape: TextShape): string {
+  if (!CONTROL.test(text)) return text.slice(0, MAX_FIELD_LENGTH);
+  const stripped = stripVTControlCharacters(text);
+  const cleaned =
+    shape === "block" ? stripped.replace(BLOCK_CONTROLS, "") : stripped.replace(LINE_CONTROLS, " ");
+  return cleaned.slice(0, MAX_FIELD_LENGTH);
 }
 
 /** A finite, non-negative number. */

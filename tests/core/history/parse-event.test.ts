@@ -59,6 +59,23 @@ describe("parseHistoryLine", () => {
     );
   });
 
+  it("drops the terminal escapes a tool printed, keeping a message's line breaks", () => {
+    const parsed = parseHistoryLine(
+      line(
+        updateEvent("winget", "Pkg\tId\u0007", {
+          message: "\u001b[31mError\u001b[0m: failed\r\n\u001b]52;c;aGk=\u0007next\tline\u0000",
+          to: "2.0\u001b[2J",
+        }),
+      ),
+    );
+
+    expect(parsed.kind === "event" && parsed.event).toMatchObject({
+      packageId: "Pkg Id ",
+      message: "Error: failed\r\nnext\tline",
+      to: "2.0",
+    });
+  });
+
   it.each([
     ["a torn line", line(updateEvent("pip", "rich")).slice(0, 40)],
     ["not an object", "[1,2,3]"],
