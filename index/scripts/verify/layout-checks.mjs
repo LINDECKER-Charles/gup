@@ -2,8 +2,9 @@
  * Geometry: no horizontal overflow at desktop, tablet and phone widths on
  * every locale, and every right-to-left locale mirrored where it should be:
  * header brand on the right, arrows pointing along the reading direction,
- * the terminal caption in the page's direction, while the terminal itself,
- * commands and key caps stay left-to-right. `--shots` saves top and bottom
+ * the terminal caption in the page's direction, the language menu's names
+ * all starting on the right, while the terminal itself, commands and key caps
+ * stay left-to-right. `--shots` saves top and bottom
  * screenshots per locale and viewport into .verify/.
  *
  * @typedef {import("../../build/page-context.mjs").PageContext} PageContext
@@ -61,6 +62,11 @@ function rtlGeometry(page) {
       isArrowMirrored: style(".icon--directional").transform.startsWith("matrix(-1,"),
       caption: style(".term-caption").direction,
       isLinkRowFaded: style(".nav-links").maskImage !== "none",
+      menuStarts: (() => {
+        document.querySelector(".lang").open = true;
+        const names = [...document.querySelectorAll(".lang-list a span:last-child")];
+        return new Set(names.map((name) => Math.round(name.getBoundingClientRect().right))).size;
+      })(),
     };
   });
 }
@@ -75,6 +81,7 @@ function reportRightToLeft(report, name, { geometry, overflow, isNarrow }) {
   );
   report.check(`${name}: arrows point along the reading direction`, geometry.isArrowMirrored);
   report.check(`${name}: the terminal caption reads right-to-left`, geometry.caption === "rtl");
+  report.check(`${name}: language menu names all start on the right`, geometry.menuStarts === 1);
   report.check(`${name}: no overflow`, overflow <= OVERFLOW_TOLERANCE_PX, `${overflow}px`);
   report.check(
     `${name}: header links faded only where they scroll`,
@@ -89,7 +96,9 @@ async function checkRightToLeft({ report, browser, origin }, pages) {
       const options = { viewport, reducedMotion: "reduce" };
       const url = origin + localeHref(target.locale);
       const { context, page } = await openPage(browser, url, options);
-      const measured = { geometry: await rtlGeometry(page), overflow: await overflowOf(page) };
+      // Overflow first: measuring the geometry leaves the language menu open.
+      const overflow = await overflowOf(page);
+      const measured = { geometry: await rtlGeometry(page), overflow };
       const isNarrow = viewport.width <= NARROW_HEADER_MAX_PX;
       const name = `${target.locale.id} @ ${viewport.width}px`;
       reportRightToLeft(report, name, { ...measured, isNarrow });

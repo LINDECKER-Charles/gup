@@ -77,17 +77,43 @@ const menuState = (page) =>
     hasSummaryFocus: document.activeElement?.classList.contains("lang-summary") === true,
   }));
 
+/** Per menu entry: its name's language and the x of the name's start edge (this page is ltr). */
+const menuNames = (page) =>
+  page.$$eval(".lang-list a", (links) =>
+    links.map((link) => {
+      const name = link.querySelector("span:last-child");
+      return {
+        lang: name.lang,
+        start: Math.round(name.getBoundingClientRect().left),
+        isCurrent: link.getAttribute("aria-current") === "page",
+      };
+    }),
+  );
+
+/** The open menu: every locale, the current one marked, each name in its own language. */
+async function checkMenuListing(report, page, pages) {
+  const names = await menuNames(page);
+  const langs = names.map((name) => name.lang).join(" ");
+  const current = names.filter((name) => name.isCurrent);
+  report.check(`language menu: lists the ${pages.length} locales`, names.length === pages.length);
+  report.check("language menu: marks exactly the current one", current.length === 1);
+  report.check(
+    "language menu: each name is tagged with its own language",
+    langs === pages.map((target) => target.locale.htmlLang).join(" "),
+    langs,
+  );
+  report.check(
+    "language menu: every name starts on the same edge, whatever its direction",
+    new Set(names.map((name) => name.start)).size === 1,
+  );
+}
+
 /** Keyboard opening, the listed locales, Escape and outside-click dismissal. */
 async function checkMenuBehaviour(report, page, pages) {
   await page.focus(".lang-summary");
   await page.keyboard.press("Enter");
   report.check("language menu: Enter opens it", (await menuState(page)).isOpen);
-  const links = await page.$$eval(".lang-list a", (nodes) =>
-    nodes.map((node) => ({ lang: node.lang, isCurrent: node.getAttribute("aria-current") })),
-  );
-  const current = links.filter((link) => link.isCurrent === "page");
-  report.check(`language menu: lists the ${pages.length} locales`, links.length === pages.length);
-  report.check("language menu: marks exactly the current one", current.length === 1);
+  await checkMenuListing(report, page, pages);
   await page.keyboard.press("Escape");
   const afterEscape = await menuState(page);
   report.check(
