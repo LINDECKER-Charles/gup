@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 
+import { log } from "./log/log.js";
 import { filterByOwnership } from "./ownership.js";
 import { isSupportedOn } from "./platform/is-supported-on.js";
 import { withOperation } from "./state/run-context.js";
@@ -530,13 +531,15 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
   // `node` on PATH would shadow the nvm shim on next shell). See
   // src/core/ownership.ts for the polyglot table and detection heuristic.
   //
-  // The `exclusions` list returned by filterByOwnership is intentionally
-  // discarded here for now: surfacing per-package advisories ("hidden by
-  // ownership filter") would change list/menu output shape and warrants
-  // a separate UX pass. Until then, scanAll honours the existing contract
-  // (returns only the kept ProviderScanResult[]). The filter itself stays
-  // observable through src/core/ownership.ts unit tests.
-  const { results } = await filterByOwnership(raw);
+  // The `exclusions` are not surfaced in list/menu output: per-package
+  // advisories ("hidden by ownership filter") would change its shape and
+  // warrant a separate UX pass, so scanAll keeps returning only the kept
+  // ProviderScanResult[]. They go to the debug log instead, where "why is
+  // this update missing?" gets its answer.
+  const { results, exclusions } = await filterByOwnership(raw);
+  for (const { providerId, packageId, binary, actualOwner } of exclusions) {
+    log.debug("scan.ownership-excluded", { providerId, packageId, binary, owner: actualOwner });
+  }
   return results;
 }
 
