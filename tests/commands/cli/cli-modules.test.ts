@@ -20,17 +20,21 @@ describe("CLI_MODULES", () => {
     const program = assembled();
     expect(program.commands.map((c) => c.name()).sort()).toEqual([
       "__admin-batch",
+      "__schedule-tick",
       "doctor",
       "list",
       "log",
       "report",
+      "schedule",
       "update",
     ]);
     const help = program.helpInformation();
     expect(help).toMatch(/\blist\b/);
     expect(help).toMatch(/\bupdate\b/);
     expect(help).toMatch(/\bdoctor\b/);
+    expect(help).toMatch(/\bschedule\b/);
     expect(help).not.toContain("__admin-batch");
+    expect(help).not.toContain("__schedule-tick");
   });
 
   it("refuses a bad --timeout with exit 2, before updating anything", async () => {

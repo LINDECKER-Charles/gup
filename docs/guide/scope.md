@@ -46,8 +46,11 @@ status, is in [`providers-catalog.md`](providers-catalog.md).
 
 - **Not a package manager.** It publishes nothing, resolves no dependency, and
   holds no shared state. It drives the managers you already have.
-- **Not an agent.** No daemon, no tray icon, no background polling. Every scan
-  is something you asked for.
+- **Not an agent.** No daemon, no tray icon, nothing resident. Every scan is
+  something you asked for — either now, or ahead of time with an opt-in
+  [schedule](scheduled-updates.md): only then does the OS start a short-lived
+  `gup` every 15 minutes, which checks whether a schedule is due and exits.
+  With no enabled schedule, nothing is registered anywhere.
 - **Not project-scoped.** `package.json`, `requirements.txt`, `Cargo.toml`,
   `composer.json` — none of that is its business.
 - **Not an OS updater.** Kernel, drivers and system releases belong to the OS.

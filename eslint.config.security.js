@@ -263,6 +263,17 @@ export default [
     },
   },
   {
+    // The scheduler registers the running gup with the OS trigger: it
+    // resolves process.execPath and process.argv[1] (realpath), reads the
+    // package.json beside that entry (accepted only when its name is gup's)
+    // and the OS temp dir. The process's own files — no path comes from a
+    // provider, a schedule or the network.
+    files: ["src/core/scheduler/trigger/task-command.ts"],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
     // Secret redaction for the debug log. Every pattern is literal-prefixed
     // with single bounded quantifiers (`{1,256}`…) and no nested repetition;
     // a test feeds 1 MiB of adversarial input and bounds the time. The rule

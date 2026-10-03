@@ -14,6 +14,7 @@ describe("menuViews", () => {
     expect(sidebar).toEqual([
       ["Scan", 0],
       ["Paquets", 0],
+      ["Planification", 0],
       ["Providers", 1],
       ["Journal", 1],
       ["Options", 1],

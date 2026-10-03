@@ -18,7 +18,17 @@ export interface IdListBounds {
   readonly pattern: RegExp;
 }
 
+export interface TextBounds {
+  /** Longest accepted value, in UTF-16 code units. */
+  readonly maxLength: number;
+  /** Anchored pattern the value must match as well. */
+  readonly pattern?: RegExp;
+}
+
 export type HexColor = `#${string}`;
+
+/** The JSON type of a present value — lets a section read a field that admits two types. */
+export type JsonKind = "string" | "number" | "boolean" | "null" | "array" | "object";
 
 export interface FieldReader {
   boolean(key: string, fallback: boolean): boolean;
@@ -28,13 +38,20 @@ export interface FieldReader {
   hexColor(key: string): HexColor | undefined;
   /** De-duplicated list of pattern-checked strings, truncated to `bounds.max`. */
   ids(key: string, bounds: IdListBounds): readonly string[];
+  /** Optional string within bounds, without control characters; else undefined. */
+  text(key: string, bounds: TextBounds): string | undefined;
   /** Nested object reader; a missing or invalid value gives an empty reader. */
   object(key: string): FieldReader;
+  /** One reader per object of a list (other entries dropped), at most `max`. */
+  objects(key: string, max: number): readonly FieldReader[];
   /** Own keys, minus `__proto__`, `constructor`, `prototype`. */
   keys(): readonly string[];
+  /** The JSON type of `key`'s value, undefined when absent. Records nothing. */
+  kindOf(key: string): JsonKind | undefined;
 }
 
 const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
 const SHORT_HEX = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i;
 const LONG_HEX = /^#[0-9a-f]{6}$/i;
 
@@ -106,14 +123,43 @@ class LenientFieldReader implements FieldReader {
     return [...new Set(valid)].slice(0, bounds.max);
   }
 
+  text(key: string, bounds: TextBounds): string | undefined {
+    const value = this.#value(key);
+    if (value === undefined) return undefined;
+    if (typeof value === "string" && isWithin(value, bounds)) return value;
+    const expected = `texte de ${bounds.maxLength} caractères au plus attendu`;
+    return this.#invalid(key, expected, undefined);
+  }
+
   object(key: string): FieldReader {
     const value = this.#value(key);
     if (value !== undefined && !isJsonObject(value)) this.#report(key, "objet attendu");
     return createFieldReader(value, `${this.#path}.${key}`, this.#issues);
   }
 
+  objects(key: string, max: number): readonly FieldReader[] {
+    const value = this.#value(key);
+    if (value === undefined) return [];
+    if (!Array.isArray(value)) return this.#invalid(key, "liste attendue", []);
+    const readers = value.flatMap((item: unknown, index) => {
+      if (!isJsonObject(item)) return [];
+      return [createFieldReader(item, `${this.#path}.${key}[${index}]`, this.#issues)];
+    });
+    if (readers.length !== value.length) this.#report(key, "entrées invalides ignorées");
+    if (readers.length > max) this.#report(key, `${max} entrées au plus`);
+    return readers.slice(0, max);
+  }
+
   keys(): readonly string[] {
     return Object.keys(this.#source).filter(isSafeKey);
+  }
+
+  kindOf(key: string): JsonKind | undefined {
+    const value = this.#value(key);
+    if (value === undefined) return undefined;
+    if (value === null) return "null";
+    if (Array.isArray(value)) return "array";
+    return typeof value as Exclude<JsonKind, "null" | "array">;
   }
 
   #value(key: string): unknown {
@@ -129,6 +175,11 @@ class LenientFieldReader implements FieldReader {
   #report(key: string, problem: string): void {
     this.#issues.push(`${this.#path}.${key} : ${problem}`);
   }
+}
+
+function isWithin(value: string, bounds: TextBounds): boolean {
+  if (value.length > bounds.maxLength || CONTROL_CHARACTER.test(value)) return false;
+  return bounds.pattern?.test(value) ?? true;
 }
 
 function normalizeHex(value: string): HexColor | undefined {
