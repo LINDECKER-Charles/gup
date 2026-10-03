@@ -78,9 +78,10 @@ function summaryOf(record: LogRecord): string {
 /**
  * Record text made safe for one terminal line: what a tool printed may carry
  * escape sequences (colours, a window title, a clipboard write) and line
- * breaks, and a log line must never drive the terminal it is shown on.
+ * breaks, and a log line must never drive the terminal it is shown on. The
+ * journal's detail views pass every line they show through it too.
  */
-function printable(text: string): string {
+export function printable(text: string): string {
   return stripVTControlCharacters(text).replace(CONTROL_CHARACTERS, " ").trim();
 }
 
