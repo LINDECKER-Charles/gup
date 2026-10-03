@@ -9,7 +9,7 @@ import { SettingsService } from "../../../src/ui/settings/settings-service.js";
 import { appearanceSource } from "../../../src/ui/settings/settings-sources.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
-import { RGB_THEME_IDS, type ThemeId } from "../../../src/ui/theme/palette.js";
+import { RGB_THEME_IDS, type ContrastLevel, type ThemeId } from "../../../src/ui/theme/palette.js";
 import type { TerminalFacts } from "../../../src/ui/theme/resolve-theme.js";
 import { staticProbe } from "../../../src/ui/theme/runtime/terminal-probe.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
@@ -18,7 +18,7 @@ import { optionsView } from "../../../src/ui/views/options-view.js";
 import { packagesView } from "../../../src/ui/views/packages-view.js";
 import { providersView } from "../../../src/ui/views/providers-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
-import type * as wcag from "../../support/contrast/wcag.js";
+import * as wcag from "../../support/contrast/wcag.js";
 import { frameContrastViolations } from "../../support/tui/frame-contrast.js";
 import { bootMenu, type MenuDriver } from "../../support/tui/menu-driver.js";
 import { CAMPBELL, TERMINAL_APP_BASIC } from "../../support/tui/reference-palettes.js";
@@ -71,6 +71,8 @@ interface Audited {
   readonly ground: wcag.Rgb;
   /** The terminal's own text colour, for cells painted in its default foreground. */
   readonly ink?: wcag.Rgb;
+  /** The saved contrast level; default AA. */
+  readonly level?: ContrastLevel;
 }
 
 const toOracle = (color: { r: number; g: number; b: number }): wcag.Rgb => [
@@ -94,6 +96,11 @@ function onTerminal(
   };
 }
 
+/** `audited` on a terminal that paints only `depth` colours. */
+function withDepth(audited: Audited, depth: TerminalFacts["depth"]): Audited {
+  return { ...audited, terminal: { ...audited.terminal, depth } };
+}
+
 const CAMPBELL_DARK = { palette: CAMPBELL, mode: "dark" } as const;
 const BASIC_LIGHT = { palette: TERMINAL_APP_BASIC, mode: "light" } as const;
 
@@ -104,6 +111,17 @@ const AUDITED: readonly Audited[] = [
   onTerminal("auto on a light terminal", "auto", BASIC_LIGHT),
   onTerminal("terminal on Campbell", "terminal", CAMPBELL_DARK),
   onTerminal("terminal on Terminal.app Basic", "terminal", BASIC_LIGHT),
+  withDepth(
+    onTerminal("terminal on Terminal.app Basic, 256 colours", "terminal", BASIC_LIGHT),
+    "256",
+  ),
+  {
+    label: "dark at AAA, 256 colours",
+    theme: "dark",
+    terminal: { ...UNKNOWN, depth: "256" },
+    ground: [0, 0, 0],
+    level: "AAA",
+  },
   onTerminal("monochrome on Campbell", "monochrome", CAMPBELL_DARK),
   onTerminal("monochrome on Terminal.app Basic", "monochrome", BASIC_LIGHT),
 ];
@@ -123,6 +141,12 @@ function viewsOf(settings: SettingsService): ViewDefinition[] {
     scanView(),
   ];
 }
+
+/** What the oracle asks of text at each level (WCAG 1.4.3 and 1.4.6). */
+const TEXT_MINIMUM: Readonly<Record<ContrastLevel, number>> = {
+  AA: wcag.WCAG_MIN_CONTRAST.text,
+  AAA: wcag.WCAG_MIN_CONTRAST.enhancedText,
+};
 
 /** The terminal parser holds a lone Escape for 20 ms: let it through. */
 const ESCAPE_SETTLE_MS = 100;
@@ -218,7 +242,7 @@ function themedFactory(audited: Audited, settings: SettingsService, painted: { g
 
 async function violationsOf(audited: Audited, legacy?: AppearanceFactory): Promise<string[]> {
   const settings = new SettingsService(new ConfigStore({ file: null, isDisabled: true }));
-  settings.update("theme", { id: audited.theme });
+  settings.update("theme", { id: audited.theme, contrast: audited.level ?? "AA" });
   const painted = { ground: audited.ground };
   const menu = await bootMenu({
     scans: SCANS,
@@ -239,6 +263,7 @@ async function violationsOf(audited: Audited, legacy?: AppearanceFactory): Promi
   return frames.flatMap(([state, frame]) =>
     frameContrastViolations(frame, {
       ground: painted.ground,
+      textMinimum: TEXT_MINIMUM[audited.level ?? "AA"],
       ...(audited.ink && { ink: audited.ink }),
     }).map((v) => `${state}: "${v.text.trim()}" ${v.ratio.toFixed(2)} < ${v.needed}`),
   );
@@ -249,7 +274,7 @@ const AUDIT_TIMEOUT_MS = 60_000;
 
 describe("contrast audit of the menu", () => {
   it.each(AUDITED.map((audited) => [audited.label, audited] as const))(
-    "%s: every text ≥ 4.5:1, every border ≥ 3:1",
+    "%s: every text ≥ 4.5:1 (AAA 7:1), every border ≥ 3:1",
     async (_label, audited) => {
       expect(await violationsOf(audited)).toEqual([]);
     },
