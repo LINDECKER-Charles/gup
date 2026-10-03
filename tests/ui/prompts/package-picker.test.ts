@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ProviderScanResult } from "../../../src/core/types.js";
-import { LAUNCH_NOTICES } from "../../../src/ui/text/packages-labels.js";
+import { LAUNCH_NOTICES, SELECTION_BAR } from "../../../src/ui/text/packages-labels.js";
 import { pickPackages } from "../../../src/ui/prompts/package-picker.js";
 import { createTestHost, frame, press } from "../../support/tui/test-host.js";
 
@@ -30,7 +30,7 @@ describe("pickPackages", () => {
     expect((await picked).map((p) => p.pkg.id)).toEqual(["Git.Git", "7zip.7zip"]);
   });
 
-  it("picks nothing on Entrée with nothing checked, and says how; a then Entrée takes all", async () => {
+  it("picks nothing on Entrée with nothing checked, then a and Entrée take all", async () => {
     const { picked, screen } = await openPicker();
     await press(screen, "down", "enter");
     const text = await frame(screen);
@@ -38,6 +38,16 @@ describe("pickPackages", () => {
     expect(text).toContain("q annuler");
     await press(screen, "a", "enter");
     expect((await picked).map((p) => p.pkg.id)).toEqual(["Git.Git", "7zip.7zip"]);
+  });
+
+  it("keeps the selection bar on the last row when the terminal shrinks", async () => {
+    const { picked, screen } = await openPicker();
+    screen.resize(100, 12);
+    const rows = (await frame(screen)).split("\n");
+    // Bottom up: the key hints, the panel's border, then the bar.
+    expect(rows.at(-3)).toContain(SELECTION_BAR.empty);
+    await press(screen, "q");
+    await picked;
   });
 
   it("returns nothing when left with q", async () => {

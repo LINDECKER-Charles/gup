@@ -80,6 +80,13 @@ describe("PackagesPanel", () => {
     expect(text(view.render(VIEW))).not.toContain(LAUNCH_NOTICES.empty);
   });
 
+  it("drops the notice when a new scan replaces the table", () => {
+    const { view } = panel();
+    press(view, "return");
+    view.setList(new PackageList(SCANS, () => "Winget"));
+    expect(text(view.render(VIEW))).not.toContain(LAUNCH_NOTICES.empty);
+  });
+
   it("launches the checked packages the filter hides too", () => {
     const { view, launched } = panel();
     press(view, "down", "space", "/");
