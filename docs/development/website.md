@@ -74,7 +74,9 @@ Catalog strings may use:
   `{packageName}`, `{installCommand}`, `{year}`, `{endonym}`;
 - plural objects `{ $count: "providers", one: "…", other: "…" }` listing **every** CLDR category
   of the locale (ar: zero/one/two/few/many/other; es/fr/pt: one/many/other; en/hi/bn: one/other;
-  zh: other);
+  zh: other). Use one only where the counted noun changes within a realistic provider count:
+  French, Spanish and Portuguese keep plain strings (their noun only changes for 0–1 and for
+  millions), Hindi, Bengali and Chinese do not inflect after a numeral;
 - three inline markups, never nested: `` `code` `` (commands, flags, ids — never translated),
   `**strong**`, `[[Key]]` (key caps; the key name may be translated). `meta.*`, `common.*` and
   `nav.*` are plain text only.
@@ -140,19 +142,33 @@ recurring concepts (consistency is checked in review, not by tests):
 
 - **en** — direct, second person, short sentences.
 - **fr** — tutoiement (the brand voice); U+202F before `: ; ! ?` and inside « » (tested).
-- **es** — neutral international Spanish, *tú*, no *vosotros*; `¿ ¡`.
-- **pt** — Brazilian Portuguese (`lang="pt-BR"`), *você*; served as `hreflang="pt"`.
+- **es** — neutral international Spanish, *tú*, no *vosotros*; `¿ ¡` (tested); *la* terminal;
+  key caps *Espacio*, *Intro*.
+- **pt** — Brazilian Portuguese (`lang="pt-BR"`), *você*; served as `hreflang="pt"`; "scan" is
+  *verificar* (verb) and *varredura* (noun).
 - **zh** — Simplified, mainland tech register; full-width punctuation; a half-width space
   between Han and Latin/digits (`更新 153 个来源`).
 - **hi** — standard Hindi, formal *आप*; danda `।`.
 - **ar** — Modern Standard Arabic, formal; `، ؛ ؟`; Western digits.
 - **bn** — standard written Bengali, *আপনি*; danda `।`.
 
+### Translation record
+
+Every catalog except French was written by Claude from `en.js`, then translated back into English
+in a separate pass and compared with the source, key by key. The table keeps what that pass
+looked at and what it changed. A native speaker has not reviewed these yet: one
+"Native review wanted: <language>" issue (label `i18n`) per language follows the first deployment.
+
+| Locale | Key risks | Back-translation notes |
+|---|---|---|
+| es | *registro* means both a package registry and a log; *terminal* has both genders across regions; Enter is *Intro* on Spanish keyboards. | Clean except one fix: "Sin registro" read as "no logging", contradicting the journal — now "Sin registro de paquetes". "one full-screen terminal app" shortened to "una app de terminal" in `meta.description` for the 160-column budget, as in French. "opt-in scheduling" reads "optional scheduling": same meaning for a reader. |
+| pt | "built accordingly" is easy to turn into "built for that"; *registry* is often left in English in Brazil. | One fix: "E foi construído para isso" read as "built to run privileged commands" — now "com isso em mente". "Sem registry" became "Sem registro de pacotes" (clearer, distinct from *registro de atividades*). "keeps the providers moving" reads "keeps the providers up to date": accepted. |
+
 ## Quality gates
 
 | Gate | What it pins |
 |---|---|
-| `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, French typography. |
+| `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`…). |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
 | `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`. |
 | `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no-JS and reduced-motion rendering, overflow at 1440/820/390 px, RTL geometry (on a forced-RTL page until an RTL locale exists). Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu. |

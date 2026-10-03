@@ -3,9 +3,10 @@
 ## Added
 
 - **landing:** the site is translated and prerendered per language, English at `/gup/`
-  (`x-default`) and French at `/gup/fr/`, with a language menu, reciprocal `hreflang` in every
-  head and in the sitemap, per-language Open Graph cards and a per-language JSON-LD graph whose
-  FAQ is now visible on the page.
+  (`x-default`), Spanish at `/gup/es/`, French at `/gup/fr/` and Brazilian Portuguese at
+  `/gup/pt/`, with a language menu, reciprocal `hreflang` in every head and in the sitemap,
+  per-language Open Graph cards and a per-language JSON-LD graph whose FAQ is now visible on
+  the page.
 - **landing:** build-time i18n: catalogs resolved in Node (placeholders, CLDR plurals, inline
   markup), shipped to the client as resolved strings — no i18n runtime, no catalog in the bundle.
 - **landing:** right-to-left layout and system font stacks for Han, Devanagari, Bengali and
@@ -32,4 +33,5 @@
 ## Documentation
 
 - **docs:** `docs/development/website.md` — how the site is built, the i18n workflow, the
-  glossary and the quality gates.
+  glossary, the quality gates and the per-language translation record (back-translation risks
+  and fixes).

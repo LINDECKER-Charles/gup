@@ -163,6 +163,34 @@ test("fr: high punctuation and guillemets take a narrow no-break space", () => {
   assert.deepEqual(offences, []);
 });
 
+const occurrences = (text, char) => text.split(char).length - 1;
+const unpaired = (opening, closing) => (text) =>
+  occurrences(text, opening) !== occurrences(text, closing);
+
+/**
+ * The register rules of docs/development/website.md that a machine can check,
+ * as named defects per locale. meta.keywords is a comma-separated list for
+ * crawlers, not prose, so it is exempt.
+ */
+const REGISTER_DEFECTS = {
+  es: [
+    ["a question without its opening ¿", unpaired("¿", "?")],
+    ["an exclamation without its opening ¡", unpaired("¡", "!")],
+  ],
+};
+
+for (const [id, defects] of Object.entries(REGISTER_DEFECTS)) {
+  test(`${id}: punctuation and spacing follow the language's register`, () => {
+    const offences = leaves(CATALOGS[id])
+      .filter(([path]) => path !== "meta.keywords")
+      .flatMap(([path, leaf]) => variants(leaf).map((text) => [path, text]))
+      .flatMap(([path, text]) =>
+        defects.filter(([, isDefect]) => isDefect(text)).map(([defect]) => `${path}: ${defect}`),
+      );
+    assert.deepEqual(offences, []);
+  });
+}
+
 test("every provider domain of the registry has a label", () => {
   const labels = Object.keys(english.coverage.domains);
   assert.deepEqual(Object.keys(providersByDomain).filter((domain) => !labels.includes(domain)), []);

@@ -6,7 +6,7 @@
  * Imported by the client bundle (language menu, `<html lang dir>`) and by the
  * build (head, sitemap, prerender). It holds metadata only — never copy: the
  * catalogs under ./catalogs/ are build-time inputs and must not reach the
- * client bundle (tests/design/boundaries.test.mjs).
+ * client bundle (tests/rules/boundaries.test.mjs).
  *
  * @typedef {"en" | "zh" | "hi" | "es" | "ar" | "fr" | "bn" | "pt"} LocaleId
  * @typedef {"latin" | "han" | "devanagari" | "arabic" | "bengali"} Script
@@ -39,6 +39,18 @@ export const LOCALES = Object.freeze([
     ogImage: "public/og-image.png",
   }),
   Object.freeze({
+    id: "es",
+    path: "es",
+    isDefault: false,
+    htmlLang: "es",
+    hreflang: "es",
+    dir: "ltr",
+    ogLocale: "es_ES",
+    endonym: "Español",
+    script: "latin",
+    ogImage: "public/og/es.png",
+  }),
+  Object.freeze({
     id: "fr",
     path: "fr",
     isDefault: false,
@@ -49,5 +61,17 @@ export const LOCALES = Object.freeze([
     endonym: "Français",
     script: "latin",
     ogImage: "public/og/fr.png",
+  }),
+  Object.freeze({
+    id: "pt",
+    path: "pt",
+    isDefault: false,
+    htmlLang: "pt-BR",
+    hreflang: "pt",
+    dir: "ltr",
+    ogLocale: "pt_BR",
+    endonym: "Português",
+    script: "latin",
+    ogImage: "public/og/pt.png",
   }),
 ]);
