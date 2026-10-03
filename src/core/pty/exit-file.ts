@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { mkdtempSync, renameSync, writeFileSync } from "node:fs";
+import { mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -32,14 +32,45 @@ export interface ExitFileSlot {
   release(): Promise<void>;
 }
 
+/** Directories of the slots not released yet. */
+const openDirs = new Set<string>();
+let isExitCleanupInstalled = false;
+
 /** A fresh private directory and a random file name in it. Throws when the temp dir is unusable. */
 export function createExitFileSlot(): ExitFileSlot {
   const dir = mkdtempSync(join(tmpdir(), DIR_PREFIX));
+  removeOnExit(dir);
   const name = `${randomBytes(NAME_BYTES).toString("hex")}${EXIT_SUFFIX}`;
   return {
     path: join(dir, name),
-    release: () => rm(dir, { recursive: true, force: true }).catch(() => {}),
+    release: () => {
+      openDirs.delete(dir);
+      return rm(dir, { recursive: true, force: true }).catch(() => {});
+    },
   };
+}
+
+/**
+ * A signal ends gup with `process.exit` while an install may still run (the
+ * screen host interrupts it on its way out): its slot is never released, and
+ * the trampoline, alive a moment longer, writes its code there. Removing the
+ * directory as the process exits leaves nothing in the temp dir; the
+ * trampoline's `wx` write then fails for want of a directory, which it
+ * ignores.
+ */
+function removeOnExit(dir: string): void {
+  openDirs.add(dir);
+  if (isExitCleanupInstalled) return;
+  isExitCleanupInstalled = true;
+  process.once("exit", () => {
+    for (const open of openDirs) {
+      try {
+        rmSync(open, { recursive: true, force: true });
+      } catch {
+        // Best effort: the process is ending either way.
+      }
+    }
+  });
 }
 
 /** Child side: write `exitCode` atomically. Throws when the file cannot be written. */

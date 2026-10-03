@@ -1,7 +1,10 @@
+import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createExitFileSlot,
@@ -16,6 +19,18 @@ import {
  * strictly by the parent — anything but one integer and a newline is no
  * answer yet.
  */
+
+const run = promisify(execFile);
+const SPAWN_TIMEOUT_MS = 60_000;
+const EXIT_FILE_MODULE = pathToFileURL(join(process.cwd(), "src", "core", "pty", "exit-file.ts"));
+/**
+ * A process that opens a slot, prints its path and exits without releasing
+ * it — the way gup leaves on a signal while an install runs.
+ */
+const OPEN_THEN_EXIT = [
+  `const { createExitFileSlot } = await import(${JSON.stringify(EXIT_FILE_MODULE.href)});`,
+  "process.stdout.write(createExitFileSlot().path, () => process.exit(0));",
+].join("\n");
 
 let dir: string;
 
@@ -81,6 +96,17 @@ describe("createExitFileSlot", () => {
     }
     expect(existsSync(dirname(first.path))).toBe(false);
   });
+
+  it(
+    "leaves nothing in the temp dir when the process exits with a slot still open",
+    async () => {
+      const args = ["--import", "tsx", "--input-type=module", "-e", OPEN_THEN_EXIT];
+      const { stdout } = await run(process.execPath, args);
+      expect(basename(dirname(stdout))).toMatch(/^gup-pty-/);
+      expect(existsSync(dirname(stdout))).toBe(false);
+    },
+    SPAWN_TIMEOUT_MS,
+  );
 });
 
 describe("watchExitFile", () => {
