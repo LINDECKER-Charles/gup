@@ -1,6 +1,7 @@
 import type { OutdatedPackage, SelectedPackage } from "../../core/types.js";
 import type { NoteColumn } from "../app/ui-preferences.js";
 import type { PackageAction, PackageMarker } from "../app/view-definition.js";
+import { NO_SCAN_YET } from "../text/menu-labels.js";
 import { ListCursor } from "../tui/list-cursor.js";
 import type { KeyPress } from "../tui/screen-host.js";
 import { fillLine, fit, seg, type Line } from "../tui/styled-lines.js";
@@ -20,6 +21,12 @@ export interface PackagesOptions {
   /** One-column marks after the checkbox; the column only appears when one shows. */
   readonly markers?: () => readonly PackageMarker[];
   readonly noteColumn?: () => NoteColumn;
+  /**
+   * Whether a scan runs, for the wait before the first results: "scan en
+   * cours…", or how to start one. Absent: results are on their way (the
+   * `gup update` picker always has them).
+   */
+  readonly isScanning?: () => boolean;
 }
 
 /** Keys the table itself uses: a package action never takes one of them. */
@@ -38,6 +45,7 @@ const VERSION_WIDTH = 14;
 const NOTE_WIDTH = 22;
 /** Below this width the note column is dropped. */
 const NOTE_MIN_VIEWPORT = 90;
+const SCANNING = "scan en cours…";
 
 /** How package rows are laid out for one render. */
 interface Layout {
@@ -87,7 +95,7 @@ export class PackagesPanel implements Panel {
 
   render(viewport: Viewport): readonly Line[] {
     const list = this.#list;
-    if (!list) return placeholder("scan en cours…");
+    if (!list) return placeholder(this.isScanPending() ? SCANNING : NO_SCAN_YET);
     if (list.total === 0 && list.rows.length === 0) return placeholder("Tout est à jour.");
     const layout = this.layout(list, viewport.width - GUTTER);
     const head = this.headLines(list, layout);
@@ -105,13 +113,18 @@ export class PackagesPanel implements Panel {
 
   press(key: KeyPress): void {
     const list = this.#list;
-    if (!list) return;
+    if (!list) return this.pressBeforeResults(key);
     this.#notice = null;
     if (this.#isFiltering) return this.typeFilter(list, key);
     const name = key.sequence === "/" ? "/" : key.name;
     const own = this.ownKeys(list)[name];
     if (own) return own();
     this.runAction(list, name);
+  }
+
+  /** No results yet: only `r` means something — the scan the panel suggests. */
+  private pressBeforeResults(key: KeyPress): void {
+    if (key.name === "r") this.#handlers.onRescan?.();
   }
 
   click(row: number, viewport: Viewport): void {
@@ -161,6 +174,11 @@ export class PackagesPanel implements Panel {
   private actions(): PackageAction[] {
     const actions = this.#options.actions?.() ?? [];
     return actions.filter((action) => !RESERVED_PACKAGE_KEYS.has(action.key));
+  }
+
+  /** Before the first results: a scan is on its way, unless the menu says none runs. */
+  private isScanPending(): boolean {
+    return this.#options.isScanning?.() ?? true;
   }
 
   private submit(list: PackageList): void {

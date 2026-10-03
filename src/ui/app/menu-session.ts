@@ -124,7 +124,7 @@ export class MenuSession {
       this.wireInput();
       this.#views.panel?.onShow?.();
       if (this.#deps.scanOnStart) void this.scan();
-      else this.#scans.announceResults();
+      else if (this.#deps.state.scans.length > 0) this.#scans.announceResults();
       this.draw();
     });
   }
@@ -146,6 +146,7 @@ export class MenuSession {
         this.draw();
       },
       rescan: () => this.rescan(),
+      isScanning: () => this.#scans.isRunning,
       onScansChanged: (listener) => this.#scans.onResults(listener),
       observeScan: (observer) => this.#scans.observe(observer),
       takeOver: (start) => this.takeOver(start),

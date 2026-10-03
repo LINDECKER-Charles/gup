@@ -1,3 +1,4 @@
+import { NO_SCAN_YET } from "../text/menu-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
 import { fit, seg, type Line } from "../tui/styled-lines.js";
@@ -114,7 +115,7 @@ export class ScanPanel implements Panel, ScanEvents {
   }
 
   render(viewport: Viewport): readonly Line[] {
-    if (this.#phase === "idle") return placeholder("Aucun scan pour l'instant — r pour scanner.");
+    if (this.#phase === "idle") return placeholder(NO_SCAN_YET);
     const head = [this.headline(), []];
     const rows = this.sortedRows().slice(
       this.#offset,

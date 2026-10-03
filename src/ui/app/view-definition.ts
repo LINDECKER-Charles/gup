@@ -86,10 +86,13 @@ export interface ViewContext {
   show(view: ViewId): void;
   /** A user-requested scan: the Scan view comes to the front (ignored while one runs). */
   rescan(): void;
+  /** True while a scan of the session runs. */
+  isScanning(): boolean;
   /**
    * `listener` runs whenever `state.scans` holds results the views have not
    * seen: a scan finished, an update pruned the packages it updated, or a
-   * session starts on the previous results without scanning.
+   * session starts on previous results without scanning. A session that
+   * starts without scanning and without results announces nothing.
    */
   onScansChanged(listener: () => void): () => void;
   /** Hear every scan of the session as it runs. */

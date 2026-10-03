@@ -8,6 +8,7 @@ import type {
   ViewDefinition,
 } from "../../../src/ui/app/view-definition.js";
 import type { Panel } from "../../../src/ui/panels/panel.js";
+import { NO_SCAN_YET } from "../../../src/ui/text/menu-labels.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { toAscii } from "../../../src/ui/theme/glyphs.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
@@ -141,6 +142,15 @@ describe("MenuSession", () => {
     });
     expect(await menu.waitForText("Git.Git")).toContain("┏━ Paquets");
     expect(menu.controller.scan).not.toHaveBeenCalled();
+  });
+
+  it("says how to scan when it starts with neither a scan nor results", async () => {
+    const menu = await bootMenu({ scanOnStart: false, initialView: "packages" });
+    const text = await menu.waitForText(NO_SCAN_YET);
+    expect(text).not.toContain("Tout est à jour");
+    expect(menu.controller.scan).not.toHaveBeenCalled();
+    await menu.press("r");
+    expect(await menu.waitForText("Scan terminé")).toContain("┏━ Scan");
   });
 
   it("says when the scan itself breaks", async () => {

@@ -20,6 +20,9 @@ export const SIDEBAR_HINTS = "↑↓ naviguer · entrée ouvrir · tab contenu �
 /** Appended to the focused panel's own hints. */
 export const PANEL_HINTS_TAIL = "tab menu · q quitter";
 
+/** What Scan and Paquets say when the session has not scanned yet and no scan runs. */
+export const NO_SCAN_YET = "Aucun scan pour l'instant — r pour scanner.";
+
 export function providerCountFact(count: number): string {
   return `${count} provider(s)`;
 }

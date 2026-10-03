@@ -7,7 +7,8 @@ import { updateCountFact, VIEW_LABELS } from "../text/menu-labels.js";
 /**
  * Paquets: the outdated packages of the last scan, to check and update. The
  * list is rebuilt whenever the scan results change; until the first results
- * arrive the panel says a scan is running. Other views' package actions and
+ * arrive the panel says a scan is running, or how to start one when none
+ * runs (no scan at launch). Other views' package actions and
  * marks show here; order and Note column follow the preferences live.
  */
 export function packagesView(): ViewDefinition {
@@ -35,6 +36,7 @@ function createPackagesPanel(context: ViewContext): PackagesPanel {
       actions: context.packageActions,
       markers: context.packageMarkers,
       noteColumn: () => context.preferences().noteColumn,
+      isScanning: () => context.isScanning(),
     },
   );
   const sort = () => context.preferences().packageSort;
