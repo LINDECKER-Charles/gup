@@ -32,6 +32,7 @@ export function registerLogCommand(program: Command): void {
     .option("-s, --since <période>", LOG_COMMAND_LABELS.since)
     .option("-o, --out <fichier>", LOG_COMMAND_LABELS.out)
     .option("--force", LOG_COMMAND_LABELS.force)
+    .option("--no-history", LOG_COMMAND_LABELS.noHistory)
     .action(async (options: ExportOptions) => process.exit(await exportDiagnostic(options)));
 }
 

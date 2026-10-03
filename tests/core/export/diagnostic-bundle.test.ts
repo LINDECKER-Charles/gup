@@ -90,6 +90,24 @@ describe("buildDiagnosticZip", () => {
     expect(archive.records).toBe(1);
   });
 
+  it("adds the activity summary it is given, or says in the README why there is none", () => {
+    const summary = { summary: { totals: { attempts: 3 } } };
+    const withSummary = entries(build({ generatedAt: new Date(), system: SYSTEM, logs: [], history: summary }).zip);
+    expect(JSON.parse(withSummary.get("history-summary.json")!)).toEqual({ totals: { attempts: 3 } });
+    expect(withSummary.get("README.txt")).toContain("history-summary.json");
+
+    const reason = `EACCES: permission denied, scandir '${join(homedir(), "history")}'`;
+    const unreadable = entries(
+      build({ generatedAt: new Date(), system: SYSTEM, logs: [], history: { unreadable: reason } }).zip,
+    );
+    expect([...unreadable.keys()].sort()).toEqual(["README.txt", "system.json"]);
+    expect(unreadable.get("README.txt")).toContain("historique illisible — EACCES: permission denied");
+    expect(unreadable.get("README.txt")!.toLowerCase()).not.toContain(homedir().toLowerCase());
+
+    const leftOut = entries(build({ generatedAt: new Date(), system: SYSTEM, logs: [] }).zip);
+    expect(leftOut.get("README.txt")).not.toContain("résumé d'activité");
+  });
+
   it("drops what is not a record, says how many lines in the README, and skips foreign file names", () => {
     const archive = build({
       generatedAt: new Date(),

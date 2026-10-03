@@ -10,6 +10,7 @@ import { journalModule } from "../../../src/commands/journal/journal-module.js";
 import { stopLogSession } from "../../../src/commands/journal/log-session.js";
 import { utcDay } from "../../../src/core/log/file-sink.js";
 import type { LogRecord } from "../../../src/core/log/types.js";
+import { updateEvent, writeHistoryShards } from "../../support/history-fixtures.js";
 
 let dir: string;
 let logs: string;
@@ -22,6 +23,7 @@ beforeEach(() => {
   logs = join(dir, "logs");
   vi.stubEnv("GUP_LOG_DIR", logs);
   vi.stubEnv("GUP_REPORT_DIR", join(dir, "reports"));
+  vi.stubEnv("GUP_HISTORY_DIR", join(dir, "history"));
   vi.stubEnv("GUP_LOG_LEVEL", "debug");
   exitCodes = [];
   vi.spyOn(process, "exit").mockImplementation(((code?: number) => {
@@ -127,8 +129,32 @@ describe("gup log export", () => {
     expect(out).toContain("relisez-la avant de la partager");
     const archive = new AdmZip(join(dir, "reports", name!));
     const entries = archive.getEntries().map((entry) => entry.entryName).sort();
-    expect(entries).toEqual(["README.txt", `logs/gup-${utcDay(new Date())}.jsonl`, "system.json"]);
+    expect(entries).toEqual([
+      "README.txt",
+      "history-summary.json",
+      `logs/gup-${utcDay(new Date())}.jsonl`,
+      "system.json",
+    ]);
     expect(archive.readAsText(`logs/gup-${utcDay(new Date())}.jsonl`)).toContain("password=***");
+  });
+
+  it("sums up the period's activity without its raw events, unless --no-history", async () => {
+    const recent = new Date(Date.now() - 86_400_000).toISOString();
+    await writeHistoryShards(join(dir, "history"), [
+      updateEvent("winget", "Git.Git", { ts: recent, status: "failed", message: "token=s3cr3t" }),
+    ]);
+
+    await gup("log", "export", "--out", join(dir, "with.zip"));
+    const archive = new AdmZip(join(dir, "with.zip"));
+    const summary = JSON.parse(archive.readAsText("history-summary.json")) as Record<string, unknown>;
+    expect(summary["totals"]).toMatchObject({ attempts: 1, failures: 1 });
+    expect(summary).not.toHaveProperty("events");
+    expect(archive.readAsText("history-summary.json")).not.toContain("s3cr3t");
+    expect(archive.readAsText("README.txt")).toContain("history-summary.json");
+
+    await gup("log", "export", "--no-history", "--out", join(dir, "without.zip"));
+    const without = new AdmZip(join(dir, "without.zip")).getEntries().map((entry) => entry.entryName);
+    expect(without).not.toContain("history-summary.json");
   });
 
   it("never replaces an existing --out without --force", async () => {
@@ -148,6 +174,6 @@ describe("gup log export", () => {
     expect(existsSync(logs)).toBe(false);
     const [name] = readdirSync(join(dir, "reports"));
     const entries = new AdmZip(join(dir, "reports", name!)).getEntries().map((entry) => entry.entryName);
-    expect(entries.sort()).toEqual(["README.txt", "system.json"]);
+    expect(entries.sort()).toEqual(["README.txt", "history-summary.json", "system.json"]);
   });
 });

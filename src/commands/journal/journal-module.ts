@@ -12,11 +12,13 @@ import {
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "../cli/cli-module.js";
 import { registerLogCommand } from "./log-command.js";
 import { currentLogSession, logCrash, startLogSession, type LogSession } from "./log-session.js";
+import { registerReportCommand } from "./report-command.js";
 
 /**
- * The debug log on the command line: the global `--log-level`, the `gup log`
- * commands, the log installed before every command (the elevated child
- * included, with its memory sink), the crash record, and its `gup doctor` line.
+ * The journal on the command line: the global `--log-level`, the `gup log`
+ * commands, `gup report` (the activity history exported), the log installed
+ * before every command (the elevated child included, with its memory sink),
+ * the crash record, and its `gup doctor` line.
  */
 
 const USAGE_EXIT_CODE = 2;
@@ -28,6 +30,7 @@ export const journalModule: CliModule = {
   register(program) {
     program.option("--log-level <niveau>", LOG_LEVEL_OPTION);
     registerLogCommand(program);
+    registerReportCommand(program);
   },
   beforeAction(context) {
     startLogSession(context, logLevelFlag(context.options["logLevel"]));

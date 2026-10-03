@@ -23,6 +23,7 @@ describe("CLI_MODULES", () => {
       "doctor",
       "list",
       "log",
+      "report",
       "update",
     ]);
     const help = program.helpInformation();

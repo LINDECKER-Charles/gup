@@ -1,7 +1,7 @@
-import chalk from "chalk";
 import { stripVTControlCharacters } from "node:util";
 import type { LogLevel } from "../core/log/log.js";
 import type { LogData, LogRecord, LogValue } from "../core/log/types.js";
+import { lineToAnsi } from "./charts/ansi-lines.js";
 import { formatDuration } from "./text/fr-format.js";
 import {
   COMMAND_END_LABELS,
@@ -33,18 +33,6 @@ const LEVEL_TONES: Readonly<Record<LogLevel, Tone>> = {
   trace: "muted",
 };
 
-const PAINT: Readonly<Record<Tone, (value: string) => string>> = {
-  plain: (value) => value,
-  strong: (value) => chalk.bold(value),
-  muted: (value) => chalk.dim(value),
-  disabled: (value) => chalk.gray(value),
-  accent: (value) => chalk.cyan(value),
-  success: (value) => chalk.green(value),
-  warning: (value) => chalk.yellow(value),
-  danger: (value) => chalk.red(value),
-  onAccent: (value) => chalk.inverse(value),
-};
-
 type Summary = (data: LogData) => string;
 
 const SUMMARIES: Readonly<Record<string, Summary>> = {
@@ -64,7 +52,7 @@ export function levelLabel(level: LogLevel): string {
 /** The record as styled segments; with a `width`, the summary is cut to fit it. */
 export function logRecordLine(record: LogRecord, width?: number): Line {
   const head: Segment[] = [
-    seg(`${timeOf(record.ts)}  `, "muted"),
+    seg(`${recordTime(record.ts)}  `, "muted"),
     seg(`${levelLabel(record.level).padEnd(LEVEL_WIDTH)} `, LEVEL_TONES[record.level]),
     seg(`${record.event.padEnd(EVENT_WIDTH)} `, "strong"),
   ];
@@ -76,10 +64,7 @@ export function logRecordLine(record: LogRecord, width?: number): Line {
 
 /** The record as one line of terminal text; uncoloured under `NO_COLOR` or into a pipe. */
 export function logRecordText(record: LogRecord): string {
-  return logRecordLine(record)
-    .map((segment) => PAINT[segment.tone](segment.text))
-    .join("")
-    .trimEnd();
+  return lineToAnsi(logRecordLine(record));
 }
 
 function summaryOf(record: LogRecord): string {
@@ -93,9 +78,10 @@ function summaryOf(record: LogRecord): string {
 /**
  * Record text made safe for one terminal line: what a tool printed may carry
  * escape sequences (colours, a window title, a clipboard write) and line
- * breaks, and a log line must never drive the terminal it is shown on.
+ * breaks, and a log line must never drive the terminal it is shown on. The
+ * journal's detail views pass every line they show through it too.
  */
-function printable(text: string): string {
+export function printable(text: string): string {
   return stripVTControlCharacters(text).replace(CONTROL_CHARACTERS, " ").trim();
 }
 
@@ -173,8 +159,8 @@ function text(value: LogValue | undefined): string {
   return typeof value === "object" ? JSON.stringify(value) : String(value);
 }
 
-/** `03/10 14:22:05.112`, in local time. */
-function timeOf(ts: string): string {
+/** `03/10 14:22:05.112`: a record's instant in local time, as its line shows it. */
+export function recordTime(ts: string): string {
   const date = new Date(ts);
   const pad = (value: number, size = 2) => String(value).padStart(size, "0");
   const day = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;

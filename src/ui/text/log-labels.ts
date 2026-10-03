@@ -1,6 +1,7 @@
 import {
   DIAGNOSTIC_ENTRIES,
   type DiagnosticContents,
+  type DiagnosticHistory,
 } from "../../core/export/diagnostic-bundle.js";
 import type { LogLevel, LogThreshold } from "../../core/log/log.js";
 import type { UpdateStatus } from "../../core/history/types.js";
@@ -48,6 +49,7 @@ export const LOG_COMMAND_LABELS = {
   json: "lignes JSON brutes",
   out: "fichier de sortie (défaut : dossier des rapports)",
   force: "écrase le fichier --out s'il existe",
+  noHistory: "n'inclut pas le résumé d'activité dans l'archive",
 } as const;
 
 export const LOG_MESSAGES = {
@@ -100,6 +102,7 @@ export function diagnosticReadme(contents: DiagnosticContents): string {
     "                (liste fermée : le reste de l'environnement n'est jamais copié)",
     `  ${DIAGNOSTIC_ENTRIES.logs}/         journal de debug, ${logs.length} fichier(s)`,
     ...logs.map((name) => `                  ${name}`),
+    ...historyLines(contents.history),
     "",
     "Les secrets reconnus (jetons, mots de passe, clés, identifiants dans les URL)",
     "sont masqués par ***, et le dossier personnel est abrégé en ~.",
@@ -110,4 +113,16 @@ export function diagnosticReadme(contents: DiagnosticContents): string {
     ...(dropped > 0 ? ["", `${dropped} ligne(s) illisible(s) du journal ont été omise(s).`] : []),
   ];
   return `${lines.join("\n")}\n`;
+}
+
+/** The README's line on the activity summary; none when it was left out on request. */
+function historyLines(history: DiagnosticHistory | undefined): string[] {
+  if (history === undefined) return [];
+  if ("unreadable" in history) {
+    return [`  (pas de résumé d'activité : historique illisible — ${history.unreadable})`];
+  }
+  return [
+    `  ${DIAGNOSTIC_ENTRIES.history}   résumé de l'activité de la période (chiffres,`,
+    "                rythmes, échecs), sans les événements eux-mêmes",
+  ];
 }

@@ -169,7 +169,7 @@ function envelope<K extends HistoryEvent["kind"]>(
 }
 
 function append(event: HistoryEvent): void {
-  if (!isEnabled()) return;
+  if (!isHistoryEnabled()) return;
   const location = historyLocation(new Date());
   if (!location) return;
   try {
@@ -184,7 +184,8 @@ function append(event: HistoryEvent): void {
   }
 }
 
-function isEnabled(): boolean {
+/** False under `GUP_HISTORY=0` (or `false`, `off`, `no`): nothing is recorded. */
+export function isHistoryEnabled(): boolean {
   const raw = process.env[ENABLED_ENV];
   return raw === undefined || !DISABLED_VALUES.has(raw.trim().toLowerCase());
 }
