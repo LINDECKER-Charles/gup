@@ -1,8 +1,13 @@
+import { mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import type { CapturedFrame } from "@opentui/core";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { createSettingsModule } from "../../../src/commands/cli/settings-module.js";
 import { ConfigStore } from "../../../src/core/config/store.js";
+import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../../src/core/runner.js";
 import type { ProviderScanResult } from "../../../src/core/types.js";
-import { setUiPreferencesSource } from "../../../src/ui/app/ui-preferences.js";
+import { setUiPreferencesSource, uiPreferences } from "../../../src/ui/app/ui-preferences.js";
 import { SettingsService } from "../../../src/ui/settings/settings-service.js";
 import {
   appearanceSource,
@@ -10,12 +15,25 @@ import {
 } from "../../../src/ui/settings/settings-sources.js";
 import { staticProbe } from "../../../src/ui/theme/runtime/terminal-probe.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
-import { COLOR_EDITOR, CONTRAST_STATUS, PREVIEW_FACT } from "../../../src/ui/text/theme-labels.js";
+import { TIMEOUT_DIALOG } from "../../../src/ui/text/menu-labels.js";
+import { OPTIONS_NOTICES, SORT_VALUES } from "../../../src/ui/text/options-labels.js";
+import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings-labels.js";
+import {
+  COLOR_EDITOR,
+  CONTRAST_STATUS,
+  PREVIEW_FACT,
+  THEME_LABELS,
+} from "../../../src/ui/text/theme-labels.js";
+import { configureScreens } from "../../../src/ui/tui/screen-host.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
 import { packagesView } from "../../../src/ui/views/packages-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
 import * as wcag from "../../support/contrast/wcag.js";
-import { bootMenu, type MenuDriverOptions } from "../../support/tui/menu-driver.js";
+import {
+  bootMenu,
+  type MenuDriver,
+  type MenuDriverOptions,
+} from "../../support/tui/menu-driver.js";
 
 /**
  * The Options view in the running menu, painted by the theme engine and
@@ -148,5 +166,87 @@ describe("Options in an 80 × 24 terminal", () => {
     await menu.press("down", "enter");
     const editor = await menu.waitForText(COLOR_EDITOR.columns.ratio);
     expect(editor.split("\n").at(-1)).toContain("échap retour");
+  });
+});
+
+describe("Options and the settings file", () => {
+  const INITIAL_TIMEOUT = getInstallTimeoutSeconds();
+  let file: string;
+
+  beforeEach(async () => {
+    file = join(await mkdtemp(join(tmpdir(), "gup-options-file-")), "config.json");
+  });
+
+  afterEach(() => {
+    setInstallTimeoutSeconds(INITIAL_TIMEOUT);
+    configureScreens(null);
+    setUiPreferencesSource(null);
+  });
+
+  /** An input dialog takes the focus on the next turn. */
+  const FOCUS_SETTLE_MS = 10;
+
+  async function typeTimeout(menu: MenuDriver, seconds: string): Promise<void> {
+    await menu.press("enter");
+    await menu.waitForText(TIMEOUT_DIALOG.title);
+    await new Promise((resolve) => setTimeout(resolve, FOCUS_SETTLE_MS));
+    for (let i = 0; i < String(INITIAL_TIMEOUT).length; i++) menu.screen.mockInput.pressBackspace();
+    await menu.screen.mockInput.typeText(seconds);
+    await menu.press("enter");
+    await menu.waitForText(`[${seconds}s]`);
+  }
+
+  it("saves what the user changes, and the next start opens with it", async () => {
+    const { menu } = await menuOn(new SettingsService(new ConfigStore({ file })));
+    await menu.press("enter", "down");
+    await typeTimeout(menu, "600");
+    await menu.press("down", "down", "enter", "down", "down", "enter");
+    await menu.waitForText(`[${THEME_LABELS.dark}]`);
+    await menu.press("down", "down", "down", "down", "enter");
+    await menu.press("down", "down", "down", "down", "down", "enter");
+    await menu.waitForText(`[${SORT_VALUES.name}]`);
+
+    const next = new SettingsService(new ConfigStore({ file }));
+    const module = createSettingsModule({
+      settings: () => next,
+      env: {},
+      isKnownProvider: () => true,
+    });
+    await module.beforeAction?.({ commandPath: "", options: {} });
+    expect(getInstallTimeoutSeconds()).toBe(600);
+    expect(uiPreferences().current()).toMatchObject({ packageSort: "name", scan: { fast: true } });
+    const restarted = await bootMenu({
+      scanOnStart: false,
+      initialView: "options",
+      views: [optionsView({ settings: () => next }), packagesView(), scanView()],
+    });
+    const frame = await restarted.waitForText("APPARENCE");
+    expect(screenBackground(restarted.screen.captureSpans())).toEqual(DARK_BACKGROUND);
+    expect(frame).toMatch(/Filtre providers.*\n.*APPARENCE/);
+  });
+
+  it("starts on defaults from a corrupt file, keeps a copy of it, and saves a clean one", async () => {
+    await writeFile(file, "{ pas du json", "utf8");
+    const { menu, settings } = await menuOn(new SettingsService(new ConfigStore({ file })));
+    await menu.press("enter");
+    expect(settings.get("scan").fast).toBe(true);
+    const saved = JSON.parse(await readFile(file, "utf8")) as unknown;
+    expect(saved).toMatchObject({ sections: { scan: { fast: true } } });
+    const copies = (await readdir(dirname(file))).filter((name) => name.includes("corrupt"));
+    expect(copies).toHaveLength(1);
+    expect(await readFile(join(dirname(file), copies[0] ?? ""), "utf8")).toBe("{ pas du json");
+    await menu.press("END");
+    await menu.waitForText(CONFIG_STATE_LABELS.recovered("").trim());
+  });
+
+  it("works on a file a newer gup wrote: the change applies, says it is not saved, the file is untouched", async () => {
+    const newer = JSON.stringify({ version: 2, sections: { theme: { v: 1, id: "light" } } });
+    await writeFile(file, newer, "utf8");
+    const { menu, settings } = await menuOn(new SettingsService(new ConfigStore({ file })));
+    expect(await menu.frame()).toContain(`[${THEME_LABELS.light}]`);
+    await menu.press("enter");
+    await menu.waitForText(OPTIONS_NOTICES.notSaved("").trim());
+    expect(settings.get("scan").fast).toBe(true);
+    expect(await readFile(file, "utf8")).toBe(newer);
   });
 });
