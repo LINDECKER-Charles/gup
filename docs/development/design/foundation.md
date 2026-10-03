@@ -195,14 +195,16 @@ group 0 (work views), a blank row, group 1 (information, settings), a blank row,
 
 A view reaches the menu through its `ViewContext`: `screen`, `state`, `dialogs`, `updates`
 (the launcher), `preferences()`, `packageActions()`, `packageMarkers()`, `displayName`, `redraw`,
-`show(view)`, `rescan()`, `onScansChanged(listener)`, `observeScan(observer)` and
-`takeOver(start)`. A takeover (the run view) hides the sidebar and the main panel, gets the
+`show(view)`, `rescan()`, `isScanning()`, `onScansChanged(listener)`, `observeScan(observer)`
+and `takeOver(start)`. A takeover (the run view) hides the sidebar and the main panel, gets the
 chrome's body, and receives every key after the dialogs plus a frame tick until it is released.
 `Panel` gains `wantsKey(key)` (claim ←/→ before the global bindings; `q` and Tab stay global)
 and `onShow()` (lazy loads).
 
 Key routing in `MenuSession`: Ctrl+C (the screen's) → dialog → takeover → the focused panel when
-it captures text or claims the key → global (`q`, Tab, ←) → panel or sidebar.
+it captures text or claims the key → global (`q`, Tab, ←) → panel or sidebar. Which side has the
+keyboard and the sidebar cursor live in `MenuNav` (`menu-nav.ts`). The session's frame clock
+stops when it ends and when its renderer is destroyed under it (Ctrl+C, a signal).
 
 `UpdateLauncher.launch(packages, { scheduleId?, returnTo? })` resolves with the report of an
 update run inside the screen, or `null` (declined, or run outside). The foundation's
@@ -218,7 +220,9 @@ Paquets), or rescans (`rescanAfterUpdate`). An in-screen launcher gets a `Launch
 come from `uiPreferences()`; the session redraws when they or the appearance change, and the
 spinners stand still when `animations` is off.
 
-Paquets: `PackagesPanel({ onLaunch, onRescan? }, { actions, markers, noteColumn })`. A
+Paquets: `PackagesPanel({ onLaunch, onRescan? }, { actions, markers, noteColumn, isScanning })`.
+Before its first results it says a scan is running, or — no scan running, as with
+`scanOnLaunch` off — how to start one (`r`). A
 `PackageAction` (key, hint, empty-selection notice, `run(selection)`) acts on the **checked**
 packages only and can never take a key of `RESERVED_PACKAGE_KEYS`. A `PackageMarker` adds a
 one-column mark after the checkbox; the column takes no room unless a visible package has a mark.
@@ -240,7 +244,9 @@ in-memory renderer configured like the real one (no OpenTUI Ctrl+C or signal han
 `press` and `frame`. `menu-driver.ts`: `bootMenu({ scans, size, controller, views, providers,
 scanOnStart, initialView, state, createAppearance, launcher, preferences })` →
 `{ screen, controller, state, exit, press, frame, waitForText, setPreferences }`; it installs the
-launcher and preference slots for the current test only. `defaultViews()`,
+launcher and preference slots for the current test only, and ends the session when the test is
+over (the host then releases the screen as on a quit), so no renderer outlives its test.
+A suite that mounts screens with `createTestHost` itself ends them the same way. `defaultViews()`,
 `scriptedController()` and `EMPTY_REPORT` are exported for suites that assemble their own menu.
 
 ---
@@ -373,14 +379,20 @@ Recorded so the integration agent and the wave-2 branches are not surprised.
 - **`UpdateDecisions.unattended`** (additive) is how `HEADLESS_DECISIONS` sets
   `UpdateOptions.unattended` (F-5): decisions are the one port a scheduled run already swaps, so
   no caller has to remember a second flag.
+- **`ViewContext.isScanning()`** and **`PackagesOptions.isScanning`** (additive): with
+  `scanOnLaunch` off, Paquets must tell "no scan yet — `r`" from "scan running"; a session that
+  starts with neither a scan nor previous results no longer announces empty results.
+- **`menu-session.ts` split:** the keyboard focus and sidebar cursor moved to `menu-nav.ts`
+  (the slot F-10 kept in `ui/app`), bringing the session back under the 300-line alert.
 
 ## 10. Folder budget after the foundation
 
 `core/platform` 7 · `core/state` 3 · `core/process` 5 · `core/log` 1 · `core/config` 6 ·
-`core/update` 10 (full) · `ui` root 6 · `ui/app` 8 · `ui/views` 4 · `ui/panels` 7 · `ui/theme` 3 ·
-`ui/text` 2 · `ui/tui` 9 · `commands` 7 + `cli/` 3. `ui/app` keeps room for the in-screen
-launcher; labels modules go to `ui/text/`; the options host and schedule flows go to their panel
-folders (`ui/panels/options/`, `ui/panels/schedules/`).
+`core/update` 10 (full) · `ui` root 6 · `ui/app` 9 · `ui/views` 4 · `ui/panels` 7 · `ui/theme` 3 ·
+`ui/text` 2 · `ui/tui` 9 · `commands` 7 + `cli/` 3. `ui/app` keeps one slot, for the in-screen
+launcher (`menu-nav.ts` took the one F-10 kept for splitting the session); labels modules go to
+`ui/text/`; the options host and schedule flows go to their panel folders
+(`ui/panels/options/`, `ui/panels/schedules/`).
 
 Shared documents that still describe the 0.4.0 internals (`architecture.md`, `how-gup-works.md`:
 `ui/retry-failed.ts`, `maybeRetryFailures`, the menu's own update loop) are rewritten by the
