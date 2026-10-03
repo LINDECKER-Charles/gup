@@ -78,6 +78,7 @@
     "prepare": "npm run build",
     "start": "node dist/cli.js",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
+    "typecheck:scripts": "tsc -p scripts/screenshots",
     "test": "vitest --project unit --project \"providers*\"",
     "test:run": "vitest run",
     "test:unit": "vitest run --project unit --project \"providers*\"",
@@ -89,6 +90,8 @@
     "test:coverage:ci": "vitest run --coverage --reporter=default --reporter=junit --outputFile=coverage/junit.xml",
     "lint": "eslint --no-error-on-unmatched-pattern src tests scripts",
     "lint:security": "eslint src --config eslint.config.security.js",
+    "screenshots": "vitest run --config scripts/screenshots/vitest.config.ts",
+    "screenshots:check": "vitest run --config scripts/screenshots/vitest.config.ts --mode check",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
     "audit:deps:ci": "audit-ci --config audit-ci.json",
     "security": "npm run audit:deps:ci && npm run lint:security && npm run test:security"
