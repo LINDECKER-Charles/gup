@@ -8,7 +8,9 @@ import {
   NO_ACTIVE_TRIGGER,
   NO_SCHEDULE,
   REPAIR_COMMAND,
+  STATUS_DETAILS,
   TABLE_HEADERS,
+  unsupportedTriggerLine,
 } from "../../ui/text/schedule-cli-labels.js";
 import {
   recurrenceLabel,
@@ -83,24 +85,25 @@ function statusLines(
   const recorded = record ? recordLines(record) : [];
   return [
     triggerSummary(report, context.now) || NO_ACTIVE_TRIGGER,
-    ...(context.location ? [`  emplacement : ${context.location}`] : []),
+    ...(context.location ? [STATUS_DETAILS.location(context.location)] : []),
     ...recorded,
-    `  planifications actives : ${report.enabledCount}`,
+    STATUS_DETAILS.enabledCount(report.enabledCount),
   ];
 }
 
 function recordLines(record: InstallRecord): string[] {
-  const command = record.argv.map((arg) => `"${arg}"`).join(" ");
   const installedAt = formatDateTime(new Date(record.installedAt));
   return [
-    `  commande : ${command} (lanceur : ${record.launcher})`,
-    `  installé le : ${installedAt} · gup ${record.gupVersion}`,
+    STATUS_DETAILS.command(record.argv, record.launcher),
+    STATUS_DETAILS.installed(installedAt, record.gupVersion),
   ];
 }
 
 /** The trigger line, or the reason this platform has none. */
 function triggerSummary(report: TriggerReport, now: Date): string {
-  if (report.unsupported && report.enabledCount > 0) return `Déclencheur : ${report.unsupported}`;
+  if (report.unsupported && report.enabledCount > 0) {
+    return unsupportedTriggerLine(report.unsupported);
+  }
   if (!report.mechanism) return "";
   const context = { mechanism: report.mechanism, now, repair: REPAIR_COMMAND };
   return triggerLine(report.health, context);

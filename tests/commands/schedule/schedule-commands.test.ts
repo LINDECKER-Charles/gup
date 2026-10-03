@@ -9,7 +9,6 @@ import {
 import { listCommand, statusCommand } from "../../../src/commands/schedule/report-commands.js";
 import { runNowCommand } from "../../../src/commands/schedule/run-now.js";
 import type { AddOptions } from "../../../src/commands/schedule/schedule-args.js";
-import { NOT_A_PACKAGE } from "../../../src/commands/schedule/schedule-args.js";
 import {
   installCommand,
   uninstallCommand,
@@ -18,6 +17,7 @@ import type { UpdateRequest } from "../../../src/core/update/update-ports.js";
 import { buildReport } from "../../../src/core/update/update-report.js";
 import {
   NO_SCHEDULE,
+  NOT_A_PACKAGE,
   NOTHING_TO_INSTALL,
   PURGED,
   SCHEDULER_DIR_OVERRIDDEN,

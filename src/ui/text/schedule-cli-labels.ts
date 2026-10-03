@@ -1,5 +1,6 @@
+import { NEVER_A_PROVIDER } from "../../core/scheduler/model/schedule-target.js";
 import type { Schedule } from "../../core/scheduler/model/types.js";
-import type { Mechanism } from "../../core/scheduler/trigger/os-trigger.js";
+import type { Launcher, Mechanism } from "../../core/scheduler/trigger/os-trigger.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import {
   MECHANISM_LABELS,
@@ -106,3 +107,60 @@ export const TABLE_HEADERS = {
   next: "PROCHAINE",
   last: "DERNIÈRE",
 } as const;
+
+export const ADD_EXAMPLE = "  Exemple : gup schedule add winget:Git.Git --every daily";
+
+/** A bare provider was given: the rule, then how to name a package. */
+export const NOT_A_PACKAGE = `${NEVER_A_PROVIDER}\n${ADD_EXAMPLE}`;
+
+/** Why the arguments of `gup schedule add | install` are not a schedule (exit 2). */
+export const ARGUMENT_ERRORS = {
+  noTarget: "au moins un paquet provider:paquet requis",
+  launcher: (value: string): string =>
+    `--launcher : headless ou direct attendu (reçu « ${value} »)`,
+  bothFrequencies: "--every et --cron s'excluent : choisissez l'un des deux",
+  noFrequency:
+    'fréquence requise : --every <daily|weekly|monthly> ou --cron "<m h j mois js>"',
+  every: (value: string): string => `--every : daily, weekly ou monthly attendu (reçu « ${value} »)`,
+  at: (value: string | undefined): string => `--at : heure HH:MM attendue (reçu « ${value} »)`,
+  cronSaysAll: "--on et --at ne s'appliquent pas à --cron : l'expression dit tout",
+  onNotDaily: "--on ne s'applique qu'à --every weekly ou monthly",
+  weekday: "--on : jour de la semaine attendu (lun, mar… dim)",
+  monthDay: "--on : jour du mois attendu (1 à 28, ou dernier)",
+} as const;
+
+/** What a validation problem is about, by field, when it is not one package. */
+export const ISSUE_SUBJECTS: Readonly<Record<string, string>> = {
+  name: "nom",
+  recurrence: "fréquence",
+  targets: "paquets",
+  schedules: "planifications",
+};
+
+/** "✖ brew:git : Provider inconnu: brew", "✖ nom : nom requis". */
+export function issueLine(subject: string, message: string): string {
+  return `${STATUS_GLYPHS.failed} ${subject} : ${message}`;
+}
+
+export function notSavedLine(reason: string): string {
+  return `${STATUS_GLYPHS.failed} Planifications non enregistrées : ${reason}`;
+}
+
+/** The first line of `list` and `status` where this platform has no trigger. */
+export function unsupportedTriggerLine(reason: string): string {
+  return `Déclencheur : ${reason}`;
+}
+
+/** The details of `gup schedule status`, under its first line. */
+export const STATUS_DETAILS = {
+  location: (location: string): string => `  emplacement : ${location}`,
+  command: (argv: readonly string[], launcher: Launcher): string =>
+    `  commande : ${argv.map((arg) => `"${arg}"`).join(" ")} (lanceur : ${launcher})`,
+  installed: (at: string, gupVersion: string): string => `  installé le : ${at} · gup ${gupVersion}`,
+  enabledCount: (count: number): string => `  planifications actives : ${count}`,
+} as const;
+
+/** The first line of `run-now`'s summary. */
+export function runResultLine(status: string): string {
+  return `Résultat : ${status}`;
+}

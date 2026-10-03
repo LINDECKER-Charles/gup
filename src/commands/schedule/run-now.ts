@@ -1,7 +1,7 @@
 import { ManualRun, type ManualExecutor } from "../../core/scheduler/manual-run.js";
 import { neededProviders } from "../../core/scheduler/model/tick-plan.js";
 import type { ScheduleRunRecord } from "../../core/scheduler/model/types.js";
-import { runNowHeader } from "../../ui/text/schedule-cli-labels.js";
+import { runNowHeader, runResultLine } from "../../ui/text/schedule-cli-labels.js";
 import { runStatusLabel, targetResultLabel } from "../../ui/text/schedule-labels.js";
 import { updateOnConsole } from "../update.js";
 import { targetResolver } from "./run-deps.js";
@@ -56,7 +56,7 @@ function summaryLines(record: ScheduleRunRecord, services: SchedulerServices): s
     const packageId = rest.join(":");
     return `  ${displayName(services, providerId)}  ${packageId}  ${targetResultLabel(result)}`;
   });
-  return [`Résultat : ${runStatusLabel(record)}`, ...rows];
+  return [runResultLine(runStatusLabel(record)), ...rows];
 }
 
 function displayName(services: SchedulerServices, providerId: string): string {

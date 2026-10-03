@@ -13,6 +13,7 @@ import type {
 } from "../../core/scheduler/model/types.js";
 import { defaultScheduleName } from "../../core/scheduler/model/validate-schedule.js";
 import type { Launcher } from "../../core/scheduler/trigger/os-trigger.js";
+import { ARGUMENT_ERRORS, NOT_A_PACKAGE } from "../../ui/text/schedule-cli-labels.js";
 
 /**
  * `gup schedule add` options → a schedule draft, or every reason it is not
@@ -35,11 +36,6 @@ export interface AddOptions {
 export type ParsedAdd =
   | { readonly ok: true; readonly draft: ScheduleDraft }
   | { readonly ok: false; readonly errors: readonly string[] };
-
-export const ADD_EXAMPLE = "  Exemple : gup schedule add winget:Git.Git --every daily";
-/** A bare provider was given: the rule, then how to name a package. */
-export const NOT_A_PACKAGE = `${NEVER_A_PROVIDER}\n${ADD_EXAMPLE}`;
-const NO_TARGET = "au moins un paquet provider:paquet requis";
 
 const WEEKDAYS: Readonly<Record<string, Weekday>> = {
   dim: 0, dimanche: 0, sun: 0, sunday: 0, "0": 0, "7": 0,
@@ -76,7 +72,7 @@ export function parseLauncher(
 ): Launcher | undefined | { readonly error: string } {
   if (value === undefined) return undefined;
   const launcher = LAUNCHERS.find((candidate) => candidate === value);
-  return launcher ?? { error: `--launcher : headless ou direct attendu (reçu « ${value} »)` };
+  return launcher ?? { error: ARGUMENT_ERRORS.launcher(value) };
 }
 
 interface Parsed<T> {
@@ -85,7 +81,7 @@ interface Parsed<T> {
 }
 
 function parseTargets(texts: readonly string[]): Parsed<ScheduleTarget[]> {
-  if (texts.length === 0) return { value: [], errors: [NO_TARGET] };
+  if (texts.length === 0) return { value: [], errors: [ARGUMENT_ERRORS.noTarget] };
   const value: ScheduleTarget[] = [];
   const errors: string[] = [];
   for (const text of texts) {
@@ -99,22 +95,20 @@ function parseTargets(texts: readonly string[]): Parsed<ScheduleTarget[]> {
 function parseRecurrence(options: AddOptions): Parsed<Recurrence | null> {
   const { every, cron } = options;
   if (every !== undefined && cron !== undefined) {
-    return failed("--every et --cron s'excluent : choisissez l'un des deux");
+    return failed(ARGUMENT_ERRORS.bothFrequencies);
   }
   if (cron !== undefined) return parseCron(options);
-  if (every === undefined) {
-    return failed('fréquence requise : --every <daily|weekly|monthly> ou --cron "<m h j mois js>"');
-  }
+  if (every === undefined) return failed(ARGUMENT_ERRORS.noFrequency);
   const preset = PRESETS.find((candidate) => candidate === every.toLowerCase());
-  if (!preset) return failed(`--every : daily, weekly ou monthly attendu (reçu « ${every} »)`);
+  if (!preset) return failed(ARGUMENT_ERRORS.every(every));
   const at = parseTime(options.at);
-  if (!at) return failed(`--at : heure HH:MM attendue (reçu « ${options.at} »)`);
+  if (!at) return failed(ARGUMENT_ERRORS.at(options.at));
   return presetRecurrence(preset, { at, on: options.on });
 }
 
 function parseCron(options: AddOptions): Parsed<Recurrence | null> {
   if (options.on !== undefined || options.at !== undefined) {
-    return failed("--on et --at ne s'appliquent pas à --cron : l'expression dit tout");
+    return failed(ARGUMENT_ERRORS.cronSaysAll);
   }
   return { value: { kind: "cron", expression: options.cron ?? "" }, errors: [] };
 }
@@ -127,15 +121,15 @@ function presetRecurrence(
   if (preset === "daily") {
     return on === undefined
       ? { value: { kind: "daily", at }, errors: [] }
-      : failed("--on ne s'applique qu'à --every weekly ou monthly");
+      : failed(ARGUMENT_ERRORS.onNotDaily);
   }
   if (preset === "weekly") {
     const weekday = on === undefined ? undefined : weekdayOf(on);
-    if (weekday === undefined) return failed("--on : jour de la semaine attendu (lun, mar… dim)");
+    if (weekday === undefined) return failed(ARGUMENT_ERRORS.weekday);
     return { value: { kind: "weekly", weekday, at }, errors: [] };
   }
   const day = on === undefined ? null : parseMonthDay(on);
-  if (day === null) return failed("--on : jour du mois attendu (1 à 28, ou dernier)");
+  if (day === null) return failed(ARGUMENT_ERRORS.monthDay);
   return { value: { kind: "monthly", day, at }, errors: [] };
 }
 

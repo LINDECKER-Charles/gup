@@ -7,14 +7,16 @@ import {
   validateDraft,
   type ValidationIssue,
 } from "../../core/scheduler/model/validate-schedule.js";
-import { STATUS_GLYPHS } from "../../ui/theme/glyphs.js";
 import { formatRelative } from "../../ui/text/fr-format.js";
 import {
   createdLine,
   disabledLine,
   disabledPreview,
   enabledLine,
+  ISSUE_SUBJECTS,
+  issueLine,
   nextRunsLine,
+  notSavedLine,
   removedLine,
   WINGET_UAC_NOTE,
 } from "../../ui/text/schedule-cli-labels.js";
@@ -43,7 +45,7 @@ export async function addCommand(
     providers: services.providers,
     existingCount: services.repo.list().length,
   });
-  if (issues.length > 0) return refuse(issues.map((i) => issueLine(i, parsed.draft)), output);
+  if (issues.length > 0) return refuse(issues.map((i) => issueLineOf(i, parsed.draft)), output);
   const schedule = save(() => services.repo.create(parsed.draft, now), output);
   if (!schedule) return 1;
   output.out(createdLine(schedule));
@@ -137,7 +139,7 @@ function save<T>(write: () => T, output: CommandOutput): T | undefined {
     return write();
   } catch (err) {
     if (!(err instanceof ConfigWriteError)) throw err;
-    output.err(`${STATUS_GLYPHS.failed} Planifications non enregistrées : ${err.message}`);
+    output.err(notSavedLine(err.message));
     return undefined;
   }
 }
@@ -147,18 +149,11 @@ function refuse(errors: readonly string[], output: CommandOutput): number {
   return 2;
 }
 
-/** "brew:git : Provider inconnu: brew", "nom : nom requis". */
-function issueLine(issue: ValidationIssue, draft: ScheduleDraft): string {
+/** A problem with what it is about: the package it names, else the field. */
+function issueLineOf(issue: ValidationIssue, draft: ScheduleDraft): string {
   const target = issue.field.startsWith("target:")
     ? draft.targets[Number(issue.field.slice("target:".length))]
     : undefined;
-  const subject = target ? targetKey(target) : FIELD_NAMES[issue.field] ?? issue.field;
-  return `${STATUS_GLYPHS.failed} ${subject} : ${issue.message}`;
+  const subject = target ? targetKey(target) : (ISSUE_SUBJECTS[issue.field] ?? issue.field);
+  return issueLine(subject, issue.message);
 }
-
-const FIELD_NAMES: Readonly<Record<string, string>> = {
-  name: "nom",
-  recurrence: "fréquence",
-  targets: "paquets",
-  schedules: "planifications",
-};

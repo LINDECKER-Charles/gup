@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  NOT_A_PACKAGE,
   parseAddArgs,
   parseLauncher,
   type AddOptions,
 } from "../../../src/commands/schedule/schedule-args.js";
+import { NOT_A_PACKAGE } from "../../../src/ui/text/schedule-cli-labels.js";
 
 function options(overrides: Partial<AddOptions>): AddOptions {
   return { targets: ["winget:Git.Git"], catchUp: true, disabled: false, ...overrides };
