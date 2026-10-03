@@ -26,7 +26,7 @@ function makeProvider(cfg: FakeProviderConfig): Provider {
   return {
     id: cfg.id,
     displayName: cfg.displayName ?? cfg.id,
-    slow: cfg.slow,
+    ...(cfg.slow === undefined ? {} : { slow: cfg.slow }),
     async isAvailable() {
       return cfg.available ?? true;
     },

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { UpdateOutcome } from "../../src/core/types.js";
 import { chocoOutcome, parseChocoOutdated } from "../../src/providers/os/choco.js";
 
 describe("chocoOutcome", () => {
@@ -47,7 +48,7 @@ describe("ChocoProvider.updateAll: reboot-message deduplication", () => {
     // free of process spawning.
     const exitCode = 3010;
     const ids = ["caddy", "ffmpeg", "fzf"];
-    const outcomes = ids.map((id, i) => {
+    const outcomes = ids.map((id, i): UpdateOutcome => {
       const o = chocoOutcome(id, exitCode);
       if (i > 0 && o.message) {
         const { message: _msg, ...rest } = o;

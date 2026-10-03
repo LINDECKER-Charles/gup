@@ -77,7 +77,7 @@
     "build": "tsup",
     "prepare": "npm run build",
     "start": "node dist/cli.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
     "test": "vitest",
     "test:run": "vitest run",
     "test:security": "vitest run tests/security",
