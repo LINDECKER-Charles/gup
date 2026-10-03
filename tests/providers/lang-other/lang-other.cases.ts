@@ -5,15 +5,16 @@ import { githubLatest } from "../../support/system/releases.js";
 import type { SystemSpec } from "../../support/system/types.js";
 
 /**
- * Language ecosystems without a home of their own. Sample outputs are
- * exported: the knowledge tests of each provider start from the same machine.
+ * Language ecosystems without a home of their own. The machines and outputs a
+ * knowledge test starts from are exported; the rest of the case data stays
+ * private.
  */
 
 // --- vcpkg ------------------------------------------------------------------
 
-export const VCPKG_BIN = "C:\\vcpkg\\vcpkg.exe";
+const VCPKG_BIN = "C:\\vcpkg\\vcpkg.exe";
 export const VCPKG_REBUILD_NOTE = "reconstruction depuis les sources — peut être long";
-export const VCPKG_UPGRADE = ["vcpkg", "upgrade", "--no-dry-run", "--no-keep-going"];
+const VCPKG_UPGRADE = ["vcpkg", "upgrade", "--no-dry-run", "--no-keep-going"];
 
 /** `vcpkg update` in classic mode: preamble, rows, both footers. */
 export const VCPKG_UPDATE_STDOUT = [

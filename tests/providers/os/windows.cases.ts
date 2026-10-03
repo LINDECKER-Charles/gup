@@ -9,8 +9,8 @@ import { WIN_HOME } from "../../support/system/os-identity.js";
 import type { SystemSpec } from "../../support/system/types.js";
 
 /**
- * Windows package managers. Sample outputs are exported: the knowledge tests
- * of each provider start from the same nominal machine.
+ * Windows package managers. The machines and outputs a knowledge test starts
+ * from are exported; the rest of the case data stays private.
  */
 
 // --- winget -----------------------------------------------------------------
@@ -24,7 +24,7 @@ export const WINGET_UPGRADE_ARGV = [
 export const WINGET_PIN_ARGV = ["winget", "pin", "list"];
 
 /** `winget upgrade` on an English Windows, the totals line included. */
-export const WINGET_UPGRADE_TABLE = [
+const WINGET_UPGRADE_TABLE = [
   "Name                              Id                          Version       Available     Source",
   "-------------------------------------------------------------------------------------------------",
   "Microsoft Edge                    Microsoft.Edge              120.0.2210.91 121.0.2277.83 winget",
@@ -34,7 +34,7 @@ export const WINGET_UPGRADE_TABLE = [
 ].join("\n");
 
 /** `winget pin list`: the second column is the pinned id. */
-export const WINGET_PIN_LIST = [
+const WINGET_PIN_LIST = [
   "Name      Id                  Version Source Pin type",
   "-----------------------------------------------------",
   "PowerToys Microsoft.PowerToys 0.75.0  winget Pinning",
@@ -101,7 +101,7 @@ const WINGET: ProviderContractCase = {
 // --- scoop ------------------------------------------------------------------
 
 /** `scoop status`, with a held app (Info column). */
-export const SCOOP_STATUS = [
+const SCOOP_STATUS = [
   "Scoop is up to date.",
   "",
   "Name      Installed Version  Latest Version  Missing Dependencies  Info",
@@ -139,12 +139,12 @@ const SCOOP: ProviderContractCase = {
 
 // --- chocolatey -------------------------------------------------------------
 
-export const CHOCO_OUTDATED_ARGV = ["choco", "outdated", "-r", "--limit-output"];
+const CHOCO_OUTDATED_ARGV = ["choco", "outdated", "-r", "--limit-output"];
 
 /** `choco outdated -r --limit-output`: name|current|available|pinned. */
-export const CHOCO_OUTDATED = "git|2.43.0|2.44.0|false\nvlc|3.0.18|3.0.20|true\n";
+const CHOCO_OUTDATED = "git|2.43.0|2.44.0|false\nvlc|3.0.18|3.0.20|true\n";
 
-export const CHOCO_NOT_ADMIN_MESSAGE =
+const CHOCO_NOT_ADMIN_MESSAGE =
   "Chocolatey nécessite un terminal admin. Relancer gup depuis PowerShell ou Terminal lancé en « Exécuter en tant qu'administrateur ».";
 
 /** A Chocolatey install; `elevated` says whether gup runs as administrator. */
@@ -256,12 +256,12 @@ export function cygwinMachine(setup: string | null, elevated = false): SystemSpe
   };
 }
 
-export const CYGWIN_UNVERIFIABLE_MESSAGE =
+const CYGWIN_UNVERIFIABLE_MESSAGE =
   "setup s'est élevé via UAC : son processus parent sort toujours en 0, le " +
   "résultat réel est dans sa fenêtre et dans setup.log. Relancer gup en " +
   "administrateur pour obtenir un statut fiable.";
 
-export const CYGWIN_MISSING_SETUP_MESSAGE =
+const CYGWIN_MISSING_SETUP_MESSAGE =
   "setup-x86_64.exe introuvable : Cygwin ne l'installe pas dans son arborescence. " +
   "Le télécharger sur https://cygwin.com/setup-x86_64.exe puis le placer dans la " +
   "racine Cygwin ou dans le dossier Downloads du profil utilisateur.";

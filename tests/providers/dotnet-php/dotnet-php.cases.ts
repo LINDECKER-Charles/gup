@@ -5,8 +5,8 @@ import type { ProviderContractCase } from "../../support/contract/types.js";
 import type { HttpRoute, SystemSpec } from "../../support/system/types.js";
 
 /**
- * The .NET side of the dotnet-php domain. Sample outputs are exported: the
- * knowledge tests of each provider start from the same machine.
+ * The .NET side of the dotnet-php domain. The machines and outputs a knowledge
+ * test starts from are exported; the rest of the case data stays private.
  */
 
 // --- .NET SDK ---------------------------------------------------------------
@@ -57,7 +57,7 @@ export function dotnetManualMessage(channel: string): string {
 }
 
 /** The SDK where its installers put it: a system prefix with no ownership signal. */
-export const DOTNET_MACHINE: SystemSpec = {
+const DOTNET_MACHINE: SystemSpec = {
   platform: "win32",
   bin: { dotnet: "C:\\Program Files\\dotnet\\dotnet.exe" },
   commands: [{ argv: ["dotnet", "--list-sdks"], stdout: LIST_SDKS_STDOUT }],
@@ -137,7 +137,7 @@ const DOTNET_SDK_APT: ProviderContractCase = {
 export const NUGET_FLAT_CONTAINER =
   "https://api.nuget.org/v3-flatcontainer/nuget.commandline/index.json";
 export const NUGET_FORCED_HELP_ARGV = ["nuget", "help", "-ForceEnglishOutput"];
-export const NUGET_SELF_UPDATE = ["nuget", "update", "-self", "-NonInteractive"];
+const NUGET_SELF_UPDATE = ["nuget", "update", "-self", "-NonInteractive"];
 
 /** `nuget help`: the four-part file version banner, then the help text. */
 export const NUGET_HELP_STDOUT = [
@@ -152,7 +152,7 @@ export const NUGET_HELP_STDOUT = [
 ].join("\n");
 
 /** The flat container lists every version: unordered, previews included. */
-export const NUGET_VERSIONS = ["6.9.0", "6.12.0", "6.11.0", "7.0.0-preview.1"];
+const NUGET_VERSIONS = ["6.9.0", "6.12.0", "6.11.0", "7.0.0-preview.1"];
 
 export const NUGET_WINDOWS_FAILURE =
   "nuget.exe se remplace sur place : vérifier les droits d'écriture sur son dossier, ou relancer depuis un terminal administrateur";

@@ -13,14 +13,14 @@ import { githubLatest } from "../../support/system/releases.js";
 import type { CommandScript, HttpRoute, SystemSpec } from "../../support/system/types.js";
 
 /**
- * macOS and Linux package managers. Sample outputs are exported: the
- * knowledge tests of each provider start from the same nominal machine.
+ * macOS and Linux package managers. The machines and outputs a knowledge test
+ * starts from are exported; the rest of the case data stays private.
  */
 
 // --- Homebrew ---------------------------------------------------------------
 
-export const BREW_FORMULAE_ARGV = ["brew", "outdated", "--formula", "--json=v2"];
-export const BREW_CASKS_ARGV = ["brew", "outdated", "--cask", "--json=v2"];
+const BREW_FORMULAE_ARGV = ["brew", "outdated", "--formula", "--json=v2"];
+const BREW_CASKS_ARGV = ["brew", "outdated", "--cask", "--json=v2"];
 
 /** `brew outdated --formula --json=v2`: a pinned formula, a formula with two kegs. */
 export const BREW_FORMULAE_JSON = JSON.stringify({
@@ -44,7 +44,7 @@ export const BREW_FORMULAE_JSON = JSON.stringify({
 });
 
 /** `brew outdated --cask --json=v2`: the array form and the singular installed_version. */
-export const BREW_CASKS_JSON = JSON.stringify({
+const BREW_CASKS_JSON = JSON.stringify({
   formulae: [],
   casks: [
     { name: "iterm2", installed_versions: ["3.4.23"], current_version: "3.5.0" },
@@ -52,7 +52,7 @@ export const BREW_CASKS_JSON = JSON.stringify({
   ],
 });
 
-export const BREW_MACHINE: SystemSpec = {
+const BREW_MACHINE: SystemSpec = {
   platform: "darwin",
   bin: { brew: "/opt/homebrew/bin/brew" },
   commands: [
@@ -118,7 +118,7 @@ const BREW_CASK: ProviderContractCase = {
 
 // --- Mac App Store ------------------------------------------------------------
 
-export const MAS_MACHINE: SystemSpec = {
+const MAS_MACHINE: SystemSpec = {
   platform: "darwin",
   bin: { mas: "/opt/homebrew/bin/mas" },
   commands: [
@@ -144,14 +144,14 @@ const MAS: ProviderContractCase = {
 
 // --- MacPorts -----------------------------------------------------------------
 
-export const PORT_OUTDATED = [
+const PORT_OUTDATED = [
   "The following installed ports are outdated:",
   "gettext                        0.21_0 < 0.22_1",
   "libiconv                       1.16_1 < 1.17_0",
 ].join("\n");
 
 /** A MacPorts tree; `elevated` says whether gup already runs as root. */
-export function macportsMachine(elevated: boolean): SystemSpec {
+function macportsMachine(elevated: boolean): SystemSpec {
   return {
     platform: "darwin",
     bin: { port: "/opt/local/bin/port" },
@@ -192,7 +192,7 @@ export const NIX_UPSTREAM_VERSION = "nix (Nix) 2.28.3";
 /** A Determinate build: its product version first, the Nix version last. */
 export const NIX_DETERMINATE_VERSION = "nix (Determinate Nix 3.21.9) 2.35.1";
 export const NIX_BIN = "/nix/var/nix/profiles/default/bin/nix";
-export const NIX_ENV_BIN = "/nix/var/nix/profiles/default/bin/nix-env";
+const NIX_ENV_BIN = "/nix/var/nix/profiles/default/bin/nix-env";
 export const NIX_PROFILE_UPGRADE_ARGV = [
   "nix",
   "--extra-experimental-features",
@@ -296,7 +296,7 @@ export const TRANSMIT_PLIST = "/Applications/Transmit.app/Contents/Info.plist";
 export const ITERM_PLIST = "/Applications/iTerm.app/Contents/Info.plist";
 export const TRANSMIT_FEED = "https://www.panic.com/updates/transmit5.xml";
 export const ITERM_FEED = "https://iterm2.com/appcasts/final_modern.xml";
-export const SPARKLE_NOTE = "Sparkle — updater intégré à l'app";
+const SPARKLE_NOTE = "Sparkle — updater intégré à l'app";
 
 /** Sparkle 2's recommended shape: versions as child elements of <item>. */
 export const APPCAST_ELEMENT_SHAPE = `<?xml version="1.0" encoding="utf-8"?>
@@ -344,7 +344,7 @@ export const APPCAST_ATTRIBUTE_SHAPE = `<?xml version="1.0" encoding="utf-8"?>
 export type PlistKeys = Readonly<Record<string, string>>;
 
 /** `plutil -extract <key> raw -o - <plist>` for each key; absent keys exit 1. */
-export function plutilScripts(plist: string, keys: PlistKeys): CommandScript[] {
+function plutilScripts(plist: string, keys: PlistKeys): CommandScript[] {
   return ["SUFeedURL", "CFBundleShortVersionString", "CFBundleVersion"].map((key) => {
     const value = keys[key];
     const argv = ["plutil", "-extract", key, "raw", "-o", "-", plist];
@@ -501,14 +501,14 @@ const PKGIN: ProviderContractCase = {
 // --- pkgx ---------------------------------------------------------------------
 
 export const PKGX_RELEASES_URL = "https://api.github.com/repos/pkgxdev/pkgx/releases?per_page=30";
-export const PKGX_MANUAL_MESSAGE =
+const PKGX_MANUAL_MESSAGE =
   "Relancer l'installeur officiel, qui met aussi pkgx à jour : curl -LSsf https://pkgx.sh | sh";
 
 /**
  * `/releases`, most recent first: a v2 pre-release, a v1 maintenance release
  * published between two v2 ones, then the newest stable v2.
  */
-export const PKGX_RELEASES = [
+const PKGX_RELEASES = [
   { tag_name: "v2.12.0-rc.1" },
   { tag_name: "v1.6.0" },
   { tag_name: "v2.11.0" },
