@@ -40,6 +40,8 @@ export interface HttpRoute {
   readonly json?: unknown;
   readonly body?: Text;
   readonly headers?: Readonly<Record<string, string>>;
+  /** Where redirects ended (`Response.url`); default: the requested URL. */
+  readonly finalUrl?: string;
 }
 
 export interface FsNode {

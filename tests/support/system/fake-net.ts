@@ -25,8 +25,9 @@ const RATE_LIMITED: ResolvedRoute = {
 
 function respond(route: ResolvedRoute, url: string): Response {
   const response = new Response(route.body, { status: route.status, headers: route.headers });
-  // A constructed Response has an empty url; the real one carries the request's.
-  Object.defineProperty(response, "url", { value: url });
+  // A constructed Response has an empty url; the real one carries the URL the
+  // redirects ended on.
+  Object.defineProperty(response, "url", { value: route.finalUrl ?? url });
   return response;
 }
 

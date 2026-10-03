@@ -39,6 +39,7 @@ export interface ResolvedRoute {
   readonly status: number;
   readonly body: string;
   readonly headers: Readonly<Record<string, string>>;
+  readonly finalUrl?: string;
 }
 
 export interface MachineState {
@@ -95,6 +96,7 @@ async function resolveRoute(route: HttpRoute): Promise<ResolvedRoute> {
     status: route.status ?? 200,
     body,
     headers: { ...(isJson && { "content-type": "application/json" }), ...route.headers },
+    ...(route.finalUrl !== undefined && { finalUrl: route.finalUrl }),
   };
 }
 

@@ -38,6 +38,18 @@ describe("fake network", () => {
     await expect(response.text()).resolves.toBe("hello from a fixture\n");
   });
 
+  it("reports where redirects ended, when the route says so", async () => {
+    const mirror = "http://mirror.example.test/feed.xml";
+    await system.load({
+      platform: "darwin",
+      http: [{ url: "https://example.test/feed.xml", body: "<rss/>", finalUrl: mirror }],
+    });
+
+    const response = await fetch("https://example.test/feed.xml");
+
+    expect(response.url).toBe(mirror);
+  });
+
   it("matches the method as well as the exact URL", async () => {
     await system.load({
       platform: "linux",
