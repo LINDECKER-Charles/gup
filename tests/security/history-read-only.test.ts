@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
  * a retry does. A module outside the front-ends importing them would be the
  * first step towards that, so the import graph is pinned here.
  */
-const READ_SIDE_MODULE = /["'][^"']*(?:\/(?:reader|parse-event)|insights\/[\w-]+)\.js["']/;
+const READ_SIDE_MODULE = /["'][^"']*(?:\/(?:reader|parse-event)|\binsights\/[\w-]+)\.js["']/;
 
 /** Path prefixes allowed to import the read side (posix, relative to the repo root). */
 const FRONT_ENDS = [
