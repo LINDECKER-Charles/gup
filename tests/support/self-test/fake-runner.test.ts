@@ -105,6 +105,16 @@ describe("fake runner: run()", () => {
     system.acknowledgeUnscripted();
   });
 
+  it("keeps a recorded violation when the test loads another machine", async () => {
+    // Contract checks reload between steps: a violation of an early step must survive.
+    await system.load(WINDOWS_TOFU);
+    await run("tofu", ["providers"]).catch(() => undefined);
+    await system.load({ platform: "linux" });
+
+    expect(system.unscripted).toHaveLength(1);
+    system.acknowledgeUnscripted();
+  });
+
   it("treats a binary declared by path in `fs` as present", async () => {
     const vswhere = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
     await system.load({ platform: "win32", fs: { [vswhere]: { kind: "file" } } });

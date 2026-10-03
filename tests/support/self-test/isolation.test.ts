@@ -1,5 +1,6 @@
 import { homedir, platform, tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
+import { run, runInherit } from "../../../src/core/runner.js";
 import { HOST_PLATFORM, restorePlatform, setPlatform } from "../platform.js";
 import { violationReport } from "../system/errors.js";
 import { system } from "../system/fake-system.js";
@@ -82,19 +83,57 @@ describe("simulated OS identity", () => {
   });
 });
 
-// Sequential by default: the second test observes what the first one left.
-describe("isolation between tests", () => {
-  it("leaves a foreign platform and a dirty machine behind on purpose", async () => {
+// The pairs below run in declaration order, never shuffled: a later test
+// observes what the setupFile did around an earlier one.
+describe("isolation between tests", { shuffle: false }, () => {
+  let afterDirtyTest: { readonly platform: string; readonly simulated: string | undefined } | undefined;
+
+  it("leaves a foreign platform and a dirty machine behind on purpose", async (context) => {
+    // onTestFinished runs after every afterEach hook, the setupFile's included.
+    context.onTestFinished(() => {
+      afterDirtyTest = { platform: process.platform, simulated: process.env["ONLY_SIMULATED"] };
+    });
     const foreign = HOST_SIM_PLATFORM === "darwin" ? "win32" : "darwin";
-    await system.load({ platform: foreign, bin: { brew: "/opt/homebrew/bin/brew" } });
+    await system.load({
+      platform: foreign,
+      env: { ONLY_SIMULATED: "1" },
+      bin: { brew: "/opt/homebrew/bin/brew" },
+    });
     system.inject({ on: "spawn", argv: ["brew", "outdated"], mode: "exit-1" });
     system.answerInstall({ exitCode: 9 });
   });
 
-  it("starts the next test on an empty machine of the host platform", () => {
+  it("hands the real platform and env back as soon as that test ends", () => {
+    expect(afterDirtyTest).toEqual({ platform: HOST_PLATFORM, simulated: undefined });
+  });
+
+  it("starts the next test on an empty machine of the host platform", async () => {
     expect(process.platform).toBe(HOST_SIM_PLATFORM);
     expect(system.trace).toEqual({ spawns: [], requests: [], fsReads: [] });
     expect(system.unscripted).toEqual([]);
+    // Neither the injected fault nor the queued install answer survived.
+    await expect(run("brew", ["outdated"])).resolves.toMatchObject({ exitCode: -1 });
+    await expect(runInherit("brew", ["upgrade"])).resolves.toMatchObject({ exitCode: 0 });
+  });
+});
+
+describe("strict mode", { shuffle: false }, () => {
+  let failure: readonly string[] = [];
+
+  // Must end red. Its code swallows the error, as a fail-soft provider does:
+  // only the setupFile's afterEach can fail it.
+  it.fails("fails a test whose code swallowed an unscripted spawn", async (context) => {
+    context.onTestFailed(({ task }) => {
+      failure = (task.result?.errors ?? []).map((error) => error.message);
+    });
+    await system.load({ platform: "linux", bin: { lm: "/usr/bin/lm" } });
+    await run("lm", ["outdated"]).catch(() => undefined);
+  });
+
+  it("reports the swallowed violation as that test's failure", () => {
+    expect(failure).toEqual([
+      expect.stringMatching(/^1 strict fake-system violation\(s\).*\n- unscripted spawn \["lm"/s),
+    ]);
   });
 });
 

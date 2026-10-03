@@ -51,6 +51,7 @@ describe("fake network", () => {
     await expect(fetch("https://example.test/q?a=2", { method: "POST" })).rejects.toThrow(
       "POST https://example.test/q?a=1",
     );
+    expect(system.unscripted).toHaveLength(2);
     system.acknowledgeUnscripted();
   });
 
