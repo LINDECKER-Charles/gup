@@ -4,11 +4,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   applyLogThreshold,
   effectiveLogThreshold,
+  forwardLogRecord,
   installLogBackend,
   log,
   type LogBackend,
   type LogLevel,
 } from "../../../src/core/log/log.js";
+import type { LogRecord } from "../../../src/core/log/types.js";
 
 afterEach(() => {
   installLogBackend(null);
@@ -94,6 +96,30 @@ describe("log facade", () => {
     installLogBackend(null);
     log.info("session.start");
     expect(backend.emit).not.toHaveBeenCalled();
+  });
+
+  it("hands an elevated child's record to a backend that takes them, and tolerates one that does not", () => {
+    const child: LogRecord = {
+      v: 1,
+      ts: "2026-10-03T12:00:00.000Z",
+      level: "info",
+      event: "cmd.end",
+      runId: "child",
+      pid: 7,
+    };
+    const forward = vi.fn();
+    installLogBackend({ ...backendAt(["info"]), forward });
+    forwardLogRecord(child);
+    expect(forward).toHaveBeenCalledWith(child);
+    installLogBackend(backendAt(["info"]));
+    expect(() => forwardLogRecord(child)).not.toThrow();
+    installLogBackend({
+      ...backendAt(["info"]),
+      forward: () => {
+        throw new Error("disk full");
+      },
+    });
+    expect(() => forwardLogRecord(child)).not.toThrow();
   });
 });
 
