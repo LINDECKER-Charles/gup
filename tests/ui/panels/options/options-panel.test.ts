@@ -22,7 +22,7 @@ import {
   OPTIONS_SECTIONS,
   TIMEOUT_OUT_OF_RANGE,
 } from "../../../../src/ui/text/options-labels.js";
-import { COLORS_UNAVAILABLE } from "../../../../src/ui/text/theme-labels.js";
+import { COLORS_UNAVAILABLE, CONTRAST_STATUS } from "../../../../src/ui/text/theme-labels.js";
 import { seg } from "../../../../src/ui/tui/styled-lines.js";
 import {
   key,
@@ -176,6 +176,16 @@ describe("OptionsPanel on a narrow panel", () => {
     expect(after).not.toContain(OPTION_HINTS.fast);
     expect(after).toHaveLength(before.length);
     expect(after.every((line) => line.length <= NARROW.width)).toBe(true);
+  });
+
+  it("repeats under the list only a hint its own row cuts", () => {
+    const { panel } = setup();
+    const onFast = linesOf(panel, VIEW);
+    expect(onFast.filter((line) => line.includes(OPTION_HINTS.fast))).toHaveLength(1);
+    press(panel, "down", "down", "down");
+    const onTheme = linesOf(panel, VIEW);
+    expect(onTheme).toContain(CONTRAST_STATUS.unverified);
+    expect(onTheme).toHaveLength(onFast.length);
   });
 
   it("repeats nothing under the list when every hint fits beside its row", () => {

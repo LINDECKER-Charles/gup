@@ -265,9 +265,9 @@ flowchart LR
 is compact; only the part around the cursor is drawn when the list is taller than the panel. The
 notice line and the rescan offer are pinned above the list, so they stay visible whatever the
 scroll. When some row cannot show its whole hint beside it (an 80-column terminal leaves the panel
-50 columns), a hint that would be cut below 16 columns is left out of its row, and the cursor
-row's hint is shown whole under the list, on a fixed two rows so the list never jumps as the
-cursor moves. The key-hint bar puts what matters first (the rescan offer before `c`, `échap
+50 columns), a hint that would be cut below 16 columns is left out of its row, and when the
+cursor stands on a row whose hint does not fit, that hint is shown whole under the list — in an
+area of two rows kept (blank) whatever the row, so the list never jumps as the cursor moves. The key-hint bar puts what matters first (the rescan offer before `c`, `échap
 retour` third in the colour editor): a narrow bar cuts the end. Keys: ↑ ↓ `k` `j` `pgup` `pgdn` `home` `end` move; Entrée / Espace / a click activate an
 enabled row; ← → step the row under the cursor; `r` rescans after a scan setting changed; the
 sections' shortcuts last. `wantsKey` claims ← → only on an enabled row that steps (elsewhere ←

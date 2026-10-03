@@ -105,7 +105,8 @@ export function renderItems(
 
 /**
  * Under the list when some row cannot show its whole hint beside it: a blank
- * row, then the cursor row's hint in full, wrapped on a fixed number of rows.
+ * row, then — when the cursor row is one of them — its hint in full, wrapped
+ * on a fixed number of rows (kept blank otherwise, so the list never jumps).
  * Empty when every hint fits inline.
  */
 export function detailLines(
@@ -117,7 +118,7 @@ export function detailLines(
   const fits = (row: OptionRow): boolean =>
     lineWidth(cellsOf(row, columns, false)) + lineWidth(row.hint()) <= width;
   if (rowsOf(items).every(fits)) return [];
-  const hint = cursor ? wrapLine(cursor.hint(), width) : [];
+  const hint = cursor && !fits(cursor) ? wrapLine(cursor.hint(), width) : [];
   return [[], ...Array.from({ length: DETAIL_HINT_ROWS }, (_, index) => hint[index] ?? [])];
 }
 
