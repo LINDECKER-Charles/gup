@@ -41,6 +41,10 @@ after the bump, the same day).
 
 ## Writing the next one
 
+This section covers the notes file only. The whole procedure (branch, bump,
+checks, tag, npm publish, GitHub Release) is in
+[`../development/releasing.md`](../development/releasing.md).
+
 1. Create `docs/releases/<version>.md` on the release branch, in English.
    Shape used since `0.3.0`: a one-paragraph **TL;DR** with the install line,
    one section per theme, then **Tests**, **Verification** (the full check
