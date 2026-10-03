@@ -5,7 +5,7 @@ const { commandExistsMock, runMock } = vi.hoisted(() => ({
   runMock: vi.fn(),
 }));
 
-vi.mock("../../src/core/runner.js", () => ({
+vi.mock("../../../src/core/runner.js", () => ({
   commandExists: commandExistsMock,
   run: runMock,
   runInherit: vi.fn(),
@@ -17,7 +17,7 @@ const { fetchGitHubReleaseLatestMock } = vi.hoisted(() => ({
   fetchGitHubReleaseLatestMock: vi.fn(),
 }));
 
-vi.mock("../../src/core/gh-releases.js", () => ({
+vi.mock("../../../src/core/gh-releases.js", () => ({
   fetchGitHubReleaseLatest: fetchGitHubReleaseLatestMock,
   fetchGitHubReleaseTagMatching: vi.fn(),
   normalizeVersion: (v: string) => v.trim().replace(/^v/i, "").toLowerCase(),
@@ -61,13 +61,13 @@ vi.mock("adm-zip", () => ({
   default: admZipMock,
 }));
 
-import { EclipseMarketplaceProvider } from "../../src/providers/ide/eclipse-marketplace.js";
-import { JetBrainsPluginsProvider } from "../../src/providers/ide/jetbrains-plugins.js";
-import { NotepadPpProvider } from "../../src/providers/ide/notepad-pp.js";
-import { ObsidianPluginsProvider } from "../../src/providers/ide/obsidian-plugins.js";
-import { SublimePcProvider } from "../../src/providers/ide/sublime-pc.js";
-import { UnityHubProvider } from "../../src/providers/ide/unity-hub.js";
-import { ZedExtProvider } from "../../src/providers/ide/zed-ext.js";
+import { EclipseMarketplaceProvider } from "../../../src/providers/ide/eclipse-marketplace.js";
+import { JetBrainsPluginsProvider } from "../../../src/providers/ide/jetbrains-plugins.js";
+import { NotepadPpProvider } from "../../../src/providers/ide/notepad-pp.js";
+import { ObsidianPluginsProvider } from "../../../src/providers/ide/obsidian-plugins.js";
+import { SublimePcProvider } from "../../../src/providers/ide/sublime-pc.js";
+import { UnityHubProvider } from "../../../src/providers/ide/unity-hub.js";
+import { ZedExtProvider } from "../../../src/providers/ide/zed-ext.js";
 
 function mkRun(stdout: string, failed = false) {
   return { stdout, stderr: "", exitCode: failed ? 1 : 0, failed };
