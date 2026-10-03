@@ -26,9 +26,9 @@ import type { LogSink } from "./types.js";
 
 /** `gup-2026-10-03.jsonl`, `gup-2026-10-03.1.jsonl` … `.9.jsonl`. */
 export const LOG_FILE_PATTERN = /^gup-(\d{4}-\d{2}-\d{2})(?:\.([1-9]))?\.jsonl$/;
-export const DEFAULT_MAX_FILE_BYTES = 10 * 1024 * 1024;
+const DEFAULT_MAX_FILE_BYTES = 10 * 1024 * 1024;
 /** Parts after the first one; the pattern's single digit bounds it. */
-export const DEFAULT_MAX_PARTS = 9;
+const DEFAULT_MAX_PARTS = 9;
 export const DEFAULT_RETENTION_DAYS = 14;
 export const MAX_RETENTION_DAYS = 365;
 export const RETENTION_ENV = "GUP_LOG_RETENTION_DAYS";
