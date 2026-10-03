@@ -1,8 +1,9 @@
 import { ConfigWriteError } from "../../core/config/store.js";
-import { upcomingRuns } from "../../core/scheduler/model/recurrence.js";
+import { PREVIEW_RUNS, upcomingRuns } from "../../core/scheduler/model/recurrence.js";
 import { targetKey } from "../../core/scheduler/model/schedule-target.js";
 import type { Schedule, ScheduleDraft } from "../../core/scheduler/model/types.js";
 import {
+  mayAskForUac,
   validateDraft,
   type ValidationIssue,
 } from "../../core/scheduler/model/validate-schedule.js";
@@ -29,11 +30,6 @@ import { indented, reconcileTrigger, reportSync } from "./trigger-commands.js";
  * invalid arguments, nothing changed.
  */
 
-/** Occurrences shown after a change. */
-export const PREVIEW_RUNS = 3;
-/** A winget package installed for every user may raise UAC, which nobody answers. */
-const UAC_PRONE_PROVIDER = "winget";
-
 export async function addCommand(
   services: SchedulerServices,
   options: AddOptions,
@@ -55,9 +51,7 @@ export async function addCommand(
   details.out(
     schedule.enabled ? nextRunsLine(upcomingLabels(schedule, now)) : disabledPreview(schedule),
   );
-  if (schedule.targets.some((t) => t.providerId === UAC_PRONE_PROVIDER)) {
-    details.out(WINGET_UAC_NOTE);
-  }
+  if (mayAskForUac(schedule.targets)) details.out(WINGET_UAC_NOTE);
   return reportSync(await reconcileTrigger(services), { services, output: details });
 }
 

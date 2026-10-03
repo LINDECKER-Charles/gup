@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { CronExpression } from "../../../src/core/scheduler/model/cron.js";
-import { toCron, upcomingRuns } from "../../../src/core/scheduler/model/recurrence.js";
+import {
+  parseMonthDay,
+  parseTimeOfDay,
+  toCron,
+  upcomingRuns,
+} from "../../../src/core/scheduler/model/recurrence.js";
 
 // The suite runs with TZ=UTC (tests/support/test-env.ts): local time is UTC.
 const SATURDAY_10H = new Date("2026-10-03T10:00:00Z");
@@ -121,5 +126,28 @@ describe("upcomingRuns", () => {
       "2026-10-12T09:00:00.000Z",
     ]);
     expect(upcomingRuns({ kind: "cron", expression: "nope" }, SATURDAY_10H, 2)).toEqual([]);
+  });
+});
+
+describe("parseTimeOfDay", () => {
+  it("reads a 24-hour HH:MM or H:MM time, nothing else", () => {
+    expect(parseTimeOfDay("09:05")).toEqual({ hour: 9, minute: 5 });
+    expect(parseTimeOfDay(" 7:30 ")).toEqual({ hour: 7, minute: 30 });
+    expect(parseTimeOfDay("23:59")).toEqual({ hour: 23, minute: 59 });
+    for (const text of ["24:00", "12:60", "9h", "09:5", "", "-1:00"]) {
+      expect(parseTimeOfDay(text), text).toBeNull();
+    }
+  });
+});
+
+describe("parseMonthDay", () => {
+  it("reads a day every month has, or the last one", () => {
+    expect(parseMonthDay("1")).toBe(1);
+    expect(parseMonthDay(" 28 ")).toBe(28);
+    expect(parseMonthDay("Dernier")).toBe("last");
+    expect(parseMonthDay("last")).toBe("last");
+    for (const text of ["0", "29", "31", "01", "lundi", ""]) {
+      expect(parseMonthDay(text), text).toBeNull();
+    }
   });
 });

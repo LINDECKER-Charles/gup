@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  defaultScheduleName,
+  MAX_NAME_LENGTH,
+  mayAskForUac,
   MAX_SCHEDULES,
   MAX_TARGETS_PER_SCHEDULE,
   TOO_FREQUENT,
@@ -104,5 +107,27 @@ describe("validateDraft", () => {
     expect(messages(draft({ recurrence: monthly }))).toEqual([
       "recurrence: jour du mois invalide (1 à 28, ou le dernier)",
     ]);
+  });
+});
+
+describe("defaultScheduleName", () => {
+  it("names a schedule after its first package and how many others", () => {
+    expect(defaultScheduleName([target("winget", "Git.Git")])).toBe("Git.Git");
+    const three = [target("winget", "Git.Git"), target("npm-g", "a"), target("npm-g", "b")];
+    expect(defaultScheduleName(three)).toBe("Git.Git +2");
+    expect(defaultScheduleName([])).toBe("planification");
+  });
+
+  it("stays within the name limit", () => {
+    const name = defaultScheduleName([target("npm-g", "x".repeat(80))]);
+    expect(name).toHaveLength(MAX_NAME_LENGTH);
+    expect(name.endsWith("…")).toBe(true);
+  });
+});
+
+describe("mayAskForUac", () => {
+  it("warns about winget packages only, which may be installed machine-wide", () => {
+    expect(mayAskForUac([target("npm-g", "pnpm"), target("winget", "Git.Git")])).toBe(true);
+    expect(mayAskForUac([target("npm-g", "pnpm")])).toBe(false);
   });
 });

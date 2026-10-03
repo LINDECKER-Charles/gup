@@ -1,4 +1,4 @@
-import { toCron, upcomingRuns } from "../../core/scheduler/model/recurrence.js";
+import { PREVIEW_RUNS, toCron, upcomingRuns } from "../../core/scheduler/model/recurrence.js";
 import { targetKey } from "../../core/scheduler/model/schedule-target.js";
 import type { Schedule, SchedulerState } from "../../core/scheduler/model/types.js";
 import type { InstallRecord } from "../../core/scheduler/persistence/install-record.js";
@@ -15,7 +15,7 @@ import {
   runStatusLabel,
   triggerLine,
 } from "../../ui/text/schedule-labels.js";
-import { PREVIEW_RUNS, upcomingLabels } from "./crud-commands.js";
+import { upcomingLabels } from "./crud-commands.js";
 import {
   readTriggerReport,
   type CommandOutput,

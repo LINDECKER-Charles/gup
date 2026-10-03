@@ -34,6 +34,11 @@ const MAX_MINUTE = 59;
 const MAX_WEEKDAY = 6;
 
 export const TOO_FREQUENT = "Fréquence trop élevée — au plus une exécution par heure";
+export const INVALID_TIME = "heure invalide (HH:MM attendu)";
+/** The name of a schedule that has no target to be named after yet. */
+const UNNAMED = "planification";
+/** Its packages installed machine-wide may ask for UAC. */
+const UAC_PRONE_PROVIDER = "winget";
 
 export type IssueField = "name" | "recurrence" | "targets" | "schedules" | `target:${number}`;
 
@@ -65,6 +70,23 @@ export function validateDraft(
   return issues;
 }
 
+/** "Git.Git", "Git.Git +2" — the first package and how many others, within the name limit. */
+export function defaultScheduleName(targets: readonly ScheduleTarget[]): string {
+  const [first] = targets;
+  const rest = targets.length - 1;
+  const name = `${first?.packageId ?? UNNAMED}${rest > 0 ? ` +${rest}` : ""}`;
+  return name.length > MAX_NAME_LENGTH ? `${name.slice(0, MAX_NAME_LENGTH - 1)}…` : name;
+}
+
+/**
+ * A warning, not a refusal (amendment S-1): a winget package installed for
+ * every user may ask for UAC at run time, and a scheduled run never
+ * elevates — that package would then be skipped.
+ */
+export function mayAskForUac(targets: readonly ScheduleTarget[]): boolean {
+  return targets.some((target) => target.providerId === UAC_PRONE_PROVIDER);
+}
+
 function nameProblem(name: string): string | null {
   const trimmed = name.trim();
   if (trimmed === "") return "nom requis";
@@ -93,7 +115,7 @@ function shapeProblem(recurrence: Recurrence): string | null {
   if (recurrence.kind === "cron") {
     return recurrence.expression.trim() === "" ? "expression cron requise" : null;
   }
-  if (!isTimeOfDay(recurrence.at)) return "heure invalide (HH:MM attendu)";
+  if (!isTimeOfDay(recurrence.at)) return INVALID_TIME;
   if (recurrence.kind === "weekly" && !isInRange(recurrence.weekday, 0, MAX_WEEKDAY)) {
     return "jour de la semaine invalide";
   }

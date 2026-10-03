@@ -1,13 +1,17 @@
+import {
+  DEFAULT_TIME,
+  parseMonthDay,
+  parseTimeOfDay,
+} from "../../core/scheduler/model/recurrence.js";
 import { NEVER_A_PROVIDER, parseTarget } from "../../core/scheduler/model/schedule-target.js";
 import type {
-  MonthDay,
   Recurrence,
   ScheduleDraft,
   ScheduleTarget,
   TimeOfDay,
   Weekday,
 } from "../../core/scheduler/model/types.js";
-import { MAX_NAME_LENGTH } from "../../core/scheduler/model/validate-schedule.js";
+import { defaultScheduleName } from "../../core/scheduler/model/validate-schedule.js";
 import type { Launcher } from "../../core/scheduler/trigger/os-trigger.js";
 
 /**
@@ -35,7 +39,6 @@ export type ParsedAdd =
 export const ADD_EXAMPLE = "  Exemple : gup schedule add winget:Git.Git --every daily";
 /** A bare provider was given: the rule, then how to name a package. */
 export const NOT_A_PACKAGE = `${NEVER_A_PROVIDER}\n${ADD_EXAMPLE}`;
-export const DEFAULT_TIME: TimeOfDay = { hour: 9, minute: 0 };
 const NO_TARGET = "au moins un paquet provider:paquet requis";
 
 const WEEKDAYS: Readonly<Record<string, Weekday>> = {
@@ -47,11 +50,6 @@ const WEEKDAYS: Readonly<Record<string, Weekday>> = {
   ven: 5, vendredi: 5, fri: 5, friday: 5, "5": 5,
   sam: 6, samedi: 6, sat: 6, saturday: 6, "6": 6,
 };
-const LAST_DAY_WORDS = new Set(["dernier", "last"]);
-const MONTH_DAY = /^(?:[1-9]|1\d|2[0-8])$/;
-const TIME = /^(\d{1,2}):(\d{2})$/;
-const MAX_HOUR = 23;
-const MAX_MINUTE = 59;
 const PRESETS = ["daily", "weekly", "monthly"] as const;
 const LAUNCHERS: readonly Launcher[] = ["headless", "direct"];
 
@@ -63,7 +61,7 @@ export function parseAddArgs(options: AddOptions): ParsedAdd {
   return {
     ok: true,
     draft: {
-      name: options.name?.trim() || defaultName(targets.value),
+      name: options.name?.trim() || defaultScheduleName(targets.value),
       recurrence: recurrence.value,
       targets: targets.value,
       enabled: !options.disabled,
@@ -136,36 +134,16 @@ function presetRecurrence(
     if (weekday === undefined) return failed("--on : jour de la semaine attendu (lun, mar… dim)");
     return { value: { kind: "weekly", weekday, at }, errors: [] };
   }
-  const day = parseMonthDay(on);
+  const day = on === undefined ? null : parseMonthDay(on);
   if (day === null) return failed("--on : jour du mois attendu (1 à 28, ou dernier)");
   return { value: { kind: "monthly", day, at }, errors: [] };
 }
 
-function parseMonthDay(on: string | undefined): MonthDay | null {
-  if (on === undefined) return null;
-  const word = on.toLowerCase();
-  if (LAST_DAY_WORDS.has(word)) return "last";
-  return MONTH_DAY.test(word) ? Number(word) : null;
-}
-
 /** "HH:MM" (or "H:MM"), 09:00 when absent; null when malformed. */
 function parseTime(text: string | undefined): TimeOfDay | null {
-  if (text === undefined) return DEFAULT_TIME;
-  const match = TIME.exec(text.trim());
-  const hour = Number(match?.[1]);
-  const minute = Number(match?.[2]);
-  if (!match || hour > MAX_HOUR || minute > MAX_MINUTE) return null;
-  return { hour, minute };
+  return text === undefined ? DEFAULT_TIME : parseTimeOfDay(text);
 }
 
 function failed(error: string): Parsed<null> {
   return { value: null, errors: [error] };
-}
-
-/** "Git.Git", "Git.Git +2" — the first package, and how many others. */
-function defaultName(targets: readonly ScheduleTarget[]): string {
-  const [first] = targets;
-  const rest = targets.length - 1;
-  const name = `${first?.packageId ?? "planification"}${rest > 0 ? ` +${rest}` : ""}`;
-  return name.length > MAX_NAME_LENGTH ? `${name.slice(0, MAX_NAME_LENGTH - 1)}…` : name;
 }
