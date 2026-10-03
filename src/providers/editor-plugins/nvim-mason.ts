@@ -28,6 +28,7 @@ export class NvimMasonProvider implements Provider {
     return [
       {
         id: "all",
+        aggregate: true,
         name: "mason update",
         current: "?",
         latest: "refresh",

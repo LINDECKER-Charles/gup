@@ -53,6 +53,8 @@ export class NpackdProvider implements Provider {
     fallback:
       "Npackd est un gestionnaire de paquets Windows — il n'existe pas sur cette plateforme.",
   });
+  /** Npackd installs machine-wide by default, behind UAC. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     return (await resolveNpackdBinary()) !== null;

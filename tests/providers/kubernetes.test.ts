@@ -703,6 +703,7 @@ describe("helm-plugins provider", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       id: "all",
+      aggregate: true,
       name: "helm plugin update --all",
       current: "?",
       latest: "refresh",
@@ -808,6 +809,7 @@ describe("helm-repo provider", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       id: "all",
+      aggregate: true,
       name: "helm repo update",
       current: "?",
       latest: "refresh",

@@ -1297,6 +1297,7 @@ describe("FinkProvider", () => {
     expect(rows).toEqual([
       {
         id: "fink",
+        aggregate: true,
         name: "Fink (paquets installés)",
         current: "?",
         latest: "2 pkg",
@@ -1532,6 +1533,7 @@ describe("PkginProvider.listOutdated", () => {
     await expect(new PkginProvider().listOutdated()).resolves.toEqual([
       {
         id: "pkgin:refresh",
+        aggregate: true,
         name: "pkgin (catalogue distant)",
         current: "?",
         latest: "refresh",

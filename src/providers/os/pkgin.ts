@@ -55,6 +55,8 @@ export class PkginProvider implements Provider {
       "Bootstrapper pkgsrc puis `pkg_add pkgin` — https://pkgsrc.smartos.org/install-on-macos/",
     fallback: "Fourni par pkgsrc — https://pkgin.net/",
   });
+  /** pkgin writes the pkgsrc prefix through sudo unless gup runs as root. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform === "win32") return false;
@@ -252,6 +254,7 @@ function buildRows(
 function refreshRow(): OutdatedPackage {
   return {
     id: REFRESH_ROW_ID,
+    aggregate: true,
     name: "pkgin (catalogue distant)",
     current: "?",
     latest: "refresh",

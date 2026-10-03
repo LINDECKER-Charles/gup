@@ -30,6 +30,7 @@ export class HelmPluginsProvider implements Provider {
     return [
       {
         id: "all",
+        aggregate: true,
         name: "helm plugin update --all",
         current: "?",
         latest: "refresh",

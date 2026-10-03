@@ -53,6 +53,8 @@ export class FinkProvider implements Provider {
     darwin: "https://www.finkproject.org/download/",
     fallback: "macOS uniquement — https://www.finkproject.org/",
   });
+  /** `fink update-all` always runs under sudo. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform !== "darwin") return false;
@@ -71,6 +73,7 @@ export class FinkProvider implements Provider {
     return [
       {
         id: FINK_ROW_ID,
+        aggregate: true,
         name: "Fink (paquets installés)",
         current: "?",
         latest: `${names.length} pkg`,

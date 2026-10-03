@@ -67,12 +67,13 @@ export class GcloudProvider implements Provider {
 /**
  * gcloud spells a component's state out in plain text ("Update Available"), and
  * does not always fill in both versions. null for anything that is not an
- * actionable update.
+ * actionable update. Every row is `aggregate`: updating one component bumps
+ * the whole SDK (see update()).
  */
 function toComponentUpdate(c: GcloudComponentJson): OutdatedPackage | null {
   if (!/update available/i.test(c.state?.name ?? "")) return null;
   const current = c.current_version_string;
   const latest = c.latest_version_string;
   if (!current || !latest || current === latest) return null;
-  return { id: c.id, name: c.name ?? c.id, current, latest };
+  return { id: c.id, name: c.name ?? c.id, current, latest, aggregate: true };
 }

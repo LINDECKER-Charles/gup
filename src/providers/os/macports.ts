@@ -20,6 +20,8 @@ export class MacPortsProvider implements Provider {
     darwin: "https://www.macports.org/install.php",
     fallback: "macOS uniquement — https://www.macports.org/",
   });
+  /** Every write to the /opt/local tree goes through sudo. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform !== "darwin") return false;

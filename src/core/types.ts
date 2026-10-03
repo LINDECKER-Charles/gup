@@ -27,6 +27,13 @@ export interface OutdatedPackage {
    * its own SKIP message at update time.
    */
   requiresAdmin?: boolean;
+  /**
+   * True when updating this row acts on the whole provider rather than on
+   * what the id names: a synthetic row ("all plugins", a refresh marker) or a
+   * manager that can only upgrade everything at once. Such a row is never a
+   * scheduling target — a schedule names packages, never a provider.
+   */
+  aggregate?: boolean;
 }
 
 export interface UpdateOutcome {
@@ -103,6 +110,12 @@ export interface Provider {
    * isAvailable() on `process.platform` yourself.
    */
   readonly platforms?: PlatformSet;
+  /**
+   * False when update() always needs an administrator (UAC or sudo), which a
+   * run nobody watches can never grant: unattended runs skip the provider.
+   * Omitted means true.
+   */
+  readonly canUpdateUnattended?: boolean;
 
   isAvailable(): Promise<boolean>;
   listOutdated(): Promise<OutdatedPackage[]>;

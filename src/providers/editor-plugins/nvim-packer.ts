@@ -32,6 +32,7 @@ export class NvimPackerProvider implements Provider {
     return [
       {
         id: "all",
+        aggregate: true,
         name: "packer.nvim sync",
         current: "?",
         latest: "refresh",

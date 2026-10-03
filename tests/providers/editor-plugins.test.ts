@@ -91,6 +91,7 @@ describe("NvimLazyProvider", () => {
     expect(pkgs[0]).toMatchObject({
       id: "all",
       latest: "refresh",
+      aggregate: true,
       note: expect.stringMatching(/Synchronise/i),
     });
   });
@@ -150,7 +151,7 @@ describe("NvimMasonProvider", () => {
   it("listOutdated returns synthetic mason update entry", async () => {
     const pkgs = await new NvimMasonProvider().listOutdated();
     expect(pkgs).toHaveLength(1);
-    expect(pkgs[0]).toMatchObject({ id: "all", latest: "refresh" });
+    expect(pkgs[0]).toMatchObject({ id: "all", latest: "refresh", aggregate: true });
     expect(pkgs[0]?.note).toMatch(/Mason/i);
   });
 
@@ -210,6 +211,7 @@ describe("NvimPackerProvider", () => {
     const pkgs = await new NvimPackerProvider().listOutdated();
     expect(pkgs).toHaveLength(1);
     expect(pkgs[0]?.note).toMatch(/PackerSync/);
+    expect(pkgs[0]?.aggregate).toBe(true);
   });
 
   it("update invokes PackerSync with autocmd to quit on completion", async () => {
@@ -282,6 +284,7 @@ describe("VimPlugProvider", () => {
     const pkgs = await new VimPlugProvider().listOutdated();
     expect(pkgs).toHaveLength(1);
     expect(pkgs[0]?.note).toMatch(/PlugUpdate/);
+    expect(pkgs[0]?.aggregate).toBe(true);
   });
 
   it("update invokes nvim --headless +PlugUpdate", async () => {

@@ -28,6 +28,7 @@ export class NvimLazyProvider implements Provider {
     return [
       {
         id: "all",
+        aggregate: true,
         name: "lazy.nvim sync",
         current: "?",
         latest: "refresh",

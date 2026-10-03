@@ -30,6 +30,7 @@ export class VimPlugProvider implements Provider {
     return [
       {
         id: "all",
+        aggregate: true,
         name: "vim-plug update",
         current: "?",
         latest: "refresh",
