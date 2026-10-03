@@ -7,7 +7,9 @@ import {
   normalizeVersion,
 } from "../core/gh-releases.js";
 import { delegateUpdate } from "../core/install-source.js";
-import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
+import type { OutdatedPackage, PlatformSet, Provider, UpdateOutcome } from "../core/types.js";
+import { isSupportedOn } from "../core/platform/is-supported-on.js";
+import { PLATFORMS } from "../core/platform/platforms.js";
 
 /**
  * Meta-provider that surfaces self-updates of the package managers themselves
@@ -115,14 +117,12 @@ interface SelfTarget {
    * spawn per scan, and would light up on the strength of a shim that merely
    * forwards elsewhere (a `brew.cmd` bridging into WSL, say).
    */
-  platforms?: readonly NodeJS.Platform[];
+  platforms?: PlatformSet;
 }
 
 /** Targets that can exist on the running platform. */
 function activeTargets(): SelfTarget[] {
-  return TARGETS.filter(
-    (t) => !t.platforms || t.platforms.includes(process.platform),
-  );
+  return TARGETS.filter((t) => isSupportedOn(t));
 }
 
 async function runStdout(cmd: string, args: string[]): Promise<string> {
@@ -291,7 +291,8 @@ const TARGETS: SelfTarget[] = [
     id: "brew",
     displayName: "Homebrew",
     binary: "brew",
-    platforms: ["darwin", "linux"],
+    // The same set as the brew provider: Linuxbrew included, Windows never.
+    platforms: PLATFORMS.notWindows,
     current: async () => {
       const out = await runStdout("brew", ["--version"]);
       // A brew checkout ahead of the last tag reports a git-describe suffix
