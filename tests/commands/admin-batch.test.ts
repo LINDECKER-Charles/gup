@@ -18,7 +18,9 @@ vi.mock("../../src/core/config/store.js", async (importOriginal) => ({
 }));
 
 import { adminBatchCommand } from "../../src/commands/admin-batch.js";
-import { installLogBackend, type LogThreshold } from "../../src/core/log/log.js";
+import { elevatedLogBuffer } from "../../src/core/log/elevated-bridge.js";
+import { installLogBackend, log, type LogThreshold } from "../../src/core/log/log.js";
+import { SinkLogBackend } from "../../src/core/log/log-backend.js";
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../src/core/runner.js";
 
@@ -215,5 +217,39 @@ describe("adminBatchCommand", () => {
     expect(timeoutDuringUpdate).toBe(45);
     expect(thresholds).toEqual(["debug"]);
     expect(configStoreMock).not.toHaveBeenCalled();
+  });
+
+  it("returns its log with the outcomes, each update's lines tagged with the package", async () => {
+    const file = await mkInputFile();
+    await writeFile(file, JSON.stringify({ version: 1, targets: ["choco:git"], logThreshold: "info" }), {
+      encoding: "utf8",
+      flag: "wx",
+    });
+    getProviderMock.mockReturnValue({
+      id: "choco",
+      displayName: "Chocolatey",
+      isAvailable: vi.fn(),
+      listOutdated: vi.fn(),
+      update: vi.fn(async (id: string) => {
+        log.info("cmd.end", { exitCode: 0 });
+        return { id, success: true };
+      }),
+      updateAll: vi.fn(),
+    });
+    installLogBackend(new SinkLogBackend({ threshold: "off", sink: elevatedLogBuffer }));
+    try {
+      await expect(adminBatchCommand(file)).resolves.toBe(0);
+    } finally {
+      installLogBackend(null);
+      elevatedLogBuffer.drain();
+    }
+    const out = JSON.parse(await readFile(`${file}.out`, "utf8")) as { log: string[] };
+    expect(out.log.map((line) => JSON.parse(line) as unknown)).toEqual([
+      expect.objectContaining({
+        event: "cmd.end",
+        ctx: { op: "update", providerId: "choco", packageId: "git" },
+        data: { exitCode: 0 },
+      }),
+    ]);
   });
 });

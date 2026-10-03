@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 
+import { ingestElevatedLines } from "./log/elevated-bridge.js";
 import { effectiveLogThreshold, LOG_THRESHOLDS, type LogThreshold } from "./log/log.js";
 import { getInstallTimeoutSeconds, isElevated, runInherit } from "./runner.js";
 import type { OutdatedPackage, UpdateOutcome } from "./types.js";
@@ -47,6 +48,12 @@ const ELEVATION_PROMPT_GRACE_MS = 300_000;
 export interface AdminBatchOutput {
   version: 1;
   outcomes: UpdateOutcome[];
+  /**
+   * The child's debug log records, for the parent to write: the elevated
+   * child never writes into the user's log directory. Optional both ways, so
+   * a parent and a child of different versions still understand each other.
+   */
+  log?: string[];
 }
 
 /**
@@ -150,8 +157,16 @@ export function elevatedWaitMs(
  * forbids overwriting an existing file at the same path — the elevated
  * child must hit a freshly-created location, never a pre-staged one.
  */
-export async function writeBatchOutput(file: string, outcomes: UpdateOutcome[]): Promise<void> {
-  const payload: AdminBatchOutput = { version: 1, outcomes };
+export async function writeBatchOutput(
+  file: string,
+  outcomes: UpdateOutcome[],
+  log: readonly string[] = [],
+): Promise<void> {
+  const payload: AdminBatchOutput = {
+    version: 1,
+    outcomes,
+    ...(log.length > 0 && { log: [...log] }),
+  };
   await writeFile(file, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
 }
 
@@ -186,6 +201,7 @@ async function readBatchOutput(file: string, targets: string[]): Promise<UpdateO
   try {
     const raw = await readFile(file, "utf8");
     const parsed = JSON.parse(raw) as AdminBatchOutput;
+    forwardChildLog(parsed);
     if (parsed.version !== 1 || !Array.isArray(parsed.outcomes)) {
       throw new Error("malformed output payload");
     }
@@ -207,6 +223,21 @@ async function readBatchOutput(file: string, targets: string[]): Promise<UpdateO
     );
   } catch (err) {
     return targets.map((t) => fallbackFailure(t, err));
+  }
+}
+
+/**
+ * The child's log, written to this process's log before the outcomes are
+ * checked: when they turn out malformed, its lines are what explains why.
+ * Isolated: a bad log never changes what the outcomes say.
+ */
+function forwardChildLog(output: unknown): void {
+  try {
+    if (typeof output === "object" && output !== null) {
+      ingestElevatedLines((output as { log?: unknown }).log);
+    }
+  } catch {
+    // The bridge does not throw; this guard keeps the outcomes safe if it ever does.
   }
 }
 

@@ -5,9 +5,11 @@ import {
   writeBatchOutput,
   type AdminBatchInput,
 } from "../core/elevation.js";
+import { elevatedLogBuffer } from "../core/log/elevated-bridge.js";
 import { applyLogThreshold } from "../core/log/log.js";
 import { lookupProvider } from "../core/platform/lookup-provider.js";
 import { setInstallTimeoutSeconds } from "../core/runner.js";
+import { withOperation } from "../core/state/run-context.js";
 import type { UpdateOutcome } from "../core/types.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 
@@ -21,7 +23,8 @@ import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
  * — that would be an infinite recursion guarded only by the user's UAC
  * patience. We therefore call `provider.update()` directly and never
  * `runElevatedBatch` from inside it. It never reads the user's settings
- * either: the parent's effective ones arrive in the payload.
+ * either: the parent's effective ones arrive in the payload. Its debug log
+ * stays in memory and travels back with the outcomes (`log/elevated-bridge.ts`).
  */
 export async function adminBatchCommand(inputFile: string): Promise<number> {
   let input;
@@ -41,7 +44,7 @@ export async function adminBatchCommand(inputFile: string): Promise<number> {
   }
 
   try {
-    await writeBatchOutput(`${inputFile}.out`, outcomes);
+    await writeBatchOutput(`${inputFile}.out`, outcomes, elevatedLogBuffer.drain());
   } catch (err) {
     process.stderr.write(
       `${chalk.red("admin-batch:")} échec d'écriture des outcomes — ${err instanceof Error ? err.message : String(err)}\n`,
@@ -72,7 +75,11 @@ async function runOneTarget(target: string): Promise<UpdateOutcome> {
   if (!lookup.isFound) return { id: packageId, success: false, message: lookup.error };
   const { provider } = lookup;
   process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
-  return provider.update(packageId);
+  // Same operation context as an in-process update: the commands traced in
+  // the child's log name the package they belong to.
+  return withOperation({ op: "update", providerId: provider.id, packageId }, () =>
+    provider.update(packageId),
+  );
 }
 
 /**
