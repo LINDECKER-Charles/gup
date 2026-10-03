@@ -8,7 +8,8 @@ import type { Cadence, PackageRecurrence, TimedUpdate, VersionStep } from "./typ
  *
  * Successes less than an hour apart are one update (a retry, a second run
  * right after the first): counting them twice would halve the interval of
- * any package that needed a retry.
+ * any package that needed a retry. The merge chains — three runs 50 minutes
+ * apart are one update — and an update dates from its first success.
  */
 
 const RETRY_MERGE_MS = 3_600_000;
@@ -94,13 +95,15 @@ function recurrenceOf(tally: PackageTally): PackageRecurrence {
 /** Median days between successive updates, retries merged; null under two updates. */
 function medianIntervalOf(successAts: readonly number[]): number | null {
   const intervals: number[] = [];
-  let previous: number | null = null;
+  let updateAt: number | null = null;
+  let previousAt = 0;
   for (const at of successAts) {
-    if (previous === null) previous = at;
-    else if (at - previous >= RETRY_MERGE_MS) {
-      intervals.push((at - previous) / MS_PER_DAY);
-      previous = at;
+    if (updateAt === null) updateAt = at;
+    else if (at - previousAt >= RETRY_MERGE_MS) {
+      intervals.push((at - updateAt) / MS_PER_DAY);
+      updateAt = at;
     }
+    previousAt = at;
   }
   return median(intervals);
 }

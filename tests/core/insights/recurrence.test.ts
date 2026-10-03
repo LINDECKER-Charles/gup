@@ -46,6 +46,21 @@ describe("package recurrence", () => {
     expect(pkg).toMatchObject({ successes: 5, medianIntervalDays: 30, cadence: "monthly" });
   });
 
+  it("merges a chain of runs each less than an hour after the previous one", () => {
+    const fiftyMinutes = 50 / (24 * 60);
+    const [pkg] = recurrence(updatesAt("Git.Git", [0, fiftyMinutes, 2 * fiftyMinutes, 30]));
+
+    // One update at day 0 (three runs), one at day 30.
+    expect(pkg).toMatchObject({ successes: 4, medianIntervalDays: 30 });
+  });
+
+  it("takes the mean of the two middle intervals on an even count", () => {
+    // Intervals 3, 10, 20 and 40 days: the median is (10 + 20) / 2.
+    const [pkg] = recurrence(updatesAt("Mozilla.Firefox", [0, 3, 13, 33, 73]));
+
+    expect(pkg).toMatchObject({ medianIntervalDays: 15, cadence: "monthly" });
+  });
+
   it("counts failures and skips beside the successes, which alone set the pace", () => {
     const events = [
       ...updatesAt("nodejs", [0, 50]),
