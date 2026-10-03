@@ -3,24 +3,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 /**
  * applyUpdate is the single seam every non-elevated update goes through, so
  * what matters here is that it wires the three concerns together in the right
- * order: dispatch to the provider, normalise the outcome through the skip
- * controller, then log it. Both collaborators are mocked so each can be
+ * order: dispatch to the provider, normalise the outcome (finalize-outcome),
+ * then log it. Both collaborators are mocked so each can be
  * asserted on its own.
  */
 const { recordUpdateMock } = vi.hoisted(() => ({ recordUpdateMock: vi.fn() }));
-vi.mock("../../src/core/history/store.js", () => ({
+vi.mock("../../../src/core/history/store.js", () => ({
   recordUpdate: recordUpdateMock,
 }));
 
 const { finalizeOutcomeMock } = vi.hoisted(() => ({
   finalizeOutcomeMock: vi.fn((o: unknown) => o),
 }));
-vi.mock("../../src/ui/skip-controller.js", () => ({
+vi.mock("../../../src/core/update/finalize-outcome.js", () => ({
   finalizeOutcome: finalizeOutcomeMock,
 }));
 
-import { applyEach, applyUpdate } from "../../src/ui/apply-update.js";
-import type { Provider } from "../../src/core/types.js";
+import { currentOperation } from "../../../src/core/state/run-context.js";
+import type { Provider } from "../../../src/core/types.js";
+import { applyOptionsOf, applyUpdate } from "../../../src/core/update/apply-update.js";
 
 function mkProvider(update = vi.fn().mockResolvedValue({ id: "x", success: true })) {
   return {
@@ -89,35 +90,33 @@ describe("applyUpdate", () => {
   });
 });
 
-describe("applyEach", () => {
-  const never = { isAbortRequested: () => false };
-
-  it("updates every package in order and logs one record each", async () => {
-    const provider = mkProvider();
-    const packages = [
-      { id: "a", current: "1", latest: "2" },
-      { id: "b", current: "1", latest: "2" },
-    ];
-
-    const outcomes = await applyEach(provider, packages, never);
-
-    expect(outcomes).toHaveLength(2);
-    expect(provider.update.mock.calls.map((c) => c[0])).toEqual(["a", "b"]);
-    expect(recordUpdateMock).toHaveBeenCalledTimes(2);
+describe("applyUpdate context", () => {
+  it("runs the provider under the update operation, so its commands are attributed", async () => {
+    let seen: unknown;
+    const provider = mkProvider(
+      vi.fn(async () => {
+        seen = currentOperation();
+        return { id: "typescript", success: true };
+      }),
+    );
+    await applyUpdate(provider, "typescript");
+    expect(seen).toEqual({ op: "update", providerId: "npm-global", packageId: "typescript" });
+    expect(currentOperation()).toBeUndefined();
   });
 
-  it("stops before the next package once the batch is aborted", async () => {
-    const provider = mkProvider();
-    let calls = 0;
-    const session = { isAbortRequested: () => calls++ > 0 };
+  it("records the schedule an attempt belongs to", async () => {
+    await applyUpdate(mkProvider(), "typescript", { scheduleId: "s-1" });
+    expect(recordUpdateMock.mock.calls[0]![0]).toMatchObject({ scheduleId: "s-1" });
+  });
+});
 
-    const outcomes = await applyEach(
-      provider,
-      [{ id: "a", current: "1", latest: "2" }, { id: "b", current: "1", latest: "2" }],
-      session,
-    );
-
-    expect(outcomes).toHaveLength(1);
-    expect(provider.update).toHaveBeenCalledTimes(1);
+describe("applyOptionsOf", () => {
+  it("carries a request's scan entry and schedule, and nothing it lacks", () => {
+    const pkg = { id: "a", current: "1", latest: "2" };
+    expect(applyOptionsOf({ providerId: "p", packageId: "a", pkg, scheduleId: "s" })).toEqual({
+      pkg,
+      scheduleId: "s",
+    });
+    expect(applyOptionsOf({ providerId: "p", packageId: "a" })).toEqual({});
   });
 });

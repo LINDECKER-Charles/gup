@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { ALL_PROVIDERS, detectAvailableProviders, getProvider } from "../core/registry.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
-import { applyEach, applyUpdate } from "../ui/apply-update.js";
+import { applyUpdate } from "../core/update/apply-update.js";
 import { MenuApp } from "../ui/app/menu-app.js";
 import type { MenuController } from "../ui/app/menu-session.js";
 import { maybeRetryFailures, type OutcomeWithProvider } from "../ui/retry-failed.js";
@@ -117,6 +117,20 @@ async function applyGrouped(
     session.dispose();
   }
   return entries;
+}
+
+/** One package at a time, so a skip or a timeout drops a single install. */
+async function applyEach(
+  provider: Provider,
+  packages: readonly OutdatedPackage[],
+  session: { isAbortRequested(): boolean },
+): Promise<UpdateOutcome[]> {
+  const outcomes: UpdateOutcome[] = [];
+  for (const pkg of packages) {
+    if (session.isAbortRequested()) break;
+    outcomes.push(await applyUpdate(provider, pkg.id, { pkg }));
+  }
+  return outcomes;
 }
 
 interface ParsedTarget {

@@ -29,12 +29,9 @@ vi.mock("../../src/ui/select.js", () => ({
   promptPackageSelection: promptPackageSelectionMock,
 }));
 
-const { maybeRetryFailuresMock } = vi.hoisted(() => ({
-  maybeRetryFailuresMock: vi.fn(),
-}));
-vi.mock("../../src/ui/retry-failed.js", () => ({
-  maybeRetryFailures: maybeRetryFailuresMock,
-}));
+// The retry tiers are asked through the standalone select prompt.
+const { selectMock } = vi.hoisted(() => ({ selectMock: vi.fn() }));
+vi.mock("../../src/ui/prompts/select.js", () => ({ select: selectMock }));
 
 const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }));
 vi.mock("../../src/ui/prompts/confirm.js", () => ({ confirm: confirmMock }));
@@ -75,15 +72,11 @@ beforeEach(() => {
   getProviderMock.mockReset();
   scanWithProgressMock.mockReset();
   promptPackageSelectionMock.mockReset();
-  maybeRetryFailuresMock.mockReset();
+  selectMock.mockReset();
   confirmMock.mockReset();
   runElevatedBatchMock.mockReset();
   stdoutSpy.mockClear();
   stderrSpy.mockClear();
-  // Default: pass entries through unchanged.
-  maybeRetryFailuresMock.mockImplementation(async (entries: Array<{ outcome: unknown }>) =>
-    entries.map((e) => e.outcome),
-  );
 });
 
 describe("updateCommand: --targets", () => {
@@ -194,13 +187,14 @@ describe("updateCommand: --targets", () => {
     expect(p.update).toHaveBeenCalledWith("scope:pkg@1");
   });
 
-  it("forwards yes:true to maybeRetryFailures (skip the retry prompt)", async () => {
+  it("with yes:true never offers a retry (no hash bypass without explicit consent)", async () => {
     const p = mkProvider({
-      update: vi.fn().mockResolvedValue({ id: "x", success: true }),
+      update: vi.fn().mockResolvedValue({ id: "x", success: false, retryable: true }),
     });
     getProviderMock.mockReturnValue(p);
     await updateCommand({ targets: ["p:x"], yes: true });
-    expect(maybeRetryFailuresMock).toHaveBeenCalledWith(expect.any(Array), { yes: true });
+    expect(selectMock).not.toHaveBeenCalled();
+    expect(p.update).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -317,7 +311,7 @@ describe("updateCommand: --all", () => {
     expect(code).toBe(0);
     expect(confirmMock).not.toHaveBeenCalled();
     expect(provA.update).toHaveBeenCalledWith("x");
-    expect(maybeRetryFailuresMock).toHaveBeenCalledWith(expect.any(Array), { yes: true });
+    expect(selectMock).not.toHaveBeenCalled();
   });
 
   it("without --yes asks for confirmation and proceeds when confirmed", async () => {
@@ -352,7 +346,7 @@ describe("updateCommand: --all", () => {
     const code = await updateCommand({ all: true });
     expect(code).toBe(1);
     expect(getProviderMock).not.toHaveBeenCalled();
-    expect(maybeRetryFailuresMock).not.toHaveBeenCalled();
+    expect(selectMock).not.toHaveBeenCalled();
   });
 
   it("forwards only/fast to the underlying scan", async () => {

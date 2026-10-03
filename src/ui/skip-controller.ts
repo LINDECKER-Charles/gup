@@ -1,26 +1,24 @@
 import chalk from "chalk";
-import {
-  consumeInterrupt,
-  getInstallTimeoutSeconds,
-  skipCurrent,
-} from "../core/runner.js";
-import type { UpdateOutcome } from "../core/types.js";
+import { getInstallTimeoutSeconds, skipCurrent } from "../core/runner.js";
 
 /**
- * Interactive "skip" layer for update batches.
+ * Interactive "skip" layer for update batches on a plain terminal.
  *
  * Two complementary levers keep a wedged install from blocking the whole run:
  * - automatic: the runner kills any install that exceeds the wall-clock
- *   timeout (see runner.ts) — surfaced here as a SKIP outcome;
+ *   timeout (see runner.ts) — the pipeline then reports a SKIP outcome
+ *   (core/update/finalize-outcome.ts);
  * - manual: Ctrl+C skips the install in flight and lets the batch continue;
- *   a second Ctrl+C within {@link DOUBLE_PRESS_MS} stops the whole batch.
+ *   a second Ctrl+C within {@link CTRL_C_DOUBLE_PRESS_MS} stops the whole batch.
  *
  * A SIGINT listener (instead of letting Node exit) is what turns Ctrl+C into a
  * skip rather than a hard kill of gup. The session is only live around the
  * update loop, so prompts (confirm/select) keep their normal Ctrl+C = exit.
+ * A session is the pipeline's abort gate.
  */
 
-const DOUBLE_PRESS_MS = 1500;
+/** Two Ctrl+C within this window stop the batch — in the console and in the run view alike. */
+export const CTRL_C_DOUBLE_PRESS_MS = 1500;
 
 interface ActiveSession {
   abortRequested: boolean;
@@ -68,7 +66,7 @@ function makeSigintHandler(session: ActiveSession): () => void {
   let lastPress = 0;
   return (): void => {
     const now = Date.now();
-    const isDouble = now - lastPress < DOUBLE_PRESS_MS;
+    const isDouble = now - lastPress < CTRL_C_DOUBLE_PRESS_MS;
     lastPress = now;
     // A single press with an install in flight only skips that package; a
     // double press, or a press with nothing running, stops the whole batch.
@@ -113,45 +111,11 @@ function printHint(): void {
   );
 }
 
-/** True if a skip session is active and the user requested a full abort. */
+/**
+ * True if a skip session is active and the user requested a full abort.
+ * Only the menu's legacy retry prompt (ui/retry-failed.ts) still reads it; the
+ * pipeline asks its gate instead.
+ */
 export function isAbortRequested(): boolean {
   return active?.abortRequested ?? false;
-}
-
-/**
- * Rewrite an interrupted outcome (manual skip or timeout) as a deliberate
- * SKIP so the summary shows it as a skip rather than a hard failure, and the
- * retry prompt doesn't offer to retry something the user explicitly skipped.
- * Pass-through when the run completed normally.
- */
-export function finalizeOutcome(outcome: UpdateOutcome): UpdateOutcome {
-  const { timedOut, aborted } = consumeInterrupt();
-  if (timedOut) {
-    return {
-      ...outcome,
-      success: false,
-      skipped: true,
-      retryable: false,
-      message: `timeout (${getInstallTimeoutSeconds()}s) — install ignorée`,
-    };
-  }
-  if (aborted) {
-    return {
-      ...outcome,
-      success: false,
-      skipped: true,
-      retryable: false,
-      message: "ignorée (Ctrl+C)",
-    };
-  }
-  return outcome;
-}
-
-/**
- * Drop any interrupt flag left behind by a runInherit call that isn't routed
- * through {@link finalizeOutcome} (e.g. the elevated-batch PowerShell wait), so
- * a stale flag can't bleed into the next package's outcome.
- */
-export function discardPendingInterrupt(): void {
-  consumeInterrupt();
 }

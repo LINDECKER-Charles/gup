@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { select } from "./prompts/select.js";
 import { getProvider } from "../core/registry.js";
-import { applyUpdate } from "./apply-update.js";
+import { applyUpdate } from "../core/update/apply-update.js";
 import { isAbortRequested } from "./skip-controller.js";
 import type { UpdateOptions, UpdateOutcome } from "../core/types.js";
 
