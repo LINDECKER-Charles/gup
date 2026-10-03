@@ -117,10 +117,13 @@ function sanitizeArgs(args: readonly string[]): string[] {
 // without touching any of them.
 // ---------------------------------------------------------------------------
 
-/** Wall-clock cap per install, in seconds. 0 disables. Overridable at runtime. */
-// 20 min: long enough for big installers, short enough that a wedged one
-// doesn't hang the whole run forever.
-const DEFAULT_INSTALL_TIMEOUT_S = 1200;
+/**
+ * Wall-clock cap per install, in seconds, when nothing overrides it
+ * (GUP_INSTALL_TIMEOUT, `--timeout`, the persisted install setting, which
+ * uses it as its default). 0 disables. 20 min: long enough for big
+ * installers, short enough that a wedged one doesn't hang the whole run.
+ */
+export const DEFAULT_INSTALL_TIMEOUT_S = 1200;
 
 function readEnvTimeoutSeconds(): number {
   const raw = process.env.GUP_INSTALL_TIMEOUT;

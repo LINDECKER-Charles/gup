@@ -16,6 +16,7 @@ import {
 } from "../../src/core/process/inherit-sink.js";
 import {
   consumeInterrupt,
+  DEFAULT_INSTALL_TIMEOUT_S,
   getInstallTimeoutSeconds,
   isElevated,
   killProcessTree,
@@ -367,6 +368,7 @@ describe("runner install-timeout config", () => {
 
   it("defaults to 1200s and is settable", () => {
     expect(getInstallTimeoutSeconds()).toBe(1200);
+    expect(DEFAULT_INSTALL_TIMEOUT_S).toBe(1200);
     setInstallTimeoutSeconds(30);
     expect(getInstallTimeoutSeconds()).toBe(30);
   });
