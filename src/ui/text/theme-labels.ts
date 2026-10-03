@@ -137,8 +137,9 @@ export const THEME_SAMPLE = {
 
 export const COLOR_EDITOR = {
   title: "Couleurs",
+  /** échap first after the basics: on a narrow bar, the end is what gets cut. */
   hints:
-    "↑↓ rôle · entrée #hex · ←→ teinte · +/- luminosité · a garder · suppr thème · échap retour",
+    "↑↓ rôle · entrée #hex · échap retour · ←→ teinte · +/- luminosité · a garder · suppr thème",
   base: (theme: string) => `Thème de base : ${theme} — les rôles non modifiés suivent le thème.`,
   columns: {
     role: "Rôle",

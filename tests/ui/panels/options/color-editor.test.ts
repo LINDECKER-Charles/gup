@@ -74,6 +74,15 @@ describe("colour editor", () => {
     expect(text([lineWith(editor.panel.render(VIEW), "Accent")])).toMatch(/✔/);
   });
 
+  it("keeps the contrast and its warning whole on a narrow panel, the painted colour left out", async () => {
+    const editor = openEditor();
+    await typeColor(editor, DARK_BACKGROUND);
+    const narrow = editor.panel.render({ width: 50, height: 20 });
+    expect(text(narrow)).not.toContain(COLOR_EDITOR.columns.shown);
+    expect(text([lineWith(narrow, "Accent")])).toMatch(/1,0 → \d+,\d:1 ⚠/);
+    expect(text(editor.panel.render(VIEW))).toContain(COLOR_EDITOR.columns.shown);
+  });
+
   it("gives a role back to the theme with Suppr", async () => {
     const editor = openEditor();
     await typeColor(editor, "#FF8800");

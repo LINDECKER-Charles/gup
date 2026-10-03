@@ -10,7 +10,7 @@ import {
 } from "../../../src/ui/settings/settings-sources.js";
 import { staticProbe } from "../../../src/ui/theme/runtime/terminal-probe.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
-import { PREVIEW_FACT } from "../../../src/ui/text/theme-labels.js";
+import { COLOR_EDITOR, CONTRAST_STATUS, PREVIEW_FACT } from "../../../src/ui/text/theme-labels.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
 import { packagesView } from "../../../src/ui/views/packages-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
@@ -29,6 +29,11 @@ const LIGHT_BACKGROUND = wcag.parseHexColor("#F9FAFC");
 async function themedMenu(options: MenuDriverOptions = {}) {
   const settings = new SettingsService(new ConfigStore({ file: null, isDisabled: true }));
   settings.update("theme", { id: "dark" });
+  return menuOn(settings, options);
+}
+
+/** The menu on Options, the theme engine and the Options view both on `settings`. */
+async function menuOn(settings: SettingsService, options: MenuDriverOptions = {}) {
   const menu = await bootMenu({
     scanOnStart: false,
     initialView: "options",
@@ -132,5 +137,16 @@ describe("Options view in the menu", () => {
     await menu.press("tab", "up");
     const frame = await menu.waitForText("Alpha.App");
     expect(frame.indexOf("Alpha.App")).toBeLessThan(frame.indexOf("Zed.Zed"));
+  });
+});
+
+describe("Options in an 80 × 24 terminal", () => {
+  it("shows the cursor row's hint whole, and how to leave the colour editor", async () => {
+    const { menu } = await themedMenu({ size: { cols: 80, rows: 24 } });
+    await menu.press("down", "down", "down");
+    await menu.waitForText(CONTRAST_STATUS.pass("AA", 6.14));
+    await menu.press("down", "enter");
+    const editor = await menu.waitForText(COLOR_EDITOR.columns.ratio);
+    expect(editor.split("\n").at(-1)).toContain("échap retour");
   });
 });

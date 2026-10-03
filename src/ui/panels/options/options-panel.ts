@@ -13,7 +13,23 @@ import type {
   OptionsView,
   SectionFactory,
 } from "./option-row.js";
-import { listItems, renderItems, rowsOf, visibleRange, type ListItem } from "./settings-list.js";
+import {
+  detailLines,
+  listItems,
+  renderItems,
+  rowsOf,
+  visibleRange,
+  type ListItem,
+} from "./settings-list.js";
+
+interface ListLayout {
+  readonly items: ListItem[];
+  readonly cursor: OptionRow | undefined;
+  readonly pinned: Line[];
+  readonly detail: Line[];
+  /** Rows left for the list itself. */
+  readonly height: number;
+}
 
 /** ← → step the value of the row under the cursor. */
 const STEP_KEYS: Readonly<Record<string, -1 | 1>> = { left: -1, h: -1, right: 1, l: 1 };
@@ -56,20 +72,19 @@ export class OptionsPanel implements Panel {
     return this.#view ? `${VIEW_LABELS.options} › ${this.#view.title}` : VIEW_LABELS.options;
   }
 
+  /** The rescan offer before the sections' keys: on a narrow bar, the end is what gets cut. */
   hints(): string {
     if (this.#view) return this.#view.hints();
-    const tail = this.#isScanDirty ? [OPTIONS_HINTS.rescan] : [];
-    return [OPTIONS_HINTS.list, ...this.shortcuts().map((shortcut) => shortcut.hint), ...tail].join(
-      " · ",
-    );
+    const rescan = this.#isScanDirty ? [OPTIONS_HINTS.rescan] : [];
+    const shortcuts = this.shortcuts().map((shortcut) => shortcut.hint);
+    return [OPTIONS_HINTS.list, ...rescan, ...shortcuts].join(" · ");
   }
 
   render(viewport: Viewport): readonly Line[] {
     if (this.#view) return this.#view.render(viewport);
-    const pinned = this.pinnedLines();
-    const items = this.items();
-    const room = { width: viewport.width, height: viewport.height - pinned.length };
-    return [...pinned, ...renderItems(items, this.cursorIn(items), room)];
+    const { items, cursor, pinned, detail, height } = this.layout(viewport);
+    const list = renderItems(items, cursor, { width: viewport.width, height });
+    return [...pinned, ...list, ...detail];
   }
 
   press(key: KeyPress): void {
@@ -85,10 +100,10 @@ export class OptionsPanel implements Panel {
 
   click(row: number, viewport: Viewport): void {
     if (this.#view) return this.#view.click(row, viewport);
-    const pinned = this.pinnedLines().length;
-    const items = this.items();
-    const { start } = visibleRange(items, this.cursorIn(items), viewport.height - pinned);
-    const item = row >= pinned ? items[start + row - pinned] : undefined;
+    const { items, cursor, pinned, height } = this.layout(viewport);
+    const { start, end } = visibleRange(items, cursor, height);
+    const index = start + row - pinned.length;
+    const item = row >= pinned.length && index < end ? items[index] : undefined;
     if (item?.kind !== "row") return;
     this.#cursorId = item.row.id;
     this.activate(item.row);
@@ -131,6 +146,16 @@ export class OptionsPanel implements Panel {
 
   private items(): ListItem[] {
     return listItems(this.#sections, this.#host.density());
+  }
+
+  /** The list's parts: pinned lines above, the cursor row's hint below, the rows in between. */
+  private layout(viewport: Viewport): ListLayout {
+    const items = this.items();
+    const cursor = this.cursorIn(items);
+    const pinned = this.pinnedLines();
+    const detail = detailLines(items, cursor, viewport.width);
+    const height = viewport.height - pinned.length - detail.length;
+    return { items, cursor, pinned, detail, height };
   }
 
   /** The row under the cursor: the remembered one, else the first. */

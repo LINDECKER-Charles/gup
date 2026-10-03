@@ -2,7 +2,7 @@ import type { MenuState } from "../../../../commands/menu-state.js";
 import { FILTER_VIEW } from "../../../text/options-labels.js";
 import { ListCursor } from "../../../tui/list-cursor.js";
 import type { KeyPress } from "../../../tui/screen-host.js";
-import { fillLine, fit, seg, type Line } from "../../../tui/styled-lines.js";
+import { fillLine, fit, seg, wrap, type Line } from "../../../tui/styled-lines.js";
 import type { Viewport } from "../../panel.js";
 import type { OptionsView } from "../option-row.js";
 
@@ -37,7 +37,10 @@ export class ProviderFilter implements OptionsView {
   render(viewport: Viewport): readonly Line[] {
     const { providers, filter } = this.#deps.state;
     const heading: Line = [seg(FILTER_VIEW.heading, "strong")];
-    if (providers.length === 0) return [heading, [], [seg(FILTER_VIEW.empty, "muted")]];
+    if (providers.length === 0) {
+      const empty = wrap(FILTER_VIEW.empty, Math.max(1, viewport.width));
+      return [heading, [], ...empty.map((part): Line => [seg(part, "muted")])];
+    }
     const cursor = new ListCursor(
       providers.map(() => true),
       this.#cursor,

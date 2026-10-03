@@ -1,60 +1,28 @@
 import type { CustomColors, ThemeSettings } from "../../../settings/theme-section.js";
 import { fromOklch, toOklch, type Oklch } from "../../../theme/color/oklch.js";
-import { BLACK, parseHex, toHex, worstRatio, type Rgb } from "../../../theme/color/rgb.js";
-import type { Correction } from "../../../theme/enforce-contrast.js";
+import { BLACK, parseHex, toHex, type Rgb } from "../../../theme/color/rgb.js";
 import {
   CUSTOMIZABLE_TOKENS,
-  type ColorToken,
   type CustomizableToken,
   type ThemeId,
 } from "../../../theme/palette.js";
-import type { ResolvedTheme } from "../../../theme/resolve-theme.js";
-import {
-  COLOR_EDITOR,
-  formatRatio,
-  formatRatioValue,
-  HEX_DIALOG,
-  ROLE_LABELS,
-  THEME_LABELS,
-} from "../../../text/theme-labels.js";
+import { COLOR_EDITOR, HEX_DIALOG, ROLE_LABELS, THEME_LABELS } from "../../../text/theme-labels.js";
 import type { KeyPress } from "../../../tui/screen-host.js";
-import {
-  fillLine,
-  fit,
-  seg,
-  wrap,
-  type Line,
-  type Segment,
-  type Tone,
-} from "../../../tui/styled-lines.js";
+import { seg, wrap, type Line } from "../../../tui/styled-lines.js";
 import type { Viewport } from "../../panel.js";
 import type { OptionsControls, OptionsHost, OptionsView } from "../option-row.js";
-import { clipLine } from "../settings-list.js";
+import { adjustedRoles, adjustedWarning, colorTableLines } from "./color-table.js";
 
 export interface ColorEditorDeps {
   readonly controls: OptionsControls;
   readonly host: OptionsHost;
 }
 
-const ROLE_WIDTH = 17;
-const HEX_WIDTH = 9;
-const RATIO_WIDTH = 16;
 const HUE_STEP_DEGREES = 10;
 const LIGHTNESS_STEP = 0.03;
 const DEGREES_PER_TURN = 360;
 /** Between the base theme line and the first role: a blank and the column headings. */
 const TABLE_HEADING_ROWS = 2;
-const GROUNDS: ReadonlySet<CustomizableToken> = new Set(["background", "highlight"]);
-const SAMPLE_TONE: Readonly<Record<CustomizableToken, Tone>> = {
-  accent: "accent",
-  success: "success",
-  warning: "warning",
-  danger: "danger",
-  text: "plain",
-  muted: "muted",
-  background: "muted",
-  highlight: "plain",
-};
 
 /** A colour being nudged: previewed on the whole app, saved when the user moves on. */
 interface Draft {
@@ -88,18 +56,12 @@ export class ColorEditor implements OptionsView {
 
   render(viewport: Viewport): readonly Line[] {
     const theme = this.#deps.host.appearance.resolved();
-    const customs = this.customs();
-    const rows = CUSTOMIZABLE_TOKENS.map((token, index): Line => {
-      const line = clipLine(roleCells(token, theme, customs[token]), viewport.width - 2);
-      if (index !== this.#cursor) return [seg("  "), ...line];
-      return fillLine([seg("› ", "accent"), ...line], viewport.width, "highlight");
-    });
+    const table = { theme, customs: this.customs(), cursor: this.#cursor };
     return [
       ...this.baseLines(viewport.width),
       [],
-      [seg(`  ${columnHeadings()}`, "muted")],
-      ...rows,
-      ...footer(theme, viewport.width),
+      ...colorTableLines(table, viewport.width),
+      ...adjustedWarning(theme, viewport.width),
     ];
   }
 
@@ -143,7 +105,8 @@ export class ColorEditor implements OptionsView {
 
   /** Which theme the colours belong to, above the table. */
   private baseLines(width: number): Line[] {
-    return wrapped(COLOR_EDITOR.base(THEME_LABELS[this.#base]), width, "muted");
+    const text = COLOR_EDITOR.base(THEME_LABELS[this.#base]);
+    return wrap(text, Math.max(1, width)).map((part): Line => [seg(part, "muted")]);
   }
 
   private savedCustoms(): CustomColors {
@@ -212,10 +175,9 @@ export class ColorEditor implements OptionsView {
   /** `a`: every adjusted role keeps the colour it is painted with. */
   private keepAdjusted(): void {
     this.commitDraft();
-    const adjusted = this.#deps.host.appearance
-      .resolved()
-      .report.corrections.filter((correction) => isCustomizable(correction.token))
-      .map((correction) => [correction.token, toHex(correction.applied)] as const);
+    const adjusted = adjustedRoles(this.#deps.host.appearance.resolved()).map(
+      (correction) => [correction.token, toHex(correction.applied)] as const,
+    );
     if (adjusted.length === 0) return;
     this.saveCustoms({ ...this.savedCustoms(), ...Object.fromEntries(adjusted) });
   }
@@ -240,10 +202,6 @@ export class ColorEditor implements OptionsView {
   }
 }
 
-function isCustomizable(token: ColorToken): token is CustomizableToken {
-  return (CUSTOMIZABLE_TOKENS as readonly ColorToken[]).includes(token);
-}
-
 /** The per-theme colours with `id`'s replaced (dropped when empty). */
 function withThemeColors(
   custom: ThemeSettings["custom"],
@@ -252,65 +210,4 @@ function withThemeColors(
 ): ThemeSettings["custom"] {
   const { [id]: _previous, ...others } = custom;
   return Object.keys(colors).length > 0 ? { ...others, [id]: colors } : others;
-}
-
-function columnHeadings(): string {
-  const { role, chosen, shown, ratio, sample } = COLOR_EDITOR.columns;
-  return [
-    fit(role, ROLE_WIDTH),
-    fit(chosen, HEX_WIDTH),
-    fit(shown, HEX_WIDTH),
-    fit(ratio, RATIO_WIDTH),
-    sample,
-  ].join("");
-}
-
-function roleCells(
-  token: CustomizableToken,
-  theme: ResolvedTheme,
-  chosen: string | undefined,
-): Line {
-  const shown = theme.palette?.[token];
-  const correction = theme.report.corrections.find((candidate) => candidate.token === token);
-  return [
-    seg(fit(ROLE_LABELS[token], ROLE_WIDTH)),
-    seg(fit(chosen ?? COLOR_EDITOR.themeValue, HEX_WIDTH), chosen ? "plain" : "muted"),
-    seg(fit(shown ? toHex(shown) : "", HEX_WIDTH)),
-    ratioCell(token, theme, correction),
-    token === "highlight"
-      ? seg(COLOR_EDITOR.samples[token], SAMPLE_TONE[token], "highlight")
-      : seg(COLOR_EDITOR.samples[token], SAMPLE_TONE[token]),
-  ];
-}
-
-/** Grounds: "—" (or "ajusté ⚠"); text roles: their worst ratio, or before → after. */
-function ratioCell(
-  token: CustomizableToken,
-  theme: ResolvedTheme,
-  correction: Correction | undefined,
-): Segment {
-  if (GROUNDS.has(token)) {
-    return correction
-      ? seg(fit(COLOR_EDITOR.groundCorrected, RATIO_WIDTH), "warning")
-      : seg(fit(COLOR_EDITOR.ground, RATIO_WIDTH), "muted");
-  }
-  const { palette } = theme;
-  if (!palette) return seg(fit(COLOR_EDITOR.ground, RATIO_WIDTH), "muted");
-  const ratio = formatRatio(worstRatio(palette[token], [palette.background, palette.highlight]));
-  if (!correction) return seg(fit(`${ratio}  ✔`, RATIO_WIDTH), "success");
-  return seg(fit(`${formatRatioValue(correction.before)} → ${ratio} ⚠`, RATIO_WIDTH), "warning");
-}
-
-/** The warning under the table when some colours had to be adjusted. */
-function footer(theme: ResolvedTheme, width: number): Line[] {
-  const adjusted = theme.report.corrections.filter((correction) =>
-    isCustomizable(correction.token),
-  );
-  if (adjusted.length === 0) return [];
-  const text = COLOR_EDITOR.corrected(adjusted.length, theme.report.level);
-  return [[], ...wrapped(text, width, "warning")];
-}
-
-function wrapped(text: string, width: number, tone: Tone): Line[] {
-  return wrap(text, Math.max(1, width)).map((part): Line => [seg(part, tone)]);
 }

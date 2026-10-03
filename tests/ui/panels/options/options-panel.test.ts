@@ -17,6 +17,7 @@ import { scanSection } from "../../../../src/ui/panels/options/scan-section.js";
 import { TIMEOUT_DIALOG } from "../../../../src/ui/text/menu-labels.js";
 import {
   FILTER_VIEW,
+  OPTION_HINTS,
   OPTIONS_NOTICES,
   OPTIONS_SECTIONS,
   TIMEOUT_OUT_OF_RANGE,
@@ -154,6 +155,58 @@ describe("OptionsPanel list", () => {
     expect(state.fast).toBe(true);
     panel.scroll(1);
     expect(cursorRow(panel)).toContain("Timeout install");
+  });
+});
+
+describe("OptionsPanel on a narrow panel", () => {
+  /** The Options panel of an 80 × 24 terminal. */
+  const NARROW = { width: 50, height: 20 };
+
+  const linesOf = (panel: OptionsPanel, viewport: { width: number; height: number }) =>
+    text(panel.render(viewport)).split("\n");
+
+  it("leaves hints too cut to read out of their rows, and shows the cursor row's whole below", () => {
+    const { panel } = setup();
+    const before = linesOf(panel, NARROW);
+    expect(before.find((line) => line.includes("Mode rapide"))).not.toContain("ignore");
+    expect(before).toContain(OPTION_HINTS.fast);
+    press(panel, "down");
+    const after = linesOf(panel, NARROW);
+    expect(after).toContain(OPTION_HINTS.timeout);
+    expect(after).not.toContain(OPTION_HINTS.fast);
+    expect(after).toHaveLength(before.length);
+    expect(after.every((line) => line.length <= NARROW.width)).toBe(true);
+  });
+
+  it("repeats nothing under the list when every hint fits beside its row", () => {
+    const { panel } = setup({}, [scanSection]);
+    expect(linesOf(panel, VIEW)).toEqual([
+      OPTIONS_SECTIONS.scan,
+      expect.stringContaining(OPTION_HINTS.fast),
+      expect.stringContaining(OPTION_HINTS.timeout),
+      expect.stringContaining(OPTION_HINTS.filter),
+    ]);
+  });
+
+  it("acts on the row a click lands on, and on nothing below the list", () => {
+    const { panel, state, settings, dialogs } = setup();
+    const saved = () => [settings.get("interface"), settings.get("theme"), settings.get("scan")];
+    const untouched = saved();
+    panel.click(NARROW.height - 2, NARROW);
+    expect(saved()).toEqual(untouched);
+    expect(dialogs.ask).not.toHaveBeenCalled();
+    panel.click(1, NARROW);
+    expect(state.fast).toBe(true);
+  });
+
+  it("wraps the provider filter's empty message instead of cutting it", () => {
+    const { panel, state } = setup();
+    state.providers = [];
+    press(panel, "down", "down", "enter");
+    const message = linesOf(panel, { width: 30, height: 20 }).slice(2);
+    expect(message.length).toBeGreaterThan(1);
+    expect(message.every((line) => line.length <= 30)).toBe(true);
+    expect(message.join(" ")).toBe(FILTER_VIEW.empty);
   });
 });
 

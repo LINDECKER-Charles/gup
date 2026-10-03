@@ -110,4 +110,10 @@ describe("theme picker", () => {
     );
     expect(panel.render({ width: 50, height: 12 })).toHaveLength(12);
   });
+
+  it("gives the contrast verdict before the sample under the list, so a short panel keeps it", () => {
+    const { panel } = openPicker();
+    const lines = text(panel.render({ width: 50, height: 20 })).split("\n");
+    expect(lines).toContain(THEME_PICKER.report(6.14, "AA"));
+  });
 });

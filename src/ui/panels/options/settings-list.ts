@@ -1,6 +1,14 @@
 import type { Density } from "../../theme/appearance.js";
 import { ListCursor } from "../../tui/list-cursor.js";
-import { fillLine, fit, lineWidth, seg, type Line, type Segment } from "../../tui/styled-lines.js";
+import {
+  fillLine,
+  fit,
+  lineWidth,
+  seg,
+  wrap,
+  type Line,
+  type Segment,
+} from "../../tui/styled-lines.js";
 import type { Viewport } from "../panel.js";
 import type { OptionRow, OptionSection } from "./option-row.js";
 
@@ -8,7 +16,9 @@ import type { OptionRow, OptionSection } from "./option-row.js";
  * The Options list as lines: section headers (never selectable), rows as
  * `› Label   [value]   hint` in aligned columns, a blank row between
  * sections unless the density is compact. Only the part around the cursor is
- * drawn when the list is taller than the panel.
+ * drawn when the list is taller than the panel. On a narrow panel a hint cut
+ * to a few columns says nothing: it is left out of its row, and the cursor
+ * row's hint is shown in full under the list instead.
  */
 
 export type ListItem =
@@ -33,6 +43,10 @@ const GUTTER = 2;
 const COLUMN_GAP = 2;
 const MAX_LABEL = 22;
 const MAX_VALUE = 26;
+/** Narrower than this, a hint cut to fit says nothing: it is left out of the row. */
+const MIN_HINT_WIDTH = 16;
+/** Rows of the cursor row's hint under the list, always that many so the list never jumps. */
+const DETAIL_HINT_ROWS = 2;
 
 interface Columns {
   readonly label: number;
@@ -83,21 +97,53 @@ export function renderItems(
   return items.slice(start, end).map((item): Line => {
     if (item.kind === "gap") return [];
     if (item.kind === "header") return [seg(item.title, "strong")];
-    const line = clipLine(rowLine(item.row, columns, item.row === cursor), viewport.width);
-    return item.row === cursor ? fillLine(line, viewport.width, "highlight") : line;
+    const isCursor = item.row === cursor;
+    const line = rowLine(item.row, columns, { width: viewport.width, isCursor });
+    return isCursor ? fillLine(line, viewport.width, "highlight") : line;
   });
 }
 
-/** An action row (no value) lets its hint start in the value column. */
-function rowLine(row: OptionRow, columns: Columns, isCursor: boolean): Line {
+/**
+ * Under the list when some row cannot show its whole hint beside it: a blank
+ * row, then the cursor row's hint in full, wrapped on a fixed number of rows.
+ * Empty when every hint fits inline.
+ */
+export function detailLines(
+  items: readonly ListItem[],
+  cursor: OptionRow | undefined,
+  width: number,
+): Line[] {
+  const columns = columnsOf(rowsOf(items));
+  const fits = (row: OptionRow): boolean =>
+    lineWidth(cellsOf(row, columns, false)) + lineWidth(row.hint()) <= width;
+  if (rowsOf(items).every(fits)) return [];
+  const hint = cursor ? wrapLine(cursor.hint(), width) : [];
+  return [[], ...Array.from({ length: DETAIL_HINT_ROWS }, (_, index) => hint[index] ?? [])];
+}
+
+/** The row cut to `width`, with its hint when it has room to say something. */
+function rowLine(row: OptionRow, columns: Columns, at: { width: number; isCursor: boolean }): Line {
+  const cells = cellsOf(row, columns, at.isCursor);
+  const hasRoom = at.width - lineWidth(cells) >= MIN_HINT_WIDTH;
+  return clipLine(hasRoom ? [...cells, ...row.hint()] : cells, at.width);
+}
+
+/** Gutter, label and value; an action row (no value) lets its hint start in the value column. */
+function cellsOf(row: OptionRow, columns: Columns, isCursor: boolean): Line {
   const isEnabled = row.isEnabled();
   const value = bracketed(row.value());
   return [
     seg(isCursor ? "› " : " ".repeat(GUTTER), "accent"),
     seg(fit(row.label, columns.label), isEnabled ? "plain" : "disabled"),
     ...(value === "" ? [] : [seg(fit(value, columns.value), isEnabled ? "accent" : "disabled")]),
-    ...row.hint(),
   ];
+}
+
+/** Each segment word-wrapped to `width`, in its own tone; a word longer than that is cut. */
+function wrapLine(line: Line, width: number): Line[] {
+  return line.flatMap((segment) =>
+    wrap(segment.text, width).map((part) => clipLine([seg(part, segment.tone)], width)),
+  );
 }
 
 /** `line` cut to `width` columns, an ellipsis marking the cut. */

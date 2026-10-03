@@ -264,7 +264,11 @@ flowchart LR
 (never selectable), the rows in aligned columns, a blank row between sections unless the density
 is compact; only the part around the cursor is drawn when the list is taller than the panel. The
 notice line and the rescan offer are pinned above the list, so they stay visible whatever the
-scroll. Keys: ↑ ↓ `k` `j` `pgup` `pgdn` `home` `end` move; Entrée / Espace / a click activate an
+scroll. When some row cannot show its whole hint beside it (an 80-column terminal leaves the panel
+50 columns), a hint that would be cut below 16 columns is left out of its row, and the cursor
+row's hint is shown whole under the list, on a fixed two rows so the list never jumps as the
+cursor moves. The key-hint bar puts what matters first (the rescan offer before `c`, `échap
+retour` third in the colour editor): a narrow bar cuts the end. Keys: ↑ ↓ `k` `j` `pgup` `pgdn` `home` `end` move; Entrée / Espace / a click activate an
 enabled row; ← → step the row under the cursor; `r` rescans after a scan setting changed; the
 sections' shortcuts last. `wantsKey` claims ← → only on an enabled row that steps (elsewhere ←
 keeps its menu meaning, the sidebar), and every key while a sub-view is open; the session keeps
@@ -285,14 +289,17 @@ keeps its menu meaning, the sidebar), and every key while a sub-view is open; th
   cannot paint it). Moving the cursor previews the theme on the whole app
   (`AppearanceControl.preview`, with the saved contrast level and customs); the saved theme and
   unavailable ones are not previewed. Entrée saves and ends the preview; Échap or ← ends it. The
-  right column (under the list below 66 columns): description, the sample block
-  (`theme-sample.ts`: every tone and fill the screens paint), the contrast report and the paint
-  mode's note. The title bar carries `aperçu du thème` while a preview is on screen
+  right column: description, the sample block (`theme-sample.ts`: every tone and fill the
+  screens paint), the contrast report and the paint mode's note. Below 66 columns it goes under
+  the list, the contrast report right after the description, so a short panel cuts the sample
+  rather than the verdict. The title bar carries `aperçu du thème` while a preview is on screen
   (`ViewDefinition.facts`).
 - **Colour editor.** The saved theme's eight customizable roles: Choisie (the custom hex or
   `(thème)`), Affichée (the painted colour), Contraste (worst ratio on the background and the
   highlight; `2,1 → 4,6:1 ⚠` from the engine's correction report; grounds show `—`), Aperçu (the
-  role painted). Entrée asks for a hex (strictly parsed, `#RGB`/`#RRGGBB`), saved at once under
+  role painted). The table is `views/color-table.ts` (pure rendering); on a panel narrower than
+  its fixed columns, Affichée is left out — Contraste already says when it differs from the
+  choice, and the screen is painted with it. Entrée asks for a hex (strictly parsed, `#RGB`/`#RRGGBB`), saved at once under
   `custom[baseTheme]`; ← → nudge the hue by 10°, `+` `-` the OKLCH lightness by 0.03 — the draft
   is kept in OKLCH (no drift through gamut clamping), previewed live, and saved when the user
   changes role or leaves (no timer). `a` stores the adjusted value of every corrected role;
@@ -352,9 +359,9 @@ the renderer reads it when it is created.
 | `tests/ui/theme/terminal-probe.test.ts` | lazy and bounded queries, process cache, unsupported/suspended terminals, events, bounded settle, dispose |
 | `tests/ui/theme/themed-appearance.test.ts` | finding 1 (plain text and input in the terminal's colour), on-screen AA for RGB and detected themes, preview, live settings, detection policy, dispose |
 | `tests/ui/app/contrast-audit.test.ts` | every registered view walked — Paquets (cursor, checked rows, filter, confirmation), Scan with a failure, Providers, Options (list, timeout dialog, theme picker and a preview, reset choice and confirmation, colour editor, hex dialog, an accent typed unreadable on purpose) — under every built-in theme: the seven RGB ones, `auto` on a light terminal, `terminal` on Campbell and Terminal.app Basic, `monochrome` on both with the terminal's own text colour. Every span ≥ 4.5:1, borders ≥ 3:1; the legacy look on a light terminal is caught |
-| `tests/ui/panels/options/options-panel.test.ts` | section order, headers skipped, switches saved, ← → claimed on stepping rows only, disabled rows never activated, comfort rows to `interface` (mouse at once), extra sections between CONFORT and FICHIER, compact density, scrolling, clicks, a failed save kept and reported then cleared, timeout dialog and its bounds, provider filter |
-| `tests/ui/panels/options/{theme-picker,color-editor,file-section}.test.ts` | picker marks, preview without saving, Échap, Entrée, customs kept while trying, unknown palette, 16 colours refused, narrow layout; editor columns, typed hex saved per theme and validated, `avant → après ⚠` and `a`, Suppr, hue and lightness previews saved on moving on; file state and path, `c` copy (and its failure), reset scopes with the Non default, session scan state and timeout precedence |
-| `tests/ui/views/options-view.test.ts` | in the running menu with the theme engine on the same settings: the whole app repainted by the preview and restored by Échap, Entrée applies, symbols switch at once, mouse on/off on the renderer, Paquets re-sorted at once |
+| `tests/ui/panels/options/options-panel.test.ts` | section order, headers skipped, switches saved, ← → claimed on stepping rows only, disabled rows never activated, comfort rows to `interface` (mouse at once), extra sections between CONFORT and FICHIER, compact density, scrolling, clicks, a failed save kept and reported then cleared, timeout dialog and its bounds, provider filter; on a 50-column panel: hints left out of the rows and the cursor row's whole below (the list never jumps), clicks below the list ignored, the filter's empty message wrapped |
+| `tests/ui/panels/options/{theme-picker,color-editor,file-section}.test.ts` | picker marks, preview without saving, Échap, Entrée, customs kept while trying, unknown palette, 16 colours refused, narrow layout with the verdict before the sample; editor columns (Affichée left out on a narrow panel, the ratio and its ⚠ kept whole), typed hex saved per theme and validated, `avant → après ⚠` and `a`, Suppr, hue and lightness previews saved on moving on; file state and path, `c` copy (and its failure), reset scopes with the Non default, session scan state and timeout precedence |
+| `tests/ui/views/options-view.test.ts` | in the running menu with the theme engine on the same settings: the whole app repainted by the preview and restored by Échap, Entrée applies, symbols switch at once, mouse on/off on the renderer, Paquets re-sorted at once; in an 80 × 24 terminal, the cursor row's hint whole under the list and `échap retour` on the colour editor's bar |
 | `tests/ui/text/theme-labels.test.ts` | `formatRatio` truncation, the contrast status of each situation (pass, adjusted, unverifiable, pending, NO_COLOR, monochrome, 16 and 256 colours) |
 | `tests/core/config/{scan,install}-section.test.ts`, `tests/ui/settings/*.test.ts`, `tests/commands/cli/settings-module.test.ts` | parsing, sparse writes, precedence, service, sources, status lines, the module (elevated child skipped, issues printed once before the action, `NO_COLOR`, preferences, screens, mouse, diagnostics) |
 
@@ -401,7 +408,7 @@ the test, an appearance control resolving for real).
 | D13 | `applyPersistedInstallTimeout(store, env)` | `(installSettings, env)` | The module reads every section through the shared `SettingsService`; the function keeps the one precedence rule. |
 | D14 | Sections APPARENCE, CONFORT, SCAN & INSTALLATION, extras, FICHIER | SCAN & INSTALLATION first, then APPARENCE, CONFORT, extras, FICHIER | The foundation's `menu-session.test.ts` (frozen in wave 2) opens Options and takes the second row as the timeout; it is also the 0.4 panel's order (fast, timeout, filter), which users know. |
 | D15 | `formatRatio` in `color/rgb.ts` | `ui/text/theme-labels.ts`, on `formatDecimal` | French display formatting belongs with the labels and `fr-format`; the colour science stays locale-free, and `ui/theme` is full. |
-| D16 | Under 80 columns the hint column is dropped; picker side by side from 90 columns | hints cut with an ellipsis; picker side by side from 66 columns | A cut hint still says something; the list (31) and the sample (32) fit side by side in a 100-column terminal's panel (70). |
+| D16 | Under 80 columns the hint column is dropped; picker side by side from 90 columns, cut to 4 lines below | a hint with fewer than 16 columns left is dropped from its row, and whenever some hint does not fit the cursor row's is shown whole under the list; picker side by side from 66 columns, the contrast report first when stacked; the colour editor drops Affichée on a narrow panel | The panel is 50 columns wide in an 80-column terminal: hints cut to 4 characters said nothing and hid the Thème row's contrast status. The list (31) and the sample (32) fit side by side in a 100-column terminal's panel (70). |
 | D17 | `c` copies the path on the FICHIER row | anywhere in the list (a section shortcut), and Entrée on the Fichier row | One key the hint bar can announce; `OptionSection.shortcuts` keeps it in the file section. |
 | D18 | `a` keeps the adjusted value (of the row) | keeps every adjusted role | Matches the warning under the table, which counts every adjusted role. |
 | D19 | Colour editor: "Échap/←" leaves (§2.4), ← → nudge the hue (key table) | ← → nudge the hue, Échap leaves | The key table is the precise one; ← → on a colour read as "turn the hue". |

@@ -60,17 +60,21 @@ export class ThemePicker implements OptionsView {
     return THEME_PICKER.hints;
   }
 
+  /**
+   * The preview beside the list, or under it on a narrow panel — there the
+   * contrast verdict comes before the sample, since a short panel cuts the end.
+   */
   render(viewport: Viewport): readonly Line[] {
     const availability = this.#deps.host.appearance.availability();
     const list = this.listLines(availability);
     if (viewport.width >= SIDE_BY_SIDE_MIN) {
       const previewWidth = viewport.width - LIST_WIDTH - COLUMN_SEPARATOR.length;
-      return sideBySide(list, this.previewLines(availability, previewWidth), viewport.width);
+      const { intro, sample, report, note } = this.preview(availability, previewWidth);
+      return sideBySide(list, separated([intro, sample, [...report, ...note]]), viewport.width);
     }
-    return [...list, [], ...this.previewLines(availability, viewport.width)].slice(
-      0,
-      viewport.height,
-    );
+    const { intro, sample, report, note } = this.preview(availability, viewport.width);
+    const below = separated([[...intro, ...report], sample, note]);
+    return [...list, [], ...below].slice(0, viewport.height);
   }
 
   press(key: KeyPress): void {
@@ -136,22 +140,35 @@ export class ThemePicker implements OptionsView {
   }
 
   /** The theme under the cursor: what it is, the sample painted with it, how readable it is. */
-  private previewLines(availability: readonly ThemeAvailability[], width: number): Line[] {
+  private preview(availability: readonly ThemeAvailability[], width: number): Preview {
     const heading: Line = [seg(THEME_PICKER.previewHeading, "strong")];
     if (availability[this.#cursor]?.isAvailable === false) {
-      return [heading, [seg(THEME_UNAVAILABLE_16, "disabled")]];
+      const intro = [heading, [seg(THEME_UNAVAILABLE_16, "disabled")]];
+      return { intro, sample: [], report: [], note: [] };
     }
     const theme = this.#deps.host.appearance.resolved();
-    return [
-      heading,
-      ...wrapped(THEME_DESCRIPTIONS[this.current], width, "muted"),
-      [],
-      ...themeSample(width),
-      [],
-      ...reportLines(theme, width),
-      ...wrapped(THEME_PICKER.modeNotes[theme.mode], width, "muted"),
-    ];
+    return {
+      intro: [heading, ...wrapped(THEME_DESCRIPTIONS[this.current], width, "muted")],
+      sample: themeSample(width),
+      report: reportLines(theme, width),
+      note: wrapped(THEME_PICKER.modeNotes[theme.mode], width, "muted"),
+    };
   }
+}
+
+/** The blocks of the preview, each a few lines. */
+interface Preview {
+  readonly intro: Line[];
+  readonly sample: Line[];
+  readonly report: Line[];
+  readonly note: Line[];
+}
+
+/** The non-empty blocks, a blank row between two. */
+function separated(blocks: readonly Line[][]): Line[] {
+  return blocks
+    .filter((block) => block.length > 0)
+    .flatMap((block, index) => (index === 0 ? block : [[], ...block]));
 }
 
 /** "✔ 6,1" (corrected: "⚠ 4,5"), "? —" when the contrast cannot be computed, "–" unavailable. */
