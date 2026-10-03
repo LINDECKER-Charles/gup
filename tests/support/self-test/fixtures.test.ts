@@ -9,9 +9,9 @@ import {
 import { fixture, fixtureFile, golden, isFixtureRef, isGoldenRef } from "../fixtures/refs.js";
 
 const WINDOWS_MACHINE: RedactionContext = {
-  user: "user",
-  host: "HOST",
-  home: "C:\\Users\\user",
+  user: "dana",
+  host: "STUDIO-DANAE",
+  home: "C:\\Users\\dana",
   isCaseInsensitive: true,
 };
 
@@ -54,7 +54,7 @@ describe("fixture references", () => {
 describe("redaction", () => {
   it("replaces the home directory in both separator styles, whatever its case on Windows", () => {
     const { text, counts } = redact(
-      "C:\\Users\\user\\scoop\\shims · c:/users/USER/.cargo/bin",
+      "C:\\Users\\dana\\scoop\\shims · c:/users/DANA/.cargo/bin",
       WINDOWS_MACHINE,
     );
 
@@ -63,7 +63,7 @@ describe("redaction", () => {
   });
 
   it("replaces the home directory a JSON report escaped", () => {
-    const report = JSON.stringify({ location: "C:\\Users\\user\\AppData\\Roaming\\npm" });
+    const report = JSON.stringify({ location: "C:\\Users\\dana\\AppData\\Roaming\\npm" });
     const { text, counts } = redact(report, WINDOWS_MACHINE);
 
     expect(JSON.parse(text)).toEqual({ location: "<HOME>\\AppData\\Roaming\\npm" });
@@ -72,16 +72,16 @@ describe("redaction", () => {
 
   it("replaces the user and host names only where they stand alone", () => {
     const { text, counts } = redact(
-      "owner user on HOST · charlotte · user.dev · xcharl",
+      "owner dana on studio-danae · danaides · dana.dev · xdana",
       WINDOWS_MACHINE,
     );
 
-    expect(text).toBe("owner <USER> on <HOST> · charlotte · <USER>.dev · xcharl");
+    expect(text).toBe("owner <USER> on <HOST> · danaides · <USER>.dev · xdana");
     expect(counts).toEqual({ "<HOME>": 0, "<USER>": 2, "<HOST>": 1 });
   });
 
   it("leaves a longer home that merely starts with the real one alone", () => {
-    expect(redact("C:\\Users\\charlie\\x", WINDOWS_MACHINE).text).toBe("C:\\Users\\charlie\\x");
+    expect(redact("C:\\Users\\danae\\x", WINDOWS_MACHINE).text).toBe("C:\\Users\\danae\\x");
   });
 
   it("matches POSIX names case-sensitively", () => {
