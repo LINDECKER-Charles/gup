@@ -374,6 +374,15 @@ describe("report page: safety and comfort", () => {
     expect(root.hasAttribute("data-theme")).toBe(false);
   });
 
+  it("skips to the content without leaving the page", async () => {
+    const page = await openReport(reportModelOf(EVENTS), "#/failures");
+
+    await go(page, "#main");
+
+    expect(page.$("[data-page-section='failures']")?.hasAttribute("hidden")).toBe(false);
+    expect(page.$("[data-page-section='overview']")?.hasAttribute("hidden")).toBe(true);
+  });
+
   it("focuses the search with / and clears it with Échap", async () => {
     const page = await openReport();
     const input = page.$("#search");

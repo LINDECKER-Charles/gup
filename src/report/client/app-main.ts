@@ -237,7 +237,10 @@ function boot() {
   initSearch();
   initDrawer();
   initPrint();
-  on(window, "hashchange", onRoute);
+  on(window, "hashchange", () => {
+    // "#main" (the skip link) is an anchor in the page, not a route.
+    if (location.hash === "" || location.hash.indexOf("#/") === 0) onRoute();
+  });
   onRoute();
 }
 `;
