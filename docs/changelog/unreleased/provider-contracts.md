@@ -1,0 +1,12 @@
+# Fragment — `test/provider-contracts`
+
+Test suite only: no change to what gup does. Design note:
+[`docs/development/design/provider-contracts.md`](../../development/design/provider-contracts.md).
+
+## Internal
+
+- **providers/iac:** Move the ten infrastructure providers to contract cases on the fake machine — real `gh-releases`, `hashicorp-releases` and `install-source` underneath, every installer's upgrade argv pinned — replacing two flat suites that mocked all three ([`165b76e`](https://github.com/LINDECKER-Charles/gup/commit/165b76e))
+- **providers/os:** Move the whole `os` domain — winget, scoop, Chocolatey, the Homebrew formulae and casks, the Mac App Store, MacPorts, MSYS2, Cygwin, Npackd, Nix, Sparkle, Fink, pkgin and pkgx — to contract cases plus one knowledge file per provider, keeping the knowledge of the former `-gaps` suites and adding scoop's id check, the batch commands and the `requiresAdmin` rows to what is pinned ([`5dfd3c2`](https://github.com/LINDECKER-Charles/gup/commit/5dfd3c2), [`fb76fef`](https://github.com/LINDECKER-Charles/gup/commit/fb76fef), [`0cfa5bc`](https://github.com/LINDECKER-Charles/gup/commit/0cfa5bc), [`b717870`](https://github.com/LINDECKER-Charles/gup/commit/b717870))
+- **providers:** Split the package-gap suite into its own domains: vcpkg and mint under `lang-other`, the .NET SDK and the NuGet CLI under `dotnet-php`, with a stronger `dotnet --list-sdks` banner test found by a seeded mutation ([`48053c6`](https://github.com/LINDECKER-Charles/gup/commit/48053c6), [`50cf775`](https://github.com/LINDECKER-Charles/gup/commit/50cf775))
+- **providers:** Extend the contract harness for the migration: update routes through every installer, batch argv and failed-batch checks, machines that answer a re-query after an install, recorded scan timeouts, redirect targets, trace readers and a one-test spy for failures Node never produces on its own ([`60f865c`](https://github.com/LINDECKER-Charles/gup/commit/60f865c), [`9dcc557`](https://github.com/LINDECKER-Charles/gup/commit/9dcc557), [`4fbef13`](https://github.com/LINDECKER-Charles/gup/commit/4fbef13), [`0611848`](https://github.com/LINDECKER-Charles/gup/commit/0611848))
+- **chore:** Add `scripts/coverage-delta.mjs`, the per-file coverage gate of the migration (a source file may not lose more than one point against the `int/wave-1` baseline) ([`bc129b8`](https://github.com/LINDECKER-Charles/gup/commit/bc129b8), [`8594823`](https://github.com/LINDECKER-Charles/gup/commit/8594823))
