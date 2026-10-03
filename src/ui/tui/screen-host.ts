@@ -1,6 +1,7 @@
 import type { CliRenderer, KeyEvent } from "@opentui/core";
 import { loadTui, type Tui } from "./load-tui.js";
 import { PromptCancelledError } from "./prompt-cancelled.js";
+import { destroyRenderer } from "./teardown.js";
 
 /** The keys a view reacts to — a subset of OpenTUI's KeyEvent, easy to fake. */
 export type KeyPress = Pick<KeyEvent, "name" | "ctrl" | "sequence">;
@@ -35,7 +36,7 @@ export function createScreenHost(createRenderer: RendererFactory): ScreenHost {
       try {
         return await untilCancelled(renderer, mount({ renderer, tui }));
       } finally {
-        renderer.destroy();
+        await destroyRenderer(renderer);
       }
     },
   };
