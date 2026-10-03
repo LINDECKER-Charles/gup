@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { appendFileSync, mkdirSync } from "node:fs";
 import chalk from "chalk";
+import { RUN_ID } from "../state/run-context.js";
 import { gupVersion } from "../version.js";
 import { historyLocation } from "./paths.js";
 import {
@@ -36,13 +36,6 @@ import type {
 /** Set to `0` / `false` / `off` / `no` to turn the history off entirely. */
 const ENABLED_ENV = "GUP_HISTORY";
 const DISABLED_VALUES = new Set(["0", "false", "off", "no"]);
-
-/**
- * One id per gup process, stamped on every record it emits. Cheap enough to
- * compute unconditionally, and it makes "which updates followed this scan"
- * answerable without relying on timestamp proximity.
- */
-const RUN_ID = randomUUID();
 
 let warned = false;
 

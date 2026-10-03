@@ -8,6 +8,7 @@ import {
   getProvidersToScan,
   scanAll,
 } from "../../src/core/registry.js";
+import { currentOperation, type OperationContext } from "../../src/core/state/run-context.js";
 import type {
   OutdatedPackage,
   Provider,
@@ -203,6 +204,25 @@ describe("registry: detectAvailableProviders", () => {
       for (const s of spies) s.mockRestore();
     }
   });
+
+  it("runs each probe under a detect operation naming its provider", async () => {
+    const seen: Array<OperationContext | undefined> = [];
+    const probed = (id: string) =>
+      Object.assign(makeProvider({ id }), {
+        isAvailable: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 1));
+          seen.push(currentOperation());
+          return true;
+        },
+      });
+    await detectAvailableProviders([probed("a"), probed("b")]);
+    expect(seen).toEqual(
+      expect.arrayContaining([
+        { op: "detect", providerId: "a" },
+        { op: "detect", providerId: "b" },
+      ]),
+    );
+  });
 });
 
 describe("registry: platform gate", () => {
@@ -392,5 +412,21 @@ describe("registry: scanAll", () => {
     const b = makeProvider({ id: "default-c-b" });
     const results = await scanAll({ detected: [a, b] });
     expect(results.map((r) => r.providerId)).toEqual(["default-c-a", "default-c-b"]);
+  });
+
+  it("runs each concurrent scan under a scan operation naming its provider", async () => {
+    const seen = new Map<string, OperationContext | undefined>();
+    const scanned = (id: string, delayMs: number) =>
+      Object.assign(makeProvider({ id }), {
+        listOutdated: async () => {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          seen.set(id, currentOperation());
+          return [];
+        },
+      });
+    await scanAll({ detected: [scanned("slow", 5), scanned("quick", 1)], concurrency: 2 });
+    expect(seen.get("slow")).toEqual({ op: "scan", providerId: "slow" });
+    expect(seen.get("quick")).toEqual({ op: "scan", providerId: "quick" });
+    expect(currentOperation()).toBeUndefined();
   });
 });

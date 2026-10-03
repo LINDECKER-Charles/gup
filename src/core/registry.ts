@@ -2,6 +2,7 @@ import pLimit from "p-limit";
 
 import { filterByOwnership } from "./ownership.js";
 import { isSupportedOn } from "./platform/is-supported-on.js";
+import { withOperation } from "./state/run-context.js";
 
 // --- OS-level / Windows -----------------------------------------------------
 import { WingetProvider } from "../providers/os/winget.js";
@@ -466,7 +467,9 @@ export async function detectAvailableProviders(
   const supported = candidates.filter((p) => isSupportedOn(p));
   const limit = pLimit(DETECTION_CONCURRENCY);
   const checks = await Promise.all(
-    supported.map((p) => limit(() => probeAvailability(p))),
+    supported.map((p) =>
+      limit(() => withOperation({ op: "detect", providerId: p.id }, () => probeAvailability(p))),
+    ),
   );
   return supported.filter((_, i) => checks[i]);
 }
@@ -514,30 +517,11 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
   const filtered = await getProvidersToScan(options);
 
   const limit = pLimit(options.concurrency ?? 4);
+  // Each task runs under its own operation context, so whatever a concurrent
+  // scan spawns or logs is attributed to the right provider.
   const raw = await Promise.all(
     filtered.map((p) =>
-      limit(async (): Promise<ProviderScanResult> => {
-        options.onProviderStart?.(p);
-        let result: ProviderScanResult;
-        try {
-          const all = await p.listOutdated();
-          // The tool only surfaces actionable updates — items the provider
-          // flagged as `manual: true` (Toolbox-managed IDEs, manual binary
-          // installs, plugins behind GUI managers, ...) are dropped here so
-          // they never appear in lists, prompts, or "update all" flows.
-          const packages = all.filter((pkg) => !pkg.manual);
-          result = { providerId: p.id, available: true, packages };
-        } catch (err) {
-          result = {
-            providerId: p.id,
-            available: true,
-            packages: [],
-            error: err instanceof Error ? err.message : String(err),
-          };
-        }
-        options.onProviderEnd?.(p, result);
-        return result;
-      }),
+      limit(() => withOperation({ op: "scan", providerId: p.id }, () => scanProvider(p, options))),
     ),
   );
 
@@ -554,4 +538,28 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
   // observable through src/core/ownership.ts unit tests.
   const { results } = await filterByOwnership(raw);
   return results;
+}
+
+/** One provider's scan, fail-soft: a provider that throws becomes an error row. */
+async function scanProvider(p: Provider, options: ScanOptions): Promise<ProviderScanResult> {
+  options.onProviderStart?.(p);
+  let result: ProviderScanResult;
+  try {
+    const all = await p.listOutdated();
+    // The tool only surfaces actionable updates — items the provider
+    // flagged as `manual: true` (Toolbox-managed IDEs, manual binary
+    // installs, plugins behind GUI managers, ...) are dropped here so
+    // they never appear in lists, prompts, or "update all" flows.
+    const packages = all.filter((pkg) => !pkg.manual);
+    result = { providerId: p.id, available: true, packages };
+  } catch (err) {
+    result = {
+      providerId: p.id,
+      available: true,
+      packages: [],
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+  options.onProviderEnd?.(p, result);
+  return result;
 }
