@@ -85,11 +85,15 @@ const SHELL_PATH: Readonly<Record<PowerShell, string>> = {
   powershell: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
 };
 
+/** Windows with only `shell` on PATH. */
+export function powerShellHost(shell: PowerShell): SystemSpec {
+  return { platform: "win32", bin: { [shell]: SHELL_PATH[shell] } };
+}
+
 /** Only `shell` on PATH, its module scan printing `stdout`. */
 export function powerShellMachine(shell: PowerShell, stdout: string): SystemSpec {
   return {
-    platform: "win32",
-    bin: { [shell]: SHELL_PATH[shell] },
+    ...powerShellHost(shell),
     commands: [{ argv: [shell, ...PWSH_PREFIX, PWSH_SCAN_SCRIPT], stdout }],
   };
 }
