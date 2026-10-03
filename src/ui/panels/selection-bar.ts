@@ -13,38 +13,63 @@ export interface SelectionBarState {
   readonly notice: string | null;
 }
 
+/** Columns kept blank between the count and the launch button. */
+const BUTTON_GAP = 1;
+
 /**
- * The foot of the package table, always on screen: a row for the notice of a
- * refused key (blank otherwise), then the bar — how many packages are checked
- * and, once one is, the launch button on the right. The bar's row is the
- * last one; clicking it is pressing Entrée.
+ * The foot of the package table, always on screen: guidance rows, then the
+ * bar — how many packages are checked and, once one is, the launch button on
+ * the right. The bar's row is the last one; clicking it is pressing Entrée.
  */
 export function selectionBar(state: SelectionBarState, width: number): Line[] {
-  const notice = state.notice ? wrap(state.notice, width).map((text) => [seg(text, "warning")]) : [];
-  return [...(notice.length > 0 ? notice : [[]]), barLine(state, width)];
-}
-
-function barLine(state: SelectionBarState, width: number): Line {
-  if (state.checked === 0) return [seg(emptyMessage(width), "muted")];
-  const button = launchButton(state);
-  const room = Math.max(0, width - lineWidth(button));
-  return [seg(fit(SELECTION_BAR.count(state.checked, state.total), room), "success"), ...button];
-}
-
-/** How to check packages, or only that none is when the bar is too narrow to say it. */
-function emptyMessage(width: number): string {
-  const { empty, emptyShort } = SELECTION_BAR;
-  return fit(empty.length <= width ? empty : emptyShort, width).trimEnd();
+  return [...guidanceLines(state, width), barLine(state, width)];
 }
 
 /**
- * ` Entrée  Mettre à jour (n) ` between half blocks: a filled button that
- * still reads as one without colours (the edges stay), drawn inert while it
- * cannot be pressed.
+ * The rows above the bar: the notice of a refused key, word-wrapped; else,
+ * while nothing is checked and the bar is too narrow to say it, how to
+ * check; else one blank row, so the table does not move when a notice comes.
  */
-function launchButton({ checked, canLaunch }: SelectionBarState): Line {
+function guidanceLines(state: SelectionBarState, width: number): Line[] {
+  const notice = wrap(state.notice ?? "", width).map((text): Line => [seg(text, "warning")]);
+  if (notice.length > 0) return notice;
+  if (state.checked === 0 && !isEmptyMessageFitting(width)) {
+    return [[seg(fit(SELECTION_BAR.howToCheck, width).trimEnd(), "muted")]];
+  }
+  return [[]];
+}
+
+/**
+ * The count, then the launch button at the right edge. A bar too narrow for
+ * both drops the number from the button before cutting the count: the count
+ * right beside it already says how many.
+ */
+function barLine(state: SelectionBarState, width: number): Line {
+  if (state.checked === 0) return emptyBarLine(width);
+  const count = SELECTION_BAR.count(state.checked, state.total);
+  const full = launchButton(SELECTION_BAR.button(state.checked), state.canLaunch);
+  const isRoomy = count.length + BUTTON_GAP + lineWidth(full) <= width;
+  const button = isRoomy ? full : launchButton(SELECTION_BAR.buttonShort, state.canLaunch);
+  const room = Math.max(0, width - lineWidth(button) - BUTTON_GAP);
+  return [seg(fit(count, room), "success"), seg(" ".repeat(BUTTON_GAP)), ...button];
+}
+
+function emptyBarLine(width: number): Line {
+  const { empty, nothingChecked } = SELECTION_BAR;
+  const message = isEmptyMessageFitting(width) ? empty : nothingChecked;
+  return [seg(fit(message, width).trimEnd(), "muted")];
+}
+
+function isEmptyMessageFitting(width: number): boolean {
+  return SELECTION_BAR.empty.length <= width;
+}
+
+/**
+ * `label` between half blocks: a filled button that still reads as one
+ * without colours (the edges stay), drawn inert while it cannot be pressed.
+ */
+function launchButton(label: string, canLaunch: boolean): Line {
   const { buttonStart, buttonEnd } = SELECTION_BAR;
-  const label = SELECTION_BAR.button(checked);
   if (!canLaunch) return [seg(`${buttonStart}${label}${buttonEnd}`, "disabled")];
   return [seg(buttonStart, "accent"), seg(label, "onAccent", "accent"), seg(buttonEnd, "accent")];
 }

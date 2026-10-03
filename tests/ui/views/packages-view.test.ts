@@ -3,7 +3,11 @@ import type { MenuState } from "../../../src/commands/menu-state.js";
 import type { ProviderScanResult } from "../../../src/core/types.js";
 import type { ScanEvents } from "../../../src/ui/panels/scan-panel.js";
 import { CONFIRM_UPDATE } from "../../../src/ui/text/menu-labels.js";
-import { LAUNCH_NOTICES, PACKAGES_HINTS } from "../../../src/ui/text/packages-labels.js";
+import {
+  LAUNCH_NOTICES,
+  PACKAGES_HINTS,
+  SELECTION_BAR,
+} from "../../../src/ui/text/packages-labels.js";
 import { bootMenu, type MenuDriver } from "../../support/tui/menu-driver.js";
 
 const pkg = (id: string, current: string, latest: string) => ({ id, current, latest });
@@ -38,6 +42,16 @@ describe("Paquets", () => {
     expect(text).toContain(LAUNCH_NOTICES.empty);
     expect(text).not.toContain(CONFIRM_UPDATE.heading(1));
     expect(text).toContain(PACKAGES_HINTS.checkAll);
+  });
+
+  it("says how to check above the bar at 80 × 24, then the count and button", async () => {
+    const menu = await bootMenu({ scans: [WINGET], size: { cols: 80, rows: 24 } });
+    const rows = (await menu.waitForText("Git.Git")).split("\n");
+    // Bottom up: the key hints, the panel's border, the bar, the row above it.
+    expect(rows.at(-3)).toContain(SELECTION_BAR.nothingChecked);
+    expect(rows.at(-4)).toContain(SELECTION_BAR.howToCheck);
+    await menu.press("a");
+    expect((await menu.frame()).split("\n").at(-3)).toMatch(/● 2 sur 2 coché\(s\) +▐ Entrée/);
   });
 
   it("checks everything with a, then updates it all from a click on the bar", async () => {

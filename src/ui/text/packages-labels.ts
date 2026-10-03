@@ -20,15 +20,24 @@ export const PACKAGES_PLACEHOLDERS = {
 } as const;
 
 const NOTHING_CHECKED = "Aucun paquet coché";
+const HOW_TO_CHECK = "espace pour cocher, a pour tout cocher";
+const LAUNCH = "Entrée  Mettre à jour";
 
 /** The bar at the foot of the table: what is checked, and the button that updates it. */
 export const SELECTION_BAR = {
-  empty: `${NOTHING_CHECKED} — espace pour cocher, a pour tout cocher`,
-  /** `empty` on a bar too narrow for it: the keys stay in the hint bar. */
-  emptyShort: NOTHING_CHECKED,
+  empty: `${NOTHING_CHECKED} — ${HOW_TO_CHECK}`,
+  /**
+   * `empty` cut in two where the bar is too narrow for it (about 50 columns
+   * on an 80-column terminal): the state stays on the bar, how to check goes
+   * on the row above it.
+   */
+  nothingChecked: NOTHING_CHECKED,
+  howToCheck: HOW_TO_CHECK,
   count: (checked: number, total: number) =>
     `● ${formatCount(checked)} sur ${formatCount(total)} coché(s)`,
-  button: (checked: number) => ` Entrée  Mettre à jour (${formatCount(checked)}) `,
+  button: (checked: number) => ` ${LAUNCH} (${formatCount(checked)}) `,
+  /** `button` on a bar too narrow for it and the count: the number, already in the count, goes. */
+  buttonShort: ` ${LAUNCH} `,
   /** The button's edges: what still marks it as a button without colours. */
   buttonStart: "▐",
   buttonEnd: "▌",
