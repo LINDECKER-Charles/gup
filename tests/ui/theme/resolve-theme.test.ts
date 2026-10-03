@@ -1,19 +1,32 @@
 import { describe, expect, it } from "vitest";
-import type { ThemeSettings } from "../../../src/ui/settings/theme-section.js";
+import type { CustomColors, ThemeSettings } from "../../../src/ui/settings/theme-section.js";
 import { BUILTIN_PALETTES } from "../../../src/ui/theme/builtin-themes.js";
 import { xterm256Color } from "../../../src/ui/theme/color/quantize-256.js";
-import { toHex } from "../../../src/ui/theme/color/rgb.js";
+import { rgb, toHex, type Rgb } from "../../../src/ui/theme/color/rgb.js";
 import { CONTRAST_RULES, CONTRAST_TARGETS } from "../../../src/ui/theme/contrast-rules.js";
-import { COLOR_TOKENS, RGB_THEME_IDS, type Palette } from "../../../src/ui/theme/palette.js";
+import {
+  COLOR_TOKENS,
+  CONTRAST_LEVELS,
+  CUSTOMIZABLE_TOKENS,
+  RGB_THEME_IDS,
+  type ContrastLevel,
+  type Palette,
+} from "../../../src/ui/theme/palette.js";
 import {
   isNoColor,
   resolveTheme,
   themeAvailability,
+  type ResolvedTheme,
   type ResolveInput,
   type TerminalFacts,
 } from "../../../src/ui/theme/resolve-theme.js";
-import { detectedColorsFrom } from "../../../src/ui/theme/terminal-palette.js";
+import { buildThemePaint, type ColorRef } from "../../../src/ui/theme/style-table.js";
+import {
+  detectedColorsFrom,
+  type DetectedColors,
+} from "../../../src/ui/theme/terminal-palette.js";
 import * as wcag from "../../support/contrast/wcag.js";
+import { pick, seededRandom } from "../../support/random.js";
 import { CAMPBELL, TERMINAL_APP_BASIC } from "../../support/tui/reference-palettes.js";
 
 const TRUECOLOR: TerminalFacts = {
@@ -189,5 +202,106 @@ describe("isNoColor", () => {
     expect(isNoColor({ NO_COLOR: "false" })).toBe(true);
     expect(isNoColor({ NO_COLOR: "" })).toBe(false);
     expect(isNoColor({})).toBe(false);
+  });
+});
+
+
+/**
+ * The guarantee end to end, for colours nobody chose with care: random
+ * custom colours on every theme gup paints, random terminal palettes under
+ * the terminal theme, on truecolor and 256-colour terminals, at both levels.
+ * Measured on the paint itself — what each cell shows: its own RGB, or the
+ * terminal's default it stands for — with the independent oracle.
+ */
+describe("resolveTheme + paint: every painted pair holds, whatever the colours", () => {
+  const CASES = 300;
+  const SCENARIOS = (["truecolor", "256"] as const).flatMap((depth) =>
+    CONTRAST_LEVELS.map((level) => [depth, level] as const),
+  );
+  const TUNABLE = ["auto", ...RGB_THEME_IDS] as const;
+  type Pair = [label: string, ink: Rgb, ground: Rgb, target: number];
+
+  const seedOf = (depth: TerminalFacts["depth"], level: ContrastLevel, salt: number): number =>
+    (depth === "256" ? 256_000 : 24_000) + (level === "AAA" ? 100 : 0) + salt;
+
+  const randomRgb = (random: () => number): Rgb =>
+    rgb(random() * 256, random() * 256, random() * 256);
+
+  function randomCustoms(random: () => number): CustomColors {
+    const tuned = CUSTOMIZABLE_TOKENS.filter(() => random() < 0.5);
+    return Object.fromEntries(tuned.map((token) => [token, toHex(randomRgb(random))]));
+  }
+
+  function randomTerminal(random: () => number): DetectedColors {
+    const ansi = Array.from({ length: 16 }, () => randomRgb(random));
+    return { foreground: randomRgb(random), background: randomRgb(random), ansi };
+  }
+
+  function shown(ref: ColorRef): Rgb {
+    if (!ref.rgb) throw new Error(`a palette mode painted an unknown colour: ${ref.kind}`);
+    return ref.rgb;
+  }
+
+  /** Every pair the paint puts on screen. `screen`: what a cell left unpainted shows. */
+  function pairsOf(resolved: ResolvedTheme, screen: Rgb): Pair[] {
+    const paint = buildThemePaint(resolved);
+    const { text, ui } = CONTRAST_TARGETS[resolved.report.level];
+    const ground = paint.background ? shown(paint.background) : screen;
+    const field = paint.input.background ? shown(paint.input.background) : ground;
+    const chunks = Object.entries(paint.text).flatMap(([tone, fills]) =>
+      Object.entries(fills).map(
+        ([fill, style]): Pair => [
+          `${tone} on ${fill}`,
+          shown(style.fg),
+          style.bg ? shown(style.bg) : ground,
+          text,
+        ],
+      ),
+    );
+    return [
+      ...chunks,
+      ["idle border", shown(paint.border.idle), ground, ui],
+      ["focus border", shown(paint.border.focus), ground, ui],
+      ["panel title", shown(paint.title), ground, text],
+      ["typed text", shown(paint.input.text), field, text],
+      ["placeholder", shown(paint.input.placeholder), field, text],
+    ];
+  }
+
+  function failuresOf(resolved: ResolvedTheme, screen: Rgb): string[] {
+    return pairsOf(resolved, screen).flatMap(([label, ink, ground, target]) => {
+      const ratio = wcag.contrastRatio([ink.r, ink.g, ink.b], [ground.r, ground.g, ground.b]);
+      return ratio >= target ? [] : [`${label} ${ratio.toFixed(2)} < ${target}`];
+    });
+  }
+
+  it.each(SCENARIOS)("gup's themes with random custom colours, %s, %s", (depth, level) => {
+    const random = seededRandom(seedOf(depth, level, 1));
+    const failures = Array.from({ length: CASES }, (_, index) => {
+      const id = pick(random, TUNABLE);
+      const resolved = resolveTheme({
+        settings: { id, contrast: level, custom: { [id]: randomCustoms(random) } },
+        terminal: { ...TRUECOLOR, depth, themeMode: pick(random, ["dark", "light"] as const) },
+        isNoColor: false,
+      });
+      const painted = resolved.palette?.background ?? rgb(0, 0, 0);
+      return failuresOf(resolved, painted).map((failure) => `#${index} ${id}: ${failure}`);
+    });
+    expect(failures.flat()).toEqual([]);
+  });
+
+  it.each(SCENARIOS)("the terminal theme on random palettes and colours, %s, %s", (depth, level) => {
+    const random = seededRandom(seedOf(depth, level, 2));
+    const failures = Array.from({ length: CASES }, (_, index) => {
+      const colors = randomTerminal(random);
+      const custom = random() < 0.5 ? { terminal: randomCustoms(random) } : {};
+      const resolved = resolveTheme({
+        settings: { id: "terminal", contrast: level, custom },
+        terminal: { ...TRUECOLOR, colors, depth, detection: "done" },
+        isNoColor: false,
+      });
+      return failuresOf(resolved, colors.background).map((failure) => `#${index}: ${failure}`);
+    });
+    expect(failures.flat()).toEqual([]);
   });
 });

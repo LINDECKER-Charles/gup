@@ -1,5 +1,10 @@
-import { correctLightness, farExtreme, type ContrastRequirement } from "./color/contrast.js";
-import { nearestXterm256, quantizeWithin } from "./color/quantize-256.js";
+import {
+  correctLightness,
+  farExtreme,
+  meetsAll,
+  type ContrastRequirement,
+} from "./color/contrast.js";
+import { quantizeWithin } from "./color/quantize-256.js";
 import { BLACK, isDark, isSameRgb, WHITE, worstRatio, type Rgb } from "./color/rgb.js";
 import { CONTRAST_RULES, CONTRAST_TARGETS, TEXT_TOKENS } from "./contrast-rules.js";
 import { COLOR_TOKENS, type ColorToken, type ContrastLevel, type Palette } from "./palette.js";
@@ -78,18 +83,34 @@ export function enforceContrast(
 }
 
 function enforced(palette: Palette, targets: Targets): Palette {
-  const need = targets.text + GROUND_HEADROOM;
-  const background = correctLightness(palette.background, [farExtreme(palette.background)], need);
-  const highlight = correctLightness(palette.highlight, [farExtreme(background)], need);
-  let current: Palette = { ...palette, background, highlight };
+  const grounds = groundRequirement(palette.background, targets);
+  let current: Palette = {
+    ...palette,
+    background: corrected(palette.background, [grounds]),
+    highlight: corrected(palette.highlight, [grounds]),
+  };
   for (const token of PAINTED_ORDER) {
-    const fixed = requirementsOf(token, current, targets).reduce(
-      (color, requirement) => correctLightness(color, requirement.grounds, requirement.target),
-      current[token],
-    );
-    current = { ...current, [token]: fixed };
+    const requirements = requirementsOf(token, current, targets);
+    current = { ...current, [token]: corrected(current[token], requirements) };
   }
   return current;
+}
+
+function corrected(color: Rgb, requirements: readonly ContrastRequirement[]): Rgb {
+  return requirements.reduce(
+    (current, requirement) => correctLightness(current, requirement.grounds, requirement.target),
+    color,
+  );
+}
+
+/**
+ * What both grounds keep against the extreme on the far side of `background`
+ * (white for a dark one): the text target plus headroom, so that extreme is
+ * always a readable text colour on either ground. A background is only ever
+ * pushed away from that extreme, so its side never changes once corrected.
+ */
+function groundRequirement(background: Rgb, targets: Targets): ContrastRequirement {
+  return { grounds: [farExtreme(background)], target: targets.text + GROUND_HEADROOM };
 }
 
 /**
@@ -120,10 +141,17 @@ function requirementsOf(
 
 /**
  * The enforced palette moved onto the standardized xterm slots (16–255), for
- * terminals that only paint 256 colours: grounds to their nearest slot, then
- * every other token to the nearest slot that still meets its requirements on
- * those grounds — re-corrected with a growing margin when the nearest one
- * falls short. Only `tokens` move; the others keep their colour.
+ * terminals that only paint 256 colours. `tokens` (the colours painted in
+ * RGB) each move to the nearest slot that still meets their requirements —
+ * re-corrected with a growing margin when the nearest one falls short:
+ *
+ * - the grounds first, keeping their headroom on their slot, so a cube
+ *   corner (pure black or white) always remains readable on both;
+ * - then everything painted on them, measured on the grounds as quantized.
+ *
+ * A colour outside `tokens` (a detected terminal's own slot or default)
+ * keeps its colour, unless a moved ground leaves it short: then it moves to
+ * a slot too, and `slots` says so.
  */
 export function quantizeToXterm256(
   palette: Palette,
@@ -133,15 +161,17 @@ export function quantizeToXterm256(
   const targets = CONTRAST_TARGETS[level];
   const slots: Partial<Record<ColorToken, number>> = {};
   let current = palette;
-  const place = (token: ColorToken, slot: { slot: number; rgb: Rgb }): void => {
-    slots[token] = slot.slot;
-    current = { ...current, [token]: slot.rgb };
+  const place = (token: ColorToken, requirements: readonly ContrastRequirement[]): void => {
+    const { slot, rgb } = quantizeWithin(current[token], requirements);
+    slots[token] = slot;
+    current = { ...current, [token]: rgb };
   };
   for (const ground of GROUNDS.filter((token) => tokens.has(token))) {
-    place(ground, nearestXterm256(current[ground]));
+    place(ground, [groundRequirement(palette.background, targets)]);
   }
-  for (const token of PAINTED_ORDER.filter((candidate) => tokens.has(candidate))) {
-    place(token, quantizeWithin(current[token], requirementsOf(token, current, targets)));
+  for (const token of PAINTED_ORDER) {
+    const requirements = requirementsOf(token, current, targets);
+    if (tokens.has(token) || !meetsAll(current[token], requirements)) place(token, requirements);
   }
   return { palette: current, slots };
 }

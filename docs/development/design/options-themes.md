@@ -168,9 +168,21 @@ background), `onAccent` on the fill, the borders. Corrections are reported (`req
 `before`, `after`) except for target-seeking tokens (`disabled`; the detected `muted`).
 `minTextRatio` excludes them too, so the picker shows a theme's real floor (dark: 6.1).
 
+**On 256-colour terminals** (`quantizeToXterm256`), the grounds move first, each to the nearest
+slot that still keeps the same headroom against the background's far extreme — so a cube corner
+(pure black or white) stays readable on both, and `quantizeWithin` always has a passing fallback.
+Then every token painted in RGB moves to a slot meeting its requirements on the grounds *as
+quantized*. A colour kept as the terminal's own (a detected slot or default) is re-checked too: if
+a moved ground leaves it short, it moves to a slot as well. Without these two rules a quantized
+highlight could drop the terminal's own accent to 4.2:1, and AAA grounds lose enough headroom on
+their slot that no text reached 7:1.
+
 **Guarantees, tested:** the seven RGB themes pass AA with zero corrections (`high-contrast` AAA);
 1,000 seeded random palettes per level (AA and AAA) meet every rule after enforcement, checked
-with the independent oracle `tests/support/contrast/wcag.ts`.
+with the independent oracle `tests/support/contrast/wcag.ts`; and end to end, on the paint itself
+(what each cell shows), 300 seeded cases per scenario of random custom colours on every theme gup
+paints and of random terminal palettes (with random customs) under the terminal theme, on
+truecolor and 256-colour terminals, at AA and AAA (`resolve-theme.test.ts`).
 
 ### 4.4 Resolution and paint modes (`resolve-theme.ts`, `style-table.ts`)
 
@@ -178,7 +190,8 @@ Precedence: `NO_COLOR` → monochrome; `monochrome` → monochrome; depth 16 →
 `depth-16` for RGB themes and `auto`); `terminal` → detected when the palette is known, else
 trusted (`palette-pending` / `palette-unknown`); `auto` → dark or light per the terminal's
 background (dark when unknown); RGB themes → their palette. Depth 256 → every colour painted in
-RGB moves to a standardized slot, re-checked (notice `depth-256`).
+RGB moves to a standardized slot, re-checked, and a kept terminal colour that the moved grounds
+leave short moves too (notice `depth-256`, §4.3).
 
 | Mode | Text | Fills | Background |
 |---|---|---|---|
@@ -334,7 +347,7 @@ the renderer reads it when it is created.
 | `tests/ui/theme/color.test.ts` | hex parsing, reference ratios, agreement with the oracle on random pairs, OKLCH round trip, hue kept by corrections, smallest move, black/white fallback, xterm slots never 0–15, `quantizeWithin` |
 | `tests/ui/theme/enforce-contrast.test.ts` | built-ins with zero corrections (AA; high-contrast AAA); 1,000 seeded palettes × AA/AAA; correction report; seeking tokens unreported; mid-grey background moved |
 | `tests/ui/theme/terminal-palette.test.ts` | OSC answers converted or refused; sources; Campbell, Terminal.app Basic, Solarized Dark, One Half Light meet every rule at AA and AAA |
-| `tests/ui/theme/resolve-theme.test.ts` | the precedence matrix, customs per theme, 256-colour slots still AA, availability, `NO_COLOR` |
+| `tests/ui/theme/resolve-theme.test.ts` | the precedence matrix, customs per theme, 256-colour slots still AA, availability, `NO_COLOR`; seeded property test on the paint: random custom colours and terminal palettes, truecolor and 256 colours, AA and AAA |
 | `tests/ui/theme/style-table.test.ts` | accent fill, no DIM in palette modes, detected defaults, trusted inverse fills, monochrome without colour |
 | `tests/ui/theme/terminal-probe.test.ts` | lazy and bounded queries, process cache, unsupported/suspended terminals, events, bounded settle, dispose |
 | `tests/ui/theme/themed-appearance.test.ts` | finding 1 (plain text and input in the terminal's colour), on-screen AA for RGB and detected themes, preview, live settings, detection policy, dispose |
