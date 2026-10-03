@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import { stripVTControlCharacters } from "node:util";
 import type { LogLevel } from "../core/log/log.js";
 import type { LogData, LogRecord, LogValue } from "../core/log/types.js";
 import { formatDuration } from "./text/fr-format.js";
@@ -20,6 +21,9 @@ import { fit, seg, type Line, type Segment, type Tone } from "./tui/styled-lines
 const LEVEL_WIDTH = 6;
 const EVENT_WIDTH = 14;
 const PATH_SEPARATORS = /[\\/]/;
+/** C0 and C1 controls, line breaks and tabs included, once escape sequences are gone. */
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]+/g;
 
 const LEVEL_TONES: Readonly<Record<LogLevel, Tone>> = {
   error: "danger",
@@ -83,7 +87,16 @@ function summaryOf(record: LogRecord): string {
   const summary = (SUMMARIES[record.event] ?? pairs)(data);
   const scope = record.ctx?.providerId;
   const prefix = [record.elevated ? ELEVATED_MARK : "", scope ? `[${scope}]` : ""];
-  return [...prefix.filter(Boolean), summary].join(" ");
+  return printable([...prefix.filter(Boolean), summary].join(" "));
+}
+
+/**
+ * Record text made safe for one terminal line: what a tool printed may carry
+ * escape sequences (colours, a window title, a clipboard write) and line
+ * breaks, and a log line must never drive the terminal it is shown on.
+ */
+function printable(text: string): string {
+  return stripVTControlCharacters(text).replace(CONTROL_CHARACTERS, " ").trim();
 }
 
 /** The program's own name (not its folder) and its arguments. */
@@ -120,7 +133,7 @@ function versions(data: LogData): string {
 }
 
 function statusLabel(status: string): string {
-  return status in UPDATE_STATUS_LABELS
+  return Object.hasOwn(UPDATE_STATUS_LABELS, status)
     ? UPDATE_STATUS_LABELS[status as keyof typeof UPDATE_STATUS_LABELS]
     : status;
 }
@@ -139,7 +152,9 @@ function duration(value: LogValue | undefined): string {
 
 /** The last non-empty line of a captured output: what usually names the error. */
 function lastLine(value: LogValue | undefined): string {
-  const lines = text(value).split(/\r?\n/).map((line) => line.trim());
+  const lines = stripVTControlCharacters(text(value))
+    .split(/\r?\n/)
+    .map((line) => line.trim());
   return lines.filter(Boolean).at(-1) ?? "";
 }
 

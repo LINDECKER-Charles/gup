@@ -66,6 +66,25 @@ describe("logRecordLine", () => {
     );
   });
 
+  it("never lets what a tool printed drive the terminal: escapes go, line breaks become spaces", () => {
+    const hostile = "\u001b]52;c;ZXZpbA==\u0007boom\r\nsecond\u001b[31m line\u0000\u009b";
+    expect(summary({ event: "update.end", data: { providerId: "x", packageId: "y", status: "failed", message: hostile } })).toBe(
+      "x · y · échec · boom second line",
+    );
+    expect(summary({ event: "cmd.end", data: { cmd: "npm", args: [], exitCode: 1, ms: 5, stderrTail: "npm ERR! x\n\u001b[0m\n" } })).toBe(
+      "npm · exit 1 · 0,0 s · npm ERR! x",
+    );
+    expect(summary({ event: "scan.provider", ctx: { op: "scan", providerId: "a\u001b[2Jb" }, data: { note: "1\n2" } })).toBe(
+      "[ab] note=1 2",
+    );
+  });
+
+  it("shows a status it does not know as it is", () => {
+    expect(summary({ event: "update.end", data: { providerId: "x", packageId: "y", status: "constructor" } })).toBe(
+      "x · y · constructor",
+    );
+  });
+
   it("cuts the summary to the width it is given", () => {
     const line = logRecordLine(record({ event: "update.end", data: { message: "x".repeat(200) } }), 60);
     expect(lineWidth(line)).toBeLessThanOrEqual(60);
