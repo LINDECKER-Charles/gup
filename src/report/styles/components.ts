@@ -96,7 +96,8 @@ export const COMPONENTS_CSS = String.raw`
 .cell[data-level="3"]{background:var(--heat-3)}
 .cell[data-level="4"]{background:var(--heat-4)}
 .cell-out{visibility:hidden}
-[role="gridcell"]{cursor:pointer}
+[role="gridcell"],.cell-link{cursor:pointer}
+.cell-link:hover{outline:2px solid var(--text);outline-offset:1px}
 [role="gridcell"]:hover,[role="gridcell"]:focus-visible{
   outline:2px solid var(--text);outline-offset:1px;
 }

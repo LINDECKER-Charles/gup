@@ -104,7 +104,11 @@ function activityCard() {
   const describe = (index) => [fmtLongDay(index), daySummary(index)];
   return card(t("overview.activity"), [
     h("p", { class: "card-intro" }, t("overview.activityIntro")),
-    heatGrid(recent, (cell, index) => withTooltip(cell, () => describe(index))),
+    heatGrid(recent, (cell, index) => {
+      cell.classList.add("cell-link");
+      withTooltip(cell, () => describe(index));
+      on(cell, "click", () => openDay(index));
+    }),
     heatLegend(),
   ], link("#/calendar", t("overview.openCalendar"), "card-link"));
 }

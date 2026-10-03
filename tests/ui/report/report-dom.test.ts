@@ -162,6 +162,16 @@ describe("report page: overview", () => {
 });
 
 describe("report page: calendar", () => {
+  it("opens a day's sessions from the overview's calendar too", async () => {
+    const page = await openReport();
+    const cells = page.$$(".cell-link[data-level='1']");
+
+    (cells.at(-1) as unknown as { click(): void }).click();
+    await page.settle();
+
+    expect(page.window.location.hash).toBe(`#/sessions?day=${dayOf(0.4)}`);
+  });
+
   it("draws every day of the period, Monday first, one grid per year", async () => {
     const page = await openReport(reportModelOf(EVENTS), "#/calendar");
 
