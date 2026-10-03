@@ -33,7 +33,9 @@ export function providerStats(
       tally.lastScanError = provider.error;
     }
   }
-  return [...byProvider].map(([providerId, tally]) => statsOf(providerId, tally)).sort(busiestFirst);
+  return [...byProvider]
+    .map(([providerId, tally]) => statsOf(providerId, tally))
+    .sort(busiestFirst);
 }
 
 function tallyOf(byProvider: Map<string, ProviderTally>, providerId: string): ProviderTally {

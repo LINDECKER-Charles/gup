@@ -48,7 +48,7 @@ export function buildInsights(events: readonly HistoryEvent[], options: InsightO
   };
 }
 
-/** Each event with its instant and local day, oldest first (a stable sort: ties keep their order). */
+/** Each event with its instant and local day, oldest first (stable: ties keep their order). */
 function timedEvents(
   events: readonly HistoryEvent[],
   dayKey: (date: Date) => DayKey,

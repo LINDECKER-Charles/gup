@@ -1,5 +1,11 @@
 import { ratio } from "./stats.js";
-import type { InsightTotals, PackageRecurrence, TimedScan, TimedUpdate, TrendPoint } from "./types.js";
+import type {
+  InsightTotals,
+  PackageRecurrence,
+  TimedScan,
+  TimedUpdate,
+  TrendPoint,
+} from "./types.js";
 
 /** The headline numbers of a period: the journal's first lines, the report's cards. */
 
