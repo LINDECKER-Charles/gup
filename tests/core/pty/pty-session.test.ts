@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakePty, type FakePtyOptions } from "../../support/pty/fake-pty.js";
 import { restorePlatform, setPlatform } from "../../support/platform.js";
@@ -50,17 +51,18 @@ async function peek<T>(promise: Promise<T>): Promise<T | typeof PENDING> {
 /** A ConPTY agent shaped like node-pty 1.1.0's, recording its release. */
 function conptyInternals(overrides: Record<string, unknown> = {}) {
   const calls: string[] = [];
+  const worker = new EventEmitter();
   const agent = {
     _useConpty: true,
     _useConptyDll: false,
     _pty: 7,
     _ptyNative: { kill: (pty: number, dll: boolean) => calls.push(`close ${pty} ${dll}`) },
-    _conoutSocketWorker: { dispose: () => calls.push("worker") },
+    _conoutSocketWorker: { dispose: () => calls.push("worker"), _worker: worker },
     _inSocket: { destroy: () => calls.push("in") },
     _outSocket: { destroy: () => calls.push("out") },
     ...overrides,
   };
-  return { calls, internals: () => ({ _agent: agent }) };
+  return { calls, worker, internals: () => ({ _agent: agent }) };
 }
 
 describe("PtySession: start and I/O", () => {
@@ -231,6 +233,16 @@ describe("releaseConpty", () => {
     expect(conpty.calls).toHaveLength(4);
   });
 
+  it("keeps a conout worker failing on its closed pipe from taking gup down", () => {
+    setPlatform("win32");
+    const conpty = conptyInternals();
+    const { handle } = start(LAUNCH, { internals: conpty.internals });
+    handle.emitExit({ exitCode: 0 });
+
+    const epipe = Object.assign(new Error("write EPIPE"), { code: "EPIPE" });
+    expect(() => conpty.worker.emit("error", epipe)).not.toThrow();
+  });
+
   it("recognises only a system-ConPTY handle of the pinned shape", () => {
     const pty = (overrides: Record<string, unknown>) =>
       fakePty({ internals: conptyInternals(overrides).internals }).module.spawn("x", [], {
@@ -242,6 +254,7 @@ describe("releaseConpty", () => {
     expect(isReleasableConpty(pty({ _useConptyDll: true }))).toBe(false);
     expect(isReleasableConpty(pty({ _useConpty: false }))).toBe(false);
     expect(isReleasableConpty(pty({ _conoutSocketWorker: {} }))).toBe(false);
+    expect(isReleasableConpty(pty({ _conoutSocketWorker: { dispose: () => {} } }))).toBe(false);
     const plain = fakePty().module.spawn("x", [], { name: TERM_NAME, cols: 80, rows: 24 });
     expect(isReleasableConpty(plain)).toBe(false);
   });

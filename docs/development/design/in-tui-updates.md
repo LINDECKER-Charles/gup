@@ -124,7 +124,12 @@ for it. A pane that throws on output, note, attach or tail never fails the insta
   `_conoutSocketWorker.dispose()`, `_inSocket.destroy()`, `_outSocket.destroy()` — shape-checked,
   once per handle (a second close is a native use-after-free), Windows only, never throwing —
   also after a fast exit (below), whose pseudo-console still closes at node-pty's event.
-  Exported for the wave-3 E2E harness.
+  Exported for the wave-3 E2E harness. The drain worker pipes ConPTY's output into a socket
+  node-pty closes before it reports the exit; output still produced then (the close's own flush,
+  a grandchild) fails that write with EPIPE, and node-pty leaves the worker's `error` event
+  unhandled, which surfaced as an uncaught exception in the main thread. Each session therefore
+  subscribes to that event at spawn (debug log `pty.conout-worker-failed`), and the shape check
+  requires the worker (`_conoutSocketWorker._worker`).
 - **Exit-file fast path (B8, IT-3, IT-4).** node-pty reports a ConPTY exit only after a fixed 1 s
   flush. On Windows the sink gives the trampoline an exit file: a random name in a fresh private
   `mkdtemp` directory (`gup-pty-*`), removed before the install is reported settled (so

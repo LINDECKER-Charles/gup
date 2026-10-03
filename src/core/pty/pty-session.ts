@@ -1,3 +1,4 @@
+import { log } from "../log/log.js";
 import type { InheritExit, InheritProcess } from "../process/inherit-sink.js";
 import { watchExitFile } from "./exit-file.js";
 import type { PtyExitEvent, PtyHandle, PtyModule } from "./pty-loader.js";
@@ -60,6 +61,7 @@ export class PtySession implements InheritProcess {
   ) {
     this.handle = handle;
     this.exited = new Promise((resolve) => (this.settle = resolve));
+    containConoutWorker(handle);
     const output = handle.onData((data) => this.forward(data, onData));
     const stopWatch =
       exitFile === undefined ? () => {} : watchExitFile(exitFile, (code) => this.fastExit(code));
@@ -150,10 +152,14 @@ function exitOf(event: PtyExitEvent): InheritExit {
 // the screen instead of leaking).
 // ---------------------------------------------------------------------------
 
+interface ConoutWorker {
+  on(event: "error", listener: (error: unknown) => void): unknown;
+}
+
 interface ConptyAgent {
   readonly _pty: number;
   readonly _ptyNative: { kill(pty: number, useConptyDll: boolean): void };
-  readonly _conoutSocketWorker: { dispose(): void };
+  readonly _conoutSocketWorker: { dispose(): void; readonly _worker: ConoutWorker };
   readonly _inSocket: { destroy(): void };
   readonly _outSocket: { destroy(): void };
 }
@@ -189,6 +195,21 @@ export function releaseConpty(handle: PtyHandle): void {
   }
 }
 
+/**
+ * Keep a failure of the conout drain worker inside that worker. It pipes
+ * ConPTY's output into a socket the agent closes once the child exited;
+ * output still produced then (the close's own flush, a grandchild still
+ * writing) fails with EPIPE, and node-pty leaves the worker's `error` event
+ * unhandled, which turns it into an uncaught exception that takes gup down.
+ * The worker has nothing left to deliver by then. Windows only, at spawn.
+ */
+function containConoutWorker(handle: PtyHandle): void {
+  if (process.platform !== "win32") return;
+  conptyAgentOf(handle)?._conoutSocketWorker._worker.on("error", (error) => {
+    log.debug("pty.conout-worker-failed", { error: String(error) });
+  });
+}
+
 function conptyAgentOf(handle: PtyHandle): ConptyAgent | null {
   const agent: unknown = Reflect.get(handle, "_agent");
   if (!isRecord(agent)) return null;
@@ -198,10 +219,15 @@ function conptyAgentOf(handle: PtyHandle): ConptyAgent | null {
     typeof agent["_pty"] === "number";
   const hasParts =
     hasMethod(agent["_ptyNative"], "kill") &&
-    hasMethod(agent["_conoutSocketWorker"], "dispose") &&
+    isConoutConnection(agent["_conoutSocketWorker"]) &&
     hasMethod(agent["_inSocket"], "destroy") &&
     hasMethod(agent["_outSocket"], "destroy");
   return isSystemConpty && hasParts ? (agent as unknown as ConptyAgent) : null;
+}
+
+/** node-pty's `ConoutConnection`: disposable, around its drain `Worker`. */
+function isConoutConnection(value: unknown): boolean {
+  return hasMethod(value, "dispose") && isRecord(value) && hasMethod(value["_worker"], "on");
 }
 
 function hasMethod(value: unknown, name: string): boolean {
