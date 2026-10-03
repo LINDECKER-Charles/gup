@@ -10,9 +10,9 @@ import { utcDay } from "../../core/log/file-sink.js";
 import { listLogFiles } from "../../core/log/log-reader.js";
 import { stateDir } from "../../core/state/app-dirs.js";
 import { systemSnapshot } from "../../core/state/system-snapshot.js";
+import { parsePeriod } from "../../core/time/period.js";
 import { diagnosticReadme, LOG_MESSAGES } from "../../ui/text/log-labels.js";
 import { DEFAULT_SINCE } from "./log-show.js";
-import { parseSince } from "./since-option.js";
 
 /**
  * `gup log export`: the diagnostic archive a bug report asks for — the debug
@@ -33,10 +33,10 @@ const FAILURE_EXIT_CODE = 1;
 export async function exportDiagnostic(options: ExportOptions): Promise<number> {
   const now = new Date();
   const rawSince = options.since ?? DEFAULT_SINCE;
-  const since = parseSince(rawSince, now);
-  if (!since.isValid) return fail(LOG_MESSAGES.badSince(rawSince), USAGE_EXIT_CODE);
+  const period = parsePeriod(rawSince, now);
+  if (period === null) return fail(LOG_MESSAGES.badSince(rawSince), USAGE_EXIT_CODE);
   try {
-    const logs = await collectLogs(stateDir("logs"), since.since);
+    const logs = await collectLogs(stateDir("logs"), period.since);
     const archive = buildDiagnosticZip({
       generatedAt: now,
       system: systemSnapshot(),

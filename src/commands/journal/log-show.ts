@@ -3,9 +3,9 @@ import type { LogLevel } from "../../core/log/log.js";
 import { readLogTail, type LogQuery, type LogTail } from "../../core/log/log-reader.js";
 import { isLogLevel, type LogRecord } from "../../core/log/types.js";
 import { stateDir } from "../../core/state/app-dirs.js";
+import { parsePeriod } from "../../core/time/period.js";
 import { logRecordText } from "../../ui/log-line.js";
 import { LOG_MESSAGES } from "../../ui/text/log-labels.js";
-import { parseSince } from "./since-option.js";
 
 /**
  * `gup log [show]`: the newest lines of the debug log, filtered, one line per
@@ -57,11 +57,11 @@ function queryOf(options: ShowOptions, now: Date): LogQuery | string {
   const minLevel = levelOf(options.level);
   if (minLevel === null) return LOG_MESSAGES.badLevel(options.level ?? "");
   const rawSince = options.since ?? DEFAULT_SINCE;
-  const since = parseSince(rawSince, now);
-  if (!since.isValid) return LOG_MESSAGES.badSince(rawSince);
+  const period = parsePeriod(rawSince, now);
+  if (period === null) return LOG_MESSAGES.badSince(rawSince);
   return {
     limit,
-    since: since.since,
+    since: period.since,
     ...(minLevel !== undefined && { minLevel }),
     ...(options.grep && { grep: options.grep }),
   };
