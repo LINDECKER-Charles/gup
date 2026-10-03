@@ -1,17 +1,22 @@
 /**
- * Serves dist/ under the base path exactly as GitHub Pages does: directory
- * URLs resolve to their index.html, unknown paths get dist/404.html with a
- * 404 status. Used by the verify suite and the Lighthouse audit; runnable on
- * its own (`node scripts/serve.mjs [port]`) to preview a build.
+ * Serves dist/ under the base path the way GitHub Pages does: directory URLs
+ * resolve to their index.html, unknown paths get dist/404.html with a 404
+ * status, text is gzipped and everything carries Pages' ten-minute cache
+ * lifetime — so the Lighthouse audit measures what visitors get. Used by the
+ * verify suite and the audit; runnable on its own
+ * (`node scripts/serve.mjs [port]`) to preview a build.
  */
 import { createReadStream, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 import { extname, join, normalize, resolve, sep } from "node:path";
+import { createGzip } from "node:zlib";
 import { LINKS } from "../src/data/links.js";
 
 const DIST = resolve(fileURLToPath(new URL("../dist/", import.meta.url)));
 const DEFAULT_PORT = 4178;
+const PAGES_CACHE_CONTROL = "max-age=600";
+const COMPRESSIBLE = /^(text\/|application\/(json|xml|manifest\+json)|image\/svg)/;
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -46,10 +51,18 @@ function fileFor(pathname) {
 
 function respond(request, response) {
   const file = fileFor(new URL(request.url, "http://localhost").pathname);
-  const status = file ? 200 : 404;
   const body = file ?? join(DIST, "404.html");
-  response.writeHead(status, { "content-type": MIME[extname(body)] ?? "application/octet-stream" });
-  createReadStream(body).pipe(response);
+  const type = MIME[extname(body)] ?? "application/octet-stream";
+  const acceptsGzip = /\bgzip\b/.test(request.headers["accept-encoding"] ?? "");
+  const isGzipped = acceptsGzip && COMPRESSIBLE.test(type);
+  response.writeHead(file ? 200 : 404, {
+    "content-type": type,
+    "cache-control": PAGES_CACHE_CONTROL,
+    vary: "Accept-Encoding",
+    ...(isGzipped ? { "content-encoding": "gzip" } : {}),
+  });
+  const stream = createReadStream(body);
+  (isGzipped ? stream.pipe(createGzip()) : stream).pipe(response);
 }
 
 /**
