@@ -57,6 +57,15 @@ What is *not* a bullet:
 
 - Work merged to `main` goes into [`unreleased.md`](unreleased.md) under the
   same headings.
+- While several branches are in flight at once (the 0.5.0 development), each
+  branch writes its own fragment instead:
+  [`unreleased/<branch-slug>.md`](unreleased/) — `feat/scheduled-updates` writes
+  `unreleased/scheduled-updates.md` — with the headings above and the usual
+  bullet shape, the commit hashes of that branch only. Nobody edits
+  `unreleased.md` meanwhile, so parallel branches never conflict there. The
+  documentation pass that closes the cycle folds every fragment into
+  `unreleased.md` (one bullet per change, related bullets of several branches
+  merged) and deletes the folder.
 - At release time, rename `unreleased.md` to `<version>.md`, set the title and
   the header links, start a fresh `unreleased.md`, and add the row above. Write
   the matching [`../releases/<version>.md`](../releases/README.md) alongside.
