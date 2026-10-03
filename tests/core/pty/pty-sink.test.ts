@@ -52,7 +52,7 @@ describe("createPtySink", () => {
     expect(decodePayload(call!.args[1]!)).toStrictEqual({ v: 1, ...REQUEST });
   });
 
-  it("on Windows, hands the trampoline an exit file, removed once the session closed", async () => {
+  it("on Windows, hands the trampoline an exit file, removed once the install settled", async () => {
     setPlatform("win32");
     const child = sink().start(REQUEST);
     expect(decodePayload(pty.spawned[0]!.args[1]!).exitFile).toBe(slotMock.path);
@@ -60,7 +60,14 @@ describe("createPtySink", () => {
 
     pty.last().emitExit({ exitCode: 0 });
     await child.exited;
-    await vi.waitFor(() => expect(slotMock.release).toHaveBeenCalledOnce());
+    expect(slotMock.release).toHaveBeenCalledOnce();
+  });
+
+  it("removes the exit file of a session that could not start", () => {
+    setPlatform("win32");
+    pty = fakePty({ spawnError: new Error("Cannot create process") });
+    sink().start(REQUEST);
+    expect(slotMock.release).toHaveBeenCalledOnce();
   });
 
   it("keeps writing a child's output into the pane it started in", () => {

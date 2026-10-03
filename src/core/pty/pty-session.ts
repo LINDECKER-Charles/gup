@@ -26,17 +26,16 @@ export interface PtyLaunch {
 
 /**
  * One child in a pseudo-terminal, as an install process: its output goes to
- * `onData` until node-pty reports its exit, its keyboard comes from `write`.
+ * `onData` until node-pty reports its exit, its keyboard comes from `write`,
+ * and its pseudo-console is released once that exit came.
  *
  * `exited` resolves on node-pty's exit event — or earlier, on Windows, when
  * the trampoline's exit file says 0. A non-zero code always waits for the
  * exit event: by then ConPTY has flushed the last output, so a failure's
- * tail is complete. `closed` resolves once node-pty reported the exit and
- * the pseudo-console was released.
+ * tail is complete.
  */
 export class PtySession implements InheritProcess {
   readonly exited: Promise<InheritExit>;
-  readonly closed: Promise<void>;
   private readonly handle: PtyHandle;
   private hasExited = false;
   private isKilled = false;
@@ -64,15 +63,12 @@ export class PtySession implements InheritProcess {
     const output = handle.onData((data) => this.forward(data, onData));
     const stopWatch =
       exitFile === undefined ? () => {} : watchExitFile(exitFile, (code) => this.fastExit(code));
-    this.closed = new Promise((resolve) => {
-      const exit = handle.onExit((event) => {
-        stopWatch();
-        this.finish(exitOf(event));
-        exit.dispose();
-        output.dispose();
-        releaseConpty(handle);
-        resolve();
-      });
+    const exit = handle.onExit((event) => {
+      stopWatch();
+      this.finish(exitOf(event));
+      exit.dispose();
+      output.dispose();
+      releaseConpty(handle);
     });
   }
 

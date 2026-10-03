@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -233,5 +233,23 @@ describe.skipIf(!backend || !IS_WINDOWS)("embedded terminal on ConPTY", () => {
     expect(Math.min(...durations), `durations: ${durations.join(", ")} ms`).toBeLessThan(
       FAST_EXIT_BUDGET_MS,
     );
+  });
+
+  it("leaves no exit file behind once the install settled", async () => {
+    // The exit-file directory goes where os.tmpdir() points: a sandbox of its own here.
+    const sandbox = await mkdtemp(join(tmpdir(), "gup-pty-tmp-"));
+    const previous = { TEMP: process.env["TEMP"], TMP: process.env["TMP"] };
+    Object.assign(process.env, { TEMP: sandbox, TMP: sandbox });
+    try {
+      await runInPane(...node(""));
+      await runInPane(...node("process.exit(4)"));
+      expect(await readdir(sandbox)).toEqual([]);
+    } finally {
+      for (const [key, value] of Object.entries(previous)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+      await rm(sandbox, { recursive: true, force: true });
+    }
   });
 });

@@ -75,9 +75,14 @@ function startInPane(request: InheritRequest, backend: PtyBackend, pane: PtyPane
       (data) => pane.write(data),
     );
     const detach = attachSafely(pane, session);
-    void session.closed.then(() => exitFile?.release());
     return {
-      exited: session.exited.then((exit) => ended(exit, pane, detach)),
+      exited: session.exited.then(async (exit) => {
+        // The trampoline is done with its file once the install settled:
+        // removing it before reporting, not a second later when the
+        // pseudo-console closes, leaves nothing behind if gup exits next.
+        await exitFile?.release();
+        return ended(exit, pane, detach);
+      }),
       kill: () => session.kill(),
     };
   } catch (error) {

@@ -126,37 +126,46 @@ describe("PtySession: exit", () => {
     await expect(session.exited).resolves.toEqual(exit);
   });
 
-  it("is closed once node-pty reported the exit, and forwards nothing after it", async () => {
-    const { session, handle, onData } = start();
-    expect(await peek(session.closed)).toBe(PENDING);
+  it("forwards nothing once node-pty reported the exit", () => {
+    const { handle, onData } = start();
     handle.emitExit({ exitCode: 0 });
-    await expect(session.closed).resolves.toBeUndefined();
     handle.emitData("late");
     expect(onData).not.toHaveBeenCalled();
   });
 });
 
 describe("PtySession: exit file (Windows fast path)", () => {
-  function startWatched() {
+  function startWatched(options: FakePtyOptions = {}) {
     const stop = vi.fn();
     watchMock.mockReturnValueOnce(stop);
-    const started = start({ ...LAUNCH, exitFile: "C:\\t\\a.exit" });
+    const started = start({ ...LAUNCH, exitFile: "C:\\t\\a.exit" }, options);
     const onCode = watchMock.mock.lastCall![1] as (code: number) => void;
     return { ...started, onCode, stop };
   }
 
-  it("resolves on a 0 before node-pty's exit, ignores the late event, waits to close", async () => {
-    const { session, handle, onCode, stop } = startWatched();
+  it("resolves on a 0 before node-pty's exit, and still forwards the late output", async () => {
+    const { session, handle, onData, onCode, stop } = startWatched();
     expect(watchMock).toHaveBeenCalledWith("C:\\t\\a.exit", expect.any(Function));
 
     onCode(0);
     await expect(session.exited).resolves.toEqual({ exitCode: 0, failed: false });
-    expect(await peek(session.closed)).toBe(PENDING);
+    handle.emitData("last line");
+    expect(onData).toHaveBeenCalledWith("last line");
 
     handle.emitExit({ exitCode: 1 });
-    await expect(session.closed).resolves.toBeUndefined();
     await expect(session.exited).resolves.toEqual({ exitCode: 0, failed: false });
     expect(stop).toHaveBeenCalled();
+  });
+
+  it("releases the pseudo-console at node-pty's exit, not at the fast exit", async () => {
+    setPlatform("win32");
+    const conpty = conptyInternals();
+    const { session, handle, onCode } = startWatched({ internals: conpty.internals });
+    onCode(0);
+    await session.exited;
+    expect(conpty.calls).toEqual([]);
+    handle.emitExit({ exitCode: 0 });
+    expect(conpty.calls).toHaveLength(4);
   });
 
   it("waits for node-pty's exit on a failure, so the output is complete", async () => {
@@ -209,14 +218,13 @@ describe("PtySession: kill", () => {
 });
 
 describe("releaseConpty", () => {
-  it("closes the pseudo-console and its pipes once node-pty reported the exit", async () => {
+  it("closes the pseudo-console and its pipes once node-pty reported the exit", () => {
     setPlatform("win32");
     const conpty = conptyInternals();
-    const { session, handle } = start(LAUNCH, { internals: conpty.internals });
+    const { handle } = start(LAUNCH, { internals: conpty.internals });
     expect(conpty.calls).toEqual([]);
 
     handle.emitExit({ exitCode: 0 });
-    await session.closed;
     expect(conpty.calls).toEqual(["close 7 false", "worker", "in", "out"]);
 
     releaseConpty(handle);
@@ -238,12 +246,11 @@ describe("releaseConpty", () => {
     expect(isReleasableConpty(plain)).toBe(false);
   });
 
-  it("leaves handles alone off Windows", async () => {
+  it("leaves handles alone off Windows", () => {
     setPlatform("darwin");
     const conpty = conptyInternals();
-    const { session, handle } = start(LAUNCH, { internals: conpty.internals });
+    const { handle } = start(LAUNCH, { internals: conpty.internals });
     handle.emitExit({ exitCode: 0 });
-    await session.closed;
     expect(conpty.calls).toEqual([]);
   });
 });
