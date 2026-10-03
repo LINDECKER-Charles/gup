@@ -92,8 +92,11 @@ JSON blocks (`gup-report-labels`, `gup-report-data`) and `<script>REPORT_JS</scr
   `main` (hash router, header, search, theme, print, `boot()`). Pages render on first visit;
   lists show 100 rows (50 for failures and sessions) at a time.
 - **Routing**: `#/overview`, `#/calendar`, `#/packages[/<n>]`, `#/failures`, `#/sessions[?day=]`,
-  and `?pkg=<n>` on any page for the drawer — Back closes it, focus returns to the package button
-  that opened it (found again by index when the table was redrawn).
+  and `?pkg=<n>` on any page for the drawer — Back closes it, focus returns to the control that
+  opened it (or the package's button when a row was clicked outside it). A visit redraws a list
+  only when what it shows changed (the search, the day asked for), so closing a drawer leaves
+  the page as it was, opened sessions included. Addresses not starting with `#/` (the skip link's
+  `#main`) are anchors, not routes.
 - **Styles**: system fonts only, a token table per theme (`THEME_TOKENS`) emitted as custom
   properties under `:root`, `prefers-color-scheme: dark` (unless *Clair*), `[data-theme="dark"]`,
   and `@media print` (always light). Narrow screens stack the header, keep charts and the packages
