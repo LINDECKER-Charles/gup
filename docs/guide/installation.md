@@ -83,10 +83,22 @@ npm install -g @charles_lindecker/gup@latest
 
 ## Uninstalling
 
+If you created [scheduled updates](scheduled-updates.md), remove their OS
+trigger first — npm runs no uninstall hook for gup, and a trigger left behind
+keeps starting a `gup` that no longer exists:
+
+```bash
+gup schedule uninstall --purge            # the trigger, the schedules and their state
+```
+
+Then:
+
 ```bash
 npm uninstall -g @charles_lindecker/gup   # installed from npm
 npm rm -g @charles_lindecker/gup          # installed with `npm link`
 ```
+
+Already uninstalled? [Remove the trigger by hand](scheduled-updates.md#removing-everything-by-hand).
 
 Two things are left behind on disk, both under your platform's local state
 directory and both safe to delete:
