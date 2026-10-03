@@ -171,8 +171,15 @@ const COMMUNITY_PATH =
 const BUILDTOOLS_PATH =
   "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools";
 
+/**
+ * Field overrides for {@link vsInstance}. An explicit `undefined` stands for a
+ * field vswhere omitted, which `exactOptionalPropertyTypes` would otherwise
+ * reject on a plain `Partial<VsInstance>`.
+ */
+type VsInstanceOverrides = { [K in keyof VsInstance]?: VsInstance[K] | undefined };
+
 /** Shape of a real `vswhere -all -products * -format json -utf8` entry. */
-function vsInstance(overrides: Partial<VsInstance> = {}): VsInstance {
+function vsInstance(overrides: VsInstanceOverrides = {}): VsInstance {
   return {
     instanceId: "a1f2b3c4",
     installDate: "2024-11-12T08:31:10Z",

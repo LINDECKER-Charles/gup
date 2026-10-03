@@ -26,7 +26,6 @@ export default defineConfig({
         "src/ui/**",
         "src/commands/menu.ts",
       ],
-      all: true,
       clean: true,
       thresholds: {
         lines: 90,
