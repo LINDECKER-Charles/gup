@@ -15,7 +15,8 @@ import { Chrome, CHROME_ROWS } from "../tui/chrome.js";
 import { DialogLayer } from "../tui/dialog.js";
 import type { KeyPress, Screen } from "../tui/screen-host.js";
 import { panelFrame, TextPanel } from "../tui/text-panel.js";
-import { entryAtRow, QUIT, renderSidebar, SIDEBAR_WIDTH } from "./sidebar.js";
+import { MenuNav } from "./menu-nav.js";
+import { SIDEBAR_WIDTH } from "./sidebar.js";
 import { uiPreferences, type UiPreferences } from "./ui-preferences.js";
 import { launcherFactory, type LaunchRequest, type LauncherContext } from "./update-launcher.js";
 import type {
@@ -86,9 +87,8 @@ export class MenuSession {
   readonly #main: TextPanel;
   readonly #dialogs: DialogLayer;
   readonly #views: ViewRegistry;
+  readonly #nav: MenuNav;
   readonly #scans: ScanBus;
-  #focus: "sidebar" | "main" = "main";
-  #navCursor = 0;
   #takeover: Takeover | null = null;
   #exit: (exit: SessionExit) => void = () => {};
 
@@ -104,6 +104,7 @@ export class MenuSession {
     this.#main = new TextPanel(screen, this.#chrome.body, { id: "gup-main", title: "" });
     this.#dialogs = new DialogLayer(screen);
     this.#views = new ViewRegistry(deps.views, deps.initialView ?? "scan");
+    this.#nav = new MenuNav(this.#views, () => this.#exit({ kind: "quit" }));
     this.#scans = new ScanBus((events) => deps.controller.scan(deps.state, events));
     this.#views.mount(this.createContext());
   }
@@ -176,10 +177,12 @@ export class MenuSession {
     // The mouse reaches what is under the pointer, dialog or not: ignore it
     // while a dialog is open, or a click beside it would tick a package hidden
     // behind it.
-    this.#sidebar.onRowClick((row) => this.whenBrowsing(() => this.clickNav(row)));
+    this.#sidebar.onRowClick((row) =>
+      this.whenBrowsing(() => this.#nav.click(row, this.#screen.appearance.density)),
+    );
     this.#main.onRowClick((row) =>
       this.whenBrowsing(() => {
-        this.#focus = "main";
+        this.#nav.focusMain();
         this.#views.panel?.click(row, this.viewport());
       }),
     );
@@ -193,20 +196,14 @@ export class MenuSession {
     this.draw();
   }
 
-  private clickNav(row: number): void {
-    const index = entryAtRow(this.#views.layout(this.#screen.appearance.density), row);
-    if (index !== null) this.activate(index);
-  }
-
   private onKey(key: KeyEvent): void {
     const overlay = this.overlayFor(key);
     if (overlay) return overlay(key);
     if (this.isClaimedByPanel(key)) return this.#views.panel?.press(key);
     const global = this.globalKeys()[key.name];
     if (global) return global();
-    if (this.#focus === "main") return this.#views.panel?.press(key);
-    if (key.name === "right") this.#focus = "main";
-    else this.navKey(key);
+    if (this.#nav.isSidebarFocused) return this.#nav.press(key);
+    this.#views.panel?.press(key);
   }
 
   /** Who hears `key` before the menu: the screen (Ctrl+C), an open dialog, a takeover. */
@@ -220,7 +217,7 @@ export class MenuSession {
   /** The focused panel takes the key before the global bindings: text input, or a claim. */
   private isClaimedByPanel(key: KeyPress): boolean {
     const panel = this.#views.panel;
-    if (this.#focus !== "main" || !panel) return false;
+    if (this.#nav.isSidebarFocused || !panel) return false;
     if (panel.isCapturingText) return true;
     const isReserved = key.name === "q" || key.name === "tab";
     return !isReserved && panel.wantsKey?.(key) === true;
@@ -229,37 +226,9 @@ export class MenuSession {
   private globalKeys(): Record<string, () => void> {
     return {
       q: () => this.#exit({ kind: "quit" }),
-      tab: () => (this.#focus === "main" ? this.focusSidebar() : (this.#focus = "main")),
-      left: () => this.focusSidebar(),
+      tab: () => this.#nav.toggle(),
+      left: () => this.#nav.focusSidebar(),
     };
-  }
-
-  /** Give the sidebar the focus, its cursor on the view on screen. */
-  private focusSidebar(): void {
-    this.#focus = "sidebar";
-    this.#navCursor = this.#views.indexOf(this.#views.current);
-  }
-
-  private navKey(key: KeyPress): void {
-    if (key.name === "up" || key.name === "k") this.moveNav(-1);
-    else if (key.name === "down" || key.name === "j") this.moveNav(1);
-    else if (["return", "enter", "space"].includes(key.name)) this.activate(this.#navCursor);
-  }
-
-  private moveNav(step: number): void {
-    const last = this.#views.entries.length - 1;
-    this.#navCursor = Math.max(0, Math.min(last, this.#navCursor + step));
-    const entry = this.#views.entries[this.#navCursor];
-    if (entry && entry.id !== QUIT) this.#views.show(entry.id);
-  }
-
-  private activate(index: number): void {
-    const entry = this.#views.entries[index];
-    if (!entry) return;
-    this.#navCursor = index;
-    if (entry.id === QUIT) return this.#exit({ kind: "quit" });
-    this.#views.show(entry.id);
-    this.#focus = "main";
   }
 
   /** A scan the user asked for: the Scan view comes to the front. */
@@ -348,8 +317,8 @@ export class MenuSession {
     const panel = this.#views.panel;
     this.#main.setTitle(panel?.title ?? "");
     this.#main.show(panel?.render(this.viewport()) ?? []);
-    this.#main.setFocused(this.#focus === "main");
-    this.#sidebar.setFocused(this.#focus === "sidebar");
+    this.#main.setFocused(!this.#nav.isSidebarFocused);
+    this.#sidebar.setFocused(this.#nav.isSidebarFocused);
     this.drawSidebar();
     const { detectedCount } = this.#deps.state;
     this.#chrome.setFacts([providerCountFact(detectedCount), ...this.#views.facts()]);
@@ -358,16 +327,14 @@ export class MenuSession {
 
   private drawSidebar(): void {
     const { density } = this.#screen.appearance;
-    const isFocused = this.#focus === "sidebar";
-    const state = { current: this.#views.current, cursor: this.#navCursor, isFocused };
     const width = SIDEBAR_WIDTH - panelFrame(density).cols;
-    this.#sidebar.show(renderSidebar(this.#views.layout(density), state, width));
+    this.#sidebar.show(this.#nav.render(density, width));
   }
 
   private hints(): string {
     const panel = this.#views.panel;
     if (this.#dialogs.isOpen) return "";
-    if (this.#focus === "sidebar" || !panel) return SIDEBAR_HINTS;
+    if (this.#nav.isSidebarFocused || !panel) return SIDEBAR_HINTS;
     return `${panel.hints()} · ${PANEL_HINTS_TAIL}`;
   }
 }
