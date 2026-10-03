@@ -61,7 +61,7 @@ Then, in the same branch:
 2. **Release notes.** Write `docs/releases/x.y.z.md` in the shape described in
    [`docs/releases/README.md` § Writing the next one](../releases/README.md#writing-the-next-one),
    and add its row to the table there.
-3. **Landing facts.** Run `cd index && npm run sync:facts`. It regenerates
+3. **Landing facts.** Run `npm --prefix index run sync:facts`. It regenerates
    `index/src/data/facts.js` (version, provider count, Node floor) from the
    root `package.json` and the registry; the landing build does the same, but
    the committed copy must not lag behind the release.
