@@ -86,9 +86,20 @@ describe("journal view", () => {
 
     await menu.press("e");
     await menu.waitForText("Exporter le journal");
-    await menu.press("down", "enter");
+    await menu.press("down", "down", "enter");
 
     await menu.waitForText("Export écrit");
     expect(source.export).toHaveBeenCalledWith("csv", expect.objectContaining({ key: "12m" }));
+  });
+
+  it("opens the period's HTML report with o and says so", async () => {
+    const source = scriptedSource(journalData(), { ok: true, path: "C:\r\gup-report.html", opened: true });
+    const { menu } = await journalMenu({ cols: 120, rows: 30 }, source);
+    await menu.waitForText("Mises à jour réussies par jour");
+
+    await menu.press("o");
+
+    await menu.waitForText("Rapport ouvert dans le navigateur");
+    expect(source.export).toHaveBeenCalledWith("html", expect.objectContaining({ key: "12m" }));
   });
 });

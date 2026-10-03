@@ -24,7 +24,8 @@ import { RecurrenceTab } from "./recurrence-tab.js";
 /**
  * The Journal view: four tabs over one load of the period — Activité,
  * Récurrence, Événements, Debug — switched with 1-4 or [ ]. `p` steps the
- * period, `r` reloads, `e` exports. A load never blanks the screen: the
+ * period, `r` reloads, `o` opens the HTML report of the period in the
+ * browser, `e` exports. A load never blanks the screen: the
  * previous data stays until the new one arrives (the title shows ↻), and a
  * load overtaken by a newer one is dropped.
  */
@@ -45,7 +46,7 @@ const TAB_BAR_ROWS = 1;
 const TAB_GAP = "  ";
 /** Keys named by their character rather than by OpenTUI's name. */
 const PUNCTUATION: ReadonlySet<string> = new Set(["[", "]"]);
-const EXPORT_FORMATS: readonly ExportFormat[] = ["json", "csv", "diagnostic"];
+const EXPORT_FORMATS: readonly ExportFormat[] = ["html", "json", "csv", "diagnostic"];
 
 export class JournalPanel implements Panel {
   readonly #deps: JournalPanelDeps;
@@ -145,6 +146,7 @@ export class JournalPanel implements Panel {
         this.load();
       },
       r: () => this.load(),
+      o: () => void this.export("html"),
       e: () => void this.chooseExport(),
     };
   }
@@ -196,9 +198,7 @@ export class JournalPanel implements Panel {
     this.#deps.redraw();
     const outcome = await this.safeExport(format);
     this.#isExporting = false;
-    this.#status = outcome.ok
-      ? [seg(EXPORT_LABELS.written(outcome.path), "success")]
-      : [seg(EXPORT_LABELS.failed(outcome.error), "danger")];
+    this.#status = outcomeLine(outcome);
     this.#deps.redraw();
   }
 
@@ -222,6 +222,14 @@ function tabBar(current: number, width: number): Line {
   });
   const used = segments.reduce((total, segment) => total + segment.text.length, 0);
   return used <= width ? segments : [seg(fit(segments.map((s) => s.text).join(""), width))];
+}
+
+/** Where the export went: written, opened in the browser, written but not opened, or why not. */
+function outcomeLine(outcome: ExportOutcome): Line {
+  if (!outcome.ok) return [seg(EXPORT_LABELS.failed(outcome.error), "danger")];
+  if (outcome.opened === true) return [seg(EXPORT_LABELS.opened(outcome.path), "success")];
+  if (outcome.opened === false) return [seg(EXPORT_LABELS.notOpened(outcome.path), "warning")];
+  return [seg(EXPORT_LABELS.written(outcome.path), "success")];
 }
 
 function unreadableData(period: Period, error: string): JournalData {

@@ -1,16 +1,22 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { stripVTControlCharacters } from "node:util";
 import { Command } from "commander";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { installStartup } from "../../../src/commands/cli/startup.js";
 import { journalModule } from "../../../src/commands/journal/journal-module.js";
 import { stopLogSession } from "../../../src/commands/journal/log-session.js";
 import { reportRequestOf, runReport } from "../../../src/commands/journal/report-command.js";
+import { MAX_REPORT_UPDATES } from "../../../src/core/export/report-model.js";
 import { utcDay } from "../../../src/core/log/file-sink.js";
 import { REPORT_MESSAGES } from "../../../src/ui/text/report-labels.js";
 import { scanEvent, updateEvent, writeHistoryShards } from "../../support/history-fixtures.js";
+
+// Never a real browser from a unit test (W2-4): the command path opens through this mock.
+const commandOpen = vi.hoisted(() => vi.fn(async () => ({ opened: true, launcher: "explorer.exe" })));
+vi.mock("../../../src/core/export/open-external.js", () => ({ openExternal: commandOpen }));
 
 let dir: string;
 let stdout: ReturnType<typeof vi.spyOn>;
@@ -43,9 +49,116 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+/** Make stdout a terminal or not (a worker has none), until the test ends. */
+function setTerminal(isTerminal: boolean): void {
+  const original = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+  Object.defineProperty(process.stdout, "isTTY", { value: isTerminal, configurable: true });
+  onTestFinished(() => {
+    if (original) Object.defineProperty(process.stdout, "isTTY", original);
+    else Reflect.deleteProperty(process.stdout, "isTTY");
+  });
+}
+
+/** Pretend stdout is a terminal outside CI: where a report opens in the browser. */
+function interactive(): void {
+  setTerminal(true);
+  vi.stubEnv("CI", "");
+}
+
+const opener = (isOpened: boolean) =>
+  vi.fn(async () => ({ opened: isOpened, launcher: isOpened ? "explorer.exe" : null }));
+
+describe("gup report (HTML)", () => {
+  it("writes the HTML report to the reports directory and opens it, by default", async () => {
+    interactive();
+    const openExternal = opener(true);
+
+    expect(await runReport({}, { openExternal })).toBe(0);
+
+    const [name] = readdirSync(join(dir, "reports"));
+    const path = join(dir, "reports", name ?? "");
+    expect(name).toMatch(/^gup-report-\d{8}-\d{6}\.html$/);
+    expect(readFileSync(path, "utf8")).toContain("<title>gup — Rapport d&#39;activité (12 derniers mois)</title>");
+    expect(openExternal).toHaveBeenCalledWith(path);
+    expect(output(stdout)).toBe(`${REPORT_MESSAGES.reportWritten(path)}\n${REPORT_MESSAGES.opened}\n`);
+  });
+
+  it("does not open it with --no-open, and gives its address instead", async () => {
+    interactive();
+    const openExternal = opener(true);
+    const out = join(dir, "rapport.html");
+
+    expect(await runReport({ out, open: false }, { openExternal })).toBe(0);
+
+    expect(openExternal).not.toHaveBeenCalled();
+    expect(output(stdout)).toContain(REPORT_MESSAGES.reportWritten(out));
+    expect(output(stdout)).toContain(pathToFileURL(out).href);
+  });
+
+  it("does not open it when nobody watches: no terminal, or CI", async () => {
+    setTerminal(false);
+    const openExternal = opener(true);
+    expect(await runReport({}, { openExternal })).toBe(0);
+    interactive();
+    vi.stubEnv("CI", "true");
+    expect(await runReport({ out: join(dir, "ci.html") }, { openExternal })).toBe(0);
+
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
+  it("still succeeds when the browser cannot be opened, and says how to open it", async () => {
+    interactive();
+    const out = join(dir, "rapport.html");
+
+    expect(await runReport({ out }, { openExternal: opener(false) })).toBe(0);
+
+    expect(output(stderr)).toContain(REPORT_MESSAGES.openFailed.trim());
+    expect(output(stdout)).toContain(pathToFileURL(out).href);
+  });
+
+  it("writes the HTML to standard output with --out -", async () => {
+    interactive();
+    const openExternal = opener(true);
+
+    expect(await runReport({ out: "-" }, { openExternal })).toBe(0);
+
+    expect(output(stdout)).toMatch(/^<!doctype html>/);
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
+  it("says on the error output when the report details only the newest attempts", async () => {
+    const events = Array.from({ length: MAX_REPORT_UPDATES + 1 }, (_unused, index) =>
+      updateEvent("npm-g", `pkg-${index % 50}`, { ts: new Date(NOW.getTime() - index * 60_000).toISOString() }),
+    ).reverse();
+    const stats = { files: 1, lines: events.length, malformed: 0, unsupported: 0 };
+    const readHistory = async () => ({ dir, events, stats });
+
+    expect(await runReport({ out: join(dir, "big.html"), open: false }, { readHistory })).toBe(0);
+
+    expect(output(stderr)).toContain(REPORT_MESSAGES.truncated(MAX_REPORT_UPDATES));
+  }, 30_000);
+
+  it("logs the export and the opening", async () => {
+    interactive();
+    vi.stubEnv("GUP_LOG_LEVEL", "info");
+    const out = join(dir, "r.html");
+
+    expect(await gup("report", "--out", out)).toBe(0);
+
+    const log = readFileSync(join(dir, "logs", `gup-${utcDay(new Date())}.jsonl`), "utf8");
+    const events = log
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => JSON.parse(line) as { event: string; data?: object });
+    expect(events.find((record) => record.event === "report.export")?.data).toMatchObject({ format: "html" });
+    expect(events.find((record) => record.event === "report.open")?.data).toMatchObject({ opened: true });
+    expect(commandOpen).toHaveBeenCalledWith(out);
+  });
+});
+
 describe("gup report", () => {
-  it("prints the period's activity as text charts by default", async () => {
-    expect(await runReport({})).toBe(0);
+  it("prints the period's activity as text charts", async () => {
+    expect(await runReport({ format: "text" })).toBe(0);
 
     const text = output(stdout);
     expect(text).toMatch(/^gup — activité · 12 derniers mois\n/);
@@ -94,7 +207,7 @@ describe("gup report", () => {
   it("writes the text charts to a file as plain text", async () => {
     const out = join(dir, "activite.txt");
 
-    expect(await runReport({ out })).toBe(0);
+    expect(await runReport({ format: "text", out })).toBe(0);
 
     const text = readFileSync(out, "utf8");
     expect(text).toMatch(/^gup — activité · 12 derniers mois\n/);
@@ -111,7 +224,7 @@ describe("gup report", () => {
   });
 
   it("names the end of a period given --until in the report's title", async () => {
-    expect(await runReport({ since: "2020-01-01", until: "2020-03-31" })).toBe(0);
+    expect(await runReport({ format: "text", since: "2020-01-01", until: "2020-03-31" })).toBe(0);
 
     expect(output(stdout)).toMatch(/^gup — activité · depuis le 01\/01\/2020 jusqu'au 31\/03\/2020\n/);
   });
@@ -127,7 +240,7 @@ describe("gup report", () => {
     const outOfRange = updateEvent("pip", "clock-reset", { ts: "0999-06-01T00:00:00.000Z" });
     writeFileSync(join(dir, "history", "0999-06.jsonl"), `${JSON.stringify(outOfRange)}\n`);
 
-    expect(await runReport({ since: "all" })).toBe(0);
+    expect(await runReport({ format: "text", since: "all" })).toBe(0);
     expect(output(stdout)).toContain("2 mises à jour · 67 % réussies");
     expect(output(stderr)).toContain(REPORT_MESSAGES.malformed(1));
   });
