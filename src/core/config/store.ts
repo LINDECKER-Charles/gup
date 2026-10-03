@@ -66,6 +66,12 @@ export interface ConfigStoreOptions {
   readonly fileOps?: FileOps;
   /** Clock for the corrupt-file backup name. */
   readonly now?: () => Date;
+  /**
+   * Largest file accepted, in bytes; a bigger one is treated as corrupt.
+   * Default: a settings file's MAX_CONFIG_BYTES. A store holding records
+   * (the scheduler's schedules) sizes it to its own bounds.
+   */
+  readonly maxBytes?: number;
 }
 
 interface LoadedFile {
@@ -170,7 +176,7 @@ export class ConfigStore {
     const { file, isDisabled } = this.#options;
     if (isDisabled) return { state: "disabled", document: emptyDocument() };
     if (file === null) return { state: "unavailable", document: emptyDocument() };
-    const read = readConfigFile(file);
+    const read = readConfigFile(file, this.#options.maxBytes);
     if (read.kind === "missing") return { state: "missing", document: emptyDocument() };
     if (read.kind === "loaded") return { state: "loaded", document: read.document };
     if (read.kind === "unreadable") return this.#unavailable(read.reason);
@@ -211,7 +217,7 @@ export class ConfigStore {
 
   #rewrite<T extends object>(file: string, change: SectionChange<T>): T {
     const { section, compute } = change;
-    const fresh = freshDocument(file);
+    const fresh = freshDocument(file, this.#options.maxBytes);
     if (isReadOnlySection(fresh, section)) throw readOnlyError(section);
     const next = compute(parseSection(section, fresh, []));
     const text = serializeDocument(withSection(fresh, section, next));
@@ -262,8 +268,8 @@ function readOnlyError(section: ConfigSectionDef<object>): ConfigWriteError {
 }
 
 /** The file as it is now, inside the lock. */
-function freshDocument(file: string): ConfigDocument {
-  const read = readConfigFile(file);
+function freshDocument(file: string, maxBytes: number | undefined): ConfigDocument {
+  const read = readConfigFile(file, maxBytes);
   if (read.kind === "loaded") return read.document;
   if (read.kind === "missing") return emptyDocument();
   if (read.kind === "corrupt") {

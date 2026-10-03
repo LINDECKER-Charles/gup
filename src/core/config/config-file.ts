@@ -35,12 +35,16 @@ export function emptyDocument(): ConfigDocument {
   return { version: ENVELOPE_VERSION, sections: {} };
 }
 
-export function readConfigFile(file: string): ConfigFileRead {
+/** Classify `file`; one larger than `maxBytes` is corrupt (not a settings file). */
+export function readConfigFile(
+  file: string,
+  maxBytes: number = MAX_CONFIG_BYTES,
+): ConfigFileRead {
   let text: string;
   try {
     const stats = statSync(file);
     if (!stats.isFile()) return { kind: "corrupt", reason: "pas un fichier" };
-    if (stats.size > MAX_CONFIG_BYTES) {
+    if (stats.size > maxBytes) {
       return { kind: "corrupt", reason: "fichier trop volumineux" };
     }
     text = readFileSync(file, "utf8");
