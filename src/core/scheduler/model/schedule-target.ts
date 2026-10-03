@@ -53,11 +53,16 @@ export function packageIdProblem(packageId: string): string | null {
     return "les jokers (* ?) sont refusés — une planification vise des paquets précis";
   }
   if (packageId.startsWith("-")) return "un identifiant de paquet ne commence pas par « - »";
-  if (CONTROL_CHARACTER.test(packageId)) return "caractère de contrôle interdit";
+  if (hasControlCharacter(packageId)) return "caractère de contrôle interdit";
   if (packageId.length > MAX_PACKAGE_ID_LENGTH) {
     return `identifiant trop long (${MAX_PACKAGE_ID_LENGTH} caractères au plus)`;
   }
   return null;
+}
+
+/** C0 controls and DEL: never legitimate in a name, an id or a path the OS will run. */
+export function hasControlCharacter(text: string): boolean {
+  return CONTROL_CHARACTER.test(text);
 }
 
 /** `provider:packageId` — the same identity the update pipeline gives a package. */

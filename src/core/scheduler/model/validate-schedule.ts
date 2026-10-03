@@ -1,6 +1,6 @@
 import { CronExpression } from "./cron.js";
 import { toCron } from "./recurrence.js";
-import { packageIdProblem, targetKey } from "./schedule-target.js";
+import { hasControlCharacter, packageIdProblem, targetKey } from "./schedule-target.js";
 import type {
   ProviderFacts,
   Recurrence,
@@ -32,7 +32,6 @@ const MAX_MONTH_DAY = 28;
 const MAX_HOUR = 23;
 const MAX_MINUTE = 59;
 const MAX_WEEKDAY = 6;
-const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
 
 export const TOO_FREQUENT = "Fréquence trop élevée — au plus une exécution par heure";
 
@@ -70,7 +69,7 @@ function nameProblem(name: string): string | null {
   const trimmed = name.trim();
   if (trimmed === "") return "nom requis";
   if (trimmed.length > MAX_NAME_LENGTH) return `${MAX_NAME_LENGTH} caractères au plus`;
-  if (CONTROL_CHARACTER.test(trimmed)) return "caractère de contrôle interdit";
+  if (hasControlCharacter(trimmed)) return "caractère de contrôle interdit";
   return null;
 }
 
