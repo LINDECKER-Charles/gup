@@ -8,7 +8,7 @@ import {
   OPTIONS_SECTIONS,
   TIMEOUT_OUT_OF_RANGE,
   TIMEOUT_VALUE,
-} from "../../text/options-labels.js";
+} from "../../text/settings/options-labels.js";
 import { seg } from "../../tui/styled-lines.js";
 import type { OptionRow, OptionsControls, OptionsHost, SectionFactory } from "./option-row.js";
 import { choiceRow, switchChoices } from "./option-rows.js";

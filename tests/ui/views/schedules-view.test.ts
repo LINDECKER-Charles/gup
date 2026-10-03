@@ -4,7 +4,7 @@ import type { Schedule, SchedulerState } from "../../../src/core/scheduler/model
 import type { SelectedPackage } from "../../../src/core/types.js";
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
-import { SCHEDULE_ACTION } from "../../../src/ui/text/schedule-menu-labels.js";
+import { SCHEDULE_ACTION } from "../../../src/ui/text/schedule/schedule-menu-labels.js";
 import { schedulesView } from "../../../src/ui/views/schedules-view.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { bootMenu, defaultViews, type MenuDriver } from "../../support/tui/menu-driver.js";

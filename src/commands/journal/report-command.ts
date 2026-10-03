@@ -7,9 +7,9 @@ import { OutputExistsError } from "../../core/export/output-file.js";
 import { MAX_REPORT_UPDATES } from "../../core/export/report-model.js";
 import { parsePeriod, parseUntil, withUntil, type Period } from "../../core/time/period.js";
 import { resolveGlyphMode } from "../../ui/theme/glyphs.js";
-import { periodLabel } from "../../ui/text/activity-labels.js";
-import { LOG_MESSAGES } from "../../ui/text/log-labels.js";
-import { REPORT_COMMAND_LABELS, REPORT_MESSAGES } from "../../ui/text/report-labels.js";
+import { periodLabel } from "../../ui/text/journal/activity-labels.js";
+import { LOG_MESSAGES } from "../../ui/text/journal/log-labels.js";
+import { REPORT_COMMAND_LABELS, REPORT_MESSAGES } from "../../ui/text/journal/report-labels.js";
 import {
   exportHistory,
   HISTORY_FORMATS,

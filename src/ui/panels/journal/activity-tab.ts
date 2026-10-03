@@ -5,7 +5,7 @@ import {
   slowProvidersLine,
   trendLine,
 } from "../../charts/activity-sections.js";
-import { JOURNAL_HINTS } from "../../text/journal-labels.js";
+import { JOURNAL_HINTS } from "../../text/journal/journal-labels.js";
 import type { Line } from "../../tui/styled-lines.js";
 import type { JournalData } from "./journal-source.js";
 import {

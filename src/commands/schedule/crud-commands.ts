@@ -19,8 +19,8 @@ import {
   notSavedLine,
   removedLine,
   WINGET_UAC_NOTE,
-} from "../../ui/text/schedule-cli-labels.js";
-import { DISABLED_NEXT_RUN } from "../../ui/text/schedule-labels.js";
+} from "../../ui/text/schedule/schedule-cli-labels.js";
+import { DISABLED_NEXT_RUN } from "../../ui/text/schedule/schedule-labels.js";
 import { parseAddArgs, type AddOptions } from "./schedule-args.js";
 import type { CommandOutput, SchedulerServices } from "./scheduler-services.js";
 import { indented, reconcileTrigger, reportSync } from "./trigger-commands.js";

@@ -59,7 +59,7 @@ flowchart LR
 | `ui/charts/` | `chart-glyphs`, `scale`, `bar-chart`, `sparkline`, `heatmap`, `activity-sections`, `recurrence-table`, `text-report`, `ansi-lines` | Pure `Line[]` producers shared by the TUI and the text report. |
 | `ui/panels/journal/` | `journal-source` (port), `journal-panel`, `journal-tab`, `activity-tab`, `recurrence-tab`, `events-tab`, `debug-tab`, `browsable-list`, `detail-lines`, `event-line` | The view. |
 | `ui/views/` | `journal-view.ts` | The `ViewDefinition`; one line in `commands/menu-views.ts`. |
-| `ui/text/` | `activity-labels.ts`, `journal-labels.ts`, `report-labels.ts` | Every French string (F-10). |
+| `ui/text/journal/` | `activity-labels.ts`, `journal-labels.ts`, `report-labels.ts` | Every French string (F-10). |
 | `commands/journal/` | `export-history.ts`, `report-command.ts`, `journal-source.ts` | Composition: `exportHistory` (read → insights → serialise → stdout or file → `report.export`), `gup report`, the view's source. |
 
 ### Reader (`core/history/reader.ts`, `parse-event.ts`)
@@ -157,7 +157,7 @@ format, records, bytes, path.
 
 - **The read side never feeds a decision.** `tests/security/history-read-only.test.ts` pins the
   import graph: only `commands/journal`, `core/export`, `core/insights`, `core/history/reader`,
-  `ui/charts`, `ui/panels/journal`, `ui/views/journal-view.ts` and `ui/text/activity-labels.ts`
+  `ui/charts`, `ui/panels/journal`, `ui/views/journal-view.ts` and `ui/text/journal/activity-labels.ts`
   may import the reader, the parser or the insights (and the guard proves it sees importers).
 - **Strict parsing:** fresh objects with known fields, no spread, no prototype access, bounded
   strings and lines; hostile content is counted, never thrown.
@@ -187,7 +187,7 @@ format, records, bytes, path.
 - **`gup report` defaults to `text`** (the spec's default is `html`, which this branch cannot
   render). `feat/html-report` flips the default (done).
 - **`describePeriod` is not in `core/time`:** it is French text, so it lives in
-  `ui/text/activity-labels.ts` (`periodLabel`), reading the period's `scope` (F-10). `Period`
+  `ui/text/journal/activity-labels.ts` (`periodLabel`), reading the period's `scope` (F-10). `Period`
   carries `scope` for that reason, and `hasFixedEnd` so that a `--until` period reads
   "depuis le 01/01/2026 jusqu'au 31/03/2026".
 - **Heatmap weeks are counted between Mondays**, not as the spec's `ceil(periodDays / 7)`, which

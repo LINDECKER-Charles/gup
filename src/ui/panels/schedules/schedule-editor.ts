@@ -15,7 +15,7 @@ import {
   MAX_NAME_LENGTH,
   type ValidationIssue,
 } from "../../../core/scheduler/model/validate-schedule.js";
-import { timeLabel } from "../../text/schedule-labels.js";
+import { timeLabel } from "../../text/schedule/schedule-labels.js";
 
 /**
  * The form behind "Nouvelle planification" and "Modifier": its fields, the

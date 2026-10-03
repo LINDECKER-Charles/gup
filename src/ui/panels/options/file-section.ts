@@ -8,7 +8,7 @@ import {
   OPTIONS_SECTIONS,
   RESET_DIALOG,
   type ResetScope,
-} from "../../text/options-labels.js";
+} from "../../text/settings/options-labels.js";
 import { seg, type Line, type Tone } from "../../tui/styled-lines.js";
 import type { OptionRow, OptionsControls, OptionsHost, SectionFactory } from "./option-row.js";
 import { resetSettings, touchesScan } from "./reset-settings.js";

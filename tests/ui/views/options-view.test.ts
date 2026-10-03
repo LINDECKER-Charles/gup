@@ -16,14 +16,14 @@ import {
 import { staticProbe } from "../../../src/ui/theme/runtime/terminal-probe.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
 import { TIMEOUT_DIALOG } from "../../../src/ui/text/menu-labels.js";
-import { OPTIONS_NOTICES, SORT_VALUES } from "../../../src/ui/text/options-labels.js";
-import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings-labels.js";
+import { OPTIONS_NOTICES, SORT_VALUES } from "../../../src/ui/text/settings/options-labels.js";
+import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings/settings-labels.js";
 import {
   COLOR_EDITOR,
   CONTRAST_STATUS,
   PREVIEW_FACT,
   THEME_LABELS,
-} from "../../../src/ui/text/theme-labels.js";
+} from "../../../src/ui/text/settings/theme-labels.js";
 import { configureScreens } from "../../../src/ui/tui/screen-host.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
 import { packagesView } from "../../../src/ui/views/packages-view.js";

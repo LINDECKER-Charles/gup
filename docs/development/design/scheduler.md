@@ -58,9 +58,9 @@ src/ui/panels/schedules/ (9)          schedules-port (types), schedules-panel, s
                                       schedule-list-lines, schedule-editor-lines, flow-context,
                                       schedule-flows, editor-flows, package-flow
 src/ui/views/schedules-view.ts        schedulesView(port): sidebar entry, badge, facts, p, ◷
-src/ui/text/schedule-labels.ts        vocabulary shared by the command line and the menu
-src/ui/text/schedule-cli-labels.ts    what `gup schedule` prints
-src/ui/text/schedule-menu-labels.ts   what the Planification view says
+src/ui/text/schedule/ (3)             schedule-labels: vocabulary shared by the command line and
+                                      the menu; schedule-cli-labels: what `gup schedule` prints;
+                                      schedule-menu-labels: what the Planification view says
 ```
 
 Names follow the plan (C26): `ScheduledTarget` / `TickPlan`, never the

@@ -10,8 +10,8 @@ import {
   triggerInstalledLine,
   UNINSTALL_COMMAND,
   uninstalledLine,
-} from "../../ui/text/schedule-cli-labels.js";
-import { foreignInstallation } from "../../ui/text/schedule-labels.js";
+} from "../../ui/text/schedule/schedule-cli-labels.js";
+import { foreignInstallation } from "../../ui/text/schedule/schedule-labels.js";
 import { parseLauncher } from "./schedule-args.js";
 import type { CommandOutput, SchedulerServices } from "./scheduler-services.js";
 

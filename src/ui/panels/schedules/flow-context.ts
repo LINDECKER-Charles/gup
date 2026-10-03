@@ -2,13 +2,13 @@ import { log } from "../../../core/log/log.js";
 import type { Schedule } from "../../../core/scheduler/model/types.js";
 import type { SyncResult } from "../../../core/scheduler/trigger/trigger-sync.js";
 import type { ViewContext } from "../../app/view-definition.js";
-import { TRIGGER_REMOVED, triggerInstalledLine } from "../../text/schedule-cli-labels.js";
-import { foreignInstallation } from "../../text/schedule-labels.js";
+import { TRIGGER_REMOVED, triggerInstalledLine } from "../../text/schedule/schedule-cli-labels.js";
+import { foreignInstallation } from "../../text/schedule/schedule-labels.js";
 import {
   CONSENT_DIALOG,
   REPAIR_KEY,
   SCHEDULE_NOTICES,
-} from "../../text/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-menu-labels.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
 import type { SchedulesPanel } from "./schedules-panel.js";
 import type { ChangeOutcome, SchedulesPort } from "./schedules-port.js";

@@ -1,4 +1,4 @@
-import { THEME_SAMPLE } from "../../../text/theme-labels.js";
+import { THEME_SAMPLE } from "../../../text/settings/theme-labels.js";
 import { fillLine, fit, seg, type Line } from "../../../tui/styled-lines.js";
 
 const NAME_WIDTH = 11;

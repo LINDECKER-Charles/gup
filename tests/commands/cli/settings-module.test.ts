@@ -19,7 +19,7 @@ import { setUiPreferencesSource, uiPreferences } from "../../../src/ui/app/ui-pr
 import { SettingsService } from "../../../src/ui/settings/settings-service.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
 import { configureScreens } from "../../../src/ui/tui/screen-host.js";
-import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings-labels.js";
+import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings/settings-labels.js";
 import { createTestHost } from "../../support/tui/test-host.js";
 
 // Spied, not replaced: the screens still get what the module installs.

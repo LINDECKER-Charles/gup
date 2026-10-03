@@ -6,7 +6,7 @@ import {
   type CustomizableToken,
   type ThemeId,
 } from "../../../theme/palette.js";
-import { COLOR_EDITOR, HEX_DIALOG, ROLE_LABELS, THEME_LABELS } from "../../../text/theme-labels.js";
+import { COLOR_EDITOR, HEX_DIALOG, ROLE_LABELS, THEME_LABELS } from "../../../text/settings/theme-labels.js";
 import type { KeyPress } from "../../../tui/screen-host.js";
 import { seg, wrap, type Line } from "../../../tui/styled-lines.js";
 import type { Viewport } from "../../panel.js";

@@ -23,7 +23,7 @@ import {
   SCHEDULER_DIR_OVERRIDDEN,
   TRIGGER_REMOVED,
   WINGET_UAC_NOTE,
-} from "../../../src/ui/text/schedule-cli-labels.js";
+} from "../../../src/ui/text/schedule/schedule-cli-labels.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { schedulerFixture, type Fixture, type FixtureOptions } from "./scheduler-fixture.js";
 

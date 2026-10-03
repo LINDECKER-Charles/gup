@@ -13,7 +13,7 @@ import {
   CONFIG_DIAGNOSTIC_LABEL,
   startupIssueLine,
   unknownProviderIssue,
-} from "../../ui/text/settings-labels.js";
+} from "../../ui/text/settings/settings-labels.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli-module.js";
 
 /**

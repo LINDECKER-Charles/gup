@@ -13,7 +13,7 @@ import {
   formatRatio,
   formatRatioValue,
   ROLE_LABELS,
-} from "../../../text/theme-labels.js";
+} from "../../../text/settings/theme-labels.js";
 import {
   fillLine,
   fit,

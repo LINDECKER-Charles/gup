@@ -2,9 +2,9 @@ import {
   DIAGNOSTIC_ENTRIES,
   type DiagnosticContents,
   type DiagnosticHistory,
-} from "../../core/export/diagnostic-bundle.js";
-import type { LogLevel, LogThreshold } from "../../core/log/log.js";
-import type { UpdateStatus } from "../../core/history/types.js";
+} from "../../../core/export/diagnostic-bundle.js";
+import type { LogLevel, LogThreshold } from "../../../core/log/log.js";
+import type { UpdateStatus } from "../../../core/history/types.js";
 
 /**
  * The debug log's words (French, the language of the interface): `gup log`

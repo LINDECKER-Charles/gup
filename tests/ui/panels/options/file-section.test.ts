@@ -15,8 +15,8 @@ import {
   OPTIONS_NOTICES,
   RESET_DIALOG,
   type ResetScope,
-} from "../../../../src/ui/text/options-labels.js";
-import { CONFIG_STATE_LABELS } from "../../../../src/ui/text/settings-labels.js";
+} from "../../../../src/ui/text/settings/options-labels.js";
+import { CONFIG_STATE_LABELS } from "../../../../src/ui/text/settings/settings-labels.js";
 import {
   key,
   optionsFixture,

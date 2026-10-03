@@ -13,7 +13,7 @@ import type {
 } from "../../core/scheduler/model/types.js";
 import { defaultScheduleName } from "../../core/scheduler/model/validate-schedule.js";
 import type { Launcher } from "../../core/scheduler/trigger/os-trigger.js";
-import { ARGUMENT_ERRORS, NOT_A_PACKAGE } from "../../ui/text/schedule-cli-labels.js";
+import { ARGUMENT_ERRORS, NOT_A_PACKAGE } from "../../ui/text/schedule/schedule-cli-labels.js";
 
 /**
  * `gup schedule add` options → a schedule draft, or every reason it is not

@@ -8,7 +8,7 @@ import { OptionsPanel } from "../panels/options/options-panel.js";
 import { scanSection } from "../panels/options/scan-section.js";
 import { settingsService, type SettingsService } from "../settings/settings-service.js";
 import { scanModeFact, VIEW_LABELS } from "../text/menu-labels.js";
-import { PREVIEW_FACT } from "../text/theme-labels.js";
+import { PREVIEW_FACT } from "../text/settings/theme-labels.js";
 
 export interface OptionsViewPorts {
   /** The settings shown and edited; default: the process-wide service. */

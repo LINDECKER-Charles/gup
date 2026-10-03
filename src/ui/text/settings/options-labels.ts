@@ -1,7 +1,7 @@
-import type { NoteColumn, PackageSort } from "../app/ui-preferences.js";
-import type { ViewId } from "../app/view-definition.js";
-import type { Density } from "../theme/appearance.js";
-import type { GlyphPreference } from "../theme/glyphs.js";
+import type { NoteColumn, PackageSort } from "../../app/ui-preferences.js";
+import type { ViewId } from "../../app/view-definition.js";
+import type { Density } from "../../theme/appearance.js";
+import type { GlyphPreference } from "../../theme/glyphs.js";
 
 /**
  * The Options view's words (French, the language of the interface): section

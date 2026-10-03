@@ -8,9 +8,9 @@ import {
 import {
   CADENCE_DESCRIPTIONS,
   intervalLabel,
-} from "../../text/activity-labels.js";
+} from "../../text/journal/activity-labels.js";
 import { formatCount, formatDate, formatRelative } from "../../text/fr-format.js";
-import { JOURNAL_HINTS, RECURRENCE_LABELS } from "../../text/journal-labels.js";
+import { JOURNAL_HINTS, RECURRENCE_LABELS } from "../../text/journal/journal-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { fit, seg, type Line } from "../../tui/styled-lines.js";
 import { placeholder } from "../panel.js";

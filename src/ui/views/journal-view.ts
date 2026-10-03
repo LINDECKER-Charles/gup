@@ -1,7 +1,7 @@
 import type { ViewDefinition } from "../app/view-definition.js";
 import { JournalPanel } from "../panels/journal/journal-panel.js";
 import type { JournalSource } from "../panels/journal/journal-source.js";
-import { JOURNAL_LABELS } from "../text/journal-labels.js";
+import { JOURNAL_LABELS } from "../text/journal/journal-labels.js";
 
 /**
  * Journal: the activity of a period — at a glance, per package, event by

@@ -1,7 +1,7 @@
-import type { PaintMode, ResolvedTheme } from "../theme/resolve-theme.js";
-import type { ContrastLevel, CustomizableToken, ThemeId } from "../theme/palette.js";
-import type { Tone } from "../tui/styled-lines.js";
-import { formatDecimal } from "./fr-format.js";
+import type { PaintMode, ResolvedTheme } from "../../theme/resolve-theme.js";
+import type { ContrastLevel, CustomizableToken, ThemeId } from "../../theme/palette.js";
+import type { Tone } from "../../tui/styled-lines.js";
+import { formatDecimal } from "../fr-format.js";
 
 /**
  * The theme engine's words (French, the language of the interface): theme

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { appearanceSection } from "../../../../src/ui/panels/options/appearance-section.js";
 import { OptionsPanel } from "../../../../src/ui/panels/options/options-panel.js";
-import { COLOR_EDITOR, HEX_DIALOG } from "../../../../src/ui/text/theme-labels.js";
+import { COLOR_EDITOR, HEX_DIALOG } from "../../../../src/ui/text/settings/theme-labels.js";
 import * as wcag from "../../../support/contrast/wcag.js";
 import { key, lineWith, optionsFixture, settle, text, VIEW } from "./options-fixture.js";
 

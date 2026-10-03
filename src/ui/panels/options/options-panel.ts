@@ -1,6 +1,6 @@
 import { ConfigWriteError } from "../../../core/config/store.js";
 import { VIEW_LABELS } from "../../text/menu-labels.js";
-import { OPTIONS_HINTS, OPTIONS_NOTICES } from "../../text/options-labels.js";
+import { OPTIONS_HINTS, OPTIONS_NOTICES } from "../../text/settings/options-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
 import { PAGE_STEP, type Panel, type Viewport } from "../panel.js";

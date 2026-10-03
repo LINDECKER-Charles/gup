@@ -16,7 +16,7 @@ import {
   runStatusLabel,
   targetResultLabel,
   triggerLine,
-} from "../../text/schedule-labels.js";
+} from "../../text/schedule/schedule-labels.js";
 import {
   LIST_HEADERS,
   NEVER_RAN_DETAIL,
@@ -26,7 +26,7 @@ import {
   TRIGGER_CHECKING,
   lastRunHeading,
   nextRunDetail,
-} from "../../text/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-menu-labels.js";
 import { fillLine, fit, seg, type Line, type Tone } from "../../tui/styled-lines.js";
 import type { SchedulesSnapshot, TriggerSummary } from "./schedules-port.js";
 

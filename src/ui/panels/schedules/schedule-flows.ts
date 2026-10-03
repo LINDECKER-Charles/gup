@@ -4,13 +4,13 @@ import type { Schedule } from "../../../core/scheduler/model/types.js";
 import type { SelectedPackage } from "../../../core/types.js";
 import type { UpdateReport } from "../../../core/update/update-report.js";
 import { formatRelative } from "../../text/fr-format.js";
-import { NOTHING_TO_INSTALL } from "../../text/schedule-cli-labels.js";
-import { NEVER_RAN, runStatusLabel } from "../../text/schedule-labels.js";
+import { NOTHING_TO_INSTALL } from "../../text/schedule/schedule-cli-labels.js";
+import { NEVER_RAN, runStatusLabel } from "../../text/schedule/schedule-labels.js";
 import {
   REMOVE_DIALOG,
   RUN_NOW_DIALOG,
   SCHEDULE_NOTICES,
-} from "../../text/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-menu-labels.js";
 import { seg } from "../../tui/styled-lines.js";
 import type { FlowContext } from "./flow-context.js";
 import { runStatusTone } from "./schedule-list-lines.js";

@@ -1,5 +1,5 @@
 import type { MenuState } from "../../../../commands/menu-state.js";
-import { FILTER_VIEW } from "../../../text/options-labels.js";
+import { FILTER_VIEW } from "../../../text/settings/options-labels.js";
 import { ListCursor } from "../../../tui/list-cursor.js";
 import type { KeyPress } from "../../../tui/screen-host.js";
 import { fillLine, fit, seg, wrap, type Line } from "../../../tui/styled-lines.js";

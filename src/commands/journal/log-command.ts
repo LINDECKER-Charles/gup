@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { stateDir } from "../../core/state/app-dirs.js";
-import { LOG_COMMAND_LABELS, LOG_MESSAGES } from "../../ui/text/log-labels.js";
+import { LOG_COMMAND_LABELS, LOG_MESSAGES } from "../../ui/text/journal/log-labels.js";
 import { exportDiagnostic, type ExportOptions } from "./diagnostic.js";
 import { showLog, type ShowOptions } from "./log-show.js";
 

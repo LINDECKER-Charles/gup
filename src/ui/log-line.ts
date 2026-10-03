@@ -8,7 +8,7 @@ import {
   ELEVATED_MARK,
   LEVEL_LABELS,
   UPDATE_STATUS_LABELS,
-} from "./text/log-labels.js";
+} from "./text/journal/log-labels.js";
 import { fit, seg, type Line, type Segment, type Tone } from "./tui/styled-lines.js";
 
 /**

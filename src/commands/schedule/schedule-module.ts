@@ -9,8 +9,8 @@ import {
   NO_ACTIVE_SCHEDULE,
   REPAIR_COMMAND,
   TRIGGER_REPAIRED,
-} from "../../ui/text/schedule-cli-labels.js";
-import { triggerLine } from "../../ui/text/schedule-labels.js";
+} from "../../ui/text/schedule/schedule-cli-labels.js";
+import { triggerLine } from "../../ui/text/schedule/schedule-labels.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "../cli/cli-module.js";
 import { addCommand, disableCommand, enableCommand, removeCommand } from "./crud-commands.js";
 import { listCommand, statusCommand } from "./report-commands.js";

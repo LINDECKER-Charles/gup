@@ -5,7 +5,7 @@ import { parsePeriod } from "../../../src/core/time/period.js";
 import { linesToAnsi, linesToText } from "../../../src/ui/charts/ansi-lines.js";
 import { chartGlyphs } from "../../../src/ui/charts/chart-glyphs.js";
 import { renderTextReport } from "../../../src/ui/charts/text-report.js";
-import { EMPTY_ACTIVITY, TEXT_REPORT_LABELS } from "../../../src/ui/text/activity-labels.js";
+import { EMPTY_ACTIVITY, TEXT_REPORT_LABELS } from "../../../src/ui/text/journal/activity-labels.js";
 import { seg } from "../../../src/ui/tui/styled-lines.js";
 import { updateEvent } from "../../support/history-fixtures.js";
 

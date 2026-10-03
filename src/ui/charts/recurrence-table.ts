@@ -1,5 +1,5 @@
 import type { PackageRecurrence } from "../../core/insights/types.js";
-import { CADENCE_LABELS, intervalLabel, RECURRENCE_COLUMNS } from "../text/activity-labels.js";
+import { CADENCE_LABELS, intervalLabel, RECURRENCE_COLUMNS } from "../text/journal/activity-labels.js";
 import { formatCount } from "../text/fr-format.js";
 import { fit, seg, type Segment, type Tone } from "../tui/styled-lines.js";
 import { barText } from "./bar-chart.js";

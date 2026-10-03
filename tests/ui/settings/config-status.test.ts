@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ConfigStatus } from "../../../src/core/config/store.js";
 import { describeConfigStatus } from "../../../src/ui/settings/config-status.js";
-import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings-labels.js";
+import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings/settings-labels.js";
 
 const status = (overrides: Partial<ConfigStatus>): ConfigStatus => ({
   file: "C:\\Users\\u\\AppData\\Roaming\\gup\\config.json",

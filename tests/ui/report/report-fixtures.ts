@@ -4,7 +4,7 @@ import { buildReportModel } from "../../../src/core/export/report-model.js";
 import type { ReportModel } from "../../../src/core/export/report-types.js";
 import type { RunTrigger } from "../../../src/core/state/run-context.js";
 import { parsePeriod } from "../../../src/core/time/period.js";
-import { periodLabel, periodLead } from "../../../src/ui/text/activity-labels.js";
+import { periodLabel, periodLead } from "../../../src/ui/text/journal/activity-labels.js";
 import { scanEvent, updateEvent } from "../../support/history-fixtures.js";
 import { seededRandom } from "../../support/random.js";
 

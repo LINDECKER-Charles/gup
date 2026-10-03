@@ -1,8 +1,8 @@
 import { ManualRun, type ManualExecutor } from "../../core/scheduler/manual-run.js";
 import { neededProviders } from "../../core/scheduler/model/tick-plan.js";
 import type { ScheduleRunRecord } from "../../core/scheduler/model/types.js";
-import { runNowHeader, runResultLine } from "../../ui/text/schedule-cli-labels.js";
-import { runStatusLabel, targetResultLabel } from "../../ui/text/schedule-labels.js";
+import { runNowHeader, runResultLine } from "../../ui/text/schedule/schedule-cli-labels.js";
+import { runStatusLabel, targetResultLabel } from "../../ui/text/schedule/schedule-labels.js";
 import { updateOnConsole } from "../update.js";
 import { targetResolver } from "./run-deps.js";
 import type { CommandOutput, SchedulerServices } from "./scheduler-services.js";

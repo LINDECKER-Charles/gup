@@ -1,7 +1,7 @@
 import { parseMonthDay } from "../../../core/scheduler/model/recurrence.js";
 import { parseTarget } from "../../../core/scheduler/model/schedule-target.js";
 import type { Recurrence, Weekday } from "../../../core/scheduler/model/types.js";
-import { recurrenceLabel, WEEKDAY_NAMES } from "../../text/schedule-labels.js";
+import { recurrenceLabel, WEEKDAY_NAMES } from "../../text/schedule/schedule-labels.js";
 import {
   ADD_TARGET_DIALOG,
   EDITOR_TEXT,
@@ -11,7 +11,7 @@ import {
   MONTH_DAY_DIALOG,
   SCHEDULE_NOTICES,
   WEEKDAY_DIALOG,
-} from "../../text/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-menu-labels.js";
 import { seg } from "../../tui/styled-lines.js";
 import type { FlowContext } from "./flow-context.js";
 import type { ScheduleEditor } from "./schedule-editor.js";

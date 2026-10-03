@@ -1,7 +1,7 @@
-import { NEVER_A_PROVIDER } from "../../core/scheduler/model/schedule-target.js";
-import type { Schedule } from "../../core/scheduler/model/types.js";
-import type { Launcher, Mechanism } from "../../core/scheduler/trigger/os-trigger.js";
-import { STATUS_GLYPHS } from "../theme/glyphs.js";
+import { NEVER_A_PROVIDER } from "../../../core/scheduler/model/schedule-target.js";
+import type { Schedule } from "../../../core/scheduler/model/types.js";
+import type { Launcher, Mechanism } from "../../../core/scheduler/trigger/os-trigger.js";
+import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import {
   MECHANISM_LABELS,
   recurrenceLabel,

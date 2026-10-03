@@ -5,7 +5,7 @@ import {
   THEME_LABELS,
   THEME_PICKER,
   THEME_UNAVAILABLE_16,
-} from "../../../../src/ui/text/theme-labels.js";
+} from "../../../../src/ui/text/settings/theme-labels.js";
 import {
   key,
   lineWith,

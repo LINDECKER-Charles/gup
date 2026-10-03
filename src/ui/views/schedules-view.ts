@@ -18,7 +18,7 @@ import {
   SCHEDULES_LABEL,
   UNSEEN_FAILURE_BADGE,
   unseenRunsFact,
-} from "../text/schedule-menu-labels.js";
+} from "../text/schedule/schedule-menu-labels.js";
 
 /**
  * Planification: the schedules of this machine — create them from Paquets

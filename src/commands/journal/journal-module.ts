@@ -8,7 +8,7 @@ import {
   LOG_MESSAGES,
   LOG_SOURCE_LABELS,
   thresholdLabel,
-} from "../../ui/text/log-labels.js";
+} from "../../ui/text/journal/log-labels.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "../cli/cli-module.js";
 import { registerLogCommand } from "./log-command.js";
 import { currentLogSession, logCrash, startLogSession, type LogSession } from "./log-session.js";

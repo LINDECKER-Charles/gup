@@ -3,12 +3,12 @@ import type {
   ScheduleRunRecord,
   TargetResult,
   TimeOfDay,
-} from "../../core/scheduler/model/types.js";
-import { TICK_INTERVAL_MINUTES } from "../../core/scheduler/scheduler-timing.js";
-import type { Mechanism } from "../../core/scheduler/trigger/os-trigger.js";
-import type { TriggerHealth } from "../../core/scheduler/trigger/trigger-health.js";
-import { STATUS_GLYPHS } from "../theme/glyphs.js";
-import { formatDuration, formatRelative } from "./fr-format.js";
+} from "../../../core/scheduler/model/types.js";
+import { TICK_INTERVAL_MINUTES } from "../../../core/scheduler/scheduler-timing.js";
+import type { Mechanism } from "../../../core/scheduler/trigger/os-trigger.js";
+import type { TriggerHealth } from "../../../core/scheduler/trigger/trigger-health.js";
+import { STATUS_GLYPHS } from "../../theme/glyphs.js";
+import { formatDuration, formatRelative } from "../fr-format.js";
 
 /**
  * The scheduler's words (French, the language of the interface), shared by

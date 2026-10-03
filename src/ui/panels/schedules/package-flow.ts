@@ -6,12 +6,12 @@ import {
   type ValidationIssue,
 } from "../../../core/scheduler/model/validate-schedule.js";
 import type { SelectedPackage } from "../../../core/types.js";
-import { recurrenceLabel } from "../../text/schedule-labels.js";
+import { recurrenceLabel } from "../../text/schedule/schedule-labels.js";
 import {
   EDITOR_TEXT,
   LEAVE_DIALOG,
   SCHEDULE_PACKAGES,
-} from "../../text/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-menu-labels.js";
 import type { DialogChoice } from "../../tui/dialog.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
 import type { FlowContext } from "./flow-context.js";

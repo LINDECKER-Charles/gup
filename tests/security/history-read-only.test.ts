@@ -20,7 +20,7 @@ const FRONT_ENDS = [
   "src/commands/journal/",
   "src/ui/charts/",
   "src/ui/panels/journal/",
-  "src/ui/text/activity-labels.ts",
+  "src/ui/text/journal/activity-labels.ts",
   "src/ui/views/journal-view.ts",
 ];
 

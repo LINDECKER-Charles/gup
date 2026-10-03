@@ -21,8 +21,8 @@ import {
   OPTIONS_NOTICES,
   OPTIONS_SECTIONS,
   TIMEOUT_OUT_OF_RANGE,
-} from "../../../../src/ui/text/options-labels.js";
-import { COLORS_UNAVAILABLE, CONTRAST_STATUS } from "../../../../src/ui/text/theme-labels.js";
+} from "../../../../src/ui/text/settings/options-labels.js";
+import { COLORS_UNAVAILABLE, CONTRAST_STATUS } from "../../../../src/ui/text/settings/theme-labels.js";
 import { seg } from "../../../../src/ui/tui/styled-lines.js";
 import {
   key,

@@ -12,13 +12,13 @@ import {
   OPTION_HINTS,
   OPTION_LABELS,
   OPTIONS_SECTIONS,
-} from "../../text/options-labels.js";
+} from "../../text/settings/options-labels.js";
 import {
   COLORS_UNAVAILABLE,
   contrastStatus,
   ROLE_LABELS,
   THEME_LABELS,
-} from "../../text/theme-labels.js";
+} from "../../text/settings/theme-labels.js";
 import { seg } from "../../tui/styled-lines.js";
 import type { OptionRow, OptionsControls, OptionsHost, SectionFactory } from "./option-row.js";
 import { choiceRow, choicesOf, interfaceRow } from "./option-rows.js";

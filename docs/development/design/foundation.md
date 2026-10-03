@@ -229,7 +229,9 @@ one-column mark after the checkbox; the column takes no room unless a visible pa
 `PackageList(scans, nameOf, { sort })` reads the order on use (`orderPackages`: provider, name,
 bump), so a changed preference re-sorts at once, checks kept.
 
-Labels live in `src/ui/text/<feature>-labels.ts` (the menu's own: `menu-labels.ts`).
+Labels live in `src/ui/text/<feature>-labels.ts` (the menu's own: `menu-labels.ts`), in a
+domain sub-folder once a domain has several (`journal/`, `schedule/`, `settings/`), which keeps
+`ui/text` under the 10-file budget.
 
 ### 3.10 French formatting (`src/ui/text/fr-format.ts`)
 
@@ -265,7 +267,7 @@ A suite that mounts screens with `createTestHost` itself ends them the same way.
 | Persist settings | `defineSection` + `configStore().read/write/update`; machine-local data in its own `ConfigStore({ file })` | read config in `__admin-batch` |
 | Paint | `Tone` + `Fill`; glyphs from `glyphs.ts` | build an `RGBA` outside `src/ui/theme/**` |
 | Log | `log.info("domain.action", data)` | `console.*`, direct stderr |
-| Strings | French constants in `src/ui/text/<feature>-labels.ts`; numbers and dates through `fr-format.ts` | NBSP/NNBSP in TUI strings; `toLocaleString()` without `fr-FR` |
+| Strings | French constants in `src/ui/text/[<domain>/]<feature>-labels.ts`; numbers and dates through `fr-format.ts` | NBSP/NNBSP in TUI strings; `toLocaleString()` without `fr-FR` |
 | Docs | a design note in `docs/development/design/`, your guide page, a changelog fragment | edit shared docs in wave 2 |
 
 Contracts are extended **additively** only (new optional members), announced in the extending

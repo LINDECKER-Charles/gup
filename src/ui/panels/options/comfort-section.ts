@@ -6,7 +6,7 @@ import {
   OPTION_LABELS,
   OPTIONS_SECTIONS,
   SORT_VALUES,
-} from "../../text/options-labels.js";
+} from "../../text/settings/options-labels.js";
 import type { SectionFactory } from "./option-row.js";
 import { choicesOf, interfaceRow, switchChoices, type RowBuilder } from "./option-rows.js";
 

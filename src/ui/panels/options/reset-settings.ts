@@ -1,6 +1,6 @@
 import { applyPersistedInstallTimeout } from "../../../core/config/install-section.js";
 import { INTERFACE_SECTION } from "../../settings/interface-section.js";
-import type { ResetScope } from "../../text/options-labels.js";
+import type { ResetScope } from "../../text/settings/options-labels.js";
 import type { OptionsHost } from "./option-row.js";
 
 /**

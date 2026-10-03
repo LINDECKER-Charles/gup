@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { ScheduleRunRecord, TargetResult } from "../../../src/core/scheduler/model/types.js";
+import type { ScheduleRunRecord, TargetResult } from "../../../../src/core/scheduler/model/types.js";
 import {
   recurrenceLabel,
   runStatusLabel,
   targetResultLabel,
   triggerLine,
-} from "../../../src/ui/text/schedule-labels.js";
+} from "../../../../src/ui/text/schedule/schedule-labels.js";
 
 // TZ=UTC: local time is UTC.
 const NOW = new Date("2026-10-05T10:00:00Z");

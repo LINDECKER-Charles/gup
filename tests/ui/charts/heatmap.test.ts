@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { chartGlyphs } from "../../../src/ui/charts/chart-glyphs.js";
 import { renderHeatmap, type HeatmapInput } from "../../../src/ui/charts/heatmap.js";
-import { MONTH_ABBREVIATIONS } from "../../../src/ui/text/activity-labels.js";
+import { MONTH_ABBREVIATIONS } from "../../../src/ui/text/journal/activity-labels.js";
 import type { Line } from "../../../src/ui/tui/styled-lines.js";
 
 const text = (line: Line) => line.map((segment) => segment.text).join("");

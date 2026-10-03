@@ -3,7 +3,7 @@ import {
   EMPTY_ACTIVITY,
   periodLabel,
   TEXT_REPORT_LABELS,
-} from "../text/activity-labels.js";
+} from "../text/journal/activity-labels.js";
 import { fit, seg, type Line } from "../tui/styled-lines.js";
 import {
   heatmapSection,

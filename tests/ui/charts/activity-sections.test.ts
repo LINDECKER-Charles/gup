@@ -10,7 +10,7 @@ import {
   type ChartContext,
 } from "../../../src/ui/charts/activity-sections.js";
 import { chartGlyphs } from "../../../src/ui/charts/chart-glyphs.js";
-import { HEATMAP_LABELS, NO_DATA } from "../../../src/ui/text/activity-labels.js";
+import { HEATMAP_LABELS, NO_DATA } from "../../../src/ui/text/journal/activity-labels.js";
 import type { Line } from "../../../src/ui/tui/styled-lines.js";
 import { scanEvent, updateEvent } from "../../support/history-fixtures.js";
 

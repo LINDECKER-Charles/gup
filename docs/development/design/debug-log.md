@@ -67,7 +67,7 @@ flowchart LR
 | `commands/journal/log-session.ts` | Installs backend, tracer and observer; `session.*` records. |
 | `commands/journal/log-command.ts`, `log-show.ts`, `diagnostic.ts` | `gup log show|path|export` (`--since` through `core/time/period.ts` since `feat/activity-journal`). |
 | `ui/log-line.ts` | A record as one readable line (`Line` for the TUI, ANSI text for the CLI), stripped of the terminal escapes and control characters a tool printed. |
-| `ui/text/log-labels.ts` | Every French string of the above, the diagnostic archive's README included. |
+| `ui/text/journal/log-labels.ts` | Every French string of the above, the diagnostic archive's README included. |
 
 ### Startup
 

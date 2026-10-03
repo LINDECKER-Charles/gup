@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { ThemeSettings } from "../../../src/ui/settings/theme-section.js";
-import { resolveTheme, type TerminalFacts } from "../../../src/ui/theme/resolve-theme.js";
+import type { ThemeSettings } from "../../../../src/ui/settings/theme-section.js";
+import { resolveTheme, type TerminalFacts } from "../../../../src/ui/theme/resolve-theme.js";
 import {
   CONTRAST_STATUS,
   contrastStatus,
   formatRatio,
-} from "../../../src/ui/text/theme-labels.js";
+} from "../../../../src/ui/text/settings/theme-labels.js";
 
 const UNKNOWN: TerminalFacts = { colors: null, themeMode: null, depth: "truecolor", detection: "done" };
 

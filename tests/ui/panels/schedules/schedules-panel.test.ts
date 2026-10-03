@@ -9,7 +9,7 @@ import type { TriggerSummary } from "../../../../src/ui/panels/schedules/schedul
 import {
   EMPTY_SCHEDULES,
   SCHEDULES_HINTS,
-} from "../../../../src/ui/text/schedule-menu-labels.js";
+} from "../../../../src/ui/text/schedule/schedule-menu-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import type { Line } from "../../../../src/ui/tui/styled-lines.js";
 import { FakeSchedulesPort, storedSchedule } from "./fake-schedules-port.js";

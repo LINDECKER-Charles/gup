@@ -23,7 +23,7 @@ import type {
   SchedulesSnapshot,
   TriggerSummary,
 } from "../../ui/panels/schedules/schedules-port.js";
-import { SCHEDULE_NOTICES } from "../../ui/text/schedule-menu-labels.js";
+import { SCHEDULE_NOTICES } from "../../ui/text/schedule/schedule-menu-labels.js";
 import { targetResolver } from "./run-deps.js";
 import {
   processSchedulerServices,

@@ -1,6 +1,6 @@
 import type { InterfaceSettings } from "../../settings/interface-section.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
-import { SWITCH_VALUES } from "../../text/options-labels.js";
+import { SWITCH_VALUES } from "../../text/settings/options-labels.js";
 import type { OptionRow, OptionsControls, OptionsHost } from "./option-row.js";
 
 /**

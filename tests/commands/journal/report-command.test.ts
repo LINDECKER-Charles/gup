@@ -11,7 +11,7 @@ import { stopLogSession } from "../../../src/commands/journal/log-session.js";
 import { reportRequestOf, runReport } from "../../../src/commands/journal/report-command.js";
 import { MAX_REPORT_UPDATES } from "../../../src/core/export/report-model.js";
 import { utcDay } from "../../../src/core/log/file-sink.js";
-import { REPORT_MESSAGES } from "../../../src/ui/text/report-labels.js";
+import { REPORT_MESSAGES } from "../../../src/ui/text/journal/report-labels.js";
 import { scanEvent, updateEvent, writeHistoryShards } from "../../support/history-fixtures.js";
 
 // Never a real browser from a unit test (W2-4): the command path opens through this mock.

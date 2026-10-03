@@ -1,7 +1,7 @@
-import type { Recurrence, RunKind } from "../../core/scheduler/model/types.js";
-import { TICK_INTERVAL_MINUTES } from "../../core/scheduler/scheduler-timing.js";
-import type { Mechanism } from "../../core/scheduler/trigger/os-trigger.js";
-import { STATUS_GLYPHS } from "../theme/glyphs.js";
+import type { Recurrence, RunKind } from "../../../core/scheduler/model/types.js";
+import { TICK_INTERVAL_MINUTES } from "../../../core/scheduler/scheduler-timing.js";
+import type { Mechanism } from "../../../core/scheduler/trigger/os-trigger.js";
+import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import { WARNING_MARK } from "./schedule-labels.js";
 
 /**

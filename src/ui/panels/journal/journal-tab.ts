@@ -1,6 +1,6 @@
 import type { ChartGlyphs } from "../../charts/chart-glyphs.js";
-import { EMPTY_ACTIVITY } from "../../text/activity-labels.js";
-import { JOURNAL_HINTS, JOURNAL_LABELS } from "../../text/journal-labels.js";
+import { EMPTY_ACTIVITY } from "../../text/journal/activity-labels.js";
+import { JOURNAL_HINTS, JOURNAL_LABELS } from "../../text/journal/journal-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { fillLine, seg, wrap, type Line } from "../../tui/styled-lines.js";
 import { placeholder } from "../panel.js";

@@ -7,7 +7,7 @@ import {
   THEME_LABELS,
   THEME_PICKER,
   THEME_UNAVAILABLE_16,
-} from "../../../text/theme-labels.js";
+} from "../../../text/settings/theme-labels.js";
 import type { KeyPress } from "../../../tui/screen-host.js";
 import {
   fillLine,

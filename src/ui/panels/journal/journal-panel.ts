@@ -8,8 +8,8 @@ import {
 } from "../../../core/time/period.js";
 import { chartGlyphs } from "../../charts/chart-glyphs.js";
 import type { GlyphMode } from "../../theme/glyphs.js";
-import { periodLabel } from "../../text/activity-labels.js";
-import { EXPORT_LABELS, JOURNAL_LABELS, TAB_LABELS } from "../../text/journal-labels.js";
+import { periodLabel } from "../../text/journal/activity-labels.js";
+import { EXPORT_LABELS, JOURNAL_LABELS, TAB_LABELS } from "../../text/journal/journal-labels.js";
 import type { ChoiceSpec } from "../../tui/dialog.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { fit, seg, type Line, type Segment } from "../../tui/styled-lines.js";

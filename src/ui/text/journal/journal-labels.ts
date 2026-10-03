@@ -1,5 +1,5 @@
-import type { RunTrigger } from "../../core/state/run-context.js";
-import { STATUS_GLYPHS } from "../theme/glyphs.js";
+import type { RunTrigger } from "../../../core/state/run-context.js";
+import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import { counted } from "./activity-labels.js";
 
 /**

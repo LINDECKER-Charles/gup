@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { JournalPanel } from "../../../../src/ui/panels/journal/journal-panel.js";
 import type { JournalData } from "../../../../src/ui/panels/journal/journal-source.js";
 import type { Viewport } from "../../../../src/ui/panels/panel.js";
-import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS, RECURRENCE_LABELS } from "../../../../src/ui/text/journal-labels.js";
+import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS, RECURRENCE_LABELS } from "../../../../src/ui/text/journal/journal-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import type { Line } from "../../../../src/ui/tui/styled-lines.js";
 import { updateEvent } from "../../../support/history-fixtures.js";

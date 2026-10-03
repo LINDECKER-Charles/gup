@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parsePeriod, parseUntil, withUntil } from "../../../src/core/time/period.js";
-import { periodLead } from "../../../src/ui/text/activity-labels.js";
+import { parsePeriod, parseUntil, withUntil } from "../../../../src/core/time/period.js";
+import { periodLead } from "../../../../src/ui/text/journal/activity-labels.js";
 
 const NOW = new Date("2026-10-03T12:00:00.000Z");
 

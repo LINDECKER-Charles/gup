@@ -1,5 +1,5 @@
 import type { HistoryEvent } from "../../../core/history/types.js";
-import { EVENT_LABELS, JOURNAL_HINTS } from "../../text/journal-labels.js";
+import { EVENT_LABELS, JOURNAL_HINTS } from "../../text/journal/journal-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
 import { placeholder } from "../panel.js";

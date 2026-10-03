@@ -70,7 +70,7 @@ flowchart LR
   `firstDay`, `lastDay`), the read statistics.
 
 The French period wording comes from the composition root (`periodLabel`/`periodLead` in
-`ui/text/activity-labels.ts`): `core` never imports `ui`. 50 000 attempts: 2.2 MB of JSON, built
+`ui/text/journal/activity-labels.ts`): `core` never imports `ui`. 50 000 attempts: 2.2 MB of JSON, built
 in about 0.1 s.
 
 ### The page (`src/report/`)
@@ -165,7 +165,7 @@ skips dotted — the spec's patterns, kept on by default for that reason.
 | `tests/ui/report/report-dom.test.ts` | the generated file loaded in a happy-dom `Window` running the page's own script: hero sentence and key numbers, nav counts, chart table toggle, empty period, truncation banner, 366 calendar cells in two year grids, arrow keys and Entrée to the day's sessions, heat levels 1,1,2,3,4,8 → 1,1,1,2,3,4, search (live count, failure messages, from another page), sorting with `aria-sort`, drawer open/close with focus back (also after a click outside the row's button) and address sync, Back closing it, a closed drawer leaving no entry for Back, failures, sessions filters, 50 at a time and lazy attempts, hostile text as text, theme switch and memory, `/` and Échap, the search keeping the focus while it changes the page, a link to another page focusing its heading, the skip link keeping the address, every page and row rendered before printing and the first rows after — and no console error |
 | `tests/commands/journal/report-command.test.ts` | html by default to the reports directory and opened (mocked), `--no-open`, no terminal or CI → not opened, open failure → exit 0 with the address, `--out -`, the truncation notice past 50 000 attempts, `report.export` and `report.open` logged |
 | `tests/commands/journal/journal-source.test.ts`, `tests/ui/panels/journal/journal-panel.test.ts`, `tests/ui/views/journal-view.test.ts` | `html` export asks to open and reports `opened`; `o` on every tab; the dialog's first choice; the not-opened warning line; `o` through `bootMenu` |
-| `tests/ui/text/activity-labels.test.ts` | `periodLead` for every period form |
+| `tests/ui/text/journal/activity-labels.test.ts` | `periodLead` for every period form |
 
 No unit test starts a browser: `openExternal` is injected or module-mocked (W2-4).
 
@@ -182,7 +182,7 @@ after `beforeprint`, real mouse and key events for the focus paths), not by the 
 - **Report labels in `src/report/report-labels.ts`**, not `src/ui/text/` (F-10 targets terminal
   labels): they are browser strings, embedded as a JSON block so the script carries no text and
   its hash does not move when a word changes. `gup report`'s own terminal messages stay in
-  `ui/text/report-labels.ts`, the Journal's in `ui/text/journal-labels.ts`.
+  `ui/text/journal/report-labels.ts`, the Journal's in `ui/text/journal/journal-labels.ts`.
 - **Model shape**: as the spec, plus `meta.period.lead/firstDay/lastDay`, `UPDATE_FLAGS.scheduled`,
   run outcome counts, `UPDATE_ROW` positions; `buildReportModel` takes the context (now, names,
   wording, version, platform, zone) as one object.
@@ -222,8 +222,8 @@ after `beforeprint`, real mouse and key events for the focus paths), not by the 
 | `commands/journal/export-history.ts` | `HistoryFormat` gains `html` (first); `HistoryExportRequest.open?`; `HistoryExportResult.truncated` and `.opened` (`OpenResult \| null`); `ExportDeps.openExternal`; `SERIALIZERS.html` |
 | `commands/journal/report-command.ts` | default format `html`; `--no-open`; `ReportOptions.open?` |
 | `ui/panels/journal/journal-source.ts` | `ExportFormat` gains `html`; `ExportOutcome.opened?` |
-| `ui/text/activity-labels.ts` | `periodLead(period)` |
-| `ui/text/report-labels.ts`, `journal-labels.ts` | the report's command help, messages and status lines; the Activité hint gains `o rapport HTML` |
+| `ui/text/journal/activity-labels.ts` | `periodLead(period)` |
+| `ui/text/journal/report-labels.ts`, `journal-labels.ts` | the report's command help, messages and status lines; the Activité hint gains `o rapport HTML` |
 
 ## 8. Folder budget
 

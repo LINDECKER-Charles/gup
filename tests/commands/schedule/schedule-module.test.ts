@@ -6,7 +6,7 @@ import { ManualRunTracker } from "../../../src/core/scheduler/manual-run-tracker
 import { TICK_COMMAND } from "../../../src/core/scheduler/trigger/task-command.js";
 import { batchGuard, setBatchGuard } from "../../../src/core/update/update-extensions.js";
 import type { UpdateObserver } from "../../../src/core/update/update-ports.js";
-import { TRIGGER_REPAIRED } from "../../../src/ui/text/schedule-cli-labels.js";
+import { TRIGGER_REPAIRED } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
 import { schedulerFixture, type Fixture } from "./scheduler-fixture.js";
 
 let fixture: Fixture;

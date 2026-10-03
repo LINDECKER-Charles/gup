@@ -8,7 +8,7 @@ import { ScheduleRepo } from "../../../src/core/scheduler/persistence/schedule-r
 import type { ScheduleDraft } from "../../../src/core/scheduler/model/types.js";
 import type { PlannedUpdate } from "../../../src/core/update/update-ports.js";
 import { buildReport } from "../../../src/core/update/update-report.js";
-import { SCHEDULE_NOTICES } from "../../../src/ui/text/schedule-menu-labels.js";
+import { SCHEDULE_NOTICES } from "../../../src/ui/text/schedule/schedule-menu-labels.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { NOW, schedulerFixture, type Fixture, type FixtureOptions } from "./scheduler-fixture.js";
 

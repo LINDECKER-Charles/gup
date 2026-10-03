@@ -5,7 +5,7 @@ import { isLogLevel, type LogRecord } from "../../core/log/types.js";
 import { stateDir } from "../../core/state/app-dirs.js";
 import { parsePeriod } from "../../core/time/period.js";
 import { logRecordText } from "../../ui/log-line.js";
-import { LOG_MESSAGES } from "../../ui/text/log-labels.js";
+import { LOG_MESSAGES } from "../../ui/text/journal/log-labels.js";
 
 /**
  * `gup log [show]`: the newest lines of the debug log, filtered, one line per

@@ -1,7 +1,7 @@
 import { levelRank, type LogRecord } from "../../../core/log/types.js";
 import { levelLabel, logRecordLine, printable, recordTime } from "../../log-line.js";
-import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS } from "../../text/journal-labels.js";
-import { LOG_SOURCE_LABELS, thresholdLabel } from "../../text/log-labels.js";
+import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS } from "../../text/journal/journal-labels.js";
+import { LOG_SOURCE_LABELS, thresholdLabel } from "../../text/journal/log-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { fit, seg, type Line } from "../../tui/styled-lines.js";
 import { placeholder } from "../panel.js";

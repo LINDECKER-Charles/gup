@@ -7,8 +7,8 @@ import type {
 } from "../../../core/history/types.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import { formatDateTime, formatDuration, formatRelative } from "../../text/fr-format.js";
-import { EVENT_LABELS, TRIGGER_LABELS } from "../../text/journal-labels.js";
-import { UPDATE_STATUS_LABELS } from "../../text/log-labels.js";
+import { EVENT_LABELS, TRIGGER_LABELS } from "../../text/journal/journal-labels.js";
+import { UPDATE_STATUS_LABELS } from "../../text/journal/log-labels.js";
 import { fit, seg, type Line, type Segment, type Tone } from "../../tui/styled-lines.js";
 import { fieldLines, textBlock, type DetailField } from "./detail-lines.js";
 

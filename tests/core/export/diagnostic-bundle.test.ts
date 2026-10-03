@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { buildDiagnosticZip, type DiagnosticInput } from "../../../src/core/export/diagnostic-bundle.js";
 import type { LogRecord } from "../../../src/core/log/types.js";
 import type { SystemSnapshot } from "../../../src/core/state/system-snapshot.js";
-import { diagnosticReadme } from "../../../src/ui/text/log-labels.js";
+import { diagnosticReadme } from "../../../src/ui/text/journal/log-labels.js";
 
 const SYSTEM: SystemSnapshot = {
   gup: "0.5.0",

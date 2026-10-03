@@ -15,7 +15,7 @@ import { listLogFiles } from "../../core/log/log-reader.js";
 import { stateDir } from "../../core/state/app-dirs.js";
 import { systemSnapshot } from "../../core/state/system-snapshot.js";
 import { parsePeriod, type Period } from "../../core/time/period.js";
-import { diagnosticReadme, LOG_MESSAGES } from "../../ui/text/log-labels.js";
+import { diagnosticReadme, LOG_MESSAGES } from "../../ui/text/journal/log-labels.js";
 import { DEFAULT_SINCE } from "./log-show.js";
 
 /**

@@ -4,7 +4,7 @@ import {
   EMPTY_SCHEDULES,
   SCHEDULES_HINTS,
   SCHEDULES_LABEL,
-} from "../../text/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-menu-labels.js";
 import { ListCursor } from "../../tui/list-cursor.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { seg, type Line } from "../../tui/styled-lines.js";

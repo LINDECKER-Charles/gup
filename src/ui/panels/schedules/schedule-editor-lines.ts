@@ -7,15 +7,15 @@ import {
 } from "../../../core/scheduler/model/validate-schedule.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import { formatRelative } from "../../text/fr-format.js";
-import { WINGET_UAC_NOTE } from "../../text/schedule-cli-labels.js";
-import { WARNING_MARK, WEEKDAY_NAMES } from "../../text/schedule-labels.js";
+import { WINGET_UAC_NOTE } from "../../text/schedule/schedule-cli-labels.js";
+import { WARNING_MARK, WEEKDAY_NAMES } from "../../text/schedule/schedule-labels.js";
 import {
   CATCH_UP_VALUES,
   EDITOR_TEXT,
   FIELD_LABELS,
   FREQUENCY_LABELS,
   LAST_MONTH_DAY,
-} from "../../text/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-menu-labels.js";
 import { fillLine, fit, seg, wrap, type Line } from "../../tui/styled-lines.js";
 import type { EditorField, EditorItem, ScheduleEditor } from "./schedule-editor.js";
 

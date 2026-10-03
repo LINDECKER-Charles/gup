@@ -4,7 +4,7 @@ import type { Insights } from "../../../core/insights/types.js";
 import type { LogThreshold } from "../../../core/log/log.js";
 import type { LogRecord } from "../../../core/log/types.js";
 import type { Period } from "../../../core/time/period.js";
-import type { LOG_SOURCE_LABELS } from "../../text/log-labels.js";
+import type { LOG_SOURCE_LABELS } from "../../text/journal/log-labels.js";
 
 /**
  * What the journal view needs from the rest of gup, as a port: the

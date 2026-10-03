@@ -18,7 +18,7 @@ import { renderReportHtml } from "../../report/render-report.js";
 import { linesToAnsi, linesToText } from "../../ui/charts/ansi-lines.js";
 import { chartGlyphs } from "../../ui/charts/chart-glyphs.js";
 import { renderTextReport } from "../../ui/charts/text-report.js";
-import { periodLabel, periodLead } from "../../ui/text/activity-labels.js";
+import { periodLabel, periodLead } from "../../ui/text/journal/activity-labels.js";
 import type { GlyphMode } from "../../ui/theme/glyphs.js";
 
 /**

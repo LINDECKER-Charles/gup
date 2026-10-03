@@ -10,7 +10,7 @@ import {
   HEATMAP_LABELS,
   MONTH_ABBREVIATIONS,
   WEEKDAY_LABELS,
-} from "../text/activity-labels.js";
+} from "../text/journal/activity-labels.js";
 import { seg, type Line, type Segment, type Tone } from "../tui/styled-lines.js";
 import type { ChartGlyphs } from "./chart-glyphs.js";
 import { quantileLevels } from "./scale.js";

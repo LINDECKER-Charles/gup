@@ -11,12 +11,12 @@ import {
   STATUS_DETAILS,
   TABLE_HEADERS,
   unsupportedTriggerLine,
-} from "../../ui/text/schedule-cli-labels.js";
+} from "../../ui/text/schedule/schedule-cli-labels.js";
 import {
   recurrenceLabel,
   runStatusLabel,
   triggerLine,
-} from "../../ui/text/schedule-labels.js";
+} from "../../ui/text/schedule/schedule-labels.js";
 import { upcomingLabels } from "./crud-commands.js";
 import {
   readTriggerReport,

@@ -1,6 +1,6 @@
-import type { Cadence } from "../../core/insights/types.js";
-import type { Period, PeriodUnit } from "../../core/time/period.js";
-import { formatCount, formatDate } from "./fr-format.js";
+import type { Cadence } from "../../../core/insights/types.js";
+import type { Period, PeriodUnit } from "../../../core/time/period.js";
+import { formatCount, formatDate } from "../fr-format.js";
 
 /**
  * The words of the activity insights (French, the language of the

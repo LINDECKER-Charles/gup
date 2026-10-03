@@ -1,5 +1,5 @@
 import type { ConfigStatus } from "../../core/config/store.js";
-import { CONFIG_STATE_LABELS, invalidSettingsLabel } from "../text/settings-labels.js";
+import { CONFIG_STATE_LABELS, invalidSettingsLabel } from "../text/settings/settings-labels.js";
 
 /**
  * The settings file's state in one line, and how worrying it is: what
