@@ -64,7 +64,9 @@ Deliberate choices:
 - `pyenv` / `pyenv-win` and `nvm` / `nvm-windows` share a binary name; the
   sets give each binary to exactly one provider per OS.
 - The `self` meta-provider filters its targets with the same predicate (the
-  `self:brew` target uses `PLATFORMS.notWindows`, like `brew`).
+  `self:brew` target uses `PLATFORMS.notWindows`, like `brew`). Its `winget`,
+  `scoop` and `choco` self-update targets are not restricted yet: on macOS and
+  Linux they still look for those binaries on the `PATH`.
 
 The lists are frozen by `tests/core/platform/provider-platforms.test.ts`:
 changing a set means changing that test on purpose. Adding a provider: see

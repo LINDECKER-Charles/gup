@@ -20,7 +20,7 @@ Windows doivent apparaître grisés dans la liste des providers sur Mac, et inve
 | The `showIncompatibleProviders` preference (on by default) hides that group, live. | `ui/views/providers-view.ts` |
 | `gup doctor` prints the same group, dimmed, after the missing providers. | `ui/table.ts` |
 | `gup list` / `gup update` warn once per `--provider` id gup cannot act on (foreign to the OS, or unknown) instead of scanning nothing in silence. | `commands/warn-ignored-providers.ts` |
-| Side effects of the declarations: a `winget`/`scoop`/`choco` shim on a POSIX `PATH` is no longer detected; `gup update brew-cask:x` exits 2 on Windows (the foundation's refusal, now live). | — |
+| Side effects of the declarations: a `winget`/`scoop`/`choco` shim on a POSIX `PATH` no longer lights up those providers (the `self` meta-provider's self-update targets of the same names keep their PATH probe until wave 3, §9.5); `gup update brew-cask:x` exits 2 on Windows (the foundation's refusal, now live). | — |
 
 ## 2. What the foundation already provided
 
@@ -118,7 +118,8 @@ uniquement) — ignoré.` / `Attention : Provider inconnu: nope — ignoré.`. s
 ## 7. Security
 
 - Smaller execution surface: on an OS outside the set, no `where`/`which` probe and no command
-  of a same-named binary (`brew.cmd` → WSL, NCAR `ncl`, a `winget` shim on POSIX).
+  of a same-named binary (`brew.cmd` → WSL, NCAR `ncl`, a `winget` shim on POSIX) by the
+  provider itself; the `self` targets of the same names are the one remaining exception (§9.5).
 - No new input surface: ids come from the existing parsing; messages interpolate the id the user
   typed, as `Provider inconnu` already did. No new I/O, dependency or process.
 
@@ -150,6 +151,9 @@ uniquement) — ignoré.` / `Attention : Provider inconnu: nope — ignoré.`. s
 5. **`self` winget/scoop/choco targets stay unrestricted** (spec §4.9, optional): restricting
    them changes the rows `tests/providers/self*.test.ts` expect on the POSIX CI legs, and
    `tests/providers/**` belongs to `test/provider-contracts` in wave 2. Candidate for wave 3.
+   Until then, on macOS/Linux the `self` meta-provider still runs a PATH probe for those three
+   binaries (and, if a shim answers, its `--version`): the shim exclusion of §7 holds for the
+   `winget`, `scoop` and `choco` providers, not yet for these self-update targets.
 6. **No duplicate `getProvidersToScan` case**: the foundation's `registry-extra.test.ts` already
    proves an injected unsupported provider is dropped.
 
