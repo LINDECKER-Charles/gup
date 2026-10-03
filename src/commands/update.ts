@@ -15,6 +15,7 @@ import { promptPackageSelection } from "../ui/select.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { consolePorts, printReport } from "../ui/update-console.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
+import { warnIgnoredProviders } from "./warn-ignored-providers.js";
 
 export interface UpdateOptions {
   only?: string[];
@@ -34,6 +35,7 @@ export async function updateCommand(options: UpdateOptions): Promise<number> {
     return runTargets(options.targets, yesFlag(options));
   }
 
+  warnIgnoredProviders(options.only);
   const { results: scans } = await scanWithProgress({
     ...(options.only && { only: options.only }),
     ...(options.fast !== undefined && { fast: options.fast }),

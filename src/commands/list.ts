@@ -3,6 +3,7 @@ import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 import { recordScan } from "../core/history/store.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { renderScanTable } from "../ui/table.js";
+import { warnIgnoredProviders } from "./warn-ignored-providers.js";
 
 export interface ListOptions {
   only?: string[];
@@ -11,6 +12,8 @@ export interface ListOptions {
 }
 
 export async function listCommand(options: ListOptions): Promise<number> {
+  // Warnings go to stderr, so `--json` keeps a clean stdout.
+  warnIgnoredProviders(options.only);
   if (options.json) {
     // The JSON branch bypasses scanWithProgress (no spinner on a piped
     // stdout), so it is the one scan path that has to log for itself.
