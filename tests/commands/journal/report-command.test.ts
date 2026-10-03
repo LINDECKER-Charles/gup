@@ -9,6 +9,7 @@ import { installStartup } from "../../../src/commands/cli/startup.js";
 import { journalModule } from "../../../src/commands/journal/journal-module.js";
 import { stopLogSession } from "../../../src/commands/journal/log-session.js";
 import { reportRequestOf, runReport } from "../../../src/commands/journal/report-command.js";
+import { MAX_REPORT_UPDATES } from "../../../src/core/export/report-model.js";
 import { utcDay } from "../../../src/core/log/file-sink.js";
 import { REPORT_MESSAGES } from "../../../src/ui/text/report-labels.js";
 import { scanEvent, updateEvent, writeHistoryShards } from "../../support/history-fixtures.js";
@@ -124,6 +125,18 @@ describe("gup report (HTML)", () => {
     expect(output(stdout)).toMatch(/^<!doctype html>/);
     expect(openExternal).not.toHaveBeenCalled();
   });
+
+  it("says on the error output when the report details only the newest attempts", async () => {
+    const events = Array.from({ length: MAX_REPORT_UPDATES + 1 }, (_unused, index) =>
+      updateEvent("npm-g", `pkg-${index % 50}`, { ts: new Date(NOW.getTime() - index * 60_000).toISOString() }),
+    ).reverse();
+    const stats = { files: 1, lines: events.length, malformed: 0, unsupported: 0 };
+    const readHistory = async () => ({ dir, events, stats });
+
+    expect(await runReport({ out: join(dir, "big.html"), open: false }, { readHistory })).toBe(0);
+
+    expect(output(stderr)).toContain(REPORT_MESSAGES.truncated(MAX_REPORT_UPDATES));
+  }, 30_000);
 
   it("logs the export and the opening", async () => {
     interactive();
