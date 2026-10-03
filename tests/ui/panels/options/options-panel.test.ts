@@ -8,6 +8,7 @@ import {
   getInstallTimeoutSeconds,
   setInstallTimeoutSeconds,
 } from "../../../../src/core/runner.js";
+import { appearanceSection } from "../../../../src/ui/panels/options/appearance-section.js";
 import { comfortSection } from "../../../../src/ui/panels/options/comfort-section.js";
 import { fileSection } from "../../../../src/ui/panels/options/file-section.js";
 import type { SectionFactory } from "../../../../src/ui/panels/options/option-row.js";
@@ -33,7 +34,12 @@ import {
 const INITIAL_TIMEOUT_S = getInstallTimeoutSeconds();
 afterEach(() => setInstallTimeoutSeconds(INITIAL_TIMEOUT_S));
 
-const SECTIONS: readonly SectionFactory[] = [scanSection, comfortSection, fileSection];
+const SECTIONS: readonly SectionFactory[] = [
+  scanSection,
+  appearanceSection,
+  comfortSection,
+  fileSection,
+];
 
 function setup(options: FixtureOptions = {}, sections = SECTIONS) {
   const fixture = optionsFixture(options);
@@ -55,14 +61,19 @@ describe("OptionsPanel list", () => {
     const titles = text(panel.render(VIEW))
       .split("\n")
       .filter((line) => Object.values(OPTIONS_SECTIONS).includes(line.trim() as never));
-    expect(titles).toEqual([OPTIONS_SECTIONS.scan, OPTIONS_SECTIONS.comfort, OPTIONS_SECTIONS.file]);
+    expect(titles).toEqual([
+      OPTIONS_SECTIONS.scan,
+      OPTIONS_SECTIONS.appearance,
+      OPTIONS_SECTIONS.comfort,
+      OPTIONS_SECTIONS.file,
+    ]);
     expect(cursorRow(panel)).toContain("Mode rapide");
   });
 
   it("skips the section headers and blank rows when the cursor moves", () => {
     const { panel } = setup();
     press(panel, "down", "down", "down");
-    expect(cursorRow(panel)).toContain("Vue au lancement");
+    expect(cursorRow(panel)).toContain("Thème");
     press(panel, "up");
     expect(cursorRow(panel)).toContain("Filtre providers");
   });
@@ -81,15 +92,15 @@ describe("OptionsPanel list", () => {
 
   it("steps a value with ← →, claiming the arrows only on rows that step", () => {
     const { panel, settings } = setup();
-    press(panel, "down");
+    press(panel, "down", "down", "down");
     expect(panel.wantsKey(key("left"))).toBe(false);
-    press(panel, "down", "down", "down", "down", "down", "down");
-    expect(cursorRow(panel)).toContain("Tri des paquets");
+    press(panel, "down");
+    expect(cursorRow(panel)).toContain("Niveau de contraste");
     expect(panel.wantsKey(key("left"))).toBe(true);
     press(panel, "right");
-    expect(settings.get("interface").packageSort).toBe("name");
+    expect(settings.get("theme").contrast).toBe("AAA");
     press(panel, "left");
-    expect(settings.get("interface").packageSort).toBe("provider");
+    expect(settings.get("theme").contrast).toBe("AA");
   });
 
   it("writes each comfort row to the interface settings, the mouse switching at once", () => {
@@ -106,7 +117,7 @@ describe("OptionsPanel list", () => {
 
   it("places the sections other features add between the comfort and file sections", () => {
     const extra: SectionFactory = () => ({ id: "journal", title: "JOURNAL", rows: () => [] });
-    const { panel } = setup({}, [scanSection, comfortSection, extra, fileSection]);
+    const { panel } = setup({}, [scanSection, appearanceSection, comfortSection, extra, fileSection]);
     const rendered = text(panel.render({ width: 100, height: 60 }));
     expect(rendered.indexOf("CONFORT")).toBeLessThan(rendered.indexOf("JOURNAL"));
     expect(rendered.indexOf("JOURNAL")).toBeLessThan(rendered.indexOf("FICHIER"));
@@ -115,7 +126,7 @@ describe("OptionsPanel list", () => {
   it("drops the blank rows between sections in compact density", () => {
     const { panel } = setup({ density: "compact" });
     const lines = text(panel.render(VIEW)).split("\n");
-    expect(lines[lines.indexOf(OPTIONS_SECTIONS.comfort) - 1]).toContain("Filtre providers");
+    expect(lines[lines.indexOf(OPTIONS_SECTIONS.appearance) - 1]).toContain("Filtre providers");
   });
 
   it("keeps the cursor in view when the list is taller than the panel", () => {

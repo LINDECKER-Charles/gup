@@ -113,18 +113,24 @@ export interface ThemeAvailability {
   readonly reason?: "depth-16";
   /** Lowest text ratio once resolved here; null when it cannot be computed. */
   readonly minTextRatio: number | null;
+  /** How it would be painted here. */
+  readonly mode: PaintMode;
+  /** True when some of its colours had to be adjusted to reach the contrast level. */
+  readonly isCorrected: boolean;
 }
 
 /** Every theme, resolved against the same settings and terminal as `input`. */
 export function themeAvailability(input: ResolveInput): ThemeAvailability[] {
   return THEME_IDS.map((id) => {
-    const { report } = resolveTheme({ ...input, settings: { ...input.settings, id } });
+    const { report, mode } = resolveTheme({ ...input, settings: { ...input.settings, id } });
     const isUnpaintable = report.notices.includes("depth-16");
     return {
       id,
       isAvailable: !isUnpaintable,
       ...(isUnpaintable && { reason: "depth-16" as const }),
       minTextRatio: report.minTextRatio,
+      mode,
+      isCorrected: report.corrections.length > 0,
     };
   });
 }

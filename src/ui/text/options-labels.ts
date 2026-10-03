@@ -1,14 +1,17 @@
 import type { NoteColumn, PackageSort } from "../app/ui-preferences.js";
 import type { ViewId } from "../app/view-definition.js";
+import type { Density } from "../theme/appearance.js";
+import type { GlyphPreference } from "../theme/glyphs.js";
 
 /**
  * The Options view's words (French, the language of the interface): section
- * titles, rows, values, hints, notices and the reset dialogs. Tests import
- * these rather than repeat them.
+ * titles, rows, values, hints, notices and the reset dialogs. Theme words
+ * live in `theme-labels.ts`. Tests import these rather than repeat them.
  */
 
 export const OPTIONS_SECTIONS = {
   scan: "SCAN & INSTALLATION",
+  appearance: "APPARENCE",
   comfort: "CONFORT",
   file: "FICHIER",
 } as const;
@@ -17,6 +20,10 @@ export const OPTION_LABELS = {
   fast: "Mode rapide",
   timeout: "Timeout install",
   filter: "Filtre providers",
+  theme: "Thème",
+  contrast: "Niveau de contraste",
+  glyphs: "Symboles",
+  density: "Densité",
   launchView: "Vue au lancement",
   scanOnLaunch: "Scanner au lancement",
   confirm: "Confirmer les MAJ",
@@ -35,6 +42,9 @@ export const OPTION_HINTS = {
   fast: "ignore les providers lents",
   timeout: "une install bloquée au-delà est ignorée",
   filter: "limiter le scan",
+  contrast: "AA 4,5:1 · AAA 7:1",
+  glyphs: "ASCII si des □ s'affichent",
+  density: "Compacte : plus de lignes",
   launchView: "vue ouverte au démarrage",
   scanOnLaunch: "sinon, r pour scanner",
   confirm: "demander avant de lancer",
@@ -49,6 +59,17 @@ export const OPTION_HINTS = {
 } as const;
 
 export const SWITCH_VALUES = { on: "ON", off: "OFF" } as const;
+
+export const GLYPH_VALUES: Readonly<Record<GlyphPreference, string>> = {
+  auto: "Auto",
+  unicode: "Unicode",
+  ascii: "ASCII",
+};
+
+export const DENSITY_VALUES: Readonly<Record<Density, string>> = {
+  comfortable: "Confortable",
+  compact: "Compacte",
+};
 
 export const SORT_VALUES: Readonly<Record<PackageSort, string>> = {
   provider: "Ordre du provider",

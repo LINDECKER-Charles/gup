@@ -101,7 +101,7 @@ function rowLine(row: OptionRow, columns: Columns, isCursor: boolean): Line {
 }
 
 /** `line` cut to `width` columns, an ellipsis marking the cut. */
-function clipLine(line: Line, width: number): Line {
+export function clipLine(line: Line, width: number): Line {
   if (lineWidth(line) <= width) return line;
   const out: Segment[] = [];
   let used = 0;

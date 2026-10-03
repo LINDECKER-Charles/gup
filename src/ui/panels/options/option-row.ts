@@ -1,6 +1,8 @@
 import type { MenuState } from "../../../commands/menu-state.js";
 import type { SettingsService } from "../../settings/settings-service.js";
+import type { ThemeSettings } from "../../settings/theme-section.js";
 import type { Density } from "../../theme/appearance.js";
+import type { ResolvedTheme, ThemeAvailability } from "../../theme/resolve-theme.js";
 import type { DialogLayer } from "../../tui/dialog.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import type { Line } from "../../tui/styled-lines.js";
@@ -72,11 +74,23 @@ export interface OptionsControls {
   scanSettingsChanged(): void;
 }
 
+/** The theme engine, as the Options view drives it. */
+export interface AppearanceControl {
+  /** The theme painted now: the preview while one is shown. */
+  resolved(): ResolvedTheme;
+  /** Paint the whole app with `theme` until `endPreview`; nothing is saved. */
+  preview(theme: ThemeSettings): void;
+  endPreview(): void;
+  /** Every theme as it would resolve on this terminal with the saved settings. */
+  availability(): readonly ThemeAvailability[];
+}
+
 export type OptionsDialogs = Pick<DialogLayer, "ask" | "choose" | "confirm">;
 
 /** The rest of gup, as the Options view sees it. Built once per menu session. */
 export interface OptionsHost {
   readonly settings: SettingsService;
+  readonly appearance: AppearanceControl;
   /** The session's scan settings and detected providers. */
   readonly state: MenuState;
   readonly dialogs: OptionsDialogs;

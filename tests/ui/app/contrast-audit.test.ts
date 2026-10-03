@@ -25,9 +25,10 @@ import { CAMPBELL, TERMINAL_APP_BASIC } from "../../support/tui/reference-palett
 
 /**
  * The end-to-end guarantee: the whole menu, driven through every registered
- * view and every dialog, paints no text below 4.5:1 and no border below
- * 3:1, for every RGB theme and for the terminal theme on real palettes.
- * Whatever code path paints a cell, if it escapes the theme, it fails here.
+ * view, every Options sub-view and every dialog, paints no text below 4.5:1
+ * and no border below 3:1, under every built-in theme — the terminal theme
+ * on real palettes, monochrome with a real terminal's text colour. Whatever
+ * code path paints a cell, if it escapes the theme, it fails here.
  */
 
 const pkg = (id: string, current: string, latest: string) => ({ id, current, latest });
@@ -67,6 +68,8 @@ interface Audited {
   readonly terminal: TerminalFacts;
   /** What shows through a cell gup leaves unpainted (an RGB theme paints its own). */
   readonly ground: wcag.Rgb;
+  /** The terminal's own text colour, for cells painted in its default foreground. */
+  readonly ink?: wcag.Rgb;
 }
 
 const toOracle = (color: { r: number; g: number; b: number }): wcag.Rgb => [
@@ -86,6 +89,7 @@ function onTerminal(
     theme,
     terminal: { ...UNKNOWN, colors, themeMode: reported.mode },
     ground: toOracle(colors.background),
+    ink: toOracle(colors.foreground),
   };
 }
 
@@ -96,8 +100,11 @@ const AUDITED: readonly Audited[] = [
   ...RGB_THEME_IDS.map(
     (theme): Audited => ({ label: theme, theme, terminal: UNKNOWN, ground: [0, 0, 0] }),
   ),
+  onTerminal("auto on a light terminal", "auto", BASIC_LIGHT),
   onTerminal("terminal on Campbell", "terminal", CAMPBELL_DARK),
   onTerminal("terminal on Terminal.app Basic", "terminal", BASIC_LIGHT),
+  onTerminal("monochrome on Campbell", "monochrome", CAMPBELL_DARK),
+  onTerminal("monochrome on Terminal.app Basic", "monochrome", BASIC_LIGHT),
 ];
 
 /** The menu's registered views, Options editing `settings`. */
@@ -148,13 +155,18 @@ async function walkTheViews(menu: MenuDriver, capture: Capture): Promise<void> {
   await capture("Providers", "╭─ Providers");
 }
 
-/** Options: the list, the timeout dialog, the reset dialogs. */
+/** Options: the list, the timeout dialog, the theme picker and a preview, the reset dialogs. */
 async function walkTheOptions(menu: MenuDriver, capture: Capture): Promise<void> {
   await menu.press("down", "enter", "down", "enter");
   await pause(FOCUS_SETTLE_MS);
   await capture("Options, timeout dialog", "Timeout par install");
   await escape(menu);
-  await capture("Options, list", "CONFORT");
+  await capture("Options, list", "APPARENCE");
+  await menu.press("down", "down", "enter");
+  await capture("Options, theme picker", "Aperçu");
+  await menu.press("up");
+  await capture("Options, theme picker on the previous theme", "Aperçu");
+  await escape(menu);
   await menu.press("END", "up", "enter");
   await capture("Options, reset choice", "Scan & installation");
   await menu.press("enter");
@@ -202,13 +214,14 @@ async function violationsOf(audited: Audited, legacy?: AppearanceFactory): Promi
   await walkTheViews(menu, capture);
   await walkTheOptions(menu, capture);
   return frames.flatMap(([state, frame]) =>
-    frameContrastViolations(frame, { ground: painted.ground }).map(
-      (v) => `${state}: "${v.text.trim()}" ${v.ratio.toFixed(2)} < ${v.needed}`,
-    ),
+    frameContrastViolations(frame, {
+      ground: painted.ground,
+      ...(audited.ink && { ink: audited.ink }),
+    }).map((v) => `${state}: "${v.text.trim()}" ${v.ratio.toFixed(2)} < ${v.needed}`),
   );
 }
 
-/** Generous: each walk drives one screen through a dozen states, on a loaded machine. */
+/** Generous: each walk drives one screen through some twenty states, on a loaded machine. */
 const AUDIT_TIMEOUT_MS = 60_000;
 
 describe("contrast audit of the menu", () => {

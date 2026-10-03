@@ -76,6 +76,8 @@ export class ThemedAppearance implements Appearance {
   #settings: AppearanceSettings;
   #preview: ThemeSettings | null = null;
   #rendering: Rendering;
+  /** Every theme resolved: computed when asked, kept until the next re-resolve. */
+  #availability: ThemeAvailability[] | null = null;
 
   constructor(deps: ThemedAppearanceDeps) {
     this.#deps = deps;
@@ -107,6 +109,11 @@ export class ThemedAppearance implements Appearance {
     return this.#settings.density;
   }
 
+  /** True while a theme other than the saved one is painted. */
+  get isPreviewing(): boolean {
+    return this.#preview !== null;
+  }
+
   style(tone: Tone, fill?: Fill): ChunkStyle {
     return this.#rendering.look.style(tone, fill);
   }
@@ -129,7 +136,8 @@ export class ThemedAppearance implements Appearance {
 
   /** Every theme, as it would resolve on this terminal with the current settings. */
   availability(): ThemeAvailability[] {
-    return themeAvailability(this.#input(this.#settings.theme));
+    this.#availability ??= themeAvailability(this.#input(this.#settings.theme));
+    return this.#availability;
   }
 
   /** Paint the whole screen with `theme` until {@link endPreview}; nothing is saved. */
@@ -185,6 +193,7 @@ export class ThemedAppearance implements Appearance {
 
   #refresh(): void {
     this.#rendering = this.#render();
+    this.#availability = null;
     this.#detectIfNeeded();
     for (const listener of [...this.#listeners]) {
       try {

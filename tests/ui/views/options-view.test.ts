@@ -1,3 +1,4 @@
+import type { CapturedFrame } from "@opentui/core";
 import { describe, expect, it } from "vitest";
 import { ConfigStore } from "../../../src/core/config/store.js";
 import type { ProviderScanResult } from "../../../src/core/types.js";
@@ -9,9 +10,11 @@ import {
 } from "../../../src/ui/settings/settings-sources.js";
 import { staticProbe } from "../../../src/ui/theme/runtime/terminal-probe.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
+import { PREVIEW_FACT } from "../../../src/ui/text/theme-labels.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
 import { packagesView } from "../../../src/ui/views/packages-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
+import * as wcag from "../../support/contrast/wcag.js";
 import { bootMenu, type MenuDriverOptions } from "../../support/tui/menu-driver.js";
 
 /**
@@ -19,6 +22,9 @@ import { bootMenu, type MenuDriverOptions } from "../../support/tui/menu-driver.
  * following the same settings it edits, as `gup` wires them: what the user
  * changes there reaches the whole app at once.
  */
+
+const DARK_BACKGROUND = wcag.parseHexColor("#0B0D13");
+const LIGHT_BACKGROUND = wcag.parseHexColor("#F9FAFC");
 
 async function themedMenu(options: MenuDriverOptions = {}) {
   const settings = new SettingsService(new ConfigStore({ file: null, isDisabled: true }));
@@ -36,11 +42,69 @@ async function themedMenu(options: MenuDriverOptions = {}) {
       }),
     ...options,
   });
-  await menu.waitForText("CONFORT");
+  await menu.waitForText("APPARENCE");
   return { menu, settings };
 }
 
+/**
+ * The terminal parser holds a lone Escape for 20 ms (it may start an Alt
+ * sequence) and only then delivers it: wait well beyond that.
+ */
+const ESCAPE_SETTLE_MS = 100;
+
+async function pressEscape(menu: Awaited<ReturnType<typeof themedMenu>>["menu"]): Promise<void> {
+  await menu.press("escape");
+  await new Promise((resolve) => setTimeout(resolve, ESCAPE_SETTLE_MS));
+}
+
+/** What the hint bar (the last row) is painted on: the screen's background. */
+function screenBackground(frame: CapturedFrame): wcag.Rgb {
+  const span = frame.lines.at(-1)?.spans[0];
+  if (!span) throw new Error("empty frame");
+  const [red, green, blue] = span.bg.toInts();
+  return [red, green, blue];
+}
+
+/** Wait until the frame satisfies `isReady`, then capture its colours. */
+async function spansWhen(
+  menu: Awaited<ReturnType<typeof themedMenu>>["menu"],
+  isReady: (text: string) => boolean,
+): Promise<CapturedFrame> {
+  await menu.screen.waitForFrame(isReady);
+  return menu.screen.captureSpans();
+}
+
 describe("Options view in the menu", () => {
+  it("paints the theme under the picker's cursor on the whole app, and Échap brings the saved one back", async () => {
+    const { menu, settings } = await themedMenu();
+    expect(screenBackground(menu.screen.captureSpans())).toEqual(DARK_BACKGROUND);
+    await menu.press("down", "down", "down", "enter", "down");
+    const previewed = await spansWhen(menu, (text) => text.includes(PREVIEW_FACT));
+    expect(screenBackground(previewed)).toEqual(LIGHT_BACKGROUND);
+    await pressEscape(menu);
+    const restored = await spansWhen(menu, (text) => !text.includes(PREVIEW_FACT));
+    expect(screenBackground(restored)).toEqual(DARK_BACKGROUND);
+    expect(settings.get("theme").id).toBe("dark");
+  });
+
+  it("applies the theme on Entrée: saved, painted, and no preview left", async () => {
+    const { menu, settings } = await themedMenu();
+    await menu.press("down", "down", "down", "enter", "down", "enter");
+    const applied = await spansWhen(menu, (text) => text.includes("[Clair (gup)]"));
+    expect(settings.get("theme").id).toBe("light");
+    expect(screenBackground(applied)).toEqual(LIGHT_BACKGROUND);
+    expect(await menu.frame()).not.toContain(PREVIEW_FACT);
+  });
+
+  it("switches the symbol set at once", async () => {
+    const { menu } = await themedMenu();
+    expect(await menu.frame()).toContain("┏━ Options");
+    await menu.press("down", "down", "down", "down", "down", "enter", "enter");
+    const frame = await menu.waitForText("[ASCII]");
+    expect(frame).not.toContain("┏");
+    expect(frame).toContain("*= Options");
+  });
+
   it("turns the mouse off and on, on this screen, at once", async () => {
     const { menu, settings } = await themedMenu();
     await menu.press("END", "up", "up", "up", "enter");
@@ -63,7 +127,7 @@ describe("Options view in the menu", () => {
     ];
     const { menu, settings } = await themedMenu({ scans, scanOnStart: true });
     setUiPreferencesSource(menuPreferencesSource(settings, () => true));
-    await menu.press(...Array.from({ length: 7 }, () => "down"), "enter");
+    await menu.press(...Array.from({ length: 11 }, () => "down"), "enter");
     expect(settings.get("interface").packageSort).toBe("name");
     await menu.press("tab", "up");
     const frame = await menu.waitForText("Alpha.App");

@@ -19,6 +19,12 @@ export interface ContrastViolation {
 export interface FrameContrastOptions {
   /** What shows through an unpainted cell: the terminal's (or the theme's) background. */
   readonly ground: wcag.Rgb;
+  /**
+   * What a cell painted in the terminal's default foreground shows — its
+   * text colour — when the frame did not capture it (monochrome, trusted
+   * modes paint the default without knowing it). Default: the captured value.
+   */
+  readonly ink?: wcag.Rgb;
   /** Text minimum; default AA (4.5). */
   readonly textMinimum?: number;
 }
@@ -35,11 +41,12 @@ function rgbOf(color: CapturedSpan["fg"]): wcag.Rgb {
  * A cell shows `ground` when nothing is painted behind it, and when what is
  * painted is the terminal's own default background (a dialog over a screen
  * that paints none): its captured RGB is only OpenTUI's placeholder then.
+ * Likewise its text shows `ink`, when given, in the default foreground.
  */
-function inkAndGround(span: CapturedSpan, ground: wcag.Rgb): [wcag.Rgb, wcag.Rgb] {
-  const ink = rgbOf(span.fg);
+function inkAndGround(span: CapturedSpan, options: FrameContrastOptions): [wcag.Rgb, wcag.Rgb] {
+  const ink = span.fg.intent === "default" && options.ink ? options.ink : rgbOf(span.fg);
   const isGround = span.bg.a === 0 || span.bg.intent === "default";
-  const behind = isGround ? ground : rgbOf(span.bg);
+  const behind = isGround ? options.ground : rgbOf(span.bg);
   const isInverse = (span.attributes & TextAttributes.INVERSE) !== 0;
   return isInverse ? [behind, ink] : [ink, behind];
 }
@@ -53,7 +60,7 @@ export function frameContrastViolations(
     line.spans.flatMap((span) => {
       const visible = span.text.replace(/\s/gu, "");
       if (visible === "") return [];
-      const [ink, behind] = inkAndGround(span, options.ground);
+      const [ink, behind] = inkAndGround(span, options);
       const ratio = wcag.contrastRatio(ink, behind);
       const needed = BORDER_ONLY.test(visible) ? wcag.WCAG_MIN_CONTRAST.nonText : textMinimum;
       return ratio >= needed ? [] : [{ text: span.text, ratio, needed }];
