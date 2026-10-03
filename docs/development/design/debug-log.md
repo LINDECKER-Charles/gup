@@ -61,13 +61,13 @@ flowchart LR
 | `core/log/log-reader.ts` | `listLogFiles`, `readLogTail`, strict `parseLogLine`. |
 | `core/state/system-snapshot.ts` | Versions, platform, TTYs, allowlisted environment. |
 | `core/export/output-file.ts` | Exports: `wx` dated names, `--out`/`--force`, 20 files kept per kind. |
-| `core/export/diagnostic-bundle.ts` | The diagnostic zip (adm-zip), every line re-parsed and re-redacted. |
+| `core/export/diagnostic-bundle.ts` | The diagnostic zip (adm-zip), every line re-parsed and re-redacted; the README text is injected (`DiagnosticInput.readme`). |
 | `commands/journal/journal-module.ts` | The `CliModule`: `--log-level`, `gup log`, startup, crash hook, doctor line. |
 | `commands/journal/log-settings.ts` | Threshold precedence and the sink per command (pure). |
 | `commands/journal/log-session.ts` | Installs backend, tracer and observer; `session.*` records. |
 | `commands/journal/log-command.ts`, `log-show.ts`, `diagnostic.ts`, `since-option.ts` | `gup log show|path|export`. |
-| `ui/log-line.ts` | A record as one readable line (`Line` for the TUI, ANSI text for the CLI). |
-| `ui/text/log-labels.ts` | Every French string of the above. |
+| `ui/log-line.ts` | A record as one readable line (`Line` for the TUI, ANSI text for the CLI), stripped of the terminal escapes and control characters a tool printed. |
+| `ui/text/log-labels.ts` | Every French string of the above, the diagnostic archive's README included. |
 
 ### Startup
 
@@ -116,16 +116,30 @@ same file. Scan events (`scan.start/provider/end`) arrive with `feat/activity-jo
 ## 3. Security
 
 - **Redaction everywhere a string is written.** `sanitizeData` passes every string of a record
-  through `redactText` (secret shapes + home → `~`), masks values under secret-looking keys
-  (`password`, `token`, `api_key`, `authorization`, `cookie`…), bounds strings (2,000 chars),
-  keys (32), items (50), depth (3) and the whole record (16 KiB of text), drops prototype keys and
-  never calls a foreign `toString()`. Argv values after `--token`, `--password`… are masked;
-  `--token-file <path>` is not a secret.
-- **Patterns are linear.** Literal prefixes, single bounded quantifiers over classes that cannot
-  contain what follows them, a lookbehind so token patterns start only at the beginning of a run;
-  PEM keys use two forward-only searches. A test redacts 1 MiB of eleven hostile shapes and
-  bounds each run to 100 ms (measured: 1–25 ms). Value classes exclude `"` and `\`, so redacted
-  JSON stays JSON.
+  — keys included — through `redactText` (secret shapes + home → `~`), masks values under
+  secret-looking keys (`password`, `token`, `api_key`, `authorization`, `cookie`…), bounds strings
+  (2,000 chars), keys (32), items (50), depth (3) and the whole record (16 KiB of text), drops
+  prototype keys and never calls a foreign `toString()`. Argv values after `--token`,
+  `--password`… are masked; `--token-file <path>` is not a secret.
+- **Secret shapes.** URL credentials (empty user and `@` in the password included); any query
+  parameter or `name=value` / `name: value` / `"name": "value"` whose name *ends* like a secret's
+  (`password`, `passwd`, `pwd`, `passphrase`, `secret`, `token`, `auth`, `api/access/account/
+  private/secret` + `key`) — so `NPM_TOKEN=`, `.npmrc`'s `:_authToken=` / `:_auth=` /
+  `:_password=`, `AWS_SECRET_ACCESS_KEY=`, Azure `AccountKey=` / `SharedAccessKey=` and the SAS
+  `sig=` are all caught while `max_tokens:`, `--auth-type=` or `SharedAccessKeyName=` are not;
+  an `Authorization` header whatever its scheme and case; `Bearer`/`Basic` credentials; token
+  formats (GitHub `gh[pousr]_`/`github_pat_`, npm, GitLab, Slack, PyPI, NuGet, AWS `AKIA`/`ASIA`,
+  Google, JWT) and PEM private keys. A short `-p <value>` argv flag is **not** treated as
+  secret: too many tools use `-p` for a port, a path or a prefix.
+- **Patterns are linear.** Every pattern starts at a literal prefix or only where a run of its own
+  class starts (lookbehind), with single bounded quantifiers; the name rule's prefix is bounded
+  and lazy. PEM keys use two forward-only searches. A test redacts 1 MiB of sixteen hostile
+  shapes and bounds each run to 100 ms (measured: about 10 ms). Value classes exclude `"` and
+  `\`, so redacted JSON stays JSON.
+- **Display.** `gup log` and the Debug tab print record text through `printable()`
+  (`ui/log-line.ts`): escape sequences a tool printed (colours, a title, an OSC 52 clipboard
+  write) are dropped and control characters become spaces, so a log line never drives the
+  terminal it is shown on. `--json` output is JSON-escaped already.
 - **Elevated child (CWE-59).** The child never writes into the user's log directory: its records
   stay in memory (1,000 lines / 512 KiB, one `log.capped` notice) and return in
   `AdminBatchOutput.log`. The parent parses each line strictly, re-redacts it, applies its own
@@ -140,6 +154,8 @@ same file. Scan events (`scan.start/provider/end`) arrive with `feat/activity-jo
 - **Diagnostic archive.** Fixed entry names (or validated log file names), every log line parsed
   and redacted again (rules may have improved), non-records dropped and counted in the README,
   environment through the snapshot's allowlist only; the README asks for a review before sharing.
+  A test builds an archive from an older line holding the home directory and secrets in its
+  context, keys and values, and finds neither (plain, JSON-escaped, any case) in the zip.
 - **Never break a run.** The facade swallows backend errors; the backend stops at its first sink
   failure and queues one notice for the process exit (`deferUntilExit`) — nothing is written to
   the terminal while the TUI is mounted. Writes are synchronous so `process.exit(code)` loses
@@ -180,6 +196,12 @@ same file. Scan events (`scan.start/provider/end`) arrive with `feat/activity-jo
   owned by `feat/activity-journal`; that branch folds it into `core/time/period.ts`.
 - **A file sink at `off` installs nothing**; the elevated child always gets its memory backend,
   since its threshold arrives later in the payload.
+- **Secret names match on their end** (`NPM_TOKEN`, `_authToken`, `AWS_SECRET_ACCESS_KEY`), not
+  on a word boundary as the spec's `\b(password|…|token)` sketch did: that sketch let every
+  underscore- or camelCase-prefixed name through. Values may be quoted (`"password": "x"`), and
+  the query rule covers every secret-named parameter, not a fixed list.
+- **The archive's README is injected** (`DiagnosticInput.readme`, `diagnosticReadme` in
+  `log-labels.ts`): it is French interface text, and `core/` cannot import `ui/`.
 
 ## 6. Contract changes (additive)
 
@@ -201,7 +223,8 @@ same file. Scan events (`scan.start/provider/end`) arrive with `feat/activity-jo
   `logRecordLine(record, width)`; the write threshold and its source come from
   `currentLogSession()`. `report-command.ts` registers from `journalModule.register`. Fold
   `since-option.ts` into `core/time/period.ts`; add `history-summary.json` and `--no-history` to
-  `gup log export` (`DiagnosticInput` gains the insights). Scan events go in `scan-progress.ts`.
+  `gup log export` (`DiagnosticInput` gains the insights, `DiagnosticContents` what the README
+  lists, `diagnosticReadme` its line). Scan events go in `scan-progress.ts`.
 - **`feat/html-report`**: `writeOutputFile({ kind: "report", extension: "html", … })` already
   names, protects and prunes report files.
 - **`feat/journal-settings`** (wave 3): add the `setting` source to `LogSource` and read

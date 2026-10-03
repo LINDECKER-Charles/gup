@@ -124,9 +124,14 @@ UTC. Files older than 14 days are deleted when gup starts writing; `GUP_LOG_RETE
 
 ### Privacy
 
-- Known secret shapes are masked before anything is written: credentials in URLs, `?token=`,
-  `password=`, `Bearer …`, GitHub/npm/GitLab/Slack tokens, AWS and Google keys, JWTs, private
-  keys, the values of `--token`/`--password` flags. Your home directory is shortened to `~`.
+- Known secret shapes are masked before anything is written: credentials in URLs; the value of
+  any setting, variable or query parameter named like a secret (`password=`, `NPM_TOKEN=`,
+  `.npmrc`'s `_authToken=`, `AWS_SECRET_ACCESS_KEY=`, Azure `AccountKey=`, `?sig=` of a SAS
+  link, `"client_secret": "…"`); `Authorization` headers and `Bearer …` values;
+  GitHub/npm/GitLab/Slack/PyPI/NuGet tokens, AWS and Google keys, JWTs, private keys; the values
+  of `--token`/`--password` flags. Your home directory is shortened to `~`.
+- `gup log` drops the escape sequences a tool may have printed: a log line never changes your
+  terminal's colours, title or clipboard.
 - The environment is never copied wholesale: only gup's own variables and the terminal's name.
 - With administrator rights (the elevated batch), gup writes nothing to your log directory: the
   elevated part hands its lines back, and your own gup process checks and writes them.
