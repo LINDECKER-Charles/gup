@@ -58,14 +58,27 @@ describe("PackageList", () => {
     expect(list.rows).toHaveLength(3);
   });
 
-  it("offers what is under the cursor when nothing is checked", () => {
+  it("checks everything shown, then clears it, and tells which one comes next", () => {
     const list = make();
-    list.moveTo(5);
-    expect(list.underCursor.map((s) => s.pkg.id)).toEqual(["7zip.7zip"]);
-    list.moveTo(3);
-    expect(list.underCursor.map((s) => s.pkg.id)).toEqual(["Git.Git", "7zip.7zip"]);
-    list.moveTo(0);
-    expect(list.underCursor).toEqual([]);
+    expect(list.isAllVisibleChecked()).toBe(false);
+    list.toggleAllVisible();
+    expect(ids(list)).toEqual(["typescript", "Git.Git", "7zip.7zip"]);
+    expect(list.isAllVisibleChecked()).toBe(true);
+    list.toggleAllVisible();
+    expect(ids(list)).toEqual([]);
+    expect(list.isAllVisibleChecked()).toBe(false);
+  });
+
+  it("judges “everything checked” on what the filter shows only", () => {
+    const list = make();
+    list.setFilter("winget");
+    list.toggleAllVisible();
+    expect(list.isAllVisibleChecked()).toBe(true);
+    list.setFilter("");
+    expect(list.isAllVisibleChecked()).toBe(false);
+    list.setFilter("nothing matches this");
+    expect(list.isAllVisibleChecked()).toBe(false);
+    expect(ids(list)).toEqual(["Git.Git", "7zip.7zip"]);
   });
 
   it("keeps the cursor inside the list", () => {

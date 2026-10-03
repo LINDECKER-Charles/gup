@@ -6,10 +6,13 @@ import { updateCountFact, VIEW_LABELS } from "../text/menu-labels.js";
 
 /**
  * Paquets: the outdated packages of the last scan, to check and update. The
- * list is rebuilt whenever the scan results change; until the first results
- * arrive the panel says a scan is running, or how to start one when none
- * runs (no scan at launch). Other views' package actions and
- * marks show here; order and Note column follow the preferences live.
+ * checked set is the only selection: Entrée hands it to the launcher, and
+ * other views' package actions act on it too. The list is rebuilt whenever
+ * the scan results change (a fresh table, nothing checked); while a scan
+ * runs, Entrée waits for it. Until the first results arrive the panel says a
+ * scan is running, or how to start one when none runs (no scan at launch).
+ * Other views' marks show here; order and Note column follow the
+ * preferences live.
  */
 export function packagesView(): ViewDefinition {
   return {

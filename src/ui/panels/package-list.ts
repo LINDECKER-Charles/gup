@@ -35,8 +35,9 @@ interface Group {
  * The outdated packages of a scan, grouped by provider, with a cursor, a
  * text filter and a set of checked packages.
  *
- * Checked packages survive filtering: narrowing the list to find one more
- * package never loses what was already picked. Toggling a group or "all"
+ * The checked set is the only selection: nothing acts on the row under the
+ * cursor. Checked packages survive filtering — narrowing the list to find one
+ * more package never loses what was already picked. Toggling a group or "all"
  * only acts on what the filter currently shows.
  */
 export class PackageList {
@@ -90,14 +91,6 @@ export class PackageList {
     );
   }
 
-  /** What Enter acts on when nothing is checked: the package or group under the cursor. */
-  get underCursor(): SelectedPackage[] {
-    const row = this.rows[this.#cursor];
-    if (row?.kind === "package") return [{ providerId: row.providerId, pkg: row.pkg }];
-    if (row?.kind !== "group") return [];
-    return this.visiblePackages(row.providerId).map((pkg) => ({ providerId: row.providerId, pkg }));
-  }
-
   setFilter(text: string): void {
     this.#filter = text;
     this.#cursor = 0;
@@ -134,13 +127,30 @@ export class PackageList {
     this.setAll(this.groups().map((g) => g.providerId));
   }
 
+  /**
+   * True when the filter shows packages and every one of them is checked:
+   * `a` then clears them. Checked packages the filter hides do not count.
+   */
+  isAllVisibleChecked(): boolean {
+    const keys = this.visibleKeys(this.groups().map((g) => g.providerId));
+    return keys.length > 0 && this.areChecked(keys);
+  }
+
   private setAll(providerIds: readonly string[]): void {
-    const keys = providerIds.flatMap((id) => this.visiblePackages(id).map((pkg) => keyOf(id, pkg)));
-    const isEveryChecked = keys.every((key) => this.#checked.has(key));
+    const keys = this.visibleKeys(providerIds);
+    const isEveryChecked = this.areChecked(keys);
     for (const key of keys) {
       if (isEveryChecked) this.#checked.delete(key);
       else this.#checked.add(key);
     }
+  }
+
+  private visibleKeys(providerIds: readonly string[]): string[] {
+    return providerIds.flatMap((id) => this.visiblePackages(id).map((pkg) => keyOf(id, pkg)));
+  }
+
+  private areChecked(keys: readonly string[]): boolean {
+    return keys.every((key) => this.#checked.has(key));
   }
 
   private flip(key: string): void {

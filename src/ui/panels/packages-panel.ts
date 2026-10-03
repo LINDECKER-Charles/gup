@@ -1,15 +1,22 @@
 import type { OutdatedPackage, SelectedPackage } from "../../core/types.js";
 import type { NoteColumn } from "../app/ui-preferences.js";
 import type { PackageAction, PackageMarker } from "../app/view-definition.js";
-import { NO_SCAN_YET } from "../text/menu-labels.js";
+import { NO_SCAN_YET, VIEW_LABELS } from "../text/menu-labels.js";
+import {
+  LAUNCH_NOTICES,
+  PACKAGE_COLUMNS,
+  PACKAGES_HINTS,
+  PACKAGES_PLACEHOLDERS,
+} from "../text/packages-labels.js";
 import { ListCursor } from "../tui/list-cursor.js";
 import type { KeyPress } from "../tui/screen-host.js";
 import { fillLine, fit, seg, type Line } from "../tui/styled-lines.js";
 import type { PackageList, PackageRow } from "./package-list.js";
 import { PAGE_STEP, placeholder, type Panel, type Viewport } from "./panel.js";
+import { selectionBar, type SelectionBarState } from "./selection-bar.js";
 
 export interface PackagesHandlers {
-  /** Entrée: update these packages. */
+  /** Entrée, or a click on the selection bar: update these checked packages (never empty). */
   onLaunch(packages: SelectedPackage[]): void;
   /** `r`: scan again. Absent where no scan can run (the `gup update` picker). */
   onRescan?(): void;
@@ -22,9 +29,10 @@ export interface PackagesOptions {
   readonly markers?: () => readonly PackageMarker[];
   readonly noteColumn?: () => NoteColumn;
   /**
-   * Whether a scan runs, for the wait before the first results: "scan en
-   * cours…", or how to start one. Absent: results are on their way (the
-   * `gup update` picker always has them).
+   * Whether a scan runs. Before the first results it picks the wait message
+   * ("scan en cours…", or how to start one); afterwards it holds Entrée back,
+   * since the scan is about to replace the table. Absent: results are on
+   * their way and never replaced (the `gup update` picker always has them).
    */
   readonly isScanning?: () => boolean;
 }
@@ -45,25 +53,47 @@ const VERSION_WIDTH = 14;
 const NOTE_WIDTH = 22;
 /** Below this width the note column is dropped. */
 const NOTE_MIN_VIEWPORT = 90;
-const SCANNING = "scan en cours…";
+const MIN_NAME_WIDTH = 10;
+/** The spaces and arrow between the version columns: ` ` + ` → `. */
+const VERSION_SEPARATORS = 4;
+const HINT_SEPARATOR = " · ";
 
 /** How package rows are laid out for one render. */
 interface Layout {
+  /** The whole viewport: the cursor's highlight spans it. */
+  readonly width: number;
   readonly name: number;
   readonly note: number;
   /** The mark of a package, when the mark column shows at all. */
   readonly markOf: ((providerId: string, pkg: OutdatedPackage) => string) | null;
 }
 
+/** The slice of `list.rows` drawn: `start` included, `end` excluded. */
+interface RowWindow {
+  readonly start: number;
+  readonly end: number;
+}
+
+/** One render of the table, with the rows a click maps back to. */
+interface Composition extends RowWindow {
+  readonly lines: readonly Line[];
+  /** Content row where `list.rows[start]` is drawn. */
+  readonly firstRow: number;
+  /** Content row of the selection bar; -1 when the table has no package to check. */
+  readonly barRow: number;
+}
+
 /**
  * The outdated packages as a table, grouped by provider, with a checkbox per
- * package. Picking one package or several is the same gesture: check what you
- * want (Space, or a click), or check nothing and press Enter on a package —
- * or on a provider to take all of it. Other views add their own keys on the
- * checked packages, and their marks on the rows.
+ * package and a selection bar at its foot. Picking is checking (Space, a
+ * click, `a` for everything shown); Entrée — or a click on the bar — updates
+ * the checked packages, those the filter hides included, and nothing else:
+ * with nothing checked, or while a scan runs, it explains instead. Other
+ * views add their own keys on the checked packages, and their marks on the
+ * rows.
  */
 export class PackagesPanel implements Panel {
-  readonly title = "Paquets";
+  readonly title = VIEW_LABELS.packages;
   readonly #handlers: PackagesHandlers;
   readonly #options: PackagesOptions;
   #list: PackageList | null = null;
@@ -82,33 +112,36 @@ export class PackagesPanel implements Panel {
   setList(list: PackageList): void {
     this.#list = list;
     this.#isFiltering = false;
+    this.#notice = null;
   }
 
   hints(): string {
-    if (this.#isFiltering) return "tapez pour filtrer · entrée valider · échap effacer";
-    const count = this.#list?.selection.length ?? 0;
-    const submit = count > 0 ? `entrée mettre à jour (${count})` : "entrée mettre à jour ce paquet";
-    const rescan = this.#handlers.onRescan ? ["r rescanner"] : [];
-    const base = `↑↓ naviguer · espace cocher · a tout · / filtrer · ${submit}`;
-    return [base, ...rescan, ...this.actions().map((action) => action.hint)].join(" · ");
+    if (this.#isFiltering) return PACKAGES_HINTS.filtering;
+    const rescan = this.#handlers.onRescan ? [PACKAGES_HINTS.rescan] : [];
+    const list = this.#list;
+    if (!list) return rescan.join(HINT_SEPARATOR);
+    const checked = list.selection.length;
+    const canLaunch = checked > 0 && !this.isScanRunning();
+    return [
+      PACKAGES_HINTS.navigate,
+      PACKAGES_HINTS.check,
+      list.isAllVisibleChecked() ? PACKAGES_HINTS.clearAll : PACKAGES_HINTS.checkAll,
+      PACKAGES_HINTS.filter,
+      ...(canLaunch ? [PACKAGES_HINTS.launch(checked)] : []),
+      ...rescan,
+      ...this.actions().map((action) => action.hint),
+    ].join(HINT_SEPARATOR);
   }
 
   render(viewport: Viewport): readonly Line[] {
     const list = this.#list;
-    if (!list) return placeholder(this.isScanPending() ? SCANNING : NO_SCAN_YET);
-    if (list.total === 0 && list.rows.length === 0) return placeholder("Tout est à jour.");
-    const layout = this.layout(list, viewport.width - GUTTER);
-    const head = this.headLines(list, layout);
-    const rows = list.rows;
-    if (rows.length === 0)
-      return [...head, ...placeholder(`Aucun paquet ne correspond à « ${list.filter} ».`)];
-    const { start, end } = windowOf(list, viewport.height - head.length);
-    const body = rows.slice(start, end).map((row, offset) => {
-      const isCursor = start + offset === list.cursor;
-      const line: Line = [seg(isCursor ? "› " : "  ", "accent"), ...this.rowLine(row, layout)];
-      return isCursor ? fillLine(line, viewport.width, "highlight") : line;
-    });
-    return [...head, ...body];
+    if (!list) {
+      return placeholder(this.isScanPending() ? PACKAGES_PLACEHOLDERS.scanning : NO_SCAN_YET);
+    }
+    if (list.total === 0 && list.rows.length === 0) {
+      return placeholder(PACKAGES_PLACEHOLDERS.upToDate);
+    }
+    return this.compose(list, viewport).lines;
   }
 
   press(key: KeyPress): void {
@@ -127,13 +160,15 @@ export class PackagesPanel implements Panel {
     if (key.name === "r") this.#handlers.onRescan?.();
   }
 
+  /** A package or provider row toggles; the selection bar launches. */
   click(row: number, viewport: Viewport): void {
     const list = this.#list;
     if (!list || this.#isFiltering) return;
-    const head = this.headLines(list, this.layout(list, viewport.width - GUTTER)).length;
-    const { start } = windowOf(list, viewport.height - head);
-    const index = start + row - head;
-    if (row < head || index >= list.rows.length) return;
+    const { firstRow, start, end, barRow } = this.compose(list, viewport);
+    this.#notice = null;
+    if (row === barRow) return this.launch(list);
+    const index = start + row - firstRow;
+    if (row < firstRow || index >= end) return;
     list.moveTo(index);
     list.toggleCurrent();
   }
@@ -156,10 +191,23 @@ export class PackagesPanel implements Panel {
       a: () => list.toggleAllVisible(),
       "/": () => (this.#isFiltering = true),
       escape: () => list.setFilter(""),
-      return: () => this.submit(list),
-      enter: () => this.submit(list),
+      return: () => this.launch(list),
+      enter: () => this.launch(list),
       r: () => this.#handlers.onRescan?.(),
     };
+  }
+
+  /** The checked packages, filtered-out ones included — or why not. */
+  private launch(list: PackageList): void {
+    const selection = list.selection;
+    const refusal = this.launchRefusal(selection.length);
+    if (refusal) this.#notice = refusal;
+    else this.#handlers.onLaunch(selection);
+  }
+
+  private launchRefusal(checked: number): string | null {
+    if (this.isScanRunning()) return LAUNCH_NOTICES.scanning;
+    return checked === 0 ? LAUNCH_NOTICES.empty : null;
   }
 
   /** Another view's key: on the checked packages, or a notice when none is. */
@@ -181,9 +229,9 @@ export class PackagesPanel implements Panel {
     return this.#options.isScanning?.() ?? true;
   }
 
-  private submit(list: PackageList): void {
-    const picked = list.selection.length > 0 ? list.selection : list.underCursor;
-    if (picked.length > 0) this.#handlers.onLaunch(picked);
+  /** A scan runs now, about to replace the table: no update starts from it. */
+  private isScanRunning(): boolean {
+    return this.#options.isScanning?.() === true;
   }
 
   private typeFilter(list: PackageList, key: KeyPress): void {
@@ -198,29 +246,60 @@ export class PackagesPanel implements Panel {
     }
   }
 
-  private layout(list: PackageList, width: number): Layout {
-    const markOf = markColumn(list, this.#options.markers?.() ?? []);
-    const isNoteShown = this.#options.noteColumn?.() !== "hidden" && width >= NOTE_MIN_VIEWPORT;
-    const note = isNoteShown ? NOTE_WIDTH : 0;
-    const marks = markOf ? MARK_WIDTH : 0;
-    const fixed = CHECKBOX_WIDTH + marks + VERSION_WIDTH * 2 + 4 + (note > 0 ? note + 1 : 0);
-    return { name: Math.max(10, width - fixed), note, markOf };
+  /**
+   * Filter and column titles, the rows that fit around the cursor, then —
+   * when there is a package to check — the selection bar on the last row.
+   */
+  private compose(list: PackageList, viewport: Viewport): Composition {
+    const layout = this.layout(list, viewport.width);
+    const head = this.headLines(list, layout);
+    const foot = list.total > 0 ? selectionBar(this.barState(list), viewport.width) : [];
+    const window = windowOf(list, viewport.height - head.length - foot.length);
+    const body = this.bodyLines(list, window, layout);
+    const gap = viewport.height - head.length - body.length - foot.length;
+    const lines = [...head, ...body, ...blankLines(gap), ...foot];
+    const barRow = foot.length > 0 ? lines.length - 1 : -1;
+    return { lines, firstRow: head.length, ...window, barRow };
   }
 
-  /** The notice of a refused action, the filter being typed, then the column titles. */
+  /** The rows in `window`, the cursor's marked and highlighted; or why there are none. */
+  private bodyLines(list: PackageList, window: RowWindow, layout: Layout): Line[] {
+    if (list.rows.length === 0) return placeholder(PACKAGES_PLACEHOLDERS.noMatch(list.filter));
+    return list.rows.slice(window.start, window.end).map((row, offset) => {
+      const isCursor = window.start + offset === list.cursor;
+      const line: Line = [seg(isCursor ? "› " : "  ", "accent"), ...this.rowLine(row, layout)];
+      return isCursor ? fillLine(line, layout.width, "highlight") : line;
+    });
+  }
+
+  private barState(list: PackageList): SelectionBarState {
+    const checked = list.selection.length;
+    const canLaunch = !this.isScanRunning();
+    return { checked, total: list.total, canLaunch, notice: this.#notice };
+  }
+
+  private layout(list: PackageList, width: number): Layout {
+    const markOf = markColumn(list, this.#options.markers?.() ?? []);
+    const rowWidth = width - GUTTER;
+    const isNoteShown = this.#options.noteColumn?.() !== "hidden" && rowWidth >= NOTE_MIN_VIEWPORT;
+    const note = isNoteShown ? NOTE_WIDTH : 0;
+    const marks = markOf ? MARK_WIDTH : 0;
+    const versions = VERSION_WIDTH * 2 + VERSION_SEPARATORS;
+    const fixed = CHECKBOX_WIDTH + marks + versions + (note > 0 ? note + 1 : 0);
+    return { width, name: Math.max(MIN_NAME_WIDTH, rowWidth - fixed), note, markOf };
+  }
+
+  /** The filter being typed (or applied), then the column titles. */
   private headLines(list: PackageList, layout: Layout): Line[] {
     const indent = GUTTER + CHECKBOX_WIDTH + (layout.markOf ? MARK_WIDTH : 0);
+    const { name, current, latest, note } = PACKAGE_COLUMNS;
     const header: Line = [
-      seg(
-        `${" ".repeat(indent)}${fit("Paquet", layout.name)} ${fit("Actuel", VERSION_WIDTH)}   `,
-        "muted",
-      ),
-      seg(`${fit("Dernier", VERSION_WIDTH)} ${layout.note > 0 ? "Note" : ""}`, "muted"),
+      seg(`${" ".repeat(indent)}${fit(name, layout.name)} ${fit(current, VERSION_WIDTH)}   `, "muted"),
+      seg(`${fit(latest, VERSION_WIDTH)} ${layout.note > 0 ? note : ""}`, "muted"),
     ];
-    const notice: Line[] = this.#notice ? [[seg(this.#notice, "warning")]] : [];
-    if (!this.#isFiltering && !list.filter) return [...notice, header];
+    if (!this.#isFiltering && !list.filter) return [header];
     const cursor = this.#isFiltering ? "█" : "";
-    return [...notice, [seg("/ ", "accent"), seg(list.filter + cursor, "strong")], header];
+    return [[seg("/ ", "accent"), seg(list.filter + cursor, "strong")], header];
   }
 
   private rowLine(row: PackageRow, layout: Layout): Line {
@@ -241,6 +320,10 @@ export class PackagesPanel implements Panel {
     const mark = layout.markOf?.(row.providerId, row.pkg);
     return packageLine({ pkg: row.pkg, isChecked, ...(mark !== undefined && { mark }) }, layout);
   }
+}
+
+function blankLines(count: number): Line[] {
+  return Array.from({ length: Math.max(0, count) }, () => []);
 }
 
 /**
@@ -282,7 +365,7 @@ function packageLine(
 }
 
 /** Rows of the list to draw so that the cursor stays in view. */
-function windowOf(list: PackageList, height: number): { start: number; end: number } {
+function windowOf(list: PackageList, height: number): RowWindow {
   const rows = list.rows;
   const cursor = new ListCursor(
     rows.map(() => true),
