@@ -44,6 +44,15 @@ function titleStyle(locale) {
     : `font-family: system-ui, sans-serif; font-weight: 800; font-size: 72px; line-height: 1.3;`;
 }
 
+/**
+ * Non-Latin cards keep Geist Mono for the Latin runs (the command, product
+ * names) and render their own words in a system face, like the title: the
+ * bare `monospace` fallback would hand them to Times New Roman (Arabic) or
+ * NSimSun (Chinese) on Windows.
+ */
+const scriptBody = (locale) =>
+  locale.script === "latin" ? "" : `body { font-family: "Geist Mono", system-ui, sans-serif; }`;
+
 const STYLE = `
   @font-face { font-family: "Anton"; src: url("${ASSETS.anton}") format("woff2"); }
   @font-face { font-family: "Geist Mono"; src: url("${ASSETS.mono}") format("woff2"); }
@@ -76,7 +85,7 @@ function cardHtml(page) {
   const [before, accent, after] = [title.before, title.accent, title.after].map(escapeHtml);
   const footer = trust.slice(0, TRUST_ITEMS).map((item) => `<span>${escapeHtml(item)}</span>`);
   return `<!doctype html><html lang="${locale.htmlLang}" dir="${locale.dir}">
-<meta charset="utf-8"><style>${STYLE} h1 { ${titleStyle(locale)} }</style>
+<meta charset="utf-8"><style>${STYLE} ${scriptBody(locale)} h1 { ${titleStyle(locale)} }</style>
 <header dir="ltr"><img src="${ASSETS.logo}" alt=""><span class="word">GUP</span>
   <span class="badge">v${escapeHtml(facts.version)}</span></header>
 <main><h1>${before}<br><span class="accent">${accent}</span><br>${after}</h1>
