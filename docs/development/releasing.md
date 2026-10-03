@@ -23,8 +23,7 @@ flowchart LR
     Main([main green]) --> RB["branch<br/>chore/release-x.y.z"]
     RB --> Bump["npm version x.y.z<br/>--no-git-tag-version"]
     Bump --> Docs["releases/x.y.z.md<br/>changelog: unreleased → x.y.z"]
-    Docs --> Shots["npm run screenshots<br/>(title bar shows the version)"]
-    Shots --> PR[PR + required checks]
+    Docs --> PR[PR + required checks]
     PR --> Merge[merge]
     Merge --> Tag[git tag x.y.z + push]
     Tag --> Pub[npm publish]
@@ -35,7 +34,8 @@ flowchart LR
 ## 1. Pre-flight
 
 - `main` is green: the eight required checks listed in
-  [CONTRIBUTING.md](../../CONTRIBUTING.md) passed on its last commit.
+  [CONTRIBUTING.md § Pull request flow](../../CONTRIBUTING.md#9-pull-request-flow)
+  passed on its last commit.
 - Open Dependabot pull requests are processed: merged when green and relevant,
   closed with a reason otherwise. A release never ships with a known
   advisory that a pending bump fixes.
@@ -61,23 +61,25 @@ Then, in the same branch:
 2. **Release notes.** Write `docs/releases/x.y.z.md` in the shape described in
    [`docs/releases/README.md` § Writing the next one](../releases/README.md#writing-the-next-one),
    and add its row to the table there.
-3. **Screenshots.** Run `npm run screenshots` and commit the result. The title
-   bar of every screenshot shows the version, so a bump makes all of them
-   stale, and CI fails until they are regenerated.
-4. **Full checks** on Node 26, the same gates CI runs:
+3. **Landing facts.** Run `cd index && npm run sync:facts`. It regenerates
+   `index/src/data/facts.js` (version, provider count, Node floor) from the
+   root `package.json` and the registry; the landing build does the same, but
+   the committed copy must not lag behind the release.
+4. **Full checks** on Node 26, the npm gates CI runs (CodeQL, Semgrep and
+   gitleaks run on the pull request):
 
    ```bash
    npm run typecheck && npm run lint && npm run lint:security \
      && npm run test:run && npm run build && npm run security
    node dist/cli.js --version    # prints x.y.z
-   npm pack --dry-run            # dist/, LICENSE, README.md, SECURITY.md only
+   npm pack --dry-run            # package.json, dist/, LICENSE, README.md, SECURITY.md
    ```
 
    On Windows, `check.cmd` runs the security audit, the tests and the coverage
    in parallel and prints a summary; it does not replace the gates above.
-5. Commit the bump as `chore(release): x.y.z`, with the changelog and the
-   release notes in the same commit (release notes travel with the commit they
-   document).
+5. Commit the bump as `chore(release): x.y.z`, with the changelog, the release
+   notes and the landing facts in the same commit (release notes travel with
+   the commit they document).
 
 ## 3. Merge, tag, publish
 
@@ -119,7 +121,8 @@ Then, in the same branch:
 - In [`docs/releases/README.md`](../releases/README.md), replace "not yet
   published" with the npm publication date (UTC) and link the GitHub Release
   and the npm version. Do the same in
-  [`docs/changelog/README.md`](../changelog/README.md).
+  [`docs/changelog/README.md`](../changelog/README.md), and in the title and
+  header links of `docs/changelog/x.y.z.md`.
 - Verify what users get:
   - the npm page shows `x.y.z` and the README renders correctly;
   - `npx @charles_lindecker/gup@x.y.z --version` prints `x.y.z`;
