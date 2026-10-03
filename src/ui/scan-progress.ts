@@ -1,8 +1,14 @@
 import chalk from "chalk";
 import type { Provider, ProviderScanResult } from "../core/types.js";
 import { recordScan } from "../core/history/store.js";
+import { log } from "../core/log/log.js";
 import { detectAvailableProviders, scanAll, type ScanOptions } from "../core/registry.js";
-import { SILENT_SCAN, type ScanEvents, type ScanObserver } from "./panels/scan-panel.js";
+import {
+  SILENT_SCAN,
+  type ProviderOutcome,
+  type ScanEvents,
+  type ScanObserver,
+} from "./panels/scan-panel.js";
 import { withScanScreen } from "./prompts/scan-screen.js";
 import { canPrompt } from "./tui/screen-host.js";
 
@@ -25,15 +31,17 @@ export interface ScanRun {
 /**
  * Detection then scanAll, reporting each step to `events`: the phase change,
  * the planned count, and every provider as it starts and finishes. Records
- * the scan in the history. Shared by the menu and the one-shot commands.
+ * the scan in the history — each provider's own duration included — and in
+ * the debug log. Shared by the menu and the one-shot commands.
  */
 export async function runScan(options: BaseScanOptions, events: ScanEvents): Promise<ScanRun> {
   events.detecting();
   const detected = await detectAvailableProviders();
   const planned = countPlanned(detected, options);
   events.planned(planned);
+  log.info("scan.start", { planned, fast: options.fast === true, filter: options.only ?? [] });
   const startedAt = Date.now();
-  const started = new Map<string, number>();
+  const timings = new ProviderTimings();
   const results =
     planned === 0
       ? []
@@ -41,15 +49,57 @@ export async function runScan(options: BaseScanOptions, events: ScanEvents): Pro
           ...options,
           detected,
           onProviderStart: (p) => {
-            started.set(p.id, Date.now());
+            timings.start(p.id);
             events.started(p.displayName);
           },
-          onProviderEnd: (p, r) => events.finished(p.displayName, outcomeOf(r, started.get(p.id))),
+          onProviderEnd: (p, r) => events.finished(p.displayName, providerEnded(r, timings)),
         });
   const elapsedMs = Date.now() - startedAt;
-  if (planned > 0) recordScan({ results, durationMs: elapsedMs, options });
+  if (planned > 0) {
+    recordScan({ results, durationMs: elapsedMs, options, providerDurations: timings.durations });
+  }
+  logScanEnd(results, elapsedMs);
   events.completed(elapsedMs);
   return { results, detected, planned, elapsedMs };
+}
+
+/** When each provider's scan started, then how long it took. */
+class ProviderTimings {
+  readonly #startedAt = new Map<string, number>();
+  readonly durations = new Map<string, number>();
+
+  start(providerId: string): void {
+    this.#startedAt.set(providerId, Date.now());
+  }
+
+  /** The provider's duration in ms (0 when its start was not seen), kept for the history. */
+  end(providerId: string): number {
+    const startedAt = this.#startedAt.get(providerId);
+    const ms = startedAt === undefined ? 0 : Date.now() - startedAt;
+    this.durations.set(providerId, ms);
+    return ms;
+  }
+}
+
+/**
+ * One provider finished: timed, logged (the scan's operation context names
+ * the provider), and summed up for the screen.
+ */
+function providerEnded(result: ProviderScanResult, timings: ProviderTimings): ProviderOutcome {
+  const ms = timings.end(result.providerId);
+  const outdated = result.packages.length;
+  if (result.error === undefined) log.debug("scan.provider", { ms, outdated });
+  else log.warn("scan.provider", { ms, outdated, error: result.error });
+  return { updates: outdated, ms, ...(result.error && { error: result.error }) };
+}
+
+function logScanEnd(results: readonly ProviderScanResult[], ms: number): void {
+  log.info("scan.end", {
+    ms,
+    providers: results.length,
+    outdated: results.reduce((total, result) => total + result.packages.length, 0),
+    errors: results.filter((result) => result.error !== undefined).length,
+  });
 }
 
 /**
@@ -65,11 +115,6 @@ export async function scanWithProgress(
     : await runScan(options, SILENT_SCAN);
   reportScanDone(run);
   return { results: run.results, detectedCount: run.detected.length };
-}
-
-function outcomeOf(result: ProviderScanResult, startedAt: number | undefined) {
-  const ms = startedAt === undefined ? 0 : Date.now() - startedAt;
-  return { updates: result.packages.length, ms, ...(result.error && { error: result.error }) };
 }
 
 function reportScanDone({ results, planned, elapsedMs }: ScanRun): void {
