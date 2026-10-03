@@ -10,6 +10,10 @@ import { ASCII_BORDER_CHARS, resolveGlyphMode, toAscii, type GlyphMode } from ".
  * does for the rest of gup's output. OpenTUI's named colors are fixed RGB
  * (`cyan` is #00FFFF), unreadable on a light theme. Tones without a slot keep
  * OpenTUI's default colour; the text field keeps OpenTUI's own defaults.
+ *
+ * Focus never rests on colour alone (WCAG 1.4.1): the focused panel is drawn
+ * with a heavy border, the others with a rounded one — ASCII mode has its own
+ * focus characters.
  */
 const FG_SLOT: Partial<Record<Tone, number>> = {
   accent: 6,
@@ -43,7 +47,7 @@ function createLegacyAppearance(tui: Tui, glyphMode: GlyphMode): Appearance {
     },
     border: (isFocused) => ({
       color: slot(isFocused ? BORDER_SLOT.focus : BORDER_SLOT.idle),
-      style: "rounded",
+      style: isFocused ? "heavy" : "rounded",
       ...(glyphMode === "ascii" && {
         customChars: isFocused ? ASCII_BORDER_CHARS.focus : ASCII_BORDER_CHARS.idle,
       }),

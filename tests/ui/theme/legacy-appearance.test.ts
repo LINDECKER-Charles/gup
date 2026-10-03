@@ -92,7 +92,7 @@ describe("legacy appearance", () => {
     );
   });
 
-  it("draws idle panels on slot 8 and the focused one on slot 6", async () => {
+  it("draws idle panels rounded on slot 8, the focused one heavy on slot 6", async () => {
     await onScreen(
       (screen) => {
         const chrome = new Chrome(screen);
@@ -102,6 +102,9 @@ describe("legacy appearance", () => {
       async (setup) => {
         expect(fgOf(spanOf(setup, "Repos"))).toBe("indexed:8");
         expect(fgOf(spanOf(setup, "Actif"))).toBe("indexed:6");
+        const text = await frame(setup);
+        expect(text).toContain("╭─ Repos");
+        expect(text).toContain("┏━ Actif");
       },
     );
   });

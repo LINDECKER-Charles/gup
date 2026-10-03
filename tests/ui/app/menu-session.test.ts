@@ -50,7 +50,7 @@ describe("MenuSession", () => {
     const { exit, next } = setup();
     const screen = await ready(next);
     const text = await frame(screen);
-    expect(text).toContain("╭─ Paquets");
+    expect(text).toContain("┏━ Paquets");
     expect(text).toContain("2 mise(s) à jour");
     await press(screen, "q");
     await expect(exit).resolves.toEqual({ kind: "quit" });
@@ -76,7 +76,7 @@ describe("MenuSession", () => {
     await press(screen, "down", "enter", "n");
     const text = await frame(screen);
     expect(text).not.toContain("vont être mis à jour");
-    expect(text).toContain("╭─ Paquets");
+    expect(text).toContain("┏━ Paquets");
     expect(controller.updatePackages).not.toHaveBeenCalled();
     await press(screen, "q");
   });
@@ -87,7 +87,9 @@ describe("MenuSession", () => {
     await press(screen, "tab", "down", "down", "down");
     await screen.waitForFrame((text) => text.includes("Homebrew"));
     expect(controller.providersStatus).toHaveBeenCalledOnce();
-    expect(await frame(screen)).toContain("╭─ Providers");
+    const text = await frame(screen);
+    expect(text).toContain("╭─ Providers");
+    expect(text).toContain("┏━ Menu");
     await press(screen, "q");
   });
 
