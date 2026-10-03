@@ -63,7 +63,7 @@ export class EventsTab implements JournalTab {
     const current = this.#list.current;
     if (this.#list.isDetailOpen && current) {
       const { title, body } = eventDetail(current, frame);
-      return detailView(title, body, { list: this.#list, height: frame.height });
+      return detailView(title, body, { list: this.#list, ...frame });
     }
     const head = this.headLines(history, frame.width);
     const height = frame.height - head.length;

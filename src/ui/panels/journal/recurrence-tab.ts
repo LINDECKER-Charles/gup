@@ -70,7 +70,7 @@ export class RecurrenceTab implements JournalTab {
     const current = this.#list.current;
     if (this.#list.isDetailOpen && current) {
       const body = detailBody(current, frame);
-      return detailView(detailTitle(current), body, { list: this.#list, height: frame.height });
+      return detailView(detailTitle(current), body, { list: this.#list, ...frame });
     }
     if (this.#list.visible.length === 0) return placeholder(RECURRENCE_LABELS.empty);
     const head = this.headLines(history, frame.width);

@@ -5,7 +5,8 @@ import type { Viewport } from "../../../../src/ui/panels/panel.js";
 import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS, RECURRENCE_LABELS } from "../../../../src/ui/text/journal-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import type { Line } from "../../../../src/ui/tui/styled-lines.js";
-import { JOURNAL_NOW, journalData, scriptedSource } from "./journal-data.js";
+import { updateEvent } from "../../../support/history-fixtures.js";
+import { JOURNAL_NOW, journalData, logRecord, scriptedSource } from "./journal-data.js";
 
 const VIEWPORT: Viewport = { width: 100, height: 26 };
 
@@ -92,6 +93,21 @@ describe("Événements", () => {
     expect(detail).toMatch(/winget +9 en retard · 12,4 s/);
     expect(detail).toMatch(/az +erreur : Please run 'az login'/);
   });
+
+  it("shows a long package id and a long path in full, wrapped at the panel's edge", async () => {
+    const packageId = `Microsoft.VisualStudio.${"BuildTools.".repeat(10)}Extra`;
+    const path = `C:\\${"dossier\\".repeat(20)}package.json`;
+    const failure = updateEvent("winget", packageId, { status: "failed", message: `ENOENT: ${path}` });
+    const { press, screen } = await journalOn("3", journalData([failure]));
+
+    press("return");
+
+    const detail = screen();
+    for (const line of detail) expect(line.length).toBeLessThanOrEqual(VIEWPORT.width);
+    const joined = detail.map((line) => line.trim()).join("");
+    expect(joined).toContain(packageId);
+    expect(joined).toContain(path);
+  });
 });
 
 describe("Récurrence", () => {
@@ -158,6 +174,18 @@ describe("Debug", () => {
     expect(screen()[1]).toBe("AVERT. cmd.end");
     expect(detail).toMatch(/Contexte +scan · az/);
     expect(detail).toContain(`${DEBUG_LABELS.data}\n  {\n    "cmd": "az",`);
+  });
+
+  it("wraps a long value of a record's data instead of cutting it", async () => {
+    const stderr = "e".repeat(300);
+    const record = logRecord({ level: "warn", event: "cmd.end", data: { cmd: "npm", stderr } });
+    const { press, screen } = await journalOn("4", journalData(undefined, { log: { records: [record] } }));
+
+    press("return");
+
+    const detail = screen();
+    for (const line of detail) expect(line.length).toBeLessThanOrEqual(VIEWPORT.width);
+    expect(detail.map((line) => line.trim()).join("")).toContain(`"stderr":"${stderr}"`);
   });
 
   it("says when this run writes no log, and counts what could not be read", async () => {

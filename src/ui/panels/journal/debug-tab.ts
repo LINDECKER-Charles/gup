@@ -6,7 +6,7 @@ import type { KeyPress } from "../../tui/screen-host.js";
 import { fit, seg, type Line } from "../../tui/styled-lines.js";
 import { placeholder } from "../panel.js";
 import { BrowsableList } from "./browsable-list.js";
-import { detailView, fieldLines, type DetailField } from "./detail-lines.js";
+import { detailView, fieldLines, indentedLines, type DetailField } from "./detail-lines.js";
 import type { JournalData, JournalLog } from "./journal-source.js";
 import {
   clickRow,
@@ -30,6 +30,8 @@ type LevelFilter = keyof typeof DEBUG_LABELS.levels;
 const LEVEL_FILTERS: readonly LevelFilter[] = ["all", "debug", "info", "warn", "error"];
 const SESSION_ID_LENGTH = 8;
 const JSON_INDENT = 2;
+/** The data block sits under its title by this much. */
+const DATA_INDENT = "  ";
 const LEADING_SPACES = /^ */;
 
 export interface DebugTabActions {
@@ -66,7 +68,7 @@ export class DebugTab implements JournalTab {
     const current = this.#list.current;
     if (this.#list.isDetailOpen && current) {
       const body = detailBody(current, frame.width);
-      return detailView(detailTitle(current), body, { list: this.#list, height: frame.height });
+      return detailView(detailTitle(current), body, { list: this.#list, ...frame });
     }
     const head = this.headLines(data.log, frame.width);
     const foot = footLines(data);
@@ -159,19 +161,22 @@ function detailBody(record: LogRecord, width: number): Line[] {
     [DEBUG_LABELS.session, record.runId.slice(0, SESSION_ID_LENGTH)],
     [DEBUG_LABELS.elevated, record.elevated ? EVENT_LABELS.yes : undefined],
   ];
-  return [...fieldLines(fields, width), ...dataLines(record.data)];
+  return [...fieldLines(fields, width), ...dataLines(record.data, width)];
 }
 
-/** The record's data as indented JSON, each line made printable, its indentation kept. */
-function dataLines(data: LogRecord["data"]): Line[] {
+/**
+ * The record's data as indented JSON, each line made printable, its
+ * indentation kept, a long value (a command's error output) wrapped under it.
+ */
+function dataLines(data: LogRecord["data"], width: number): Line[] {
   if (data === undefined) return [];
   const json = JSON.stringify(data, null, JSON_INDENT).split("\n");
   return [
     [],
     [seg(DEBUG_LABELS.data, "strong")],
-    ...json.map((line): Line => {
+    ...json.flatMap((line) => {
       const indent = LEADING_SPACES.exec(line)?.[0] ?? "";
-      return [seg(`  ${indent}${printable(line.slice(indent.length))}`)];
+      return indentedLines(printable(line.slice(indent.length)), `${DATA_INDENT}${indent}`, width);
     }),
   ];
 }
