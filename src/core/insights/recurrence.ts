@@ -11,11 +11,11 @@ import type { Cadence, PackageRecurrence, TimedUpdate, VersionStep } from "./typ
  * any package that needed a retry.
  */
 
-export const RETRY_MERGE_MS = 3_600_000;
+const RETRY_MERGE_MS = 3_600_000;
 /** Version steps kept per package, newest first. */
 export const MAX_VERSION_STEPS = 20;
 /** Upper bound of each cadence's median interval, in days; beyond: rare. */
-export const CADENCE_MAX_DAYS = { weekly: 10, monthly: 45, quarterly: 120 } as const;
+const CADENCE_MAX_DAYS = { weekly: 10, monthly: 45, quarterly: 120 } as const;
 
 const MS_PER_DAY = 86_400_000;
 const KEY_SEPARATOR = "\u0000";
