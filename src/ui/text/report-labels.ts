@@ -22,10 +22,9 @@ export const REPORT_MESSAGES = {
   badUntil: (raw: string) => `date de fin invalide : ${raw} (AAAA-MM-JJ)`,
   untilBeforeSince: "la date de fin précède le début de la période",
   badDelimiter: (raw: string) => `séparateur CSV invalide : ${raw} (, ; ou tab)`,
-  written: (path: string, events: number) =>
-    `  export écrit : ${path} (${counted(events, "événement", "événements")})`,
+  written: (path: string, records: number) =>
+    `  export écrit : ${path} (${counted(records, "enregistrement", "enregistrements")})`,
   empty: (period: string) => `aucune activité sur la période (${period})`,
-  unreadable: (reason: string) => `historique illisible : ${reason}`,
   malformed: (count: number) => `${count} ligne(s) d'historique illisible(s) ignorée(s)`,
   unsupported: (count: number) =>
     `${count} ligne(s) écrite(s) par une version plus récente de gup ignorée(s)`,

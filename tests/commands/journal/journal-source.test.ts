@@ -74,7 +74,7 @@ describe("journal source", () => {
   });
 
   it("writes JSON and CSV through the history export, the archive through the diagnostic", async () => {
-    const exportHistory = vi.fn(async () => ({ path: "C:\\r\\h.csv", bytes: 1, events: 1, read: historyRead() }));
+    const exportHistory = vi.fn(async () => ({ path: "C:\\r\\h.csv", bytes: 1, records: 1, read: historyRead() }));
     const writeDiagnostic = vi.fn(async () => "C:\\r\\d.zip");
     const source = createJournalSource({ exportHistory, writeDiagnostic });
 

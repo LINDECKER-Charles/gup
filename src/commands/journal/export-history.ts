@@ -46,7 +46,8 @@ export interface HistoryExportResult {
   /** The file written; null on standard output. */
   readonly path: string | null;
   readonly bytes: number;
-  readonly events: number;
+  /** Records the export holds: every event, or every update attempt for a CSV. */
+  readonly records: number;
   readonly read: HistoryRead;
 }
 
@@ -79,12 +80,18 @@ interface Serializer {
   readonly kind: OutputKind;
   readonly extension: OutputExtension;
   serialize(input: SerializeInput): string;
+  /** How many records of `read` the output holds. */
+  records(read: HistoryRead): number;
 }
 
+const everyEvent = (read: HistoryRead): number => read.events.length;
+const updatesOnly = (read: HistoryRead): number =>
+  read.events.filter((event) => event.kind === "update").length;
+
 const SERIALIZERS: Readonly<Record<HistoryFormat, Serializer>> = {
-  json: { kind: "history", extension: "json", serialize: serializeJson },
-  csv: { kind: "history", extension: "csv", serialize: serializeCsv },
-  text: { kind: "report", extension: "txt", serialize: serializeText },
+  json: { kind: "history", extension: "json", serialize: serializeJson, records: everyEvent },
+  csv: { kind: "history", extension: "csv", serialize: serializeCsv, records: updatesOnly },
+  text: { kind: "report", extension: "txt", serialize: serializeText, records: everyEvent },
 };
 
 /** Never partial: a read or write failure rejects, and nothing is reported as written. */
@@ -99,9 +106,9 @@ export async function exportHistory(
   const content = serializer.serialize({ request, read, insights, deps });
   const path = await deliver(content, serializer, { request, deps });
   const bytes = Buffer.byteLength(content);
-  const events = read.events.length;
-  log.info("report.export", { format: request.format, events, bytes, path });
-  return { path, bytes, events, read };
+  const records = serializer.records(read);
+  log.info("report.export", { format: request.format, records, bytes, path });
+  return { path, bytes, records, read };
 }
 
 async function deliver(

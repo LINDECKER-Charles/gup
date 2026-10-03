@@ -76,7 +76,7 @@ describe("gup report", () => {
 
     expect(await gup("report", "-f", "csv", "-o", out)).toBe(0);
     expect(readFileSync(out, "utf8")).toContain("Git.Git");
-    expect(output(stdout)).toContain(REPORT_MESSAGES.written(out, 3));
+    expect(output(stdout)).toContain(REPORT_MESSAGES.written(out, 2));
     expect(await gup("report", "-f", "csv", "-o", out)).toBe(1);
     expect(output(stderr)).toContain("existe déjà — utilisez --force");
     expect(await gup("report", "-f", "csv", "-o", out, "--force")).toBe(0);
@@ -88,7 +88,7 @@ describe("gup report", () => {
       .map((line) => JSON.parse(line) as { event: string; data?: Record<string, unknown> })
       .filter((record) => record.event === "report.export");
     expect(exports).toHaveLength(2);
-    expect(exports[0]!.data).toMatchObject({ format: "csv", events: 3, bytes: expect.any(Number) });
+    expect(exports[0]!.data).toMatchObject({ format: "csv", records: 2, bytes: expect.any(Number) });
   });
 
   it("writes the text charts to a file as plain text", async () => {

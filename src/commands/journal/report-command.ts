@@ -116,14 +116,14 @@ function targetOf({ out, force }: ReportOptions): ExportTarget {
 }
 
 /** Notices on stderr (stdout may be the data), the file written on stdout. */
-function printOutcome({ path, events, read }: HistoryExportResult, period: Period): void {
+function printOutcome({ path, records, read }: HistoryExportResult, period: Period): void {
   const notices = [
     ...(read.stats.malformed > 0 ? [REPORT_MESSAGES.malformed(read.stats.malformed)] : []),
     ...(read.stats.unsupported > 0 ? [REPORT_MESSAGES.unsupported(read.stats.unsupported)] : []),
-    ...(events === 0 ? [REPORT_MESSAGES.empty(periodLabel(period))] : []),
+    ...(read.events.length === 0 ? [REPORT_MESSAGES.empty(periodLabel(period))] : []),
   ];
   for (const notice of notices) process.stderr.write(`${chalk.dim(notice)}\n`);
-  if (path !== null) process.stdout.write(`${REPORT_MESSAGES.written(path, events)}\n`);
+  if (path !== null) process.stdout.write(`${REPORT_MESSAGES.written(path, records)}\n`);
 }
 
 function failureMessage(error: unknown): string {
