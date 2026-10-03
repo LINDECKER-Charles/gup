@@ -9,6 +9,8 @@
  * and the current operation (`core/state/run-context.ts`), and redacts.
  */
 
+import type { LogRecord } from "./types.js";
+
 export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
 
 /** The least severe level recorded, or "off". */
@@ -44,6 +46,12 @@ export interface LogBackend {
   emit(level: LogLevel, event: string, data: LogInput | undefined): void;
   /** Record from `threshold` on. Optional: a fixed backend ignores it. */
   setThreshold?(threshold: LogThreshold): void;
+  /**
+   * Write a record another gup process produced — the elevated child, whose
+   * lines come back with its outcomes. Already validated; the backend applies
+   * its own threshold and redaction. Optional: must not throw.
+   */
+  forward?(record: LogRecord): void;
 }
 
 let backend: LogBackend | null = null;
@@ -66,6 +74,15 @@ export function effectiveLogThreshold(): LogThreshold {
 export function applyLogThreshold(threshold: LogThreshold): void {
   try {
     backend?.setThreshold?.(threshold);
+  } catch {
+    // Same contract as every logging call: never a reason to fail.
+  }
+}
+
+/** Hand a record of the elevated child to the backend (see {@link LogBackend.forward}). */
+export function forwardLogRecord(record: LogRecord): void {
+  try {
+    backend?.forward?.(record);
   } catch {
     // Same contract as every logging call: never a reason to fail.
   }

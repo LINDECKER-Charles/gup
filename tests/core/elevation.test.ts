@@ -202,6 +202,59 @@ describe("runElevatedBatch", () => {
   });
 });
 
+describe("elevated log bridge", () => {
+  const childRecord = (event: string) =>
+    JSON.stringify({ v: 1, ts: "2026-10-03T12:00:00.000Z", level: "info", event, runId: "child", pid: 7 });
+
+  it("writes the child's log next to its outcomes only when there is one", async () => {
+    const withLog = await mkSandboxFile("with-log.json");
+    await writeBatchOutput(withLog, [{ id: "git", success: true }], [childRecord("cmd.end")]);
+    expect(JSON.parse(await readFile(withLog, "utf8"))).toEqual({
+      version: 1,
+      outcomes: [{ id: "git", success: true }],
+      log: [childRecord("cmd.end")],
+    });
+    const withoutLog = await mkSandboxFile("without-log.json");
+    await writeBatchOutput(withoutLog, [{ id: "git", success: true }], []);
+    expect(JSON.parse(await readFile(withoutLog, "utf8"))).not.toHaveProperty("log");
+  });
+
+  it("forwards the child's records to this process's log, whatever the outcomes say", async () => {
+    const forward = vi.fn();
+    installLogBackend({ isEnabled: () => true, emit: () => {}, forward });
+    try {
+      const good = await runElevatedBatch(["choco:git"], async (inputFile) => {
+        await writeBatchOutput(`${inputFile}.out`, [{ id: "git", success: true }], [
+          childRecord("update.start"),
+          "garbage",
+        ]);
+      });
+      expect(good).toEqual([{ id: "git", success: true }]);
+      const mismatched = await runElevatedBatch(["choco:git", "choco:7zip"], async (inputFile) => {
+        await writeBatchOutput(`${inputFile}.out`, [{ id: "git", success: true }], [childRecord("cmd.end")]);
+      });
+      expect(mismatched.every((outcome) => !outcome.success)).toBe(true);
+      expect(forward.mock.calls.map(([record]) => (record as { event: string }).event)).toEqual([
+        "update.start",
+        "cmd.end",
+      ]);
+    } finally {
+      installLogBackend(null);
+    }
+  });
+
+  it("never lets a malformed log change the outcomes", async () => {
+    const outcomes = await runElevatedBatch(["choco:git"], async (inputFile) => {
+      await writeFile(
+        `${inputFile}.out`,
+        JSON.stringify({ version: 1, outcomes: [{ id: "git", success: true }], log: { not: "a list" } }),
+        { encoding: "utf8", flag: "wx" },
+      );
+    });
+    expect(outcomes).toEqual([{ id: "git", success: true }]);
+  });
+});
+
 describe("elevated child settings (payload)", () => {
   async function payloadFile(content: unknown): Promise<string> {
     const file = await mkSandboxFile("settings.json");

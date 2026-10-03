@@ -1,4 +1,6 @@
 import { appendFileSync, mkdirSync } from "node:fs";
+import { log } from "../log/log.js";
+import { redactSecrets } from "../log/redact.js";
 import { installConsole } from "../process/output-router.js";
 import { RUN_ID, runTrigger } from "../state/run-context.js";
 import { gupVersion } from "../version.js";
@@ -31,6 +33,11 @@ import type {
  *   `process.exit(code)`, which does not drain pending async I/O — a
  *   fire-and-forget append would routinely lose the last records of a run. At
  *   these sizes the syscall is noise next to spawning an installer.
+ *
+ * Provider messages and scan errors are stored as the tools printed them,
+ * minus the secrets some of them echo (a token in a URL, a `password=`):
+ * known secret shapes are masked at write time. Paths stay verbatim — the
+ * history is the user's own record; exports shorten them.
  */
 
 /** Set to `0` / `false` / `off` / `no` to turn the history off entirely. */
@@ -91,7 +98,7 @@ export function recordUpdate(record: UpdateRecord): void {
     ...envelope("update"),
     providerId: record.providerId,
     packageId: outcome.id,
-    status: statusOf(outcome),
+    status: updateStatusOf(outcome),
     ...versionsOf(record.pkg),
     ...attemptDetails(record),
   };
@@ -106,7 +113,7 @@ function providerRecord(
   return {
     providerId: result.providerId,
     outdated: result.packages.length,
-    ...(result.error !== undefined && { error: result.error }),
+    ...(result.error !== undefined && { error: redactSecrets(result.error) }),
     ...(durationMs !== undefined && { durationMs: wholeMs(durationMs) }),
   };
 }
@@ -124,7 +131,7 @@ function attemptDetails(record: UpdateRecord): AttemptDetails {
   const { durationMs, outcome, retry, elevated, scheduleId } = record;
   return {
     ...(durationMs !== undefined && { durationMs: wholeMs(durationMs) }),
-    ...(outcome.message !== undefined && { message: outcome.message }),
+    ...(outcome.message !== undefined && { message: redactSecrets(outcome.message) }),
     ...(retry !== undefined && { retry }),
     ...(elevated === true && { elevated: true }),
     ...(scheduleId !== undefined && { scheduleId }),
@@ -139,8 +146,9 @@ function wholeMs(ms: number): number {
 /**
  * A skipped attempt is not a failure: the provider deferred on purpose, or the
  * user skipped it. Keeping the three apart is the whole point of logging them.
+ * Shared with the debug log, so both records name an outcome the same way.
  */
-function statusOf(outcome: UpdateOutcome): UpdateStatus {
+export function updateStatusOf(outcome: UpdateOutcome): UpdateStatus {
   if (outcome.success) return "success";
   return outcome.skipped ? "skipped" : "failed";
 }
@@ -186,11 +194,12 @@ function isEnabled(): boolean {
  * tools and a warning there would corrupt the payload. Through the output
  * router: during an in-app update the warning lands in the install pane, and
  * while a full screen is mounted it waits for the exit instead of painting
- * over the frame.
+ * over the frame. The debug log records it too, with the reason.
  */
 function warnOnce(err: unknown): void {
   if (warned) return;
   warned = true;
   const reason = err instanceof Error ? err.message : String(err);
+  log.warn("history.write-failed", { reason });
   installConsole.warn(`  historique non écrit — ${reason}`);
 }

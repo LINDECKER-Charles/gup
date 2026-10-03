@@ -226,4 +226,40 @@ describe("opt-out and failure handling", () => {
     expect(stderrSpy).toHaveBeenCalledTimes(1);
     expect(String(stderrSpy.mock.calls[0]![0])).toContain("historique non écrit");
   });
+
+  it("tells the debug log why the history was not written", async () => {
+    const facade = await import("../../src/core/log/log.js");
+    const emit = vi.fn();
+    facade.installLogBackend({ isEnabled: () => true, emit });
+    const blocker = join(dir, "blocker");
+    writeFileSync(blocker, "not a directory");
+    process.env["GUP_HISTORY_DIR"] = join(blocker, "history");
+    try {
+      store.recordUpdate({ providerId: "p", outcome: outcome() });
+    } finally {
+      facade.installLogBackend(null);
+    }
+    expect(emit).toHaveBeenCalledExactlyOnceWith("warn", "history.write-failed", {
+      reason: expect.any(String),
+    });
+  });
+});
+
+describe("secrets", () => {
+  it("masks known secret shapes in update messages and scan errors, keeping paths verbatim", () => {
+    store.recordUpdate({
+      providerId: "npm-g",
+      outcome: outcome({
+        success: false,
+        message: "403 for https://bob:hunter2@registry.example.com in C:\\Users\\bob\\.npmrc",
+      }),
+    });
+    store.recordScan({
+      durationMs: 5,
+      results: [scanResult({ providerId: "gh-ext", error: "gh: token ghp_abcdefghijklmnopqrstuvwxyz0123456789 expired" })],
+    });
+    const [update, scan] = readEvents() as [UpdateEvent, ScanEvent];
+    expect(update.message).toBe("403 for https://***@registry.example.com in C:\\Users\\bob\\.npmrc");
+    expect(scan.providers[0]?.error).toBe("gh: token *** expired");
+  });
 });
