@@ -62,6 +62,14 @@ describe("redaction", () => {
     expect(counts["<HOME>"]).toBe(2);
   });
 
+  it("replaces the home directory a JSON report escaped", () => {
+    const report = JSON.stringify({ location: "C:\\Users\\user\\AppData\\Roaming\\npm" });
+    const { text, counts } = redact(report, WINDOWS_MACHINE);
+
+    expect(JSON.parse(text)).toEqual({ location: "<HOME>\\AppData\\Roaming\\npm" });
+    expect(counts).toEqual({ "<HOME>": 1, "<USER>": 0, "<HOST>": 0 });
+  });
+
   it("replaces the user and host names only where they stand alone", () => {
     const { text, counts } = redact(
       "owner user on HOST · charlotte · user.dev · xcharl",
