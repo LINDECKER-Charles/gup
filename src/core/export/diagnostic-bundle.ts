@@ -1,13 +1,15 @@
 import AdmZip from "adm-zip";
 import { LOG_FILE_PATTERN } from "../log/file-sink.js";
 import { parseLogLine } from "../log/log-reader.js";
+import { redactText } from "../log/redact.js";
 import { resanitizeRecord, sanitizeData } from "../log/sanitize-data.js";
 import type { SystemSnapshot } from "../state/system-snapshot.js";
 
 /**
  * The archive `gup log export` writes for a bug report: the debug log of the
- * last days and a description of the machine — nothing else (no history
- * events, no settings file, no environment beyond an allowlist).
+ * last days, a description of the machine and, unless left out, a summary of
+ * the period's activity — nothing else (no history events, no settings file,
+ * no environment beyond an allowlist).
  *
  * Every log line is parsed and redacted again on the way in: the redaction
  * rules may have improved since the line was written, and a line that is not
@@ -29,8 +31,15 @@ export interface DiagnosticLog {
 export const DIAGNOSTIC_ENTRIES = {
   readme: "README.txt",
   system: "system.json",
+  history: "history-summary.json",
   logs: "logs",
 } as const;
+
+/**
+ * The activity summary of the archive: the period's insights as JSON data
+ * (already redacted by the caller), or why the history could not be read.
+ */
+export type DiagnosticHistory = { readonly summary: unknown } | { readonly unreadable: string };
 
 /** What an archive holds, for its README. */
 export interface DiagnosticContents {
@@ -40,12 +49,15 @@ export interface DiagnosticContents {
   readonly logs: readonly string[];
   /** Log lines left out because they were not well-formed records. */
   readonly dropped: number;
+  /** Absent when the summary was left out on request. */
+  readonly history?: DiagnosticHistory;
 }
 
 export interface DiagnosticInput {
   readonly generatedAt: Date;
   readonly system: SystemSnapshot;
   readonly logs: readonly DiagnosticLog[];
+  readonly history?: DiagnosticHistory;
   /** The README, in the interface's language: what is inside, what to check before sharing. */
   readonly readme: (contents: DiagnosticContents) => string;
 }
@@ -70,12 +82,25 @@ export function buildDiagnosticZip(input: DiagnosticInput): DiagnosticArchive {
     zip.addFile(`${DIAGNOSTIC_ENTRIES.logs}/${log.name}`, Buffer.from(content, "utf8"));
     included.push(log.name);
   }
-  const system = JSON.stringify(sanitizeData(input.system) ?? {}, null, JSON_INDENT);
-  zip.addFile(DIAGNOSTIC_ENTRIES.system, Buffer.from(`${system}\n`, "utf8"));
+  addJson(zip, DIAGNOSTIC_ENTRIES.system, sanitizeData(input.system) ?? {});
   const { generatedAt } = input;
-  const readme = input.readme({ generatedAt, system: input.system, logs: included, ...totals });
+  const history = input.history && redactedHistory(input.history);
+  if (history !== undefined && "summary" in history) {
+    addJson(zip, DIAGNOSTIC_ENTRIES.history, history.summary);
+  }
+  const contents = { generatedAt, system: input.system, logs: included, ...totals };
+  const readme = input.readme({ ...contents, ...(history !== undefined && { history }) });
   zip.addFile(DIAGNOSTIC_ENTRIES.readme, Buffer.from(readme, "utf8"));
   return { zip: zip.toBuffer(), ...totals };
+}
+
+/** The reason a history could not be read names its path: shortened like everything else. */
+function redactedHistory(history: DiagnosticHistory): DiagnosticHistory {
+  return "unreadable" in history ? { unreadable: redactText(history.unreadable) } : history;
+}
+
+function addJson(zip: AdmZip, name: string, value: unknown): void {
+  zip.addFile(name, Buffer.from(`${JSON.stringify(value, null, JSON_INDENT)}\n`, "utf8"));
 }
 
 /** Each record of a log file, redacted again; anything else dropped and counted. */
