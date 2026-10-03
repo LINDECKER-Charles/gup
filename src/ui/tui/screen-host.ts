@@ -85,14 +85,15 @@ export function createScreenHost(
       const tui = await loadTui();
       const renderer = await createRenderer(tui);
       let appearance: Appearance | undefined;
+      let stopWatching = (): void => {};
       const release = once(() => releaseScreen(renderer, appearance));
-      const stopWatching = watchExitSignals((signal) => endOnSignal(signal, release));
       try {
+        stopWatching = watchExitSignals((signal) => endOnSignal(signal, release));
         appearance = appearanceOf(renderer, tui, createAppearance ?? defaults.createAppearance);
         setFullScreen(true);
         return await mountScreen({ renderer, tui, appearance }, mount);
       } finally {
-        await release().finally(stopWatching);
+        await release().finally(() => stopWatching());
       }
     },
   };
