@@ -62,6 +62,7 @@ describe("parseAddArgs", () => {
     [{ every: "daily", on: "lun" }, "--on ne s'applique qu'à --every weekly ou monthly"],
     [{ every: "weekly" }, "--on : jour de la semaine attendu (lun, mar… dim)"],
     [{ every: "weekly", on: "funday" }, "--on : jour de la semaine attendu (lun, mar… dim)"],
+    [{ every: "weekly", on: "constructor" }, "--on : jour de la semaine attendu (lun, mar… dim)"],
     [{ every: "monthly", on: "31" }, "--on : jour du mois attendu (1 à 28, ou dernier)"],
     [{ cron: "0 9 * * *", at: "10:00" }, "--on et --at ne s'appliquent pas à --cron : l'expression dit tout"],
   ] as const)("refuses %j", (overrides, error) => {

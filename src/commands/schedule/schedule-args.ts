@@ -130,13 +130,19 @@ function presetRecurrence(
       : failed("--on ne s'applique qu'à --every weekly ou monthly");
   }
   if (preset === "weekly") {
-    const weekday = on === undefined ? undefined : WEEKDAYS[on.toLowerCase()];
+    const weekday = on === undefined ? undefined : weekdayOf(on);
     if (weekday === undefined) return failed("--on : jour de la semaine attendu (lun, mar… dim)");
     return { value: { kind: "weekly", weekday, at }, errors: [] };
   }
   const day = on === undefined ? null : parseMonthDay(on);
   if (day === null) return failed("--on : jour du mois attendu (1 à 28, ou dernier)");
   return { value: { kind: "monthly", day, at }, errors: [] };
+}
+
+/** "lun", "monday", "1"… → that weekday; only the table's own words ("constructor" is none). */
+function weekdayOf(text: string): Weekday | undefined {
+  const word = text.toLowerCase();
+  return Object.hasOwn(WEEKDAYS, word) ? WEEKDAYS[word] : undefined;
 }
 
 /** "HH:MM" (or "H:MM"), 09:00 when absent; null when malformed. */
