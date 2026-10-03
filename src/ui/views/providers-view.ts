@@ -8,7 +8,11 @@ export interface ProvidersPort {
   readonly status: () => Promise<ProviderStatusReport>;
 }
 
-/** Providers: what this machine has, what it lacks and how to install it. */
+/**
+ * Providers: what this machine has, what it lacks and how to install it, and
+ * — greyed, unless the "show incompatible providers" preference is off —
+ * what belongs to another OS.
+ */
 export function providersView(port: ProvidersPort): ViewDefinition {
   return {
     id: "providers",
@@ -16,7 +20,9 @@ export function providersView(port: ProvidersPort): ViewDefinition {
     order: 40,
     group: 1,
     create(context) {
-      const panel: ProvidersPanel = new ProvidersPanel(() => void load(panel, port, context));
+      const panel: ProvidersPanel = new ProvidersPanel(() => void load(panel, port, context), {
+        showIncompatible: () => context.preferences().showIncompatibleProviders,
+      });
       return panel;
     },
   };
@@ -25,10 +31,13 @@ export function providersView(port: ProvidersPort): ViewDefinition {
 /** Detection runs once, the first time the view is shown; a failure shows empty groups. */
 async function load(panel: ProvidersPanel, port: ProvidersPort, context: ViewContext) {
   try {
-    const report = await port.status();
-    panel.setData(report.detected, report.missing);
+    panel.setData(await port.status());
   } catch {
-    panel.setData([], []);
+    panel.setData(emptyReport());
   }
   context.redraw();
+}
+
+function emptyReport(): ProviderStatusReport {
+  return { platform: process.platform, detected: [], missing: [], incompatible: [] };
 }

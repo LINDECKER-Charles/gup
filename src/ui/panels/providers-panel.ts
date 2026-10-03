@@ -1,31 +1,53 @@
+import { supportLabel } from "../../core/platform/platform-label.js";
+import type { ProviderStatusReport, ProviderSummary } from "../../core/platform/types.js";
+import { PROVIDERS_PANEL_LABELS as LABELS, providersSummary } from "../text/providers-labels.js";
+import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
-import { fit, seg, type Line } from "../tui/styled-lines.js";
+import { fit, seg, wrap, type Line } from "../tui/styled-lines.js";
 import { PAGE_STEP, placeholder, type Panel, type Viewport } from "./panel.js";
 
-export interface ProviderInfo {
-  readonly id: string;
-  readonly displayName: string;
-  readonly installHint?: string;
+const NAME_WIDTH = 30;
+/** How far an incompatible row's name may shrink so its badge still fits. */
+const MIN_NAME_WIDTH = 10;
+const COLUMN_GAP = 1;
+/** "  – ": indent, glyph and space before an incompatible row's name. */
+const ROW_PREFIX_WIDTH = 4;
+/** The explanation wraps here: it fits the panel of an 80-column terminal. */
+const NOTE_WIDTH = 48;
+const HINT_PREFIX = "      → ";
+
+const SCROLL_STEPS: Readonly<Record<string, number>> = {
+  up: -1,
+  k: -1,
+  down: 1,
+  j: 1,
+  pageup: -PAGE_STEP,
+  pagedown: PAGE_STEP,
+};
+
+export interface ProvidersPanelOptions {
+  /** Read on every render, so the preference applies live. Default: shown. */
+  readonly showIncompatible?: () => boolean;
 }
 
-const NAME_WIDTH = 30;
-
 /**
- * Which providers gup found on this machine, and how to get the others.
- * Detection is slow, so it starts the first time the panel is shown: `load`
- * fetches the data and hands it to {@link setData}.
+ * Which providers gup found on this machine, how to get the others, and —
+ * greyed — the ones that belong to another OS. Detection is slow, so it
+ * starts the first time the panel is shown: `load` fetches the report and
+ * hands it to {@link setData}.
  */
 export class ProvidersPanel implements Panel {
   readonly title = "Providers";
   readonly isCapturingText = false;
   readonly #load: () => void;
+  readonly #showIncompatible: () => boolean;
   #isLoadRequested = false;
-  #detected: readonly ProviderInfo[] | null = null;
-  #missing: readonly ProviderInfo[] = [];
+  #report: ProviderStatusReport | null = null;
   #offset = 0;
 
-  constructor(load: () => void) {
+  constructor(load: () => void, options: ProvidersPanelOptions = {}) {
     this.#load = load;
+    this.#showIncompatible = options.showIncompatible ?? (() => true);
   }
 
   onShow(): void {
@@ -34,55 +56,111 @@ export class ProvidersPanel implements Panel {
     this.#load();
   }
 
-  setData(detected: readonly ProviderInfo[], missing: readonly ProviderInfo[]): void {
-    this.#detected = detected;
-    this.#missing = missing;
+  setData(report: ProviderStatusReport): void {
+    this.#report = report;
     this.#offset = 0;
   }
 
   hints(): string {
-    return "↑↓ défiler";
+    return LABELS.hints;
   }
 
   render(viewport: Viewport): readonly Line[] {
-    if (!this.#detected) return placeholder("détection des providers…");
-    return this.allLines().slice(this.#offset, this.#offset + viewport.height);
+    if (!this.#report) return placeholder(LABELS.loading);
+    const lines = this.allLines(viewport.width);
+    // The list shrinks when the incompatible group is hidden: never scroll past its end.
+    const offset = Math.min(this.#offset, Math.max(0, lines.length - 1));
+    return lines.slice(offset, offset + viewport.height);
   }
 
   press(key: KeyPress): void {
-    const steps: Record<string, number> = {
-      up: -1,
-      k: -1,
-      down: 1,
-      j: 1,
-      pageup: -PAGE_STEP,
-      pagedown: PAGE_STEP,
-    };
-    const step = steps[key.name];
+    const step = SCROLL_STEPS[key.name];
     if (step !== undefined) this.scroll(step);
   }
 
   click(): void {}
 
   scroll(step: number): void {
-    this.#offset = Math.max(0, Math.min(this.#offset + step, this.allLines().length - 1));
+    // The width only shapes the columns, never the number of lines.
+    const lastLine = this.allLines(Number.POSITIVE_INFINITY).length - 1;
+    this.#offset = Math.max(0, Math.min(this.#offset + step, lastLine));
   }
 
-  private allLines(): Line[] {
-    const detected = this.#detected ?? [];
+  private allLines(width: number): Line[] {
+    if (!this.#report) return [];
+    const report = this.#showIncompatible() ? this.#report : { ...this.#report, incompatible: [] };
     return [
-      [seg("● ", "success"), seg(`Détectés (${detected.length})`, "strong")],
-      ...detected.map((p): Line => [
-        seg("  ● ", "success"),
-        seg(fit(p.displayName, NAME_WIDTH)),
-        seg(p.id, "muted"),
-      ]),
+      [seg(providersSummary(report), "muted")],
       [],
-      [seg("○ ", "muted"), seg(`Non installés / hors PATH (${this.#missing.length})`, "strong")],
-      ...this.#missing.flatMap((p): Line[] => [
-        [seg("  ○ ", "muted"), seg(fit(p.displayName, NAME_WIDTH)), seg(p.id, "muted")],
-        ...(p.installHint ? [[seg(`      → ${p.installHint}`, "muted")]] : []),
-      ]),
+      ...detectedLines(report.detected),
+      [],
+      ...missingLines(report.missing),
+      ...incompatibleLines(report, width),
     ];
   }
+}
+
+/** The name cut to its column, then a gap: a name as wide as the column never touches the id. */
+function nameCell(name: string, width: number = NAME_WIDTH): string {
+  return `${fit(name, width)}${" ".repeat(COLUMN_GAP)}`;
+}
+
+function detectedLines(detected: readonly ProviderSummary[]): Line[] {
+  const glyph = STATUS_GLYPHS.enabled;
+  return [
+    [seg(`${glyph} `, "success"), seg(LABELS.detected(detected.length), "strong")],
+    ...detected.map((p): Line => [
+      seg(`  ${glyph} `, "success"),
+      seg(nameCell(p.displayName)),
+      seg(p.id, "muted"),
+    ]),
+  ];
+}
+
+function missingLines(missing: readonly ProviderSummary[]): Line[] {
+  const glyph = STATUS_GLYPHS.disabled;
+  return [
+    [seg(`${glyph} `, "muted"), seg(LABELS.missing(missing.length), "strong")],
+    ...missing.flatMap((p): Line[] => [
+      [seg(`  ${glyph} `, "muted"), seg(nameCell(p.displayName)), seg(p.id, "muted")],
+      ...(p.installHint ? [[seg(`${HINT_PREFIX}${p.installHint}`, "muted")]] : []),
+    ]),
+  ];
+}
+
+/**
+ * The providers foreign to this OS: every row in the `disabled` tone, and the
+ * glyph, the header and the "<OS> uniquement" badge say it without colour
+ * (conhost renders no faint text). No install hint — the badge is the
+ * information. Nothing at all when the group is empty.
+ */
+function incompatibleLines(report: ProviderStatusReport, width: number): Line[] {
+  const { platform, incompatible } = report;
+  if (incompatible.length === 0) return [];
+  const header = LABELS.incompatible(platform, incompatible.length);
+  return [
+    [],
+    [seg(`${STATUS_GLYPHS.incompatible} `, "disabled"), seg(header, "strong")],
+    ...wrap(LABELS.incompatibleNote, NOTE_WIDTH).map((line): Line => [seg(`  ${line}`, "muted")]),
+    ...incompatibleRows(incompatible, width),
+  ];
+}
+
+/**
+ * One row per provider, the columns sized for the whole group so the badges
+ * line up; on a narrow panel the names give way first, so the badge — what
+ * the row is about — stays whole.
+ */
+function incompatibleRows(incompatible: readonly ProviderSummary[], width: number): Line[] {
+  const rows = incompatible.map((p) => ({ ...p, badge: supportLabel(p.platforms ?? []) }));
+  const idWidth = Math.max(...rows.map((row) => row.id.length)) + COLUMN_GAP;
+  const badgeWidth = Math.max(...rows.map((row) => row.badge.length));
+  const room = width - ROW_PREFIX_WIDTH - COLUMN_GAP - idWidth - badgeWidth;
+  const nameWidth = Math.max(MIN_NAME_WIDTH, Math.min(NAME_WIDTH, room));
+  return rows.map((row): Line => [
+    seg(`  ${STATUS_GLYPHS.incompatible} `, "disabled"),
+    seg(nameCell(row.displayName, nameWidth), "disabled"),
+    seg(fit(row.id, idWidth), "disabled"),
+    seg(row.badge, "disabled"),
+  ]);
 }
