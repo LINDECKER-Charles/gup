@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { UvToolsProvider } from "../../../src/providers/python/uv-tools.js";
 import { system } from "../../support/system/fake-system.js";
-import { pypiRoute, uvMachine } from "./python.cases.js";
+import { pypiRoute } from "../../support/system/releases.js";
+import { uvMachine } from "./python.cases.js";
 
 /** `uv tool list`: a `<tool> v<version>` line, then one `- <executable>` line each. */
 

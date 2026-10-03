@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PipxProvider } from "../../../src/providers/python/pipx.js";
 import { system } from "../../support/system/fake-system.js";
-import { pipxMachine, pypiRoute } from "./python.cases.js";
+import { pypiRoute } from "../../support/system/releases.js";
+import { pipxMachine } from "./python.cases.js";
 
 /** pipx has no "outdated" command: each app's version is compared with PyPI's. */
 

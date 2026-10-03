@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { YarnGlobalProvider } from "../../../src/providers/node/yarn-global.js";
 import { system } from "../../support/system/fake-system.js";
-import { npmLatestRoute, yarnMachine } from "./node.cases.js";
+import { npmLatestRoute } from "../../support/system/releases.js";
+import { yarnMachine } from "./node.cases.js";
 
 /** Yarn classic only: Yarn 2+ dropped `yarn global`. */
 

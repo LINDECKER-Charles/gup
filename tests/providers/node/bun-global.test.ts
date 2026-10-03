@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { BunGlobalProvider } from "../../../src/providers/node/bun-global.js";
 import { system } from "../../support/system/fake-system.js";
-import { bunMachine, npmLatestRoute } from "./node.cases.js";
+import { npmLatestRoute } from "../../support/system/releases.js";
+import { bunMachine } from "./node.cases.js";
 
 /** `bun pm ls -g` has no "outdated": each package is looked up on the npm registry. */
 

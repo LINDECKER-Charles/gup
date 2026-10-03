@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { SelfProvider } from "../../../src/providers/self.js";
 import { system } from "../../support/system/fake-system.js";
-import { githubLatest } from "../../support/system/releases.js";
+import { githubLatest, npmLatestRoute, pypiRoute } from "../../support/system/releases.js";
 import { installArgvs, installs, probeArgvs } from "../../support/system/trace.js";
 import {
   CHOCO_MACHINE,
-  npmLatestRoute,
   PIP_SELF_UPGRADE,
   PNPM_MACHINE,
-  pypiRoute,
   SCOOP_SHIM,
   versionProbe,
   YARN_MACHINE,

@@ -14,18 +14,13 @@ import {
   selfUpdatingToolCases,
 } from "../../support/contract/self-updating-tool.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
-import { githubLatest } from "../../support/system/releases.js";
+import { githubLatest, pypiRoute } from "../../support/system/releases.js";
 import type { CommandScript, HttpRoute, SystemSpec } from "../../support/system/types.js";
 
 /**
  * Python's package and version managers. The machines and outputs a knowledge
  * test starts from are exported; the rest of the case data stays private.
  */
-
-/** PyPI's JSON for `name`: its latest version, or an `info` without one. */
-export function pypiRoute(name: string, version?: string): HttpRoute {
-  return { url: `https://pypi.org/pypi/${name}/json`, json: { info: version ? { version } : {} } };
-}
 
 // --- Conda ----------------------------------------------------------------------
 

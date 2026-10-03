@@ -2,8 +2,8 @@ import type { OutdatedPackage } from "../../../src/core/types.js";
 import { SelfProvider } from "../../../src/providers/self.js";
 import { delegationRoutes, installedVia } from "../../support/contract/installers.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
-import { githubLatest } from "../../support/system/releases.js";
-import type { CommandScript, HttpRoute, SystemSpec } from "../../support/system/types.js";
+import { githubLatest, npmLatestRoute, pypiRoute } from "../../support/system/releases.js";
+import type { CommandScript, SystemSpec } from "../../support/system/types.js";
 
 /**
  * The self-updates of the package managers gup drives: one case per target,
@@ -11,16 +11,6 @@ import type { CommandScript, HttpRoute, SystemSpec } from "../../support/system/
  * it exists on. The machines a knowledge test starts from are exported; the
  * rest of the case data stays private.
  */
-
-/** The npm registry's latest version of `name`, or an answer without one. */
-export function npmLatestRoute(name: string, version?: string): HttpRoute {
-  return { url: `https://registry.npmjs.org/${name}/latest`, json: version ? { version } : {} };
-}
-
-/** PyPI's latest version of `name`, or an `info` without one. */
-export function pypiRoute(name: string, version?: string): HttpRoute {
-  return { url: `https://pypi.org/pypi/${name}/json`, json: { info: version ? { version } : {} } };
-}
 
 /** `<binary> --version` answering `stdout`. */
 export function versionProbe(binary: string, stdout: string): CommandScript {

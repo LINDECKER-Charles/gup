@@ -4,6 +4,7 @@ import { NpmGlobalProvider } from "../../../src/providers/node/npm-global.js";
 import { PnpmGlobalProvider } from "../../../src/providers/node/pnpm-global.js";
 import { YarnGlobalProvider } from "../../../src/providers/node/yarn-global.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
+import { npmLatestRoute } from "../../support/system/releases.js";
 import type { CommandScript, HttpRoute, SystemSpec } from "../../support/system/types.js";
 
 /**
@@ -14,14 +15,6 @@ import type { CommandScript, HttpRoute, SystemSpec } from "../../support/system/
  */
 
 const NODE_DIR = "C:\\Program Files\\nodejs";
-
-/** The npm registry's latest version of `name`, or an answer without one. */
-export function npmLatestRoute(name: string, version?: string): HttpRoute {
-  return {
-    url: `https://registry.npmjs.org/${name}/latest`,
-    json: version ? { name, version } : { name },
-  };
-}
 
 // --- npm ------------------------------------------------------------------------
 
