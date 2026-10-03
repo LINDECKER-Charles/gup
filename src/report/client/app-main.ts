@@ -14,7 +14,9 @@ function page(name, render, onEnter) {
   const ensure = () => {
     if (state.rendered[name]) return;
     state.rendered[name] = true;
-    render(document.querySelector("[data-page-section=\"" + name + "\"] .page-body"));
+    const body = document.querySelector("[data-page-section=\"" + name + "\"] .page-body");
+    render(body);
+    showLatest(body);
   };
   return {
     render: ensure,

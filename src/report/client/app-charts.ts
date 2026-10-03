@@ -227,6 +227,13 @@ function valueOn(points, index) {
   return found.value;
 }
 
+/** Charts wider than a small screen scroll sideways: they open on their latest days. */
+function showLatest(root) {
+  root.querySelectorAll(".heat-scroll, .chart-frame").forEach((frame) => {
+    frame.scrollLeft = frame.scrollWidth;
+  });
+}
+
 // ---- Heatmap ---------------------------------------------------------------
 
 /** Levels 1-4 by the quartiles of the distinct non-zero counts; 0 stays 0. */

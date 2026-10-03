@@ -1,8 +1,9 @@
 /**
  * How the report adapts: narrow screens (stacked header, fewer table
- * columns), reduced motion, forced colours (Windows high contrast: marks
- * keep their patterns, outlines replace backgrounds) and print (every page
- * one after the other, light, without the controls, cards kept whole).
+ * columns, the drawer's actions above its title), reduced motion, forced
+ * colours (Windows high contrast: marks keep their patterns, outlines
+ * replace backgrounds) and print (every page one after the other, light,
+ * without the controls nor the optional columns, cards kept whole).
  */
 export const ADAPTIVE_CSS = String.raw`
 @media (max-width:760px){
@@ -14,6 +15,7 @@ export const ADAPTIVE_CSS = String.raw`
 .chart-frame{overflow-x:auto}
 .chart-svg{min-width:520px}
 .packages{min-width:620px}
+.packages tbody th{min-width:9em}
 .control{flex:1 1 160px}
 .control select{min-width:0;width:100%}
 main{padding:18px 14px 8px}
@@ -24,6 +26,8 @@ main{padding:18px 14px 8px}
 .top-item{grid-template-columns:minmax(0,1fr) auto}
 .top-item .meter{display:none}
 .drawer-head,.drawer-body{padding-left:16px;padding-right:16px}
+.drawer-head{flex-wrap:wrap}
+.drawer-actions{order:-1;width:100%;justify-content:flex-end}
 }
 @media (prefers-reduced-motion:reduce){
 *,*::before,*::after{
@@ -40,9 +44,10 @@ main{padding:18px 14px 8px}
 body{background:#fff;font-size:12px}
 .masthead{position:static;border-bottom:0}
 .tools,.tabs,.skip-link,.chart-actions,.more-slot,.toolbar,.search-note,.day-filter,.card-link,
-.banner:empty,.drawer,.tooltip,.day-detail .button,.card-actions{
+.banner:empty,.drawer,.tooltip,.day-detail,.card-actions,.failure-open,.optional{
   display:none !important;
 }
+.session summary::after{display:none}
 [data-page-section][hidden]{display:block !important}
 .page{break-before:page}
 .page:first-of-type{break-before:auto}
