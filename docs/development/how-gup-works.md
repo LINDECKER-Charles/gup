@@ -2,7 +2,7 @@
 
 > Source document for the explanatory site. Aimed at intermediate / advanced developers. Covers **the entirety** of `gup`'s operation: motivation, model, architecture, command lifecycle, internal contracts, resilience patterns, security, build.
 >
-> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 24), ESM, `execa`, `commander`, `@inquirer/prompts`, `chalk`, `cli-table3`, `ora`, `p-limit`. No browser runtime, no UI framework: this is a pure CLI.
+> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 26.9), ESM, `execa`, `commander`, `@opentui/core`, `chalk`, `cli-table3`, `p-limit`. No browser runtime: this is a CLI whose interactive moments (prompts, live scan) are drawn by OpenTUI's native renderer, loaded on demand.
 
 ---
 
@@ -76,7 +76,7 @@ These seven primitives are enough to model the entire behavior of `gup`.
             └──────────┴────┬──────┴──────────────┘
                             ▼
                   ┌─────────────────────┐
-                  │  ui/scan-progress   │  ora spinner, live in-flight names
+                  │  ui/scan-progress   │  live scan screen, in-flight names
                   └──────────┬──────────┘
                              │
                   ┌──────────▼──────────┐
@@ -142,9 +142,11 @@ src/
 │   └── shell/                # oh-my-posh, starship, nerd-fonts, pwsh-modules
 └── ui/
     ├── table.ts              # cli-table3 wrappers (renderScanTable, renderProvidersStatus)
-    ├── scan-progress.ts      # ora spinner + [done/total] counters + in-flight names
-    ├── select.ts             # @inquirer/prompts checkbox grouped by provider
-    └── retry-failed.ts       # post-batch retry-strategy prompt
+    ├── scan-progress.ts      # detection + scan under the live scan screen, one summary line after
+    ├── select.ts             # package checkbox grouped by provider
+    ├── retry-failed.ts       # post-batch retry-strategy prompt
+    ├── prompts/              # select, checkbox, confirm, input — OpenTUI views
+    └── tui/                  # OpenTUI loader, prompt host, list cursor, scan screen
 ```
 
 ### Guiding principle #1: **provider isolation**
@@ -181,7 +183,7 @@ An uncaught exception inside a provider would collapse the entire parallel scan.
 3. printHeader()  →  ASCII title + version
 4. initialScan(state)
      └─> ui/scan-progress.scanWithProgress({ fast, only? })
-           ├─ ora spinner "detecting providers…"
+           ├─ live scan screen "détection des providers…"
            ├─ detectAvailableProviders(): Promise.all(ALL_PROVIDERS.map(p => p.isAvailable()))
            ├─ filter (only / fast)  →  planned[]
            ├─ scanAll({ detected, onProviderStart, onProviderEnd })
@@ -608,7 +610,7 @@ Locates Neovim directories per OS (`XDG_DATA_HOME`, `%LOCALAPPDATA%\nvim-data`, 
 ### 9.1 `cli.ts` — the entry
 
 Pure commander orchestration. 5 entry points (default + 4 subcommands). Each action `await`s a `*Command()` that returns an exit code, then `process.exit(code)`. Global catch:
-- `ExitPromptError` (Ctrl+C inside an @inquirer prompt) → silent, exit 130 (POSIX SIGINT convention).
+- `PromptCancelledError` (Ctrl+C while a prompt or the scan screen holds the keyboard — raw mode turns it into a key, not SIGINT) → silent, exit 130 (POSIX SIGINT convention).
 - Other exception → `chalk.red("Error:")` + message + exit 1.
 
 ### 9.2 `list.ts`
@@ -672,19 +674,21 @@ Wraps `cli-table3`. Two helpers:
 
 ### 11.2 `scan-progress.ts`
 
-The most user-facing element. Uses `ora` (Unicode spinner) + local state to render:
+The most user-facing element. In a terminal, detection and scan run under a live screen (`ui/tui/scan-view.ts`):
 
 ```
-⠋ scan [12/47] — npm (global) · pip · Helm  +5
+◐  scan 12/47  ██████░░░░░░░░░░░░░░░░░░
+│  npm (global) · pip · Helm · Scoop +5
+│  ✖ az : exit 1
 ```
 
-Mechanics: `inFlight = new Set<string>()`. `onProviderStart` adds the `displayName`, `onProviderEnd` removes it. On every event, `render()` rebuilds the string with the first 3 + "+N" on overflow. On error, persists the message briefly before the next render.
+Mechanics: `inFlight = new Set<string>()`. `onProviderStart` adds the `displayName`, `onProviderEnd` removes it and records the latest failure, which stays on screen until the scan ends. The screen redraws on every event and on a 100 ms spinner tick.
 
-At the end, a `stopAndPersist` shows the summary: duration, number of providers, number of updates.
+When it closes, one summary line stays in the scrollback: duration, number of providers, number of updates. Piped or redirected, no screen is drawn and OpenTUI is never loaded — only that line is written.
 
 ### 11.3 `select.ts`
 
-Wraps `@inquirer/prompts.checkbox` but with a **grouped by provider** layout. Separates each group with a `Separator`, indents packages, displays the note in gray on the right.
+Builds a **grouped by provider** `checkbox` (`ui/prompts/checkbox.ts`): one group per provider with updates, a header row that checks or unchecks the whole group, packages indented under it with the version jump and the note on the right.
 
 ### 11.4 `retry-failed.ts`
 
@@ -806,7 +810,7 @@ Significant attack surface (shell-out to ~150 third-party tools). See `SECURITY.
 
 ## 16. Tests
 
-Stack: Vitest + v8 coverage. Cross-platform CI: Windows + macOS + Ubuntu × Node 22 + Node 24.
+Stack: Vitest + v8 coverage. Cross-platform CI: Windows + macOS + Ubuntu × Node 26. The prompt suites drive the real views through OpenTUI's in-memory test renderer (`@opentui/core/testing`): keys in, frame text out.
 
 ```bash
 npm run typecheck             # tsc strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes
@@ -924,7 +928,7 @@ Conventions to follow:
 | `gup update --all -y` | idem | + skip confirm + skip retry menu |
 | `gup update winget:Microsoft.PowerShell` | idem | `runTargets(["winget:Microsoft.PowerShell"])`; no scan |
 | `gup doctor` | `program.command("doctor")` | `doctorCommand()` |
-| Ctrl+C inside a prompt | global catch | `ExitPromptError` → exit 130 |
+| Ctrl+C inside a prompt | global catch | `PromptCancelledError` → exit 130 |
 | Fatal error | global catch | `chalk.red("Error:")` + exit 1 |
 
 ---

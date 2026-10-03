@@ -1,5 +1,5 @@
-import { select } from "@inquirer/prompts";
 import chalk from "chalk";
+import { select } from "./prompts/select.js";
 import { getProvider } from "../core/registry.js";
 import { applyUpdate } from "./apply-update.js";
 import { isAbortRequested } from "./skip-controller.js";
@@ -129,14 +129,13 @@ async function promptStrategy(
     message: "Stratégie de réessai",
     default: "none",
     choices: [
-      { name: "Aucun — laisser les échecs", value: "none" },
+      { label: "Aucun — laisser les échecs", value: "none" },
       ...remaining.map((s) => ({
-        name: s.name,
+        label: s.name,
         value: s.value,
         description: s.description,
       })),
     ],
-    loop: false,
   });
   if (strategy === "none") return null;
   return STRATEGIES.find((s) => s.value === strategy) ?? null;

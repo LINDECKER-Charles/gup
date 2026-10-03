@@ -99,13 +99,12 @@
     "darwin"
   ],
   "dependencies": {
-    "@inquirer/prompts": "^8.6.0",
+    "@opentui/core": "0.5.14",
     "adm-zip": "^0.6.1",
     "chalk": "^6.0.0",
     "cli-table3": "^0.6.5",
     "commander": "^15.0.0",
     "execa": "^10.0.1",
-    "ora": "^9.4.1",
     "p-limit": "^7.3.1",
     "semver": "^7.8.5"
   },

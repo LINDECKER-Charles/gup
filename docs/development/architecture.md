@@ -487,7 +487,9 @@ src/
 └── ui/
     ├── table.ts                    # cli-table3 + chalk rendering
     ├── select.ts                   # multi-package checkbox
-    ├── scan-progress.ts            # spinner + live counter (ora)
+    ├── scan-progress.ts            # live scan screen + summary line
+    ├── prompts/                    # select, checkbox, confirm, input (OpenTUI views)
+    ├── tui/                        # OpenTUI loader, prompt host, list cursor, scan screen
     ├── skip-controller.ts          # Ctrl+C / timeout → SKIP outcome
     ├── apply-update.ts             # single seam: dispatch + finalize + record
     └── retry-failed.ts             # retry strategy prompt

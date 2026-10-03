@@ -1,5 +1,4 @@
 import chalk from "chalk";
-import ora, { type Ora } from "ora";
 import type { Provider, ProviderScanResult } from "../core/types.js";
 import { recordScan } from "../core/history/store.js";
 import {
@@ -7,6 +6,8 @@ import {
   scanAll,
   type ScanOptions,
 } from "../core/registry.js";
+import { canPrompt } from "./tui/prompt-host.js";
+import { SILENT_PROGRESS, withScanView, type ScanProgress } from "./tui/scan-view.js";
 
 export interface ScanWithProgressResult {
   results: ProviderScanResult[];
@@ -14,83 +15,88 @@ export interface ScanWithProgressResult {
   detectedCount: number;
 }
 
+type BaseScanOptions = Omit<ScanOptions, "onProviderStart" | "onProviderEnd">;
+
+interface ScanRun extends ScanWithProgressResult {
+  planned: number;
+  elapsedMs: number;
+}
+
 /**
- * Runs scanAll with a live spinner showing currently-scanning providers and
- * a [done/total] counter. Caps the displayed in-flight list at 3 names so
- * the line stays readable; remaining are summarized as "+N".
- *
- * Detection itself can take a noticeable amount of time (probing every
- * provider's `isAvailable()`), so we surface a dedicated spinner phase
- * before the scan kicks in.
+ * Runs detection then scanAll under a live progress band (in a terminal):
+ * a [done/total] counter, the providers currently scanning and the latest
+ * failure. Detection gets its own phase because probing every provider's
+ * `isAvailable()` takes a noticeable moment. Once the band is gone, a single
+ * summary line stays in the scrollback; piped or redirected, only that line
+ * is written.
  */
 export async function scanWithProgress(
-  baseOptions: Omit<ScanOptions, "onProviderStart" | "onProviderEnd"> = {},
+  baseOptions: BaseScanOptions = {},
 ): Promise<ScanWithProgressResult> {
-  const spinner = ora({
-    text: chalk.dim("détection des providers…"),
-    spinner: "line",
-  }).start();
+  const work = (progress: ScanProgress): Promise<ScanRun> => detectAndScan(baseOptions, progress);
+  const run = canPrompt() ? await withScanView(work) : await work(SILENT_PROGRESS);
+  reportScanDone(run);
+  return { results: run.results, detectedCount: run.detectedCount };
+}
 
+async function detectAndScan(
+  baseOptions: BaseScanOptions,
+  progress: ScanProgress,
+): Promise<ScanRun> {
+  progress.detecting();
   const detected = await detectAvailableProviders();
-  const total = countPlanned(detected, baseOptions);
-  if (total === 0) {
-    const text = chalk.dim("aucun provider disponible");
-    spinner.stopAndPersist({ symbol: chalk.dim("·"), text });
-    return { results: [], detectedCount: detected.length };
+  const planned = countPlanned(detected, baseOptions);
+  if (planned === 0) {
+    return { results: [], detectedCount: detected.length, planned, elapsedMs: 0 };
   }
 
-  spinner.text = chalk.dim(`scan [0/${total}]`);
   const startedAt = Date.now();
-
   const results = await scanAll({
     ...baseOptions,
     detected,
-    ...progressCallbacks(spinner, total),
+    ...progressCallbacks(progress, planned),
   });
-
-  recordScan({ results, durationMs: Date.now() - startedAt, options: baseOptions });
-  reportScanDone(spinner, { results, total, startedAt });
-  return { results, detectedCount: detected.length };
+  const elapsedMs = Date.now() - startedAt;
+  recordScan({ results, durationMs: elapsedMs, options: baseOptions });
+  return { results, detectedCount: detected.length, planned, elapsedMs };
 }
 
-function reportScanDone(
-  spinner: Ora,
-  run: { results: ProviderScanResult[]; total: number; startedAt: number },
-): void {
-  const elapsed = ((Date.now() - run.startedAt) / 1000).toFixed(1);
-  const updates = run.results.reduce((n, r) => n + r.packages.length, 0);
-  spinner.stopAndPersist({
-    symbol: chalk.dim("·"),
-    text: chalk.dim(
-      `scan terminé en ${elapsed}s — ${run.total} provider(s), ${updates} mise(s) à jour`,
-    ),
-  });
+function reportScanDone({ results, planned, elapsedMs }: ScanRun): void {
+  if (planned === 0) {
+    process.stdout.write(chalk.dim("·  aucun provider disponible\n"));
+    return;
+  }
+  const elapsed = (elapsedMs / 1000).toFixed(1);
+  const updates = results.reduce((n, r) => n + r.packages.length, 0);
+  process.stdout.write(
+    `${chalk.green("◇")}  ${chalk.dim(
+      `scan terminé en ${elapsed}s — ${planned} provider(s), ${updates} mise(s) à jour`,
+    )}\n`,
+  );
 }
 
 /**
- * Progress callbacks for `scanAll`. They close over the counter and the set of
- * in-flight providers so the caller does not have to carry them.
+ * Progress callbacks for `scanAll`. They close over the counter, the set of
+ * in-flight providers and the latest failure, so the caller does not have to
+ * carry them.
  */
-function progressCallbacks(spinner: Ora, total: number) {
+function progressCallbacks(progress: ScanProgress, total: number) {
   const inFlight = new Set<string>();
   let done = 0;
-  const render = (): void => {
-    spinner.text = chalk.dim(`scan [${done}/${total}]`) + inFlightSuffix(inFlight);
-  };
+  let lastError: string | undefined;
+  const report = (): void =>
+    progress.scanning({ done, total, inFlight: [...inFlight], ...(lastError && { lastError }) });
 
   return {
     onProviderStart: (provider: Provider) => {
       inFlight.add(provider.displayName);
-      render();
+      report();
     },
     onProviderEnd: (provider: Provider, result: ProviderScanResult) => {
       inFlight.delete(provider.displayName);
       done++;
-      // Hold the failure briefly so it's visible before the next render.
-      if (!result.error) return render();
-      spinner.text =
-        chalk.dim(`scan [${done}/${total}] — `) +
-        chalk.red(`${provider.displayName}: ${result.error}`);
+      if (result.error) lastError = `${provider.displayName} : ${result.error}`;
+      report();
     },
   };
 }
@@ -105,17 +111,4 @@ function countPlanned(
     if (options.fast && p.slow) return false;
     return true;
   }).length;
-}
-
-/** "— a · b · c +2": the providers currently scanning, capped at three. */
-function inFlightSuffix(inFlight: Set<string>): string {
-  const active = [...inFlight];
-  if (active.length === 0) return "";
-  const head = active.slice(0, 3);
-  const overflow = active.length - head.length;
-  return (
-    chalk.dim(" — ") +
-    head.join(chalk.dim(" · ")) +
-    (overflow > 0 ? chalk.dim(` +${overflow}`) : "")
-  );
 }

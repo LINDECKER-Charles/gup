@@ -37,7 +37,7 @@ vi.mock("../../src/ui/retry-failed.js", () => ({
 }));
 
 const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }));
-vi.mock("@inquirer/prompts", () => ({ confirm: confirmMock }));
+vi.mock("../../src/ui/prompts/confirm.js", () => ({ confirm: confirmMock }));
 
 const { runElevatedBatchMock } = vi.hoisted(() => ({
   runElevatedBatchMock: vi.fn(),

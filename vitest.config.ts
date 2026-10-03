@@ -10,6 +10,10 @@ export default defineConfig({
     // writes to the real user profile. Off by default here; the suites that
     // actually exercise it re-enable it against a temp directory.
     env: { GUP_HISTORY: "0" },
+    // The UI suites load OpenTUI, whose native renderer goes through
+    // `node:ffi`; Node still flags it experimental, and the warning it prints
+    // once per worker is noise in the test output.
+    execArgv: ["--disable-warning=ExperimentalWarning"],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "html", "lcov", "json-summary"],

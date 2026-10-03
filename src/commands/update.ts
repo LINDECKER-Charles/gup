@@ -1,4 +1,4 @@
-import { confirm } from "@inquirer/prompts";
+import { confirm } from "../ui/prompts/confirm.js";
 import chalk from "chalk";
 import { runElevatedBatch } from "../core/elevation.js";
 import { ALL_PROVIDERS, getProvider } from "../core/registry.js";

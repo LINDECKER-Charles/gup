@@ -1,4 +1,3 @@
-import { select, input, confirm, Separator } from "@inquirer/prompts";
 import chalk from "chalk";
 import {
   ALL_PROVIDERS,
@@ -14,9 +13,12 @@ import {
 } from "../ui/retry-failed.js";
 import { applyEach, applyUpdate } from "../ui/apply-update.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
+import { confirm } from "../ui/prompts/confirm.js";
+import { input } from "../ui/prompts/input.js";
+import { select, type SelectEntry } from "../ui/prompts/select.js";
 import { gupVersion } from "../core/version.js";
 import { runOptions } from "./menu-options.js";
-import { dim, pad, type MenuState } from "./menu-state.js";
+import { describeFilter, dim, type MenuState } from "./menu-state.js";
 import type {
   OutdatedPackage,
   Provider,
@@ -46,46 +48,31 @@ export async function menuCommand(): Promise<number> {
   await initialScan(state);
 
   for (;;) {
-    printStatus(state);
     const action = await select<MenuAction>({
       message: "Action",
       choices: mainMenuChoices(totalUpdates(state)),
-      pageSize: 14,
-      loop: false,
+      context: statusLines(state),
     });
     if (action === "quit") return 0;
     await runAction(action, state);
   }
 }
 
-function mainMenuChoices(total: number) {
-  const noUpdate = total === 0 ? dim("aucune mise à jour") : false;
+function mainMenuChoices(total: number): SelectEntry<MenuAction>[] {
+  // The update actions stay listed, greyed out, when there is nothing to do:
+  // a menu whose entries come and go is harder to learn than one that dims.
+  const whenUpdates = total === 0 ? { disabled: "aucune mise à jour" } : {};
   return [
-    { name: pad("Scan", "rescanne tous les providers"), value: "scan" as const },
-    {
-      name: pad("Review", "voir la liste détaillée"),
-      value: "review" as const,
-      disabled: noUpdate,
-    },
-    {
-      name: pad("Update selected", "choix multiple"),
-      value: "select" as const,
-      disabled: noUpdate,
-    },
-    {
-      name: pad("Update all", `${total} paquet(s)`),
-      value: "all" as const,
-      disabled: noUpdate,
-    },
-    new Separator(dim("  ─")),
-    { name: pad("Update target", "provider:package"), value: "target" as const },
-    { name: pad("Providers", "status / install hints"), value: "doctor" as const },
-    {
-      name: pad("Options", "fast mode, filtre providers"),
-      value: "options" as const,
-    },
-    new Separator(dim("  ─")),
-    { name: pad("Quit", ""), value: "quit" as const },
+    { label: "Scan", hint: "rescanne tous les providers", value: "scan" },
+    { label: "Review", hint: "voir la liste détaillée", value: "review", ...whenUpdates },
+    { label: "Update selected", hint: "choix multiple", value: "select", ...whenUpdates },
+    { label: "Update all", hint: `${total} paquet(s)`, value: "all", ...whenUpdates },
+    { separator: true },
+    { label: "Update target", hint: "provider:package", value: "target" },
+    { label: "Providers", hint: "status / install hints", value: "doctor" },
+    { label: "Options", hint: "fast mode, filtre providers", value: "options" },
+    { separator: true },
+    { label: "Quit", value: "quit" },
   ];
 }
 
@@ -121,20 +108,15 @@ function printHeader(): void {
   process.stdout.write(`  ${line}\n`);
 }
 
-function printStatus(state: MenuState): void {
+/** Shown above the menu: the state the next action will run against. */
+function statusLines(state: MenuState): string[] {
   const total = totalUpdates(state);
-  const providerLine = `${state.detectedCount} provider(s) détecté(s)`;
-  const updateLine =
-    total === 0
-      ? chalk.green("à jour")
-      : chalk.yellow(`${total} mise(s) à jour disponible(s)`);
-  const filterLabel =
-    state.filter.length === 0 ? "tous" : state.filter.join(", ");
-  const modeLine = `${state.fast ? "fast" : "normal"}  ·  ${filterLabel}`;
-
-  process.stdout.write("\n");
-  process.stdout.write(`  ${dim("status".padEnd(8))} ${providerLine}  ·  ${updateLine}\n`);
-  process.stdout.write(`  ${dim("mode".padEnd(8))} ${chalk.dim(modeLine)}\n\n`);
+  const updates = total === 0 ? "à jour" : `${total} mise(s) à jour disponible(s)`;
+  const mode = `${state.fast ? "fast" : "normal"}  ·  ${describeFilter(state.filter)}`;
+  return [
+    `${"status".padEnd(8)} ${state.detectedCount} provider(s) détecté(s)  ·  ${updates}`,
+    `${"mode".padEnd(8)} ${mode}`,
+  ];
 }
 
 async function initialScan(state: MenuState): Promise<void> {

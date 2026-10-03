@@ -1,10 +1,12 @@
-import { select, input, checkbox, Separator } from "@inquirer/prompts";
 import { detectAvailableProviders } from "../core/registry.js";
 import {
   getInstallTimeoutSeconds,
   setInstallTimeoutSeconds,
 } from "../core/runner.js";
-import { describeFilter, dim, pad, type MenuState } from "./menu-state.js";
+import { checkbox } from "../ui/prompts/checkbox.js";
+import { input } from "../ui/prompts/input.js";
+import { select, type SelectEntry } from "../ui/prompts/select.js";
+import { describeFilter, dim, type MenuState } from "./menu-state.js";
 
 /**
  * The interactive menu's "Options" screen: fast mode, provider filter and
@@ -17,7 +19,6 @@ export async function runOptions(state: MenuState): Promise<void> {
   const choice = await select<OptionAction>({
     message: "Options",
     choices: optionChoices(state),
-    loop: false,
   });
 
   if (choice === "fast") toggleFastMode(state);
@@ -25,29 +26,22 @@ export async function runOptions(state: MenuState): Promise<void> {
   else if (choice === "timeout") await editInstallTimeout();
 }
 
-function optionChoices(state: MenuState) {
+function optionChoices(state: MenuState): SelectEntry<OptionAction>[] {
   const timeout = getInstallTimeoutSeconds();
   return [
     {
-      name: pad(
-        `Fast mode  [${state.fast ? "ON" : "OFF"}]`,
-        "skip pwsh-modules & vscode-ext",
-      ),
-      value: "fast" as const,
+      label: `Fast mode  [${state.fast ? "ON" : "OFF"}]`,
+      hint: "skip pwsh-modules & vscode-ext",
+      value: "fast",
     },
+    { label: "Filtre providers", hint: describeFilter(state.filter), value: "filter" },
     {
-      name: pad("Filtre providers", describeFilter(state.filter)),
-      value: "filter" as const,
+      label: `Timeout install  [${timeout > 0 ? `${timeout}s` : "OFF"}]`,
+      hint: "skip auto si une install bloque",
+      value: "timeout",
     },
-    {
-      name: pad(
-        `Timeout install  [${timeout > 0 ? `${timeout}s` : "OFF"}]`,
-        "skip auto si une install bloque",
-      ),
-      value: "timeout" as const,
-    },
-    new Separator(dim("  ─")),
-    { name: pad("Retour", ""), value: "back" as const },
+    { separator: true },
+    { label: "Retour", value: "back" },
   ];
 }
 
@@ -61,12 +55,17 @@ async function editProviderFilter(state: MenuState): Promise<void> {
   const available = await detectAvailableProviders();
   state.filter = await checkbox<string>({
     message: "Providers à inclure (vide = tous)",
-    choices: available.map((p) => ({
-      name: `${p.displayName.padEnd(22)} ${dim(`(${p.id})`)}`,
-      value: p.id,
-      checked: state.filter.length === 0 ? false : state.filter.includes(p.id),
-    })),
-    loop: false,
+    groups: [
+      {
+        title: "",
+        choices: available.map((p) => ({
+          label: p.displayName,
+          hint: p.id,
+          value: p.id,
+          checked: state.filter.includes(p.id),
+        })),
+      },
+    ],
     pageSize: 12,
   });
   const label = describeFilter(state.filter);
@@ -78,11 +77,11 @@ async function editInstallTimeout(): Promise<void> {
     message: "Timeout par install en secondes (0 = désactivé)",
     default: String(getInstallTimeoutSeconds()),
     validate: (v) => {
-      const n = Number(v.trim());
+      const n = Number(v);
       return (Number.isFinite(n) && n >= 0) || "saisir un nombre de secondes >= 0";
     },
   });
-  setInstallTimeoutSeconds(Number(raw.trim()));
+  setInstallTimeoutSeconds(Number(raw));
   const next = getInstallTimeoutSeconds();
   process.stdout.write(
     dim(`  timeout install: ${next > 0 ? `${next}s` : "désactivé"}\n`),

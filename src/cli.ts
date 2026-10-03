@@ -7,6 +7,7 @@ import { doctorCommand } from "./commands/doctor.js";
 import { menuCommand } from "./commands/menu.js";
 import { setInstallTimeoutSeconds } from "./core/runner.js";
 import { gupVersion } from "./core/version.js";
+import { PromptCancelledError } from "./ui/tui/prompt-cancelled.js";
 
 const program = new Command();
 
@@ -95,8 +96,8 @@ program
   });
 
 program.parseAsync(process.argv).catch((err: unknown) => {
-  // @inquirer/prompts throws this when the user hits Ctrl+C — handle silently.
-  if (err instanceof Error && err.name === "ExitPromptError") {
+  // Ctrl+C while a prompt or the scan band holds the keyboard — handle silently.
+  if (err instanceof PromptCancelledError) {
     process.stdout.write("\n");
     process.exit(130);
   }
