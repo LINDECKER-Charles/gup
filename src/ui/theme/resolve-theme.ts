@@ -15,6 +15,7 @@ import {
   type ColorToken,
   type ContrastLevel,
   type Palette,
+  type RgbThemeId,
   THEME_IDS,
   type ThemeId,
 } from "./palette.js";
@@ -130,13 +131,14 @@ export function themeAvailability(input: ResolveInput): ThemeAvailability[] {
 
 export function resolveTheme(input: ResolveInput): ResolvedTheme {
   const { settings, terminal } = input;
+  const { id } = settings;
   if (input.isNoColor) return withoutPalette(settings, "monochrome", ["no-color"]);
-  if (settings.id === "monochrome") return withoutPalette(settings, "monochrome", []);
+  if (id === "monochrome") return withoutPalette(settings, "monochrome", []);
   if (terminal.depth === "16") {
-    return withoutPalette(settings, "trusted", settings.id === "terminal" ? [] : ["depth-16"]);
+    return withoutPalette(settings, "trusted", id === "terminal" ? [] : ["depth-16"]);
   }
-  if (settings.id === "terminal") return resolveTerminal(settings, terminal);
-  return resolveRgb(settings, terminal);
+  if (id === "terminal") return resolveTerminal(settings, terminal);
+  return resolveRgb({ settings, terminal, id });
 }
 
 function withoutPalette(
@@ -176,13 +178,18 @@ function resolveTerminal(settings: ThemeSettings, terminal: TerminalFacts): Reso
   return finish({ settings, terminal, mode: "detected", enforced, sources });
 }
 
-function resolveRgb(settings: ThemeSettings, terminal: TerminalFacts): ResolvedTheme {
+interface RgbRequest {
+  readonly settings: ThemeSettings;
+  readonly terminal: TerminalFacts;
+  readonly id: RgbThemeId | "auto";
+}
+
+function resolveRgb({ settings, terminal, id }: RgbRequest): ResolvedTheme {
   const auto = terminal.themeMode === "light" ? "light" : "dark";
-  const id = settings.id === "auto" ? auto : settings.id;
-  const base = BUILTIN_PALETTES[id as keyof typeof BUILTIN_PALETTES];
-  const palette = prepared(base, settings.custom[settings.id]);
+  const effective = id === "auto" ? auto : id;
+  const palette = prepared(BUILTIN_PALETTES[effective], settings.custom[id]);
   const enforced = enforceContrast(palette, settings.contrast, RGB_SEEKING);
-  return finish({ settings, terminal, mode: "rgb", enforced, sources: {}, effective: id });
+  return finish({ settings, terminal, mode: "rgb", enforced, sources: {}, effective });
 }
 
 /** A theme's palette with the user's colours for it, and the derived tokens. */
