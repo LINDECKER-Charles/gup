@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { JournalData, JournalSource } from "../../../src/ui/panels/journal/journal-source.js";
 import { journalView } from "../../../src/ui/views/journal-view.js";
 import { bootMenu, defaultViews } from "../../support/tui/menu-driver.js";
 import { journalData, scriptedSource } from "../panels/journal/journal-data.js";
@@ -7,7 +8,10 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-async function journalMenu(size: { cols: number; rows: number }, source = scriptedSource()) {
+async function journalMenu(
+  size: { cols: number; rows: number },
+  source: JournalSource = scriptedSource(),
+) {
   const menu = await bootMenu({
     views: [...defaultViews(), journalView(source)],
     initialView: "journal",
@@ -61,6 +65,19 @@ describe("journal view", () => {
 
     expect(frame).not.toMatch(/[░▒▓█▌·→✔✖]/);
     expect(frame).toContain("|1 Activit");
+  });
+
+  it("lets a load finish after the user quit, drawing nothing", async () => {
+    let finishLoad: (data: JournalData) => void = () => {};
+    const late = new Promise<JournalData>((resolve) => (finishLoad = resolve));
+    const source = { load: vi.fn(() => late), export: vi.fn() };
+    const { menu } = await journalMenu({ cols: 100, rows: 30 }, source);
+
+    await menu.press("q");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+    finishLoad(journalData());
+    // A redraw on the destroyed screen would surface as an unhandled rejection.
+    await new Promise((resolve) => setTimeout(resolve, 50));
   });
 
   it("exports through the dialog the e key opens", async () => {

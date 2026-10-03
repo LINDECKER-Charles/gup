@@ -17,7 +17,11 @@ export function journalView(source: JournalSource): ViewDefinition {
     create: (context) =>
       new JournalPanel({
         source,
-        redraw: () => context.redraw(),
+        // A load or an export may finish after the session's screen is gone
+        // (the user quit meanwhile): there is nothing left to draw on.
+        redraw: () => {
+          if (!context.screen.renderer.isDestroyed) context.redraw();
+        },
         choose: (spec) => context.dialogs.choose(spec),
         glyphMode: () => context.screen.appearance.glyphMode,
       }),
