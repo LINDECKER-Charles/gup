@@ -19,9 +19,15 @@ vi.mock("../../../src/core/update/finalize-outcome.js", () => ({
   finalizeOutcome: finalizeOutcomeMock,
 }));
 
+import { runInherit } from "../../../src/core/runner.js";
 import { currentOperation } from "../../../src/core/state/run-context.js";
 import type { Provider } from "../../../src/core/types.js";
-import { applyOptionsOf, applyUpdate } from "../../../src/core/update/apply-update.js";
+import {
+  applyOptionsOf,
+  applyUpdate,
+  BARRIER_REFUSAL_MESSAGE,
+  UNEXPECTED_FAILURE_MESSAGE,
+} from "../../../src/core/update/apply-update.js";
 
 function mkProvider(update = vi.fn().mockResolvedValue({ id: "x", success: true })) {
   return {
@@ -87,6 +93,38 @@ describe("applyUpdate", () => {
     const pkg = { id: "typescript", current: "5.0.0", latest: "5.1.0" };
     await applyUpdate(mkProvider(), "typescript", { pkg });
     expect(recordUpdateMock.mock.calls[0]![0]).toMatchObject({ pkg });
+  });
+});
+
+describe("applyUpdate when the provider rejects", () => {
+  it("records a package the runner's argv barrier refused as failed, and resolves", async () => {
+    // The real barrier: a control character in argv is refused before any spawn.
+    const provider = mkProvider(
+      vi.fn(async () => {
+        await runInherit("npm", ["install", "-g", "evil\u0007name"]);
+        return { id: "evil", success: true };
+      }),
+    );
+
+    const outcome = await applyUpdate(provider, "evil");
+
+    expect(outcome).toEqual({
+      id: "evil",
+      success: false,
+      message: `${BARRIER_REFUSAL_MESSAGE} : argv[2] contains a forbidden control character`,
+    });
+    expect(finalizeOutcomeMock).toHaveBeenCalledWith(outcome);
+    expect(recordUpdateMock.mock.calls[0]![0]).toMatchObject({ providerId: "npm-global", outcome });
+  });
+
+  it("reports any other rejection as an unexpected failure", async () => {
+    const provider = mkProvider(vi.fn().mockRejectedValue(new TypeError("boom")));
+    await expect(applyUpdate(provider, "typescript")).resolves.toEqual({
+      id: "typescript",
+      success: false,
+      message: `${UNEXPECTED_FAILURE_MESSAGE} : boom`,
+    });
+    expect(recordUpdateMock).toHaveBeenCalledTimes(1);
   });
 });
 
