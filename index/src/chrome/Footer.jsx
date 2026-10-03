@@ -10,6 +10,7 @@ import { localeHref } from "../i18n/locale-href.js";
 import { useI18n } from "../i18n/use-i18n.js";
 import { BrandMark } from "../ui/BrandMark.jsx";
 import { Shell } from "../ui/Shell.jsx";
+import { FooterLanguages } from "./FooterLanguages.jsx";
 
 function FooterColumn({ column, footer }) {
   return (
@@ -49,6 +50,7 @@ export function Footer() {
             <FooterColumn key={column.id} column={column} footer={footer} />
           ))}
         </div>
+        <FooterLanguages />
         <p className="foot-legal">{footer.legal}</p>
       </Shell>
     </footer>

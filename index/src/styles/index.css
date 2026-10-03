@@ -14,6 +14,7 @@
 @import "./foundation/motion.css";
 
 @import "./chrome/nav.css";
+@import "./chrome/language.css";
 @import "./chrome/footer.css";
 
 @import "./sections/hero.css";

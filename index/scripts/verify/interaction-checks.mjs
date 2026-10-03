@@ -1,7 +1,8 @@
 /**
- * Interactive behaviour, on the default locale: terminal tabs (click, arrow
- * keys, Home/End, replay), the copy button and its announcement, and a FAQ
- * fragment opening its item.
+ * Interactive behaviour, from the default locale: terminal tabs (click, arrow
+ * keys, Home/End, replay), the copy button and its announcement, a FAQ
+ * fragment opening its item, and the language menu (keyboard, dismissal,
+ * fragment carried over to the other locale).
  *
  * @typedef {import("../../build/page-context.mjs").PageContext} PageContext
  * @typedef {{ report: ReturnType<import("./report.mjs").createReport>,
@@ -70,6 +71,51 @@ async function checkFaqFragment({ report, browser, origin }, target) {
   await context.close();
 }
 
+const menuState = (page) =>
+  page.evaluate(() => ({
+    isOpen: document.querySelector(".lang").open,
+    hasSummaryFocus: document.activeElement?.classList.contains("lang-summary") === true,
+  }));
+
+/** Keyboard opening, the listed locales, Escape and outside-click dismissal. */
+async function checkMenuBehaviour(report, page, pages) {
+  await page.focus(".lang-summary");
+  await page.keyboard.press("Enter");
+  report.check("language menu: Enter opens it", (await menuState(page)).isOpen);
+  const links = await page.$$eval(".lang-list a", (nodes) =>
+    nodes.map((node) => ({ lang: node.lang, isCurrent: node.getAttribute("aria-current") })),
+  );
+  const current = links.filter((link) => link.isCurrent === "page");
+  report.check(`language menu: lists the ${pages.length} locales`, links.length === pages.length);
+  report.check("language menu: marks exactly the current one", current.length === 1);
+  await page.keyboard.press("Escape");
+  const afterEscape = await menuState(page);
+  report.check(
+    "language menu: Escape closes it and refocuses the summary",
+    !afterEscape.isOpen && afterEscape.hasSummaryFocus,
+  );
+  await page.click(".lang-summary");
+  await page.mouse.click(8, 600);
+  report.check("language menu: an outside click closes it", !(await menuState(page)).isOpen);
+}
+
+/** @param {Context} ctx @param {readonly PageContext[]} pages */
+async function checkLanguageMenu({ report, browser, origin }, pages) {
+  const home = pages.find((page) => page.locale.isDefault);
+  const { context, page } = await openPage(browser, `${origin}${localeHref(home.locale)}#faq`);
+  await checkMenuBehaviour(report, page, pages);
+  const destination = pages.at(-1);
+  await page.click(".lang-summary");
+  await page.click(`.lang-list a[hreflang="${destination.locale.hreflang}"]`);
+  await page.waitForURL((url) => url.pathname === localeHref(destination.locale));
+  report.check(
+    `language menu: switching keeps the fragment (→ ${destination.locale.id})`,
+    new URL(page.url()).hash === "#faq",
+    page.url(),
+  );
+  await context.close();
+}
+
 /**
  * @param {Context} ctx
  * @param {readonly PageContext[]} pages
@@ -80,4 +126,5 @@ export async function runInteractionChecks(ctx, pages) {
   await checkTabs(ctx, home);
   await checkCopy(ctx, home);
   await checkFaqFragment(ctx, home);
+  await checkLanguageMenu(ctx, pages);
 }
