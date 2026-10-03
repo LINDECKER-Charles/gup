@@ -8,11 +8,12 @@ anywhere:
 - the **debug log**: what gup did step by step — the commands it ran, their exit codes, the
   updates it attempted — to understand a failure or to attach to a bug report.
 
-This page covers both: what the history shows (the **Journal** view of the menu and
-`gup report`), then the debug log.
+This page covers both: what the history shows (the **Journal** view of the menu, the HTML
+report and `gup report`), then the debug log.
 
 - [Activity journal](#activity-journal)
   - [In the menu: the Journal view](#in-the-menu-the-journal-view)
+  - [In the browser: the HTML report](#in-the-browser-the-html-report)
   - [On the command line: `gup report`](#on-the-command-line-gup-report)
   - [How the numbers are counted](#how-the-numbers-are-counted)
   - [Exports and privacy](#exports-and-privacy)
@@ -65,34 +66,75 @@ history each time it comes to the front, and has four tabs:
 | **4 Debug** | the newest lines of the [debug log](#debug-log), under the level this run writes and where that came from | `l` levels shown · `/` filter · `entrée` the record's context and data · `x` write a diagnostic archive |
 
 Everywhere: `1`–`4` or `[` `]` switch tabs, `p` steps the period (30 days → 90 days → 12 months
-→ everything), `r` reloads, `e` exports (JSON, CSV or a diagnostic archive — the file is written
-to the reports directory and its path shown at the bottom), `échap` leaves a detail or a filter.
+→ everything), `r` reloads, `o` opens the [HTML report](#in-the-browser-the-html-report) of the
+period in your browser, `e` exports (HTML report, JSON, CSV or a diagnostic archive — the file is
+written to the reports directory and its path shown at the bottom), `échap` leaves a detail or a
+filter. When no browser can be opened, the bottom line gives the report's path instead.
 
 The view fits an 80 × 24 terminal; with `GUP_ASCII=1` (or a terminal without the block symbols)
 the charts switch to ASCII marks (`. : + * #`).
 
+### In the browser: the HTML report
+
+`gup report` (or `o` in the Journal view) writes the period's activity to one HTML file and opens
+it in your default browser. The file stands alone: open it again later, keep it, send it — it
+needs no network and no gup.
+
+| Page | Shows |
+|---|---|
+| **Vue d'ensemble** | a sentence that sums up the period (*Sur les 12 derniers mois, gup a mis à jour 38 paquets avec 97 % de réussite.*), the key numbers — each a link to the page that details it —, the calendar of the latest weeks, the attempts per week (per month over long periods), the outdated packages day after day, the failures to watch, the most updated packages and every provider's figures |
+| **Calendrier** | one calendar per year of the period; point at a day, or move with the arrow keys, to read what happened that day; `Entrée` or a click opens that day's sessions |
+| **Paquets** | every package of the period in a table you can sort by any column, filter by provider and pace, and narrow with the search box; a package opens a panel with its figures, the versions its updates installed and every attempt with its message, and a button that copies its identifier |
+| **Échecs** | the failures grouped by package and message, most frequent first |
+| **Sessions** | every gup run, day by day: what started it (menu, command line, schedule), how many scans, what it updated; open one to see its attempts; filter by outcome and provider |
+
+- The search box (`/` to reach it, `échap` to clear it) looks through package names, providers,
+  versions and failure messages.
+- Theme: *Auto* follows your system, *Clair* and *Sombre* force one; the browser remembers the
+  choice. Colours meet WCAG AA in both themes, and outcomes are never told by colour alone: each
+  has an icon and a word, failures are hatched and skips dotted in the charts.
+- Everything works with the keyboard; every chart has a *Voir les données* button showing the same
+  numbers as a table.
+- *Imprimer* prints every page, light, without the controls.
+- The page addresses follow the browser's history: Back closes a package panel or returns to the
+  previous page.
+- Very long histories: the report details the 50 000 most recent attempts and says so at the top;
+  its figures always cover the whole period.
+
 ### On the command line: `gup report`
 
 ```bash
-gup report                              # text charts of the last 12 months
+gup report                              # HTML report of the last 12 months, opened in the browser
 gup report --since 30d                  # … of the last 30 days (also 12w, 6m, 1y, all, 2026-01-01)
 gup report --since 2026-01-01 --until 2026-06-30
+gup report --no-open -o rapport.html    # write it there, do not open it
+gup report --format text                # the charts in the terminal
 gup report --format json > activite.json
 gup report --format csv --delimiter ";" -o maj.csv   # Excel in a French locale
 ```
 
 | Option | |
 |---|---|
-| `-f, --format` | `text` (default: the charts above, then the most updated packages and the recurring failures), `json` (every event of the period plus the computed figures) or `csv` (one row per update attempt) |
+| `-f, --format` | `html` (default: the [HTML report](#in-the-browser-the-html-report)), `text` (the charts above, then the most updated packages and the recurring failures), `json` (every event of the period plus the computed figures) or `csv` (one row per update attempt) |
 | `-s, --since` | the period: `7d`, `30d`, `12w`, `6m`, `1y`, `all` or a date `AAAA-MM-JJ`; default `12m` |
 | `--until` | last day included (`AAAA-MM-JJ`); default: now. The charts then stop on that day, and the title names it |
-| `-o, --out` | write to a file instead of the standard output (`-` keeps the standard output); `--force` replaces an existing file |
+| `-o, --out` | write to a file (`-`: the standard output). Without it, the HTML report goes to the reports directory and the other formats to the standard output; `--force` replaces an existing file |
+| `--no-open` | do not open the HTML report in the browser |
 | `--delimiter` | CSV separator: `,` (default), `;` or `tab` |
 
+The HTML report opens in the browser when gup runs in a terminal outside CI, unless `--no-open`;
+otherwise, or when no browser can be started, gup prints the file's `file:///` address to open it
+yourself:
+
+```
+  rapport écrit : C:\Users\you\AppData\Local\gup\reports\gup-report-20261003-142205.html
+  ouvert dans le navigateur par défaut
+```
+
 The data goes to the standard output and every notice (empty period, lines that could not be
-read) to the error output, so `gup report -f csv > maj.csv` stays clean. Exit codes: `0` written,
-`2` an option is wrong, `1` the history could not be read or the file written. An empty period
-still gives a valid JSON or CSV document.
+read) to the error output, so `gup report -f csv > maj.csv` stays clean. Exit codes: `0` written
+(even when the browser could not be opened), `2` an option is wrong, `1` the history could not
+be read or the file written. An empty period still gives a valid report, JSON or CSV document.
 
 JSON and CSV field names are English `snake_case` (`provider_id`, `duration_ms`…), the same
 whatever the language of the interface; the JSON document says which schema it follows
@@ -120,11 +162,18 @@ The journal only reads the history: nothing it shows ever decides what gup updat
 
 ### Exports and privacy
 
-- Exports are written by you, for you: nothing is uploaded. JSON and CSV files land in the
-  reports directory (the 20 newest of each kind are kept) or where `--out` says, private to your
-  user on macOS and Linux.
+- Exports are written by you, for you: nothing is uploaded. Reports, JSON and CSV files land in
+  the reports directory (the 20 newest of each kind are kept) or where `--out` says, private to
+  your user on macOS and Linux.
 - Free text — messages, scan errors, package ids, versions — is redacted again on the way out:
   known secret shapes are masked and your home directory becomes `~`.
+- The HTML report cannot reach the network: its Content-Security-Policy lets nothing load and
+  only its own script and styles run. The history it shows is data, never markup: a package
+  name or a message that looks like HTML is displayed as text.
+- To open the report, gup starts the platform's own opener — `explorer.exe` (by its full path)
+  on Windows, `/usr/bin/open` on macOS, `xdg-open` on Linux (`wslview` first under WSL) — never a
+  shell. A path holding a comma or a quote is not handed to `explorer.exe`, which would split it:
+  gup prints the address instead.
 - A CSV cell that starts like a spreadsheet formula (`=`, `+`, `-`, `@`) is prefixed with `'`,
   so opening the file never runs anything.
 - Messages printed by tools are shown without their escape sequences: the journal never changes
@@ -149,6 +198,7 @@ day:
 | `update.planned`, `elevation.batch`, `update.cancelled`, `update.waiting` | the shape of an update run: what was planned, what needed administrator rights, what a stop cancelled, a wait on another gup run |
 | `scan.start` / `scan.provider` / `scan.end` | a scan: how many providers it plans, each provider's time and outdated count (a warning when its scan failed), the totals |
 | `report.export` | an export of the history (`gup report`, the Journal view): format, records, size, file |
+| `report.open` | the HTML report handed to the browser: whether it opened, with which program, and why not |
 | `history.write-failed` | the activity history could not be written, and why |
 
 Each line names the provider and the package it belongs to, so the commands of a scan of eight

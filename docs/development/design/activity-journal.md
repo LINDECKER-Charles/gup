@@ -183,9 +183,9 @@ format, records, bytes, path.
 
 - **No `o` key and no HTML choice in `e` yet:** the HTML renderer is `feat/html-report`'s. The
   export table (`SERIALIZERS`), the `ExportFormat` port and the dialog are built so that branch
-  adds one entry each plus the `o` binding.
+  adds one entry each plus the `o` binding. (Done there: [`html-report.md`](html-report.md).)
 - **`gup report` defaults to `text`** (the spec's default is `html`, which this branch cannot
-  render). `feat/html-report` flips the default.
+  render). `feat/html-report` flips the default (done).
 - **`describePeriod` is not in `core/time`:** it is French text, so it lives in
   `ui/text/activity-labels.ts` (`periodLabel`), reading the period's `scope` (F-10). `Period`
   carries `scope` for that reason, and `hasFixedEnd` so that a `--until` period reads
