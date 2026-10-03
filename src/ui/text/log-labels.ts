@@ -1,3 +1,7 @@
+import {
+  DIAGNOSTIC_ENTRIES,
+  type DiagnosticContents,
+} from "../../core/export/diagnostic-bundle.js";
 import type { LogLevel, LogThreshold } from "../../core/log/log.js";
 import type { UpdateStatus } from "../../core/history/types.js";
 
@@ -80,4 +84,30 @@ export const LOG_SOURCE_LABELS = {
 
 export function thresholdLabel(threshold: LogThreshold): string {
   return threshold === "off" ? LOG_DIAGNOSTIC_LABELS.off : threshold;
+}
+
+/** The README of the diagnostic archive: what is inside, and to read it before sharing it. */
+export function diagnosticReadme(contents: DiagnosticContents): string {
+  const { generatedAt, system, logs, dropped } = contents;
+  const lines = [
+    "Archive de diagnostic gup",
+    "",
+    `Générée le ${generatedAt.toISOString()} par gup ${system.gup}`,
+    `(${system.platform} ${system.arch}, Node ${system.node}).`,
+    "",
+    "Contenu :",
+    `  ${DIAGNOSTIC_ENTRIES.system}   versions, plateforme et variables d'environnement propres à gup`,
+    "                (liste fermée : le reste de l'environnement n'est jamais copié)",
+    `  ${DIAGNOSTIC_ENTRIES.logs}/         journal de debug, ${logs.length} fichier(s)`,
+    ...logs.map((name) => `                  ${name}`),
+    "",
+    "Les secrets reconnus (jetons, mots de passe, clés, identifiants dans les URL)",
+    "sont masqués par ***, et le dossier personnel est abrégé en ~.",
+    "Rien n'a été envoyé : cette archive n'existe que sur votre machine.",
+    "",
+    "Relisez-la avant de la joindre à un rapport de bug : un secret dans un",
+    "format inconnu de gup pourrait subsister.",
+    ...(dropped > 0 ? ["", `${dropped} ligne(s) illisible(s) du journal ont été omise(s).`] : []),
+  ];
+  return `${lines.join("\n")}\n`;
 }

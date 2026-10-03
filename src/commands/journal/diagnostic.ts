@@ -10,7 +10,7 @@ import { utcDay } from "../../core/log/file-sink.js";
 import { listLogFiles } from "../../core/log/log-reader.js";
 import { stateDir } from "../../core/state/app-dirs.js";
 import { systemSnapshot } from "../../core/state/system-snapshot.js";
-import { LOG_MESSAGES } from "../../ui/text/log-labels.js";
+import { diagnosticReadme, LOG_MESSAGES } from "../../ui/text/log-labels.js";
 import { DEFAULT_SINCE } from "./log-show.js";
 import { parseSince } from "./since-option.js";
 
@@ -37,7 +37,12 @@ export async function exportDiagnostic(options: ExportOptions): Promise<number> 
   if (!since.isValid) return fail(LOG_MESSAGES.badSince(rawSince), USAGE_EXIT_CODE);
   try {
     const logs = await collectLogs(stateDir("logs"), since.since);
-    const archive = buildDiagnosticZip({ generatedAt: now, system: systemSnapshot(), logs });
+    const archive = buildDiagnosticZip({
+      generatedAt: now,
+      system: systemSnapshot(),
+      logs,
+      readme: diagnosticReadme,
+    });
     const path = await writeOutputFile({
       kind: "diagnostic",
       extension: "zip",

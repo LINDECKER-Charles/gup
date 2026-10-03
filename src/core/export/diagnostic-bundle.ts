@@ -25,10 +25,29 @@ export interface DiagnosticLog {
   readonly content: string;
 }
 
+/** The archive's fixed entry names (log files go under `logs/`). */
+export const DIAGNOSTIC_ENTRIES = {
+  readme: "README.txt",
+  system: "system.json",
+  logs: "logs",
+} as const;
+
+/** What an archive holds, for its README. */
+export interface DiagnosticContents {
+  readonly generatedAt: Date;
+  readonly system: SystemSnapshot;
+  /** The log files copied, by name. */
+  readonly logs: readonly string[];
+  /** Log lines left out because they were not well-formed records. */
+  readonly dropped: number;
+}
+
 export interface DiagnosticInput {
   readonly generatedAt: Date;
   readonly system: SystemSnapshot;
   readonly logs: readonly DiagnosticLog[];
+  /** The README, in the interface's language: what is inside, what to check before sharing. */
+  readonly readme: (contents: DiagnosticContents) => string;
 }
 
 export interface DiagnosticArchive {
@@ -39,9 +58,6 @@ export interface DiagnosticArchive {
   readonly dropped: number;
 }
 
-const README_NAME = "README.txt";
-const SYSTEM_NAME = "system.json";
-const LOGS_DIR = "logs";
 const JSON_INDENT = 2;
 
 export function buildDiagnosticZip(input: DiagnosticInput): DiagnosticArchive {
@@ -51,12 +67,14 @@ export function buildDiagnosticZip(input: DiagnosticInput): DiagnosticArchive {
   for (const log of input.logs) {
     if (!LOG_FILE_PATTERN.test(log.name)) continue;
     const content = redactLogContent(log.content, totals);
-    zip.addFile(`${LOGS_DIR}/${log.name}`, Buffer.from(content, "utf8"));
+    zip.addFile(`${DIAGNOSTIC_ENTRIES.logs}/${log.name}`, Buffer.from(content, "utf8"));
     included.push(log.name);
   }
   const system = JSON.stringify(sanitizeData(input.system) ?? {}, null, JSON_INDENT);
-  zip.addFile(SYSTEM_NAME, Buffer.from(`${system}\n`, "utf8"));
-  zip.addFile(README_NAME, Buffer.from(readme(input, included, totals.dropped), "utf8"));
+  zip.addFile(DIAGNOSTIC_ENTRIES.system, Buffer.from(`${system}\n`, "utf8"));
+  const { generatedAt } = input;
+  const readme = input.readme({ generatedAt, system: input.system, logs: included, ...totals });
+  zip.addFile(DIAGNOSTIC_ENTRIES.readme, Buffer.from(readme, "utf8"));
   return { zip: zip.toBuffer(), ...totals };
 }
 
@@ -71,29 +89,4 @@ function redactLogContent(content: string, totals: { records: number; dropped: n
   }
   totals.records += lines.length;
   return lines.length > 0 ? `${lines.join("\n")}\n` : "";
-}
-
-function readme(input: DiagnosticInput, logs: readonly string[], dropped: number): string {
-  const { generatedAt, system } = input;
-  const lines = [
-    "Archive de diagnostic gup",
-    "",
-    `Générée le ${generatedAt.toISOString()} par gup ${system.gup}`,
-    `(${system.platform} ${system.arch}, Node ${system.node}).`,
-    "",
-    "Contenu :",
-    `  ${SYSTEM_NAME}   versions, plateforme et variables d'environnement propres à gup`,
-    "                (liste fermée : le reste de l'environnement n'est jamais copié)",
-    `  ${LOGS_DIR}/         journal de debug, ${logs.length} fichier(s)`,
-    ...logs.map((name) => `                  ${name}`),
-    "",
-    "Les secrets reconnus (jetons, mots de passe, clés, identifiants dans les URL)",
-    "sont masqués par ***, et le dossier personnel est abrégé en ~.",
-    "Rien n'a été envoyé : cette archive n'existe que sur votre machine.",
-    "",
-    "Relisez-la avant de la joindre à un rapport de bug : un secret dans un",
-    "format inconnu de gup pourrait subsister.",
-    ...(dropped > 0 ? ["", `${dropped} ligne(s) illisible(s) du journal ont été omise(s).`] : []),
-  ];
-  return `${lines.join("\n")}\n`;
 }

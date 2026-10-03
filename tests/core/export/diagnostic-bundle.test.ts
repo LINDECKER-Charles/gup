@@ -2,9 +2,10 @@ import AdmZip from "adm-zip";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildDiagnosticZip } from "../../../src/core/export/diagnostic-bundle.js";
+import { buildDiagnosticZip, type DiagnosticInput } from "../../../src/core/export/diagnostic-bundle.js";
 import type { LogRecord } from "../../../src/core/log/types.js";
 import type { SystemSnapshot } from "../../../src/core/state/system-snapshot.js";
+import { diagnosticReadme } from "../../../src/ui/text/log-labels.js";
 
 const SYSTEM: SystemSnapshot = {
   gup: "0.5.0",
@@ -28,6 +29,11 @@ function line(over: Partial<LogRecord>): string {
   });
 }
 
+/** The archive `gup log export` builds, with its French README. */
+function build(input: Omit<DiagnosticInput, "readme">) {
+  return buildDiagnosticZip({ ...input, readme: diagnosticReadme });
+}
+
 function entries(zip: Buffer): Map<string, string> {
   const archive = new AdmZip(zip);
   return new Map(archive.getEntries().map((entry) => [entry.entryName, archive.readAsText(entry)]));
@@ -35,7 +41,7 @@ function entries(zip: Buffer): Map<string, string> {
 
 describe("buildDiagnosticZip", () => {
   it("holds a README, the system description and the log files under fixed names", () => {
-    const archive = buildDiagnosticZip({
+    const archive = build({
       generatedAt: new Date("2026-10-03T12:30:00.000Z"),
       system: SYSTEM,
       logs: [{ name: "gup-2026-10-03.jsonl", content: `${line({})}\n` }],
@@ -50,7 +56,7 @@ describe("buildDiagnosticZip", () => {
 
   it("redacts every log line again and the system description too", () => {
     const leaked = line({ data: { stderrTail: "fatal: https://bob:hunter2@git.example.com", token: "abc" } });
-    const archive = buildDiagnosticZip({
+    const archive = build({
       generatedAt: new Date(),
       system: SYSTEM,
       logs: [{ name: "gup-2026-10-03.jsonl", content: `${leaked}\n` }],
@@ -71,7 +77,7 @@ describe("buildDiagnosticZip", () => {
         stderrTail: `EACCES ${join(home, "AppData", "x")} AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG`,
       },
     });
-    const archive = buildDiagnosticZip({
+    const archive = build({
       generatedAt: new Date(),
       system: { ...SYSTEM, env: { GUP_LOG_DIR: join(home, "logs") } },
       logs: [{ name: "gup-2026-10-03.jsonl", content: `${older}\n` }],
@@ -85,7 +91,7 @@ describe("buildDiagnosticZip", () => {
   });
 
   it("drops what is not a record, says how many lines in the README, and skips foreign file names", () => {
-    const archive = buildDiagnosticZip({
+    const archive = build({
       generatedAt: new Date(),
       system: SYSTEM,
       logs: [
