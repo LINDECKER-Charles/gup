@@ -18,7 +18,7 @@ import {
 import type { ProviderContractCase } from "../contract/types.js";
 import { system } from "../system/fake-system.js";
 import { SELF_TEST_CASES } from "./contract-cases.js";
-import { FragileProvider, ListManagerProvider } from "./fake-providers.js";
+import { FallbackListProvider, FragileProvider, ListManagerProvider } from "./fake-providers.js";
 
 function selfTestCase(index: number): ProviderContractCase {
   const contractCase = SELF_TEST_CASES[index];
@@ -76,6 +76,14 @@ describe("fault sweep", () => {
   it("finds nothing on a fail-soft provider", async () => {
     await expect(sweepScan(RTOOL_ON_WINDOWS)).resolves.toEqual([]);
     await expect(sweepInstalls(RTOOL_ON_WINDOWS)).resolves.toEqual([]);
+  });
+
+  it("answers the probes only a fault reaches as failures, not as violations", async () => {
+    // The legacy listing is never scripted: the nominal scan does not reach it.
+    const fallback = { ...LIST_MANAGER, create: () => new FallbackListProvider() };
+
+    await expect(sweepScan(fallback)).resolves.toEqual([]);
+    expect(system.unscripted).toEqual([]);
   });
 
   it("names each fault that made the scan throw", async () => {

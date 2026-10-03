@@ -108,6 +108,17 @@ export class ListManagerProvider extends SelfTestProvider {
   }
 }
 
+/** Retries a failed listing with a legacy flag: a probe only a fault ever reaches. */
+export class FallbackListProvider extends ListManagerProvider {
+  override readonly id = "lm-fallback";
+
+  override async listOutdated(): Promise<OutdatedPackage[]> {
+    const first = await run("lm", ["outdated", "--json"]);
+    const listing = first.failed ? await run("lm", ["outdated", "--json", "--legacy"]) : first;
+    return listing.failed ? [] : parseListing(listing.stdout);
+  }
+}
+
 /** The same manager, upgrading everything in one call (one-batch). */
 export class BatchManagerProvider extends ListManagerProvider {
   override readonly id = "lm-batch";
