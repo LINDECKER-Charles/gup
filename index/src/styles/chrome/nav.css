@@ -1,110 +1,138 @@
-/* Sticky header. */
-
-/* ---------- Header ---------- */
+/* Sticky header. One row from 860 px; below, the section links become a
+   second row that scrolls sideways (no hamburger: every link is a jump inside
+   the page the reader is already scrolling). */
 
 .nav {
   position: sticky;
-  top: 0;
-  z-index: 60;
-  backdrop-filter: blur(20px);
-  background: oklch(0.13 0.008 265 / 0.7);
-  border-bottom: 1px solid var(--line);
-  animation: gFadeIn 0.6s ease 0.86s both;
+  inset-block-start: 0;
+  z-index: 50;
+  border-block-end: 1px solid var(--line);
+  background: oklch(0.13 0.008 265 / 0.86);
+  backdrop-filter: blur(16px);
 }
 .nav-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "brand links actions";
   align-items: center;
-  justify-content: space-between;
   gap: 24px;
-  height: var(--nav-h);
+  min-block-size: var(--nav-h);
 }
+
 .nav-brand {
+  grid-area: brand;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
 }
 .nav-brand:hover {
   color: inherit;
 }
 .nav-mark {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
+  inline-size: 30px;
+  block-size: 30px;
   border-radius: 8px;
-  box-shadow: 0 0 0 1px var(--line-bright);
+  box-shadow: 0 0 0 1px var(--line-strong);
 }
 .nav-word {
-  font-family: var(--display);
+  font-family: var(--font-brand);
   font-size: 22px;
   letter-spacing: 0.04em;
   line-height: 1;
 }
 .nav-version {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--violet-text-soft);
-  border: 1px solid oklch(0.68 0.2 275 / 0.45);
-  border-radius: var(--radius-xs);
   padding: 2px 6px;
-  letter-spacing: 0.06em;
+  border: 1px solid oklch(0.68 0.2 275 / 0.45);
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--violet-text);
   white-space: nowrap;
 }
+
 .nav-links {
+  grid-area: links;
+  justify-self: center;
+  min-inline-size: 0;
+}
+.nav-links ul {
   display: flex;
-  gap: 30px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  gap: 26px;
+}
+.nav-links a {
+  display: inline-block;
+  padding-block: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-case);
   color: var(--fg-soft);
+  white-space: nowrap;
 }
 .nav-links a:hover {
   color: var(--fg);
 }
+.nav-links a[aria-current="location"] {
+  color: var(--fg);
+  text-decoration: underline 2px var(--violet);
+  text-underline-offset: 8px;
+}
+
 .nav-actions {
+  grid-area: actions;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .nav-icon-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 13px;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: oklch(0.71 0.008 265);
-  transition:
-    border-color 0.2s ease,
-    color 0.2s ease;
+  color: var(--fg-muted);
 }
 .nav-icon-link:hover {
   border-color: var(--violet);
   color: var(--fg);
 }
 .nav-cta {
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 12px;
-  box-shadow: 0 0 34px oklch(0.68 0.2 275 / 0.5);
-}
-.nav-cta .btn-sheen {
-  width: 34%;
-  animation-duration: 3.4s;
+  min-block-size: 40px;
+  padding: 8px 16px;
+  font-size: 12.5px;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 859px) {
+  .nav-inner {
+    grid-template-areas:
+      "brand . actions"
+      "links links links";
+    row-gap: 0;
+  }
+  .nav-brand,
+  .nav-actions {
+    block-size: 56px;
+  }
   .nav-links {
-    gap: 20px;
+    justify-self: stretch;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, black 82%, transparent);
+  }
+  .nav-links ul {
+    gap: 22px;
+    block-size: 40px;
+    align-items: center;
+    padding-inline-end: 32px;
+  }
+  .nav-links li {
+    scroll-snap-align: start;
   }
 }
-@media (max-width: 860px) {
-  .nav-links {
-    display: none;
-  }
-}
+
 @media (max-width: 460px) {
   .nav-version {
     display: none;

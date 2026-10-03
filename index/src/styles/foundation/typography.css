@@ -1,75 +1,67 @@
-/* Type scale: the Anton display sizes and the shared text roles. */
-
-/* ---------- Typography scale ---------- */
+/* Type roles. Case, tracking and leading come from variables that scripts.css
+   adjusts per script — no rule hardcodes letter-spacing on translated text. */
 
 .display {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 400;
-  line-height: 1.06;
-  text-transform: uppercase;
-  letter-spacing: 0.004em;
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  line-height: var(--display-leading);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-tracking);
+  text-wrap: balance;
 }
-/* Sized to keep each of the three lines on ONE line inside the hero's 1.12fr
-   column: they are individually masked, so a wrap breaks the reveal. The
-   1.12 line-height is not slack — Anton's uppercase À and É need the headroom,
-   and the mask (overflow: hidden) clips the accent at anything tighter. */
 .display--hero {
-  font-size: clamp(38px, 6vw, 94px);
-  line-height: 1.12;
-  letter-spacing: -0.004em;
+  font-size: clamp(42px, 7.2vw, 100px);
 }
 .display--section {
-  font-size: clamp(30px, 5.2vw, 72px);
-}
-.display--cta {
-  font-size: clamp(34px, 6.4vw, 88px);
-  line-height: 1.04;
-}
-.display--card {
-  font-size: 28px;
-  letter-spacing: 0.02em;
-  line-height: 1.08;
+  max-inline-size: 22ch;
+  font-size: clamp(32px, 4.8vw, 62px);
 }
 
-/* A section heading that stands on its own line above a content grid. Headings
-   inside .sec-split deliberately keep margin 0 — there the grid owns the
-   spacing, and doubling it would push the lead paragraph out of alignment. */
-.sec-title {
-  margin-bottom: 52px;
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-block-end: 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-case);
+  color: var(--violet-text);
 }
-@media (max-width: 720px) {
-  .sec-title {
-    margin-bottom: 32px;
-  }
-}
-
-.mono-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--violet-text-soft);
-  white-space: nowrap;
+.kicker-rule {
+  flex: 1;
+  block-size: 1px;
+  background: var(--line);
 }
 
 .lead {
-  margin: 0;
-  font-size: 16.5px;
-  line-height: 1.6;
+  max-inline-size: 64ch;
+  margin-block-start: 18px;
+  font-size: 17px;
   color: var(--fg-muted);
   text-wrap: pretty;
 }
 
-.muted {
-  color: var(--fg-muted);
-}
-.dim {
-  color: var(--fg-dim);
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--violet-text);
 }
 
-/* Inline `<code>` inside prose. */
-.code-inline {
-  font-family: var(--mono);
-  color: var(--violet-text);
+kbd {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-block-end-width: 2px;
+  border-radius: 5px;
+  background: var(--surface-raised);
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+strong {
+  font-weight: 600;
+  color: var(--fg);
 }

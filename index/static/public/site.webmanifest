@@ -1,7 +1,7 @@
 {
   "name": "gup — Global Updater",
   "short_name": "gup",
-  "description": "CLI qui orchestre winget, scoop, chocolatey, Homebrew, MacPorts, npm, pip, cargo, helm, kubectl et le reste des @@PROVIDERS@@ sources d'installation derrière une seule interface.",
+  "description": "CLI that orchestrates winget, scoop, chocolatey, Homebrew, MacPorts, npm, pip, cargo, helm, kubectl and the rest of its @@PROVIDERS@@ installation sources behind one interface.",
   "start_url": "/gup/",
   "scope": "/gup/",
   "id": "https://lindecker-charles.github.io/gup/",
@@ -39,7 +39,7 @@
   "background_color": "#06070a",
   "display": "standalone",
   "orientation": "any",
-  "lang": "fr-FR",
+  "lang": "en",
   "dir": "ltr",
   "categories": ["developer", "utilities", "productivity"]
 }

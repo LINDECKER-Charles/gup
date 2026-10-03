@@ -1,0 +1,54 @@
+/* 03 · How it works — three ordered steps joined by a CSS rule. */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.step {
+  position: relative;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+/* The connector between consecutive cards, on the inline-end side. */
+.step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 38px;
+  inset-inline-end: -15px;
+  inline-size: 16px;
+  block-size: 2px;
+  background: var(--violet);
+}
+.step-number {
+  display: block;
+  margin-block-end: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--violet-text);
+}
+.step-title {
+  margin-block-end: 8px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.step-text {
+  font-size: 14.5px;
+  color: var(--fg-muted);
+}
+
+@media (max-width: 860px) {
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .step:not(:last-child)::after {
+    inset-block-start: auto;
+    inset-block-end: -15px;
+    inset-inline-end: auto;
+    inset-inline-start: 38px;
+    inline-size: 2px;
+    block-size: 16px;
+  }
+}

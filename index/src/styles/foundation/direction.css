@@ -1,0 +1,36 @@
+/* Bidirectional text. Layout is written with logical properties everywhere
+   (enforced by tests/rules/css-logical.test.mjs), so right-to-left pages
+   mirror on their own; this file holds the few things that must NOT mirror,
+   and the directional details that must. */
+
+/* Commands, key caps and terminal output are left-to-right in every locale,
+   isolated so the bidi algorithm never reorders `--flags` or punctuation. */
+code,
+kbd,
+.cmd-line,
+.term,
+.tui {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.term,
+.tui {
+  text-align: left; /* physical-ok: terminal content is left-to-right by definition */
+}
+
+/* Arrows point along the reading direction. */
+[dir="rtl"] .icon--directional {
+  transform: scaleX(-1);
+}
+
+/* The hero accent sweeps from violet to amber from where reading starts. */
+[dir="rtl"] .hero-accent {
+  --accent-angle: 260deg;
+}
+
+/* The narrow header's scroll fade sits on the inline end. */
+@media (max-width: 859px) {
+  [dir="rtl"] .nav-links {
+    mask-image: linear-gradient(to left, black 82%, transparent);
+  }
+}

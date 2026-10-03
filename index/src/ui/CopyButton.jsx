@@ -1,33 +1,35 @@
 /**
- * Copies the install command to the clipboard.
- *
- * The confirmation is announced through an `aria-live="polite"` region rather
- * than only swapping the label, so it reaches a screen reader that is not
- * focused on the button.
+ * Copies the install command. The outcome is announced through a polite
+ * status region — "copied" only once the browser accepted the write, the
+ * failure message otherwise — so it reaches a screen reader that is not on
+ * the button. The command itself stays visible and selectable beside it.
  */
-import { useClipboard } from "../lib/hooks.jsx";
-import { Copy } from "../lib/icons.jsx";
 import { installCommand } from "../data/facts.js";
+import { useI18n } from "../i18n/use-i18n.js";
+import { useClipboard } from "../lib/use-clipboard.js";
+import { Icon } from "./Icon.jsx";
 
-export function CopyButton({ className = "", label = "Copier", showState = false }) {
-  const { copied, copy } = useClipboard();
+const ANNOUNCEMENT = { idle: null, copied: "copyStatus", failed: "copyFailed" };
+
+export function CopyButton() {
+  const { common } = useI18n().messages;
+  const { state, copy } = useClipboard();
+  const announcement = ANNOUNCEMENT[state];
 
   return (
-    <button
-      type="button"
-      className={className}
-      onClick={() => copy(installCommand)}
-      aria-label={`Copier la commande d'installation : ${installCommand}`}
-    >
-      <span className="btn-sheen" aria-hidden="true" />
-      <Copy />
-      <span>{showState ? label : copied ? "Copié !" : label}</span>
-      {showState ? (
-        <span className="hero-copy-state">{copied ? "Copié !" : ""}</span>
-      ) : null}
-      <span className="sr-only" role="status" aria-live="polite">
-        {copied ? "Commande copiée dans le presse-papiers" : ""}
+    <>
+      <button
+        type="button"
+        className="btn btn--primary cmd-copy"
+        aria-label={common.copyLabel}
+        onClick={() => copy(installCommand)}
+      >
+        <Icon name={state === "copied" ? "check" : "copy"} />
+        <span>{state === "copied" ? common.copied : common.copy}</span>
+      </button>
+      <span className="sr-only" role="status">
+        {announcement ? common[announcement] : ""}
       </span>
-    </button>
+    </>
   );
 }

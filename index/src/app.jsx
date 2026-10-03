@@ -1,24 +1,26 @@
 /**
  * Browser entry.
  *
- * `npm run build` prerenders <Page /> into #root (see scripts/prerender.mjs),
- * so in production the markup is already there and this hydrates it; in dev
- * the container is empty and it mounts from scratch. Branching on
- * `hasChildNodes` keeps one entry file for both.
+ * The prerender writes the page markup into #root and the resolved messages
+ * into an inline JSON block; this entry reads that block and hydrates. In dev
+ * #root only holds the slot comment, so it mounts from scratch — hence the
+ * `firstElementChild` test (a comment is a child node, an element is not).
  */
 import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { Page } from "./Page.jsx";
+import { readBootstrap } from "./i18n/read-bootstrap.js";
 import "./styles/index.css";
 
+const { locale, messages } = readBootstrap(document);
 const container = document.getElementById("root");
 const tree = (
   <StrictMode>
-    <Page />
+    <Page locale={locale} messages={messages} />
   </StrictMode>
 );
 
-if (container.hasChildNodes()) {
+if (container.firstElementChild) {
   hydrateRoot(container, tree);
 } else {
   createRoot(container).render(tree);

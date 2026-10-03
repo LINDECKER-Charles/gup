@@ -1,0 +1,95 @@
+/* ----------------------------------------------------------------------------
+   Non-Latin scripts: system font stacks, no webfont download.
+
+   Each script lists its own faces once (--script-*); the sans, display and
+   mono stacks are built from that list. Geist and Geist Mono lead: their
+   unicode-range is Latin, so they only render the Latin runs (product names,
+   commands) and the script faces render the rest. "Geist Fallback"
+   (metric-matched Arial) is deliberately absent from the sans stacks —
+   Windows Arial carries Arabic glyphs and would hijack them. The mono stack
+   keeps "Geist Mono Fallback" (Consolas, Menlo or Liberation Mono, none of
+   which carries these scripts) so commands do not reflow when Geist Mono
+   arrives; without the script faces after it, the mono labels (navigation,
+   kickers, buttons) would fall to whatever the OS picks for a monospace
+   request — Times New Roman for Arabic, NSimSun for Chinese on Windows.
+
+   Display headings and labels drop the uppercase and every tracking:
+   letter-spacing breaks Arabic joining and the Devanagari/Bengali headline
+   bar, and Han has no case. Leading grows so matras, diacritics and dense
+   ideographs never clip. The brand word "GUP" keeps Anton (--font-brand) in
+   every locale. tests/rules/scripts.test.mjs pins all of this.
+---------------------------------------------------------------------------- */
+
+:root {
+  --script-han: system-ui, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Source Han Sans SC";
+  --script-devanagari: "Nirmala UI", "Kohinoor Devanagari", "Devanagari Sangam MN",
+    "Noto Sans Devanagari", "Mangal", system-ui;
+  --script-bengali: "Nirmala UI", "Kohinoor Bangla", "Bangla Sangam MN", "Noto Sans Bengali",
+    "Vrinda", system-ui;
+  --script-arabic: "Segoe UI", "SF Arabic", "Geeza Pro", "Noto Sans Arabic", "Noto Naskh Arabic",
+    Tahoma, system-ui;
+  --stack-han: "Geist", var(--script-han), sans-serif;
+  --stack-devanagari: "Geist", var(--script-devanagari), sans-serif;
+  --stack-bengali: "Geist", var(--script-bengali), sans-serif;
+  --stack-arabic: "Geist", var(--script-arabic), sans-serif;
+}
+
+html:is(:lang(zh), :lang(hi), :lang(bn), :lang(ar)) {
+  --display-case: none;
+  --display-tracking: 0;
+  --label-case: none;
+  --label-tracking: 0;
+  --label-tracking-tight: 0;
+}
+
+html:lang(zh) {
+  --font-sans: var(--stack-han);
+  --font-display: var(--stack-han);
+  --font-mono: "Geist Mono", "Geist Mono Fallback", var(--script-han), monospace;
+  --display-weight: 800;
+  --display-leading: 1.25;
+  line-break: strict;
+}
+
+html:lang(hi) {
+  --font-sans: var(--stack-devanagari);
+  --font-display: var(--stack-devanagari);
+  --font-mono: "Geist Mono", "Geist Mono Fallback", var(--script-devanagari), monospace;
+  --display-weight: 700;
+  --display-leading: 1.4;
+  --body-leading: 1.75;
+}
+
+html:lang(bn) {
+  --font-sans: var(--stack-bengali);
+  --font-display: var(--stack-bengali);
+  --font-mono: "Geist Mono", "Geist Mono Fallback", var(--script-bengali), monospace;
+  --display-weight: 700;
+  --display-leading: 1.4;
+  --body-leading: 1.75;
+}
+
+html:lang(ar) {
+  --font-sans: var(--stack-arabic);
+  --font-display: var(--stack-arabic);
+  --font-mono: "Geist Mono", "Geist Mono Fallback", var(--script-arabic), monospace;
+  --display-weight: 700;
+  --display-leading: 1.35;
+  --body-leading: 1.75;
+}
+
+/* A run in another script inside a page (the endonyms of the language lists)
+   gets that script's stack too. */
+[lang|="zh"]:not(html) {
+  font-family: var(--stack-han);
+}
+[lang="hi"]:not(html) {
+  font-family: var(--stack-devanagari);
+}
+[lang="bn"]:not(html) {
+  font-family: var(--stack-bengali);
+}
+[lang="ar"]:not(html) {
+  font-family: var(--stack-arabic);
+}

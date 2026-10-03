@@ -1,0 +1,125 @@
+/**
+ * The site's locales, in speaker-ranking order (Ethnologue, total speakers):
+ * the language menu, the footer list, the hreflang alternates and the sitemap
+ * all follow this order.
+ *
+ * Imported by the client bundle (language menu, `<html lang dir>`) and by the
+ * build (head, sitemap, prerender). It holds metadata only — never copy: the
+ * catalogs under ./catalogs/ are build-time inputs and must not reach the
+ * client bundle (tests/rules/boundaries.test.mjs).
+ *
+ * @typedef {"en" | "zh" | "hi" | "es" | "ar" | "fr" | "bn" | "pt"} LocaleId
+ * @typedef {"latin" | "han" | "devanagari" | "arabic" | "bengali"} Script
+ *
+ * @typedef {object} Locale
+ * @property {LocaleId} id
+ * @property {string} path        URL segment under the base path; "" for the default locale.
+ * @property {boolean} isDefault  Exactly one: served at the base path and used as x-default.
+ * @property {string} htmlLang    `<html lang>` value, also the Intl.PluralRules tag.
+ * @property {string} hreflang    Value of the hreflang alternates.
+ * @property {"ltr" | "rtl"} dir
+ * @property {string} ogLocale    Open Graph locale (language_TERRITORY).
+ * @property {string} endonym     The language's own name, shown in the language lists.
+ * @property {Script} script      Drives the font preloads and the typography overrides.
+ * @property {string} [ogImage]   Social card path relative to the site root; absent → default card.
+ */
+
+/** @type {readonly Locale[]} */
+export const LOCALES = Object.freeze([
+  Object.freeze({
+    id: "en",
+    path: "",
+    isDefault: true,
+    htmlLang: "en",
+    hreflang: "en",
+    dir: "ltr",
+    ogLocale: "en_US",
+    endonym: "English",
+    script: "latin",
+    ogImage: "public/og-image.png",
+  }),
+  Object.freeze({
+    id: "zh",
+    path: "zh",
+    isDefault: false,
+    htmlLang: "zh-Hans",
+    hreflang: "zh-Hans",
+    dir: "ltr",
+    ogLocale: "zh_CN",
+    endonym: "简体中文",
+    script: "han",
+    ogImage: "public/og/zh.png",
+  }),
+  Object.freeze({
+    id: "hi",
+    path: "hi",
+    isDefault: false,
+    htmlLang: "hi",
+    hreflang: "hi",
+    dir: "ltr",
+    ogLocale: "hi_IN",
+    endonym: "हिन्दी",
+    script: "devanagari",
+    ogImage: "public/og/hi.png",
+  }),
+  Object.freeze({
+    id: "es",
+    path: "es",
+    isDefault: false,
+    htmlLang: "es",
+    hreflang: "es",
+    dir: "ltr",
+    ogLocale: "es_ES",
+    endonym: "Español",
+    script: "latin",
+    ogImage: "public/og/es.png",
+  }),
+  Object.freeze({
+    id: "ar",
+    path: "ar",
+    isDefault: false,
+    htmlLang: "ar",
+    hreflang: "ar",
+    dir: "rtl",
+    ogLocale: "ar_AR",
+    endonym: "العربية",
+    script: "arabic",
+    ogImage: "public/og/ar.png",
+  }),
+  Object.freeze({
+    id: "fr",
+    path: "fr",
+    isDefault: false,
+    htmlLang: "fr",
+    hreflang: "fr",
+    dir: "ltr",
+    ogLocale: "fr_FR",
+    endonym: "Français",
+    script: "latin",
+    ogImage: "public/og/fr.png",
+  }),
+  Object.freeze({
+    id: "bn",
+    path: "bn",
+    isDefault: false,
+    htmlLang: "bn",
+    hreflang: "bn",
+    dir: "ltr",
+    ogLocale: "bn_BD",
+    endonym: "বাংলা",
+    script: "bengali",
+    ogImage: "public/og/bn.png",
+  }),
+  Object.freeze({
+    id: "pt",
+    path: "pt",
+    isDefault: false,
+    htmlLang: "pt-BR",
+    hreflang: "pt",
+    dir: "ltr",
+    ogLocale: "pt_BR",
+    endonym: "Português",
+    script: "latin",
+    ogImage: "public/og/pt.png",
+  }),
+]);
