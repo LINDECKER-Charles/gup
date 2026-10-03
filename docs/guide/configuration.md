@@ -1,9 +1,12 @@
 # Configuration
 
-`gup` works without any configuration. The settings you change are kept in one
-JSON file, read once when `gup` starts; scripts are never affected by it except
-for the install timeout (see [Scan & install](#scan--install)).
+`gup` works without any configuration. Change its settings in the **Options**
+view of the interactive app (`gup`, then Options in the menu): each change
+applies at once and is kept in one JSON file, read when `gup` starts. Scripts
+are never affected by it except for the install timeout (see
+[Scan & install](#scan--install)).
 
+- [The Options view](#the-options-view)
 - [Where the file lives](#where-the-file-lives)
 - [What it looks like](#what-it-looks-like)
 - [Sections](#sections)
@@ -11,8 +14,44 @@ for the install timeout (see [Scan & install](#scan--install)).
 - [When something is wrong](#when-something-is-wrong)
 - [Security](#security)
 
-Themes and the contrast guarantee have their own page:
+Themes, custom colours and the contrast guarantee have their own page:
 [`themes-and-accessibility.md`](themes-and-accessibility.md).
+
+## The Options view
+
+The settings are grouped in sections, one row per setting: `Label   [value]   hint`.
+
+| Section | Rows |
+|---|---|
+| SCAN & INSTALLATION | Mode rapide, Timeout install, Filtre providers |
+| APPARENCE | Thème, Couleurs perso., Niveau de contraste, Symboles, Densité |
+| CONFORT | Vue au lancement, Scanner au lancement, Confirmer les MAJ, Rescanner après MAJ, Tri des paquets, Colonne Note, Providers incompat., Animations, Souris, Notification de fin |
+| FICHIER | Réinitialiser…, Fichier (the file's state and path) |
+
+| Key | Effect |
+|---|---|
+| `↑` `↓` (`k` `j`), `pgup` `pgdn`, `home` `end` | move between rows (section titles are skipped) |
+| `entrée` / `espace` / a click | switch a value on or off, show the next value, or open the row (theme picker, colour editor, provider filter, a dialog) |
+| `←` `→` | previous / next value of the row under the cursor (on other rows, `←` goes back to the menu as everywhere) |
+| `r` | rescan with the new settings, after a scan setting changed |
+| `c` | copy the settings file's path to the clipboard (terminals that support OSC 52) |
+| `échap` | leave the theme picker, the colour editor or the provider filter |
+| `tab` / `q` | back to the menu / quit, from anywhere |
+
+- **Every change is saved at once**, except the theme under the picker's cursor
+  (saved with `entrée`) and the colour nudges of the colour editor (saved when
+  you move to another colour or leave it).
+- When a change cannot be saved (locked file, read-only section), it stays in
+  effect until `gup` exits and a line above the list says why:
+  `⚠ Réglage non enregistré — <raison>`. The next save that works clears it.
+- **Réinitialiser…** puts a group back to its defaults, after a confirmation that
+  answers *Non* by default: *Apparence* (theme, colours, contrast, symbols,
+  density), *Confort* (the rest of the comfort rows, mouse included), *Scan &
+  installation* (fast mode, filter, timeout), or *Tout*.
+- Fast mode, the filter and the timeout apply to the session at once; for the
+  first two, `r` rescans with them. The launch view and "scan at launch" apply
+  the next time the menu opens; everything else applies at once (sort, Note
+  column, animations, mouse, symbols, density, theme, colours).
 
 ## Where the file lives
 
@@ -23,7 +62,8 @@ Themes and the contrast guarantee have their own page:
 | Linux and others | `$XDG_CONFIG_HOME/gup/config.json`, else `~/.config/gup/config.json` |
 | Anywhere | `GUP_CONFIG_DIR=<dir>` → `<dir>/config.json` |
 
-`gup doctor` prints the path and the file's state in its "Système" section
+The Options view's **Fichier** row shows the same path and state (`c` copies
+the path), and `gup doctor` prints them in its "Système" section
 (`Configuration`). With `GUP_CONFIG=0` the file is neither read nor written:
 `gup` runs on its defaults, which is the quickest way to tell whether a problem
 comes from your settings.

@@ -7,13 +7,16 @@ border 3:1. This page lists the themes, explains how the default one follows
 your terminal, and what `gup` guarantees.
 
 - [Themes](#themes)
+- [Choosing a theme](#choosing-a-theme)
+- [Your own colours](#your-own-colours)
 - [How the `terminal` theme follows your terminal](#how-the-terminal-theme-follows-your-terminal)
 - [The contrast guarantee](#the-contrast-guarantee)
 - [Not by colour alone](#not-by-colour-alone)
 - [Terminals with fewer colours, and NO_COLOR](#terminals-with-fewer-colours-and-no_color)
 - [The embedded terminal](#the-embedded-terminal)
 
-The theme is set in the settings file (`theme.id`, see
+Pick the theme in the interactive app, **Options › Thème**, with a live preview
+(below), or in the settings file (`theme.id`, see
 [configuration.md](configuration.md#theme)).
 
 ## Themes
@@ -37,6 +40,62 @@ is up. `terminal` and `monochrome` leave your terminal's background as it is.
 
 The cursor row is a soft tint on purpose: the `›` in the gutter carries the
 cursor, the tint only reinforces it.
+
+## Choosing a theme
+
+In **Options**, the *Thème* row shows the theme in use and, as its hint, how
+readable it is on your terminal: `✔ AA · contraste min. 6,1:1`, `⚠ 2 couleur(s)
+ajustée(s) · min. 4,6:1`, or `? palette du terminal inconnue — contraste non
+vérifiable`. `entrée` opens the theme picker:
+
+| Mark | Meaning |
+|---|---|
+| `✔ 6,1` | readable as is; its lowest text contrast is 6.1:1 |
+| `⚠ 4,6` | some colours had to be adjusted to reach the level; lowest contrast after adjustment |
+| `? —` | your terminal did not report its palette: contrast cannot be checked |
+| `✔ —` | monochrome: your terminal's own text and background |
+| `–` (greyed) | this terminal cannot paint it (16 colours) — it cannot be applied |
+
+- Moving the cursor **paints the whole app** with the theme under it — the
+  menu, the borders, the title bar and a sample of every colour on the right —
+  without saving anything. The title bar says `aperçu du thème` while a theme
+  is only previewed, even if you go to another view meanwhile.
+- `entrée` saves the theme under the cursor; `échap` (or `←`) goes back to
+  the saved one.
+- The *Niveau de contraste* row switches between AA (4.5:1) and AAA (7:1) for
+  every theme.
+
+## Your own colours
+
+*Couleurs perso.* opens the colour editor for the theme in use. Your colours
+belong to that theme: an accent tuned for `dark` does not change `light`.
+
+| Column | Shows |
+|---|---|
+| Choisie | your colour, or `(thème)` when the role follows the theme |
+| Affichée | the colour actually painted |
+| Contraste | its lowest ratio on the background and the selected row — or `2,1 → 4,6:1 ⚠` when your colour was too pale or too dark to read and was moved to the closest readable one |
+| Aperçu | the role painted as it is |
+
+| Key | Effect |
+|---|---|
+| `↑` `↓` | another role |
+| `entrée` | type a colour, `#RRGGBB` or `#RGB` |
+| `←` `→` | hue −/+ 10° (previewed on the whole app) |
+| `+` `-` | lighter / darker (previewed) |
+| `a` | keep the adjusted colours as your own |
+| `suppr` | give the role back to the theme |
+| `échap` | back to the list |
+
+A colour you type is saved at once; nudges with the arrows and `+` `-` are
+saved when you move to another role or leave the editor. **However you set
+them, what is painted stays readable**: the setting keeps your choice, the screen
+shows the adjusted colour, and the editor tells you so (`⚠ 1 couleur(s)
+ajustée(s) automatiquement pour rester lisible (AA)`).
+
+The editor is unavailable — and the row says why — when there is nothing to
+tune: `monochrome`, `NO_COLOR`, a 16-colour terminal, or the `terminal` theme
+on a terminal that does not report its palette.
 
 ## How the `terminal` theme follows your terminal
 
@@ -113,4 +172,7 @@ and the symbols and labels carry the difference.
 
 When updates run inside `gup`'s screen, the installers' own output is shown in
 an embedded terminal pane drawn on your terminal's own background, never on the
-theme's: that output uses your terminal's colours, which `gup` does not check.
+theme's: **subprocess output uses the host palette** — your terminal's own
+colours, which `gup` neither changes nor checks. Its readability is your
+terminal theme's; the contrast guarantee covers everything `gup` paints around
+it.

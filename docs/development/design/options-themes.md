@@ -1,27 +1,32 @@
 # Design note — settings, themes and WCAG contrast (`feat/options-themes`)
 
-Status: **part 1 of 2 shipped** on `feat/options-themes` — the engine half: the persisted
+Status: **shipped** on `feat/options-themes`, in two parts. Part 1, the engine: the persisted
 settings the app reads, the colour science, the contrast enforcement, the ten built-in themes,
 terminal palette detection, the style tables and the theme engine's `Appearance`, installed at
-startup by a settings CLI module. **Part 2** (same branch) rebuilds the Options view on top of it:
-sectioned list, theme picker with live preview, colour editor, comfort rows, file row and the
-`extraSections` extension point.
+startup by a settings CLI module. Part 2, the Options view on top of it: a sectioned list edited
+in place, the theme picker with a live preview of the whole app, the colour editor with ratios and
+auto-correction warnings, the comfort, scan and file rows, reset, and the `extraSections`
+extension point (§5).
 
 Source spec: `themes-options.md` (§3–§8), integrated plan §6.3, amendments F-16 and IT-6. The
 foundation's contracts (`foundation.md`) are used as shipped; nothing of them changed.
 
 ---
 
-## 1. What the user gets (part 1)
+## 1. What the user gets
 
 | Change | Where |
 |---|---|
 | Plain text, package names and the dialog's input are painted in an explicit colour — the theme's text colour, or the terminal's own foreground — instead of OpenTUI's white default, which was invisible on light terminals (white on white, 1.0:1). | `ui/theme/style-table`, `runtime/themed-appearance` |
 | The default theme (`terminal`) follows the terminal's palette when the terminal reports it (OSC 4/10/11), with every colour pair raised to WCAG AA; otherwise it paints the terminal's own foreground and ANSI slots, and draws the cursor row in inverse video (its contrast is the terminal's own). | `ui/theme/*` |
-| Ten themes, chosen in the settings file (the Options view comes in part 2): `terminal`, `auto`, `dark`, `light`, `high-contrast`, `colorblind`, `dracula`, `catppuccin-mocha`, `github-light`, `monochrome`. | `ui/theme/builtin-themes` |
+| Ten themes: `terminal`, `auto`, `dark`, `light`, `high-contrast`, `colorblind`, `dracula`, `catppuccin-mocha`, `github-light`, `monochrome`. | `ui/theme/builtin-themes` |
 | `NO_COLOR` (present, not empty) turns colours off in the screens (monochrome) and in console output (chalk level 0). | settings module |
 | Settings persisted in `config.json`: menu preferences, density, symbols, mouse, scan mode and filter (menu only), install timeout (every command; `--timeout` > `GUP_INSTALL_TIMEOUT` > file > default). | `core/config`, `ui/settings` |
 | Problems with the file are printed once on stderr before any screen; `gup doctor` shows a "Configuration" line. | settings module |
+| The Options view: SCAN & INSTALLATION, APPARENCE, CONFORT, FICHIER, every row saved as it changes; a save that fails stays in effect and says why above the list. | `ui/panels/options` |
+| The theme picker paints the whole app with the theme under the cursor (nothing saved until Entrée, Échap restores), with each theme's lowest contrast and what this terminal cannot paint. | `ui/panels/options/views/theme-picker` |
+| The colour editor: each role's chosen and painted colour, its contrast, `avant → après ⚠` when an unreadable choice was moved; typed hex, hue and lightness nudges previewed live, `a` keeps the adjusted colours, Suppr gives a role back to the theme. | `ui/panels/options/views/color-editor` |
+| Reset by group (Apparence, Confort, Scan & installation, Tout) after a confirmation that defaults to Non; the file's state and path, `c` copies the path (OSC 52). | `ui/panels/options/file-section` |
 
 ---
 
@@ -64,9 +69,11 @@ that touches OpenTUI, and only `screen-look.ts` builds an `RGBA` from a theme.
 
 ### 2.1 Folders (≤ 10 files each)
 
-`core/config` 8 · `ui/settings` 5 · `ui/theme` 10 (+ `color/` 4, `runtime/` 3) · `ui/text` 3 ·
-`commands/cli` 4. `ui/theme` is full: part 2 adds no file there; a new theme-engine module goes
-under `color/` or `runtime/`.
+`core/config` 8 · `ui/settings` 5 · `ui/theme` 10 (+ `color/` 4, `runtime/` 3) · `ui/text` 5 ·
+`ui/panels` 6 (+ `options/` 10, + `options/views/` 4) · `ui/views` 4 · `commands/cli` 4.
+`ui/theme` and `ui/panels/options` are full: a new theme-engine module goes under `color/` or
+`runtime/`, a new Options sub-view under `options/views/`, and another feature's rows in its own
+folder (an `extraSections` factory, §5.4).
 
 ---
 
@@ -202,7 +209,125 @@ background role, so the detected background's colour reaches `onAccent` (a foreg
 
 ---
 
-## 5. Tests
+## 5. The Options view
+
+```mermaid
+flowchart LR
+  View["ui/views/options-view.ts<br/>optionsView({ settings, extraSections })"] --> Panel["options-panel.ts<br/>OptionsPanel implements Panel"]
+  View --> Host["options-host.ts<br/>createOptionsHost(context)"]
+  Panel -- "SectionFactory(controls, host)" --> Sections["scan · appearance · comfort · …extra · file"]
+  Sections --> Rows["option-rows.ts<br/>choiceRow · interfaceRow"]
+  Sections -- "controls.open(view)" --> Views["views/: theme-picker · theme-sample · color-editor · provider-filter"]
+  Panel --> List["settings-list.ts<br/>layout · window · columns"]
+  Host --> Service["SettingsService (settingsService())"]
+  Host --> Control["AppearanceControl<br/>(ThemedAppearance, or resolved without painting)"]
+  Host --> Ctx["ViewContext: dialogs · state · rescan · redraw · renderer (mouse, OSC 52)"]
+```
+
+### 5.1 Contracts (`ui/panels/options/option-row.ts`)
+
+- `OptionRow`: `id` (the cursor follows it), `label`, `value()` (shown `[value]`; empty for an
+  action row, whose hint then starts in the value column), `hint()` (a styled line: an
+  explanation, the contrast status, why the row is disabled), `isEnabled()`, `activate()`
+  (Entrée, Espace, a click), optional `step(±1)` (← →).
+- `OptionSection`: `id`, `title`, `rows()`, optional `shortcuts()` — keys a section answers
+  anywhere in the list, with their hint (`c copier le chemin`).
+- `OptionsView`: a sub-view shown in place of the list (`title`, `hints`, `render`, `press`,
+  `click`) until it closes itself.
+- `OptionsControls` (what the panel gives its sections): `open(view)`, `close()`, `save(write)` —
+  runs a settings write, turns a `ConfigWriteError` into the notice line (the value stays in
+  effect for the session), lets any other error through — `notify(line)`,
+  `scanSettingsChanged()` (offers `r`).
+- `OptionsHost` (the rest of gup, built once per session by
+  `createOptionsHost(context, { settings })`): `settings`, `appearance` (`AppearanceControl`:
+  `resolved`, `preview`, `endPreview`, `availability`), `state`, `dialogs`, `env`, `density()`,
+  `rescan()`, `copyToClipboard(text)` (OSC 52 through the renderer; false when unsupported),
+  `setMouse(on)` (`renderer.useMouse`), `redraw()`.
+- `SectionFactory = (controls, host) => OptionSection`.
+
+### 5.2 The panel and the keys
+
+`OptionsPanel(sections, host)` lays the sections out (`settings-list.ts`): a title per section
+(never selectable), the rows in aligned columns, a blank row between sections unless the density
+is compact; only the part around the cursor is drawn when the list is taller than the panel. The
+notice line and the rescan offer are pinned above the list, so they stay visible whatever the
+scroll. Keys: ↑ ↓ `k` `j` `pgup` `pgdn` `home` `end` move; Entrée / Espace / a click activate an
+enabled row; ← → step the row under the cursor; `r` rescans after a scan setting changed; the
+sections' shortcuts last. `wantsKey` claims ← → only on an enabled row that steps (elsewhere ←
+keeps its menu meaning, the sidebar), and every key while a sub-view is open; the session keeps
+`q` and Tab. The panel's title follows the sub-view: `Options › Thème`.
+
+### 5.3 Sections and sub-views
+
+| Section | Rows | Persistence |
+|---|---|---|
+| SCAN & INSTALLATION (`scan-section.ts`) | Mode rapide, Timeout install (dialog, integer 0–86 400), Filtre providers (`views/provider-filter.ts`) | the session's `MenuState` / effective timeout first, then `scan` / `install`; fast mode and the filter offer `r` |
+| APPARENCE (`appearance-section.ts`) | Thème (`views/theme-picker.ts`, hint = contrast status), Couleurs perso. (`views/color-editor.ts`), Niveau de contraste, Symboles, Densité | `theme`, `interface` |
+| CONFORT (`comfort-section.ts`) | Vue au lancement, Scanner au lancement, Confirmer les MAJ, Rescanner après MAJ, Tri des paquets, Colonne Note, Providers incompat., Animations, Souris, Notification de fin | `interface`; the mouse also switches on the screen at once |
+| …`extraSections` | another feature's rows | its own section of the store |
+| FICHIER (`file-section.ts`) | Réinitialiser… (`reset-settings.ts`), Fichier (state + path; Entrée or `c` copies the path) | — |
+
+- **Theme picker.** Opens on the saved theme; each row shows the theme's label and mark
+  (`✔ 6,1`, `⚠ 4,6` adjusted, `? —` unverifiable, `✔ —` monochrome, `–` greyed when this terminal
+  cannot paint it). Moving the cursor previews the theme on the whole app
+  (`AppearanceControl.preview`, with the saved contrast level and customs); the saved theme and
+  unavailable ones are not previewed. Entrée saves and ends the preview; Échap or ← ends it. The
+  right column (under the list below 66 columns): description, the sample block
+  (`theme-sample.ts`: every tone and fill the screens paint), the contrast report and the paint
+  mode's note. The title bar carries `aperçu du thème` while a preview is on screen
+  (`ViewDefinition.facts`).
+- **Colour editor.** The saved theme's eight customizable roles: Choisie (the custom hex or
+  `(thème)`), Affichée (the painted colour), Contraste (worst ratio on the background and the
+  highlight; `2,1 → 4,6:1 ⚠` from the engine's correction report; grounds show `—`), Aperçu (the
+  role painted). Entrée asks for a hex (strictly parsed, `#RGB`/`#RRGGBB`), saved at once under
+  `custom[baseTheme]`; ← → nudge the hue by 10°, `+` `-` the OKLCH lightness by 0.03 — the draft
+  is kept in OKLCH (no drift through gamut clamping), previewed live, and saved when the user
+  changes role or leaves (no timer). `a` stores the adjusted value of every corrected role;
+  Suppr drops the role's custom colour. Disabled (with its reason) when the painted theme has no
+  palette to tune: `NO_COLOR`, monochrome, 16 colours, trusted terminal mode.
+- **Reset.** Choose a scope (Apparence: the `theme` section, density, symbols; Confort: the rest
+  of `interface`, the mouse applied at once; Scan & installation: `scan` and `install`, applied to
+  the session — fast mode, filter, and the timeout with the environment's precedence; Tout), then
+  confirm (default Non). Every step runs even when one cannot be persisted; the first failure
+  becomes the notice line.
+
+### 5.4 The extension point
+
+`optionsView({ extraSections })` inserts the factories, in order, between CONFORT and FICHIER. A
+feature (wave 3: journal settings) builds rows over its own section of the store with the
+panel's controls, for example:
+
+```ts
+export const journalOptions: SectionFactory = (controls) => {
+  const rows = [
+    choiceRow({
+      id: "logLevel",
+      label: JOURNAL_OPTION_LABELS.level,
+      choices: LOG_LEVEL_CHOICES,
+      hint: JOURNAL_OPTION_HINTS.level,
+      read: () => configStore().read(LOG_SECTION).level,
+      write: (level) => controls.save(() => configStore().write(LOG_SECTION, { level })),
+    }),
+  ];
+  return { id: "journal", title: "JOURNAL", rows: () => rows };
+};
+// src/commands/menu-views.ts
+optionsView({ extraSections: [journalOptions] }),
+```
+
+### 5.5 Live effects
+
+Everything the Options view writes goes through the process-wide `SettingsService` — the one the
+settings module built the screens' appearance and the menu's preferences from — so a change
+reaches its consumer without the Options view knowing it: the theme engine re-resolves (theme,
+level, customs, symbols, density) and the chrome, panels and session redraw; the packages panel
+reads the sort and the Note column on use; the session reads the animations; the outside launcher
+reads the confirmation. Only the mouse needs a direct act on the screen (`renderer.useMouse`):
+the renderer reads it when it is created.
+
+---
+
+## 6. Tests
 
 | Suite | Checks |
 |---|---|
@@ -213,16 +338,23 @@ background role, so the detected background's colour reaches `onAccent` (a foreg
 | `tests/ui/theme/style-table.test.ts` | accent fill, no DIM in palette modes, detected defaults, trusted inverse fills, monochrome without colour |
 | `tests/ui/theme/terminal-probe.test.ts` | lazy and bounded queries, process cache, unsupported/suspended terminals, events, bounded settle, dispose |
 | `tests/ui/theme/themed-appearance.test.ts` | finding 1 (plain text and input in the terminal's colour), on-screen AA for RGB and detected themes, preview, live settings, detection policy, dispose |
-| `tests/ui/app/contrast-audit.test.ts` | the whole menu walked (Paquets, checked rows, filter, confirmation, Scan with a failure, Providers, Options and its dialog) under every RGB theme and the terminal theme on two real palettes: every span ≥ 4.5:1, borders ≥ 3:1; the legacy look on a light terminal is caught |
+| `tests/ui/app/contrast-audit.test.ts` | every registered view walked — Paquets (cursor, checked rows, filter, confirmation), Scan with a failure, Providers, Options (list, timeout dialog, theme picker and a preview, reset choice and confirmation, colour editor, hex dialog, an accent typed unreadable on purpose) — under every built-in theme: the seven RGB ones, `auto` on a light terminal, `terminal` on Campbell and Terminal.app Basic, `monochrome` on both with the terminal's own text colour. Every span ≥ 4.5:1, borders ≥ 3:1; the legacy look on a light terminal is caught |
+| `tests/ui/panels/options/options-panel.test.ts` | section order, headers skipped, switches saved, ← → claimed on stepping rows only, disabled rows never activated, comfort rows to `interface` (mouse at once), extra sections between CONFORT and FICHIER, compact density, scrolling, clicks, a failed save kept and reported then cleared, timeout dialog and its bounds, provider filter |
+| `tests/ui/panels/options/{theme-picker,color-editor,file-section}.test.ts` | picker marks, preview without saving, Échap, Entrée, customs kept while trying, unknown palette, 16 colours refused, narrow layout; editor columns, typed hex saved per theme and validated, `avant → après ⚠` and `a`, Suppr, hue and lightness previews saved on moving on; file state and path, `c` copy (and its failure), reset scopes with the Non default, session scan state and timeout precedence |
+| `tests/ui/views/options-view.test.ts` | in the running menu with the theme engine on the same settings: the whole app repainted by the preview and restored by Échap, Entrée applies, symbols switch at once, mouse on/off on the renderer, Paquets re-sorted at once |
+| `tests/ui/text/theme-labels.test.ts` | `formatRatio` truncation, the contrast status of each situation (pass, adjusted, unverifiable, pending, NO_COLOR, monochrome, 16 and 256 colours) |
 | `tests/core/config/{scan,install}-section.test.ts`, `tests/ui/settings/*.test.ts`, `tests/commands/cli/settings-module.test.ts` | parsing, sparse writes, precedence, service, sources, status lines, the module (elevated child skipped, issues printed once before the action, `NO_COLOR`, preferences, screens, mouse, diagnostics) |
 
 Shared helpers: `tests/support/tui/reference-palettes.ts` (real palettes, OSC shape) and
 `tests/support/tui/frame-contrast.ts` (every captured span against its effective ground with the
-oracle; a cell on the terminal's default background counts as the ground).
+oracle; a cell on the terminal's default background counts as the ground, and its default
+foreground as the terminal's text colour when given). The Options component tests share
+`tests/ui/panels/options/options-fixture.ts` (an in-memory settings service, dialogs answered by
+the test, an appearance control resolving for real).
 
 ---
 
-## 6. Security and cross-platform
+## 7. Security and cross-platform
 
 - The elevated `__admin-batch` child never reads the settings: the module does not opt in (test).
 - Theme colours are parsed strictly; `RGBA.fromHex` is never called on user data.
@@ -237,7 +369,7 @@ oracle; a cell on the terminal's default background counts as the ground).
 
 ---
 
-## 7. Deviations from the spec and the plan
+## 8. Deviations from the spec and the plan
 
 | # | Spec / plan | Shipped | Why |
 |---|---|---|---|
@@ -254,21 +386,41 @@ oracle; a cell on the terminal's default background counts as the ground).
 | D11 | The test host's default appearance = terminal theme, trusted | unchanged (`configureScreens` default, legacy); suites pass `createAppearance` | `tests/support/tui/test-host.ts` is the foundation's file. |
 | D12 | Theme labels, status strings and `formatRatio` in part 1 | in part 2, with the picker that shows them | No consumer in part 1 (dead-code rule). |
 | D13 | `applyPersistedInstallTimeout(store, env)` | `(installSettings, env)` | The module reads every section through the shared `SettingsService`; the function keeps the one precedence rule. |
+| D14 | Sections APPARENCE, CONFORT, SCAN & INSTALLATION, extras, FICHIER | SCAN & INSTALLATION first, then APPARENCE, CONFORT, extras, FICHIER | The foundation's `menu-session.test.ts` (frozen in wave 2) opens Options and takes the second row as the timeout; it is also the 0.4 panel's order (fast, timeout, filter), which users know. |
+| D15 | `formatRatio` in `color/rgb.ts` | `ui/text/theme-labels.ts`, on `formatDecimal` | French display formatting belongs with the labels and `fr-format`; the colour science stays locale-free, and `ui/theme` is full. |
+| D16 | Under 80 columns the hint column is dropped; picker side by side from 90 columns | hints cut with an ellipsis; picker side by side from 66 columns | A cut hint still says something; the list (31) and the sample (32) fit side by side in a 100-column terminal's panel (70). |
+| D17 | `c` copies the path on the FICHIER row | anywhere in the list (a section shortcut), and Entrée on the Fichier row | One key the hint bar can announce; `OptionSection.shortcuts` keeps it in the file section. |
+| D18 | `a` keeps the adjusted value (of the row) | keeps every adjusted role | Matches the warning under the table, which counts every adjusted role. |
+| D19 | Colour editor: "Échap/←" leaves (§2.4), ← → nudge the hue (key table) | ← → nudge the hue, Échap leaves | The key table is the precise one; ← → on a colour read as "turn the hue". |
+| D20 | — | ← also leaves the picker (cancel) and the provider filter | Back, as everywhere else in the menu; neither view uses ← otherwise. |
+| D21 | The FICHIER row shows the store status | the file's state without the store's `lastWriteError`; save failures are the notice line's | `ConfigStore` keeps its last write error for the rest of the process, even after a later save succeeds (foundation behaviour, not changed here); the notice clears on the next save. |
+| D22 | Launch view values: Scan, Paquets, Providers, Options | every `ViewId` (Planification and Journal too) | The view cannot see which views are registered; an unregistered launch view falls back to the first entry (foundation). |
+| D23 | Échap restores the saved theme | a preview left open while browsing other views stays until Entrée or Échap, the title bar saying `aperçu du thème` | `Panel` has no "hidden" event, and adding one edits the frozen session; the preview is then a way to try a theme on every view. |
+| D24 | — | `ThemeAvailability.mode` and `.isCorrected`; `ThemedAppearance.isPreviewing`; availability cached per resolve | The picker's marks and the title-bar fact; the picker redraws on every frame of a running scan. Additive, in this branch's files. |
+| D25 | — | the "Notification de fin" and "Providers incompat." rows ship before their consumers | The settings exist since part 1; in-TUI updates and OS-compat read them at integration. |
+| D26 | Timeout dialog: ">= 0" | integer 0–86 400, a second message for out-of-range values | The file keeps only that range (the elevated payload's bound); a value it cannot keep would be dropped at the next start. |
 
 ---
 
-## 8. Notes for part 2 and the other branches
+## 9. Notes for the other branches
 
-- **Options view (part 2):** reach the engine through `screen.appearance instanceof
-  ThemedAppearance` (`resolved`, `preview`, `endPreview`, `availability`); settings through
-  `settingsService()` (the module's own); file row through `describeConfigStatus`. Part 2 adds
-  `formatRatio` to `color/rgb.ts` (French decimal comma, truncated: a shown "4,5" is never a
-  rounded-up 4.46) with the picker that shows ratios. A mouse change applies to the next screen
-  through `rendererOptions`; the live switch sets `screen.renderer.useMouse`.
+- **Integration:** `menu-views.ts` keeps calling `optionsView()`; its ports are optional
+  (`settings` defaults to `settingsService()`, the one the settings module wires the screens and
+  the menu to). `src/ui/panels/options-panel.ts` is gone (moved and split); nothing else imported
+  it.
+- **Foundation:** `ConfigStore.status().lastWriteError` is never cleared after a successful save
+  (D21). The Options view works around it; `gup doctor` runs in its own process, so it is not
+  affected. A one-line fix in `store.ts` (clear it once a write persisted) would let a consumer
+  trust it.
 - **In-TUI updates (IT-6):** the embedded terminal panes must sit on `RGBA.defaultBackground()`
   (the terminal's own), never on the theme's background: subprocess output uses the host
   palette, which gup does not check. The contrast audit gains a case asserting it when the panes
   land.
 - **Journal settings (wave 3):** register `log`/`journal` sections in `core/config/` and Options
-  rows through part 2's `extraSections`; the settings module already prints every store issue at
-  startup.
+  rows through `optionsView({ extraSections: [...] })` (§5.4) in `menu-views.ts`; `choiceRow` and
+  `controls.save` cover switches and choices, a sub-view goes through `controls.open`. The
+  settings module already prints every store issue at startup.
+- **OS-compat / in-TUI updates:** "Providers incompat." writes `showIncompatibleProviders`,
+  "Notification de fin" `notifyOnDone`, "Confirmer les MAJ" `confirmBeforeUpdate` and "Rescanner
+  après MAJ" `rescanAfterUpdate`: read them through `ViewContext.preferences()` /
+  `LauncherContext.preferences()`, they change live.
