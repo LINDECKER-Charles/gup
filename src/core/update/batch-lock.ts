@@ -29,7 +29,7 @@ export interface BatchLockLocation {
 }
 
 /** Poll period of a run waiting for the batch. */
-export const BATCH_POLL_MS = 2000;
+const BATCH_POLL_MS = 2000;
 
 const INFO_FILE = "update-lock.json";
 const SOCKET_FILE = "update.sock";

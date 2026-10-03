@@ -6,7 +6,7 @@ import type { OutcomeEntry, PlannedUpdate, UpdatePorts } from "./update-ports.js
 import { entryOf } from "./update-report.js";
 
 /** What the packages left out get when the user declines the prompt. */
-export const DECLINED_ELEVATION_MESSAGE = "Élévation refusée par l'utilisateur";
+const DECLINED_ELEVATION_MESSAGE = "Élévation refusée par l'utilisateur";
 
 /**
  * Every package that needs administrator rights, behind one prompt: one UAC
