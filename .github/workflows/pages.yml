@@ -1,10 +1,21 @@
 name: pages
 
-# Deploys the static landing in index/ to GitHub Pages.
-# The page is the canonical entry point referenced by README, package.json
-# (homepage), the sitemap, and every JSON-LD block in index.html — so it
-# MUST stay reachable at https://lindecker-charles.github.io/gup/ for SEO
-# (canonical URL, OG image, sitemap discovery, AI engines' llms.txt fetch).
+# Builds, verifies and audits the landing in index/, and deploys it to
+# https://lindecker-charles.github.io/gup/ — the canonical URL referenced by
+# the README, package.json `homepage`, the sitemap and the JSON-LD graph.
+#
+# Every trigger builds, runs the node:test suites, the Playwright verify suite
+# (all locales: no-JS, RTL, budgets, no catalog in the bundle) and the
+# Lighthouse audit. Only a published release or a manual dispatch deploys:
+# the site advertises the features of the version on npm, so it must never go
+# live before that version does.
+#
+# Release deployments run on the release tag: the `github-pages` environment
+# must allow tags matching `v*` (Settings → Environments → github-pages →
+# Deployment branches and tags), otherwise the deploy job is rejected.
+#
+# Not a required check on purpose: a path-filtered workflow never reports on
+# pull requests that do not touch the site, which would block them forever.
 
 on:
   push:
@@ -12,27 +23,43 @@ on:
     paths:
       - "index/**"
       - ".github/workflows/pages.yml"
+      # The site derives the version, the Node floor and the provider count
+      # from these (index/scripts/sync-facts.mjs).
+      - "package.json"
+      - "src/core/registry.ts"
+      - "src/providers/**"
+      # The terminal demo mirrors the interface.
+      - "src/ui/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "index/**"
+      - ".github/workflows/pages.yml"
+      - "package.json"
+      - "src/core/registry.ts"
+      - "src/providers/**"
+      - "src/ui/**"
+  release:
+    types: [published]
   workflow_dispatch:
 
+# Least privilege: the build reads the repository; only the deploy job, which
+# never runs for pull requests, gets the Pages and OIDC permissions.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
-# Force GitHub Pages official actions (configure-pages, upload-pages-artifact,
-# deploy-pages) to run on Node.js 24. Upstream still ships them with a Node 20
-# runtime, deprecated by GitHub for removal on 2026-09-16. The env var is
-# GitHub's documented opt-in path until upstream cuts new majors.
+# Force the JavaScript actions onto Node.js 24 until every upstream ships it
+# (GitHub's documented opt-in; Node 20 runtimes are deprecated).
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   build:
-    name: build static site
+    name: build, verify and audit landing
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,16 +67,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # The build derives `lastmod` / `dateModified` from the last commit
-          # touching index/ (scripts/last-change.mjs). Two commits of history is
-          # enough for `git log -1 -- .` to answer, and it falls back to HEAD's
-          # own date when the trigger was a workflow_dispatch on a commit that
-          # did not touch index/.
+          # `lastmod` / `dateModified` come from the last commit touching
+          # index/ (scripts/last-change.mjs); two commits are enough, and it
+          # falls back to HEAD's date on a dispatch or a release tag.
           fetch-depth: 2
 
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
+          # Vite 8 needs >= 22.12 and Lighthouse >= 22.19; the CLI's own
+          # Node 26 floor does not apply to the site build.
           node-version: 22
           cache: npm
           cache-dependency-path: index/package-lock.json
@@ -57,39 +84,52 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build (Vite + prerender)
-        # Four steps behind one script:
-        #   1. sync-facts   — regenerates src/data/facts.js from the repo root
-        #                     package.json and src/core/registry.ts, so the
-        #                     version and the provider count cannot drift.
-        #   2. vite build   — client bundle, tree-shaken, minified, code-split
-        #                     (react in its own chunk via manualChunks). All of
-        #                     static/ is copied verbatim, preserving the already
-        #                     indexed /gup/public/*, /gup/robots.txt,
-        #                     /gup/sitemap.xml and /gup/llms.txt URLs.
-        #   3. prerender    — renders the React tree into dist/index.html, so
-        #                     the deployed HTML carries the real content for
-        #                     crawlers and AI fetchers that do not run JS.
-        #   4. stamp-static — writes the facts and the git-derived lastmod into
-        #                     the built llms.txt, sitemap.xml, 404.html and
-        #                     manifest.
-        # Every step fails loudly: a silent prerender failure would ship a blank
-        # page to every non-rendering crawler, and that is invisible in a
-        # browser.
+      - name: Unit tests (catalog parity, SEO builders, contrast, logical CSS)
+        run: npm test
+
+      - name: Build (facts sync, Vite, SSR bundle, per-locale prerender, stamp)
         run: npm run build
 
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify the built site in a browser
+        run: npm run verify
+
+      - name: Lighthouse (≥ 0.95 on performance, accessibility, best practices, SEO)
+        run: npm run lhci
+
+      - name: Keep the Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-reports
+          path: index/.lighthouse/
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Setup Pages
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         uses: actions/configure-pages@v6
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ./index/dist
 
   deploy:
     name: deploy to pages
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    # One deployment at a time, never cancelled half-way.
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
