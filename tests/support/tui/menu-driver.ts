@@ -143,15 +143,25 @@ export async function bootMenu(options: MenuDriverOptions = {}): Promise<MenuDri
     ...(options.size && { size: options.size }),
     ...(options.createAppearance && { createAppearance: options.createAppearance }),
   });
-  const exit = host.run((screen) =>
-    new MenuSession(screen, {
+  let endSession: (exit: SessionExit) => void = () => {};
+  const isTestOver = new Promise<SessionExit>((resolve) => (endSession = resolve));
+  const exit = host.run((screen) => {
+    const session = new MenuSession(screen, {
       state,
       controller,
       views: options.views ?? defaultViews(options.providers),
       scanOnStart: options.scanOnStart ?? true,
       ...(options.initialView && { initialView: options.initialView }),
-    }).run(),
-  );
+    });
+    return Promise.race([session.run(), isTestOver]);
+  });
+  // A test that leaves the menu open must not leave its renderer behind (its
+  // process listeners pile up across the file): once the test is over, end
+  // the session, and the host releases the screen as it does on a quit.
+  onTestFinished(async () => {
+    endSession({ kind: "quit" });
+    await exit.catch(() => undefined);
+  });
   const screen = await next();
   return {
     screen,

@@ -111,15 +111,12 @@ export class MenuSession {
 
   run(): Promise<SessionExit> {
     return new Promise<SessionExit>((resolve) => {
-      const timer = setInterval(() => this.tick(), FRAME_MS);
-      const redraw = (): void => this.draw();
-      const unsubscribe = [
-        this.#screen.appearance.onChange(redraw),
-        uiPreferences().subscribe(redraw),
-      ];
+      const stopDrawing = this.startDrawing();
+      // A screen torn down under the session (Ctrl+C, a signal) takes the
+      // clock with it: a frame drawn on a destroyed renderer throws.
+      this.#screen.renderer.once("destroy", stopDrawing);
       this.#exit = (exit) => {
-        clearInterval(timer);
-        for (const stop of unsubscribe) stop();
+        stopDrawing();
         resolve(exit);
       };
       this.wireInput();
@@ -128,6 +125,23 @@ export class MenuSession {
       else if (this.#deps.state.scans.length > 0) this.#scans.announceResults();
       this.draw();
     });
+  }
+
+  /** Start the frame clock and the redraws on change; returns an idempotent stop. */
+  private startDrawing(): () => void {
+    const timer = setInterval(() => this.tick(), FRAME_MS);
+    const redraw = (): void => this.draw();
+    const unsubscribe = [
+      this.#screen.appearance.onChange(redraw),
+      uiPreferences().subscribe(redraw),
+    ];
+    let isStopped = false;
+    return () => {
+      if (isStopped) return;
+      isStopped = true;
+      clearInterval(timer);
+      for (const stop of unsubscribe) stop();
+    };
   }
 
   private createContext(): ViewContext {

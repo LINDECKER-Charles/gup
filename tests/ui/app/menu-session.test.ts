@@ -10,6 +10,7 @@ import type {
 import type { Panel } from "../../../src/ui/panels/panel.js";
 import { NO_SCAN_YET } from "../../../src/ui/text/menu-labels.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
+import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
 import { toAscii } from "../../../src/ui/theme/glyphs.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
 import { providersView } from "../../../src/ui/views/providers-view.js";
@@ -23,6 +24,8 @@ const WINGET: ProviderScanResult = {
   packages: [pkg("Git.Git", "2.51.0", "2.52.0"), pkg("7zip.7zip", "25.00", "25.01")],
 };
 const INITIAL_TIMEOUT_S = getInstallTimeoutSeconds();
+/** Long enough for the session's 100 ms clock to tick a few times. */
+const SEVERAL_FRAMES_MS = 350;
 
 afterEach(() => {
   setInstallTimeoutSeconds(INITIAL_TIMEOUT_S);
@@ -229,6 +232,22 @@ describe("MenuSession views", () => {
     expect(await menu.frame()).toContain("┏━ Essai");
     await menu.press("q");
     await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+  });
+
+  it("stops drawing once Ctrl+C took the screen away", async () => {
+    const takeover: Takeover = { press: vi.fn(), tick: vi.fn(), draw: vi.fn() };
+    const view = testView((context) => {
+      context.takeOver(() => takeover);
+      return panelOf();
+    });
+    const menu = await bootMenu({ views: [view], scanOnStart: false });
+    await vi.waitFor(() => expect(takeover.tick).toHaveBeenCalled());
+
+    await menu.press("ctrl+c");
+    await expect(menu.exit).rejects.toBeInstanceOf(PromptCancelledError);
+    const frames = vi.mocked(takeover.draw).mock.calls.length;
+    await new Promise((resolve) => setTimeout(resolve, SEVERAL_FRAMES_MS));
+    expect(takeover.draw).toHaveBeenCalledTimes(frames);
   });
 
   it("adds each view's facts and badge to the title bar and the sidebar", async () => {
