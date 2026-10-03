@@ -38,6 +38,25 @@ export function withRelease(system: SystemSpec, release: HttpRoute): SystemSpec 
   return { ...system, http: [...(system.http ?? []), release] };
 }
 
+/**
+ * A scenario of `tool` where the API answers `release` and nothing may be
+ * listed: the installed version, or a valid answer without the expected
+ * field (an answer the fault sweep does not produce).
+ */
+export function nothingListedOn(
+  tool: SelfUpdatingTool,
+  scenario: string,
+  release: HttpRoute,
+): ProviderContractCase {
+  return {
+    scenario,
+    create: tool.create,
+    system: withRelease(tool.system, release),
+    outdated: [],
+    updateAll: "collapsed",
+  };
+}
+
 /** The two scenarios of a self-updating tool. */
 export function selfUpdatingToolCases(tool: SelfUpdatingTool): ProviderContractCase[] {
   const { create, row } = tool;
@@ -53,12 +72,6 @@ export function selfUpdatingToolCases(tool: SelfUpdatingTool): ProviderContractC
       },
       updateAll: "collapsed",
     },
-    {
-      scenario: "up to date",
-      create,
-      system: withRelease(tool.system, tool.upToDate),
-      outdated: [],
-      updateAll: "collapsed",
-    },
+    nothingListedOn(tool, "up to date", tool.upToDate),
   ];
 }
