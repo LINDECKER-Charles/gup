@@ -115,6 +115,7 @@ case built with them.
 | D10 | Knowledge files named after a provider source | Four files for a rule several providers share: `containers/desktop-apps`, `wsl/distro-providers`, `cloud/pip-clis`, `cloud/banners` | One table over the providers instead of the same test three to six times. |
 | D11 | — | gcloud's case carries an `outcome-id` waiver | `update(row.id)` answers for `gcloud` whatever component it is handed (§6); the waiver's dead check fails the day the provider is fixed. |
 | D12 | Fixtures "committed neutralised" | The recorder writes redacted output; the package names are neutralised by hand afterwards, noted in the manifest (`neutralised`) | Which cells are personal depends on each tool's format; a re-recording drops the note, so a raw file is visible in review. |
+| D13 | A manifest entry names the tool's version (`tool`) | No `tool` field | Each tool states its version through an argv of its own (`winget --version`, `kubectl version --client`…) that the cases do not declare beside every recorded probe; guessing one would break the rule that the recorder runs only what a case declares. Where gup reads a version, it is in the recording itself (git, kubectl, rustup, WSL, the .NET SDK). |
 
 ## 5. Results
 
