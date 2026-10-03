@@ -1,4 +1,4 @@
-import type { OutdatedPackage, Provider } from "../../../src/core/types.js";
+import type { OutdatedPackage, Provider, UpdateOutcome } from "../../../src/core/types.js";
 import type { HttpRoute, SystemSpec } from "../system/types.js";
 import type { ProviderContractCase } from "./types.js";
 
@@ -29,6 +29,8 @@ export interface SelfUpdatingTool {
   readonly upToDate: HttpRoute;
   /** The installs `update(row.id)` spawns, in order. */
   readonly installs: readonly (readonly string[])[];
+  /** The outcome when the last install fails, when it says more than `success: false`. */
+  readonly onFailure?: Partial<UpdateOutcome>;
 }
 
 /** `system` with `release` added to its routes. */
@@ -44,7 +46,11 @@ export function selfUpdatingToolCases(tool: SelfUpdatingTool): ProviderContractC
       create,
       system: withRelease(tool.system, tool.release),
       outdated: [row],
-      update: { packageId: row.id, installs: tool.installs },
+      update: {
+        packageId: row.id,
+        installs: tool.installs,
+        ...(tool.onFailure && { onFailure: tool.onFailure }),
+      },
       updateAll: "collapsed",
     },
     {
