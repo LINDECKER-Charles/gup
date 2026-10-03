@@ -159,6 +159,22 @@ describe("WingetProvider.update", () => {
     expect(args).toContain("--include-unknown");
     expect(args).not.toContain("--force");
     expect(args).not.toContain("--uninstall-previous");
+    expect(args).not.toContain("--disable-interactivity");
+  });
+
+  it("unattended:true forbids winget from prompting", async () => {
+    runInheritMock.mockResolvedValueOnce(mkRun(""));
+    await new WingetProvider().update("Some.Package", { unattended: true });
+    const args = runInheritMock.mock.calls[0]![1] as string[];
+    expect(args).toContain("--disable-interactivity");
+  });
+
+  it("unattended:true keeps both reinstall passes non-interactive", async () => {
+    runInheritMock.mockResolvedValueOnce(mkRun("")).mockResolvedValueOnce(mkRun(""));
+    await new WingetProvider().update("Some.Package", { reinstall: true, unattended: true });
+    for (const [, args] of runInheritMock.mock.calls) {
+      expect(args).toContain("--disable-interactivity");
+    }
   });
 
   it("force:true appends --force", async () => {

@@ -81,6 +81,12 @@ export interface UpdateOptions {
    * uninstallPrevious — per-app config outside %APPDATA% may be lost.
    */
   reinstall?: boolean;
+  /**
+   * Nobody watches this run (a scheduled update): a provider whose tool can
+   * stop on a prompt must tell it not to (winget --disable-interactivity),
+   * since an unanswered prompt would hold the run until its timeout.
+   */
+  unattended?: boolean;
 }
 
 export interface ProviderScanResult {

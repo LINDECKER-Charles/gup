@@ -71,6 +71,7 @@ export class WingetProvider implements Provider {
       "--accept-package-agreements",
       "--accept-source-agreements",
       "--include-unknown",
+      ...interactivityArgs(options),
     ];
     if (options?.force) args.push("--force");
     if (options?.uninstallPrevious) args.push("--uninstall-previous");
@@ -105,6 +106,7 @@ export class WingetProvider implements Provider {
       "--exact",
       "--silent",
       "--accept-source-agreements",
+      ...interactivityArgs(options),
     ];
     await runInherit("winget", ["uninstall", ...baseArgs]);
 
@@ -166,6 +168,14 @@ interface WingetColumns {
   version: number;
   available: number;
   source: number;
+}
+
+/**
+ * An unattended run (a scheduled update) has nobody to answer a prompt:
+ * winget then refuses to ask instead of waiting until the install timeout.
+ */
+function interactivityArgs(options: UpdateOptions | undefined): string[] {
+  return options?.unattended ? ["--disable-interactivity"] : [];
 }
 
 /**
