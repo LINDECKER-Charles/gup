@@ -1,5 +1,8 @@
-import type { OutdatedPackage, ProviderScanResult } from "../../core/types.js";
-import type { SelectedPackage } from "../select.js";
+import type {
+  OutdatedPackage,
+  ProviderScanResult,
+  SelectedPackage,
+} from "../../core/types.js";
 
 export type PackageRow =
   | { readonly kind: "group"; readonly providerId: string; readonly title: string }

@@ -1,5 +1,4 @@
-import type { OutdatedPackage } from "../../core/types.js";
-import type { SelectedPackage } from "../select.js";
+import type { OutdatedPackage, SelectedPackage } from "../../core/types.js";
 import { ListCursor } from "../tui/list-cursor.js";
 import type { KeyPress } from "../tui/screen-host.js";
 import { fillLine, fit, seg, type Line } from "../tui/styled-lines.js";

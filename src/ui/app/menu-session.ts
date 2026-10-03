@@ -1,13 +1,13 @@
 import type { KeyEvent } from "@opentui/core";
 import type { MenuState } from "../../commands/menu-state.js";
 import { setInstallTimeoutSeconds, getInstallTimeoutSeconds } from "../../core/runner.js";
+import type { SelectedPackage } from "../../core/types.js";
 import { OptionsPanel } from "../panels/options-panel.js";
 import { PackageList } from "../panels/package-list.js";
 import { PackagesPanel } from "../panels/packages-panel.js";
 import type { Panel, Viewport } from "../panels/panel.js";
 import { ProvidersPanel, type ProviderInfo } from "../panels/providers-panel.js";
 import { ScanPanel, type ScanEvents } from "../panels/scan-panel.js";
-import type { SelectedPackage } from "../select.js";
 import { Chrome, CHROME_ROWS } from "../tui/chrome.js";
 import { DialogLayer } from "../tui/dialog.js";
 import type { KeyPress, Screen } from "../tui/screen-host.js";

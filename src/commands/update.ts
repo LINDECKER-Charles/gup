@@ -5,7 +5,7 @@ import { isSupportedOn } from "../core/platform/is-supported-on.js";
 import { lookupProvider } from "../core/platform/lookup-provider.js";
 import { ALL_PROVIDERS, getProvider } from "../core/registry.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
-import { promptPackageSelection, type SelectedPackage } from "../ui/select.js";
+import { promptPackageSelection } from "../ui/select.js";
 import {
   maybeRetryFailures,
   type OutcomeWithProvider,
@@ -20,6 +20,7 @@ import type {
   OutdatedPackage,
   Provider,
   ProviderScanResult,
+  SelectedPackage,
   UpdateOutcome,
 } from "../core/types.js";
 

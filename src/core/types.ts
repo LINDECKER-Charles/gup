@@ -89,6 +89,15 @@ export interface UpdateOptions {
   unattended?: boolean;
 }
 
+/**
+ * A package picked for an update, with the provider it belongs to. Lives in
+ * core because the update pipeline consumes it, and core never imports ui.
+ */
+export interface SelectedPackage {
+  providerId: string;
+  pkg: OutdatedPackage;
+}
+
 export interface ProviderScanResult {
   providerId: string;
   available: boolean;

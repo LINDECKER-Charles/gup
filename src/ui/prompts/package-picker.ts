@@ -1,8 +1,7 @@
 import type { KeyEvent } from "@opentui/core";
-import type { ProviderScanResult } from "../../core/types.js";
+import type { ProviderScanResult, SelectedPackage } from "../../core/types.js";
 import { PackageList } from "../panels/package-list.js";
 import { PackagesPanel } from "../panels/packages-panel.js";
-import type { SelectedPackage } from "../select.js";
 import { Chrome, CHROME_ROWS } from "../tui/chrome.js";
 import { screenHost, type Screen, type ScreenHost } from "../tui/screen-host.js";
 import { PANEL_FRAME, TextPanel } from "../tui/text-panel.js";

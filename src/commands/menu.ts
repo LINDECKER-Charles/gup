@@ -6,7 +6,7 @@ import { MenuApp } from "../ui/app/menu-app.js";
 import type { MenuController } from "../ui/app/menu-session.js";
 import { maybeRetryFailures, type OutcomeWithProvider } from "../ui/retry-failed.js";
 import { runScan } from "../ui/scan-progress.js";
-import type { SelectedPackage } from "../ui/select.js";
+import type { SelectedPackage } from "../core/types.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { dim, type MenuState } from "./menu-state.js";
 
