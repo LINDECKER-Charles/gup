@@ -13,10 +13,11 @@ const sessionsView = {
   provider: "",
   day: "",
   limit: SESSIONS_PAGE,
+  step: SESSIONS_PAGE,
   days: null,
   shownDay: null,
 };
-const failuresView = { limit: FAILURES_PAGE };
+const failuresView = { limit: FAILURES_PAGE, step: FAILURES_PAGE };
 let rowsByRun = null;
 
 PAGES.failures = page("failures", renderFailures);
@@ -54,11 +55,7 @@ function refreshFailures() {
   list.replaceChildren(...MODEL.failures.slice(0, failuresView.limit).map(failureCard));
   const more = byId(IDS.failuresMore);
   more.replaceChildren();
-  const total = MODEL.failures.length;
-  appendAll(more, moreButton(Math.min(failuresView.limit, total), total, () => {
-    failuresView.limit += FAILURES_PAGE;
-    refreshFailures();
-  }));
+  appendAll(more, moreButton(failuresView, MODEL.failures.length, refreshFailures));
 }
 
 function failureCard(failure) {
@@ -120,10 +117,7 @@ function refreshSessions() {
   updateDayFilter();
   const more = byId(IDS.sessionsMore);
   more.replaceChildren();
-  appendAll(more, moreButton(Math.min(runs.length, sessionsView.limit), runs.length, () => {
-    sessionsView.limit += SESSIONS_PAGE;
-    refreshSessions();
-  }));
+  appendAll(more, moreButton(sessionsView, runs.length, refreshSessions));
 }
 
 function updateDayFilter() {

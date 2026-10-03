@@ -211,20 +211,16 @@ function initPrint() {
   on(byId(IDS.print), "click", () => window.print());
   on(window, "beforeprint", () => {
     Object.keys(PAGES).forEach((name) => PAGES[name].render());
-    packagesTable.limit = Infinity;
-    failuresView.limit = Infinity;
-    sessionsView.limit = Infinity;
-    refreshLists();
+    limitLists(() => Infinity);
   });
-  on(window, "afterprint", () => {
-    packagesTable.limit = PAGE_SIZE;
-    failuresView.limit = FAILURES_PAGE;
-    sessionsView.limit = SESSIONS_PAGE;
-    refreshLists();
-  });
+  on(window, "afterprint", () => limitLists((view) => view.step));
 }
 
-function refreshLists() {
+/** Redraws the lists with limitOf(view) rows each: all of them to print, a page after. */
+function limitLists(limitOf) {
+  [packagesTable, failuresView, sessionsView].forEach((view) => {
+    view.limit = limitOf(view);
+  });
   refreshPackages();
   refreshFailures();
   refreshSessions();

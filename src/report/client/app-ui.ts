@@ -138,13 +138,19 @@ function updatedProviders() {
   return options;
 }
 
-/** "Afficher 100 de plus", or nothing when every item is shown. */
-function moreButton(shown, total, onMore) {
-  if (shown >= total) return null;
-  const rest = total - shown;
+/**
+ * "Afficher 50 de plus" under a list showing view.limit of its total items,
+ * view.step more at each click; nothing when every item is shown.
+ */
+function moreButton(view, total, refresh) {
+  const rest = total - Math.min(view.limit, total);
+  if (rest <= 0) return null;
   const button = h("button", { type: "button", class: "button more" },
-    t("common.showMore", { n: fmtNumber(Math.min(PAGE_SIZE, rest)), rest: fmtNumber(rest) }));
-  return on(button, "click", onMore);
+    t("common.showMore", { n: fmtNumber(Math.min(view.step, rest)), rest: fmtNumber(rest) }));
+  return on(button, "click", () => {
+    view.limit += view.step;
+    refresh();
+  });
 }
 
 function chip(caption, isPressed, onToggle) {

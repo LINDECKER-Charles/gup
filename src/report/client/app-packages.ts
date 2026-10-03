@@ -28,6 +28,7 @@ const packagesTable = {
   sort: "successes",
   isDescending: true,
   limit: PAGE_SIZE,
+  step: PAGE_SIZE,
   rows: null,
   shownQuery: null,
 };
@@ -112,10 +113,7 @@ function refreshPackages() {
   updateSearchNote();
   const more = byId(IDS.packagesMore);
   more.replaceChildren();
-  appendAll(more, moreButton(Math.min(rows.length, packagesTable.limit), rows.length, () => {
-    packagesTable.limit += PAGE_SIZE;
-    refreshPackages();
-  }));
+  appendAll(more, moreButton(packagesTable, rows.length, refreshPackages));
 }
 
 function packagesCount(count) {

@@ -335,6 +335,19 @@ describe("report page: failures and sessions", () => {
     expect(page.text(".session summary")).toContain("Ligne de commande");
   });
 
+  it("shows the sessions fifty at a time, and says so", async () => {
+    const model = reportModelOf(realisticHistory());
+    const page = await openReport(model, "#/sessions");
+    const rest = model.runs.length - 50;
+
+    expect(page.$$(".session")).toHaveLength(50);
+    expect(page.text("#sessions-more button")).toBe(`Afficher 50 de plus (${rest} restants)`);
+    click(page, "#sessions-more button");
+
+    expect(page.$$(".session")).toHaveLength(100);
+    expect(page.text("#sessions-more button")).toBe(`Afficher 50 de plus (${rest - 50} restants)`);
+  });
+
   it("leaves an opened session as it was after a look at one of its packages", async () => {
     const page = await openReport(reportModelOf(EVENTS), "#/sessions");
     const session = page.$(".session") as unknown as { open: boolean; dispatchEvent(event: unknown): boolean };
@@ -407,8 +420,9 @@ describe("report page: safety and comfort", () => {
     expect(page.$$("#packages-body tr")).toHaveLength(4);
   });
 
-  it("renders every page before printing", async () => {
-    const page = await openReport(reportModelOf(realisticHistory()));
+  it("renders every page and every row before printing, and the first rows after", async () => {
+    const model = reportModelOf(realisticHistory());
+    const page = await openReport(model);
 
     page.window.dispatchEvent(new page.window.Event("beforeprint"));
     await page.settle();
@@ -416,7 +430,11 @@ describe("report page: safety and comfort", () => {
     for (const name of ["overview", "calendar", "packages", "failures", "sessions"]) {
       expect(page.$(`[data-page-section='${name}'] .page-body`)?.childElementCount).toBeGreaterThan(0);
     }
-    expect(page.$$("#packages-body tr")).toHaveLength(reportModelOf(realisticHistory()).packages.length);
+    expect(page.$$("#packages-body tr")).toHaveLength(model.packages.length);
+    expect(page.$$(".session")).toHaveLength(model.runs.length);
+    page.window.dispatchEvent(new page.window.Event("afterprint"));
+    await page.settle();
+    expect(page.$$(".session")).toHaveLength(50);
   });
 });
 
