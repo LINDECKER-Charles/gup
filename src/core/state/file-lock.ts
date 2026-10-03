@@ -68,7 +68,7 @@ function tryCreate(lockFile: string): boolean {
   return true;
 }
 
-/** Remove a lock left by a dead holder. True when the lock is gone (removed, or released meanwhile). */
+/** Remove a dead holder's lock. True when it is gone (removed, or released meanwhile). */
 function removeIfStale(lockFile: string): boolean {
   try {
     if (Date.now() - statSync(lockFile).mtimeMs < LOCK_STALE_MS) return false;

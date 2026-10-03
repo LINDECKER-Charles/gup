@@ -221,7 +221,8 @@ export class ConfigStore {
 
   /** Record the failure for status() and hand it back as a ConfigWriteError. */
   #failed(err: unknown): ConfigWriteError {
-    const error = err instanceof ConfigWriteError ? err : new ConfigWriteError("io", messageOf(err));
+    const error =
+      err instanceof ConfigWriteError ? err : new ConfigWriteError("io", messageOf(err));
     this.#lastWriteError = error.message;
     return error;
   }

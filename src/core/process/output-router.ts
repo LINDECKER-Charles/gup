@@ -32,7 +32,7 @@ export const installConsole = {
   },
 };
 
-/** Tell the router a full-screen app is mounted (true) or gone (false). Called by the screen host only. */
+/** A full-screen app is mounted (true) or gone (false). Called by the screen host only. */
 export function setFullScreen(isActive: boolean): void {
   isFullScreen = isActive;
 }

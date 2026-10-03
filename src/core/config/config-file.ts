@@ -40,7 +40,9 @@ export function readConfigFile(file: string): ConfigFileRead {
   try {
     const stats = statSync(file);
     if (!stats.isFile()) return { kind: "corrupt", reason: "pas un fichier" };
-    if (stats.size > MAX_CONFIG_BYTES) return { kind: "corrupt", reason: "fichier trop volumineux" };
+    if (stats.size > MAX_CONFIG_BYTES) {
+      return { kind: "corrupt", reason: "fichier trop volumineux" };
+    }
     text = readFileSync(file, "utf8");
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
