@@ -18,14 +18,19 @@ describe("WCAG contrast oracle", () => {
     expect(contrastRatio(WHITE, WHITE)).toBe(1);
   });
 
-  // Reference values published with WCAG tooling: #767676 is the darkest grey
-  // passing AA on white, #777777 the lightest failing it, #595959 the AAA edge.
+  // Reference values published with WCAG tooling (WebAIM's checker among
+  // them): #767676 is the lightest grey passing AA on white, #777 the darkest
+  // failing it, #595959 the lightest passing AAA. CSS blue, red and green pin
+  // each channel's weight end to end, hex parsing included.
   it.each([
     ["#767676", 4.54],
-    ["#777777", 4.48],
+    ["#777", 4.48],
     ["#595959", 7.0],
-  ])("measures %s on white at %f:1", (grey, expected) => {
-    expect(contrastRatio(parseHexColor(grey), WHITE)).toBeCloseTo(expected, 2);
+    ["#0000ff", 8.59],
+    ["#ff0000", 4.0],
+    ["#008000", 5.14],
+  ])("measures %s on white at %f:1", (color, expected) => {
+    expect(contrastRatio(parseHexColor(color), WHITE)).toBeCloseTo(expected, 2);
   });
 
   it("puts the AA edge exactly where WCAG does", () => {
