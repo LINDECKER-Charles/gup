@@ -78,6 +78,16 @@ describe("JournalPanel", () => {
     expect(text(journal.render(WIDE)).join("\n")).toContain("3 mises à jour");
   });
 
+  it("leaves Ctrl combinations to the tab", async () => {
+    const source = scriptedSource();
+    const { journal } = await shown(source);
+
+    journal.press({ name: "p", ctrl: true, sequence: "\u0010" });
+
+    expect(source.load).toHaveBeenCalledTimes(1);
+    expect(journal.title).toBe("Journal · 12 derniers mois");
+  });
+
   it("drops a load overtaken by a newer one", async () => {
     let resolveFirst: (data: JournalData) => void = () => {};
     const first = new Promise<JournalData>((resolve) => (resolveFirst = resolve));

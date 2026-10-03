@@ -100,7 +100,7 @@ export class JournalPanel implements Panel {
       return;
     }
     const name = PUNCTUATION.has(key.sequence) ? key.sequence : key.name;
-    const action = this.panelKeys()[name];
+    const action = key.ctrl ? undefined : this.panelKeys()[name];
     if (action) action();
     else this.tab.press(key);
   }
