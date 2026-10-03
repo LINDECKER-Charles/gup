@@ -175,6 +175,8 @@ describe("Debug", () => {
 
     const detail = screen().join("\n");
     expect(screen()[1]).toBe("AVERT. cmd.end");
+    // TZ=UTC here: the local time the list shows, then the instant as logged.
+    expect(detail).toMatch(/Heure +03\/10 11:00:02\.000 \(2026-10-03T11:00:02\.000Z\)/);
     expect(detail).toMatch(/Contexte +scan · az/);
     expect(detail).toContain(`${DEBUG_LABELS.data}\n  {\n    "cmd": "az",`);
   });

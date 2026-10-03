@@ -52,7 +52,7 @@ export function levelLabel(level: LogLevel): string {
 /** The record as styled segments; with a `width`, the summary is cut to fit it. */
 export function logRecordLine(record: LogRecord, width?: number): Line {
   const head: Segment[] = [
-    seg(`${timeOf(record.ts)}  `, "muted"),
+    seg(`${recordTime(record.ts)}  `, "muted"),
     seg(`${levelLabel(record.level).padEnd(LEVEL_WIDTH)} `, LEVEL_TONES[record.level]),
     seg(`${record.event.padEnd(EVENT_WIDTH)} `, "strong"),
   ];
@@ -159,8 +159,8 @@ function text(value: LogValue | undefined): string {
   return typeof value === "object" ? JSON.stringify(value) : String(value);
 }
 
-/** `03/10 14:22:05.112`, in local time. */
-function timeOf(ts: string): string {
+/** `03/10 14:22:05.112`: a record's instant in local time, as its line shows it. */
+export function recordTime(ts: string): string {
   const date = new Date(ts);
   const pad = (value: number, size = 2) => String(value).padStart(size, "0");
   const day = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;

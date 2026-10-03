@@ -1,5 +1,5 @@
 import { levelRank, type LogRecord } from "../../../core/log/types.js";
-import { levelLabel, logRecordLine, printable } from "../../log-line.js";
+import { levelLabel, logRecordLine, printable, recordTime } from "../../log-line.js";
 import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS } from "../../text/journal-labels.js";
 import { LOG_SOURCE_LABELS, thresholdLabel } from "../../text/log-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
@@ -153,7 +153,8 @@ function detailBody(record: LogRecord, width: number): Line[] {
   const { ctx } = record;
   const scope = ctx ? [ctx.op, ctx.providerId, ctx.packageId].filter(Boolean) : [];
   const fields: DetailField[] = [
-    [DEBUG_LABELS.time, record.ts],
+    // Local time, as the list shows it, then the instant as the log file holds it.
+    [DEBUG_LABELS.time, `${recordTime(record.ts)} (${record.ts})`],
     [DEBUG_LABELS.levelField, levelLabel(record.level)],
     [DEBUG_LABELS.event, record.event],
     [DEBUG_LABELS.context, scope.length > 0 ? scope.join(" · ") : undefined],
