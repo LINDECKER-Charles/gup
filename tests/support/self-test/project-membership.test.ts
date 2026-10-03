@@ -1,7 +1,7 @@
 import { matchesGlob, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { TestProjectConfiguration } from "vitest/config";
+import { configDefaults, type TestProjectConfiguration } from "vitest/config";
 
 /**
  * Every test file must run in exactly one vitest project: a file matched by
@@ -21,7 +21,7 @@ function toRoute(entry: TestProjectConfiguration): ProjectRoute {
   if (typeof entry !== "object" || !("test" in entry) || !entry.test?.name) {
     throw new Error("the membership check only understands named inline projects");
   }
-  const { name, include = [], exclude = [] } = entry.test;
+  const { name, include = [], exclude = configDefaults.exclude } = entry.test;
   return { name: typeof name === "string" ? name : name.label, include, exclude };
 }
 
@@ -32,10 +32,16 @@ async function loadRoutes(e2e: "on" | "off"): Promise<readonly ProjectRoute[]> {
   return (config.test?.projects ?? []).map(toRoute);
 }
 
+/**
+ * Every file vitest would take for a test by default, not only the projects'
+ * `*.test.ts`: a `.spec.ts` or `.test.tsx` file matches no project and would
+ * silently never run.
+ */
 async function listTestFiles(): Promise<readonly string[]> {
   // The real fs: in the providers project, node:fs is the fake machine's.
   const { globSync } = await vi.importActual<typeof import("node:fs")>("node:fs");
-  const files = globSync("tests/**/*.test.ts", { cwd: REPO_ROOT });
+  const patterns = configDefaults.include.map((pattern) => `tests/${pattern}`);
+  const files = globSync(patterns, { cwd: REPO_ROOT });
   return files.map((file) => file.split(sep).join("/"));
 }
 
