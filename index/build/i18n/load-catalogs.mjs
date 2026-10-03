@@ -9,5 +9,6 @@
  * disagree.
  */
 import en from "../../src/i18n/catalogs/en.js";
+import fr from "../../src/i18n/catalogs/fr.js";
 
-export const CATALOGS = Object.freeze({ en });
+export const CATALOGS = Object.freeze({ en, fr });

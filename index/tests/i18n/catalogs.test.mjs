@@ -35,6 +35,11 @@ const SAME_AS_ENGLISH = new Set([
   "footer.links.installation",
   "footer.links.architecture",
   "footer.links.llms",
+  "footer.columns.docs",
+  "footer.legal",
+  "hero.title.accent",
+  "hero.trust.1",
+  "hero.terminal.tabs.app",
 ]);
 
 const english = CATALOGS.en;
@@ -141,6 +146,22 @@ for (const locale of LOCALES) {
     );
   });
 }
+
+test("fr: high punctuation and guillemets take a narrow no-break space", () => {
+  const nbsp = String.fromCodePoint(0xa0);
+  const nnbsp = String.fromCodePoint(0x202f);
+  const wrongSpace = new RegExp(`[ ${nbsp}][:;!?»]|«[ ${nbsp}]`);
+  const missingSpace = new RegExp(`[\\p{L}\\d)][;!?»]|[\\p{L})]:(?=\\s|$)|«[^${nnbsp}]`, "u");
+  const offences = leaves(CATALOGS.fr)
+    .flatMap(([path, leaf]) => variants(leaf).map((text) => [path, text]))
+    .flatMap(([path, text]) =>
+      parseRich(text)
+        .filter((token) => token.kind === "text")
+        .filter((token) => wrongSpace.test(token.value) || missingSpace.test(token.value))
+        .map((token) => `${path}: ${token.value}`),
+    );
+  assert.deepEqual(offences, []);
+});
 
 test("every provider domain of the registry has a label", () => {
   const labels = Object.keys(english.coverage.domains);
