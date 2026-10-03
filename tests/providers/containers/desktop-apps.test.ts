@@ -19,8 +19,8 @@ interface DesktopLayout {
   /** The location looked at first, and the fallback. */
   readonly primary: string;
   readonly fallback: string;
-  /** The variables both locations derive from. */
-  readonly variables: readonly string[];
+  /** The variables the primary and the fallback location derive from. */
+  readonly variables: readonly [primary: string, fallback: string];
 }
 
 const LAYOUTS: readonly DesktopLayout[] = [
@@ -57,6 +57,13 @@ describe.each(LAYOUTS)("$id", ({ create, primary, fallback, variables }) => {
     await system.load(exeMachine(fallback));
     await expect(create().isAvailable()).resolves.toBe(true);
     expect(system.trace.fsReads).toEqual([primary, fallback]);
+  });
+
+  it("still finds its fallback when the first location's variable is unset", async () => {
+    await system.load(exeMachine(fallback));
+    delete process.env[variables[0]];
+    await expect(create().isAvailable()).resolves.toBe(true);
+    expect(system.trace.fsReads).toEqual([fallback]);
   });
 
   it("is unavailable, looking nowhere, without the variables its locations come from", async () => {
