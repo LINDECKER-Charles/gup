@@ -72,8 +72,7 @@ target declares `PLATFORMS.notWindows` like the `brew` provider (it was an ad-ho
       → https://chocolatey.org/install
 
 – Incompatibles avec Windows (14)                                           (header strong)
-  Réservés à un autre système : gup ne les détecte                          (muted, wrapped)
-  ni ne les met à jour ici.
+  Réservés à un autre système : gup ne les détecte ni ne les met à jour ici. (muted, wrapped)
   – Homebrew                       brew      macOS/Linux uniquement         (whole row disabled)
   – Homebrew (casks)               brew-cask macOS uniquement
 ```
@@ -89,8 +88,11 @@ target declares `PLATFORMS.notWindows` like the `brew` provider (it was an ad-ho
   incompatible group the id column is as wide as the longest id of the group plus a gap, and the
   name column shrinks (down to 10) when the panel is narrow, so every badge stays whole and
   aligned: checked at 80, 100 and 120 columns on the real Windows report, macOS simulated. The
-  explanation wraps at 48 columns (two lines), which fits the panel of an 80-column terminal and
-  keeps the line count independent of the width (scrolling stays exact).
+  summary breaks between its parts and the explanation between words, both at the panel's
+  width: in an 80-column terminal (a 52-column panel) "14 incompatible(s) avec Windows" moves
+  whole to a second line instead of being cut at the border. The scroll bound is computed at
+  unlimited width, so on a narrow panel the last screen keeps those one or two extra lines in
+  view; the end of the list is always reachable.
 - **Preference.** The view hands the panel `showIncompatible: () =>
   context.preferences().showIncompatibleProviders`, read on every render: the session redraws
   when preferences change, so the group appears or disappears live, without a new detection. When
@@ -125,7 +127,7 @@ uniquement) — ignoré.` / `Attention : Provider inconnu: nope — ignoré.`. s
 | File | What |
 |---|---|
 | `tests/core/platform/provider-platforms.test.ts` | Golden incompatible lists for win32 / darwin / linux over the real `ALL_PROVIDERS`; declarations are named sets only (identity); with every probe true, detection returns exactly the supported providers and never calls a refused one's probe; shared `pyenv`/`nvm` binaries go to the Windows ports on Windows and to upstream on macOS. |
-| `tests/ui/panels/providers-panel.test.ts` | Summary and group order; badge row, no hint; every segment `disabled`; header names `report.platform`; empty group omitted; preference hides live; narrow panel keeps badges whole and aligned; 30-column name keeps its gap; scroll clamp; lazy load. |
+| `tests/ui/panels/providers-panel.test.ts` | Summary and group order; badge row, no hint; every segment `disabled`; header names `report.platform`; empty group omitted; preference hides live; narrow panel keeps badges whole and aligned; summary breaks between parts; 30-column name keeps its gap; scroll clamp; lazy load. On the real registry with darwin / linux / win32 simulated (`setPlatform`, every probe false): the summary and header carry the OS and count, every incompatible row is `disabled`, badged and aligned within a 52-column panel (80-column terminal), and scrolling reaches the last row. |
 | `tests/ui/views/providers-view.test.ts` (new) | Through `bootMenu`: greyed group from the port; preference toggled live; failed detection shows empty groups. |
 | `tests/commands/doctor.test.ts` | Rewritten on the real renderer, only `readProviderStatus` mocked: titles, hint line, incompatible rows, OS name, empty section omitted (plus the foundation's Système cases). |
 | `tests/ui/table.test.ts` (new) | Incompatible rows dimmed end to end; badges aligned past a long name. |
@@ -141,7 +143,8 @@ uniquement) — ignoré.` / `Attention : Provider inconnu: nope — ignoré.`. s
    whose two refusals are "unknown" and "foreign"; an unknown id scanned nothing in silence too.
 3. **`ID_WIDTH = 20` (spec §2.1) is replaced** by group-sized columns in the panel (tight id
    column, shrinkable names, wrapped explanation): with a fixed 30 + 20 layout the badges were cut
-   at 100 columns and invisible at 80. `gup doctor` keeps a 20-column id cell.
+   at 100 columns and invisible at 80. `gup doctor` keeps a 20-column id cell. Likewise the
+   one-line summary of spec §2.1 breaks between its parts when the panel is narrower than it.
 4. **Unregistered `notepad-pp` / `unity-hub` are not annotated** (spec §3.3): the task and
    amendment U-4 leave the seven manual IDE providers to wave 3, which deletes them.
 5. **`self` winget/scoop/choco targets stay unrestricted** (spec §4.9, optional): restricting

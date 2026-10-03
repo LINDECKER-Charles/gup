@@ -15,19 +15,21 @@ export const PROVIDERS_PANEL_LABELS = {
   incompatible: (platform: NodeJS.Platform, count: number) =>
     `Incompatibles avec ${platformName(platform)} (${count})`,
   incompatibleNote: "Réservés à un autre système : gup ne les détecte ni ne les met à jour ici.",
+  summarySeparator: " · ",
 } as const;
 
 /**
- * "38 détecté(s) · 101 non installé(s) · 14 incompatible(s) avec Windows", the
- * last part only when the report lists incompatible providers.
+ * The parts of the panel's summary — "38 détecté(s)", "101 non installé(s)",
+ * "14 incompatible(s) avec Windows" — the last one only when the report lists
+ * incompatible providers. The panel joins them with `summarySeparator`.
  */
-export function providersSummary(report: ProviderStatusReport): string {
+export function providersSummaryParts(report: ProviderStatusReport): string[] {
   const parts = [`${report.detected.length} détecté(s)`, `${report.missing.length} non installé(s)`];
   if (report.incompatible.length > 0) {
     const where = platformName(report.platform);
     parts.push(`${report.incompatible.length} incompatible(s) avec ${where}`);
   }
-  return parts.join(" · ");
+  return parts;
 }
 
 export const DOCTOR_PROVIDER_LABELS = {

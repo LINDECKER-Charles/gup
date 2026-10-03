@@ -1,6 +1,9 @@
 import { supportLabel } from "../../core/platform/platform-label.js";
 import type { ProviderStatusReport, ProviderSummary } from "../../core/platform/types.js";
-import { PROVIDERS_PANEL_LABELS as LABELS, providersSummary } from "../text/providers-labels.js";
+import {
+  PROVIDERS_PANEL_LABELS as LABELS,
+  providersSummaryParts,
+} from "../text/providers-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
 import { fit, seg, wrap, type Line } from "../tui/styled-lines.js";
@@ -12,8 +15,7 @@ const MIN_NAME_WIDTH = 10;
 const COLUMN_GAP = 1;
 /** "  – ": indent, glyph and space before an incompatible row's name. */
 const ROW_PREFIX_WIDTH = 4;
-/** The explanation wraps here: it fits the panel of an 80-column terminal. */
-const NOTE_WIDTH = 48;
+const NOTE_INDENT = "  ";
 const HINT_PREFIX = "      → ";
 
 const SCROLL_STEPS: Readonly<Record<string, number>> = {
@@ -81,7 +83,9 @@ export class ProvidersPanel implements Panel {
   click(): void {}
 
   scroll(step: number): void {
-    // The width only shapes the columns, never the number of lines.
+    // Bounded at unlimited width: a narrow panel wraps the summary and the
+    // note onto a line or two more, so its last screen merely keeps those
+    // lines in view — the end of the list is always reachable.
     const lastLine = this.allLines(Number.POSITIVE_INFINITY).length - 1;
     this.#offset = Math.max(0, Math.min(this.#offset + step, lastLine));
   }
@@ -90,7 +94,7 @@ export class ProvidersPanel implements Panel {
     if (!this.#report) return [];
     const report = this.#showIncompatible() ? this.#report : { ...this.#report, incompatible: [] };
     return [
-      [seg(providersSummary(report), "muted")],
+      ...summaryLines(report, width),
       [],
       ...detectedLines(report.detected),
       [],
@@ -98,6 +102,22 @@ export class ProvidersPanel implements Panel {
       ...incompatibleLines(report, width),
     ];
   }
+}
+
+/**
+ * The summary on as few lines as the width allows, breaking between its
+ * parts only: an 80-column terminal still shows "14 incompatible(s) avec
+ * Windows" whole, on a second line.
+ */
+function summaryLines(report: ProviderStatusReport, width: number): Line[] {
+  const rows: string[] = [];
+  for (const part of providersSummaryParts(report)) {
+    const last = rows.at(-1);
+    const joined = last === undefined ? part : `${last}${LABELS.summarySeparator}${part}`;
+    if (last !== undefined && joined.length <= width) rows[rows.length - 1] = joined;
+    else rows.push(part);
+  }
+  return rows.map((row): Line => [seg(row, "muted")]);
 }
 
 /** The name cut to its column, then a gap: a name as wide as the column never touches the id. */
@@ -141,7 +161,9 @@ function incompatibleLines(report: ProviderStatusReport, width: number): Line[] 
   return [
     [],
     [seg(`${STATUS_GLYPHS.incompatible} `, "disabled"), seg(header, "strong")],
-    ...wrap(LABELS.incompatibleNote, NOTE_WIDTH).map((line): Line => [seg(`  ${line}`, "muted")]),
+    ...wrap(LABELS.incompatibleNote, width - NOTE_INDENT.length).map(
+      (line): Line => [seg(`${NOTE_INDENT}${line}`, "muted")],
+    ),
     ...incompatibleRows(incompatible, width),
   ];
 }
