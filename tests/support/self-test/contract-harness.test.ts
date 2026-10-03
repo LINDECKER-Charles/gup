@@ -34,6 +34,12 @@ function selfTestCase(index: number): ProviderContractCase {
   return contractCase;
 }
 
+/** The case with only its first expected row, the one `updateAll` is then fed. */
+function inlineFirstRow(contractCase: ProviderContractCase): ProviderContractCase {
+  const rows = Array.isArray(contractCase.outdated) ? contractCase.outdated : [];
+  return { ...contractCase, outdated: rows.slice(0, 1) };
+}
+
 const RTOOL_ON_WINDOWS = selfTestCase(0);
 const LIST_MANAGER = selfTestCase(2);
 const BATCH_MANAGER = selfTestCase(4);
@@ -181,6 +187,16 @@ describe("generated checks fail on a broken case", () => {
 
     await expect(followsUpdateAllShape(declaredOneBatch)).rejects.toThrow(
       "updateAll-shape: one-batch: 2 install(s), expected 1",
+    );
+  });
+
+  it("a collapsed updateAll that updates once per row", async () => {
+    // One row cannot tell collapsed from per-package: the check hands it twice.
+    const firstRowOnly = inlineFirstRow(LIST_MANAGER);
+    const declaredCollapsed: ProviderContractCase = { ...firstRowOnly, updateAll: "collapsed" };
+
+    await expect(followsUpdateAllShape(declaredCollapsed)).rejects.toThrow(
+      "updateAll-shape: collapsed: 2 install(s), expected 1",
     );
   });
 

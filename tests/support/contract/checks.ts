@@ -24,6 +24,7 @@ import {
 } from "./scenario.js";
 import type {
   ProviderContractCase,
+  UpdateAllShape,
   UpdateExpectation,
   UpdateRoute,
   Violation,
@@ -209,10 +210,20 @@ async function updateAllRows(contractCase: ProviderContractCase): Promise<Update
 }
 
 /** updateAll-shape and outcome-id over one `updateAll()` of the nominal rows. */
+/**
+ * What the shape check hands `updateAll`. A collapsed provider gets every row
+ * twice: one update whatever the row count is the shape, and a single row
+ * could not tell it from per-package.
+ */
+function shapeInput(shape: UpdateAllShape, rows: readonly OutdatedPackage[]): OutdatedPackage[] {
+  return shape === "collapsed" ? [...rows, ...rows] : [...rows];
+}
+
 async function updateAllShapeViolations(
   contractCase: ProviderContractCase,
 ): Promise<Violation[]> {
-  const { rows, isSynthetic } = await updateAllRows(contractCase);
+  const { rows: nominal, isSynthetic } = await updateAllRows(contractCase);
+  const rows = shapeInput(contractCase.updateAll, nominal);
   const provider = await providerOn(contractCase);
   // Synthetic rows reach probes no case scripts: answer them as failures.
   system.explore(isSynthetic);
