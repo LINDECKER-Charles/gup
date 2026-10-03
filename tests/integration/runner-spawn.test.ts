@@ -3,8 +3,11 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { routeInheritTo } from "../../src/core/process/inherit-sink.js";
 import {
   commandExists,
+  createPipeSink,
+  launchDetached,
   run,
   runInherit,
   whichFirst,
@@ -150,6 +153,36 @@ describe("runner: real process spawn", () => {
     await expect(
       runInherit(process.execPath, ["-e", "process.exit(2)"]),
     ).resolves.toMatchObject({ failed: true, exitCode: 2 });
+  });
+
+  it("runInherit through the pipe sink delivers the child's lines, keyboard closed", async () => {
+    const lines: Array<[string, string]> = [];
+    const restore = routeInheritTo(
+      createPipeSink({ capBytes: 4096, onLine: (line, stream) => lines.push([line, stream]) }),
+    );
+    try {
+      const script =
+        'process.stdin.on("data", () => process.exit(9)); process.stdin.on("end", () => {' +
+        ' console.log("première"); console.error("erreur"); process.stdout.write("fin"); });';
+      await expect(runInherit(process.execPath, ["-e", script])).resolves.toMatchObject({
+        exitCode: 0,
+        failed: false,
+      });
+    } finally {
+      restore();
+    }
+    expect(lines).toContainEqual(["première", "stdout"]);
+    expect(lines).toContainEqual(["erreur", "stderr"]);
+    expect(lines).toContainEqual(["fin", "stdout"]);
+  });
+
+  it("launchDetached reports a started process", async () => {
+    await expect(launchDetached(process.execPath, ["-e", "0"])).resolves.toBe(true);
+  });
+
+  // Windows only spawns a missing binary through cmd.exe (see launchDetached).
+  it.skipIf(process.platform === "win32")("launchDetached reports a missing binary as not started", async () => {
+    await expect(launchDetached(join(dir, "no-such-binary"))).resolves.toBe(false);
   });
 }, SPAWN_TIMEOUT_MS);
 

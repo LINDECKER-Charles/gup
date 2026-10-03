@@ -1,10 +1,14 @@
 import { execa, type Options, type ResultPromise } from "execa";
+import type { Readable } from "node:stream";
+import { traceCommand } from "./process/command-tracer.js";
 import {
   activeInheritSink,
   type InheritExit,
   type InheritProcess,
   type InheritRequest,
+  type InheritSink,
 } from "./process/inherit-sink.js";
+import { LineSplitter } from "./process/line-splitter.js";
 
 // PATH resolution lives in process/which.ts; providers keep importing it from
 // here, next to the spawn functions it serves.
@@ -231,6 +235,7 @@ export async function run(
 ): Promise<RunResult> {
   const safeCommand = sanitizeCommand(command);
   const safeArgs = sanitizeArgs(args);
+  const trace = traceCommand("probe", safeCommand, safeArgs);
   const proc = execa(safeCommand, safeArgs, {
     reject: false,
     encoding: "utf8",
@@ -243,13 +248,15 @@ export async function run(
   }) as ResultPromise;
 
   const result = await proc;
-  return {
+  const runResult: RunResult = {
     stdout: String(result.stdout ?? ""),
     stderr: String(result.stderr ?? ""),
     exitCode: exitCodeOf(result.exitCode),
     failed: Boolean(result.failed) || result.exitCode !== 0,
     ...(result.timedOut === true && { timedOut: true }),
   };
+  trace.end(runResult);
+  return runResult;
 }
 
 /**
@@ -286,13 +293,16 @@ export async function runInherit(
 ): Promise<RunResult> {
   const request = inheritRequest(command, args, options);
   const sink = activeInheritSink();
+  const trace = traceCommand(sink?.mode ?? "inherit", request.command, request.args);
   const child = sink ? sink.start(request) : startInTerminal(request);
   const interrupts = armInterrupts(() => child.kill(), timeoutMsOf(options.timeout));
   try {
     const exit = await child.exited;
     if (interrupts.flags.timedOut) pendingInterrupt.timedOut = true;
     if (interrupts.flags.aborted) pendingInterrupt.aborted = true;
-    return inheritResult(exit, interrupts.flags);
+    const result = inheritResult(exit, interrupts.flags);
+    trace.end({ ...result, ...(exit.outputTail !== undefined && { stdout: exit.outputTail }) });
+    return result;
   } finally {
     interrupts.dispose();
   }
@@ -333,13 +343,7 @@ function startInTerminal(request: InheritRequest): InheritProcess {
       cancelSignal: controller.signal,
       ...placementOf(request),
     }) as ResultPromise;
-    return {
-      exited: settled(proc),
-      kill: () => {
-        controller.abort();
-        killProcessTree(proc.pid);
-      },
-    };
+    return { exited: settled(proc), kill: () => killStarted(controller, proc.pid) };
   } catch {
     return exitedProcess();
   }
@@ -405,6 +409,110 @@ function inheritResult(exit: InheritExit, flags: InterruptFlags): RunResult {
   if (flags.timedOut) out.timedOut = true;
   if (flags.aborted) out.aborted = true;
   return out;
+}
+
+export interface PipeSinkOptions {
+  /** One whole line of a child's output (or a note from gup, on "stdout"). */
+  readonly onLine: (line: string, stream: "stdout" | "stderr") => void;
+  /** Bytes of lines kept per install and per stream; then one "sortie tronquée" line. */
+  readonly capBytes: number;
+}
+
+/**
+ * An install sink for runs nobody watches (a scheduled run): no terminal, the
+ * keyboard closed (`stdin: "ignore"` — a prompt reads EOF instead of hanging
+ * forever), the output split into capped lines for a log. It lives here so
+ * that execa stays imported by this module only. Like the terminal path, it
+ * does not hide windows: a GUI installer that ignores its silent flag must be
+ * visible rather than wait on an invisible window.
+ */
+export function createPipeSink(options: PipeSinkOptions): InheritSink {
+  return {
+    mode: "pipe",
+    start: (request) => startPiped(request, options),
+    note: (line) => options.onLine(line, "stdout"),
+  };
+}
+
+function startPiped(request: InheritRequest, options: PipeSinkOptions): InheritProcess {
+  const controller = new AbortController();
+  try {
+    const proc = execa(request.command, [...request.args], {
+      reject: false,
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe",
+      buffer: false,
+      cancelSignal: controller.signal,
+      ...placementOf(request),
+    }) as ResultPromise;
+    const flushers = [
+      pipeLines(proc.stdout, (line) => options.onLine(line, "stdout"), options.capBytes),
+      pipeLines(proc.stderr, (line) => options.onLine(line, "stderr"), options.capBytes),
+    ];
+    const exited = settled(proc).then((exit) => {
+      for (const flush of flushers) flush();
+      return exit;
+    });
+    return { exited, kill: () => killStarted(controller, proc.pid) };
+  } catch {
+    return exitedProcess();
+  }
+}
+
+/** Split a child stream into lines; returns the flush to call once the child is gone. */
+function pipeLines(
+  stream: Readable | null,
+  onLine: (line: string) => void,
+  capBytes: number,
+): () => void {
+  const splitter = new LineSplitter({ capBytes, onLine });
+  stream?.setEncoding("utf8");
+  stream?.on("data", (chunk: string) => splitter.push(chunk));
+  return () => splitter.end();
+}
+
+function killStarted(controller: AbortController, pid: number | undefined): void {
+  controller.abort();
+  killProcessTree(pid);
+}
+
+/**
+ * Start a GUI or helper process that must outlive gup (the browser opening a
+ * report) and leave it. Resolves true once it spawned, false when it could
+ * not be started. The command and argv go through the same sanitisers as
+ * every other spawn.
+ *
+ * On Windows execa hands a command it cannot resolve to cmd.exe, which spawns
+ * fine and exits 1: there a missing binary reads as launched. Callers pass an
+ * absolute path they have checked (explorer.exe under %SystemRoot%).
+ */
+export async function launchDetached(
+  command: string,
+  args: readonly string[] = [],
+): Promise<boolean> {
+  const safeCommand = sanitizeCommand(command);
+  const safeArgs = sanitizeArgs(args);
+  try {
+    const child = execa(safeCommand, safeArgs, {
+      detached: true,
+      cleanup: false,
+      stdio: "ignore",
+      reject: false,
+      // explorer.exe is a GUI-subsystem binary: there is no console to hide,
+      // and SW_HIDE could be handed down to the window it opens.
+      windowsHide: process.platform !== "win32",
+    }) as ResultPromise;
+    // execa's subprocess is no ChildProcess any more: the Node events and
+    // unref() live on its documented `nodeChildProcess` escape hatch.
+    const node = child.nodeChildProcess;
+    const spawned = new Promise<boolean>((resolve) => node.once("spawn", () => resolve(true)));
+    const isLaunched = await Promise.race([spawned, child.then(() => false, () => false)]);
+    node.unref();
+    return isLaunched;
+  } catch {
+    return false;
+  }
 }
 
 /** Reported when the child has no exit code (killed by a signal, never spawned). */
