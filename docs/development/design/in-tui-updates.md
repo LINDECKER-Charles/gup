@@ -128,7 +128,9 @@ for it. A pane that throws on output, note, attach or tail never fails the insta
 - **Exit-file fast path (B8, IT-3, IT-4).** node-pty reports a ConPTY exit only after a fixed 1 s
   flush. On Windows the sink gives the trampoline an exit file: a random name in a fresh private
   `mkdtemp` directory (`gup-pty-*`), removed before the install is reported settled (so
-  nothing is left if gup exits right after its last install). The trampoline writes
+  nothing is left if gup exits right after its last install); a directory still open when the
+  process exits (a signal during an install) is removed on the way out, and the trampoline's
+  late write then fails for want of a directory, which it ignores. The trampoline writes
   `<name>.tmp` with `wx` and renames it; the session polls every 100 ms and accepts only
   `/^-?\d{1,10}\n$/`. **A 0 settles the install at once; any other code still waits for the exit
   event**, by which time ConPTY has flushed, so a failure's tail is complete. Measured: about
@@ -394,6 +396,16 @@ script, not committed): a sandboxed npm prefix holding `is-number@6.0.0`; the me
 filter, check, Entrée, confirmation, run view with npm's output in the pane, results, back to
 Paquets without the package, `q`, exit 0 — and the same with `GUP_PTY=off` through the outside
 fallback. Only the sandbox's `is-number` was updated.
+
+The review pass repeated it with the terminal's buffer and gup's child processes watched: the
+alternate screen holds from the first frame to `q` (no switch during the run, the results or the
+return), the normal buffer comes back on exit, and `Win32_Process` shows the pseudo-console's
+`conhost.exe` and the trampoline only while npm runs — none once the results show, none after
+exit. Ctrl+C during npm's install skips it (`↷ ignorée par l'utilisateur`), twice stops the
+batch (`↷ 1`, `⊘ 1`), and leaves the results; Ctrl+Break during the install ends gup with
+status 149 (128 + SIGBREAK), the screen restored, the install's tree gone and the sandbox
+untouched. The UAC wait and the waiting state were checked as frames on the in-memory renderer
+at 80×24 and 60×15 (the real UAC round trip stays manual).
 
 ## 19. Deviations (part 2) and notes for the wave-3 consolidation
 
