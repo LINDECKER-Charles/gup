@@ -83,6 +83,7 @@
     "test:unit": "vitest run --project unit --project \"providers*\"",
     "test:integration": "vitest run --project integration",
     "test:security": "vitest run tests/security",
+    "fixtures:record": "tsx scripts/fixtures/record.ts",
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage",
     "test:coverage:ci": "vitest run --coverage --reporter=default --reporter=junit --outputFile=coverage/junit.xml",
