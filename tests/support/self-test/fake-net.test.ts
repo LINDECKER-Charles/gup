@@ -38,6 +38,16 @@ describe("fake network", () => {
     await expect(response.text()).resolves.toBe("hello from a fixture\n");
   });
 
+  it("answers a binary route byte for byte", async () => {
+    // Bytes no UTF-8 text survives: a lone continuation byte, 0xFF, NUL.
+    const archive = new Uint8Array([0x50, 0x4b, 0x80, 0xff, 0x00, 0xc3]);
+    await system.load({ platform: "win32", http: [{ url: "https://example.test/a.zip", bytes: archive }] });
+
+    const response = await fetch("https://example.test/a.zip");
+
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(archive);
+  });
+
   it("reports where redirects ended, when the route says so", async () => {
     const mirror = "http://mirror.example.test/feed.xml";
     await system.load({

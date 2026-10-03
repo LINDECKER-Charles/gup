@@ -39,6 +39,8 @@ export interface HttpRoute {
   readonly status?: number;
   readonly json?: unknown;
   readonly body?: Text;
+  /** A binary body sent as is (an archive a provider downloads); `json` and `body` are text. */
+  readonly bytes?: Uint8Array<ArrayBuffer>;
   readonly headers?: Readonly<Record<string, string>>;
   /** Where redirects ended (`Response.url`); default: the requested URL. */
   readonly finalUrl?: string;

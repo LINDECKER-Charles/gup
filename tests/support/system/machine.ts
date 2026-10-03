@@ -37,7 +37,7 @@ export interface ResolvedRoute {
   readonly method: string;
   readonly url: string;
   readonly status: number;
-  readonly body: string;
+  readonly body: string | Uint8Array<ArrayBuffer>;
   readonly headers: Readonly<Record<string, string>>;
   readonly finalUrl?: string;
 }
@@ -89,7 +89,8 @@ async function resolveScripts(scripts: readonly CommandScript[]): Promise<Script
 
 async function resolveRoute(route: HttpRoute): Promise<ResolvedRoute> {
   const isJson = route.json !== undefined;
-  const body = isJson ? JSON.stringify(route.json) : await resolveText(route.body ?? "");
+  const text = isJson ? JSON.stringify(route.json) : await resolveText(route.body ?? "");
+  const body = route.bytes ?? text;
   return {
     method: route.method ?? "GET",
     url: route.url,
