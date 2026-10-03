@@ -120,3 +120,7 @@ npm run test:security   # vitest security suite
 
 Dependabot (`.github/dependabot.yml`) opens grouped weekly PRs for npm + GH
 Actions updates.
+
+`.github/workflows/docs.yml` checks the relative links and anchors of the
+Markdown files when they change. It runs offline, with read-only repository
+permissions, and fetches nothing from the URLs it reads.
