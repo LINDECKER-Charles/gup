@@ -67,7 +67,10 @@
   line-height: 1.6;
   overflow-x: auto;
 }
+/* Localized prose inside the left-to-right frame: it carries the page's own
+   `dir` (Terminal.jsx), so it starts on the right in right-to-left pages. */
 .term-caption {
+  text-align: start;
   padding: 12px 18px;
   border-block-start: 1px solid var(--line-faint);
   font-size: 13.5px;

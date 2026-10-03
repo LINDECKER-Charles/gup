@@ -1,8 +1,10 @@
 /**
  * The hero's terminal demo: a window frame, the scene tabs, the active scene
- * and a visible caption. The panel is always `dir="ltr"` and takes the
- * scene's language (`fr` for the TUI mocks), so assistive tech reads the
- * French interface in French on every locale.
+ * and a visible caption. The frame is always left-to-right (tab order and
+ * arrow keys never invert) and the panel takes the scene's language (`fr` for
+ * the TUI mocks), so assistive tech reads the French interface in French on
+ * every locale. The window label and the caption are the page's own prose
+ * and keep its direction.
  */
 import { useState } from "react";
 import { SCENES } from "../../data/scenes/index.js";
@@ -11,7 +13,7 @@ import { LineScene } from "./LineScene.jsx";
 import { TerminalTabs } from "./TerminalTabs.jsx";
 import { TuiScene } from "./TuiScene.jsx";
 
-function TerminalHead({ terminal, active, onSelect }) {
+function TerminalHead({ terminal, dir, active, onSelect }) {
   return (
     <div className="term-head" dir="ltr">
       <span className="term-dots" aria-hidden="true">
@@ -19,7 +21,7 @@ function TerminalHead({ terminal, active, onSelect }) {
         <span />
         <span />
       </span>
-      <span className="term-label" id="term-label">
+      <span className="term-label" id="term-label" dir={dir}>
         {terminal.label}
       </span>
       <TerminalTabs
@@ -33,13 +35,19 @@ function TerminalHead({ terminal, active, onSelect }) {
 }
 
 export function Terminal() {
-  const { terminal } = useI18n().messages.hero;
+  const { locale, messages } = useI18n();
+  const { terminal } = messages.hero;
   const [active, setActive] = useState(SCENES[0].id);
   const { scene } = SCENES.find((entry) => entry.id === active);
 
   return (
     <figure className="term" aria-labelledby="term-label">
-      <TerminalHead terminal={terminal} active={active} onSelect={setActive} />
+      <TerminalHead
+        terminal={terminal}
+        dir={locale.dir}
+        active={active}
+        onSelect={setActive}
+      />
       <div
         className="term-panel"
         id="term-panel"
@@ -51,7 +59,9 @@ export function Terminal() {
       >
         {scene.kind === "tui" ? <TuiScene scene={scene} /> : <LineScene scene={scene} />}
       </div>
-      <figcaption className="term-caption">{terminal.caption}</figcaption>
+      <figcaption className="term-caption" dir={locale.dir}>
+        {terminal.caption}
+      </figcaption>
     </figure>
   );
 }

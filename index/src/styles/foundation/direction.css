@@ -1,5 +1,5 @@
 /* Bidirectional text. Layout is written with logical properties everywhere
-   (enforced by tests/design/css-logical.test.mjs), so right-to-left pages
+   (enforced by tests/rules/css-logical.test.mjs), so right-to-left pages
    mirror on their own; this file holds the few things that must NOT mirror,
    and the directional details that must. */
 
@@ -21,6 +21,11 @@ kbd,
 /* Arrows point along the reading direction. */
 [dir="rtl"] .icon--directional {
   transform: scaleX(-1);
+}
+
+/* The hero accent sweeps from violet to amber from where reading starts. */
+[dir="rtl"] .hero-accent {
+  --accent-angle: 260deg;
 }
 
 /* The narrow header's scroll fade sits on the inline end. */

@@ -18,7 +18,11 @@
   gap: 2px;
   min-inline-size: 0;
 }
+/* The command hugs the inline start, so in right-to-left pages it sits above
+   its description instead of across the cell; its content stays ltr. */
 .example code {
+  align-self: start;
+  max-inline-size: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 14px;

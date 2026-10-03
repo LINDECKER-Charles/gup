@@ -45,9 +45,16 @@
 
 /* `background-image`, never the `background` shorthand: the minifier
    duplicates colour declarations for wide gamuts, and a repeated shorthand
-   would reset `background-clip` and paint a solid bar over the text. */
+   would reset `background-clip` and paint a solid bar over the text. The
+   sweep follows the reading direction (direction.css flips the angle). */
 .hero-accent {
-  background-image: linear-gradient(100deg, var(--violet-lit) 0%, var(--fg) 55%, var(--amber) 100%);
+  --accent-angle: 100deg;
+  background-image: linear-gradient(
+    var(--accent-angle),
+    var(--violet-lit) 0%,
+    var(--fg) 55%,
+    var(--amber) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

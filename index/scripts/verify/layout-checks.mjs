@@ -2,8 +2,9 @@
  * Geometry: no horizontal overflow at desktop, tablet and phone widths on
  * every locale, and every right-to-left locale mirrored where it should be:
  * header brand on the right, arrows pointing along the reading direction,
- * while the terminal, commands and key caps stay left-to-right. `--shots`
- * saves top and bottom screenshots per locale and viewport into .verify/.
+ * the terminal caption in the page's direction, while the terminal itself,
+ * commands and key caps stay left-to-right. `--shots` saves top and bottom
+ * screenshots per locale and viewport into .verify/.
  *
  * @typedef {import("../../build/page-context.mjs").PageContext} PageContext
  * @typedef {{ report: ReturnType<import("./report.mjs").createReport>,
@@ -58,6 +59,7 @@ function rtlGeometry(page) {
       isBrandRight: box(".nav-brand").left > box(".nav-cta").left,
       ltrRuns: [".term", ".cmd-line code", "kbd"].map((selector) => style(selector).direction),
       isArrowMirrored: style(".icon--directional").transform.startsWith("matrix(-1,"),
+      caption: style(".term-caption").direction,
       isLinkRowFaded: style(".nav-links").maskImage !== "none",
     };
   });
@@ -72,6 +74,7 @@ function reportRightToLeft(report, name, { geometry, overflow, isNarrow }) {
     geometry.ltrRuns.join(" "),
   );
   report.check(`${name}: arrows point along the reading direction`, geometry.isArrowMirrored);
+  report.check(`${name}: the terminal caption reads right-to-left`, geometry.caption === "rtl");
   report.check(`${name}: no overflow`, overflow <= OVERFLOW_TOLERANCE_PX, `${overflow}px`);
   report.check(
     `${name}: header links faded only where they scroll`,

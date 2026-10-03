@@ -10,9 +10,9 @@
   review is still to come.
 - **landing:** build-time i18n: catalogs resolved in Node (placeholders, CLDR plurals, inline
   markup), shipped to the client as resolved strings — no i18n runtime, no catalog in the bundle.
-- **landing:** right-to-left Arabic page (mirrored layout and arrows; commands, key caps and the
-  terminal kept left-to-right) and system font stacks for Han, Devanagari, Bengali and Arabic
-  scripts.
+- **landing:** right-to-left Arabic page (mirrored layout, arrows and accent; commands, key caps
+  and the terminal kept left-to-right) and system font stacks for Han, Devanagari, Bengali and
+  Arabic scripts.
 - **landing:** production Content-Security-Policy, generated 404 linking every language.
 
 ## Changed
