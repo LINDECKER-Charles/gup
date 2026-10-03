@@ -107,6 +107,8 @@ export interface SpawnRecord {
 export interface RequestRecord {
   readonly method: string;
   readonly url: string;
+  /** The body the code under test sent, when it is text (a POSTed query). */
+  readonly body?: string;
 }
 
 export interface Trace {

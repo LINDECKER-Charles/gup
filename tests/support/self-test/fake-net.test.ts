@@ -67,6 +67,21 @@ describe("fake network", () => {
     system.acknowledgeUnscripted();
   });
 
+  it("traces the text body a request sent, and only a text body", async () => {
+    const url = "https://example.test/query";
+    await system.load({ platform: "linux", http: [{ url, method: "POST", json: {} }] });
+
+    await fetch(url, { method: "POST", body: JSON.stringify({ filter: "x" }) });
+    await fetch(url, { method: "POST", body: new URLSearchParams({ filter: "x" }) });
+    await fetch(url, { method: "POST" });
+
+    expect(system.trace.requests).toEqual([
+      { method: "POST", url, body: '{"filter":"x"}' },
+      { method: "POST", url },
+      { method: "POST", url },
+    ]);
+  });
+
   it("fails like a dead network in explore mode, without recording", async () => {
     await system.load({ platform: "linux" });
     system.explore(true);
