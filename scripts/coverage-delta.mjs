@@ -96,7 +96,9 @@ function report(context) {
     (path) => isInScope(path, context.scope) && !context.baseline.has(path),
   );
   const width = Math.max(0, ...rows.map((row) => row.path.length));
-  for (const row of rows) console.log(`${row.status.padEnd(7)} ${row.path.padEnd(width)}  ${row.detail}`);
+  for (const row of rows) {
+    console.log(`${row.status.padEnd(7)} ${row.path.padEnd(width)}  ${row.detail}`);
+  }
   for (const path of added) console.log(`new     ${path}`);
   const failures = rows.filter((row) => row.status === "FAIL").length;
   console.log(
