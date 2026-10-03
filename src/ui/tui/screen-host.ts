@@ -1,6 +1,8 @@
+import { constants } from "node:os";
 import type { CliRenderer, KeyEvent } from "@opentui/core";
 import { log } from "../../core/log/log.js";
 import { setFullScreen } from "../../core/process/output-router.js";
+import { skipCurrent } from "../../core/runner.js";
 import type { Appearance, AppearanceFactory } from "../theme/appearance.js";
 import { legacyAppearance } from "../theme/legacy-appearance.js";
 import { loadTui, type Tui } from "./load-tui.js";
@@ -67,6 +69,9 @@ export function configureScreens(next: Partial<ScreenDefaults> | null): void {
  * factory that throws falls back to the legacy look instead of leaving the
  * terminal on the alternate screen in raw mode.
  *
+ * A signal that ends gup while the screen is up (the console window closing,
+ * Ctrl+Break, a kill) takes the same way out before the process exits.
+ *
  * While the renderer is up, the output router holds back gup's own console
  * lines (a history warning, a provider's progress note): written now, they
  * would paint over the frame. They are printed once the process exits.
@@ -80,15 +85,58 @@ export function createScreenHost(
       const tui = await loadTui();
       const renderer = await createRenderer(tui);
       let appearance: Appearance | undefined;
+      const release = once(() => releaseScreen(renderer, appearance));
+      const stopWatching = watchExitSignals((signal) => endOnSignal(signal, release));
       try {
         appearance = appearanceOf(renderer, tui, createAppearance ?? defaults.createAppearance);
         setFullScreen(true);
         return await mountScreen({ renderer, tui, appearance }, mount);
       } finally {
-        await releaseScreen(renderer, appearance);
+        await release().finally(stopWatching);
       }
     },
   };
+}
+
+/** Exit status of a process ended by a signal: 128 + the signal number. */
+const SIGNAL_EXIT_BASE = 128;
+const WINDOWS_EXIT_SIGNALS: readonly NodeJS.Signals[] = ["SIGBREAK", "SIGTERM", "SIGHUP"];
+const POSIX_EXIT_SIGNALS: readonly NodeJS.Signals[] = ["SIGTERM", "SIGHUP", "SIGINT"];
+
+/**
+ * The signals that end gup from outside while a screen holds the terminal:
+ * the console closing (SIGHUP), a kill (SIGTERM), Ctrl+Break on Windows
+ * (SIGBREAK) and, on POSIX, an external SIGINT. In raw mode Ctrl+C itself is
+ * a key, handled by the screen. The renderer is created without OpenTUI's
+ * own handlers, which destroy it in the order that crashes conhost (see
+ * teardown.ts) and do not end the process.
+ */
+function watchExitSignals(onSignal: (signal: NodeJS.Signals) => void): () => void {
+  const signals = process.platform === "win32" ? WINDOWS_EXIT_SIGNALS : POSIX_EXIT_SIGNALS;
+  const handlers = signals.map((signal) => ({ signal, handle: () => onSignal(signal) }));
+  for (const { signal, handle } of handlers) process.on(signal, handle);
+  return () => {
+    for (const { signal, handle } of handlers) process.off(signal, handle);
+  };
+}
+
+/**
+ * Stop the install in flight, give the terminal back exactly like a normal
+ * exit, then end. The update batch lock needs no release here: it is an OS
+ * handle (core/update/batch-lock.ts), freed by the exit itself.
+ */
+function endOnSignal(signal: NodeJS.Signals, release: () => Promise<void>): void {
+  skipCurrent();
+  const code = SIGNAL_EXIT_BASE + (constants.signals[signal] ?? 0);
+  void release()
+    .catch(() => undefined)
+    .then(() => process.exit(code));
+}
+
+/** `work` run on the first call only; later calls share its promise. */
+function once(work: () => Promise<void>): () => Promise<void> {
+  let pending: Promise<void> | undefined;
+  return () => (pending ??= work());
 }
 
 function appearanceOf(renderer: CliRenderer, tui: Tui, factory: AppearanceFactory): Appearance {
@@ -180,6 +228,7 @@ export const screenHost = createScreenHost(async (tui) => {
   return tui.createCliRenderer({
     screenMode: "alternate-screen",
     exitOnCtrlC: false,
+    exitSignals: [],
     useMouse: defaults.rendererOptions().useMouse,
     consoleMode: "disabled",
   });

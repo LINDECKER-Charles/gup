@@ -1,6 +1,14 @@
+import { constants } from "node:os";
 import type { CliRenderer } from "@opentui/core";
 import { createTestRenderer } from "@opentui/core/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+const { skipCurrentMock } = vi.hoisted(() => ({ skipCurrentMock: vi.fn(() => false) }));
+vi.mock("../../../src/core/runner.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../src/core/runner.js")>()),
+  skipCurrent: skipCurrentMock,
+}));
+
 import { installLogBackend } from "../../../src/core/log/log.js";
 import { installConsole } from "../../../src/core/process/output-router.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
@@ -179,5 +187,50 @@ describe("Ctrl+C on a screen", () => {
 
     expect(heard).toEqual(["second", "first"]);
     await expect(run).rejects.toBeInstanceOf(PromptCancelledError);
+  });
+});
+
+describe("a signal while a screen is up", () => {
+  const signals: NodeJS.Signals[] =
+    process.platform === "win32"
+      ? ["SIGBREAK", "SIGTERM", "SIGHUP"]
+      : ["SIGTERM", "SIGHUP", "SIGINT"];
+
+  /**
+   * A mounted screen. The real exit is mocked, so the test unmounts it at the
+   * end itself — otherwise its handlers would hear the next test's signal.
+   */
+  async function mountedScreen() {
+    const { host, renderer } = recordingHost();
+    let mounted = (): void => {};
+    let unmount = (): void => {};
+    const isMounted = new Promise<void>((resolve) => (mounted = resolve));
+    const run = host.run(() => {
+      mounted();
+      return new Promise<void>((resolve) => (unmount = resolve));
+    });
+    await isMounted;
+    return { renderer, unmount: () => (unmount(), run) };
+  }
+
+  it.each(signals)("%s stops the install, gives the terminal back, then exits", async (signal) => {
+    const exit = vi.spyOn(process, "exit").mockImplementation((() => undefined) as never);
+    const { renderer, unmount } = await mountedScreen();
+
+    process.emit(signal);
+
+    await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(128 + constants.signals[signal]));
+    expect(skipCurrentMock).toHaveBeenCalledOnce();
+    expect(renderer()?.isDestroyed).toBe(true);
+    await unmount();
+  });
+
+  it("leaves signals to Node once the screen is gone", async () => {
+    const before = signals.map((signal) => process.listenerCount(signal));
+    const { host } = recordingHost();
+    await host.run(async () => {
+      expect(signals.map((signal) => process.listenerCount(signal))).not.toEqual(before);
+    });
+    expect(signals.map((signal) => process.listenerCount(signal))).toEqual(before);
   });
 });
