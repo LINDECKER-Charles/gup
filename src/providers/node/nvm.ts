@@ -9,6 +9,7 @@ import {
 import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /** Single tracked artefact: nvm itself. */
 const ID = "nvm";
@@ -72,6 +73,8 @@ export class NvmProvider implements Provider {
       "Projet POSIX uniquement — sous Windows, utiliser nvm-windows : winget install CoreyButler.NVMforWindows",
     fallback: INSTALL_DOC,
   });
+  /** nvm is POSIX; on Windows the role belongs to the `nvm-windows` provider. */
+  readonly platforms = PLATFORMS.notWindows;
   // Sourcing nvm.sh in a child shell plus one GitHub call.
   readonly slow = true;
 

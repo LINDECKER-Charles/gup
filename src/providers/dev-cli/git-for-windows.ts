@@ -9,6 +9,7 @@ import {
 } from "../../core/install-source.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Git for Windows — the distribution itself (git.exe plus its bundled MSYS2
@@ -59,6 +60,8 @@ export class GitForWindowsProvider implements Provider {
     win32: "winget install Git.Git",
     fallback: "Windows uniquement — équivalent macOS/Linux : brew install git",
   });
+  /** A Windows-only distribution of git. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform !== "win32") return false;

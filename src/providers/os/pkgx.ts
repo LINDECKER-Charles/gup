@@ -10,6 +10,7 @@ import {
   normalizeVersion,
 } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 const REPO = "pkgxdev/pkgx";
 
@@ -75,6 +76,8 @@ export class PkgxProvider implements Provider {
       "Support Windows expérimental — passer par WSL2, ou voir https://pkgx.sh",
     fallback: "brew install pkgx (ou l'installeur officiel https://pkgx.sh)",
   });
+  /** pkgx's Windows support is experimental: on Windows, go through WSL2. */
+  readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform === "win32") return false;

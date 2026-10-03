@@ -2,6 +2,7 @@ import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Fink — the oldest of the macOS ports trees, dpkg-based, installed under
@@ -54,6 +55,8 @@ export class FinkProvider implements Provider {
     darwin: "https://www.finkproject.org/download/",
     fallback: "macOS uniquement — https://www.finkproject.org/",
   });
+  /** Fink targets macOS only. */
+  readonly platforms = PLATFORMS.macos;
   /** `fink update-all` always runs under sudo. */
   readonly canUpdateUnattended = false;
 

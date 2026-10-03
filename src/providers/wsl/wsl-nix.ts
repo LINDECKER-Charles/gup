@@ -6,6 +6,7 @@ import {
 } from "../../core/wsl.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Nix (single-user or daemon) inside any WSL distro.
@@ -24,6 +25,8 @@ export class WslNixProvider implements Provider {
     fallback:
       "Provider spécifique à WSL (Windows) — inexistant sur cette plateforme.",
   });
+  /** Reaches into WSL distros, a Windows feature; elsewhere `nix` covers Nix. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

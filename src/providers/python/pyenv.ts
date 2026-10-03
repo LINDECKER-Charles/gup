@@ -15,6 +15,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 const ID = "pyenv";
 
@@ -83,10 +84,14 @@ export class PyenvProvider implements Provider {
     linux: "curl -fsSL https://pyenv.run | bash",
     fallback: "Installeur officiel : curl -fsSL https://pyenv.run | bash",
   });
+  /**
+   * On Windows the `pyenv` on PATH belongs to pyenv-win, whose provider
+   * already owns that row.
+   */
+  readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    // On Windows the `pyenv` on PATH belongs to pyenv-win, whose provider
-    // already owns that row.
+    // Mirrors `platforms` for a caller that probes without the registry gate.
     if (process.platform === "win32") return false;
     try {
       return await commandExists("pyenv");

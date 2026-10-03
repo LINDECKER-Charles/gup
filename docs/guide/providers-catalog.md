@@ -14,6 +14,64 @@ Unified overview — implementation status, sources, and out-of-scope items. Sou
 
 **Global out-of-scope**: the OS itself — Windows (Windows Update, WSUS, `PSWindowsUpdate`, OEM drivers, SYSTEM services, DISM, provisioned Appx, M365 Click-to-Run) and macOS (`softwareupdate`, XProtect/MRT, Command Line Tools, Apple's SIP-frozen system Ruby) — plus anything project-scoped (Maven, Gradle, sbt, bundler, `npm ci`, `pip-tools sync`, lockfiles).
 
+## Platform support
+
+A provider that gup supports on some OSes only declares them in its class, on
+one line, with one of three named sets:
+
+```ts
+readonly platforms = PLATFORMS.windows; // or PLATFORMS.macos, PLATFORMS.notWindows
+```
+
+No declaration means every platform. On an OS outside its set, gup never
+probes, scans or updates the provider, whatever happens to be on the `PATH`
+(a `brew.cmd` shim forwarding into WSL, the unrelated NCAR `ncl` on Linux):
+
+- `gup doctor` and the menu's **Providers** view list it last, greyed, under
+  **Incompatibles avec \<OS\>**, with a `–` mark and a badge saying where it
+  runs (`macOS uniquement`). The mark, the title and the badge carry the
+  meaning without colour. The menu preference `showIncompatibleProviders`
+  (on by default) hides the group from the view.
+- `gup update <id>:<package>` exits 2 with
+  `Provider <id> indisponible sur <OS> (<badge>)`; the elevated batch refuses
+  such a target with the same reason.
+- `gup list` / `gup update` with `--provider <id>` print one warning line per
+  such id (an unknown id too) and scan the rest.
+
+| Set | Means | Providers |
+|---|---|---|
+| `PLATFORMS.windows` (21) | Windows only | `winget`, `scoop`, `choco`, `msys2`, `cygwin`, `npackd`, `wsl`, `wsl-apt`, `wsl-dnf`, `wsl-pacman`, `wsl-brew`, `wsl-flatpak`, `wsl-nix`, `nvm-windows`, `pyenv-win`, `docker-desktop`, `podman-desktop`, `rancher-desktop`, `nerd-fonts`, `git-for-windows`, `visual-studio` |
+| `PLATFORMS.macos` (6) | macOS only | `brew-cask`, `mas`, `macports`, `sparkle`, `fink`, `xcodes` |
+| `PLATFORMS.notWindows` (8) | every platform but Windows — Linuxbrew and pkgsrc on the BSDs included | `brew`, `nix`, `pkgx`, `pkgin`, `nvm`, `pyenv`, `mint`, `swiftly` |
+| none (118) | everywhere | every other registered provider |
+
+Which gives, per OS (in registry order):
+
+- **Windows — 14 incompatible:** `brew`, `brew-cask`, `mas`, `macports`,
+  `sparkle`, `fink`, `nix`, `pkgx`, `pkgin`, `nvm`, `pyenv`, `mint`,
+  `swiftly`, `xcodes`.
+- **macOS — 21 incompatible:** the `PLATFORMS.windows` set above.
+- **Linux — 27 incompatible:** the `PLATFORMS.windows` set plus the six
+  macOS-only providers.
+
+Deliberate choices:
+
+- A set says where **gup drives** the source, not where the tool exists:
+  Docker Desktop, Podman Desktop and Rancher Desktop run on macOS too, but gup
+  tracks them from their Windows install paths only.
+- `asdf`, `goenv`, `sdkman` and `fastlane` stay unrestricted: they can live on
+  Windows through Git Bash or a manual install, and their detection decides.
+- `pyenv` / `pyenv-win` and `nvm` / `nvm-windows` share a binary name; the
+  sets give each binary to exactly one provider per OS.
+- The `self` meta-provider filters its targets with the same predicate (the
+  `self:brew` target uses `PLATFORMS.notWindows`, like `brew`). Its `winget`,
+  `scoop` and `choco` self-update targets are not restricted yet: on macOS and
+  Linux they still look for those binaries on the `PATH`.
+
+The lists are frozen by `tests/core/platform/provider-platforms.test.ts`:
+changing a set means changing that test on purpose. Adding a provider: see
+the header of `src/providers/_template.ts`.
+
 ---
 
 ## 1. OS / Windows
@@ -43,9 +101,9 @@ three, and §25.4 for the Windows sources deliberately left out.
 | `fink` | Fink (`fink list --outdated`, upgrades via `sudo`) | ✅ |
 | `softwareupdate` | macOS releases / XProtect / CLT | ❌ out of scope (OS-level) |
 
-`brew` also covers **Linuxbrew**, so it is not gated on darwin. `brew-cask`,
-`mas`, `macports`, `sparkle` and `fink` are macOS-only and report themselves
-unavailable elsewhere.
+`brew` also covers **Linuxbrew**, so it is declared `PLATFORMS.notWindows`
+rather than macOS-only. `brew-cask`, `mas`, `macports`, `sparkle` and `fink`
+are `PLATFORMS.macos` (see [Platform support](#platform-support)).
 
 `sparkle` is the blind-spot filler: `brew-cask` runs without `--greedy` and so
 hides every cask flagged `auto_updates true`, and `mas` only sees the App Store.
@@ -60,7 +118,7 @@ applies — the app's own updater owns that half.
 | `pkgx` | pkgx binary | ✅ |
 | `pkgin` | pkgin (pkgsrc binaries, upgrades via `sudo`) | ✅ |
 
-Gated on `process.platform !== "win32"`: under Windows, Nix lives in WSL and is
+Declared `PLATFORMS.notWindows`: under Windows, Nix lives in WSL and is
 covered by `wsl-nix` (§2).
 
 Native Linux distro packages are not standalone providers: `apt` and `dnf` are

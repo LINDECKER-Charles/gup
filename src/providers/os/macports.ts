@@ -2,6 +2,7 @@ import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * MacPorts — the other macOS ports tree. Smaller user base than Homebrew but
@@ -21,6 +22,8 @@ export class MacPortsProvider implements Provider {
     darwin: "https://www.macports.org/install.php",
     fallback: "macOS uniquement — https://www.macports.org/",
   });
+  /** MacPorts targets macOS only. */
+  readonly platforms = PLATFORMS.macos;
   /** Every write to the /opt/local tree goes through sudo. */
   readonly canUpdateUnattended = false;
 

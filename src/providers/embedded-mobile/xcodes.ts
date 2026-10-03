@@ -8,6 +8,7 @@ import {
 import type { InstallSource } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * xcodes (XcodesOrg/xcodes) — the Xcode version manager. macOS-only, since the
@@ -57,6 +58,8 @@ export class XcodesProvider implements Provider {
     fallback:
       "macOS uniquement — xcodes ne cible pas cette plateforme : https://github.com/XcodesOrg/xcodes",
   });
+  /** xcodes drives Apple's developer downloads (Xcode). */
+  readonly platforms = PLATFORMS.macos;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform !== "darwin") return false;

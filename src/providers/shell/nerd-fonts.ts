@@ -16,6 +16,7 @@ import { pickInstallHint } from "../../core/install-hint.js";
 import { installConsole } from "../../core/process/output-router.js";
 import { runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Nerd Fonts (https://github.com/ryanoasis/nerd-fonts).
@@ -49,6 +50,8 @@ export class NerdFontsProvider implements Provider {
     fallback:
       "Windows uniquement — ailleurs : https://github.com/ryanoasis/nerd-fonts/releases",
   });
+  /** gup installs the fonts per user under %LOCALAPPDATA% and registers them in HKCU. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

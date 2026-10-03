@@ -10,6 +10,11 @@
  *  - Use `run(...)` for capturable output and `runInherit(...)` to stream the
  *    update process to the user's terminal.
  *  - Set `slow = true` if scan involves per-package HTTP calls or filesystem walks.
+ *  - When gup supports the source on some OSes only, declare it on one line:
+ *    `readonly platforms = PLATFORMS.windows;` (or `macos`, `notWindows`; from
+ *    `core/platform/platforms.ts`). The registry then never probes, scans or
+ *    updates it elsewhere, and listings grey it out. Never test
+ *    `process.platform` in isAvailable() to the same end.
  *  - Return `skipped: true` from update() when the action requires user input
  *    outside the provider (manual download, GUI tool, etc.).
  *  - Avoid throwing in listOutdated/update. Return empty list / failed outcome

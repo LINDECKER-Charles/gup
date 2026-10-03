@@ -7,6 +7,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * nvm-windows (coreybutler/nvm-windows) — distinct from the Linux/macOS
@@ -27,6 +28,8 @@ export class NvmWindowsProvider implements Provider {
     fallback:
       "Windows uniquement — équivalents macOS/Linux : brew install nvm ou brew install fnm",
   });
+  /** A Windows-only project; elsewhere nvm (POSIX) holds the role. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     if (process.platform !== "win32") return false;

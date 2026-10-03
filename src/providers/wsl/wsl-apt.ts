@@ -7,6 +7,7 @@ import {
 } from "../../core/wsl.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * APT inside Debian/Ubuntu-family WSL distros. One synthetic entry per
@@ -24,6 +25,8 @@ export class WslAptProvider implements Provider {
     win32: "wsl --install -d Ubuntu",
     fallback: "WSL est une fonctionnalité Windows — inexistante sur cette plateforme.",
   });
+  /** Reaches into WSL distros, a Windows feature. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

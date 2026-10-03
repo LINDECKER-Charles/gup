@@ -522,3 +522,30 @@ describe("updateCommand: admin batch elevation", () => {
     expect(confirmMock).not.toHaveBeenCalled();
   });
 });
+
+describe("updateCommand: --provider ids gup cannot act on", () => {
+  const stderrText = (): string => stderrSpy.mock.calls.map((call) => String(call[0])).join("");
+
+  it("warns about a provider foreign to this OS before scanning", async () => {
+    const originalPlatform = process.platform;
+    const brewCask = { ...mkProvider({ id: "brew-cask" }), platforms: PLATFORMS.macos };
+    getProviderMock.mockReturnValue(brewCask);
+    scanWithProgressMock.mockResolvedValueOnce({ results: [], detectedCount: 0 });
+    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    try {
+      expect(await updateCommand({ only: ["brew-cask"], all: true })).toBe(0);
+    } finally {
+      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+    }
+    expect(stderrText()).toContain(
+      "Provider brew-cask indisponible sur Windows (macOS uniquement) — ignoré.",
+    );
+    expect(scanWithProgressMock).toHaveBeenCalledWith({ only: ["brew-cask"] });
+  });
+
+  it("does not check --provider when targets name the packages", async () => {
+    getProviderMock.mockReturnValue(mkProvider({ id: "npm-g" }));
+    await updateCommand({ targets: ["npm-g:typescript"], only: ["nope"], yes: true });
+    expect(stderrText()).not.toContain("ignoré");
+  });
+});

@@ -9,6 +9,7 @@ import {
 import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Mint (yonaskolb/Mint) — builds Swift Package Manager executables and
@@ -53,10 +54,12 @@ export class MintProvider implements Provider {
     win32: "Indisponible sur Windows — https://github.com/yonaskolb/Mint",
     fallback: "brew install mint",
   });
+  /** Mint needs a Swift toolchain and ships no Windows support. */
+  readonly platforms = PLATFORMS.notWindows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
-    // Mint needs a Swift toolchain and ships no Windows support.
+    // Mirrors `platforms` for a caller that probes without the registry gate.
     if (process.platform === "win32") return false;
     try {
       if (!(await commandExists("mint"))) return false;
