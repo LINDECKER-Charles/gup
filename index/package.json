@@ -12,6 +12,7 @@
     "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/stamp-static.mjs",
     "og": "node scripts/og-image.mjs",
     "preview": "vite preview",
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
