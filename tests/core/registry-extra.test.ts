@@ -131,6 +131,59 @@ describe("registry: detectAvailableProviders", () => {
       for (const s of spies) s.mockRestore();
     }
   });
+
+  it("reads a probe that throws as unavailable instead of failing detection", async () => {
+    const spies = ALL_PROVIDERS.map((p) =>
+      vi.spyOn(p, "isAvailable").mockResolvedValue(false),
+    );
+    spies[0]!.mockRejectedValue(new Error("boom"));
+    spies[1]!.mockResolvedValue(true);
+    try {
+      expect(await detectAvailableProviders()).toEqual([ALL_PROVIDERS[1]]);
+    } finally {
+      for (const s of spies) s.mockRestore();
+    }
+  });
+
+  it("gives up on a probe that never settles", async () => {
+    vi.useFakeTimers();
+    const spies = ALL_PROVIDERS.map((p) =>
+      vi.spyOn(p, "isAvailable").mockResolvedValue(false),
+    );
+    spies[0]!.mockReturnValue(new Promise<boolean>(() => {}));
+    spies[1]!.mockResolvedValue(true);
+    try {
+      const detection = detectAvailableProviders();
+      await vi.advanceTimersByTimeAsync(60_000);
+      await expect(detection).resolves.toEqual([ALL_PROVIDERS[1]]);
+    } finally {
+      vi.useRealTimers();
+      for (const s of spies) s.mockRestore();
+    }
+  });
+
+  it("keeps the number of probes in flight bounded", async () => {
+    // Firing every probe at once is what froze the UI on Windows: the probes
+    // that spawn a tool turned into one burst of synchronous process creations.
+    let inFlight = 0;
+    let peak = 0;
+    const spies = ALL_PROVIDERS.map((p) =>
+      vi.spyOn(p, "isAvailable").mockImplementation(async () => {
+        inFlight++;
+        peak = Math.max(peak, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        inFlight--;
+        return false;
+      }),
+    );
+    try {
+      await detectAvailableProviders();
+      expect(peak).toBeGreaterThan(1);
+      expect(peak).toBeLessThanOrEqual(8);
+    } finally {
+      for (const s of spies) s.mockRestore();
+    }
+  });
 });
 
 describe("registry: scanAll", () => {

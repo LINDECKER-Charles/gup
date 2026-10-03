@@ -1,3 +1,6 @@
+import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { delimiter, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -97,9 +100,32 @@ describe("runner.run", () => {
 
   it("merges caller options over the defaults (caller wins)", async () => {
     execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
-    await run("foo", [], { encoding: "buffer", env: { X: "1" } });
+    await run("foo", [], { encoding: "buffer", env: { X: "1" }, timeout: 5000 });
     const [, , opts] = execaMock.mock.calls[0]!;
-    expect(opts).toMatchObject({ encoding: "buffer", env: { X: "1" } });
+    expect(opts).toMatchObject({ encoding: "buffer", env: { X: "1" }, timeout: 5000 });
+  });
+
+  it("closes the child's stdin, unless the caller feeds it", async () => {
+    execaMock.mockReturnValue(mkExecaResult({ exitCode: 0 }));
+    await run("foo");
+    await run("foo", [], { input: "y\n" });
+    expect(execaMock.mock.calls[0]![2]).toMatchObject({ stdin: "ignore" });
+    expect(execaMock.mock.calls[1]![2]).not.toHaveProperty("stdin");
+  });
+
+  it("caps every run and kills the whole process tree when the cap hits", async () => {
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    await run("foo");
+    const [, , opts] = execaMock.mock.calls[0]!;
+    expect(opts).toMatchObject({ killDescendants: true });
+    expect((opts as { timeout?: number }).timeout).toBeGreaterThan(0);
+  });
+
+  it("reports a run that hit the cap as failed and timedOut", async () => {
+    execaMock.mockReturnValueOnce(
+      Promise.resolve({ stdout: "", stderr: "", exitCode: undefined, failed: true, timedOut: true }),
+    );
+    await expect(run("foo")).resolves.toMatchObject({ failed: true, timedOut: true });
   });
 
   it.each([
@@ -257,75 +283,112 @@ describe("runner skip + interrupt channel", () => {
   });
 });
 
-describe("runner.commandExists", () => {
-  it("uses `where` on win32 and returns true when stdout is non-empty", async () => {
-    setPlatform("win32");
-    execaMock.mockReturnValueOnce(
-      mkExecaResult({ stdout: "C:\\Tools\\foo.exe", exitCode: 0 }),
-    );
-    await expect(commandExists("foo")).resolves.toBe(true);
-    const [cmd, args] = execaMock.mock.calls[0]!;
-    expect(cmd).toBe("where");
-    expect(args).toEqual(["foo"]);
+/**
+ * PATH lookup runs against a real temporary PATH: the point of the feature is
+ * that it touches the filesystem instead of spawning `where` / `which`, so the
+ * filesystem is what these tests exercise. Platform-specific rules run on the
+ * matching CI leg only.
+ */
+describe("runner.whichFirst / commandExists", () => {
+  const isWindows = originalPlatform === "win32";
+  const binaryName = isWindows ? "tool.exe" : "tool";
+  const savedPath = process.env.PATH;
+  const savedPathext = process.env.PATHEXT;
+  let root: string;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), "gup-which-"));
   });
 
-  it("uses `which` on linux and returns true on success", async () => {
-    setPlatform("linux");
-    execaMock.mockReturnValueOnce(
-      mkExecaResult({ stdout: "/usr/bin/foo", exitCode: 0 }),
-    );
-    await expect(commandExists("foo")).resolves.toBe(true);
-    const [cmd] = execaMock.mock.calls[0]!;
-    expect(cmd).toBe("which");
+  afterEach(async () => {
+    process.env.PATH = savedPath;
+    if (savedPathext === undefined) delete process.env.PATHEXT;
+    else process.env.PATHEXT = savedPathext;
+    await rm(root, { recursive: true, force: true });
   });
 
-  it("returns false when the probe fails", async () => {
-    setPlatform("linux");
-    execaMock.mockReturnValueOnce(
-      mkExecaResult({ stdout: "", exitCode: 1, failed: true }),
-    );
-    await expect(commandExists("foo")).resolves.toBe(false);
+  /** Create `<root>/<dir>/<name>` (executable on POSIX) and return its path. */
+  async function placeBinary(dir: string, name: string): Promise<string> {
+    await mkdir(join(root, dir), { recursive: true });
+    const file = join(root, dir, name);
+    await writeFile(file, "");
+    await chmod(file, 0o755);
+    return file;
+  }
+
+  function usePath(...dirs: string[]): void {
+    process.env.PATH = dirs.map((dir) => join(root, dir)).join(delimiter);
+  }
+
+  it("resolves in-process, without spawning where/which", async () => {
+    const file = await placeBinary("bin", binaryName);
+    usePath("bin");
+    await expect(whichFirst("tool")).resolves.toBe(file);
+    await expect(commandExists("tool")).resolves.toBe(true);
+    expect(execaMock).not.toHaveBeenCalled();
   });
 
-  it("returns false when probe succeeds but stdout is blank", async () => {
-    setPlatform("linux");
-    execaMock.mockReturnValueOnce(
-      mkExecaResult({ stdout: "   ", exitCode: 0 }),
-    );
-    await expect(commandExists("foo")).resolves.toBe(false);
-  });
-});
-
-describe("runner.whichFirst", () => {
-  it("returns the first PATH match trimmed", async () => {
-    setPlatform("win32");
-    execaMock.mockReturnValueOnce(
-      mkExecaResult({
-        stdout: "C:\\Tools\\foo.exe\r\nC:\\Other\\foo.exe",
-        exitCode: 0,
-      }),
-    );
-    await expect(whichFirst("foo")).resolves.toBe("C:\\Tools\\foo.exe");
+  it("returns the hit from the earliest PATH entry", async () => {
+    await placeBinary("late", binaryName);
+    const early = await placeBinary("early", binaryName);
+    usePath("early", "late");
+    await expect(whichFirst("tool")).resolves.toBe(early);
   });
 
-  it("returns null when the probe fails", async () => {
-    setPlatform("linux");
-    execaMock.mockReturnValueOnce(
-      mkExecaResult({ exitCode: 1, failed: true }),
-    );
-    await expect(whichFirst("nope")).resolves.toBeNull();
+  it("returns null when nothing on PATH matches", async () => {
+    await placeBinary("bin", isWindows ? "other.exe" : "other");
+    usePath("bin", "no-such-dir");
+    await expect(whichFirst("tool")).resolves.toBeNull();
+    await expect(commandExists("tool")).resolves.toBe(false);
   });
 
-  it("returns null when stdout is empty or whitespace-only", async () => {
-    setPlatform("linux");
-    execaMock.mockReturnValueOnce(mkExecaResult({ stdout: "   \n   ", exitCode: 0 }));
-    await expect(whichFirst("foo")).resolves.toBeNull();
+  it("ignores a directory that carries the command's name", async () => {
+    await mkdir(join(root, "bin", binaryName), { recursive: true });
+    usePath("bin");
+    await expect(whichFirst("tool")).resolves.toBeNull();
   });
 
-  it("returns null when first line is empty", async () => {
-    setPlatform("linux");
-    execaMock.mockReturnValueOnce(mkExecaResult({ stdout: "\n/usr/bin/foo", exitCode: 0 }));
-    await expect(whichFirst("foo")).resolves.toBeNull();
+  it.each(["../tool", "bin/tool", "..\\tool", "to*l", ""])(
+    "refuses %j, a path or a pattern rather than a command name",
+    async (name) => {
+      // `<root>/tool` is exactly where "../tool" would land from `<root>/bin`.
+      await placeBinary(".", "tool");
+      await mkdir(join(root, "bin"), { recursive: true });
+      usePath("bin");
+      await expect(whichFirst(name)).resolves.toBeNull();
+    },
+  );
+
+  it.runIf(isWindows)("checks the bare name before PATHEXT extensions, like where", async () => {
+    await placeBinary("bin", "tool.cmd");
+    const bare = await placeBinary("bin", "tool");
+    usePath("bin");
+    process.env.PATHEXT = ".EXE;.CMD";
+    await expect(whichFirst("tool")).resolves.toBe(bare);
+  });
+
+  it.runIf(isWindows)("tries PATHEXT extensions in their declared order", async () => {
+    await placeBinary("bin", "tool.cmd");
+    const exe = await placeBinary("bin", "tool.exe");
+    usePath("bin");
+    process.env.PATHEXT = ".EXE;.CMD";
+    await expect(whichFirst("tool")).resolves.toBe(exe);
+  });
+
+  it.runIf(!isWindows)("skips a file without the exec bit, like which", async () => {
+    const plain = await placeBinary("first", "tool");
+    await chmod(plain, 0o644);
+    const executable = await placeBinary("second", "tool");
+    usePath("first", "second");
+    await expect(whichFirst("tool")).resolves.toBe(executable);
+  });
+
+  it.runIf(!isWindows)("reports the symlink on PATH, not its target", async () => {
+    const target = await placeBinary("cellar", "tool");
+    await mkdir(join(root, "bin"));
+    await symlink(target, join(root, "bin", "tool"));
+    usePath("bin");
+    await expect(whichFirst("tool")).resolves.toBe(join(root, "bin", "tool"));
   });
 });
 
