@@ -143,6 +143,13 @@ describe("updateAll shapes", () => {
     expect(updateAllViolations("collapsed", observation)).toEqual([]);
   });
 
+  it("accept a collapsed run whose one update is left to the user", () => {
+    const outcomes = [{ id: "self", success: false, skipped: true }];
+    const observation = { rows, outcomes, installCount: 0, installsPerPackage: 0 };
+
+    expect(updateAllViolations("collapsed", observation)).toEqual([]);
+  });
+
   it("report every mismatch", () => {
     const observation = {
       rows,

@@ -114,7 +114,10 @@ export interface UpdateAllObservation {
   readonly rows: readonly OutdatedPackage[];
   readonly outcomes: readonly UpdateOutcome[];
   readonly installCount: number;
-  /** Installs one `update()` performs (from the case's `update.installs`, 1 by default). */
+  /**
+   * Installs one `update()` performs: the case's `update.installs` (none when
+   * the update is left to the user), 1 when the case declares no update.
+   */
   readonly installsPerPackage: number;
 }
 

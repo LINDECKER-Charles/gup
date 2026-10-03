@@ -233,7 +233,7 @@ async function updateAllShapeViolations(
     rows,
     outcomes,
     installCount: installs.length,
-    installsPerPackage: Math.max(1, contractCase.update?.installs.length ?? 1),
+    installsPerPackage: contractCase.update?.installs.length ?? 1,
   };
   return [
     ...updateAllViolations(contractCase.updateAll, observation),
