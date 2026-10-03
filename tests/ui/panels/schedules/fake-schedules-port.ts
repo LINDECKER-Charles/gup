@@ -22,7 +22,7 @@ import { providerFacts } from "../../../core/scheduler/scheduler-fixtures.js";
  * The scheduler as the Planification view sees it, in memory: schedules,
  * run state, an OS trigger that is "installed" by the first enabled
  * schedule, and a record of every call. Validation is the real one, over a
- * fake registry (Winget, npm (global), Chocolatey admin-only).
+ * fake registry (Winget, npm (global), lazy.nvim, Chocolatey admin-only).
  */
 
 // TZ=UTC in tests: local time is UTC.
@@ -31,6 +31,8 @@ export const NOW = new Date("2026-10-05T10:00:00Z");
 export const PROVIDERS = providerFacts({
   winget: { displayName: "Winget" },
   "npm-g": { displayName: "npm (global)" },
+  // Known and unattended-capable: only the gesture keeps its aggregate row out.
+  "nvim-lazy": { displayName: "lazy.nvim" },
   choco: { displayName: "Chocolatey", canUpdateUnattended: false },
 });
 
