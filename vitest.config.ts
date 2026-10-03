@@ -55,6 +55,8 @@ export default defineConfig({
           "tests/platform/**/*.test.ts",
           "tests/support/self-test/**/*.test.ts",
         ],
+        // The fake machine: runner, fs, os, platform, env and fetch.
+        setupFiles: ["tests/support/system/install.ts"],
       }),
       project({
         name: "integration",

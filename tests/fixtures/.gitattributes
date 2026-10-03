@@ -1,0 +1,3 @@
+# Recorded tool output is compared byte for byte: never convert line endings
+# (winget prints CRLF, brew prints LF, and a checkout must keep both).
+* -text
