@@ -147,10 +147,12 @@ recurring concepts (consistency is checked in review, not by tests):
 - **pt** — Brazilian Portuguese (`lang="pt-BR"`), *você*; served as `hreflang="pt"`; "scan" is
   *verificar* (verb) and *varredura* (noun).
 - **zh** — Simplified, mainland tech register; full-width punctuation; a half-width space
-  between Han and Latin/digits (`更新 153 个来源`).
-- **hi** — standard Hindi, formal *आप*; danda `।`.
+  between Han and Latin/digits, placeholders, code and key caps (`更新 153 个来源`) — both
+  tested.
+- **hi** — standard Hindi, formal *आप*; danda `।` (tested); *कमांड* is feminine.
 - **ar** — Modern Standard Arabic, formal; `، ؛ ؟`; Western digits.
-- **bn** — standard written Bengali, *আপনি*; danda `।`.
+- **bn** — standard written Bengali, *আপনি*; danda `।` (tested); case endings join Latin words
+  with a hyphen (`gup-এর`); counts take the classifier টি (`153টি উৎস`).
 
 ### Translation record
 
@@ -162,13 +164,16 @@ looked at and what it changed. A native speaker has not reviewed these yet: one
 | Locale | Key risks | Back-translation notes |
 |---|---|---|
 | es | *registro* means both a package registry and a log; *terminal* has both genders across regions; Enter is *Intro* on Spanish keyboards. | Clean except one fix: "Sin registro" read as "no logging", contradicting the journal — now "Sin registro de paquetes". "one full-screen terminal app" shortened to "una app de terminal" in `meta.description` for the 160-column budget, as in French. "opt-in scheduling" reads "optional scheduling": same meaning for a reader. |
+| zh | Idiomatic headings drift easily ("know everything" vs "in control"); spacing between Han and Latin runs; colloquial verbs in marketing copy. | One fix: the install title "一切尽在掌握" read "everything under control" — now "一切了然" ("everything is clear"). "折腾" (fiddle with) in the lead is informal but common in Chinese developer copy: kept. The terminal caption adds "目前" (for now), consistent with the FAQ. "updates reviewed weekly" made explicit as dependency updates. |
+| hi | Symlink "resolved" has no settled Hindi verb; gender of *कमांड*; English-heavy loanwords. | One fix: "सिमलिंक … हल होते हैं" read "symlinks get solved" — now "फ़ॉलो किए जाते हैं" (followed). The hero adds "हमेशा" (always) before *अप-टू-डेट*: idiomatic headline, accepted. *कमांड* kept feminine throughout. |
+| bn | Same symlink issue; "enforces" weakened to "maintains"; Latin words need hyphenated case endings. | Two fixes: "সিমলিংক … শনাক্ত হয়" read "symlinks are detected" — now "অনুসরণ করা হয়" (followed); "WCAG AA কনট্রাস্ট বজায় রাখে" read "maintains" — now "নিশ্চিত করে" (ensures). Hero "সবসময়" (always) accepted as in Hindi. |
 | pt | "built accordingly" is easy to turn into "built for that"; *registry* is often left in English in Brazil. | One fix: "E foi construído para isso" read as "built to run privileged commands" — now "com isso em mente". "Sem registry" became "Sem registro de pacotes" (clearer, distinct from *registro de atividades*). "keeps the providers moving" reads "keeps the providers up to date": accepted. |
 
 ## Quality gates
 
 | Gate | What it pins |
 |---|---|
-| `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`…). |
+| `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda). |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
 | `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`. |
 | `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no-JS and reduced-motion rendering, overflow at 1440/820/390 px, RTL geometry (on a forced-RTL page until an RTL locale exists). Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu. |

@@ -166,6 +166,20 @@ test("fr: high punctuation and guillemets take a narrow no-break space", () => {
 const occurrences = (text, char) => text.split(char).length - 1;
 const unpaired = (opening, closing) => (text) =>
   occurrences(text, opening) !== occurrences(text, closing);
+const matching = (pattern) => (text) => pattern.test(text);
+
+/**
+ * Han directly against a Latin word, a digit, a placeholder, a code span or a
+ * key cap. Code spans and key caps count as one Latin run whatever their
+ * content (a key name may be translated: [[空格]]); strong markers are
+ * transparent.
+ */
+function hanTouchesLatin(text) {
+  const flattened = text.replace(/`[^`]*`|\[\[.*?\]\]/g, "x").replaceAll("**", "");
+  return /\p{Script=Han}[\p{Script=Latin}\d{]|[\p{Script=Latin}\d}]\p{Script=Han}/u.test(flattened);
+}
+/** A Latin full stop ending a sentence ("Node.js" and ".NET" are not sentence ends). */
+const FULL_STOP = /\.(?=\s|$)/u;
 
 /**
  * The register rules of docs/development/website.md that a machine can check,
@@ -177,6 +191,12 @@ const REGISTER_DEFECTS = {
     ["a question without its opening ¿", unpaired("¿", "?")],
     ["an exclamation without its opening ¡", unpaired("¡", "!")],
   ],
+  zh: [
+    ["Han touching a Latin word, digit or code without a space", hanTouchesLatin],
+    ["half-width punctuation after Han", matching(/\p{Script=Han}[,.;:?!()]/u)],
+  ],
+  hi: [["a full stop instead of the danda", matching(FULL_STOP)]],
+  bn: [["a full stop instead of the danda", matching(FULL_STOP)]],
 };
 
 for (const [id, defects] of Object.entries(REGISTER_DEFECTS)) {
