@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# SVG screenshots are compared byte for byte; a CRLF checkout on Windows must
+# not make them look stale.
+*.svg text eol=lf

@@ -6,6 +6,73 @@
 [![Gitleaks](https://img.shields.io/badge/gitleaks-enabled-000?logo=gitleaks)](https://github.com/LINDECKER-Charles/gup/actions/workflows/security.yml)
 [![Dependabot](https://img.shields.io/badge/dependabot-weekly-025E8C?logo=dependabot&logoColor=white)](https://github.com/LINDECKER-Charles/gup/blob/main/.github/dependabot.yml)
 
+## Supported versions
+
+| Version | Supported |
+|---|---|
+| Latest published minor release (the version `npm i -g @charles_lindecker/gup` installs) | ✅ Security fixes, shipped as a patch release |
+| Any older release | ❌ Upgrade to the latest release |
+
+While `gup` is in `0.x`, fixes are made on the latest minor line only. The
+supported runtime is the one `engines.node` allows (Node ≥ 26.9); a problem
+that only reproduces on an older Node is not supported.
+
+## Reporting a vulnerability
+
+Report it privately through GitHub's
+[private vulnerability reporting](https://github.com/LINDECKER-Charles/gup/security/advisories/new)
+(*Security* tab → *Report a vulnerability*). Only the repository's
+maintainers see the report.
+
+**Please do not open a public issue, pull request or discussion** for a
+vulnerability, and do not include a reproducer anywhere public before a fix is
+released.
+
+Include what you can of:
+
+- the affected version(s) of `gup` (`gup --version`), the OS and `node --version`;
+- the impact: what an attacker gains, and what they need to control first;
+- steps or a proof of concept that reproduce it;
+- a suggested fix, if you have one.
+
+## What happens next
+
+`gup` has a single maintainer, so these are best-effort aims, not contractual
+commitments:
+
+| Step | Aim |
+|---|---|
+| Acknowledge the report | within 7 days |
+| Assess it: confirmed or not, severity, affected versions | within 14 days |
+| Release a fix for a high or critical issue, as a patch release | within 30 days of the assessment |
+
+Lower-severity issues are fixed in a regular release. Disclosure is
+coordinated: the GitHub security advisory is published together with the fixed
+release (with a CVE when one is warranted), and you are credited in it unless
+you prefer not to be.
+
+## Scope
+
+In scope:
+
+- `gup`'s own code, as published on npm, including its dependencies as
+  shipped;
+- how it starts processes: command or argument injection, a package id or
+  version from an upstream tool reaching a shell, an update routed to the
+  wrong package manager;
+- its network access (upstream version probes);
+- every file `gup` itself writes under your profile, such as the activity
+  history.
+
+Out of scope:
+
+- vulnerabilities in the package managers `gup` drives, or in the packages
+  they install: report those upstream;
+- the terminal emulator `gup` runs in;
+- attacks that need write access to your user profile or to a directory on
+  your `PATH`: an attacker with that access already runs code as you;
+- social engineering.
+
 ## Threat model
 
 `gup` is a CLI that scans installed package managers and shells out to them to
@@ -54,7 +121,6 @@ npm run test:security   # vitest security suite
 Dependabot (`.github/dependabot.yml`) opens grouped weekly PRs for npm + GH
 Actions updates.
 
-## Reporting a vulnerability
-
-Open a private security advisory on the GitHub repository. Avoid filing a
-public issue with reproducer details.
+`.github/workflows/docs.yml` checks the relative links and anchors of the
+Markdown files when they change. It runs offline, with read-only repository
+permissions, and fetches nothing from the URLs it reads.

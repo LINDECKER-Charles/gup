@@ -4,7 +4,7 @@
 `doctor`) bypass it and are what you script against.
 
 - [Commands](#commands)
-- [Interactive menu](#interactive-menu)
+- [Interactive app](#interactive-app)
 - [Targeting a package](#targeting-a-package)
 - [Fast mode](#fast-mode)
 - [Skipping stuck installs](#skipping-stuck-installs)

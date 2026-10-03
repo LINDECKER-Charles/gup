@@ -1,0 +1,16 @@
+# Versionless on purpose: no version, release date or provider count, so the
+# file never needs a bump at release time.
+cff-version: 1.2.0
+message: "If you use gup in your work, please cite it as below."
+type: software
+title: "gup — Global Updater"
+abstract: >-
+  One CLI and full-screen terminal app to scan and update everything installed
+  on a machine, across the package managers of Windows, macOS and Linux.
+authors:
+  - family-names: Lindecker
+    given-names: Charles
+repository-code: "https://github.com/LINDECKER-Charles/gup"
+url: "https://lindecker-charles.github.io/gup/"
+license: MIT
+keywords: [cli, tui, updater, package-manager, winget, homebrew, developer-tools]
