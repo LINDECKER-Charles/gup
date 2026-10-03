@@ -1,11 +1,12 @@
 # Design note — in-app updates (`feat/in-tui-updates`)
 
-Status: **part 1 of 2 shipped — the process side** (`src/core/pty/`, `src/pty-exec.ts`). It lets
-any install run in an embedded pseudo-terminal through the foundation's install sink, and it is
-complete and tested on its own. Part 2 — the run view (`src/ui/run/`), the in-screen launcher,
-the `embeddedTerminalModule` and the user guide — plugs into the port described in §4 and
-extends this note. Sources: `update-flow.md` (B5, B8), the integrated plan §6.4, amendments
-IT-1…IT-4, F-4, W2-5.
+Status: **shipped.** Part 1 is the process side (`src/core/pty/`, `src/pty-exec.ts`, §1–§11):
+any install can run in an embedded pseudo-terminal through the foundation's install sink. Part 2
+is the screen side (§12–§19): the run view (`src/ui/run/`), the in-screen launcher
+(`src/ui/app/in-screen-launcher.ts`) and the `embedded-terminal` CLI module, so an update
+confirmed in the menu runs inside gup and lands back on Paquets. User guide:
+[`docs/guide/interactive-app.md`](../../guide/interactive-app.md). Sources: `update-flow.md`
+(B5, B7, B8), the integrated plan §6.4, amendments IT-1…IT-7, F-4, F-6, W2-5, W2-6, W2-7.
 
 ---
 
@@ -178,7 +179,7 @@ start with `runner: `), `erreur inattendue : <raison>` for anything else.
   RunAs -Wait`) runs in the pane; the elevated window is outside our tree, as before.
 - **macOS.** Prebuilds for x64/arm64 through `spawn-helper` (§3). `sudo port|fink|pkgin` and the
   POSIX elevated batch (`sudo node … __admin-batch`, F-4) go through `runInherit`, so they run in
-  the pane: one password prompt per batch, typed in the pane (IT-7; the pane title is part 2).
+  the pane: one password prompt per batch, typed in the pane (IT-7, §15).
 - **Linux.** No prebuild: node-pty builds with node-gyp when a toolchain exists, otherwise the
   optional install is skipped and the menu falls back to updating outside the screen.
 - **npm 11** reviews install scripts (`--allow-scripts=node-pty`; `--ignore-scripts` is harmless
@@ -216,14 +217,200 @@ No foundation contract changed. The `0 false off no` switch set now exists in th
 (`config/paths.ts`, `history/store.ts`, `pty/pty-loader.ts`); the first two belong to other
 branches, so the shared helper is left to the wave-3 consolidation.
 
-## 12. Hand-off to part 2
+---
 
-- `ui/run/terminal-panes.ts` implements `PtyPanes` over `EmbeddedTerminalRenderable` (`onData` →
-  `input.write`, `onTerminalResize` → `input.resize`, `tail()` from `screen().lines`).
-- The in-screen launcher: `support = await loadEmbeddedTerminal()` (warmed at menu start);
-  unavailable → `outsideLauncher` with `support.reason`; available → `routeInheritTo(
-  createPtySink(support, panes))` around the run, restored in `finally`; closes its own gate on
-  SIGBREAK/SIGTERM/SIGHUP while the batch runs (W2-6).
-- `embeddedTerminalModule`: installs the launcher factory for the menu; `diagnostics()` reports
-  `loadEmbeddedTerminal()` (available, or the reason — the spawn-helper path included).
-- UI amendments IT-5 (dialog focus), IT-6 (default background), IT-7 (sudo pane title).
+# Part 2 — the screen side
+
+## 12. At a glance
+
+```mermaid
+flowchart LR
+  P[Paquets · Entrée] --> L[in-screen launcher]
+  L -->|confirm| D[dialog]
+  L -->|unavailable| O[outsideLauncher<br/>plain terminal]
+  L -->|available| T[takeOver → RunView]
+  T --> M[RunModel<br/>UpdateObserver]
+  T --> RD[RunDialogs<br/>UpdateDecisions]
+  T --> RC[RunControl<br/>AbortGate]
+  T --> TP[TerminalPanes<br/>PtyPanes port]
+  L --> PL[runUpdates]
+  PL --> M & RD & RC
+  PL --> R[runInherit] --> S[createPtySink] --> TP
+```
+
+The foundation gave the menu a launcher slot, a takeover, the update pipeline and its ports;
+part 1 gave the PTY sink and its pane port. Part 2 composes them and owns no seam of its own:
+no foundation contract changed, and `menu-session.ts` is untouched.
+
+## 13. Modules
+
+| File | Role |
+|---|---|
+| `ui/app/in-screen-launcher.ts` | `inScreenLauncher(deps?)`: the `LauncherFactory` the CLI module installs |
+| `ui/run/run-view.ts` | `RunView`, the takeover: layout, ports, keys, Ctrl+C, frame, results |
+| `ui/run/run-model.ts` | `RunModel implements UpdateObserver`: items, phase, counts, timing |
+| `ui/run/run-lines.ts` | pure renderers: progress header, aligned rows, summary, facts, titles |
+| `ui/run/run-keys.ts` | pure `keyModeOf`, `runCommandFor`, `runHintsFor` |
+| `ui/run/run-control.ts` | `RunControl implements AbortGate` (skip, stop, stop after the step, Ctrl+C ×2); `closeOnExitSignals` (W2-6) |
+| `ui/run/run-dialogs.ts` | `RunDialogs implements UpdateDecisions`, plus the stop confirmation; one dialog at a time |
+| `ui/run/run-layout.ts` | the boxes: status `TextPanel`, terminal frame, pane host on the terminal background |
+| `ui/run/terminal-panes.ts` | `TerminalPanes implements PtyPanes`: one pane per package, retention, lock |
+| `ui/run/terminal-pane.ts` | `TerminalPane implements PtyPane` over OpenTUI's `EmbeddedTerminalRenderable` |
+| `ui/run/prompt-hint.ts` | pure `isLikelyAwaitingInput` |
+| `ui/text/run-labels.ts` | every French string of the above, the confirmation extras and the doctor line |
+| `commands/cli/embedded-terminal-module.ts` | installs the launcher for the menu; the doctor line (W2-7) |
+
+`ui/run` holds 10 files (the folder budget), `ui/app` reaches 10 with the launcher.
+
+## 14. The in-screen launcher
+
+1. **Warm-up.** The factory runs when a menu session starts and immediately calls
+   `loadEmbeddedTerminal()` (cached per process): the spawn probe costs about a second on
+   Windows, paid while the user browses, not at the confirmation.
+2. **Launch** (refused while another one is starting or running): the detection's answer, then
+   the confirmation (when `confirmBeforeUpdate`): the packages (admin ones tagged), then
+   `n paquet(s) nécessitent les droits administrateur : une invite UAC s'ouvrira en fin de lot.`
+   (or the `sudo` sentence), then, when the embedded terminal is unavailable,
+   `Terminal intégré indisponible (<raison>) : la mise à jour s'exécutera dans le terminal, hors
+   de l'interface.`
+3. **Unavailable** → the foundation's `outsideLauncher`, its own confirmation turned off (the
+   user already answered): the session ends `outside`, as in 0.4.
+4. **Available** → `takeOver` starts the `RunView`; then `routeInheritTo(createPtySink(support,
+   view.panes))`, `closeOnExitSignals(view.control)` and `screen.interceptCtrlC(view.ctrlC)`;
+   `runUpdates(requestsFrom(packages, { scheduleId }), view.ports)`. The sink and the signal gate
+   go as soon as the batch is over; the results stay until the user leaves; then everything is
+   released in reverse order and `afterUpdate(report, returnTo)` prunes Paquets (or rescans, per
+   the preferences).
+5. **A pipeline that throws** (a bug): the view is released, a dialog says
+   `La mise à jour s'est interrompue : <message>`, the menu stays as it was. `launch` never
+   rejects.
+
+**W2-6.** The screen host skips the install in flight on SIGBREAK/SIGTERM/SIGHUP (and SIGINT on
+POSIX), then tears the screen down and exits, which takes a few event-loop turns. While the batch
+runs, the launcher listens to the same signals and closes the run's gate, so the pipeline starts
+no package in between.
+
+**Frames after a promise continuation.** OpenTUI 0.5.14 drops a frame request made between the
+end of a frame's native render and the end of its `activateFrame` (the request sees a frame
+still "scheduled", but that frame was already drawn). The launcher changes the menu from promise
+continuations — the confirmation once the detection answered, the browse layout back after the
+results — right in that window after a key's frame. While the run view is up the session's
+100 ms tick redraws anyway; an idle menu does not, and showed those changes only at the next key
+press (seen driving the built CLI in ConPTY). The launcher therefore requests a frame on the
+next event-loop turn (`setImmediate`) after each of those changes. The in-memory test renderer
+forces its frames, so only the real-terminal smoke shows it (§18).
+
+## 15. The run view
+
+**Layout.** In the chrome's body: the status list (`TextPanel` titled `Mise à jour`,
+`Mise à jour — arrêt demandé`, `Mise à jour — terminée`) and the terminal frame below. Balanced:
+the list takes the rows it needs, at most 45 % of the body; the terminal always keeps 6 rows.
+`v` enlarges: the list shrinks to the progress line and the package in flight. The pane is laid
+out at 100 % of its host (it follows the list's growth) and created at the layout's expected
+size, so a child starts at the right size; later layout changes resize the child.
+
+**Status list.** Header: a 10–40 column bar, `done/total`, `✔ ↷ ✖` (and `⊘` when some were
+cancelled), the clock. Rows: `STATUS_GLYPHS` icon (spinner while in flight), the package name,
+provider and versions in aligned columns, `admin` / `fenêtre admin…` / `sudo…` /
+`↻ retry --force` and the duration on the right; a muted `└ message` under a row; the retry
+offer suffix while the run goes on. The window keeps the package in flight (or the one scrolled
+to, or the selection) in view. Facts in the title bar: `Mise à jour · 2/5 · 01:12`, then
+`Mise à jour terminée · 5 paquet(s) · 03:12`.
+
+**Panes.** One `EmbeddedTerminalRenderable` per package (1 MB scrollback), one visible. The PTY
+sink binds the pane at spawn (IT-3). Retention: failures and skips keep their pane (12 newest),
+the 3 latest successes too; others go when the next pane opens — never the one on screen. A
+retry reopens the package's pane under a `› ↻ retry --force` note. gup's own lines (notes,
+spawn failures) are dimmed, behind `›`, on their own line, glyph-mapped in ASCII mode.
+
+**Keys** (`run-keys.ts`). The session gives the takeover every key after the dialogs; Ctrl+C
+never reaches it (the screen owns it). Modes: running, elevating, waiting, typing, done. The
+view calls `preventDefault()` on every key it consumes: `t` focuses the pane while that very key
+is still being dispatched, and OpenTUI would hand it to the pane too. Ctrl+C (through
+`interceptCtrlC`): typing → nothing (the focused pane sends `^C` to the installer); done →
+leave; otherwise skip, or stop on a second press within 1.5 s.
+
+**Typing.** A pane is focusable only while a child is attached and no dialog is open, so `t`
+or a click can only ever reach a running installer; `Ctrl+G` (`preventDefault`, never sent)
+gives the keyboard back, and so does the end of the package. The prompt hint samples the pane
+every 500 ms: 2.5 s of silence on a prompt-looking cursor line.
+
+**Dialogs (IT-5).** Every dialog of the run goes through `RunDialogs`: one at a time (the
+dialog layer holds a single active box; a pipeline question waits behind the stop
+confirmation), and while one is open the panes are locked — blurred first (OpenTUI's `blur()` is
+a no-op on an unfocusable renderable), unfocusable, and the user's input dropped while terminal
+responses still reach the child. A question whose turn comes after a stop is answered "no"
+unseen.
+
+**Elevated step.** `elevationStarted` opens the elevated pane. Windows: `Administrateur (UAC)`,
+two notes, rows tagged `fenêtre admin…`; `s` and `t` are refused (the window is outside gup's
+tree, and `^C` would only kill the waiter and lose the outcomes); `x` stops after the step,
+without a confirmation. POSIX (IT-7): `Administrateur (sudo)`, the `sudo` child runs in the
+pane, `t` to type the password, once for the batch; `s` is refused (it would lose every outcome
+of the batch).
+
+**Waiting (F-6).** `waiting(holder)` shows who holds the update batch and since when; `x` (or
+Ctrl+C ×2) gives up, the guard returns, every package is cancelled.
+
+**Results.** The summary header, the cursor on the first failure, `↑↓` or a click to show what a
+package's pane kept (`Sortie non conservée (mise à jour réussie).` / `Aucune sortie pour ce
+paquet.` otherwise), `Entrée` / `Échap` / `q` / Ctrl+C to leave.
+
+**End-of-run notification.** With `notifyOnDone` and a run of 60 s or more, the view calls
+`renderer.triggerNotification` (written by OpenTUI's renderer, never by gup).
+
+## 16. Panes on the terminal's background (IT-6)
+
+The pane host is a box painted `RGBA.defaultBackground()` — the terminal's own background, not a
+colour — and the panes draw with a transparent background over it. Installers choose colours for
+the user's terminal palette; under a themed background their text could become unreadable, and
+gup's contrast enforcement cannot see it. Only the frame's border and title follow the
+appearance. This is the one colour built outside `ui/theme`, like the dialog's fallback in
+`ui/tui/dialog.ts`, and for the same reason: it names the terminal's default, not a theme
+colour. A UI test renders under an opaque themed background and checks that the pane's cells
+keep the default background while the chrome's do not.
+
+## 17. `gup doctor` and the CLI module (W2-7)
+
+`embeddedTerminalModule` (id `embedded-terminal`) installs the launcher for the menu only
+(command path `""`) — it never runs in the elevated child — and contributes one "Système" line:
+`● Terminal intégré  disponible — mises à jour dans l'interface`, or the unavailable reason
+(`spawn-helper non exécutable — chmod +x <path>` included) followed by `— mises à jour hors de
+l'interface`; status `off` when the user turned it off with `GUP_PTY`, `warn` otherwise.
+
+## 18. Tests (part 2)
+
+| Suite | What it holds |
+|---|---|
+| `tests/ui/run/{run-model,run-lines,run-keys,run-control,prompt-hint}.test.ts` | pure state, rendering, key tables, the gate and Ctrl+C double press, W2-6 signals on an injected emitter |
+| `tests/ui/run/terminal-panes.test.ts` | real `EmbeddedTerminalRenderable`s on the in-memory renderer: one pane at a time, retention, notes, keyboard only with a child, the lock (a click and Enter write nothing, terminal responses still pass), resize |
+| `tests/ui/run/run-view.test.ts` | the real menu, launcher, pipeline, runner and PTY sink on a fake node-pty: nominal run and pruned return, `s`, `x` (Non / Oui), Ctrl+C ×1 and ×2, `q` refused, typing (Ctrl+C forwarded, Ctrl+G never sent), a dialog + a click + Enter write nothing, the UAC wait, the sudo password in the pane, the retry dialog, the waiting holder, the prompt hint, the notification (≥ 60 s, short run), IT-6, the signal gate's lifetime |
+| `tests/ui/app/in-screen-launcher.test.ts` | warm-up, confirmation text, outside fallback with the reason and no second confirmation, decline, no-confirmation preference, double Entrée, pipeline error, run-now `scheduleId` + `returnTo` |
+| `tests/commands/cli/embedded-terminal-module.test.ts` | the launcher installed for the menu only; the doctor line ok / off / warn |
+| `tests/integration/pty-menu-run.test.ts` | one run end to end on a real PTY (ConPTY): three node one-liners as installers, one answered by typing in the pane, the failure's retained output on the results, back to Paquets pruned, no child process left |
+
+Manual smoke (Windows 11, the built CLI in a ConPTY driven by `@xterm/headless`, scratchpad
+script, not committed): a sandboxed npm prefix holding `is-number@6.0.0`; the menu's real scan;
+filter, check, Entrée, confirmation, run view with npm's output in the pane, results, back to
+Paquets without the package, `q`, exit 0 — and the same with `GUP_PTY=off` through the outside
+fallback. Only the sandbox's `is-number` was updated.
+
+## 19. Deviations (part 2) and notes for the wave-3 consolidation
+
+| Spec / plan | Shipped | Why |
+|---|---|---|
+| `controller.updateInScreen` on `MenuController` | The launcher calls `runUpdates` (injectable) | `menu-session.ts` is frozen in wave 2; the cookbook's way to update packages. |
+| IT-5: "the session calls `key.preventDefault()` when a dialog consumes a key" | Panes locked (blurred, unfocusable, user input dropped) while any run dialog is open | Same guarantee without editing the frozen session; every dialog of a run goes through `RunDialogs`. |
+| `RunView.finish(report)` | `finish()` | The model already holds every outcome; the launcher keeps the report for `afterUpdate`. |
+| W2-6: SIGBREAK/SIGTERM/SIGHUP | Same, plus SIGINT on POSIX | Exactly the screen host's exit set: whatever ends the screen closes the gate. |
+| `s` refused during the UAC step | Refused during the POSIX `sudo` step too; `t` refused during the UAC step | Killing the batch's child loses every outcome; typing into the UAC waiter can only kill it. |
+| `x` asks first | No confirmation during the elevated step | Nothing is interrupted there, the run only ends after the step. |
+| — | A repaint on the next turn after the launcher's asynchronous changes | OpenTUI 0.5.14 frame-request race (§14). |
+
+For the consolidation (shared docs are frozen in wave 2): `cli-reference.md` still describes
+updates that leave the screen and should point at the guide; `themes-and-accessibility.md`
+(options-themes) should state IT-6 (installer output uses the terminal's palette); the contrast
+audit (options-themes, then e2e-coverage-ci) can include the run view through the menu driver and
+this launcher; other views that change the idle menu from a promise continuation (lazy loads on
+`onShow`) can hit the same OpenTUI frame race (§14); the real UAC and `sudo` round trips stay
+manual (the UI suites replace `runElevatedBatch`; macOS session for `sudo`).
