@@ -90,8 +90,15 @@ export default defineConfig({
         "src/commands/menu.ts",
       ],
       clean: true,
-      // No global threshold: coverage is a report. Floors on the
-      // safety-critical modules come with the coverage policy.
+      // The global gate stays until the coverage policy replaces it with
+      // floors on the safety-critical modules: dropping it first would leave
+      // every branch merged in between ungated.
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
+      },
     },
   },
 });

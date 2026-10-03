@@ -62,9 +62,10 @@ same results (2,932 tests, 2 skipped on Windows).
 - `tests/support/node-guard.ts` (root global setup) fails the run below
   `package.json#engines.node` with `gup's tests need Node >=26.9.0 (OpenTUI loads its renderer
   through node:ffi). Current: vX.Y.Z.` instead of letting the UI suites die on `node:ffi`.
-- The global 90 % coverage thresholds are gone (CI never ran coverage; `coverage.all` was dropped
-  in wave 0). Coverage is a report until the floors on safety-critical modules land in wave 3.
-  `src/pty-exec.ts` is excluded ahead of its arrival.
+- The global 90 % coverage thresholds stay (`npm run test:coverage`, run by `check.cmd`) until
+  the coverage policy replaces them with floors on the safety-critical modules in wave 3 (testing
+  spec S14): removing the gate before its replacement would leave every wave-2 merge ungated.
+  `coverage.all` was dropped in wave 0; `src/pty-exec.ts` is excluded ahead of its arrival.
 
 ## 4. The fake system (`tests/support/system/`)
 
