@@ -173,6 +173,12 @@ describe("runUpdates: direct installs", () => {
       expect.objectContaining({ providerId: "p", pkg: entry, scheduleId: "s-1" }),
     );
   });
+
+  it("tells every provider not to prompt in a run nobody watches", async () => {
+    const winget = provider("winget");
+    await runUpdates([request("winget", "a")], ports({ decisions: HEADLESS_DECISIONS }));
+    expect(winget.update).toHaveBeenCalledExactlyOnceWith("a", { unattended: true });
+  });
 });
 
 describe("runUpdates: elevated batch", () => {
@@ -241,6 +247,16 @@ describe("runUpdates: retries", () => {
     expect(recordUpdateMock).toHaveBeenLastCalledWith(
       expect.objectContaining({ retry: "retry --force", pkg: pkg("a") }),
     );
+  });
+
+  it("keeps a run nobody watches from prompting on a replay too", async () => {
+    const winget = provider("winget", { a: { success: false, retryable: true } });
+    const chooseRetry = vi.fn<UpdateDecisions["chooseRetry"]>().mockResolvedValueOnce("force");
+    await runUpdates(
+      [request("winget", "a")],
+      ports({ decisions: decisions({ chooseRetry, unattended: true }) }),
+    );
+    expect(winget.update).toHaveBeenLastCalledWith("a", { force: true, unattended: true });
   });
 
   it("keeps the new outcome when a retry succeeds and stops asking", async () => {

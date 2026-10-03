@@ -100,9 +100,10 @@ async function retryOne(
   const { tier, ports } = request;
   ports.observer.started({ item, retry: tier.id });
   const startedAt = Date.now();
+  const base = applyOptionsOf(item, ports.decisions);
   const outcome = await applyUpdate(lookup.provider, item.packageId, {
-    ...applyOptionsOf(item),
-    update: tier.options,
+    ...base,
+    update: { ...tier.options, ...base.update },
     retry: tier.historyLabel,
   });
   ports.observer.finished({ item, retry: tier.id, outcome, durationMs: Date.now() - startedAt });

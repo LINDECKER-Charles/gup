@@ -30,11 +30,15 @@ export const AUTO_DECISIONS: UpdateDecisions = {
   chooseRetry: async () => null,
 };
 
-/** Scheduled runs: nobody is there to answer a UAC or sudo prompt, nor to consent to a retry. */
+/**
+ * Scheduled runs: nobody is there to answer a UAC or sudo prompt, to consent
+ * to a retry, nor to answer an installer's own question.
+ */
 export const HEADLESS_DECISIONS: UpdateDecisions = {
   confirmElevation: async () => false,
   chooseRetry: async () => null,
   declinedElevation: "Droits administrateur requis : non disponible sans surveillance",
+  unattended: true,
 };
 
 export async function runUpdates(
@@ -90,7 +94,8 @@ async function attemptOne(item: PlannedUpdate, ports: UpdatePorts): Promise<Outc
   }
   ports.observer.started({ item });
   const startedAt = Date.now();
-  const outcome = await applyUpdate(lookup.provider, item.packageId, applyOptionsOf(item));
+  const options = applyOptionsOf(item, ports.decisions);
+  const outcome = await applyUpdate(lookup.provider, item.packageId, options);
   ports.observer.finished({ item, outcome, durationMs: Date.now() - startedAt });
   return entryOf(item, outcome);
 }
