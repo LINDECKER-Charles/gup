@@ -93,6 +93,7 @@ export const SELF_TEST_CASES: readonly ProviderContractCase[] = [
     outdated: LISTED_ROWS,
     update: { packageId: "is-odd", installs: [["lm", "upgrade", "is-odd"]] },
     updateAll: "one-batch",
+    batchInstalls: [["lm", "upgrade", "left-pad", "is-odd"]],
   },
   {
     create: () => new StateFileProvider(),

@@ -5,6 +5,7 @@ import { isGoldenRef } from "../fixtures/refs.js";
 import { system } from "../system/fake-system.js";
 import { formatSweepReport, sweepInstalls, sweepScan, type SweepFinding } from "./fault-sweep.js";
 import {
+  batchInstallViolations,
   formatViolation,
   outcomeViolations,
   rowViolations,
@@ -216,14 +217,16 @@ async function updateAllShapeViolations(
   // Synthetic rows reach probes no case scripts: answer them as failures.
   system.explore(isSynthetic);
   const outcomes = await provider.updateAll([...rows]);
+  const installs = installSpawns(system.trace).map((spawn) => spawn.argv);
   const observation = {
     rows,
     outcomes,
-    installCount: installSpawns(system.trace).length,
+    installCount: installs.length,
     installsPerPackage: Math.max(1, contractCase.update?.installs.length ?? 1),
   };
   return [
     ...updateAllViolations(contractCase.updateAll, observation),
+    ...batchInstallViolations(contractCase.batchInstalls, installs),
     // Ids are the shape's business; here, skipped/retryable must still mean failure.
     ...outcomes.flatMap((outcome) => outcomeViolations(outcome, outcome.id)),
   ];
@@ -231,6 +234,25 @@ async function updateAllShapeViolations(
 
 export async function followsUpdateAllShape(contractCase: ProviderContractCase): Promise<void> {
   expectNone(await updateAllShapeViolations(contractCase), contractCase);
+}
+
+/**
+ * Failed installs queued for a failed updateAll: more than any provider
+ * spawns for one batch, fallbacks included, so none of them can succeed.
+ */
+const FAILED_BATCH_INSTALLS = 64;
+
+/** Every install of an updateAll exits 1: no outcome may claim a success. */
+export async function reportsFailedUpdateAll(contractCase: ProviderContractCase): Promise<void> {
+  const { rows, isSynthetic } = await updateAllRows(contractCase);
+  const provider = await providerOn(contractCase);
+  system.explore(isSynthetic);
+  const failures = Array.from({ length: FAILED_BATCH_INSTALLS }, () => ({ exitCode: 1 }));
+  system.answerInstall(...failures);
+  const outcomes = await provider.updateAll([...rows]);
+  const succeeded = outcomes.filter((outcome) => outcome.success);
+  const problems = succeeded.map((outcome) => `${JSON.stringify(outcome.id)} reported success`);
+  failOn(problems, "outcome(s) of a failed updateAll claim a success:");
 }
 
 /** Every waiver must cover a violation the nominal scenario really produces. */

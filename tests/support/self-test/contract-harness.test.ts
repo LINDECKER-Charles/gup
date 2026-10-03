@@ -5,6 +5,7 @@ import {
   listsExpectedRows,
   needsEveryWaiver,
   reportsFailedInstall,
+  reportsFailedUpdateAll,
   routesEveryUpdate,
   staysHidden,
   survivesScanFaults,
@@ -35,6 +36,7 @@ function selfTestCase(index: number): ProviderContractCase {
 
 const RTOOL_ON_WINDOWS = selfTestCase(0);
 const LIST_MANAGER = selfTestCase(2);
+const BATCH_MANAGER = selfTestCase(4);
 
 const FRAGILE: ProviderContractCase = {
   create: () => new FragileProvider(),
@@ -209,6 +211,20 @@ describe("generated checks fail on a broken case", () => {
     await expect(
       routesEveryUpdate({ ...RTOOL_ON_WINDOWS, routes: [route] }, expectation),
     ).rejects.toThrow('via manual: message: "Télécharger rtool" ≠ "Mettre à jour à la main"');
+  });
+
+  it("a batch upgrade other than the pinned one", async () => {
+    const pinned = { ...BATCH_MANAGER, batchInstalls: [["lm", "upgrade", "--all"]] };
+
+    await expect(followsUpdateAllShape(pinned)).rejects.toThrow(
+      'updateAll-shape: installs [["lm","upgrade","left-pad","is-odd"]], ' +
+        'expected [["lm","upgrade","--all"]]',
+    );
+  });
+
+  it("an updateAll reporting success over failed installs", async () => {
+    await expect(reportsFailedUpdateAll(FRAGILE)).rejects.toThrow('"a" reported success');
+    await expect(reportsFailedUpdateAll(BATCH_MANAGER)).resolves.toBeUndefined();
   });
 
   it("a waiver nothing needs", async () => {

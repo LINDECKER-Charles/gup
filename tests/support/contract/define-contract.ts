@@ -7,6 +7,7 @@ import {
   listsExpectedRows,
   needsEveryWaiver,
   reportsFailedInstall,
+  reportsFailedUpdateAll,
   routesEveryUpdate,
   satisfiesRowInvariants,
   staysHidden,
@@ -24,7 +25,8 @@ import type { ContractSuite, ProviderContractCase } from "./types.js";
  * Per case: detection on its machine and on a clean one, the exact rows (or a
  * golden), the row invariants, a fault sweep of the scan, the install argv and
  * its failure handling when `update` is declared, the same update on every
- * declared route, and the `updateAll` shape.
+ * declared route, and the `updateAll` shape (with its batch argv when pinned)
+ * and failure handling.
  * Every test loads its own machine; nothing is shared between them.
  */
 export function defineProviderContract(suite: ContractSuite): void {
@@ -62,6 +64,10 @@ function defineCase(contractCase: ProviderContractCase): void {
   it("does nothing for an empty updateAll", () => ignoresEmptyUpdateAll(contractCase));
   it(`updateAll follows the ${contractCase.updateAll} shape`, () =>
     followsUpdateAllShape(contractCase));
+  if (contractCase.updateAll !== "skipped") {
+    it("reports a failed updateAll as failed outcomes", () =>
+      reportsFailedUpdateAll(contractCase));
+  }
   if ((contractCase.waivers ?? []).length > 0) {
     it("needs every declared waiver", () => needsEveryWaiver(contractCase));
   }

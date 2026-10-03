@@ -77,6 +77,12 @@ export interface ProviderContractCase {
   /** `update.packageId` on further machines, one per installer the provider routes to. */
   readonly routes?: readonly UpdateRoute[];
   readonly updateAll: UpdateAllShape;
+  /**
+   * The exact installs `updateAll(rows)` spawns for the nominal rows, for a
+   * provider whose batch command is not one of its per-package installs
+   * (`brew upgrade --formula`, `choco upgrade all -y`…).
+   */
+  readonly batchInstalls?: readonly (readonly string[])[];
   readonly waivers?: readonly Waiver[];
 }
 

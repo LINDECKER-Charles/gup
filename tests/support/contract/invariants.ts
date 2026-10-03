@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../../src/core/types.js";
 import type { SpawnRecord } from "../system/types.js";
 import type { InvariantId, UpdateAllShape, Violation, Waiver } from "./types.js";
@@ -166,6 +167,16 @@ export function updateAllViolations(
   return shapeProblems(shape, observation).map((problem) =>
     makeViolation("updateAll-shape", `${shape}: ${problem}`),
   );
+}
+
+/** updateAll-shape: the batch spawned exactly the installs the case pins, when it pins any. */
+export function batchInstallViolations(
+  expected: readonly (readonly string[])[] | undefined,
+  actual: readonly (readonly string[])[],
+): Violation[] {
+  if (expected === undefined || isDeepStrictEqual(actual, expected)) return [];
+  const detail = `installs ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}`;
+  return [makeViolation("updateAll-shape", detail)];
 }
 
 /** The violations no waiver covers. */
