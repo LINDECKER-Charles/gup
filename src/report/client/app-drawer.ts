@@ -74,8 +74,11 @@ function restoreFocus() {
   const origin = state.drawerReturn;
   state.drawerReturn = null;
   if (origin === null) return;
-  const target = origin.element && origin.element.isConnected
-    ? origin.element
+  // A row clicked outside its button leaves the focus on the page itself: use the button then.
+  const element = origin.element;
+  const isControl = element && element !== document.body && element.isConnected;
+  const target = isControl
+    ? element
     : document.querySelector("[data-page-section]:not([hidden]) .package-link[data-package=\"" +
       origin.index + "\"]");
   if (target && typeof target.focus === "function") target.focus();

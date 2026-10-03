@@ -29,9 +29,13 @@ const packagesTable = {
   isDescending: true,
   limit: PAGE_SIZE,
   rows: null,
+  shownQuery: null,
 };
 
-PAGES.packages = page("packages", renderPackages, refreshPackages);
+// Redrawn on a visit only when the search changed meanwhile: a closed drawer finds its row again.
+PAGES.packages = page("packages", renderPackages, () => {
+  if (packagesTable.shownQuery !== state.query) refreshPackages();
+});
 
 function renderPackages(body) {
   if (MODEL.packages.length === 0) {
@@ -94,6 +98,7 @@ function sortPackagesBy(column) {
 function refreshPackages() {
   const body = byId(IDS.packagesBody);
   if (body === null) return;
+  packagesTable.shownQuery = state.query;
   const rows = sortedPackages(filteredPackages());
   body.replaceChildren(...rows.slice(0, packagesTable.limit).map(packageRow));
   if (rows.length === 0) {

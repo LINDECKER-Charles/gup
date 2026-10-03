@@ -91,7 +91,8 @@ function initHeader() {
   document.querySelectorAll("[data-nav]").forEach((item) => {
     const name = item.getAttribute("data-nav");
     on(item, "click", () => {
-      state.focusPage = true;
+      // Only a move to another page takes the focus to its heading.
+      if (name !== state.page) state.focusPage = true;
     });
     const badge = item.querySelector(".nav-count");
     if (badge !== null && counts[name] !== undefined) badge.textContent = fmtNumber(counts[name]);

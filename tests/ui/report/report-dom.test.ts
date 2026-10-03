@@ -278,9 +278,7 @@ describe("report page: packages", () => {
 
     expect(isOpen(page)).toBe(false);
     expect(page.window.location.hash).toBe("#/packages");
-    const focused = page.window.document.activeElement;
-    expect(focused?.className).toBe("package-link");
-    expect(focused?.textContent).toBe("Google.Chrome");
+    expect(page.window.document.activeElement).toBe(button);
   });
 
   it("opens the drawer from its address, and Back closes it", async () => {
@@ -325,6 +323,25 @@ describe("report page: failures and sessions", () => {
     expect(chips.map((chip) => chip.getAttribute("aria-pressed"))).toEqual(["false", "true", "false"]);
     expect(page.text("#sessions-count")).toBe("1 session");
     expect(page.text(".session summary")).toContain("Ligne de commande");
+  });
+
+  it("leaves an opened session as it was after a look at one of its packages", async () => {
+    const page = await openReport(reportModelOf(EVENTS), "#/sessions");
+    const session = page.$(".session") as unknown as { open: boolean; dispatchEvent(event: unknown): boolean };
+    session.open = true;
+    session.dispatchEvent(new page.window.Event("toggle"));
+    const button = page.$(".session .attempt .package-link") as unknown as { focus(): void; click(): void };
+
+    button.focus();
+    button.click();
+    await page.settle();
+    expect(isOpen(page)).toBe(true);
+    click(page, "#drawer-close");
+    await page.settle();
+
+    expect(page.window.location.hash).toBe("#/sessions");
+    expect(session.open).toBe(true);
+    expect(page.window.document.activeElement).toBe(button);
   });
 });
 

@@ -14,13 +14,18 @@ const sessionsView = {
   day: "",
   limit: SESSIONS_PAGE,
   days: null,
+  shownDay: null,
 };
 const failuresView = { limit: FAILURES_PAGE };
 let rowsByRun = null;
 
-PAGES.failures = page("failures", renderFailures, refreshFailures);
+PAGES.failures = page("failures", renderFailures);
+// Redrawn only when the day asked for changes: opening a package from a session and
+// closing it again must leave the sessions as they were (open ones stay open).
 PAGES.sessions = page("sessions", renderSessions, (route) => {
-  sessionsView.day = route.query.get("day") || "";
+  const day = route.query.get("day") || "";
+  if (day === sessionsView.shownDay) return;
+  sessionsView.day = day;
   refreshSessions();
 });
 
@@ -40,6 +45,7 @@ function renderFailures(body) {
     h("div", { class: "failure-list", id: IDS.failuresList }),
     h("div", { class: "more-slot", id: IDS.failuresMore }),
   ]);
+  refreshFailures();
 }
 
 function refreshFailures() {
@@ -105,6 +111,7 @@ function statusChips() {
 function refreshSessions() {
   const list = byId(IDS.sessionsList);
   if (list === null) return;
+  sessionsView.shownDay = sessionsView.day;
   const runs = filteredRuns();
   list.replaceChildren(...sessionGroups(runs.slice(0, sessionsView.limit)));
   if (runs.length === 0) list.append(emptyState(t("sessions.noMatch")));
