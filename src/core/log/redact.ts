@@ -36,9 +36,14 @@ const SECRET_RULES: readonly Rule[] = [
     /\b(Bearer|Basic)\s{1,8}(?=[a-z]{0,2048}[A-Z0-9._~+/=-])[A-Za-z0-9._~+/=-]{8,2048}/g,
     "$1 ***",
   ],
-  // password=…, token: …, api-key=…
+  // password=…, token: …
   [
-    /\b(pass(?:wd|word)|pwd|secret|token|(?:api|access)[_-]?key|client[_-]?secret)(\s{0,3}[=:]\s{0,3})[^\s"',;\\]{1,512}/gi,
+    /\b(pass(?:wd|word)|pwd|secret|token)(\s{0,3}[=:]\s{0,3})[^\s"',;\\]{1,512}/gi,
+    "$1$2***",
+  ],
+  // api-key=…, client_secret: …
+  [
+    /\b((?:api|access)[_-]?key|client[_-]?secret)(\s{0,3}[=:]\s{0,3})[^\s"',;\\]{1,512}/gi,
     "$1$2***",
   ],
   // Token formats: GitHub, npm, GitLab, Slack, AWS access keys, Google API keys, JWTs.
