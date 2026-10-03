@@ -137,6 +137,8 @@ export class MenuSession {
       dialogs: this.#dialogs,
       updates: launcherFactory()(this.launcherContext()),
       preferences,
+      packageActions: () => this.#views.packageActions(),
+      packageMarkers: () => this.#views.packageMarkers(),
       displayName: (providerId) => controller.displayName(providerId),
       redraw: () => this.draw(),
       show: (view) => {

@@ -290,3 +290,48 @@ describe("MenuSession preferences", () => {
     expect(await menu.frame()).toContain("+ prêt");
   });
 });
+
+describe("MenuSession package contributions", () => {
+  const SCHEDULED: ProviderScanResult = {
+    providerId: "winget",
+    available: true,
+    packages: [pkg("zlib", "1.0.0", "1.0.1"), pkg("Git.Git", "2.51.0", "3.0.0")],
+  };
+
+  /** Packages, plus a Journal view that adds `p` and marks Git.Git. */
+  function withContributions(run: (selection: readonly unknown[]) => void) {
+    const contributor: ViewDefinition = {
+      ...testView(() => panelOf()),
+      packageActions: () => [
+        { key: "p", hint: "p planifier", emptyNotice: "rien de coché", run },
+      ],
+      packageMarkers: () => [
+        { glyphFor: (_providerId, item) => (item.id === "Git.Git" ? "◷" : null) },
+      ],
+    };
+    return [...defaultViews(), contributor];
+  }
+
+  it("shows other views' keys and marks in Paquets, keys acting on checked rows", async () => {
+    const run = vi.fn();
+    const menu = await bootMenu({
+      scans: [SCHEDULED],
+      views: withContributions(run),
+      size: { cols: 160, rows: 30 },
+    });
+    const text = await menu.waitForText("Git.Git");
+    expect(text).toContain("p planifier");
+    expect(text).toMatch(/◷ Git\.Git/);
+    await menu.press("down", "space", "p");
+    expect(run).toHaveBeenCalledWith([{ providerId: "winget", pkg: SCHEDULED.packages[0] }]);
+  });
+
+  it("re-sorts Paquets as soon as the preferred order changes", async () => {
+    const menu = await bootMenu({ scans: [SCHEDULED] });
+    const before = await menu.waitForText("Git.Git");
+    expect(before.indexOf("zlib")).toBeLessThan(before.indexOf("Git.Git"));
+    menu.setPreferences({ packageSort: "bump" });
+    const after = await menu.frame();
+    expect(after.indexOf("Git.Git")).toBeLessThan(after.indexOf("zlib"));
+  });
+});

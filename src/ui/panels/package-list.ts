@@ -3,6 +3,8 @@ import type {
   ProviderScanResult,
   SelectedPackage,
 } from "../../core/types.js";
+import type { PackageSort } from "../app/ui-preferences.js";
+import { orderPackages } from "./package-order.js";
 
 export type PackageRow =
   | { readonly kind: "group"; readonly providerId: string; readonly title: string }
@@ -13,6 +15,14 @@ export type PackageRow =
       readonly title: string;
       readonly error: string;
     };
+
+export interface PackageListOptions {
+  /**
+   * Package order inside each provider (default: as scanned). Read on every
+   * use, so a preference changed while the list is on screen applies at once.
+   */
+  readonly sort?: () => PackageSort;
+}
 
 interface Group {
   readonly providerId: string;
@@ -30,13 +40,20 @@ interface Group {
  * only acts on what the filter currently shows.
  */
 export class PackageList {
-  readonly #groups: readonly Group[];
+  readonly #scanned: readonly Group[];
+  readonly #sortOf: () => PackageSort;
+  #ordered: { readonly sort: PackageSort; readonly groups: readonly Group[] } | null = null;
   readonly #checked = new Set<string>();
   #filter = "";
   #cursor = 0;
 
-  constructor(scans: readonly ProviderScanResult[], nameOf: (providerId: string) => string) {
-    this.#groups = [...scans]
+  constructor(
+    scans: readonly ProviderScanResult[],
+    nameOf: (providerId: string) => string,
+    options: PackageListOptions = {},
+  ) {
+    this.#sortOf = options.sort ?? (() => "provider");
+    this.#scanned = [...scans]
       .filter((scan) => scan.packages.length > 0 || scan.error)
       .sort((a, b) => nameOf(a.providerId).localeCompare(nameOf(b.providerId)))
       .map((scan) => ({
@@ -48,7 +65,7 @@ export class PackageList {
   }
 
   get rows(): PackageRow[] {
-    return this.#groups.flatMap((group) => this.groupRows(group));
+    return this.groups().flatMap((group) => this.groupRows(group));
   }
 
   get cursor(): number {
@@ -61,12 +78,12 @@ export class PackageList {
 
   /** Every package, filter or not. */
   get total(): number {
-    return this.#groups.reduce((n, g) => n + g.packages.length, 0);
+    return this.groups().reduce((n, g) => n + g.packages.length, 0);
   }
 
   /** Checked packages in display order, including those the filter hides. */
   get selection(): SelectedPackage[] {
-    return this.#groups.flatMap((g) =>
+    return this.groups().flatMap((g) =>
       g.packages
         .filter((pkg) => this.#checked.has(keyOf(g.providerId, pkg)))
         .map((pkg) => ({ providerId: g.providerId, pkg })),
@@ -114,7 +131,7 @@ export class PackageList {
 
   /** Check every visible package, or clear them all when they already are. */
   toggleAllVisible(): void {
-    this.setAll(this.#groups.map((g) => g.providerId));
+    this.setAll(this.groups().map((g) => g.providerId));
   }
 
   private setAll(providerIds: readonly string[]): void {
@@ -131,8 +148,21 @@ export class PackageList {
     else this.#checked.add(key);
   }
 
+  /** The groups, packages in the preferred order — re-ordered only when the order changes. */
+  private groups(): readonly Group[] {
+    const sort = this.#sortOf();
+    const cached = this.#ordered;
+    if (cached?.sort === sort) return cached.groups;
+    const groups = this.#scanned.map((group) => ({
+      ...group,
+      packages: orderPackages(group.packages, sort),
+    }));
+    this.#ordered = { sort, groups };
+    return groups;
+  }
+
   private visiblePackages(providerId: string): readonly OutdatedPackage[] {
-    const group = this.#groups.find((g) => g.providerId === providerId);
+    const group = this.groups().find((g) => g.providerId === providerId);
     if (!group) return [];
     return this.matchesGroup(group)
       ? group.packages

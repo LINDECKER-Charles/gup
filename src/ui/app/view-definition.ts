@@ -1,5 +1,6 @@
 import type { BoxRenderable } from "@opentui/core";
 import type { MenuState } from "../../commands/menu-state.js";
+import type { OutdatedPackage, SelectedPackage } from "../../core/types.js";
 import type { Panel } from "../panels/panel.js";
 import type { ScanObserver } from "../panels/scan-panel.js";
 import type { DialogLayer } from "../tui/dialog.js";
@@ -24,6 +25,26 @@ export type ViewId = "scan" | "packages" | "schedules" | "providers" | "journal"
 export interface SidebarBadge {
   readonly text: string;
   readonly tone: Tone;
+}
+
+/**
+ * A key another view adds to Paquets (the scheduler's `p planifier`). It acts
+ * on the checked packages only, like Entrée: with nothing checked, Paquets
+ * shows `emptyNotice` instead.
+ */
+export interface PackageAction {
+  /** `KeyPress.name`; never a key Paquets already uses (see RESERVED_PACKAGE_KEYS). */
+  readonly key: string;
+  /** Shown in the key-hint bar: "p planifier". */
+  readonly hint: string;
+  readonly emptyNotice: string;
+  /** Called with a non-empty checked set only. */
+  run(selection: readonly SelectedPackage[]): void;
+}
+
+/** A one-column mark another view adds after a package's checkbox (`◷` scheduled). */
+export interface PackageMarker {
+  glyphFor(providerId: string, pkg: OutdatedPackage): string | null;
 }
 
 /** A key handed to a takeover: it may stop the terminal's default handling. */
@@ -55,6 +76,10 @@ export interface ViewContext {
   readonly updates: UpdateLauncher;
   /** The user's menu preferences, as they are now (they change live). */
   readonly preferences: () => UiPreferences;
+  /** Every view's actions on the checked packages, in sidebar order. */
+  readonly packageActions: () => readonly PackageAction[];
+  /** Every view's package marks, in sidebar order. */
+  readonly packageMarkers: () => readonly PackageMarker[];
   displayName(providerId: string): string;
   redraw(): void;
   /** Bring a registered view to the front (ignored for one that is not registered). */
@@ -89,4 +114,8 @@ export interface ViewDefinition {
   badge?(context: ViewContext): SidebarBadge | null;
   /** Facts this view adds to the title bar. */
   facts?(context: ViewContext): readonly string[];
+  /** Keys this view adds to Paquets. */
+  packageActions?(context: ViewContext): readonly PackageAction[];
+  /** Marks this view adds to Paquets' rows. */
+  packageMarkers?(context: ViewContext): readonly PackageMarker[];
 }

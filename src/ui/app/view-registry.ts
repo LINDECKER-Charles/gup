@@ -1,12 +1,18 @@
 import type { Density } from "../theme/appearance.js";
 import type { Panel } from "../panels/panel.js";
 import { QUIT, sidebarEntries, type SidebarEntry, type SidebarLayout } from "./sidebar.js";
-import type { ViewContext, ViewDefinition, ViewId } from "./view-definition.js";
+import type {
+  PackageAction,
+  PackageMarker,
+  ViewContext,
+  ViewDefinition,
+  ViewId,
+} from "./view-definition.js";
 
 /**
  * The views of one menu session: their definitions, the panel each one built,
- * which one is in front, and what they contribute to the sidebar (entries,
- * badges) and the title bar (facts).
+ * which one is in front, and what they contribute to the rest of the menu:
+ * sidebar entries and badges, title-bar facts, actions and marks in Paquets.
  */
 export class ViewRegistry {
   /** Sidebar entries: the views by group then order, then "Quitter". */
@@ -62,7 +68,24 @@ export class ViewRegistry {
 
   /** Every view's title-bar facts, in sidebar order. */
   facts(): string[] {
-    return this.entries.flatMap((entry) => this.definitionOf(entry)?.facts?.(this.context()) ?? []);
+    return this.collect((view) => view.facts?.(this.context()) ?? []);
+  }
+
+  /** Every view's actions on the checked packages, in sidebar order. */
+  packageActions(): PackageAction[] {
+    return this.collect((view) => view.packageActions?.(this.context()) ?? []);
+  }
+
+  /** Every view's package marks, in sidebar order. */
+  packageMarkers(): PackageMarker[] {
+    return this.collect((view) => view.packageMarkers?.(this.context()) ?? []);
+  }
+
+  private collect<T>(contribution: (view: ViewDefinition) => readonly T[]): T[] {
+    return this.entries.flatMap((entry) => {
+      const view = this.definitionOf(entry);
+      return view ? contribution(view) : [];
+    });
   }
 
   private definitionOf(entry: SidebarEntry): ViewDefinition | undefined {

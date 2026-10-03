@@ -32,7 +32,7 @@ function mountPicker(
 ): void {
   const chrome = new Chrome(screen);
   const view = new TextPanel(screen, chrome.body, { id: "gup-packages", title: "Paquets" });
-  const packages = new PackagesPanel(resolve);
+  const packages = new PackagesPanel({ onLaunch: resolve });
   packages.setList(list);
   const viewport = () => bodyPanelSize(screen);
   const draw = (): void => {
