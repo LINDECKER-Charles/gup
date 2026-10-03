@@ -22,6 +22,7 @@ describe("CLI_MODULES", () => {
       "__admin-batch",
       "doctor",
       "list",
+      "log",
       "update",
     ]);
     const help = program.helpInformation();
