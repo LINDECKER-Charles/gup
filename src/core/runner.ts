@@ -239,7 +239,7 @@ export async function run(
   return {
     stdout: String(result.stdout ?? ""),
     stderr: String(result.stderr ?? ""),
-    exitCode: typeof result.exitCode === "number" ? result.exitCode : -1,
+    exitCode: exitCodeOf(result.exitCode),
     failed: Boolean(result.failed) || result.exitCode !== 0,
     ...(result.timedOut === true && { timedOut: true }),
   };
@@ -341,12 +341,36 @@ function inheritResult(
   const out: RunResult = {
     stdout: "",
     stderr: "",
-    exitCode: typeof result.exitCode === "number" ? result.exitCode : -1,
+    exitCode: exitCodeOf(result.exitCode),
     failed: Boolean(result.failed) || result.exitCode !== 0,
   };
   if (flags.timedOut) out.timedOut = true;
   if (flags.aborted) out.aborted = true;
   return out;
+}
+
+/** Reported when the child has no exit code (killed by a signal, never spawned). */
+const NO_EXIT_CODE = -1;
+
+/** The child's exit code in its normalised form, or {@link NO_EXIT_CODE}. */
+function exitCodeOf(exitCode: unknown): number {
+  return typeof exitCode === "number" ? normalizeExitCode(exitCode) : NO_EXIT_CODE;
+}
+
+/**
+ * One representation for an exit code, whoever reports it. A Windows exit
+ * code is a 32-bit value that execa reports unsigned (`-1` comes back as
+ * 4294967295, STATUS_CONTROL_C_EXIT as 3221225786), while `%ERRORLEVEL%`,
+ * node-pty and installer documentation show it signed — Visual Studio's
+ * "cancelled" is -1073741510. Reading it as signed makes those documented
+ * values match; small codes (2, 1641, 3010) are the same either way. POSIX
+ * exit statuses are 0..255 and pass through.
+ */
+export function normalizeExitCode(
+  code: number,
+  platform: NodeJS.Platform = process.platform,
+): number {
+  return platform === "win32" ? code | 0 : code;
 }
 
 const ROOT_UID = 0;

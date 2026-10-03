@@ -12,6 +12,7 @@ import {
   consumeInterrupt,
   getInstallTimeoutSeconds,
   isElevated,
+  normalizeExitCode,
   run,
   runInherit,
   setInstallTimeoutSeconds,
@@ -191,6 +192,35 @@ describe("runner.runInherit", () => {
   it("rejects unsafe command name without invoking execa", async () => {
     await expect(runInherit("foo;bar")).rejects.toThrow(/runner:/);
     expect(execaMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("runner exit codes", () => {
+  it("reads Windows exit codes as signed 32-bit integers", () => {
+    expect(normalizeExitCode(4294967295, "win32")).toBe(-1);
+    expect(normalizeExitCode(3221225786, "win32")).toBe(-1073741510);
+    expect(normalizeExitCode(2316632107, "win32")).toBe(-1978335189);
+    expect(normalizeExitCode(3010, "win32")).toBe(3010);
+    expect(normalizeExitCode(-1, "win32")).toBe(-1);
+  });
+
+  it("leaves POSIX exit statuses untouched", () => {
+    expect(normalizeExitCode(130, "linux")).toBe(130);
+    expect(normalizeExitCode(255, "darwin")).toBe(255);
+  });
+
+  it("reports the signed code from both spawn paths on Windows", async () => {
+    setPlatform("win32");
+    // Visual Studio's "cancelled", as execa reports it.
+    execaMock.mockReturnValue(mkExecaResult({ exitCode: 3221225786, failed: true }));
+    await expect(runInherit("vs_installer.exe")).resolves.toMatchObject({
+      exitCode: -1073741510,
+      failed: true,
+    });
+    await expect(run("vs_installer.exe")).resolves.toMatchObject({
+      exitCode: -1073741510,
+      failed: true,
+    });
   });
 });
 

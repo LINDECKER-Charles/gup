@@ -228,3 +228,22 @@ describe.runIf(process.platform === "win32")("runner: Windows .cmd shims", () =>
     }
   });
 }, SPAWN_TIMEOUT_MS);
+
+// ---------------------------------------------------------------------------
+// Windows-only: exit codes beyond 0..255
+// ---------------------------------------------------------------------------
+
+describe.runIf(process.platform === "win32")("runner: Windows exit codes", () => {
+  it("reports codes as signed 32-bit values, the way installers document them", async () => {
+    // 0xC000013A, STATUS_CONTROL_C_EXIT: Visual Studio's "cancelled".
+    const cancelled = "process.exit(-1073741510)";
+    await expect(run(process.execPath, ["-e", cancelled])).resolves.toMatchObject({
+      exitCode: -1073741510,
+      failed: true,
+    });
+    await expect(runInherit(process.execPath, ["-e", "process.exit(-1)"])).resolves.toMatchObject({
+      exitCode: -1,
+      failed: true,
+    });
+  });
+}, SPAWN_TIMEOUT_MS);
