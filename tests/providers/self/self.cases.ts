@@ -38,7 +38,7 @@ function selfCase(scenario: string, target: SelfCase): ProviderContractCase {
 
 // --- Windows package managers ---------------------------------------------------
 
-export const WINGET_MANUAL_NOTE =
+const WINGET_MANUAL_NOTE =
   "Mise à jour via le Microsoft Store (App Installer) ou https://github.com/microsoft/winget-cli/releases";
 
 /** winget ships with App Installer: no CLI self-update, a manual row. */
@@ -111,7 +111,7 @@ const CHOCO = selfCase("choco", {
   update: { packageId: "choco", installs: [["choco", "upgrade", "chocolatey", "-y"]] },
 });
 
-export const GH_MANUAL_MESSAGE =
+const GH_MANUAL_MESSAGE =
   "Télécharger https://github.com/cli/cli/releases et remplacer gh.exe";
 
 /** gh has no self-update: the installer that owns it upgrades it. */

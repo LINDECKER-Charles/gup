@@ -14,7 +14,7 @@ export const CARGO_HOME_BIN = `${WIN_HOME}\\.cargo\\bin`;
 
 // --- cargo (cargo-update plugin) ------------------------------------------------
 
-export const CARGO_PLUGIN_PROBE = ["cargo", "install-update", "--version"];
+const CARGO_PLUGIN_PROBE = ["cargo", "install-update", "--version"];
 
 /**
  * The table layout the parser reads: header, separator, then name, one

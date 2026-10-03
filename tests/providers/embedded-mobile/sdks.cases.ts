@@ -22,7 +22,7 @@ import type { CommandAnswer, HttpRoute, SystemSpec } from "../../support/system/
 
 // --- Android SDK ----------------------------------------------------------------------
 
-export const SDKMANAGER_LIST = ["sdkmanager", "--list"];
+const SDKMANAGER_LIST = ["sdkmanager", "--list"];
 
 /** sdkmanager on PATH printing `stdout` for `--list`. */
 export function sdkManagerMachine(stdout: string): SystemSpec {
@@ -66,11 +66,11 @@ const ANDROID_SDK: ProviderContractCase = {
 
 // --- Arduino CLI ----------------------------------------------------------------------
 
-export const ARDUINO_VERSION = ["arduino-cli", "version", "--format", "json"];
-export const ARDUINO_OUTDATED = ["arduino-cli", "outdated", "--format", "json"];
-export const ARDUINO_RELEASE = githubLatest("arduino/arduino-cli", "v0.35.0");
+const ARDUINO_VERSION = ["arduino-cli", "version", "--format", "json"];
+const ARDUINO_OUTDATED = ["arduino-cli", "outdated", "--format", "json"];
+const ARDUINO_RELEASE = githubLatest("arduino/arduino-cli", "v0.35.0");
 
-export interface ArduinoMachine {
+interface ArduinoMachine {
   readonly version: CommandAnswer;
   readonly outdated: CommandAnswer;
   readonly http?: readonly HttpRoute[];
@@ -156,7 +156,7 @@ export function rubygemsLatest(version?: string): HttpRoute {
   };
 }
 
-export const FASTLANE_VERSION = ["fastlane", "--version"];
+const FASTLANE_VERSION = ["fastlane", "--version"];
 
 /** fastlane prints where it is installed before its version line. */
 export function fastlaneMachine(stdout: string): SystemSpec {

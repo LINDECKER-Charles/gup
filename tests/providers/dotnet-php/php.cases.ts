@@ -25,7 +25,7 @@ const COMPOSER_BIN = "C:\\ProgramData\\ComposerSetup\\bin\\composer.bat";
 
 // --- Composer global packages ---------------------------------------------------
 
-export const COMPOSER_OUTDATED_ARGV = [
+const COMPOSER_OUTDATED_ARGV = [
   "composer",
   "global",
   "outdated",

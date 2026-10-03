@@ -201,7 +201,7 @@ const PIPX: ProviderContractCase = {
 
 // --- uv tools -------------------------------------------------------------------
 
-export const UV_TOOL_LIST_ARGV = ["uv", "tool", "list"];
+const UV_TOOL_LIST_ARGV = ["uv", "tool", "list"];
 
 /** uv answering `listing` for `uv tool list`, PyPI answering `http`. */
 export function uvMachine(

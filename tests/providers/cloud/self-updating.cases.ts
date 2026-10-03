@@ -33,7 +33,7 @@ function named(cases: readonly ProviderContractCase[], scenario: string): Provid
 
 // --- Azure CLI ------------------------------------------------------------------------
 
-export const AZ_VERSION_ARGV = ["az", "version", "-o", "json"];
+const AZ_VERSION_ARGV = ["az", "version", "-o", "json"];
 
 /** `az` on PATH printing `json` for `az version -o json`. */
 export function azMachine(json: unknown): SystemSpec {
@@ -83,8 +83,8 @@ const [FLYCTL_ONLY] = named(selfUpdatingToolCases(flyTool("flyctl")), "flyctl bi
 
 // --- gcloud ---------------------------------------------------------------------------
 
-export const GCLOUD_COMPONENTS = ["gcloud", "components", "list", "--format=json", "--quiet"];
-export const GCLOUD_UPDATE = ["gcloud", "components", "update", "--quiet"];
+const GCLOUD_COMPONENTS = ["gcloud", "components", "list", "--format=json", "--quiet"];
+const GCLOUD_UPDATE = ["gcloud", "components", "update", "--quiet"];
 
 /** gcloud on PATH listing `components`. */
 export function gcloudMachine(components: readonly unknown[]): SystemSpec {
@@ -146,7 +146,7 @@ export function pipUpgradeArgv(launcher: readonly string[], pkg: string): string
   return [...launcher, "install", "--user", "--upgrade", "--disable-pip-version-check", pkg];
 }
 
-export interface PipCli {
+interface PipCli {
   readonly create: () => Provider;
   readonly id: string;
   readonly name: string;

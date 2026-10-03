@@ -13,8 +13,8 @@ import type { HttpRoute, SystemSpec } from "../../support/system/types.js";
 
 export const XCODES_VERSION_ARGV = ["xcodes", "version"];
 /** XcodesOrg tags without a `v`. */
-export const XCODES_RELEASE = githubLatest("XcodesOrg/xcodes", "2.1.0");
-export const XCODES_MANUAL_MESSAGE =
+const XCODES_RELEASE = githubLatest("XcodesOrg/xcodes", "2.1.0");
+const XCODES_MANUAL_MESSAGE =
   "Installation manuelle : télécharger la dernière version sur " +
   "https://github.com/XcodesOrg/xcodes/releases et remplacer le binaire xcodes.";
 
@@ -27,7 +27,7 @@ export function xcodesMachine(version: string, release: HttpRoute = XCODES_RELEA
 }
 
 /** A hand-installed xcodes: nothing owns /usr/local/bin/xcodes. */
-export const XCODES_BY_HAND: SystemSpec = {
+const XCODES_BY_HAND: SystemSpec = {
   platform: "darwin",
   bin: { xcodes: "/usr/local/bin/xcodes" },
   commands: [{ argv: XCODES_VERSION_ARGV, stdout: "2.0.3" }],

@@ -20,12 +20,12 @@ import { asUtf16, wslHost } from "./wsl.cases.js";
 export const LIST_DISTROS = ["wsl", "-l", "-q"];
 
 /** `script` run in `distro` as the default user. */
-export function inDistro(distro: string, script: string): string[] {
+function inDistro(distro: string, script: string): string[] {
   return ["wsl", "-d", distro, "-e", "bash", "-lc", script];
 }
 
 /** `script` run in `distro` as root, so no sudo prompt can stall it. */
-export function asRootIn(distro: string, script: string): string[] {
+function asRootIn(distro: string, script: string): string[] {
   return ["wsl", "-d", distro, "-u", "root", "-e", "bash", "-lc", script];
 }
 
@@ -36,7 +36,7 @@ export interface Distro {
 }
 
 /** What `wsl -l -q` prints for `names`: one per line, in UTF-16. */
-export function distroListing(names: readonly string[]): string {
+function distroListing(names: readonly string[]): string {
   return asUtf16(names.map((name) => `${name}\r\n`).join(""));
 }
 
@@ -53,7 +53,7 @@ export function distrosMachine(
 }
 
 /** The probe `distroHasBinary` runs: `command -v`, then the fallback paths. */
-export function binaryProbe(
+function binaryProbe(
   distro: string,
   binary: string,
   extraPaths: readonly string[] = [],
@@ -163,11 +163,11 @@ const NIX_ENV =
   "if [ -f /etc/profile.d/nix.sh ]; then . /etc/profile.d/nix.sh; " +
   'elif [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then . "$HOME/.nix-profile/etc/profile.d/nix.sh"; fi';
 
-export function nixProbe(distro: string): string[] {
+function nixProbe(distro: string): string[] {
   return binaryProbe(distro, "nix-env", NIX_PATHS);
 }
 
-export function nixUpgrade(distro: string): string[] {
+function nixUpgrade(distro: string): string[] {
   return inDistro(distro, `${NIX_ENV} && nix-channel --update && nix-env -u '*'`);
 }
 

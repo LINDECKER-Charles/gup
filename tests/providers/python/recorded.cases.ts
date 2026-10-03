@@ -11,7 +11,7 @@ import { PIP_INSTALL_ARGS, PIP_LIST_ARGS } from "./python.cases.js";
  */
 
 /** The neutral names of the recorded report, in its order. */
-export const RECORDED_PIP_PACKAGES = Array.from(
+const RECORDED_PIP_PACKAGES = Array.from(
   { length: 10 },
   (_, index) => `package-${String(index + 1).padStart(2, "0")}`,
 );

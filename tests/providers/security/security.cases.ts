@@ -144,7 +144,7 @@ const TRIVY: ReleasedTool = {
 
 // --- ProjectDiscovery: self-updating ----------------------------------------
 
-export const NUCLEI_VERSION_ARGV = ["nuclei", "-version"];
+const NUCLEI_VERSION_ARGV = ["nuclei", "-version"];
 export const NUCLEI_RELEASE = githubLatest("projectdiscovery/nuclei", "v3.3.0");
 const NUCLEI_BINARY = `${WIN_HOME}\\go\\bin\\nuclei.exe`;
 
@@ -181,7 +181,7 @@ const NUCLEI_TEMPLATES: SelfUpdatingTool = {
 };
 
 export const PDTM_SELF_UPDATE = ["pdtm", "-up"];
-export const PDTM_UPDATE_ALL = ["pdtm", "-ua"];
+const PDTM_UPDATE_ALL = ["pdtm", "-ua"];
 
 export function pdtmMachine(answer: CommandAnswer): SystemSpec {
   return {
@@ -213,7 +213,7 @@ export function pipUpgradeArgv(python: string): string[] {
   return [python, "-m", "pip", "install", "--upgrade", "--disable-pip-version-check", "semgrep"];
 }
 
-export interface SemgrepMachine {
+interface SemgrepMachine {
   readonly platform: "win32" | "linux";
   readonly semgrep: string;
   /** The interpreter beside semgrep, when there is one. */

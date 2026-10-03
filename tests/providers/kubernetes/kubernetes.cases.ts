@@ -183,7 +183,7 @@ export function kubectlStable(tag: string): HttpRoute {
 }
 
 /** `kubectl version --client -o json` for `gitVersion`. */
-export function kubectlClientJson(gitVersion: string): string {
+function kubectlClientJson(gitVersion: string): string {
   return JSON.stringify(
     { clientVersion: { major: "1", minor: "29", gitVersion, platform: "windows/amd64" } },
     null,
@@ -214,7 +214,7 @@ const KUBECTL: ReleasedTool = {
 
 // --- kustomize: its tags share the repository with other modules --------------------
 
-export const KUSTOMIZE_RELEASES_URL =
+const KUSTOMIZE_RELEASES_URL =
   "https://api.github.com/repos/kubernetes-sigs/kustomize/releases?per_page=30";
 
 /** The release list, newest first: the kustomize module's tag after another module's. */

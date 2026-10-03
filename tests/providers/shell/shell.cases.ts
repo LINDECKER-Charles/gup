@@ -148,7 +148,7 @@ export const NERD_FONTS_TAG = "v3.4.0";
 export const NERD_FONTS_RELEASE = githubLatest("ryanoasis/nerd-fonts", NERD_FONTS_TAG);
 
 /** A zip holding `entries` (name → content; a name ending in `/` is a directory). */
-export function zipOf(entries: Readonly<Record<string, string>>): Uint8Array<ArrayBuffer> {
+function zipOf(entries: Readonly<Record<string, string>>): Uint8Array<ArrayBuffer> {
   const zip = new AdmZip();
   for (const [name, content] of Object.entries(entries)) zip.addFile(name, Buffer.from(content));
   return new Uint8Array(zip.toBuffer());
@@ -160,7 +160,7 @@ export function familyZip(family: string, entries: Readonly<Record<string, strin
   return { url: `${base}/${NERD_FONTS_TAG}/${family}.zip`, bytes: zipOf(entries) };
 }
 
-export interface FontsMachine {
+interface FontsMachine {
   /** Files in the user's font directory. */
   readonly fonts?: readonly string[];
   /** The lockfile's content (an object is written as JSON), absent when undefined. */
@@ -187,7 +187,7 @@ export function fontsMachine(machine: FontsMachine): SystemSpec {
 const HKCU_KEY = "HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion";
 
 /** The PowerShell call that registers one TrueType font file for the current user. */
-export function hkcuRegistration(fileName: string): string[] {
+function hkcuRegistration(fileName: string): string[] {
   const valueName = `${fileName.replace(/\.ttf$/i, "")} (TrueType)`;
   const script =
     `$ErrorActionPreference = 'Stop'; ` +
@@ -198,7 +198,7 @@ export function hkcuRegistration(fileName: string): string[] {
   return ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script];
 }
 
-export const HKCU_REGISTRATION_FAILED =
+const HKCU_REGISTRATION_FAILED =
   "Copie OK mais enregistrement HKCU échoué — relancer un shell, ou re-exécuter.";
 
 /**

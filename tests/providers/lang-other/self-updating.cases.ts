@@ -80,7 +80,7 @@ const STACK: SelfUpdatingTool = {
 
 // --- Hex ------------------------------------------------------------------------
 
-export const HEX_PROBE_ARGV = ["mix", "hex", "--version"];
+const HEX_PROBE_ARGV = ["mix", "hex", "--version"];
 
 /** hex.pm's package endpoint for the Hex archive itself. */
 export function hexPmRoute(json: unknown): HttpRoute {
@@ -110,7 +110,7 @@ const HEX: SelfUpdatingTool = {
 
 // --- Flutter SDK ----------------------------------------------------------------
 
-export const FLUTTER_RELEASES_URL =
+const FLUTTER_RELEASES_URL =
   "https://storage.googleapis.com/flutter_infra_release/releases/releases_windows.json";
 
 /** The release index: each channel's current hash, and the releases the hashes name. */

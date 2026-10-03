@@ -15,7 +15,7 @@ import type { CommandScript, SystemSpec } from "../../support/system/types.js";
  * form these outputs take.
  */
 
-export const WSL_EXE = "C:\\Windows\\System32\\wsl.exe";
+const WSL_EXE = "C:\\Windows\\System32\\wsl.exe";
 export const WSL_VERSION_ARGV = ["wsl", "--version"];
 
 /** UTF-16 LE text as gup receives it once decoded as UTF-8: a NUL after each character. */

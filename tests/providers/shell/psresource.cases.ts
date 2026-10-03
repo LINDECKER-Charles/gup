@@ -11,9 +11,9 @@ import { type PowerShell, powerShellHost } from "./shell.cases.js";
  * verbatim: the argv is what reaches the shell.
  */
 
-export const HOST_ARGS = ["-NoProfile", "-NonInteractive", "-Command"];
+const HOST_ARGS = ["-NoProfile", "-NonInteractive", "-Command"];
 
-export const PROBE_SCRIPT =
+const PROBE_SCRIPT =
   "if (Get-Command Get-InstalledPSResource -ErrorAction SilentlyContinue) { 'yes' } else { 'no' }";
 
 export const SCAN_SCRIPT = `
@@ -68,7 +68,7 @@ export function psRow(overrides: Readonly<Record<string, unknown>> = {}): Record
   };
 }
 
-export interface PsResourceMachine {
+interface PsResourceMachine {
   readonly shell: PowerShell;
   /** What the cmdlet probe answers; PSResourceGet is there by default. */
   readonly probe?: CommandAnswer;

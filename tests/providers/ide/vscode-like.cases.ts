@@ -14,7 +14,7 @@ import type { HttpRoute, SimPlatform, SystemSpec } from "../../support/system/ty
  * named in the query) or Open VSX (one GET URL per extension).
  */
 
-export const LIST_EXTENSIONS_ARGS = ["--list-extensions", "--show-versions"];
+const LIST_EXTENSIONS_ARGS = ["--list-extensions", "--show-versions"];
 
 export const MARKETPLACE_QUERY_URL =
   "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery";
@@ -35,7 +35,7 @@ export function openVsxRoute(publisher: string, name: string, version: string): 
   return { url: `https://open-vsx.org/api/${path}`, json: { version } };
 }
 
-export interface EditorMachine {
+interface EditorMachine {
   readonly platform: SimPlatform;
   readonly binary: string;
   /** What `--list-extensions --show-versions` prints. */

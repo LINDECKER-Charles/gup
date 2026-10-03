@@ -116,7 +116,7 @@ export const NVM_VERSION_ARGV = [
 ];
 /** nvm-sh tags with a `v`, which the checkout needs as published. */
 export const NVM_RELEASE = githubLatest("nvm-sh/nvm", "v0.40.6");
-export const NVM_MANUAL_MESSAGE =
+const NVM_MANUAL_MESSAGE =
   "Installation nvm hors dépôt git — mettre à jour en suivant https://github.com/nvm-sh/nvm#installing-and-updating";
 
 /** The README's manual upgrade, minus the `cd`: fetch the tags, check out the release. */

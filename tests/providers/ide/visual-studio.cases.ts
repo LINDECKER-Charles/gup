@@ -11,7 +11,7 @@ import type { HttpRoute, SystemSpec } from "../../support/system/types.js";
 
 export const VS_INSTALLER_DIR = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer";
 export const VSWHERE_EXE = `${VS_INSTALLER_DIR}\\vswhere.exe`;
-export const VS_SETUP_EXE = `${VS_INSTALLER_DIR}\\setup.exe`;
+const VS_SETUP_EXE = `${VS_INSTALLER_DIR}\\setup.exe`;
 export const VSWHERE_ARGV = [VSWHERE_EXE, "-all", "-products", "*", "-format", "json", "-utf8"];
 
 export const COMMUNITY_PATH = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community";
@@ -23,7 +23,7 @@ export const BUILDTOOLS_PATH =
  * field vswhere omitted, which `exactOptionalPropertyTypes` would otherwise
  * reject on a plain `Partial<VsInstance>`.
  */
-export type VsInstanceOverrides = { [K in keyof VsInstance]?: VsInstance[K] | undefined };
+type VsInstanceOverrides = { [K in keyof VsInstance]?: VsInstance[K] | undefined };
 
 /** Shape of a real `vswhere -all -products * -format json -utf8` entry. */
 export function vsInstance(overrides: VsInstanceOverrides = {}): VsInstance {
@@ -77,7 +77,7 @@ export function channelRoute(url: string, json: unknown = channelManifest()): Ht
   return { url, json };
 }
 
-export interface VsMachine {
+interface VsMachine {
   readonly instances: readonly VsInstance[];
   readonly http?: readonly HttpRoute[];
   /** The installer files present (default: vswhere.exe and setup.exe). */

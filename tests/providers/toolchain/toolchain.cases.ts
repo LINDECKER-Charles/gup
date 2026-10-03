@@ -114,7 +114,7 @@ const GOENV: SelfUpdatingTool = {
 
 // --- mise -----------------------------------------------------------------------
 
-export const MISE_OUTDATED_ARGV = ["mise", "outdated", "--json"];
+const MISE_OUTDATED_ARGV = ["mise", "outdated", "--json"];
 
 /** mise printing `report` for `mise outdated --json`. */
 export function miseMachine(report: unknown): SystemSpec {
@@ -143,7 +143,7 @@ const MISE: ProviderContractCase = {
 
 // --- proto ----------------------------------------------------------------------
 
-export const PROTO_OUTDATED_ARGV = ["proto", "outdated", "--json"];
+const PROTO_OUTDATED_ARGV = ["proto", "outdated", "--json"];
 
 /** proto 0.40.4, its managed tools reported as `managed`. */
 export function protoMachine(managed: unknown, release: HttpRoute): SystemSpec {
@@ -201,11 +201,11 @@ const PROTO_SELF: ProviderContractCase = {
 const SDKMAN_INIT = "/home/u/.sdkman/bin/sdkman-init.sh";
 
 /** `sdk` is a shell function: every call sources the init script in bash first. */
-export function sdkArgv(command: string, init = SDKMAN_INIT): string[] {
+function sdkArgv(command: string, init = SDKMAN_INIT): string[] {
   return ["bash", "-lc", `source "${init}" >/dev/null 2>&1 && ${command}`];
 }
 
-export const SDKMAN_BROKER_URL = "https://api.sdkman.io/2/broker/version/sdkman/stable";
+const SDKMAN_BROKER_URL = "https://api.sdkman.io/2/broker/version/sdkman/stable";
 
 /** SDKMAN! 5.18.2 on Linux, `sdk version` printing `stdout`. */
 export function sdkmanMachine(stdout = "\nSDKMAN!\nscript: 5.18.2\nnative: 0.4.6\n"): SystemSpec {
@@ -239,7 +239,7 @@ export const SWIFTLY_VERSION_ARGV = ["swiftly", "--version"];
 export const SWIFTLY_SELF_UPDATE = ["swiftly", "self-update", "--assume-yes"];
 /** swiftlang tags without a `v`. */
 const SWIFTLY_RELEASE = githubLatest("swiftlang/swiftly", "1.2.0");
-export const SWIFTLY_EXTERNAL_MESSAGE =
+const SWIFTLY_EXTERNAL_MESSAGE =
   "swiftly a été installé par un autre canal : le mettre à jour depuis cette source " +
   "(`swiftly self-update` refuse de s'exécuter sur une installation externe).";
 

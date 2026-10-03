@@ -18,7 +18,7 @@ const NODE_DIR = "C:\\Program Files\\nodejs";
 
 // --- npm ------------------------------------------------------------------------
 
-export const NPM_OUTDATED_ARGV = ["npm", "outdated", "-g", "--json", "--long"];
+const NPM_OUTDATED_ARGV = ["npm", "outdated", "-g", "--json", "--long"];
 
 /** npm printing `report` for `npm outdated -g --json`. */
 export function npmMachine(report: Text): SystemSpec {
@@ -50,7 +50,7 @@ const NPM: ProviderContractCase = {
 
 // --- pnpm -----------------------------------------------------------------------
 
-export const PNPM_OUTDATED_ARGV = ["pnpm", "outdated", "--global", "--format", "json"];
+const PNPM_OUTDATED_ARGV = ["pnpm", "outdated", "--global", "--format", "json"];
 
 /** pnpm printing `report` for `pnpm outdated --global --format json`. */
 export function pnpmMachine(report: string): SystemSpec {
@@ -94,8 +94,8 @@ const PNPM: ProviderContractCase = {
 
 // --- Yarn classic ---------------------------------------------------------------
 
-export const YARN_VERSION_ARGV = ["yarn", "--version"];
-export const YARN_LIST_ARGV = ["yarn", "global", "list", "--depth=0"];
+const YARN_VERSION_ARGV = ["yarn", "--version"];
+const YARN_LIST_ARGV = ["yarn", "global", "list", "--depth=0"];
 
 /** Yarn printing `version` and `listing`, the registry answering `http`. */
 export function yarnMachine(
@@ -144,7 +144,7 @@ const YARN: ProviderContractCase = {
 
 // --- Bun ------------------------------------------------------------------------
 
-export const BUN_LIST_ARGV = ["bun", "pm", "ls", "-g"];
+const BUN_LIST_ARGV = ["bun", "pm", "ls", "-g"];
 
 /** Bun printing `listing` for `bun pm ls -g`, the registry answering `http`. */
 export function bunMachine(listing: string, http: readonly HttpRoute[] = []): SystemSpec {

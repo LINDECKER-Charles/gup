@@ -15,7 +15,7 @@ import type { FsNode, SimPlatform, SystemSpec } from "../../support/system/types
  * included).
  */
 
-export interface NvimDirs {
+interface NvimDirs {
   readonly config: string;
   readonly data: string;
 }

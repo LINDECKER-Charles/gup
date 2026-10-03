@@ -193,7 +193,7 @@ const JULIA_PKG: ProviderContractCase = {
 
 // --- LuaRocks -------------------------------------------------------------------
 
-export const LUAROCKS_OUTDATED_ARGV = ["luarocks", "--local", "list", "--outdated", "--porcelain"];
+const LUAROCKS_OUTDATED_ARGV = ["luarocks", "--local", "list", "--outdated", "--porcelain"];
 
 /** LuaRocks from Homebrew, `--porcelain` answering `stdout` for the user tree. */
 export function luarocksMachine(stdout: string): SystemSpec {
@@ -222,7 +222,7 @@ const LUAROCKS: ProviderContractCase = {
 
 // --- Mix archives ---------------------------------------------------------------
 
-export const MIX_ARCHIVE_ARGV = ["mix", "archive"];
+const MIX_ARCHIVE_ARGV = ["mix", "archive"];
 
 /** hex.pm's entry for one archive. */
 export function hexPackageRoute(name: string, json: unknown): HttpRoute {
@@ -436,7 +436,7 @@ export function rMachine(stdout: string): SystemSpec {
 }
 
 /** `install.packages` of one package into the user library. */
-export function rInstallArgv(name: string): string[] {
+function rInstallArgv(name: string): string[] {
   const call = `install.packages('${name}', lib = .libPaths()[1], repos = '${CRAN}')`;
   return ["Rscript", "--vanilla", "-e", call];
 }

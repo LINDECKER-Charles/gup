@@ -69,8 +69,8 @@ const HELM_REPO: ProviderContractCase = {
 
 // --- krew ---------------------------------------------------------------------------
 
-export const KREW_VERSION = ["kubectl", "krew", "version"];
-export const KREW_LIST = ["kubectl", "krew", "list"];
+const KREW_VERSION = ["kubectl", "krew", "version"];
+const KREW_LIST = ["kubectl", "krew", "list"];
 
 /** A plugin's manifest in the krew index, its `version:` as written there. */
 export function krewManifest(name: string, body: string): HttpRoute {
@@ -78,7 +78,7 @@ export function krewManifest(name: string, body: string): HttpRoute {
   return { url, body };
 }
 
-export interface KrewMachine {
+interface KrewMachine {
   readonly list: CommandAnswer;
   readonly manifests?: readonly HttpRoute[];
   /** `kubectl krew version`; krew is installed by default. */

@@ -31,7 +31,7 @@ export const MAC_ROOTS = {
 } as const;
 
 /** The fields the provider reads off `product-info.json`. */
-export interface ProductInfo {
+interface ProductInfo {
   readonly name: string;
   readonly version: string;
   readonly buildNumber: string;
@@ -46,7 +46,7 @@ export const WEBSTORM_2024_1: ProductInfo = {
 };
 
 /** `product-info.json` in `dir`, holding `content` (a manifest, or raw text). */
-export function productInfoAt(dir: string, content: ProductInfo | string): [string, FsNode] {
+function productInfoAt(dir: string, content: ProductInfo | string): [string, FsNode] {
   const join = dir.includes("\\") ? win32.join : posix.join;
   const text = typeof content === "string" ? content : JSON.stringify(content);
   return [join(dir, "product-info.json"), { kind: "file", content: text }];
@@ -60,7 +60,7 @@ export function jetbrainsRelease(productCode: string, build: string, version: st
   return { url, json: { [productCode]: [{ build, version, type: "release" }] } };
 }
 
-export const WEBSTORM_2024_2 = jetbrainsRelease("WS", "242.20224.300", "2024.2.0");
+const WEBSTORM_2024_2 = jetbrainsRelease("WS", "242.20224.300", "2024.2.0");
 
 /** The IDE directory each layout holds WebStorm 2024.1 in. */
 export const WEBSTORM_DIRS = {
@@ -70,7 +70,7 @@ export const WEBSTORM_DIRS = {
   manual: `${WIN_ROOTS.programFiles}\\WebStorm 2024.1`,
 } as const;
 
-export interface IdeMachine {
+interface IdeMachine {
   readonly platform: SimPlatform;
   /** Directories holding a `product-info.json`, with what it says. */
   readonly installs: readonly (readonly [string, ProductInfo | string])[];
@@ -96,10 +96,10 @@ export function webstormIn(layout: keyof typeof WEBSTORM_DIRS): SystemSpec {
 // --- macOS ----------------------------------------------------------------------
 
 export const MAC_BUNDLE = `${MAC_ROOTS.applications}/WebStorm.app`;
-export const CASKROOM_BUNDLE = "/opt/homebrew/Caskroom/webstorm/2024.1.0/WebStorm.app";
+const CASKROOM_BUNDLE = "/opt/homebrew/Caskroom/webstorm/2024.1.0/WebStorm.app";
 
 /** The siblings of Contents/Resources in `bundle`, and an unrelated bundle the walk must skip. */
-export function bundleNoise(bundle: string): Readonly<Record<string, FsNode>> {
+function bundleNoise(bundle: string): Readonly<Record<string, FsNode>> {
   return {
     [`${bundle}/Contents/MacOS`]: { kind: "dir" },
     [`${bundle}/Contents/Frameworks`]: { kind: "dir" },
@@ -123,7 +123,7 @@ export function macBundleMachine(target: string = CASKROOM_BUNDLE): SystemSpec {
 // --- cases ----------------------------------------------------------------------
 
 export const TOOLBOX_SKIP = "Géré par Toolbox — ouvrir Toolbox pour appliquer.";
-export const WEBSTORM_DOWNLOAD =
+const WEBSTORM_DOWNLOAD =
   "Installation manuelle — https://www.jetbrains.com/webstorm/download/";
 
 const WEBSTORM_IDS = { winget: "JetBrains.WebStorm", scoop: "webstorm", brewCask: "webstorm" };

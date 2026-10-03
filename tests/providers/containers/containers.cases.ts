@@ -75,7 +75,7 @@ const ORAS: ReleasedTool = {
 
 // --- desktop apps ---------------------------------------------------------------
 
-export const POWERSHELL = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+const POWERSHELL = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
 const POWERSHELL_PREFIX = ["powershell", "-NoProfile", "-NonInteractive", "-Command"];
 
 /** Docker Desktop's probe: the exe path travels in the environment, never in the script. */
@@ -100,7 +100,7 @@ export const DESKTOP_EXES = {
   rancherMachineWide: "C:\\Program Files\\Rancher Desktop\\Rancher Desktop.exe",
 } as const;
 
-export interface DesktopMachine {
+interface DesktopMachine {
   readonly exe: string;
   /** The version probe, and what it prints. */
   readonly probe: readonly string[];
@@ -200,7 +200,7 @@ const PODMAN_DESKTOP: DesktopApp = {
   message: "Lancer Podman Desktop → menu → Check for Updates pour appliquer.",
 };
 
-export function rancherMachine(version: string, release: HttpRoute): SystemSpec {
+function rancherMachine(version: string, release: HttpRoute): SystemSpec {
   const exe = DESKTOP_EXES.rancher;
   return desktopMachine({ exe, probe: versionInfoArgv(exe), version: { stdout: version }, release });
 }

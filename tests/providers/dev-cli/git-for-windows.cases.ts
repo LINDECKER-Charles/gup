@@ -18,21 +18,21 @@ export const UPDATER_RUN_ARGV = ["git", "update-git-for-windows", "--yes"];
 export const UPDATER_BANNER =
   "usage: git update-git-for-windows [--gui] [--quiet] [--yes] [--test-callback=<shell-script>]";
 /** MinGit has no built-in updater: git says so. */
-export const NO_UPDATER = "git: 'update-git-for-windows' is not a git command. See 'git --help'.";
+const NO_UPDATER = "git: 'update-git-for-windows' is not a git command. See 'git --help'.";
 
 export const GFW_MANUAL =
   "Télécharger l'installeur depuis https://gitforwindows.org/ et le relancer";
 export const NOTHING_OFFERED = "aucune mise à jour proposée par git";
 export const UPDATER_TOO_OLD =
   `l'updater intégré a refusé l'option --yes (version trop ancienne) — ${GFW_MANUAL}`;
-export const UPDATER_MISSING = `updater intégré absent de cette installation — ${GFW_MANUAL}`;
+const UPDATER_MISSING = `updater intégré absent de cette installation — ${GFW_MANUAL}`;
 
 export const GFW_RELEASE = githubLatest("git-for-windows/git", "v2.55.0.windows.3");
 
 /** Where the standalone installer puts git: nobody owns it. */
 export const STANDALONE_GIT = "C:\\Program Files\\Git\\cmd\\git.exe";
 
-export interface GitMachine {
+interface GitMachine {
   /** What `git --version` prints. */
   readonly version: string;
   /** The answer to `git update-git-for-windows -h`, when the scan or update probes it. */
