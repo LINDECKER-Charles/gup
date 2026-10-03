@@ -20,6 +20,7 @@ Test suite only: no change to what gup does. Design note:
 - **providers:** Split the Windows IDE and shell gap suite into its domains: Visual Studio under `ide`, PSResourceGet under `shell`, Git for Windows under `dev-cli` ([`df3b709`](https://github.com/LINDECKER-Charles/gup/commit/df3b709))
 - **providers/wsl, providers/containers, providers/security:** Move WSL and its six distribution managers (on the real `core/wsl`, outputs in UTF-16 as gup decodes them), dive, nerdctl, ORAS, the Docker, Podman and Rancher Desktop apps, and the Sigstore, Anchore, Trivy, ProjectDiscovery and Semgrep scanners; Semgrep's update now runs on every host OS ([`1a6746b`](https://github.com/LINDECKER-Charles/gup/commit/1a6746b), [`bc678bd`](https://github.com/LINDECKER-Charles/gup/commit/bc678bd), [`d502249`](https://github.com/LINDECKER-Charles/gup/commit/d502249))
 - **providers/kubernetes, providers/cloud, providers/embedded-mobile:** Move the ten Kubernetes CLIs with helm's plugins and repositories and krew, the twelve cloud CLIs, the Android SDK, the Arduino CLI, Expo, fastlane and PlatformIO — the last flat suites ([`ae6fb65`](https://github.com/LINDECKER-Charles/gup/commit/ae6fb65), [`d180fdc`](https://github.com/LINDECKER-Charles/gup/commit/d180fdc), [`c4816e3`](https://github.com/LINDECKER-Charles/gup/commit/c4816e3))
+- **providers/containers, providers/shell, providers:** Find Podman and Rancher Desktop at their Program Files fallback while `LOCALAPPDATA` is unset again (a behaviour the containers migration had lost), pin the apostrophe Nerd Fonts doubles in the font path it hands PowerShell, and keep the case data of parts 2 and 3 module-private unless a knowledge test reads it ([`989e7f3`](https://github.com/LINDECKER-Charles/gup/commit/989e7f3), [`dbfe11d`](https://github.com/LINDECKER-Charles/gup/commit/dbfe11d), [`507e767`](https://github.com/LINDECKER-Charles/gup/commit/507e767))
 - **lint:** Retire the transitional `providers-legacy` vitest project: every provider test now runs in `providers`, on the fake machine ([`2a7268d`](https://github.com/LINDECKER-Charles/gup/commit/2a7268d))
 - **chore:** Add `npm run fixtures:record`, which re-records the probe outputs the contract cases reference from the tools installed on the machine, through gup's real runner, redacted and secret-scanned before anything is written ([`76441e6`](https://github.com/LINDECKER-Charles/gup/commit/76441e6), [`cf24b0b`](https://github.com/LINDECKER-Charles/gup/commit/cf24b0b))
 - **providers:** Run winget, scoop, pip, npm, rustup, kubectl, the .NET SDK, Git for Windows and WSL on output recorded on a French Windows 11, neutralised before commit, their rows held as goldens ([`247b25e`](https://github.com/LINDECKER-Charles/gup/commit/247b25e))
@@ -33,14 +34,17 @@ which wave 3 deletes with the seven unregistered providers it tests, moved uncha
 
 | | Before (`int/wave-1`) | After |
 |---|---:|---:|
-| Provider test lines | 25,037 in 37 flat files | 16,150 in 149 cases, contract and knowledge files |
-| Executed provider tests | 2,424 | 4,216 |
-| of which generated from contract cases / hand-written | — / 2,424 | 3,286 / 930 |
+| Provider test lines | 25,037 in 37 flat files | 16,169 in 149 cases, contract and knowledge files |
+| Executed provider tests | 2,424 | 4,220 |
+| of which generated from contract cases / hand-written | — / 2,424 | 3,286 / 934 |
 | Contract cases | — | 357 |
 | Recorded fixtures | — | 12 files, 9 goldens |
 | Shared test support and self-tests | — | 1,658 lines |
 
 Every deleted test is mapped in the body of the commit that deleted it. No source file lost
 coverage beyond one point against `int/wave-1`, and 83 of 85 seeded mutations were caught (the
-two others are explained in the design note). The migration and the recordings surfaced about
-twenty provider findings, listed in the design note for their owners.
+two others are explained in the design note). A review pass then sampled 20 deleted tests and
+applied 40 fresh mutations: it restored one lost behaviour and closed one gap the old suite
+already had, the six other surviving mutations being equivalent on real output (design note,
+§5). The migration and the recordings surfaced about twenty provider findings, listed in the
+design note for their owners.

@@ -118,14 +118,14 @@ case built with them.
 
 ## 5. Results
 
-| | Part 1 | Part 2 | Part 3 | Whole branch |
-|---|---:|---:|---:|---:|
-| Flat files deleted | 12 | 10 | 15 | 37 |
-| Test lines deleted / added | 7,541 / 5,489 | 7,401 / 4,596 | 10,095 / 5,758 | 25,037 / 16,150 * |
-| Executed tests before → after | 692 → 984 | 687 → 1,163 | 1,045 → 1,981 | 2,424 → 4,216 * |
-| of which generated / hand-written | 570 / 414 | 952 / 211 | 1,682 / 299 | 3,286 / 930 * |
-| Shared support and self-tests added | 1,049 lines | 139 lines, 4 tests | 470 lines, 14 tests | 1,658 lines |
-| Seeded mutations caught / applied | 9 / 9 | 28 / 29 | 46 / 47 | 83 / 85 |
+| | Part 1 | Part 2 | Part 3 | Review | Whole branch |
+|---|---:|---:|---:|---:|---:|
+| Flat files deleted | 12 | 10 | 15 | — | 37 |
+| Test lines deleted / added | 7,541 / 5,489 | 7,401 / 4,596 | 10,095 / 5,758 | 0 / 19 | 25,037 / 16,169 * |
+| Executed tests before → after | 692 → 984 | 687 → 1,163 | 1,045 → 1,981 | + 4 | 2,424 → 4,220 * |
+| of which generated / hand-written | 570 / 414 | 952 / 211 | 1,682 / 299 | 0 / 4 | 3,286 / 934 * |
+| Shared support and self-tests added | 1,049 lines | 139 lines, 4 tests | 470 lines, 14 tests | — | 1,658 lines |
+| Seeded mutations caught / applied | 9 / 9 | 28 / 29 | 46 / 47 | 33 / 40 | 116 / 125 |
 
 \* Measured at the head of the branch: every `tests/providers/**/*.ts` file but
 `ide/ide-manual.test.ts` (2,092 lines, 135 tests, kept as is, D9), including the S11 recorded
@@ -142,6 +142,17 @@ scenarios (9 cases, 88 tests, 12 fixture files and 9 goldens).
 - **Mutations (R3):** part 2's miss relaxes the self provider's version parser, which is the
   fix of a finding; part 3's is a first Lazygit variant (a leading space in the pattern) that
   the sample banner still matched, replaced by a breaking one.
+- **Review pass** (after part 3): 20 deleted tests sampled across domains, each traced to the
+  test that now holds its behaviour, and 40 fresh mutations in the parsers, fail-soft guards
+  and install argv of the part-3 domains and the recorded providers, none a repeat of the R3
+  set. One sampled behaviour had been lost: Podman and Rancher Desktop found at their Program
+  Files fallback while `LOCALAPPDATA` is unset (the ledger pointed at a test that keeps it
+  set); `containers/desktop-apps` holds it again. Of the seven surviving mutations, one was a
+  gap in the old suite too, now closed: the apostrophe Nerd Fonts doubles in a font path it
+  hands PowerShell. The six others change no row on any real output: helm-plugins only counts
+  its NAME column, krew strips the `v` from both sides alike, minikube's banner always has the
+  `v` one mutation made mandatory, no fastlane line but the banner matches once the regex
+  lost its anchor, and the heroku and Nerd Fonts family rewrites were equivalent regexes.
 - **New coverage of real behaviour:** scoop's id validation before its shell-routed spawn,
   winget keeping the rows it printed before a non-zero exit, every batch argv, the
   `requiresAdmin` rows, the measured `slow` flag of every per-row fetcher, nvm's directory and
