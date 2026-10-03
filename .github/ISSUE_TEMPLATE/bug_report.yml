@@ -1,0 +1,136 @@
+name: Bug report
+description: Something doesn't work as documented.
+title: "[bug] "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem.
+
+        **Security issues go to the [private advisory form](https://github.com/LINDECKER-Charles/gup/security/advisories/new), never here.**
+
+        Outputs can contain your username, your home directory and the list of software installed on your machine. Redact what you do not want to publish before pasting.
+  - type: input
+    id: version
+    attributes:
+      label: gup version
+      description: Output of `gup --version`.
+      placeholder: 0.5.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple silicon)
+        - macOS (Intel)
+        - Linux
+        - WSL
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version / distribution
+      placeholder: Windows 11 24H2 (26100), macOS 15.6, Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: Output of `node --version`.
+      placeholder: v26.10.0
+    validations:
+      required: true
+  - type: dropdown
+    id: terminal
+    attributes:
+      label: Terminal
+      description: The interactive app is a full-screen terminal program, and terminals differ.
+      options:
+        - Windows Terminal
+        - Windows console host (conhost)
+        - VS Code terminal
+        - iTerm2
+        - Terminal.app
+        - GNOME Terminal / Konsole
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      options:
+        - Interactive app (gup)
+        - gup list
+        - gup update
+        - gup doctor
+        - Scheduled updates
+        - Journal / HTML report
+        - Themes / display
+        - A specific provider
+        - Installation
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider id(s)
+      description: When a specific package source is involved. `gup doctor` lists the ids.
+      placeholder: winget, npm-g
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: The exact message or behaviour you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands or keys, in order.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `gup doctor`
+      render: shell
+  - type: textarea
+    id: logs
+    attributes:
+      label: Command output or debug log
+      description: >-
+        The full output of the failing command, e.g.
+        `gup update <provider>:<package> 2>&1 | tee gup.log`. If your version has
+        the `gup log` command, paste `gup log -n 50` or attach the archive from
+        `gup log export`, after checking what it contains.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues, open and closed.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
+        - label: I redacted personal paths and usernames from the outputs above.
+          required: true

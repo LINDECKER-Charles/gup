@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a change to gup's behaviour.
+title: "[feature] "
+labels: [enhancement, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        To ask for support of another package source, use the **New provider** form instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should gup do? Commands, keys or output you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you use today, or other designs you thought about.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of gup?
+      options:
+        - Interactive app (gup)
+        - gup list
+        - gup update
+        - gup doctor
+        - Scheduled updates
+        - Journal / HTML report
+        - Themes / display
+        - A specific provider
+        - Installation
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: I read [docs/guide/scope.md](https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/scope.md) and this request fits it.
+          required: true
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to implement it?
+      options:
+        - "Yes"
+        - Maybe, with guidance
+        - "No"

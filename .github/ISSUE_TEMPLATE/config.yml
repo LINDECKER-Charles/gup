@@ -1,0 +1,13 @@
+# Issue chooser: the four forms in this folder, plus these links. Blank issues
+# are disabled so every report carries what is needed to reproduce it.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/LINDECKER-Charles/gup/security/advisories/new
+    about: Privately — never in a public issue. See SECURITY.md.
+  - name: Read the documentation
+    url: https://github.com/LINDECKER-Charles/gup/blob/main/docs/README.md
+    about: Installation, CLI reference, scope and the providers catalog.
+  - name: Get help
+    url: https://github.com/LINDECKER-Charles/gup/blob/main/SUPPORT.md
+    about: What to check first and what to include in a question or a bug report.
