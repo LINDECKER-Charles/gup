@@ -6,7 +6,9 @@
 > bun, pip, pipx, uv, cargo, gem, composer, dotnet tools, helm, kubectl,
 > terraform, VS Code and Cursor extensions, JetBrains plugins, pwsh modules,
 > WSL distros, and more. Parallel bounded scan, fail-soft, JSON output,
-> `--fast` mode, surgical `provider:package` targeting, local JSONL history.
+> `--fast` mode, surgical `provider:package` targeting. A full-screen terminal
+> app runs the updates in an embedded terminal pane, schedules updates package
+> by package, and keeps a local activity journal with an HTML report.
 > MIT, version @@VERSION@@, Node.js >= @@NODE@@. Windows, macOS and Linux.
 
 Values in this file are generated from the repository at build time
@@ -39,7 +41,9 @@ gup update --all -y       # CI-safe: everything, no prompt
 - Subprocess strategy: `execa` argv-vector, never `shell: true` (allowlist pinned by tests)
 - Concurrency: `p-limit(4)` across providers, fail-soft per provider
 - Security: CodeQL `security-extended`, Semgrep (`p/typescript` + `p/nodejs`), gitleaks, audit-ci, eslint-plugin-security, Dependabot weekly
-- Telemetry: none. No daemon, no background service, no polling, no network call except a provider's own HTTPS version check.
+- Telemetry: none. No network call except a provider's own HTTPS version check.
+- Background work: no daemon, nothing stays resident. Scheduled updates are opt-in, per package, and started by the OS scheduler (Task Scheduler, launchd or cron) as a short-lived process.
+- Interface language: French. Commands, flags and JSON output are language-neutral.
 
 ## Platform support (precise)
 
@@ -73,7 +77,7 @@ gup update --all -y       # CI-safe: everything, no prompt
 - Not an OS updater: Windows Update (use `PSWindowsUpdate`) and macOS `softwareupdate` are out of scope.
 - Not for Maven / Gradle / sbt / bundler / lockfiles (project-scoped).
 - Not for JetBrains Toolbox-managed IDEs (Toolbox ships its own updater).
-- Not a daemon. Nothing runs until you run it.
+- Not a daemon. Nothing stays resident; opt-in per-package schedules are started by the OS scheduler.
 
 ## Supported providers (categories)
 
@@ -102,7 +106,7 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.
 
 ## Commands
 
-- `gup` — interactive menu: Scan, Review, Update selected, Update all, Update target, Providers, Options
+- `gup` — full-screen interactive app (French UI). Sidebar: Scan · Paquets · Planification · Providers · Journal · Options · Quitter. In Paquets, `space` checks a package, `a` checks everything, `enter` updates the checked ones in an embedded terminal pane without leaving the app; `p` schedules them. Providers that cannot run on the current OS are greyed out. Options include themes held to WCAG AA contrast.
 - `gup list` — outdated packages as a table
 - `gup list --fast` — skips the providers marked slow (HTTP per package, filesystem walks)
 - `gup list --json` — machine-readable, pipeable
@@ -111,6 +115,8 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.
 - `gup update --all [-y]` — everything, after confirmation (`-y` skips it)
 - `gup update <provider>:<packageId> …` — surgical targets, bypasses the scan entirely
 - `gup doctor` — what was detected, what is missing, and how to install it
+- `gup schedule` — list, add and run per-package scheduled updates
+- `gup report` — the activity journal as an offline HTML report (or `--format json|csv|text`)
 - Exit codes: `0` success, `1` partial failure, `2` invalid arguments
 
 Full reference, flags, retry strategies, install timeout, environment variables:
@@ -123,8 +129,8 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/cli-reference.md
 - `src/core/runner.ts` — the single shell-out point. `execa`, argv-vector, UTF-8, `windowsHide`, never `shell: true`.
 - `src/core/install-source.ts` — resolves who owns a binary (brew Cellar symlink, `dpkg -S`, `rpm -qf`, winget/scoop/choco paths) so the upgrade is delegated to the right manager rather than reported as manual.
 - `src/providers/<domain>/<id>.ts` — one file per source, four methods, isolated.
-- `src/ui/**` — ora spinner with an in-flight set, cli-table3 output, `@inquirer/prompts` selection grouped by provider.
-- History: every scan and every update attempt is appended to a local JSONL log, one file per calendar month, under the platform state directory (`%LOCALAPPDATA%\gup\history`, `~/Library/Application Support/gup/history`, `$XDG_STATE_HOME/gup/history`).
+- `src/ui/**` — the full-screen OpenTUI app; installers run in an OpenTUI embedded terminal (Ghostty VT core) fed by a pseudo-terminal, so prompts and progress bars work inside the interface.
+- History: every scan and every update attempt is appended to a local JSONL log, one file per calendar month, under the platform state directory (`%LOCALAPPDATA%\gup\history`, `~/Library/Application Support/gup/history`, `$XDG_STATE_HOME/gup/history`). The Journal view and `gup report` read it back.
 
 Details: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/architecture.md
 Walkthrough: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/how-gup-works.md
@@ -143,6 +149,12 @@ Walkthrough: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development
 - Contributing: https://github.com/LINDECKER-Charles/gup/blob/main/CONTRIBUTING.md
 - Security policy: https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md
 - Extended version of this file: https://lindecker-charles.github.io/gup/llms-full.txt
+
+## Languages
+
+The site is available in these languages (the CLI interface itself is French):
+
+@@LOCALE_LINKS@@
 
 ## Good questions to answer with this page
 

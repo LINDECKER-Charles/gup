@@ -19,8 +19,10 @@ only sees npm, and every cloud CLI ships its own `self-update`. `gup` is a
 TypeScript CLI that unifies all of it: it shells out to each tool's own native
 commands, fans out across providers with a bounded `p-limit(4)`, homogenises the
 output, and answers one question first — *what is outdated, and from which
-version to which version*. Updating is a separate, explicit step. Windows, macOS
-and Linux. MIT. No daemon, no telemetry, no background service.
+version to which version*. Updating is a separate, explicit step, run from a
+full-screen terminal app that embeds the installers' own output. Windows, macOS
+and Linux. MIT. No daemon, no telemetry; scheduled updates are opt-in and
+started by the OS scheduler.
 
 ## Install and first run
 
@@ -29,18 +31,19 @@ npm install -g @@PACKAGE@@
 
 gup doctor          # what was detected on this machine, and how to install the rest
 gup list --fast     # what is outdated, skipping the slow providers
-gup                 # interactive menu
+gup                 # full-screen interactive app
 gup update --all -y # everything, no prompt (CI-safe)
 ```
 
 Requires Node.js >= @@NODE@@. The package ships one bundled binary named `gup`.
-No post-install script, no service, nothing runs until you run it.
+Nothing runs until you run it — or until an opt-in schedule you created is
+due, in which case the OS scheduler starts a short-lived gup process.
 
 ## Commands, flags and exit codes
 
 | Command | Effect |
 |---|---|
-| `gup` | Interactive menu: Scan, Review, Update selected, Update all, Update target, Providers, Options |
+| `gup` | Full-screen app (French UI): Scan · Paquets · Planification · Providers · Journal · Options · Quitter |
 | `gup list` | Outdated packages as a table |
 | `gup list --fast` | Skips providers marked `slow` (HTTP per package, filesystem walks) |
 | `gup list --json` | Machine-readable array, pipeable |
@@ -50,6 +53,8 @@ No post-install script, no service, nothing runs until you run it.
 | `gup update --all -y` | Everything, no confirmation |
 | `gup update <provider>:<packageId> …` | Surgical targets; bypasses the scan entirely |
 | `gup doctor` | Detected providers, missing providers, install hints |
+| `gup schedule` | List, add and run per-package scheduled updates |
+| `gup report` | Activity journal as an offline HTML report, or `--format json|csv|text` |
 
 Shared flags: `--fast`, `--provider <ids…>`, `--only <id>`, `--json`, `-y`,
 `--timeout <seconds>` (per-install wall clock; default 1200, `0` disables).
@@ -132,7 +137,7 @@ reports itself unavailable and never appears in a scan.
 - `src/core/install-source.ts` — resolves who owns a binary (brew Cellar symlink, `dpkg -S`, `rpm -qf`, winget/scoop/choco paths) so the upgrade is delegated to the right manager instead of being reported as manual. Homebrew classification only accepts a `Cellar`/`Caskroom` segment under a known prefix, and `/usr/local` only in combination with such a segment — locked down by `tests/security/install-source.test.ts`.
 - `src/core/wsl.ts` — the WSL bridge; `isWslAvailable()` returns false off win32.
 - `src/providers/<domain>/<id>.ts` — one isolated module per source.
-- `src/ui/**` — `ora` spinner driven by an in-flight set, `cli-table3` tables, `@inquirer/prompts` checkboxes grouped by provider with separators and grey notes.
+- `src/ui/**` — the full-screen OpenTUI app. Packages are checked with `space` (`a` for all) and updated with `enter` inside an OpenTUI embedded terminal (Ghostty VT core) fed by a pseudo-terminal, so installer prompts and progress bars work without leaving the interface.
 
 Lifecycle of a run: `isAvailable()` probes in parallel (`where`/`which`, milliseconds) → flags and filters are applied (`--fast` drops slow providers, `--provider` restricts, `--only` targets) → `listOutdated()` fans out under `pLimit(4)` and `manual` packages are filtered once → selection → `runInherit()` streams stdout/stderr live, and every attempt is appended to the history log.
 
@@ -163,8 +168,9 @@ $XDG_STATE_HOME/gup/history/YYYY-MM.jsonl                   # Linux (default ~/.
 JSONL rather than a JSON array or a database: one self-describing object per
 line makes an append a single `write`, so an elevated child and its parent can
 log concurrently without a lock, and a process killed mid-write costs one line
-instead of the file. Nothing reads it back yet — the release exists to start
-accumulating the data.
+instead of the file. The Journal view reads it back (activity and
+most-updated-package charts in the terminal), and `gup report` renders it as a
+single offline HTML file, or exports it as JSON or CSV.
 
 ## Security model
 
@@ -184,7 +190,7 @@ https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md
 - It does not update the OS: Windows Update (use `PSWindowsUpdate`) and macOS `softwareupdate` are out of scope.
 - It does not touch Maven / Gradle / sbt / bundler / lockfiles.
 - It does not manage JetBrains Toolbox-installed IDEs (Toolbox ships its own updater).
-- It runs no daemon and does no polling.
+- It runs no daemon. Opt-in scheduled updates register one OS scheduled task (Task Scheduler, launchd or cron) that starts a short-lived check; nothing stays resident.
 
 Rationale: https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/scope.md
 
@@ -214,6 +220,13 @@ and JetBrains plugins.
 **Is it safe to let it update everything?** Updating is always explicit. `--all`
 confirms unless `-y` is passed, `gup list` never writes anything, and the
 shell-out layer is argv-only with a test-pinned allowlist.
+
+## Languages
+
+The site is available in these languages (the CLI interface itself is French;
+commands, flags and JSON output are language-neutral):
+
+@@LOCALE_LINKS@@
 
 ## Attribution
 

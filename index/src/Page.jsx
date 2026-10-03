@@ -1,59 +1,49 @@
 /**
- * Composition root, shared by the browser entry (src/app.jsx) and the
- * prerender entry (src/entry-server.jsx) — which is why it imports no CSS and
- * touches no browser global at module scope.
+ * Composition root, shared by the browser entry (app.jsx) and the prerender
+ * entry (entry-server.jsx) — which is why it imports no CSS and touches no
+ * browser global outside effects.
  *
- * Named `Page` rather than `App` on purpose: the entry file is `app.jsx`, and
- * on a case-insensitive filesystem (macOS, Windows) an `App.jsx` beside it is
- * the same file.
+ * Named `Page` rather than `App`: on a case-insensitive filesystem an
+ * `App.jsx` beside `app.jsx` would be the same file.
  */
-import { Intro } from "./chrome/Intro.jsx";
+import { useMemo } from "react";
 import { Backdrop } from "./chrome/Backdrop.jsx";
-import { StickyCta } from "./chrome/StickyCta.jsx";
-import { Nav } from "./chrome/Nav.jsx";
 import { Footer } from "./chrome/Footer.jsx";
-import { Hero } from "./sections/Hero.jsx";
-import { TerminalDemo } from "./sections/TerminalDemo.jsx";
-import { Why } from "./sections/Why.jsx";
-import { Platforms } from "./sections/Platforms.jsx";
-import { Usage } from "./sections/Usage.jsx";
-import { Architecture } from "./sections/Architecture.jsx";
-import { Lifecycle } from "./sections/Lifecycle.jsx";
+import { Nav } from "./chrome/Nav.jsx";
+import { I18nContext } from "./i18n/i18n-context.js";
+import { useReveal } from "./lib/use-reveal.js";
 import { Coverage } from "./sections/Coverage.jsx";
-import { Security } from "./sections/Security.jsx";
+import { Faq } from "./sections/Faq.jsx";
+import { Features } from "./sections/Features.jsx";
+import { Hero } from "./sections/Hero.jsx";
+import { HowItWorks } from "./sections/HowItWorks.jsx";
 import { Install } from "./sections/Install.jsx";
-import { useAmbientMotion } from "./lib/motion.jsx";
+import { Security } from "./sections/Security.jsx";
 
-export function Page() {
-  useAmbientMotion();
+/**
+ * @param {{ locale: import("./i18n/locales.js").Locale, messages: object }} props
+ */
+export function Page({ locale, messages }) {
+  const i18n = useMemo(() => ({ locale, messages }), [locale, messages]);
+  useReveal();
 
   return (
-    <>
+    <I18nContext.Provider value={i18n}>
       <a className="skip-link" href="#top">
-        Aller au contenu
+        {messages.common.skipLink}
       </a>
-
-      <Intro />
       <Backdrop />
-      <div className="progress" data-progress="1" aria-hidden="true" />
-      <StickyCta />
-
       <Nav />
-
-      <main id="top" className="page">
+      <main id="top" className="page" tabIndex={-1}>
         <Hero />
-        <TerminalDemo />
-        <Why />
-        <Platforms />
-        <Usage />
-        <Architecture />
-        <Lifecycle />
+        <Features />
         <Coverage />
+        <HowItWorks />
         <Security />
+        <Faq />
         <Install />
       </main>
-
       <Footer />
-    </>
+    </I18nContext.Provider>
   );
 }

@@ -10,8 +10,8 @@ import { GLOSSARY } from "../../build/i18n/glossary.mjs";
 import { resolveMessages } from "../../build/i18n/resolve-messages.mjs";
 import { LOCALES } from "../../src/i18n/locales.js";
 import { parseRich } from "../../src/i18n/parse-rich.js";
-import { facts, installCommand } from "../../src/data/facts.js";
-import { displayWidth } from "../helpers/display-width.mjs";
+import { facts, installCommand, providersByDomain } from "../../src/data/facts.js";
+import { displayWidth } from "../../build/i18n/display-width.mjs";
 
 const TITLE_MAX = 60;
 const DESCRIPTION_MAX = 160;
@@ -141,6 +141,11 @@ for (const locale of LOCALES) {
     );
   });
 }
+
+test("every provider domain of the registry has a label", () => {
+  const labels = Object.keys(english.coverage.domains);
+  assert.deepEqual(Object.keys(providersByDomain).filter((domain) => !labels.includes(domain)), []);
+});
 
 test("the allowlist only names keys that exist", () => {
   for (const path of SAME_AS_ENGLISH) assert.ok(englishLeaves.has(path), path);

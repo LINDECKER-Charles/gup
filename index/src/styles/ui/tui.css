@@ -1,0 +1,159 @@
+/* The structured TUI mock: top bar, sidebar, package table, embedded
+   terminal pane, key hints. Real layout, not box-drawing art, so it reflows
+   and never misaligns when a glyph falls back to another font. */
+
+.tui {
+  display: grid;
+  gap: 12px;
+}
+.tui-top,
+.tui-hints {
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+.tui-hints {
+  padding-block-start: 10px;
+  border-block-start: 1px solid var(--line-faint);
+}
+
+.tui-body {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 12px;
+}
+.tui--takeover .tui-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tui-side,
+.tui-main {
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 8px;
+}
+.tui-side li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: var(--fg-muted);
+}
+.tui-side .starts-group {
+  margin-block-start: 6px;
+  border-block-start: 1px solid var(--line-faint);
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  padding-block-start: 9px;
+}
+.tui-side .is-current {
+  background: var(--surface-raised);
+  color: var(--violet-text);
+  box-shadow: inset 2px 0 0 var(--violet);
+}
+.tui-badge {
+  color: var(--amber);
+}
+
+.tui-title {
+  padding: 0 8px 6px;
+  color: var(--violet-text);
+  font-weight: 600;
+}
+.tui-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+.tui-table td {
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.tui-group td {
+  padding-block-start: 8px;
+  color: var(--fg);
+  font-weight: 600;
+}
+.tui-count {
+  color: var(--amber);
+  text-align: end;
+}
+.tui-mark {
+  inline-size: 5ch;
+  color: var(--fg-dim);
+}
+.tui-name {
+  inline-size: 100%;
+  color: var(--fg);
+}
+.tui-from {
+  color: var(--fg-dim);
+}
+.tui-to {
+  color: var(--green);
+}
+.tui-row.is-cursor td {
+  background: var(--surface-raised);
+}
+.tui-row--checked .tui-mark,
+.tui-row--done .tui-mark {
+  color: var(--green);
+}
+.tui-row--running .tui-mark {
+  color: var(--amber);
+}
+.tui-row--failed .tui-mark {
+  color: var(--red);
+}
+
+/* The embedded terminal: subprocess output on the terminal's own background. */
+.tui-pane {
+  margin-block-start: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--bg-deep);
+}
+.tui-pane-title {
+  padding: 4px 10px;
+  border-block-end: 1px solid var(--line-faint);
+  color: var(--fg-muted);
+}
+.tui-pane-out {
+  margin: 0;
+  padding: 8px 10px 0;
+  font: inherit;
+  color: var(--fg-muted);
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tui-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 10px;
+  color: var(--fg-muted);
+}
+.tui-progress-track {
+  flex: 1;
+  block-size: 8px;
+  border-radius: 4px;
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+.tui-progress-bar {
+  display: block;
+  inline-size: var(--progress);
+  block-size: 100%;
+  background: var(--green);
+  animation: gup-fill 1.8s var(--ease-out) both;
+}
+
+@media (max-width: 560px) {
+  .tui-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tui-side,
+  .tui-from {
+    display: none;
+  }
+}

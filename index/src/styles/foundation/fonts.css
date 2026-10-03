@@ -1,0 +1,77 @@
+/* ----------------------------------------------------------------------------
+   Self-hosted Latin faces: Anton (display, and the "GUP" word in every
+   locale), Geist (sans) and Geist Mono (mono), served from /gup/fonts/ and
+   preloaded per script by build/seo/head.mjs. No font CDN: the old Google
+   Fonts link cost a render-blocking round trip on the LCP path.
+
+   Non-Latin scripts (Han, Devanagari, Bengali, Arabic) use system stacks
+   (scripts.css). Each face declares its unicode-range, so a non-Latin page
+   only downloads Geist when Latin glyphs actually occur (product names,
+   commands).
+
+   The "* Fallback" faces pin the system fallback to the webfont's metrics so
+   the swap does not reflow the page (CLS ~ 0).
+---------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "Anton";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("/fonts/anton-latin-400-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/geist-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/geist-mono-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Anton is a tall condensed grotesque; Impact and Arial Narrow are the closest
+   widely installed proxies. */
+@font-face {
+  font-family: "Anton Fallback";
+  src: local("Impact"), local("Haettenschweiler"), local("Arial Narrow Bold"),
+    local("Arial Narrow"), local("DejaVu Sans Condensed");
+  ascent-override: 102%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+/* Geist: UPM 1000, ascent 960, descent 250, against Arial (UPM 2048). */
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial"), local("Helvetica"), local("Liberation Sans");
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+@font-face {
+  font-family: "Geist Mono Fallback";
+  src: local("Consolas"), local("Menlo"), local("Liberation Mono"), local("Courier New");
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}

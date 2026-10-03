@@ -1,0 +1,78 @@
+/* ----------------------------------------------------------------------------
+   Non-Latin scripts: system font stacks, no webfont download.
+
+   Geist leads every stack: its unicode-range is Latin, so it only renders the
+   Latin runs (product names, commands) and the script stack renders the
+   rest. "Geist Fallback" (metric-matched Arial) is deliberately absent from
+   these stacks — Windows Arial carries Arabic glyphs and would hijack them.
+
+   Display headings drop the uppercase and the tracking: letter-spacing breaks
+   Arabic joining and the Devanagari/Bengali headline bar, and Han has no
+   case. Leading grows so matras, diacritics and dense ideographs never clip.
+   The brand word "GUP" keeps Anton (--font-brand) in every locale.
+---------------------------------------------------------------------------- */
+
+:root {
+  --stack-han: "Geist", system-ui, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  --stack-devanagari: "Geist", "Nirmala UI", "Kohinoor Devanagari", "Devanagari Sangam MN",
+    "Noto Sans Devanagari", "Mangal", system-ui, sans-serif;
+  --stack-bengali: "Geist", "Nirmala UI", "Kohinoor Bangla", "Bangla Sangam MN",
+    "Noto Sans Bengali", "Vrinda", system-ui, sans-serif;
+  --stack-arabic: "Geist", "Segoe UI", "SF Arabic", "Geeza Pro", "Noto Sans Arabic",
+    "Noto Naskh Arabic", Tahoma, system-ui, sans-serif;
+}
+
+html:is(:lang(zh), :lang(hi), :lang(bn), :lang(ar)) {
+  --display-case: none;
+  --display-tracking: 0;
+  --label-case: none;
+  --label-tracking: 0;
+}
+
+html:lang(zh) {
+  --font-sans: var(--stack-han);
+  --font-display: var(--stack-han);
+  --display-weight: 800;
+  --display-leading: 1.25;
+  line-break: strict;
+}
+
+html:lang(hi) {
+  --font-sans: var(--stack-devanagari);
+  --font-display: var(--stack-devanagari);
+  --display-weight: 700;
+  --display-leading: 1.4;
+  --body-leading: 1.75;
+}
+
+html:lang(bn) {
+  --font-sans: var(--stack-bengali);
+  --font-display: var(--stack-bengali);
+  --display-weight: 700;
+  --display-leading: 1.4;
+  --body-leading: 1.75;
+}
+
+html:lang(ar) {
+  --font-sans: var(--stack-arabic);
+  --font-display: var(--stack-arabic);
+  --display-weight: 700;
+  --display-leading: 1.35;
+  --body-leading: 1.75;
+}
+
+/* A run in another script inside a page (the endonyms of the language lists)
+   gets that script's stack too. */
+[lang|="zh"]:not(html) {
+  font-family: var(--stack-han);
+}
+[lang="hi"]:not(html) {
+  font-family: var(--stack-devanagari);
+}
+[lang="bn"]:not(html) {
+  font-family: var(--stack-bengali);
+}
+[lang="ar"]:not(html) {
+  font-family: var(--stack-arabic);
+}

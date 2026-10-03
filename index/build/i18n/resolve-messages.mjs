@@ -97,8 +97,9 @@ function resolveNode(node, path, options) {
   }
   if (isPlural(node)) return resolvePlural(node, path, options);
   if (isRecord(node)) {
+    const entries = Object.entries(node);
     return Object.fromEntries(
-      Object.entries(node).map(([key, value]) => [key, resolveNode(value, [...path, key], options)]),
+      entries.map(([key, value]) => [key, resolveNode(value, [...path, key], options)]),
     );
   }
   return fail(path, options, `unsupported value ${JSON.stringify(node)}`);

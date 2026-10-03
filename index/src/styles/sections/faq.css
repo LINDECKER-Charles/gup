@@ -1,0 +1,53 @@
+/* 05 · FAQ — native <details>, two columns from 1080 px. */
+
+.faq-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.faq-item[open] {
+  border-color: oklch(0.68 0.2 275 / 0.5);
+}
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-block-size: 56px;
+  padding: 14px 20px;
+  cursor: pointer;
+  list-style: none;
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-question {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.faq-chevron {
+  flex-shrink: 0;
+  color: var(--violet-text);
+  transition: transform 0.2s ease;
+}
+.faq-item[open] .faq-chevron {
+  transform: rotate(180deg);
+}
+.faq-answer {
+  padding: 0 20px 20px;
+  font-size: 15px;
+  color: var(--fg-muted);
+}
+
+@media (max-width: 1080px) {
+  .faq-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

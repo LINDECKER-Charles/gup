@@ -1,76 +1,64 @@
-/** 08 · Install — the conversion target, plus six copy-paste examples. */
-import { Shell } from "../ui/Shell.jsx";
-import { CopyButton } from "../ui/CopyButton.jsx";
-import { Heart } from "../lib/icons.jsx";
-import { installCommand } from "../data/facts.js";
-import { install } from "../data/content.js";
-import { KOFI_URL } from "../data/site.js";
+/**
+ * 06 · Install — the conversion target: the install command, five example
+ * commands, and the support banner.
+ */
+import { LINKS } from "../data/links.js";
+import { STRUCTURE } from "../data/structure.js";
+import { useI18n } from "../i18n/use-i18n.js";
+import { Icon } from "../ui/Icon.jsx";
+import { InstallCommand } from "../ui/InstallCommand.jsx";
+import { Section } from "../ui/Section.jsx";
+
+/** Ko-fi is a paid placement in the link graph, hence `sponsored`. */
+const SUPPORT_LINKS = [
+  { id: "kofi", href: LINKS.kofi, rel: "noopener sponsored", icon: "heart", tone: "amber" },
+  { id: "sponsors", href: LINKS.sponsors, rel: "noopener", tone: "ghost" },
+  { id: "star", href: LINKS.repo, rel: "noopener", icon: "star", tone: "ghost" },
+];
+
+function Support({ support }) {
+  return (
+    <aside className="support" aria-labelledby="support-title">
+      <div>
+        <h3 className="support-title" id="support-title">
+          {support.title}
+        </h3>
+        <p className="support-text">{support.text}</p>
+      </div>
+      <ul className="support-links">
+        {SUPPORT_LINKS.map((link) => (
+          <li key={link.id}>
+            <a className={`btn btn--${link.tone}`} href={link.href} target="_blank" rel={link.rel}>
+              {link.icon ? <Icon name={link.icon} /> : null}
+              <span>{support[link.id]}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
 
 export function Install() {
-  const [title, subtitle] = install.title;
+  const { install } = useI18n().messages;
 
   return (
-    <section className="section" id="install" aria-labelledby="install-title">
-      <Shell>
-        <div className="install-hero" data-reveal="30">
-          <span className="mono-label">{install.label}</span>
-          <h2 className="display display--cta" id="install-title">
-            {title}
-            <br />
-            {subtitle}
-          </h2>
-          <p className="install-lead">{install.lead}</p>
-
-          <div className="install-row">
-            <p className="install-cmd">
-              <span className="cmd-prompt" aria-hidden="true">
-                $
-              </span>
-              <code>{installCommand}</code>
-              <span className="install-caret" aria-hidden="true" />
-            </p>
-            <CopyButton className="btn btn--primary install-copy" />
-          </div>
-
-          <ul className="install-trust">
-            {install.trust.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-
-        <ul className="install-examples" data-reveal="31">
-          {install.examples.map((example) => (
-            <li className="install-example" key={example.cmd}>
-              <code>
-                <span className="cmd-prompt" aria-hidden="true">
-                  $
-                </span>
+    <Section id="install" kicker={install.kicker} title={install.title} lead={install.lead}>
+      <div className="install-panel" data-reveal={0}>
+        <InstallCommand />
+        <ul className="examples">
+          {STRUCTURE.examples.map((example) => (
+            <li key={example.id} className="example">
+              <code dir="ltr" translate="no">
+                <span aria-hidden="true">$ </span>
                 {example.cmd}
               </code>
-              <span>{example.desc}</span>
+              <span>{install.examples[example.id]}</span>
             </li>
           ))}
         </ul>
-
-        <div className="banner banner--amber" data-reveal="32">
-          <div className="banner-text">
-            <h3>{install.support.title}</h3>
-            <p>{install.support.text}</p>
-          </div>
-          <a
-            className="btn btn--amber"
-            href={KOFI_URL}
-            target="_blank"
-            // `sponsored` is the correct annotation for a donation link, and
-            // keeps it from being read as an editorial endorsement.
-            rel="noopener sponsored"
-          >
-            <Heart />
-            Ko-fi
-          </a>
-        </div>
-      </Shell>
-    </section>
+      </div>
+      <Support support={install.support} />
+    </Section>
   );
 }
