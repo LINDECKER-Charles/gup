@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildInsights } from "../../../src/core/insights/build-insights.js";
 import type { HistoryEvent } from "../../../src/core/history/types.js";
-import { parsePeriod } from "../../../src/core/time/period.js";
+import { parsePeriod, parseUntil, withUntil } from "../../../src/core/time/period.js";
 import {
   heatmapSection,
   kpiLines,
@@ -82,6 +82,39 @@ describe("heatmapSection", () => {
     expect(text(month[0]!)).toBe(HEATMAP_LABELS.title);
     expect(text(month[2]!)).toHaveLength(4 + 5 * 2);
     expect(text(year[2]!)).toHaveLength(4 + 53 * 2);
+  });
+
+  it("reaches back to a period's first day when it starts late in its week", () => {
+    // Sunday 6 September → Saturday 3 October: five calendar weeks, not four.
+    const sunday = updateEvent("pip", "a", { ts: "2026-09-06T10:00:00.000Z" });
+    const lines = heatmapSection(insights([sunday], "2026-09-06"), context(120)).map(text);
+
+    expect(lines[8]!.trimEnd()).toBe("dim ░ · · ·");
+  });
+});
+
+describe("a period that ended before today", () => {
+  // Tuesday 1 → Monday 14 September 2026, drawn on 3 October.
+  const PAST = withUntil(parsePeriod("2026-09-01", NOW)!, parseUntil("2026-09-14")!)!;
+  const PAST_INSIGHTS = buildInsights(
+    [
+      updateEvent("pip", "a", { ts: "2026-09-01T10:00:00.000Z" }),
+      updateEvent("pip", "a", { ts: "2026-09-14T10:00:00.000Z" }),
+      scanEvent({ ts: "2026-09-02T10:00:00.000Z", outdated: 5 }),
+    ],
+    { period: PAST },
+  );
+
+  it("ends its heatmap on the period's last day, not today", () => {
+    const lines = heatmapSection(PAST_INSIGHTS, context(120)).map((line) => text(line).trimEnd());
+
+    expect(lines.slice(2, 4)).toEqual(["lun · · ░", "    ░ ·"]);
+  });
+
+  it("draws its trend up to the period's last day", () => {
+    const sparkline = trendLine(PAST_INSIGHTS, context(120))[2]!;
+
+    expect(sparkline.text).toHaveLength(13);
   });
 });
 

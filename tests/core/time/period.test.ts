@@ -39,6 +39,7 @@ describe("parsePeriod", () => {
       scope: { kind: "span", count: 12, unit: "m" },
       since: new Date(2025, 2, 31, 15, 30, 0),
       until: NOW,
+      hasFixedEnd: false,
     });
     expect(parsePeriod("2026-03-01", NOW)?.scope).toEqual({ kind: "date" });
     expect(parsePeriod("all", NOW)?.scope).toEqual({ kind: "all" });
@@ -73,7 +74,10 @@ describe("until", () => {
 
   it("moves the end of a period, never before its start", () => {
     const period = parsePeriod("2026-03-01", NOW)!;
-    expect(withUntil(period, new Date(2026, 2, 15))?.until).toEqual(new Date(2026, 2, 15));
+    expect(withUntil(period, new Date(2026, 2, 15))).toMatchObject({
+      until: new Date(2026, 2, 15),
+      hasFixedEnd: true,
+    });
     expect(withUntil(period, new Date(2026, 1, 1))).toBeNull();
   });
 

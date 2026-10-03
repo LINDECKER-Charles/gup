@@ -4,6 +4,7 @@ import {
   compareDays,
   dayKeyOf,
   daysBetween,
+  weekStartOf,
   type DayKey,
 } from "../../core/time/calendar.js";
 import type { Period } from "../../core/time/period.js";
@@ -84,10 +85,11 @@ function recencyItems({ totals }: Insights, now: Date): Item[] {
 /** Successful updates per day, as a calendar heatmap under its title. */
 export function heatmapSection(insights: Insights, ctx: ChartContext): Line[] {
   const counts = new Map(insights.days.map((day) => [day.day, day.success] as const));
+  const end = lastDayOf(insights.period, ctx.now);
   const heatmap = renderHeatmap({
     counts,
-    end: dayKeyOf(ctx.now),
-    maxWeeks: weeksOf(insights.period, ctx.now),
+    end,
+    maxWeeks: weeksOf(insights.period, end),
     width: ctx.width,
     glyphs: ctx.glyphs,
   });
@@ -96,7 +98,7 @@ export function heatmapSection(insights: Insights, ctx: ChartContext): Line[] {
 
 /** The outdated count of each day's last full scan as a sparkline, with its max and last value. */
 export function trendLine(insights: Insights, ctx: ChartContext): Line {
-  const values = dailySeries(insights.trend, dayKeyOf(ctx.now));
+  const values = dailySeries(insights.trend, lastDayOf(insights.period, ctx.now));
   if (values.length === 0) {
     return [seg(TREND_LABELS.title, "strong"), seg(`${GAP}${NO_DATA}`, "muted")];
   }
@@ -125,11 +127,21 @@ export function slowProvidersLine(insights: Insights, ctx: ChartContext): Line {
   return [seg(title, "strong"), seg(fit(list, room).trimEnd(), "muted")];
 }
 
-/** Weeks the heatmap shows: the period's, one year at most. */
-function weeksOf(period: Period, now: Date): number {
+/** The last day the charts draw: today, or the period's last day when it ended before. */
+function lastDayOf(period: Period, now: Date): DayKey {
+  return dayKeyOf(period.until.getTime() < now.getTime() ? period.until : now);
+}
+
+/**
+ * Week columns the heatmap needs to reach back to the period's first day, one
+ * year at most: counted between Mondays, as a 30-day period starting on a
+ * Sunday spans six calendar weeks.
+ */
+function weeksOf(period: Period, end: DayKey): number {
   if (period.since === null) return MAX_HEATMAP_WEEKS;
-  const days = daysBetween(dayKeyOf(period.since), dayKeyOf(now)) + 1;
-  return Math.min(MAX_HEATMAP_WEEKS, Math.max(1, Math.ceil(days / DAYS_PER_WEEK)));
+  const first = weekStartOf(dayKeyOf(period.since));
+  const weeks = daysBetween(first, weekStartOf(end)) / DAYS_PER_WEEK + 1;
+  return Math.min(MAX_HEATMAP_WEEKS, Math.max(1, weeks));
 }
 
 /** One value per day from the first point to `end`; a day without a full scan repeats the last. */

@@ -25,6 +25,8 @@ export interface Period {
   readonly since: Date | null;
   /** Newest instant covered (inclusive). */
   readonly until: Date;
+  /** True when `until` was set (`--until`); false when the period ends now. */
+  readonly hasFixedEnd: boolean;
 }
 
 /** The periods the journal steps through with `p`, shortest first. */
@@ -44,12 +46,12 @@ const LAST_MS_OF_DAY = { hours: 23, minutes: 59, seconds: 59, ms: 999 } as const
 /** `raw` as a period ending `now`, or null when it is not one. */
 export function parsePeriod(raw: string, now: Date): Period | null {
   const key = raw.trim().toLowerCase();
-  if (key === ALL) return { key, scope: { kind: "all" }, since: null, until: new Date(now) };
+  if (key === ALL) return endingNow({ key, scope: { kind: "all" }, since: null }, now);
   const relative = RELATIVE.exec(key);
   if (relative) return spanPeriod(Number(relative[1]), relative[2] as PeriodUnit, now);
   const since = calendarDate(key);
   if (since === null || since.getTime() > now.getTime()) return null;
-  return { key, scope: { kind: "date" }, since, until: new Date(now) };
+  return endingNow({ key, scope: { kind: "date" }, since }, now);
 }
 
 /** A preset of the cycle as a period ending `now`. */
@@ -81,7 +83,7 @@ export function parseUntil(raw: string): Date | null {
 /** `period` ending at `until` instead, or null when it would end before it starts. */
 export function withUntil(period: Period, until: Date): Period | null {
   if (period.since !== null && until.getTime() < period.since.getTime()) return null;
-  return { ...period, until: new Date(until) };
+  return { ...period, until: new Date(until), hasFixedEnd: true };
 }
 
 /** Whether the instant `at` (epoch ms) falls within `period`, both ends included. */
@@ -92,12 +94,12 @@ export function isWithin(period: Period, at: number): boolean {
 
 function spanPeriod(count: number, unit: PeriodUnit, now: Date): Period | null {
   if (count < 1 || count * DAYS_PER_UNIT[unit] > MAX_SPAN_DAYS) return null;
-  return {
-    key: `${count}${unit}`,
-    scope: { kind: "span", count, unit },
-    since: spanStart(count, unit, now),
-    until: new Date(now),
-  };
+  const scope: PeriodScope = { kind: "span", count, unit };
+  return endingNow({ key: `${count}${unit}`, scope, since: spanStart(count, unit, now) }, now);
+}
+
+function endingNow(start: Pick<Period, "key" | "scope" | "since">, now: Date): Period {
+  return { ...start, until: new Date(now), hasFixedEnd: false };
 }
 
 function spanStart(count: number, unit: PeriodUnit, now: Date): Date {

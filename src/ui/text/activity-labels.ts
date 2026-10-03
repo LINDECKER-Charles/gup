@@ -116,8 +116,16 @@ const SPAN_WORDS: Readonly<Record<PeriodUnit, readonly [one: string, many: strin
   y: ["la dernière année", "dernières années"],
 };
 
-/** "30 derniers jours", "12 derniers mois", "depuis le 01/01/2026", "tout l'historique". */
+/**
+ * "30 derniers jours", "12 derniers mois", "depuis le 01/01/2026", "tout
+ * l'historique" — and "… jusqu'au 31/03/2026" when the period was given an end.
+ */
 export function periodLabel(period: Period): string {
+  const start = periodStartLabel(period);
+  return period.hasFixedEnd ? `${start} jusqu'au ${formatDate(period.until)}` : start;
+}
+
+function periodStartLabel(period: Period): string {
   const { scope } = period;
   if (scope.kind === "all" || period.since === null) return "tout l'historique";
   if (scope.kind === "date") return `depuis le ${formatDate(period.since)}`;

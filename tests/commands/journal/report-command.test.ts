@@ -105,7 +105,15 @@ describe("gup report", () => {
     expect(await runReport({ format: "json", since: "2020-01-01", until: "2020-01-02" })).toBe(0);
 
     expect((JSON.parse(output(stdout)) as { events: unknown[] }).events).toEqual([]);
-    expect(output(stderr)).toContain("aucune activité sur la période (depuis le 01/01/2020)");
+    expect(output(stderr)).toContain(
+      "aucune activité sur la période (depuis le 01/01/2020 jusqu'au 02/01/2020)",
+    );
+  });
+
+  it("names the end of a period given --until in the report's title", async () => {
+    expect(await runReport({ since: "2020-01-01", until: "2020-03-31" })).toBe(0);
+
+    expect(output(stdout)).toMatch(/^gup — activité · depuis le 01\/01\/2020 jusqu'au 31\/03\/2020\n/);
   });
 
   it("counts the history lines it could not read", async () => {
