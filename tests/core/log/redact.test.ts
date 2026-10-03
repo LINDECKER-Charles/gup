@@ -13,6 +13,7 @@ import {
 
 const GITHUB_TOKEN = `ghp_${"a1B2".repeat(9)}`;
 const NPM_TOKEN = `npm_${"x".repeat(36)}`;
+const UUID = "4f8a1c2e-9b3d-4e5f-8a7b-1c2d3e4f5a6b";
 const JWT = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
 
 describe("redactSecrets", () => {
@@ -36,6 +37,30 @@ describe("redactSecrets", () => {
     expect(redactSecrets(input)).toBe(expected);
   });
 
+  it.each([
+    ["an npm token in an .npmrc line", `//registry.npmjs.org/:_authToken=${UUID}`, "//registry.npmjs.org/:_authToken=***"],
+    ["npm basic auth in an .npmrc line", "//pkgs.dev.azure.com/o/_packaging/f/npm/registry/:_auth=dXNlcjpwdw==", "//pkgs.dev.azure.com/o/_packaging/f/npm/registry/:_auth=***"],
+    ["an npm password in an .npmrc line", "//pkgs.dev.azure.com/:_password=c2VjcmV0", "//pkgs.dev.azure.com/:_password=***"],
+    ["a token in an environment assignment", `NPM_TOKEN=${UUID} GH_TOKEN=abc123`, "NPM_TOKEN=*** GH_TOKEN=***"],
+    ["a gho_ GitHub token", `gho_${"B1".repeat(18)}`, "***"],
+    ["an AWS secret key", "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "AWS_SECRET_ACCESS_KEY=***"],
+    ["an AWS credentials file line", "aws_secret_access_key = wJalrXUtnFEMI/K7MDENG", "aws_secret_access_key = ***"],
+    ["an AWS session key and token", "ASIAIOSFODNN7EXAMPLE aws_session_token=FwoGZXIvYXdz+cd==", "*** aws_session_token=***"],
+    ["any Authorization scheme, whatever its case", "authorization: token 0123456789abcdef", "authorization: token ***"],
+    ["a proxy Authorization header", "Proxy-Authorization: bearer lowercaseonly", "Proxy-Authorization: bearer ***"],
+    ["an Authorization header in JSON", '{"Authorization":"Bearer abcDEF0123456789"}', '{"Authorization":"Bearer ***"}'],
+    ["URL credentials with an empty user", "git clone https://:pat0123@dev.azure.com/o/p", "git clone https://***@dev.azure.com/o/p"],
+    ["URL credentials whose password holds an @", "https://bob:p@ss@example.com/x", "https://***@example.com/x"],
+    ["an Azure storage key", "AccountName=acct;AccountKey=Zm9vYmFy==;EndpointSuffix=core.windows.net", "AccountName=acct;AccountKey=***;EndpointSuffix=core.windows.net"],
+    ["an Azure shared access key", "SharedAccessKeyName=Root;SharedAccessKey=Zm9vYmFy=", "SharedAccessKeyName=Root;SharedAccessKey=***"],
+    ["a quoted password", `{"password": "hunter2"} password='x1'`, `{"password": "***"} password='***'`],
+    ["a PyPI token", `pypi-AgEIcHlwaS5vcmc${"Cj".repeat(30)}`, "***"],
+    ["a NuGet API key", `oy2${"a1".repeat(21)}b`, "***"],
+    ["any secret-named query parameter", "/cb?client_secret=s3c&state=1&npm_token=t", "/cb?client_secret=***&state=1&npm_token=***"],
+  ])("masks %s", (_shape, input, expected) => {
+    expect(redactSecrets(input)).toBe(expected);
+  });
+
   it("masks a private key from its header to its footer, and to the end when the footer is missing", () => {
     const key = "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKj34GkxFhD90vcNLYLInFEX\n-----END RSA PRIVATE KEY-----";
     expect(redactSecrets(`before\n${key}\nafter`)).toBe("before\n-----PRIVATE KEY ***-----\nafter");
@@ -50,6 +75,13 @@ describe("redactSecrets", () => {
     "Basic configuration applied",
     "pip install keyring==25.6.0",
     "the token was refused",
+    "max_tokens: 1024",
+    "- Token scopes: 'gist', 'read:org'",
+    "KeyError: 'token'",
+    "npm install --auth-type=web",
+    "Requirement already satisfied: secretstorage>=3.2",
+    "Bearer token required",
+    "https://example.com:8080/path?page=2",
   ])("leaves %j alone", (text) => {
     expect(redactSecrets(text)).toBe(text);
   });
@@ -78,7 +110,12 @@ describe("redactSecrets", () => {
     ["repeated bearer words", "Bearer abcdefg "],
     ["repeated header-like words", "Basic configurations "],
     ["repeated key names", "password: "],
-    ["repeated token prefixes", "ghp_glpat-xoxb-AIza-"],
+    ["repeated assignments", "a=b:"],
+    ["long name runs", `${"a_b-c.".repeat(12)}x `],
+    ["names that almost end like secrets", "passpwtokesecreapi_ke "],
+    ["repeated headers", "authorization: x "],
+    ["repeated empty URL users", "ab://:@@"],
+    ["repeated token prefixes", "ghp_glpat-xoxb-AIza-pypi-AgEoy2"],
     ["repeated queries", "?token="],
     ["repeated home-like paths", "C:\\Users\\"],
   ])("redacts a megabyte of %s in under 100 ms", (_name, unit) => {

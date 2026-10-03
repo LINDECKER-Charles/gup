@@ -8,9 +8,8 @@ import { homedir } from "node:os";
  *
  * Patterns target known secret *shapes* only, so a package called
  * `token-bucket`, a `--token-file <path>` flag or a version string survive.
- * Every pattern has a literal prefix and single, bounded quantifiers over a
- * class that cannot contain what follows it; a token-shaped pattern only
- * starts where no character of its own class precedes (lookbehind). Each
+ * Every pattern starts at a literal prefix, or only where a run of its own
+ * class starts (lookbehind), and uses single, bounded quantifiers. Each
  * character is therefore examined a bounded number of times: redacting a
  * megabyte of hostile text stays linear (a test holds the line). Value classes
  * exclude `"` and `\`, so redacting JSON text keeps it valid JSON.
@@ -20,38 +19,77 @@ export const REDACTED = "***";
 
 type Rule = readonly [pattern: RegExp, replacement: string];
 
-const SECRET_RULES: readonly Rule[] = [
-  // scheme://user:password@host — the credentials go, the host stays.
+/**
+ * How a name whose assigned value is a secret ends: `password`, `NPM_TOKEN`,
+ * `_authToken`, `_auth`, `AWS_SECRET_ACCESS_KEY`, `AccountKey`, `client_secret`.
+ */
+const SECRET_NAME_ENDS = [
+  "passw(?:or)?d",
+  "passphrase",
+  "pwd",
+  "secret",
+  "token",
+  "auth",
+  "(?:api|access|account|private|secret)[_-]?key",
+].join("|");
+
+/** A name ending like a secret's; its prefix is bounded and lazy. */
+const SECRET_NAME = String.raw`[\w.-]{0,64}?(?:${SECRET_NAME_ENDS})`;
+
+/**
+ * A secret in a URL query: `?token=…`, `&client_secret=…`, `&sig=…` (an Azure
+ * SAS signature), `&key=…`. The value ends at the next parameter.
+ */
+// eslint-disable-next-line security/detect-non-literal-regexp -- built from constants only
+const QUERY_SECRET = new RegExp(
+  String.raw`([?&](?:${SECRET_NAME}|sig(?:nature)?|key)=)[^&\s#"\\]{1,2048}`,
+  "gi",
+);
+
+/**
+ * `name=value`, `name: value`, `"name": "value"` whose name ends like a
+ * secret's. The match starts only where a name run starts (a query parameter
+ * is the rule above's), so a run costs at most its bounded prefix times the endings.
+ */
+// eslint-disable-next-line security/detect-non-literal-regexp -- built from constants only
+const ASSIGNMENT = new RegExp(
   [
-    /(?<![a-z0-9+.-])([a-z][a-z0-9+.-]{1,20}:\/\/)[^\s/@:"\\]{1,256}:[^\s/@"\\]{1,256}@/gi,
+    String.raw`(?<![\w.?&-])(${SECRET_NAME})`,
+    String.raw`("?\s{0,3}[=:]\s{0,3}["']?)`,
+    String.raw`[^\s"',;\\]{1,512}`,
+  ].join(""),
+  "gi",
+);
+
+const SECRET_RULES: readonly Rule[] = [
+  // scheme://user:password@host — the credentials go, the host stays. The user may be
+  // empty (`https://:PAT@dev.azure.com`), the password may hold an `@` (the last one ends it).
+  [
+    /(?<![a-z0-9+.-])([a-z][a-z0-9+.-]{1,20}:\/\/)[^\s/@:"\\]{0,256}:[^\s/"\\]{1,256}@/gi,
     "$1***@",
   ],
-  // A secret in a URL query: ?token=…, &sig=…
+  [QUERY_SECRET, "$1***"],
+  // An (Proxy-)Authorization header, whatever its scheme (Bearer, token, Digest…): the
+  // scheme stays.
   [
-    /([?&](?:access_token|token|sig(?:nature)?|api_?key|key|password|secret)=)[^&\s#"\\]{1,2048}/gi,
+    /(?<!\w)(authorization"?\s{0,3}:\s{0,3}"?(?:[a-z]{1,32}\s{1,8})?)[^\s"\\]{1,2048}/gi,
     "$1***",
   ],
-  // An Authorization header value — not a plain lowercase word ("Basic configuration").
+  // Bearer/Basic credentials elsewhere — not a plain lowercase word ("Basic configuration").
   [
     /\b(Bearer|Basic)\s{1,8}(?=[a-z]{0,2048}[A-Z0-9._~+/=-])[A-Za-z0-9._~+/=-]{8,2048}/g,
     "$1 ***",
   ],
-  // password=…, token: …
-  [
-    /\b(pass(?:wd|word)|pwd|secret|token)(\s{0,3}[=:]\s{0,3})[^\s"',;\\]{1,512}/gi,
-    "$1$2***",
-  ],
-  // api-key=…, client_secret: …
-  [
-    /\b((?:api|access)[_-]?key|client[_-]?secret)(\s{0,3}[=:]\s{0,3})[^\s"',;\\]{1,512}/gi,
-    "$1$2***",
-  ],
-  // Token formats: GitHub, npm, GitLab, Slack, AWS access keys, Google API keys, JWTs.
-  [/(?<![A-Za-z0-9_])(?:gh[pousr]_[A-Za-z0-9]{20,255}|github_pat_[A-Za-z0-9_]{20,255})/g, REDACTED],
+  [ASSIGNMENT, "$1$2***"],
+  // Token formats: GitHub, npm, GitLab, Slack, PyPI, NuGet, AWS access keys (long-lived and
+  // session), Google API keys, JWTs.
+  [/(?<![\w])(?:gh[pousr]_[A-Za-z0-9]{20,255}|github_pat_[A-Za-z0-9_]{20,255})/g, REDACTED],
   [/(?<![A-Za-z0-9_])npm_[A-Za-z0-9]{36}(?![A-Za-z0-9])/g, REDACTED],
   [/(?<![A-Za-z0-9_-])glpat-[A-Za-z0-9_-]{20,64}/g, REDACTED],
   [/(?<![A-Za-z0-9_-])xox[abprs]-[A-Za-z0-9-]{10,255}/g, REDACTED],
-  [/(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}(?![A-Za-z0-9])/g, REDACTED],
+  [/(?<![A-Za-z0-9_-])pypi-AgE[A-Za-z0-9_-]{32,4096}/g, REDACTED],
+  [/(?<![A-Za-z0-9])oy2[a-z0-9]{43}(?![A-Za-z0-9])/g, REDACTED],
+  [/(?<![A-Za-z0-9])A(?:KI|SI)A[0-9A-Z]{16}(?![A-Za-z0-9])/g, REDACTED],
   [/(?<![A-Za-z0-9_-])AIza[0-9A-Za-z_-]{35}/g, REDACTED],
   [
     /(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{8,4096}\.[A-Za-z0-9_-]{8,4096}\.[A-Za-z0-9_-]{8,4096}/g,
