@@ -194,6 +194,22 @@ as the UI suites, and a `--mode check` switch that works in every shell. The
 unit tests of the pipeline live in `tests/scripts/screenshots/` and run with
 the main suite.
 
+## Link checking
+
+The `docs` workflow (`.github/workflows/docs.yml`) checks every relative link
+and its anchor in the tracked Markdown files, offline (lychee with
+`--include-fragments`), on pull requests that touch Markdown or
+`docs/assets/`. It is not a required check — a path-filtered workflow cannot
+be — but a red run is fixed before merging.
+
+- Link to a file by relative path, to a section by its GitHub anchor:
+  [`documentation.md#screenshots`](#screenshots).
+- An anchor is the heading, lowercased, punctuation dropped, spaces turned to
+  hyphens. Keep numbers out of the headings other pages link to: renumbering a
+  section would break every link to it.
+- External URLs (badges, npm, commits) are not checked: offline keeps the job
+  deterministic.
+
 ## Changelog and release notes
 
 - Each branch writes its changelog fragment, `docs/changelog/unreleased/<branch-slug>.md`,

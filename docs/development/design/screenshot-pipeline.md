@@ -96,7 +96,8 @@ is verified by the CI step of wave 3.
 - **Safe SVGs.** Text is XML-escaped (and characters XML forbids replaced); no script, no
   external reference, no `foreignObject`, no animation — safe through GitHub's camo proxy,
   npm and the landing. Scene ids are validated (`^[a-z0-9]+(-[a-z0-9]+)*$`) before any path
-  is built from them; output stays in `docs/assets/screens/`.
+  is built from them; output stays in `docs/assets/screens/`. The gallery writes titles and
+  alt texts as literal Markdown (one line, markup characters escaped).
 
 ## 5. Tests
 
@@ -107,9 +108,10 @@ is verified by the CI step of wave 3.
 | `resolve-color.test.ts` | ANSI slots through the palette, xterm-256 above slot 15, default and transparent colours, literal colours kept |
 | `frame-model.test.ts` | INVERSE, HIDDEN, wide-glyph column accounting, attribute decoding |
 | `svg-frame.test.ts` | grid placement, escaping, merged backgrounds, classes by first use, blank cells, same bytes, document size and labels |
-| `output.test.ts` | CRLF counts as unchanged, stale/missing in check mode without writing, write mode, orphans |
+| `output.test.ts` | CRLF counts as unchanged, stale/missing in check mode without writing, write mode, orphans, gallery markup escaped |
 | `catalogue-problems.test.ts` | the shipped catalogue is valid; unsafe or duplicate ids, alt text and sizes refused |
 | `env-sandbox.test.ts` | `GUP_*` hidden, data dirs in a temporary tree, Unicode glyphs whatever the host, full restore |
+| `frozen-clock.test.ts` | `Date` and the frame clock stopped at the instant while timeouts run, real timers back on thaw |
 | `no-spawn.test.ts` | every process-starting runner export refused and recorded, process-free helpers real, unknown exports refused, a refusal the app swallowed still on record |
 | `capture-scene.test.ts` | the frame of the reached state, waiting for data a view loads while the renderer idles, opening a view wherever the sidebar lists it, teardown when a scene fails (held scan released) |
 | `screens-run.test.ts` | byte-identical consecutive runs; check mode fails on stale, missing and orphan files and writes nothing; write mode deletes orphans |
@@ -169,14 +171,24 @@ and still opens Providers.
 2. Fixture ports in `app-fixture.ts` for every new view port that reaches the system (the
    guard names it), and guards for the modules that start processes outside the runner, if
    any lands (node-pty's loader, the report opener, the OS scheduler backend).
-3. The launcher: install the production launcher slot (in-screen updates) before capturing
-   update scenes, or the screenshots show the outside flow.
+3. The process-wide slots. The generator runs no `CliModule.beforeAction`, so every slot
+   stays at its default: legacy appearance, default preferences, outside launcher, no log
+   backend. Install what the shipped app installs — the themed appearance
+   (`createTestHost({ createAppearance })`, or `configureScreens`), the preferences source
+   over the sandbox config (`setUiPreferencesSource`), the in-screen launcher
+   (`setLauncherFactory`) — and reset each with `null` afterwards, or the screenshots show
+   0.4.0's look and the outside update flow.
 4. History and schedules fixtures write through the real stores into the sandbox
    directories (`GUP_HISTORY_DIR`, `GUP_SCHEDULER_DIR`, `GUP_CONFIG_DIR` are already there).
 5. Light-theme scenes: add the light palette (GitHub Light Default, from
    `primer/github-vscode-theme`) and `Scene.palette`.
 6. Generate, eyeball in a browser, commit; then the `screenshots:check` step on the Ubuntu
    leg of `ci.yml` — the first run is the cross-OS byte-identity proof (risk R3).
+7. Shared docs this branch could not edit in wave 2: list
+   `docs/development/documentation.md` in the docs index (`docs/README.md`), as the page's
+   own rule asks, and turn its mention of `docs/development/releasing.md` into a link. Its
+   "Link checking" section describes the `docs` workflow that `docs/open-source-community`
+   adds; it merges first (plan §3.5).
 
 ## 8. Observations for the UI owners
 
