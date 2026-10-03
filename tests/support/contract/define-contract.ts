@@ -7,6 +7,7 @@ import {
   listsExpectedRows,
   needsEveryWaiver,
   reportsFailedInstall,
+  routesEveryUpdate,
   satisfiesRowInvariants,
   staysHidden,
   survivesScanFaults,
@@ -22,7 +23,8 @@ import type { ContractSuite, ProviderContractCase } from "./types.js";
  *
  * Per case: detection on its machine and on a clean one, the exact rows (or a
  * golden), the row invariants, a fault sweep of the scan, the install argv and
- * its failure handling when `update` is declared, and the `updateAll` shape.
+ * its failure handling when `update` is declared, the same update on every
+ * declared route, and the `updateAll` shape.
  * Every test loads its own machine; nothing is shared between them.
  */
 export function defineProviderContract(suite: ContractSuite): void {
@@ -39,6 +41,10 @@ export function defineProviderContract(suite: ContractSuite): void {
 function assertValidSuite(suite: ContractSuite, labels: readonly string[]): void {
   const duplicate = labels.find((label, index) => labels.indexOf(label) !== index);
   if (duplicate) throw new Error(`${suite.domain}: two cases are labelled "${duplicate}"`);
+  const unrouted = suite.cases.findIndex((entry) => entry.routes && !entry.update);
+  if (unrouted !== -1) {
+    throw new Error(`${suite.domain}: "${labels[unrouted]}" declares routes but no update`);
+  }
   const waivers = suite.cases.flatMap((contractCase) => contractCase.waivers ?? []);
   const undocumented = waivers.find((waiver) => waiver.reason.trim() === "");
   if (undocumented) {
@@ -66,6 +72,10 @@ function defineUpdateTests(contractCase: ProviderContractCase): void {
   if (!expectation) return;
   it("installs through the documented argv", () =>
     installsDocumentedArgv(contractCase, expectation));
+  if ((contractCase.routes ?? []).length > 0) {
+    it("routes the update to the installer that owns the binary", () =>
+      routesEveryUpdate(contractCase, expectation));
+  }
   if (expectation.installs.length === 0) return;
   it("reports a failed install as an outcome", () =>
     reportsFailedInstall(contractCase, expectation));

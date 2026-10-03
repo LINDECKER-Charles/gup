@@ -5,6 +5,7 @@ import {
   listsExpectedRows,
   needsEveryWaiver,
   reportsFailedInstall,
+  routesEveryUpdate,
   staysHidden,
   survivesScanFaults,
 } from "../contract/checks.js";
@@ -15,10 +16,16 @@ import {
   sweepInstalls,
   sweepScan,
 } from "../contract/fault-sweep.js";
-import type { ProviderContractCase } from "../contract/types.js";
+import { installedVia } from "../contract/installers.js";
+import type { ProviderContractCase, UpdateRoute } from "../contract/types.js";
 import { system } from "../system/fake-system.js";
 import { SELF_TEST_CASES } from "./contract-cases.js";
-import { FallbackListProvider, FragileProvider, ListManagerProvider } from "./fake-providers.js";
+import {
+  FallbackListProvider,
+  FragileProvider,
+  ListManagerProvider,
+  ReleaseToolProvider,
+} from "./fake-providers.js";
 
 function selfTestCase(index: number): ProviderContractCase {
   const contractCase = SELF_TEST_CASES[index];
@@ -175,6 +182,35 @@ describe("generated checks fail on a broken case", () => {
     );
   });
 
+  it("an update routed to an installer with the wrong id", async () => {
+    const route: UpdateRoute = {
+      via: "brew",
+      system: installedVia("brew", "rtool"),
+      installs: [["brew", "upgrade", "--formula", "rtool-cli"]],
+    };
+    const misrouted = { ...RTOOL_ON_WINDOWS, routes: [route] };
+    const expectation = RTOOL_ON_WINDOWS.update ?? { packageId: "", installs: [] };
+
+    await expect(routesEveryUpdate(misrouted, expectation)).rejects.toThrow(
+      'via brew: installs [["brew","upgrade","--formula","rtool"]] ≠ ' +
+        '[["brew","upgrade","--formula","rtool-cli"]]',
+    );
+  });
+
+  it("a routed outcome that differs from the declared one", async () => {
+    const route: UpdateRoute = {
+      via: "manual",
+      system: installedVia("manual", "rtool"),
+      installs: [],
+      outcome: { success: false, skipped: true, message: "Mettre à jour à la main" },
+    };
+    const expectation = RTOOL_ON_WINDOWS.update ?? { packageId: "", installs: [] };
+
+    await expect(
+      routesEveryUpdate({ ...RTOOL_ON_WINDOWS, routes: [route] }, expectation),
+    ).rejects.toThrow('via manual: message: "Télécharger rtool" ≠ "Mettre à jour à la main"');
+  });
+
   it("a waiver nothing needs", async () => {
     const overWaived: ProviderContractCase = {
       ...LIST_MANAGER,
@@ -187,11 +223,54 @@ describe("generated checks fail on a broken case", () => {
   });
 });
 
+describe("waivers needed by a route", () => {
+  /** Reports another package id when it upgrades through Homebrew. */
+  class RenamingProvider extends ReleaseToolProvider {
+    override async update(packageId: string) {
+      const outcome = await super.update(packageId);
+      return process.platform === "darwin" ? { ...outcome, id: "rtool-renamed" } : outcome;
+    }
+  }
+
+  const renamed: ProviderContractCase = {
+    ...RTOOL_ON_WINDOWS,
+    create: () => new RenamingProvider(),
+    routes: [
+      {
+        via: "brew",
+        system: installedVia("brew", "rtool"),
+        installs: [["brew", "upgrade", "--formula", "rtool"]],
+        outcome: { id: "rtool-renamed" },
+      },
+    ],
+    waivers: [{ invariant: "outcome-id", reason: "self-test: the brew route renames" }],
+  };
+
+  it("count as needed", async () => {
+    await expect(needsEveryWaiver(renamed)).resolves.toBeUndefined();
+  });
+
+  it("are dead once the route is gone", async () => {
+    await expect(needsEveryWaiver({ ...renamed, routes: [] })).rejects.toThrow(
+      "outcome-id (self-test: the brew route renames) is never needed",
+    );
+  });
+});
+
 describe("contract suite validation", () => {
   it("refuses two cases with the same label", () => {
     expect(() =>
       defineProviderContract({ domain: "dup", cases: [LIST_MANAGER, LIST_MANAGER] }),
     ).toThrow('dup: two cases are labelled "lm"');
+  });
+
+  it("refuses routes on a case that declares no update", () => {
+    const { update: _update, ...withoutUpdate } = RTOOL_ON_WINDOWS;
+    const routed: ProviderContractCase = { ...withoutUpdate, routes: [] };
+
+    expect(() => defineProviderContract({ domain: "routed", cases: [routed] })).toThrow(
+      'routed: "rtool · scoop on windows" declares routes but no update',
+    );
   });
 
   it("refuses a waiver without a reason", () => {

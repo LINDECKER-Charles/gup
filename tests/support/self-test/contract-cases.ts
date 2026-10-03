@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import type { GoldenRef } from "../fixtures/refs.js";
 import type { ProviderContractCase } from "../contract/types.js";
+import { delegationRoutes } from "../contract/installers.js";
 import type { SystemSpec } from "../system/types.js";
 import {
   BatchManagerProvider,
@@ -49,6 +50,10 @@ export const SELF_TEST_CASES: readonly ProviderContractCase[] = [
     },
     outdated: [{ id: "rtool", current: "1.2.0", latest: "1.4.0", note: "via scoop" }],
     update: { packageId: "rtool", installs: [["scoop", "update", "rtool"]] },
+    routes: delegationRoutes("rtool", {
+      ids: { scoop: "rtool", brew: "rtool" },
+      manualMessage: "Télécharger rtool",
+    }),
     updateAll: "collapsed",
   },
   {
