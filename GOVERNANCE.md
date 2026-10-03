@@ -41,8 +41,9 @@ or by request. Nobody needs a role to send a pull request.
 - **Dependencies.** A new runtime dependency needs an issue and a
   justification first: the install footprint is kept small on purpose, and
   every dependency is code that runs on the user's machine with their
-  privileges. Native and UI dependencies are pinned exactly; the deliberate
-  version pins and their reasons are listed in
+  privileges. Native code is pinned to an exact version (today
+  `@opentui/core`, whose renderer loads through `node:ffi`); the other
+  deliberate version pins and their reasons are listed in
   [CONTRIBUTING.md § Two deliberate version pins](CONTRIBUTING.md#two-deliberate-version-pins).
 - **Releases** follow [docs/development/releasing.md](docs/development/releasing.md).
   Only a maintainer tags and publishes.
