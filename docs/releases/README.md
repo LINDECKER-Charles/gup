@@ -29,10 +29,12 @@ after the bump, the same day).
 - `0.2.0`, `0.2.1` — written in a gitignored `release/` folder at the root and
   pasted into the GitHub Release. Imported here on 2026-08-22, byte-for-byte
   (hence in French: they are kept as published rather than rewritten).
-- `0.1.0`, `0.1.1` — had no in-repo source at all. Imported from the GitHub
-  Release body on 2026-08-22; `0.1.0` was reformatted (the original was
-  indented as a code block and its fence never closed), the content is
-  unchanged.
+- `0.1.0` — had no in-repo source at all. Imported from the GitHub Release
+  body on 2026-08-22 and reformatted (the original was indented as a code
+  block and its fence never closed); the content is unchanged.
+- `0.1.1` — imported from the GitHub Release body on 2026-08-22. Its source
+  was kept in `.github/RELEASE_NOTES_v0.1.1.md` from its release (`172057e`)
+  until 2026-10, then removed as a duplicate of this file.
 - `0.2.2` — published to npm on 2026-07-03 with no tag, no GitHub Release and
   no notes. [`0.2.2.md`](0.2.2.md) is reconstructed from the two commits
   between `0.2.1` and the version bump, and says so.
