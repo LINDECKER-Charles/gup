@@ -2,7 +2,8 @@ import type { Command } from "commander";
 import { log } from "../../core/log/log.js";
 import { TICK_COMMAND } from "../../core/scheduler/trigger/task-command.js";
 import { batchLockLocation, createBatchGuard } from "../../core/update/batch-lock.js";
-import { setBatchGuard } from "../../core/update/update-extensions.js";
+import { observeUpdates, setBatchGuard } from "../../core/update/update-extensions.js";
+import type { UpdateObserver } from "../../core/update/update-ports.js";
 import {
   DIAGNOSTIC_LABEL,
   NO_ACTIVE_SCHEDULE,
@@ -16,12 +17,13 @@ import { listCommand, statusCommand } from "./report-commands.js";
 import { runNowCommand } from "./run-now.js";
 import {
   CONSOLE_OUTPUT,
+  processSchedulerServices,
   readTriggerReport,
-  schedulerServices,
   type CommandOutput,
   type SchedulerServices,
   type TriggerReport,
 } from "./scheduler-services.js";
+import { menuSchedules } from "./schedules-controller.js";
 import { runTick } from "./tick.js";
 import { installCommand, uninstallCommand } from "./trigger-commands.js";
 
@@ -30,13 +32,19 @@ import { installCommand, uninstallCommand } from "./trigger-commands.js";
  * `__schedule-tick`; the tick's run trigger ("schedule"); for every other
  * command, the batch guard that makes an interactive update wait for a
  * scheduled one; self-heal of the OS trigger when the menu or a reporting
- * `gup schedule` command starts; the "Planification" line of `gup doctor`.
+ * `gup schedule` command starts; for the menu, the observer that records a
+ * "run now" whose updates leave the screen; the "Planification" line of
+ * `gup doctor`.
  */
 
 export interface ScheduleModuleDeps {
   readonly services: () => SchedulerServices | { readonly error: string };
   readonly output: CommandOutput;
   readonly exit: (code: number) => void;
+  /** Records the menu's "run now" (the Planification view's run tracker). */
+  readonly menuRuns: () => UpdateObserver;
+  /** The pipeline's process-wide observer slot. */
+  readonly observe: (observer: UpdateObserver) => () => void;
 }
 
 /** Commands that repair a stale registration before they run (never a first one). */
@@ -58,6 +66,7 @@ export function createScheduleModule(deps: ScheduleModuleDeps): CliModule {
       if (location) setBatchGuard(createBatchGuard(location));
       if (!HEALING_COMMANDS.has(commandPath)) return;
       if (commandPath !== MENU_COMMAND) return heal(deps, true);
+      deps.observe(deps.menuRuns());
       // The menu never waits for the OS: it heals in the background, logged only.
       heal(deps, false).catch((err: unknown) => {
         log.warn("scheduler.heal-failed", { error: String(err) });
@@ -209,14 +218,10 @@ function diagnosticOf(report: TriggerReport, now: Date): DiagnosticLine {
   return { label: DIAGNOSTIC_LABEL, value, status: health.kind === "active" ? "ok" : "warn" };
 }
 
-/** One set of services per process, built on first use. */
-function lazyServices(): () => SchedulerServices | { readonly error: string } {
-  let services: ReturnType<typeof schedulerServices> | undefined;
-  return () => (services ??= schedulerServices());
-}
-
 export const scheduleModule: CliModule = createScheduleModule({
-  services: lazyServices(),
+  services: processSchedulerServices,
   output: CONSOLE_OUTPUT,
   exit: (code) => process.exit(code),
+  menuRuns: () => menuSchedules().runTracker,
+  observe: observeUpdates,
 });

@@ -111,6 +111,16 @@ export function schedulerServices(): SchedulerServices | { readonly error: strin
   };
 }
 
+let shared: ReturnType<typeof schedulerServices> | undefined;
+
+/**
+ * The process's scheduler services, built on first use: the CLI module and
+ * the menu's Planification view share one set of stores and one trigger.
+ */
+export function processSchedulerServices(): SchedulerServices | { readonly error: string } {
+  return (shared ??= schedulerServices());
+}
+
 function triggerSync(
   trigger: OsTrigger,
   context: { readonly installs: InstallRecordStore; readonly clock: () => Date },

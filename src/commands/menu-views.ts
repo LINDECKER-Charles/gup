@@ -4,6 +4,8 @@ import { optionsView } from "../ui/views/options-view.js";
 import { packagesView } from "../ui/views/packages-view.js";
 import { providersView } from "../ui/views/providers-view.js";
 import { scanView } from "../ui/views/scan-view.js";
+import { schedulesView } from "../ui/views/schedules-view.js";
+import { menuSchedules } from "./schedule/schedules-controller.js";
 
 /**
  * Composition root of the interactive menu: every view, one line each, sorted
@@ -16,5 +18,6 @@ export function menuViews(): readonly ViewDefinition[] {
     packagesView(),
     providersView({ status: readProviderStatus }),
     scanView(),
+    schedulesView(menuSchedules()),
   ];
 }

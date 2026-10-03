@@ -2,8 +2,10 @@ import { Command } from "commander";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createScheduleModule } from "../../../src/commands/schedule/schedule-module.js";
 import type { SchedulerServices } from "../../../src/commands/schedule/scheduler-services.js";
+import { ManualRunTracker } from "../../../src/core/scheduler/manual-run-tracker.js";
 import { TICK_COMMAND } from "../../../src/core/scheduler/trigger/task-command.js";
 import { batchGuard, setBatchGuard } from "../../../src/core/update/update-extensions.js";
+import type { UpdateObserver } from "../../../src/core/update/update-ports.js";
 import { TRIGGER_REPAIRED } from "../../../src/ui/text/schedule-cli-labels.js";
 import { schedulerFixture, type Fixture } from "./scheduler-fixture.js";
 
@@ -14,18 +16,24 @@ afterEach(async () => {
   await fixture?.cleanup();
 });
 
+/** Stands for the menu's run tracker: the module only hands it to the observer slot. */
+const MENU_RUNS = new ManualRunTracker(() => {});
+
 async function moduleWith(services?: () => SchedulerServices | { error: string }) {
   fixture = await schedulerFixture();
   const exit = vi.fn<(code: number) => void>();
+  const observe = vi.fn<(observer: UpdateObserver) => () => void>(() => () => {});
   const cliModule = createScheduleModule({
     services: services ?? (() => fixture.services),
     output: fixture.output,
     exit,
+    menuRuns: () => MENU_RUNS,
+    observe,
   });
   const program = new Command().name("gup").exitOverride();
   cliModule.register?.(program, { modules: [cliModule] });
   const parse = (...args: string[]) => program.parseAsync(["node", "gup", ...args]);
-  return { cliModule, exit, parse };
+  return { cliModule, exit, parse, observe };
 }
 
 describe("scheduleModule", () => {
@@ -50,6 +58,15 @@ describe("scheduleModule", () => {
     await cliModule.beforeAction?.({ commandPath: "schedule list", options: {} });
     expect(fixture.output.errors).toEqual([TRIGGER_REPAIRED]);
     expect(fixture.trigger.installed?.command.node).toBe("/usr/bin/node");
+  });
+
+  it("lets the menu record a run-now whose updates leave the screen, and no other command", async () => {
+    const { cliModule, observe } = await moduleWith();
+    await cliModule.beforeAction?.({ commandPath: "update", options: {} });
+    await cliModule.beforeAction?.({ commandPath: "schedule list", options: {} });
+    expect(observe).not.toHaveBeenCalled();
+    await cliModule.beforeAction?.({ commandPath: "", options: {} });
+    expect(observe.mock.calls).toEqual([[MENU_RUNS]]);
   });
 
   it("heals in the background when the menu starts, printing nothing", async () => {
