@@ -98,7 +98,7 @@ export function recordUpdate(record: UpdateRecord): void {
     ...envelope("update"),
     providerId: record.providerId,
     packageId: outcome.id,
-    status: statusOf(outcome),
+    status: updateStatusOf(outcome),
     ...versionsOf(record.pkg),
     ...attemptDetails(record),
   };
@@ -146,8 +146,9 @@ function wholeMs(ms: number): number {
 /**
  * A skipped attempt is not a failure: the provider deferred on purpose, or the
  * user skipped it. Keeping the three apart is the whole point of logging them.
+ * Shared with the debug log, so both records name an outcome the same way.
  */
-function statusOf(outcome: UpdateOutcome): UpdateStatus {
+export function updateStatusOf(outcome: UpdateOutcome): UpdateStatus {
   if (outcome.success) return "success";
   return outcome.skipped ? "skipped" : "failed";
 }
