@@ -440,11 +440,42 @@ export function getProvider(id: string): Provider | undefined {
   return ALL_PROVIDERS.find((p) => p.id === id);
 }
 
+/**
+ * Probes in flight at once. Firing all of them together turned the handful of
+ * probes that spawn a real tool (`wsl --version`, `git --version`, …) into one
+ * synchronous burst of process creations on Windows, long enough to freeze
+ * the spinner.
+ */
+const DETECTION_CONCURRENCY = 8;
+
+/** A probe still pending after this reads as "not installed". */
+const DETECTION_TIMEOUT_MS = 15_000;
+
 export async function detectAvailableProviders(): Promise<Provider[]> {
+  const limit = pLimit(DETECTION_CONCURRENCY);
   const checks = await Promise.all(
-    ALL_PROVIDERS.map(async (p) => ({ p, ok: await p.isAvailable() })),
+    ALL_PROVIDERS.map((p) => limit(() => probeAvailability(p))),
   );
-  return checks.filter((c) => c.ok).map((c) => c.p);
+  return ALL_PROVIDERS.filter((_, i) => checks[i]);
+}
+
+/**
+ * `isAvailable()`, bounded and fail-soft: one probe that hangs (a wedged
+ * `wsl.exe`) or throws must not hold up, or crash, the detection of the 150
+ * others.
+ */
+async function probeAvailability(provider: Provider): Promise<boolean> {
+  let timer: NodeJS.Timeout | undefined;
+  const deadline = new Promise<boolean>((resolve) => {
+    timer = setTimeout(() => resolve(false), DETECTION_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([provider.isAvailable(), deadline]);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
