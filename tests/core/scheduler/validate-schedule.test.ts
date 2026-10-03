@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   defaultScheduleName,
+  MAX_CRON_LENGTH,
   MAX_NAME_LENGTH,
   mayAskForUac,
   MAX_SCHEDULES,
@@ -95,6 +96,20 @@ describe("validateDraft", () => {
     ]);
     expect(messages(cron("60 9 * * *"))).toEqual([
       "recurrence: valeur invalide pour les minutes : 60",
+    ]);
+  });
+
+  it("bounds a custom expression as it is stored: blanks collapsed", () => {
+    const cron = (expression: string): ScheduleDraft =>
+      draft({ recurrence: { kind: "cron", expression } });
+    expect(messages(cron(" 	 "))).toEqual(["recurrence: expression cron requise"]);
+    // Padding does not count: the expression is stored with single spaces.
+    expect(messages(cron(`0	9 * * 1-5${" ".repeat(MAX_CRON_LENGTH)}`))).toEqual([]);
+    const days = Array.from({ length: 28 }, (_, i) => i + 1).join(",");
+    const long = `0 9 ${days} jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov *`;
+    expect(long.length).toBeGreaterThan(MAX_CRON_LENGTH);
+    expect(messages(cron(long))).toEqual([
+      `recurrence: expression cron trop longue (${MAX_CRON_LENGTH} caractères au plus)`,
     ]);
   });
 

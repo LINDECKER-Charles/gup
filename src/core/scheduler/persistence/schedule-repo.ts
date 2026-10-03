@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { ConfigStore } from "../../config/store.js";
-import { toCron } from "../model/recurrence.js";
+import { storedRecurrence, toCron } from "../model/recurrence.js";
 import type { Schedule, ScheduleDraft } from "../model/types.js";
 import { SCHEDULES_SECTION, type SchedulesSection } from "./schedules-section.js";
 
@@ -81,6 +81,7 @@ export class ScheduleRepo {
         ...draft,
         id: this.#uniqueId(current),
         name: draft.name.trim(),
+        recurrence: storedRecurrence(draft.recurrence),
         createdAt: stamp,
         armedAt: stamp,
       };
@@ -183,7 +184,7 @@ function edited(schedule: Schedule, draft: ScheduleDraft, now: Date): Schedule {
   return {
     ...schedule,
     name: draft.name.trim(),
-    recurrence: draft.recurrence,
+    recurrence: storedRecurrence(draft.recurrence),
     targets: draft.targets,
     enabled: draft.enabled,
     options: draft.options,

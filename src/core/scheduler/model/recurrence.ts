@@ -44,6 +44,16 @@ function normalizeCron(expression: string): string {
   return expression.trim().split(/\s+/).join(" ");
 }
 
+/**
+ * The recurrence as a schedule stores it: a custom expression in the form it
+ * is evaluated in. The schedules file refuses control characters (a tab
+ * typed on the command line included): what is saved must read back.
+ */
+export function storedRecurrence(recurrence: Recurrence): Recurrence {
+  if (recurrence.kind !== "cron") return recurrence;
+  return { kind: "cron", expression: normalizeCron(recurrence.expression) };
+}
+
 /** The next `count` occurrences after `from` (none for an invalid expression), for previews. */
 export function upcomingRuns(recurrence: Recurrence, from: Date, count: number): Date[] {
   const parsed = CronExpression.tryParse(toCron(recurrence));

@@ -129,6 +129,14 @@ describe("ScheduleRepo.replace", () => {
     expect(store.replace(id, switchedOn, evenLater)?.armedAt).toBe(evenLater.toISOString());
   });
 
+  it("stores a custom expression with single spaces, so a typed tab still reads back", () => {
+    const store = repo();
+    const created = store.create({ ...draft, recurrence: cron(" 0	9  * * 1-5 ") }, MONDAY);
+    expect(created.recurrence).toEqual(cron("0 9 * * 1-5"));
+    store.replace(created.id, { ...draft, recurrence: cron("0	8 * * 1") }, later);
+    expect(repo().list().map((schedule) => schedule.recurrence)).toEqual([cron("0 8 * * 1")]);
+  });
+
   it("returns null for a schedule removed in the meantime", () => {
     expect(repo().replace("deadbeef", draft, later)).toBeNull();
   });

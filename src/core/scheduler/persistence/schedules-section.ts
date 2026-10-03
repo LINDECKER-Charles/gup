@@ -10,6 +10,7 @@ import type {
   Weekday,
 } from "../model/types.js";
 import {
+  MAX_CRON_LENGTH,
   MAX_NAME_LENGTH,
   MAX_SCHEDULES,
   MAX_TARGETS_PER_SCHEDULE,
@@ -36,7 +37,6 @@ const ID_PATTERN = /^[0-9a-f]{8}$/;
 const ISO_MAX_LENGTH = 24;
 const PROVIDER_ID = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
 const PROVIDER_ID_MAX_LENGTH = 64;
-const EXPRESSION_MAX_LENGTH = 120;
 const LABEL_MAX_LENGTH = 200;
 const KINDS = ["daily", "weekly", "monthly", "cron"] as const;
 /** Sentinel for an absent or out-of-range integer: never a valid hour, day or weekday. */
@@ -99,7 +99,7 @@ function parseTarget(read: FieldReader): ScheduleTarget[] {
 function parseRecurrence(read: FieldReader): Recurrence | null {
   const kind = read.oneOf("kind", [...KINDS, ""] as const, "");
   if (kind === "cron") {
-    const expression = read.text("expression", { maxLength: EXPRESSION_MAX_LENGTH });
+    const expression = read.text("expression", { maxLength: MAX_CRON_LENGTH });
     return expression?.trim() ? { kind, expression } : null;
   }
   const at = parseTime(read.object("at"));

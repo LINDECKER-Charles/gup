@@ -26,6 +26,8 @@ export const MAX_HORIZON_DAYS = 366;
 export const MAX_TARGETS_PER_SCHEDULE = 50;
 export const MAX_SCHEDULES = 50;
 export const MAX_NAME_LENGTH = 60;
+/** Longest custom cron expression, blanks collapsed — the bound the schedules file reads back. */
+export const MAX_CRON_LENGTH = 120;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_MONTH_DAY = 28;
@@ -112,9 +114,7 @@ function recurrenceProblem(recurrence: Recurrence, now: Date): string | null {
 }
 
 function shapeProblem(recurrence: Recurrence): string | null {
-  if (recurrence.kind === "cron") {
-    return recurrence.expression.trim() === "" ? "expression cron requise" : null;
-  }
+  if (recurrence.kind === "cron") return expressionProblem(toCron(recurrence));
   if (!isTimeOfDay(recurrence.at)) return INVALID_TIME;
   if (recurrence.kind === "weekly" && !isInRange(recurrence.weekday, 0, MAX_WEEKDAY)) {
     return "jour de la semaine invalide";
@@ -123,6 +123,15 @@ function shapeProblem(recurrence: Recurrence): string | null {
     if (!isInRange(recurrence.day, 1, MAX_MONTH_DAY)) {
       return `jour du mois invalide (1 à ${MAX_MONTH_DAY}, ou le dernier)`;
     }
+  }
+  return null;
+}
+
+/** A custom expression, blanks collapsed as it is stored and evaluated. */
+function expressionProblem(expression: string): string | null {
+  if (expression === "") return "expression cron requise";
+  if (expression.length > MAX_CRON_LENGTH) {
+    return `expression cron trop longue (${MAX_CRON_LENGTH} caractères au plus)`;
   }
   return null;
 }

@@ -11,6 +11,7 @@ import type {
 } from "../../../core/scheduler/model/types.js";
 import {
   INVALID_TIME,
+  MAX_CRON_LENGTH,
   MAX_NAME_LENGTH,
   type ValidationIssue,
 } from "../../../core/scheduler/model/validate-schedule.js";
@@ -52,7 +53,7 @@ const DEFAULT_MONTH_DAY: MonthDay = 1;
 const MAX_TYPED: Readonly<Record<TextField, number>> = {
   name: MAX_NAME_LENGTH,
   time: "HH:MM".length,
-  cron: 120,
+  cron: MAX_CRON_LENGTH,
 };
 
 export class ScheduleEditor {
