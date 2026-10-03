@@ -64,6 +64,7 @@ export function locateTrampoline(host: TrampolineHost = runningHost()): Trampoli
 export function trampolineLaunch(
   request: InheritRequest,
   location: TrampolineLocation,
+  exitFile?: string,
 ): TrampolineLaunch {
   const payload: TrampolinePayload = {
     v: PAYLOAD_VERSION,
@@ -71,6 +72,7 @@ export function trampolineLaunch(
     args: request.args,
     ...(request.cwd !== undefined && { cwd: request.cwd }),
     ...(request.shell !== undefined && { shell: request.shell }),
+    ...(exitFile !== undefined && { exitFile }),
   };
   return {
     file: process.execPath,

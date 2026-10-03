@@ -1,4 +1,5 @@
 import type { InheritExit, InheritProcess } from "../process/inherit-sink.js";
+import { watchExitFile } from "./exit-file.js";
 import type { PtyExitEvent, PtyHandle, PtyModule } from "./pty-loader.js";
 import { ptyKill } from "./pty-kill.js";
 
@@ -11,6 +12,7 @@ const MIN_COLS = 20;
 const MIN_ROWS = 3;
 /** Reported when a signal ended the child, as `runInherit` does without a PTY. */
 const SIGNAL_EXIT_CODE = -1;
+const SUCCESS: InheritExit = { exitCode: 0, failed: false };
 
 /** What to run in the pseudo-terminal, and at which size. */
 export interface PtyLaunch {
@@ -18,13 +20,19 @@ export interface PtyLaunch {
   readonly args: readonly string[];
   readonly cols: number;
   readonly rows: number;
+  /** The trampoline's exit file (Windows fast path). */
+  readonly exitFile?: string;
 }
 
 /**
  * One child in a pseudo-terminal, as an install process: its output goes to
  * `onData` until node-pty reports its exit, its keyboard comes from `write`.
- * `exited` resolves on node-pty's exit event; `closed` once that event came
- * and the pseudo-console was released.
+ *
+ * `exited` resolves on node-pty's exit event — or earlier, on Windows, when
+ * the trampoline's exit file says 0. A non-zero code always waits for the
+ * exit event: by then ConPTY has flushed the last output, so a failure's
+ * tail is complete. `closed` resolves once node-pty reported the exit and
+ * the pseudo-console was released.
  */
 export class PtySession implements InheritProcess {
   readonly exited: Promise<InheritExit>;
@@ -43,15 +51,22 @@ export class PtySession implements InheritProcess {
       cols: Math.max(MIN_COLS, launch.cols),
       rows: Math.max(MIN_ROWS, launch.rows),
     });
-    return new PtySession(handle, onData);
+    return new PtySession(handle, launch.exitFile, onData);
   }
 
-  private constructor(handle: PtyHandle, onData: (data: string) => void) {
+  private constructor(
+    handle: PtyHandle,
+    exitFile: string | undefined,
+    onData: (data: string) => void,
+  ) {
     this.handle = handle;
     this.exited = new Promise((resolve) => (this.settle = resolve));
     const output = handle.onData((data) => this.forward(data, onData));
+    const stopWatch =
+      exitFile === undefined ? () => {} : watchExitFile(exitFile, (code) => this.fastExit(code));
     this.closed = new Promise((resolve) => {
       const exit = handle.onExit((event) => {
+        stopWatch();
         this.finish(exitOf(event));
         exit.dispose();
         output.dispose();
@@ -104,6 +119,10 @@ export class PtySession implements InheritProcess {
     } catch {
       // A failing pane must not take the install down with it.
     }
+  }
+
+  private fastExit(code: number): void {
+    if (code === 0) this.finish(SUCCESS);
   }
 
   private finish(exit: InheritExit): void {

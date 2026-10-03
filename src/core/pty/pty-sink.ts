@@ -5,6 +5,7 @@ import type {
   InheritRequest,
   InheritSink,
 } from "../process/inherit-sink.js";
+import { createExitFileSlot, type ExitFileSlot } from "./exit-file.js";
 import type { PtyModule } from "./pty-loader.js";
 import { PTY_LABELS } from "./pty-labels.js";
 import { PtySession } from "./pty-session.js";
@@ -65,17 +66,22 @@ export function createPtySink(backend: PtyBackend, panes: PtyPanes): InheritSink
  * output may still be on its way.
  */
 function startInPane(request: InheritRequest, backend: PtyBackend, pane: PtyPane): InheritProcess {
+  const exitFile = process.platform === "win32" ? exitFileSlot() : null;
   try {
-    const launch = trampolineLaunch(request, backend.trampoline);
-    const session = PtySession.start(backend.pty, { ...launch, ...pane.size() }, (data) =>
-      pane.write(data),
+    const launch = trampolineLaunch(request, backend.trampoline, exitFile?.path);
+    const session = PtySession.start(
+      backend.pty,
+      { ...launch, ...pane.size(), ...(exitFile !== null && { exitFile: exitFile.path }) },
+      (data) => pane.write(data),
     );
     const detach = attachSafely(pane, session);
+    void session.closed.then(() => exitFile?.release());
     return {
       exited: session.exited.then((exit) => ended(exit, pane, detach)),
       kill: () => session.kill(),
     };
   } catch (error) {
+    void exitFile?.release();
     return notStarted(pane, error);
   }
 }
@@ -86,6 +92,16 @@ function attachSafely(pane: PtyPane, session: PtySession): () => void {
     return pane.attach(session);
   } catch {
     return () => {};
+  }
+}
+
+/** The Windows fast path's file; without one, the exit waits for node-pty's own event. */
+function exitFileSlot(): ExitFileSlot | null {
+  try {
+    return createExitFileSlot();
+  } catch (error) {
+    log.debug("pty.exit-file-unavailable", { error: messageOf(error) });
+    return null;
   }
 }
 

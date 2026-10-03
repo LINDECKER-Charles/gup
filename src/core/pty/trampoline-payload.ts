@@ -26,10 +26,13 @@ const PAYLOAD_KEYS: ReadonlySet<string> = new Set([
   "args",
   "cwd",
   "shell",
+  "exitFile",
 ]);
 
 export interface TrampolinePayload extends InheritRequest {
   readonly v: typeof PAYLOAD_VERSION;
+  /** Where the trampoline writes the exit code before exiting (Windows fast path). */
+  readonly exitFile?: string;
 }
 
 /** Throws when the encoded request would not fit on the command line. */
@@ -63,12 +66,14 @@ function payloadOf(value: unknown): TrampolinePayload {
   if (!isStringArray(args)) return refuse("args");
   const cwd = optionalField(record, "cwd", "string");
   const shell = optionalField(record, "shell", "boolean");
+  const exitFile = optionalField(record, "exitFile", "string");
   return {
     v: PAYLOAD_VERSION,
     command,
     args: [...args],
     ...(cwd !== undefined && { cwd: cwd as string }),
     ...(shell !== undefined && { shell: shell as boolean }),
+    ...(exitFile !== undefined && { exitFile: exitFile as string }),
   };
 }
 

@@ -1,3 +1,4 @@
+import { writeExitFile } from "./core/pty/exit-file.js";
 import { PTY_LABELS } from "./core/pty/pty-labels.js";
 import { decodePayload, type TrampolinePayload } from "./core/pty/trampoline-payload.js";
 import { runInherit, type RunResult } from "./core/runner.js";
@@ -36,5 +37,15 @@ async function runRequest(encoded: string): Promise<number> {
     process.stderr.write(`${PTY_LABELS.badRequest}\n`);
     return EXIT_BAD_REQUEST;
   }
+  if (payload.exitFile !== undefined) reportExit(payload.exitFile, result.exitCode);
   return result.exitCode;
+}
+
+/** Best effort: without the file, the parent waits for the pseudo-terminal's exit event. */
+function reportExit(path: string, exitCode: number): void {
+  try {
+    writeExitFile(path, exitCode);
+  } catch {
+    // The parent's directory is gone or unwritable: the slow path still works.
+  }
 }

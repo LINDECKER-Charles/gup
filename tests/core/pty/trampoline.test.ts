@@ -101,12 +101,16 @@ describe("trampolineLaunch", () => {
       cwd: "/tmp",
       shell: false,
     };
-    const launch = trampolineLaunch(request, location);
+    const launch = trampolineLaunch(request, location, "/tmp/gup-pty-1/a.exit");
 
     expect(launch.file).toBe(process.execPath);
     expect(launch.args.slice(0, 3)).toEqual(["--import", "tsx", "/opt/gup/dist/pty-exec.js"]);
     expect(launch.args).toHaveLength(4);
-    expect(decodePayload(launch.args[3]!)).toEqual({ v: 1, ...request });
+    expect(decodePayload(launch.args[3]!)).toEqual({
+      v: 1,
+      ...request,
+      exitFile: "/tmp/gup-pty-1/a.exit",
+    });
   });
 
   it("carries only the request's own fields", () => {

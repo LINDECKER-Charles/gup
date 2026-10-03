@@ -1,15 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakePty, type FakePty } from "../../support/pty/fake-pty.js";
+import { restorePlatform, setPlatform } from "../../support/platform.js";
 import { recordingPane, type RecordingPane } from "../../support/pty/recording-pane.js";
 
 /**
  * The embedded terminal's install sink, against an in-memory node-pty and
- * recording panes. The kill lever is replaced: a unit test kills nothing real.
+ * recording panes. The kill lever and the exit-file slot are replaced: a unit
+ * test kills nothing real and leaves no directory behind.
  */
-const { ptyKillMock } = vi.hoisted(() => ({
+const { ptyKillMock, slotMock } = vi.hoisted(() => ({
   ptyKillMock: { terminate: vi.fn(), force: vi.fn() },
+  slotMock: { path: "C:\\Temp\\gup-pty-test\\0123.exit", release: vi.fn(async () => {}) },
 }));
 vi.mock("../../../src/core/pty/pty-kill.js", () => ({ ptyKill: ptyKillMock }));
+vi.mock("../../../src/core/pty/exit-file.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../src/core/pty/exit-file.js")>()),
+  createExitFileSlot: () => slotMock,
+}));
 
 import { routeInheritTo } from "../../../src/core/process/inherit-sink.js";
 import { PTY_LABELS } from "../../../src/core/pty/pty-labels.js";
@@ -24,8 +31,13 @@ let pty: FakePty;
 let current: RecordingPane;
 
 beforeEach(() => {
+  setPlatform("linux");
   pty = fakePty({ pid: 51 });
   current = recordingPane({ tail: "last visible line" });
+});
+
+afterEach(() => {
+  restorePlatform();
 });
 
 const sink = () =>
@@ -38,6 +50,17 @@ describe("createPtySink", () => {
     expect(call).toMatchObject({ file: process.execPath, options: { cols: 100, rows: 20 } });
     expect(call!.args[0]).toBe(TRAMPOLINE.script);
     expect(decodePayload(call!.args[1]!)).toStrictEqual({ v: 1, ...REQUEST });
+  });
+
+  it("on Windows, hands the trampoline an exit file, removed once the session closed", async () => {
+    setPlatform("win32");
+    const child = sink().start(REQUEST);
+    expect(decodePayload(pty.spawned[0]!.args[1]!).exitFile).toBe(slotMock.path);
+    expect(slotMock.release).not.toHaveBeenCalled();
+
+    pty.last().emitExit({ exitCode: 0 });
+    await child.exited;
+    await vi.waitFor(() => expect(slotMock.release).toHaveBeenCalledOnce());
   });
 
   it("keeps writing a child's output into the pane it started in", () => {

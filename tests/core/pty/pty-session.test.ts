@@ -4,12 +4,14 @@ import { restorePlatform, setPlatform } from "../../support/platform.js";
 
 /**
  * One child in a pseudo-terminal, against an in-memory node-pty. The kill
- * levers are replaced, so the tests drive them.
+ * levers and the exit-file watch are replaced, so the tests drive both.
  */
-const { ptyKillMock } = vi.hoisted(() => ({
+const { ptyKillMock, watchMock } = vi.hoisted(() => ({
   ptyKillMock: { terminate: vi.fn(), force: vi.fn() },
+  watchMock: vi.fn(),
 }));
 vi.mock("../../../src/core/pty/pty-kill.js", () => ({ ptyKill: ptyKillMock }));
+vi.mock("../../../src/core/pty/exit-file.js", () => ({ watchExitFile: watchMock }));
 
 import {
   isReleasableConpty,
@@ -131,6 +133,43 @@ describe("PtySession: exit", () => {
     await expect(session.closed).resolves.toBeUndefined();
     handle.emitData("late");
     expect(onData).not.toHaveBeenCalled();
+  });
+});
+
+describe("PtySession: exit file (Windows fast path)", () => {
+  function startWatched() {
+    const stop = vi.fn();
+    watchMock.mockReturnValueOnce(stop);
+    const started = start({ ...LAUNCH, exitFile: "C:\\t\\a.exit" });
+    const onCode = watchMock.mock.lastCall![1] as (code: number) => void;
+    return { ...started, onCode, stop };
+  }
+
+  it("resolves on a 0 before node-pty's exit, ignores the late event, waits to close", async () => {
+    const { session, handle, onCode, stop } = startWatched();
+    expect(watchMock).toHaveBeenCalledWith("C:\\t\\a.exit", expect.any(Function));
+
+    onCode(0);
+    await expect(session.exited).resolves.toEqual({ exitCode: 0, failed: false });
+    expect(await peek(session.closed)).toBe(PENDING);
+
+    handle.emitExit({ exitCode: 1 });
+    await expect(session.closed).resolves.toBeUndefined();
+    await expect(session.exited).resolves.toEqual({ exitCode: 0, failed: false });
+    expect(stop).toHaveBeenCalled();
+  });
+
+  it("waits for node-pty's exit on a failure, so the output is complete", async () => {
+    const { session, handle, onCode } = startWatched();
+    onCode(7);
+    expect(await peek(session.exited)).toBe(PENDING);
+    handle.emitExit({ exitCode: 7 });
+    await expect(session.exited).resolves.toEqual({ exitCode: 7, failed: true });
+  });
+
+  it("does not watch anything without an exit file", () => {
+    start();
+    expect(watchMock).not.toHaveBeenCalled();
   });
 });
 

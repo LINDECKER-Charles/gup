@@ -19,6 +19,7 @@ const FULL: TrampolinePayload = {
   args: ["install", "with space", 'qu"ote', "a&b|c^d%PATH%", "accents éàî", "", "tab\tline\nbreak"],
   cwd: "C:\\Users\\Jérôme\\Downloads",
   shell: false,
+  exitFile: "C:\\Temp\\gup-pty-x\\0123.exit",
 };
 
 const encodeRaw = (value: unknown): string =>
@@ -67,6 +68,7 @@ describe("trampoline payload", () => {
     ["a non-string argument", { v: 1, command: "npm", args: ["install", 3] }],
     ["a non-string cwd", { v: 1, command: "npm", args: [], cwd: 1 }],
     ["a non-boolean shell", { v: 1, command: "npm", args: [], shell: "yes" }],
+    ["a non-string exit file", { v: 1, command: "npm", args: [], exitFile: true }],
     ["an unknown field", { v: 1, command: "npm", args: [], env: { PATH: "x" } }],
     ["a prototype key", JSON.parse('{"v":1,"command":"npm","args":[],"__proto__":{"shell":true}}')],
   ])("refuses a payload with %s", (_label, value) => {

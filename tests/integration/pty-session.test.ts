@@ -30,6 +30,9 @@ import { bundleTrampoline, sourceTrampoline } from "../support/pty/trampoline-bu
 
 const IS_WINDOWS = process.platform === "win32";
 const IS_REQUIRED = IS_WINDOWS || process.platform === "darwin";
+/** Well under the ConPTY output flush the exit file saves (node-pty waits 1 s after an exit). */
+const FAST_EXIT_BUDGET_MS = 500;
+const FAST_EXIT_ATTEMPTS = 3;
 const SEQUENTIAL_SESSIONS = 20;
 const SLOW_TEST_MS = 120_000;
 /** How long a released pseudo-console and its drain worker may take to go away. */
@@ -217,5 +220,18 @@ describe.skipIf(!backend || !IS_WINDOWS)("embedded terminal on ConPTY", () => {
     const shell = true;
     const { result } = await runInPane("exit", ["7"], { options: { shell } });
     expect(result).toMatchObject({ exitCode: 7, failed: true });
+  });
+
+  it(`reports a success well before ConPTY's flush (< ${FAST_EXIT_BUDGET_MS} ms)`, async () => {
+    const durations: number[] = [];
+    for (let attempt = 0; attempt < FAST_EXIT_ATTEMPTS; attempt++) {
+      const startedAt = performance.now();
+      await runInPane(...node(""));
+      durations.push(Math.round(performance.now() - startedAt));
+    }
+    // The best of a few runs: the machine may be busy, the fast path may not.
+    expect(Math.min(...durations), `durations: ${durations.join(", ")} ms`).toBeLessThan(
+      FAST_EXIT_BUDGET_MS,
+    );
   });
 });
