@@ -14,7 +14,7 @@ import { stateDir } from "../state/app-dirs.js";
  */
 
 export type OutputKind = "report" | "history" | "diagnostic";
-export type OutputExtension = "html" | "json" | "csv" | "zip";
+export type OutputExtension = "html" | "json" | "csv" | "txt" | "zip";
 
 /** Files of each kind kept in the reports directory. */
 export const RETAINED_PER_KIND = 20;
@@ -22,7 +22,9 @@ export const RETAINED_PER_KIND = 20;
 const MAX_SUFFIX = 9;
 const DIR_MODE = 0o700;
 const FILE_MODE = 0o600;
-const OUTPUT_NAME = /^gup-(report|history|diagnostic)-\d{8}-\d{6}(?:-\d)?\.(?:html|json|csv|zip)$/;
+/** `gup-<kind>-YYYYMMDD-HHmmss[-n].<ext>`: the only names pruning ever deletes. */
+const OUTPUT_NAME =
+  /^gup-(report|history|diagnostic)-\d{8}-\d{6}(?:-\d)?\.(?:html|json|csv|txt|zip)$/;
 
 export interface OutputRequest {
   readonly kind: OutputKind;
