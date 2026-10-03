@@ -104,9 +104,13 @@
     "chalk": "^6.0.0",
     "cli-table3": "^0.6.5",
     "commander": "^15.0.0",
+    "croner": "10.0.1",
     "execa": "^10.0.1",
     "p-limit": "^7.3.1",
     "semver": "^7.8.5"
+  },
+  "optionalDependencies": {
+    "node-pty": "1.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
@@ -114,9 +118,11 @@
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.66.0",
     "@vitest/coverage-v8": "^4.1.11",
+    "@xterm/headless": "6.0.0",
     "audit-ci": "^7.1.0",
     "eslint": "^10.9.1",
     "eslint-plugin-security": "^4.0.1",
+    "happy-dom": "^20.14.5",
     "tsup": "^8.3.5",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
