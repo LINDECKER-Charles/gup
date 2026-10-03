@@ -1,12 +1,14 @@
 import { DotnetSdkProvider } from "../../../src/providers/dotnet-php/dotnet-sdk.js";
+import { DotnetToolsProvider } from "../../../src/providers/dotnet-php/dotnet-tools.js";
 import { NugetProvider } from "../../../src/providers/dotnet-php/nuget.js";
 import { delegationRoutes, installedVia } from "../../support/contract/installers.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
 import type { HttpRoute, SystemSpec } from "../../support/system/types.js";
 
 /**
- * The .NET side of the dotnet-php domain. The machines and outputs a knowledge
- * test starts from are exported; the rest of the case data stays private.
+ * The .NET side of the dotnet-php domain (the PHP side is php.cases.ts). The
+ * machines and outputs a knowledge test starts from are exported; the rest of
+ * the case data stays private.
  */
 
 // --- .NET SDK ---------------------------------------------------------------
@@ -204,9 +206,60 @@ const NUGET_UNDER_MONO: ProviderContractCase = {
   updateAll: "collapsed",
 };
 
+// --- .NET global tools --------------------------------------------------------
+
+const TOOL_LIST_ARGV = ["dotnet", "tool", "list", "-g"];
+const TOOL_LIST_HEADER = "Package Id                     Version      Commands";
+const TOOL_LIST_RULE = "------------------------------------------------------------";
+
+/** NuGet's search API, asked for the latest stable version of one tool. */
+export function nugetSearchUrl(toolId: string): string {
+  return `https://azuresearch-usnc.nuget.org/query?q=packageid:${toolId}&prerelease=false&take=1`;
+}
+
+/** The search answer for `toolId` at `version`. */
+export function nugetSearchRoute(toolId: string, version: string): HttpRoute {
+  return { url: nugetSearchUrl(toolId), json: { data: [{ id: toolId, version }] } };
+}
+
+/** The SDK with global tools: `rows` under the table header, `http` answering the lookups. */
+export function toolsMachine(rows: readonly string[], http: readonly HttpRoute[]): SystemSpec {
+  const stdout = [TOOL_LIST_HEADER, TOOL_LIST_RULE, ...rows].join("\n");
+  return {
+    platform: "win32",
+    bin: { dotnet: "C:\\Program Files\\dotnet\\dotnet.exe" },
+    commands: [{ argv: TOOL_LIST_ARGV, stdout }],
+    http,
+  };
+}
+
+/** Two tools behind, one current: one NuGet lookup per tool, hence `slow`. */
+const DOTNET_TOOLS: ProviderContractCase = {
+  create: () => new DotnetToolsProvider(),
+  system: toolsMachine(
+    [
+      "dotnet-ef                      7.0.0        dotnet-ef",
+      "csharpier                      0.28.2       dotnet-csharpier",
+      "dotnet-outdated-tool           4.6.4        dotnet-outdated",
+    ],
+    [
+      nugetSearchRoute("dotnet-ef", "8.0.1"),
+      nugetSearchRoute("csharpier", "0.29.2"),
+      nugetSearchRoute("dotnet-outdated-tool", "4.6.4"),
+    ],
+  ),
+  outdated: [
+    { id: "dotnet-ef", name: "dotnet-ef", current: "7.0.0", latest: "8.0.1" },
+    { id: "csharpier", name: "csharpier", current: "0.28.2", latest: "0.29.2" },
+  ],
+  update: { packageId: "dotnet-ef", installs: [["dotnet", "tool", "update", "-g", "dotnet-ef"]] },
+  updateAll: "per-package",
+};
+
 export const dotnetPhpCases: readonly ProviderContractCase[] = [
   DOTNET_SDK,
   DOTNET_SDK_APT,
   NUGET,
   NUGET_UNDER_MONO,
+  DOTNET_TOOLS,
 ];
