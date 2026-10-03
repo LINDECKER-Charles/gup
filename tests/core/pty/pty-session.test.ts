@@ -1,0 +1,210 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { fakePty, type FakePtyOptions } from "../../support/pty/fake-pty.js";
+import { restorePlatform, setPlatform } from "../../support/platform.js";
+
+/**
+ * One child in a pseudo-terminal, against an in-memory node-pty. The kill
+ * levers are replaced, so the tests drive them.
+ */
+const { ptyKillMock } = vi.hoisted(() => ({
+  ptyKillMock: { terminate: vi.fn(), force: vi.fn() },
+}));
+vi.mock("../../../src/core/pty/pty-kill.js", () => ({ ptyKill: ptyKillMock }));
+
+import {
+  isReleasableConpty,
+  PtySession,
+  releaseConpty,
+  TERM_NAME,
+  type PtyLaunch,
+} from "../../../src/core/pty/pty-session.js";
+
+const LAUNCH: PtyLaunch = {
+  file: "/usr/bin/node",
+  args: ["pty-exec.js", "e30"],
+  cols: 100,
+  rows: 30,
+};
+const PENDING = Symbol("pending");
+
+afterEach(() => {
+  vi.useRealTimers();
+  restorePlatform();
+});
+
+function start(launch: PtyLaunch = LAUNCH, options: FakePtyOptions = {}) {
+  const pty = fakePty(options);
+  const onData = vi.fn();
+  const session = PtySession.start(pty.module, launch, onData);
+  return { session, handle: pty.last(), onData, spawned: pty.spawned };
+}
+
+/** The value of a promise if it already settled, else PENDING. */
+async function peek<T>(promise: Promise<T>): Promise<T | typeof PENDING> {
+  const later = new Promise<typeof PENDING>((resolve) => setImmediate(() => resolve(PENDING)));
+  return Promise.race([promise, later]);
+}
+
+/** A ConPTY agent shaped like node-pty 1.1.0's, recording its release. */
+function conptyInternals(overrides: Record<string, unknown> = {}) {
+  const calls: string[] = [];
+  const agent = {
+    _useConpty: true,
+    _useConptyDll: false,
+    _pty: 7,
+    _ptyNative: { kill: (pty: number, dll: boolean) => calls.push(`close ${pty} ${dll}`) },
+    _conoutSocketWorker: { dispose: () => calls.push("worker") },
+    _inSocket: { destroy: () => calls.push("in") },
+    _outSocket: { destroy: () => calls.push("out") },
+    ...overrides,
+  };
+  return { calls, internals: () => ({ _agent: agent }) };
+}
+
+describe("PtySession: start and I/O", () => {
+  it("starts the child as xterm at the pane's size, never below a usable minimum", () => {
+    expect(start().spawned[0]).toMatchObject({
+      file: "/usr/bin/node",
+      args: ["pty-exec.js", "e30"],
+      options: { name: TERM_NAME, cols: 100, rows: 30 },
+    });
+    const tiny = start({ ...LAUNCH, cols: 4, rows: 1 });
+    expect(tiny.spawned[0]!.options).toMatchObject({ cols: 20, rows: 3 });
+  });
+
+  it("forwards the output and tells when it last came", () => {
+    const { session, handle, onData } = start();
+    const before = session.lastOutputAt;
+    handle.emitData("Password: ");
+    expect(onData).toHaveBeenCalledWith("Password: ");
+    expect(session.lastOutputAt).toBeGreaterThanOrEqual(before);
+  });
+
+  it("keeps the install going when the pane throws on output", () => {
+    const { handle, onData } = start();
+    onData.mockImplementation(() => {
+      throw new Error("pane gone");
+    });
+    expect(() => handle.emitData("x")).not.toThrow();
+  });
+
+  it("writes keys as text and bytes as a Buffer, and nothing once the child exited", () => {
+    const { session, handle } = start();
+    session.write("y\r");
+    session.write(new Uint8Array([0x1b, 0x5b, 0x41]));
+    handle.emitExit({ exitCode: 0 });
+    session.write("late");
+    expect(handle.written).toEqual(["y\r", Buffer.from([0x1b, 0x5b, 0x41])]);
+  });
+
+  it("resizes within the minimum, never after the exit, and survives a refusal", () => {
+    const { session, handle } = start();
+    session.resize(120, 40);
+    session.resize(3, 1);
+    handle.failResize();
+    expect(() => session.resize(90, 20)).not.toThrow();
+    handle.emitExit({ exitCode: 0 });
+    session.resize(80, 24);
+    expect(handle.resizes).toEqual([
+      [120, 40],
+      [20, 3],
+    ]);
+  });
+});
+
+describe("PtySession: exit", () => {
+  it.each([
+    [{ exitCode: 0 }, { exitCode: 0, failed: false }],
+    [{ exitCode: 3010 }, { exitCode: 3010, failed: true }],
+    [{ exitCode: 0, signal: 0 }, { exitCode: 0, failed: false }],
+    [{ exitCode: 0, signal: 15 }, { exitCode: -1, failed: true }],
+  ])("reads node-pty's exit %o as %o", async (event, exit) => {
+    const { session, handle } = start();
+    handle.emitExit(event);
+    await expect(session.exited).resolves.toEqual(exit);
+  });
+
+  it("is closed once node-pty reported the exit, and forwards nothing after it", async () => {
+    const { session, handle, onData } = start();
+    expect(await peek(session.closed)).toBe(PENDING);
+    handle.emitExit({ exitCode: 0 });
+    await expect(session.closed).resolves.toBeUndefined();
+    handle.emitData("late");
+    expect(onData).not.toHaveBeenCalled();
+  });
+});
+
+describe("PtySession: kill", () => {
+  it("kills the tree once, however many times it is asked", () => {
+    const { session } = start(LAUNCH, { pid: 31 });
+    session.kill();
+    session.kill();
+    expect(ptyKillMock.terminate).toHaveBeenCalledExactlyOnceWith(31);
+  });
+
+  it("forces the group after the grace period while the child is still there", async () => {
+    vi.useFakeTimers();
+    const { session } = start(LAUNCH, { pid: 31 });
+    session.kill();
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(ptyKillMock.force).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(ptyKillMock.force).toHaveBeenCalledExactlyOnceWith(31);
+  });
+
+  it("does not force a child that exited during the grace period", async () => {
+    vi.useFakeTimers();
+    const { session, handle } = start();
+    session.kill();
+    handle.emitExit({ exitCode: 1 });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(ptyKillMock.force).not.toHaveBeenCalled();
+  });
+
+  it("does nothing once the child exited", () => {
+    const { session, handle } = start();
+    handle.emitExit({ exitCode: 0 });
+    session.kill();
+    expect(ptyKillMock.terminate).not.toHaveBeenCalled();
+  });
+});
+
+describe("releaseConpty", () => {
+  it("closes the pseudo-console and its pipes once node-pty reported the exit", async () => {
+    setPlatform("win32");
+    const conpty = conptyInternals();
+    const { session, handle } = start(LAUNCH, { internals: conpty.internals });
+    expect(conpty.calls).toEqual([]);
+
+    handle.emitExit({ exitCode: 0 });
+    await session.closed;
+    expect(conpty.calls).toEqual(["close 7 false", "worker", "in", "out"]);
+
+    releaseConpty(handle);
+    expect(conpty.calls).toHaveLength(4);
+  });
+
+  it("recognises only a system-ConPTY handle of the pinned shape", () => {
+    const pty = (overrides: Record<string, unknown>) =>
+      fakePty({ internals: conptyInternals(overrides).internals }).module.spawn("x", [], {
+        name: TERM_NAME,
+        cols: 80,
+        rows: 24,
+      });
+    expect(isReleasableConpty(pty({}))).toBe(true);
+    expect(isReleasableConpty(pty({ _useConptyDll: true }))).toBe(false);
+    expect(isReleasableConpty(pty({ _useConpty: false }))).toBe(false);
+    expect(isReleasableConpty(pty({ _conoutSocketWorker: {} }))).toBe(false);
+    const plain = fakePty().module.spawn("x", [], { name: TERM_NAME, cols: 80, rows: 24 });
+    expect(isReleasableConpty(plain)).toBe(false);
+  });
+
+  it("leaves handles alone off Windows", async () => {
+    setPlatform("darwin");
+    const conpty = conptyInternals();
+    const { session, handle } = start(LAUNCH, { internals: conpty.internals });
+    handle.emitExit({ exitCode: 0 });
+    await session.closed;
+    expect(conpty.calls).toEqual([]);
+  });
+});
