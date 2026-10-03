@@ -21,3 +21,4 @@
 ## Internal
 
 - Drop the 11 commented template placeholders from `.github/FUNDING.yml`, keeping GitHub Sponsors and Ko-fi (`chore: drop template placeholders from FUNDING.yml`)
+- Check SVG files out with LF line endings on every platform, so that byte-for-byte comparisons of generated screenshots do not flag a Windows checkout as stale (`chore: keep SVG files LF-only in checkouts`)
