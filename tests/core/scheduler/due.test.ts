@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { evaluateDue, type DueVerdict } from "../../../src/core/scheduler/model/due.js";
 import type { Schedule, ScheduleRunState } from "../../../src/core/scheduler/model/types.js";
 import { ON_TIME_GRACE_MS } from "../../../src/core/scheduler/scheduler-timing.js";
@@ -102,6 +102,44 @@ describe("evaluateDue", () => {
     expect(due("2026-10-05T09:12:00Z", { schedule: broken })).toEqual({
       kind: "not-due",
       nextRun: null,
+    });
+  });
+});
+
+describe("evaluateDue across a DST change (Europe/Paris)", () => {
+  let previousTz: string | undefined;
+  beforeEach(() => {
+    previousTz = process.env["TZ"];
+    process.env["TZ"] = "Europe/Paris";
+  });
+  afterEach(() => {
+    if (previousTz === undefined) delete process.env["TZ"];
+    else process.env["TZ"] = previousTz;
+  });
+
+  // Daily 02:30, local time; catch-up off, so a late verdict would read "missed".
+  const night = schedule({
+    recurrence: { kind: "daily", at: { hour: 2, minute: 30 } },
+    options: { catchUp: false },
+    armedAt: "2026-03-01T08:00:00.000Z",
+  });
+
+  it("runs on time the night 02:30 does not exist, at 03:30", () => {
+    // 29 March 2026: 02:00 CET jumps to 03:00 CEST. Last run: 28 March 02:35 CET.
+    const state = { lastAttemptAt: "2026-03-28T01:35:00.000Z" };
+    expect(due("2026-03-29T01:45:00Z", { schedule: night, state })).toEqual({
+      kind: "due",
+      runKind: "on-time",
+      occurrence: date("2026-03-29T01:30:00Z"),
+    });
+  });
+
+  it("runs once the night 02:30 happens twice", () => {
+    // 25 October 2026: 03:00 CEST falls back to 02:00 CET. Run at the first 02:30.
+    const state = { lastAttemptAt: "2026-10-25T00:35:00.000Z" };
+    expect(due("2026-10-25T01:35:00Z", { schedule: night, state })).toEqual({
+      kind: "not-due",
+      nextRun: date("2026-10-26T01:30:00Z"),
     });
   });
 });
