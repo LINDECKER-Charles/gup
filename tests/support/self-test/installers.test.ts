@@ -98,4 +98,15 @@ describe("delegation routes", () => {
     const withDistros = delegationRoutes("tool", { ...delegation, ids: IDS });
     expect(withDistros.map((route) => route.via)).toContain("dnf");
   });
+
+  it("put the provider's extra machine state on every route", () => {
+    const index = { url: "https://example.test/index.json", json: {} };
+    const routes = delegationRoutes(
+      "tool",
+      { ids: { scoop: "tool" }, manualMessage: "à la main" },
+      { http: [index] },
+    );
+
+    for (const route of routes) expect(route.system.http).toEqual([index]);
+  });
 });

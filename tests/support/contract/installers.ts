@@ -111,7 +111,14 @@ export function upgradeArgv(installer: Installer, ids: DelegatedIds): string[] |
 /** Every delegating provider is routed through these; apt and dnf when it maps them. */
 const ALWAYS_ROUTED: readonly Installer[] = ["scoop", "winget", "choco", "brew", "manual"];
 
-function routeVia(installer: Installer, binary: string, delegation: Delegation): UpdateRoute {
+interface RouteTarget {
+  readonly binary: string;
+  readonly delegation: Delegation;
+  readonly extra: Omit<SystemSpec, "platform">;
+}
+
+function routeVia(installer: Installer, target: RouteTarget): UpdateRoute {
+  const { binary, delegation, extra } = target;
   const argv = upgradeArgv(installer, delegation.ids);
   const skipped: Partial<UpdateOutcome> = {
     success: false,
@@ -120,7 +127,7 @@ function routeVia(installer: Installer, binary: string, delegation: Delegation):
   };
   return {
     via: installer,
-    system: installedVia(installer, binary),
+    system: installedVia(installer, binary, extra),
     installs: argv ? [argv] : [],
     ...(!argv && { outcome: skipped }),
   };
@@ -136,8 +143,15 @@ export interface Delegation {
  * One route per installer for a provider that delegates the upgrade of
  * `binary`: the upgrade argv where it maps an id, its manual message (a
  * skipped outcome) where it does not — including on a hand-installed binary.
+ * `extra` goes onto every route's machine, for a provider whose update reads
+ * more than the binary's location (a release index, a version probe).
  */
-export function delegationRoutes(binary: string, delegation: Delegation): UpdateRoute[] {
+export function delegationRoutes(
+  binary: string,
+  delegation: Delegation,
+  extra: Omit<SystemSpec, "platform"> = {},
+): UpdateRoute[] {
   const distro = (["apt", "dnf"] as const).filter((installer) => delegation.ids[installer]);
-  return [...ALWAYS_ROUTED, ...distro].map((installer) => routeVia(installer, binary, delegation));
+  const target = { binary, delegation, extra };
+  return [...ALWAYS_ROUTED, ...distro].map((installer) => routeVia(installer, target));
 }
