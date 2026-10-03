@@ -21,7 +21,7 @@ export interface ShowOptions {
   readonly json?: boolean;
 }
 
-export const DEFAULT_LINES = 50;
+const DEFAULT_LINES = 50;
 export const DEFAULT_SINCE = "7d";
 const MAX_LINES = 10_000;
 const USAGE_EXIT_CODE = 2;

@@ -32,8 +32,8 @@ export interface LogSettingsInput {
 /** Where the records of a command go: the log file, the elevated child's memory, nowhere. */
 export type LogSinkKind = "file" | "memory" | "none";
 
-export const LOG_LEVEL_ENV = "GUP_LOG_LEVEL";
-export const DEFAULT_LOG_THRESHOLD: LogThreshold = "info";
+const LOG_LEVEL_ENV = "GUP_LOG_LEVEL";
+const DEFAULT_LOG_THRESHOLD: LogThreshold = "info";
 /** The commands that read the log (`gup log …`) must not write to it. */
 const LOG_COMMAND = "log";
 

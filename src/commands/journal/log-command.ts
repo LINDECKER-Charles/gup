@@ -36,7 +36,7 @@ export function registerLogCommand(program: Command): void {
 }
 
 /** `gup log path`: the log directory on stdout (pipeable), or why there is none. */
-export function printLogPath(): number {
+function printLogPath(): number {
   const dir = stateDir("logs");
   if (dir === null) {
     process.stderr.write(`${LOG_MESSAGES.noDirectory}\n`);
