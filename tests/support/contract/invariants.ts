@@ -132,7 +132,7 @@ function expectedShape(shape: UpdateAllShape, observation: UpdateAllObservation)
     case "one-batch":
       return { installs: 1, outcomeIds: ids };
     case "collapsed":
-      return { installs: 1, outcomeIds: null };
+      return { installs: observation.installsPerPackage, outcomeIds: null };
     case "skipped":
       return { installs: 0, outcomeIds: ids };
   }

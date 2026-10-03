@@ -14,7 +14,7 @@ export type UpdateAllShape =
   | "per-package"
   /** One install for all rows, one outcome per row. */
   | "one-batch"
-  /** One install, one outcome, whatever the row count (self-updaters). */
+  /** One update (its installs), one outcome, whatever the row count (self-updaters). */
   | "collapsed"
   /** No install; every outcome skipped (manual-only providers). */
   | "skipped";

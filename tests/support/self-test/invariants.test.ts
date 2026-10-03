@@ -136,6 +136,13 @@ describe("updateAll shapes", () => {
     expect(updateAllViolations("per-package", observation)).toEqual([]);
   });
 
+  it("scale the collapsed install count with the installs its one update performs", () => {
+    const outcomes = [{ id: "self", success: true }];
+    const observation = { rows, outcomes, installCount: 2, installsPerPackage: 2 };
+
+    expect(updateAllViolations("collapsed", observation)).toEqual([]);
+  });
+
   it("report every mismatch", () => {
     const observation = {
       rows,
