@@ -229,6 +229,18 @@ describe("NerdFontsProvider.update — install", () => {
     );
   });
 
+  it("quotes an apostrophe of the user's font path for PowerShell", async () => {
+    const local = "C:\\Users\\o'brien\\AppData\\Local";
+    const fonts = firaCodeRelease({ "FiraCodeNerdFont-Regular.ttf": "ttf" });
+    await system.load({ ...fonts, env: { LOCALAPPDATA: local } });
+    await expect(provider().update("FiraCode")).resolves.toEqual({ id: "FiraCode", success: true });
+    const [registration] = installArgvs();
+    expect(registration?.at(-1)).toContain(
+      "-Value 'C:\\Users\\o''brien\\AppData\\Local\\Microsoft\\Windows\\Fonts\\" +
+        "FiraCodeNerdFont-Regular.ttf' -Force",
+    );
+  });
+
   it("still succeeds when the temporary directory cannot be removed", async () => {
     await system.load(firaCodeRelease({ "FiraCodeNerdFont-Regular.ttf": "ttf" }));
     replaceForTest(fsPromises, "rm", () => Promise.reject(new Error("EBUSY")));
