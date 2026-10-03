@@ -1,14 +1,13 @@
-import chalk from "chalk";
+import { lookupProvider } from "../core/platform/lookup-provider.js";
 import { ALL_PROVIDERS, detectAvailableProviders, getProvider } from "../core/registry.js";
-import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
-import { applyUpdate } from "../core/update/apply-update.js";
+import type { Provider } from "../core/types.js";
+import { requestsFrom } from "../core/update/update-plan.js";
+import type { UpdateRequest } from "../core/update/update-ports.js";
 import { MenuApp } from "../ui/app/menu-app.js";
 import type { MenuController } from "../ui/app/menu-session.js";
-import { maybeRetryFailures, type OutcomeWithProvider } from "../ui/retry-failed.js";
 import { runScan } from "../ui/scan-progress.js";
-import type { SelectedPackage } from "../core/types.js";
-import { beginSkipSession } from "../ui/skip-controller.js";
-import { dim, type MenuState } from "./menu-state.js";
+import type { MenuState } from "./menu-state.js";
+import { runWithConsole } from "./update.js";
 
 /** `gup` with no subcommand: the full-screen interactive app. */
 export async function menuCommand(): Promise<number> {
@@ -23,7 +22,12 @@ export async function menuCommand(): Promise<number> {
   return 0;
 }
 
-/** What the app needs from gup's core: scanning, provider status, updates. */
+/**
+ * What the app needs from gup's core: scanning, provider status, updates.
+ * Updates run on the plain terminal through the same pipeline and console
+ * output as `gup update`: packages that need administrator rights go to one
+ * elevated batch behind a single UAC / sudo prompt.
+ */
 export const menuController: MenuController = {
   async scan(state, events) {
     const run = await runScan(
@@ -45,32 +49,20 @@ export const menuController: MenuController = {
   },
 
   async updatePackages(packages) {
-    const entries = await applyGrouped(groupByProvider(packages));
-    summarize(await maybeRetryFailures(entries));
+    await runWithConsole(requestsFrom(packages));
   },
 
   async updateTargets(targets) {
-    const entries: OutcomeWithProvider[] = [];
-    const session = beginSkipSession();
-    try {
-      for (const target of targets) {
-        if (session.isAbortRequested()) break;
-        const parsed = parseTarget(target);
-        if (!parsed) continue;
-        printSectionHeader(`${parsed.provider.displayName} : ${parsed.packageId}`, 1);
-        const outcome = await applyUpdate(parsed.provider, parsed.packageId);
-        entries.push({ providerId: parsed.provider.id, outcome });
-      }
-    } finally {
-      session.dispose();
-    }
-    summarize(await maybeRetryFailures(entries));
+    await runWithConsole(targets.flatMap((target) => requestOf(target) ?? []));
   },
 
   validateTargets(raw) {
     const targets = raw.split(/[\s,]+/).filter(Boolean);
     if (targets.length === 0) return "saisir au moins une cible";
-    const invalid = targets.find((t) => !parseTarget(t, { quiet: true }));
+    const invalid = targets.find((target) => {
+      const request = requestOf(target);
+      return !request || !lookupProvider(request.providerId).isFound;
+    });
     return invalid ? `cible invalide : ${invalid} (format provider:package)` : true;
   },
 
@@ -87,94 +79,9 @@ function info(p: Provider) {
   };
 }
 
-function groupByProvider(packages: readonly SelectedPackage[]): Map<string, OutdatedPackage[]> {
-  const grouped = new Map<string, OutdatedPackage[]>();
-  for (const { providerId, pkg } of packages) {
-    grouped.set(providerId, [...(grouped.get(providerId) ?? []), pkg]);
-  }
-  return grouped;
-}
-
-/**
- * Run a provider→packages map one package at a time, under a skip session so a
- * timed-out / Ctrl+C'd install is skipped and the batch continues.
- */
-async function applyGrouped(
-  grouped: Map<string, OutdatedPackage[]>,
-): Promise<OutcomeWithProvider[]> {
-  const entries: OutcomeWithProvider[] = [];
-  const session = beginSkipSession();
-  try {
-    for (const [providerId, pkgs] of grouped) {
-      const provider = getProvider(providerId);
-      if (!provider) continue;
-      printSectionHeader(provider.displayName, pkgs.length);
-      const done = await applyEach(provider, pkgs, session);
-      entries.push(...done.map((outcome) => ({ providerId, outcome })));
-      if (session.isAbortRequested()) break;
-    }
-  } finally {
-    session.dispose();
-  }
-  return entries;
-}
-
-/** One package at a time, so a skip or a timeout drops a single install. */
-async function applyEach(
-  provider: Provider,
-  packages: readonly OutdatedPackage[],
-  session: { isAbortRequested(): boolean },
-): Promise<UpdateOutcome[]> {
-  const outcomes: UpdateOutcome[] = [];
-  for (const pkg of packages) {
-    if (session.isAbortRequested()) break;
-    outcomes.push(await applyUpdate(provider, pkg.id, { pkg }));
-  }
-  return outcomes;
-}
-
-interface ParsedTarget {
-  provider: Provider;
-  packageId: string;
-}
-
-/** Split `provider:packageId` and resolve the provider, or report why not. */
-function parseTarget(target: string, opts: { quiet?: boolean } = {}): ParsedTarget | null {
+/** `provider:packageId` (the first colon splits), or null when either half is missing. */
+function requestOf(target: string): UpdateRequest | null {
   const idx = target.indexOf(":");
-  const provider = idx > 0 ? getProvider(target.slice(0, idx)) : undefined;
-  const packageId = target.slice(idx + 1);
-  if (provider && packageId) return { provider, packageId };
-  if (!opts.quiet) {
-    const reason = idx === -1 ? "format invalide" : "provider inconnu";
-    process.stderr.write(chalk.red(`  ${reason}: ${target}\n`));
-  }
-  return null;
-}
-
-function summarize(outcomes: UpdateOutcome[]): void {
-  if (outcomes.length === 0) return;
-  const succeeded = outcomes.filter((o) => o.success);
-  const skipped = outcomes.filter((o) => !o.success && o.skipped);
-  const failed = outcomes.filter((o) => !o.success && !o.skipped);
-
-  process.stdout.write("\n");
-  if (succeeded.length > 0) {
-    process.stdout.write(chalk.green(`  OK   ${succeeded.length} mise(s) à jour effectuée(s)\n`));
-  }
-  writeGroup(skipped, chalk.yellow, `  SKIP ${skipped.length} action(s) manuelle(s) requise(s)\n`);
-  writeGroup(failed, chalk.red, `  FAIL ${failed.length}/${outcomes.length} échec(s)\n`);
-}
-
-/** Coloured header, then one `- <id> — <message>` line per entry. */
-function writeGroup(outcomes: UpdateOutcome[], color: (s: string) => string, header: string): void {
-  if (outcomes.length === 0) return;
-  process.stdout.write(color(header));
-  for (const o of outcomes) {
-    const detail = o.message ? chalk.dim(` — ${o.message}`) : "";
-    process.stdout.write(color(`       - ${o.id}`) + detail + "\n");
-  }
-}
-
-function printSectionHeader(label: string, count: number): void {
-  process.stdout.write(`\n${chalk.bold(`  → ${label}`)} ${dim(`(${count})`)}\n`);
+  if (idx <= 0 || idx === target.length - 1) return null;
+  return { providerId: target.slice(0, idx), packageId: target.slice(idx + 1) };
 }

@@ -143,7 +143,7 @@ export function getInstallTimeoutSeconds(): number {
 }
 
 // The currently-running interruptible child, if any. Updates are sequential
-// (never concurrent — see commands/update.ts and ui/retry-failed.ts), so a
+// (never concurrent — see core/update/update-pipeline.ts), so a
 // single slot is enough; nested runInherit calls save/restore it.
 let abortCurrent: (() => void) | null = null;
 

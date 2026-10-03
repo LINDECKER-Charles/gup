@@ -110,12 +110,3 @@ function printHint(): void {
     ),
   );
 }
-
-/**
- * True if a skip session is active and the user requested a full abort.
- * Only the menu's legacy retry prompt (ui/retry-failed.ts) still reads it; the
- * pipeline asks its gate instead.
- */
-export function isAbortRequested(): boolean {
-  return active?.abortRequested ?? false;
-}
