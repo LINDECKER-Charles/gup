@@ -613,7 +613,7 @@ describe("NerdFontsProvider.update", () => {
   it("returns failure when fetch throws non-Error", async () => {
     fetchGitHubReleaseLatestMock.mockResolvedValueOnce("v3.4.0");
     fetchMock.mockImplementationOnce(() => {
-      throw "string-error"; // eslint-disable-line @typescript-eslint/no-throw-literal
+      throw "string-error";
     });
     const res = await new NerdFontsProvider().update("FiraCode");
     expect(res.success).toBe(false);

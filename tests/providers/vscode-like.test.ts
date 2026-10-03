@@ -142,7 +142,7 @@ describe("updateVsCodeLikeExtension", () => {
 
 describe("fetchMicrosoftMarketplaceLatest", () => {
   function stubFetch(impl: (url: string, init: RequestInit) => Promise<unknown>) {
-    const fn = vi.fn(impl as never);
+    const fn = vi.fn(impl);
     vi.stubGlobal("fetch", fn);
     return fn;
   }
@@ -220,7 +220,7 @@ describe("fetchMicrosoftMarketplaceLatest", () => {
 
 describe("fetchOpenVsxLatest", () => {
   function stubFetch(impl: (url: string, init?: RequestInit) => Promise<unknown>) {
-    const fn = vi.fn(impl as never);
+    const fn = vi.fn(impl);
     vi.stubGlobal("fetch", fn);
     return fn;
   }
