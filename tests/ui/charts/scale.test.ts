@@ -19,6 +19,13 @@ describe("quantileLevels", () => {
     expect(level(40)).toBe(4);
   });
 
+  it("keeps the levels apart when most days share the same count", () => {
+    const days = [...Array<number>(50).fill(1), ...Array<number>(20).fill(2), ...Array<number>(10).fill(3), 4, 4, 8];
+    const level = quantileLevels(days, 5);
+
+    expect([1, 2, 3, 4, 8].map(level)).toEqual([1, 1, 2, 3, 4]);
+  });
+
   it("gives every value the first level when nothing else is known", () => {
     expect(quantileLevels([], 5)(7)).toBe(1);
   });

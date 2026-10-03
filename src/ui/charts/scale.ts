@@ -7,15 +7,19 @@
 export const EIGHTHS_PER_CELL = 8;
 
 /**
- * Maps a value to a level `0..levels-1` by the quantiles of the non-zero
- * values: 0 stays 0, the rest spread over `1..levels-1` — so one busy day
- * does not wash every other day out to the lowest level.
+ * Maps a value to a level `0..levels-1` by the quantiles of the distinct
+ * non-zero values: 0 stays 0, the rest spread over `1..levels-1` — so one
+ * busy day does not wash every other day out to the lowest level.
+ *
+ * Distinct values, because daily counts repeat: the quartiles of a history
+ * made mostly of one-update days are all 1 or 2, which leaves levels unused
+ * and draws a day of 8 updates like a day of 3.
  */
 export function quantileLevels(
   values: readonly number[],
   levels: number,
 ): (value: number) => number {
-  const sorted = values.filter((value) => value > 0).sort((a, b) => a - b);
+  const sorted = [...new Set(values.filter((value) => value > 0))].sort((a, b) => a - b);
   const steps = levels - 1;
   const thresholds: number[] = [];
   for (let step = 1; step < steps && sorted.length > 0; step++) {
