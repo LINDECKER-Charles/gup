@@ -6,7 +6,8 @@ import type { SimPlatform } from "../../support/system/types.js";
 /**
  * The Apple-system-Ruby guard: macOS ships a frozen, SIP-locked Ruby whose
  * stdlib gems `gem update` can never touch, so a gem resolving to it hides
- * the provider instead of flooding the scan with ~40 dead rows.
+ * the provider instead of flooding the scan with ~40 dead rows. And the
+ * `gem outdated` lines the scan keeps.
  */
 
 /** A machine whose `gem` resolves to `path` (or is absent). */
@@ -65,5 +66,25 @@ describe("GemProvider.isAvailable", () => {
   it("is unavailable when gem is absent", async () => {
     await gemAt("darwin");
     await expect(new GemProvider().isAvailable()).resolves.toBe(false);
+  });
+});
+
+describe("GemProvider.listOutdated", () => {
+  it("keeps only the `name (current < latest)` lines, whatever their padding", async () => {
+    const stdout = [
+      "rake (13.0.6 < 13.1.0)",
+      "noise without parens",
+      "",
+      "  rails (7.0.0 < 7.1.0)  ",
+    ].join("\n");
+    await system.load({
+      platform: "linux",
+      bin: { gem: "/usr/bin/gem" },
+      commands: [{ argv: ["gem", "outdated"], stdout }],
+    });
+    await expect(new GemProvider().listOutdated()).resolves.toEqual([
+      { id: "rake", name: "rake", current: "13.0.6", latest: "13.1.0" },
+      { id: "rails", name: "rails", current: "7.0.0", latest: "7.1.0" },
+    ]);
   });
 });
