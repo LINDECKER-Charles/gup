@@ -6,6 +6,7 @@ import type { UpdateRequest } from "../core/update/update-ports.js";
 import { MenuApp } from "../ui/app/menu-app.js";
 import type { MenuController } from "../ui/app/menu-session.js";
 import { runScan } from "../ui/scan-progress.js";
+import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 import type { MenuState } from "./menu-state.js";
 import { runWithConsole } from "./update.js";
 
@@ -85,3 +86,15 @@ function requestOf(target: string): UpdateRequest | null {
   if (idx <= 0 || idx === target.length - 1) return null;
   return { providerId: target.slice(0, idx), packageId: target.slice(idx + 1) };
 }
+
+/** `gup` alone opens the menu: the program's own action. */
+export const menuModule: CliModule = {
+  id: "menu",
+  order: MODULE_ORDER.commands,
+  register(program) {
+    program.action(async () => {
+      const code = await menuCommand();
+      process.exit(code);
+    });
+  },
+};

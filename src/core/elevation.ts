@@ -27,6 +27,13 @@ export interface AdminBatchInput {
   logThreshold?: LogThreshold;
 }
 
+/**
+ * The hidden command the elevated child runs. The Windows wrapper script
+ * spells it as a literal on purpose: that script is a constant, with no
+ * value woven into it.
+ */
+export const ADMIN_BATCH_COMMAND = "__admin-batch";
+
 /** Upper bound of an install timeout carried by the payload: one day. */
 const MAX_INSTALL_TIMEOUT_S = 86_400;
 
@@ -282,7 +289,7 @@ async function spawnWithUac({ node, cli, inputFile, timeout }: ElevatedLaunch): 
  * flows through env-derived inputs, never code.
  */
 async function spawnWithSudo({ node, cli, inputFile, timeout }: ElevatedLaunch): Promise<void> {
-  const res = await runInherit("sudo", [node, cli, "__admin-batch", inputFile], { timeout });
+  const res = await runInherit("sudo", [node, cli, ADMIN_BATCH_COMMAND, inputFile], { timeout });
   if (res.failed) throw new Error("sudo a échoué ou a été refusé");
 }
 

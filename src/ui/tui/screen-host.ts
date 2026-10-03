@@ -52,8 +52,14 @@ export function createScreenHost(createRenderer: RendererFactory): ScreenHost {
   };
 }
 
-/** True when both ends are a terminal, i.e. when a screen can be shown at all. */
+/**
+ * True when a screen can be shown at all: both ends are a terminal, and the
+ * run is not unattended. A scheduled run sets `GUP_NONINTERACTIVE=1`: under
+ * `conhost --headless` both ends ARE terminals that nobody watches, so an
+ * accidental prompt must fail fast instead of waiting forever.
+ */
 export function canPrompt(): boolean {
+  if (process.env["GUP_NONINTERACTIVE"] === "1") return false;
   return Boolean(process.stdin.isTTY && process.stdout.isTTY);
 }
 

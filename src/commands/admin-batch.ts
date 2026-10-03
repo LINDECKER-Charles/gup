@@ -1,9 +1,15 @@
 import chalk from "chalk";
-import { readBatchInput, writeBatchOutput, type AdminBatchInput } from "../core/elevation.js";
+import {
+  ADMIN_BATCH_COMMAND,
+  readBatchInput,
+  writeBatchOutput,
+  type AdminBatchInput,
+} from "../core/elevation.js";
 import { applyLogThreshold } from "../core/log/log.js";
 import { lookupProvider } from "../core/platform/lookup-provider.js";
 import { setInstallTimeoutSeconds } from "../core/runner.js";
 import type { UpdateOutcome } from "../core/types.js";
+import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 
 /**
  * Elevated-child entrypoint for {@link runElevatedBatch}. Reads the JSON
@@ -68,3 +74,22 @@ async function runOneTarget(target: string): Promise<UpdateOutcome> {
   process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
   return provider.update(packageId);
 }
+
+/**
+ * Internal: invoked by the parent gup process after UAC / sudo elevation, to
+ * run a pre-validated batch from a temp file. Hidden from `--help`; the name
+ * is deliberately ugly so accidental discovery is hard.
+ */
+export const adminBatchModule: CliModule = {
+  id: "admin-batch",
+  order: MODULE_ORDER.commands,
+  register(program) {
+    program
+      .command(`${ADMIN_BATCH_COMMAND} <file>`, { hidden: true })
+      .description("Internal: run a pre-validated elevated batch from a temp file.")
+      .action(async (file: string) => {
+        const code = await adminBatchCommand(file);
+        process.exit(code);
+      });
+  },
+};

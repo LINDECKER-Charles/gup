@@ -1,8 +1,10 @@
 import chalk from "chalk";
+import type { Command } from "commander";
 import { isSupportedOn } from "../core/platform/is-supported-on.js";
 import { lookupProvider } from "../core/platform/lookup-provider.js";
 import { ALL_PROVIDERS } from "../core/registry.js";
 import type { Provider, ProviderScanResult, SelectedPackage } from "../core/types.js";
+import { setInstallTimeoutSeconds } from "../core/runner.js";
 import { requestsFrom } from "../core/update/update-plan.js";
 import { runUpdates } from "../core/update/update-pipeline.js";
 import type { UpdateRequest } from "../core/update/update-ports.js";
@@ -12,6 +14,7 @@ import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection } from "../ui/select.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { consolePorts, printReport } from "../ui/update-console.js";
+import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 
 export interface UpdateOptions {
   only?: string[];
@@ -190,3 +193,51 @@ const GENERIC_TARGET_EXAMPLES = [
   `Pour mettre à jour tout un provider sans cibler un paquet :`,
   `           gup update --provider <id> --all`,
 ];
+
+interface UpdateFlags {
+  all?: boolean;
+  yes?: boolean;
+  provider?: string[];
+  fast?: boolean;
+  timeout?: string;
+}
+
+export const updateModule: CliModule = {
+  id: "update",
+  order: MODULE_ORDER.commands,
+  register(program: Command) {
+    program
+      .command("update [targets...]")
+      .description("Mise à jour directe (sans menu). Cibles au format provider:packageId.")
+      .option("-a, --all", "Tout mettre à jour")
+      .option("-y, --yes", "Skip la confirmation en mode --all")
+      .option("-p, --provider <ids...>", "Restreint à certains providers")
+      .option("--fast", "Skip les scans lents")
+      .option(
+        "--timeout <seconds>",
+        "Timeout par install en secondes — l'install bloquée est skippée (0 = désactivé)",
+      )
+      .action(async (targets: string[], opts: UpdateFlags) => {
+        applyTimeoutFlag(opts.timeout);
+        const code = await updateCommand({
+          ...(targets.length > 0 && { targets }),
+          ...(opts.all !== undefined && { all: opts.all }),
+          ...(opts.yes !== undefined && { yes: opts.yes }),
+          ...(opts.provider && { only: opts.provider }),
+          ...(opts.fast !== undefined && { fast: opts.fast }),
+        });
+        process.exit(code);
+      });
+  },
+};
+
+/** `--timeout <seconds>` wins over GUP_INSTALL_TIMEOUT; a bad value exits 2. */
+function applyTimeoutFlag(raw: string | undefined): void {
+  if (raw === undefined) return;
+  const seconds = Number(raw);
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    process.stderr.write(`${chalk.red("Error:")} --timeout attend un nombre de secondes >= 0\n`);
+    process.exit(2);
+  }
+  setInstallTimeoutSeconds(seconds);
+}

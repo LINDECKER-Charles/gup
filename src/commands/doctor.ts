@@ -1,5 +1,6 @@
 import { ALL_PROVIDERS } from "../core/registry.js";
 import { renderProvidersStatus } from "../ui/table.js";
+import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 
 export async function doctorCommand(): Promise<number> {
   const checks = await Promise.all(
@@ -18,3 +19,17 @@ export async function doctorCommand(): Promise<number> {
   process.stdout.write(`${renderProvidersStatus(detected, missing)}\n`);
   return 0;
 }
+
+export const doctorModule: CliModule = {
+  id: "doctor",
+  order: MODULE_ORDER.commands,
+  register(program) {
+    program
+      .command("doctor")
+      .description("Affiche les providers détectés et ceux non installés.")
+      .action(async () => {
+        const code = await doctorCommand();
+        process.exit(code);
+      });
+  },
+};

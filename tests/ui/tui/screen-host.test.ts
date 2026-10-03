@@ -1,10 +1,43 @@
 import { createTestRenderer } from "@opentui/core/testing";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { installConsole } from "../../../src/core/process/output-router.js";
-import { createScreenHost } from "../../../src/ui/tui/screen-host.js";
+import { canPrompt, createScreenHost } from "../../../src/ui/tui/screen-host.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
+
+describe("canPrompt", () => {
+  const streams = [process.stdin, process.stdout];
+  const saved = streams.map((stream) => Object.getOwnPropertyDescriptor(stream, "isTTY"));
+
+  afterEach(() => {
+    streams.forEach((stream, i) => {
+      const descriptor = saved[i];
+      if (descriptor) Object.defineProperty(stream, "isTTY", descriptor);
+      else delete (stream as { isTTY?: boolean }).isTTY;
+    });
+  });
+
+  function onTerminal(isTTY: boolean): void {
+    for (const stream of streams) {
+      Object.defineProperty(stream, "isTTY", { value: isTTY, configurable: true, writable: true });
+    }
+  }
+
+  it("needs a terminal on both ends", () => {
+    onTerminal(true);
+    expect(canPrompt()).toBe(true);
+    onTerminal(false);
+    expect(canPrompt()).toBe(false);
+  });
+
+  it("refuses to prompt in an unattended run, even on a terminal", () => {
+    onTerminal(true);
+    vi.stubEnv("GUP_NONINTERACTIVE", "1");
+    expect(canPrompt()).toBe(false);
+  });
 });
 
 describe("screen host and the output router", () => {
