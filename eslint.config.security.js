@@ -273,4 +273,17 @@ export default [
       "security/detect-unsafe-regex": "off",
     },
   },
+  {
+    // The embedded terminal's own files, never a path from a provider or the
+    // network: the trampoline is looked up beside the running CLI
+    // (`realpath(process.argv[1])` joined with the constant `pty-exec` and the
+    // CLI's own extension) and only checked for existence; macOS's
+    // `spawn-helper` is node-pty's resolved package directory joined with the
+    // constant `prebuilds/darwin-<process.arch>/spawn-helper`, stat-ed, and
+    // chmod-ed 0755 only when it belongs to the current user.
+    files: ["src/core/pty/trampoline.ts", "src/core/pty/spawn-helper.ts"],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
 ];

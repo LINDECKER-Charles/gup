@@ -26,6 +26,18 @@ export interface ApplyOptions {
   readonly scheduleId?: string;
 }
 
+/**
+ * Message of an attempt the runner's argv barrier refused (`sanitizeCommand`
+ * / `sanitizeArgs` in `core/runner.ts`, whose errors start with
+ * {@link BARRIER_ERROR_PREFIX}); the reason follows.
+ */
+export const BARRIER_REFUSAL_MESSAGE = "refusé par la barrière de sécurité";
+
+/** Message of an attempt whose provider threw anything else; the reason follows. */
+export const UNEXPECTED_FAILURE_MESSAGE = "erreur inattendue";
+
+const BARRIER_ERROR_PREFIX = "runner: ";
+
 export async function applyUpdate(
   provider: Provider,
   packageId: string,
@@ -34,12 +46,7 @@ export async function applyUpdate(
   const context = { op: "update", providerId: provider.id, packageId } as const;
   return withOperation(context, async () => {
     const startedAt = Date.now();
-    // Call with a single argument when there are no provider options: passing
-    // an explicit `undefined` would change the observable call shape for
-    // providers (and the tests) that only ever expect the package id.
-    const raw = options.update
-      ? await provider.update(packageId, options.update)
-      : await provider.update(packageId);
+    const raw = await settledUpdate(provider, packageId, options.update);
     const outcome = finalizeOutcome(raw);
     recordUpdate({
       providerId: provider.id,
@@ -51,6 +58,34 @@ export async function applyUpdate(
     });
     return outcome;
   });
+}
+
+/**
+ * The provider's outcome — or, when `update()` rejects, a failed one. A
+ * rejection is not an outcome a batch can stop on: the runner's argv barrier
+ * refuses an unsafe package id by throwing, and that one package must fail
+ * (recorded like any failure) while the rest of the batch goes on.
+ */
+async function settledUpdate(
+  provider: Provider,
+  packageId: string,
+  update: UpdateOptions | undefined,
+): Promise<UpdateOutcome> {
+  try {
+    // Call with a single argument when there are no provider options: passing
+    // an explicit `undefined` would change the observable call shape for
+    // providers (and the tests) that only ever expect the package id.
+    return update ? await provider.update(packageId, update) : await provider.update(packageId);
+  } catch (error) {
+    return { id: packageId, success: false, message: rejectionMessage(error) };
+  }
+}
+
+function rejectionMessage(error: unknown): string {
+  const reason = error instanceof Error ? error.message : String(error);
+  return reason.startsWith(BARRIER_ERROR_PREFIX)
+    ? `${BARRIER_REFUSAL_MESSAGE} : ${reason.slice(BARRIER_ERROR_PREFIX.length)}`
+    : `${UNEXPECTED_FAILURE_MESSAGE} : ${reason}`;
 }
 
 /**
