@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../../src/core/types.js";
 import type { SpawnRecord } from "../system/types.js";
 import type { InvariantId, UpdateAllShape, Violation, Waiver } from "./types.js";
@@ -113,7 +114,10 @@ export interface UpdateAllObservation {
   readonly rows: readonly OutdatedPackage[];
   readonly outcomes: readonly UpdateOutcome[];
   readonly installCount: number;
-  /** Installs one `update()` performs (from the case's `update.installs`, 1 by default). */
+  /**
+   * Installs one `update()` performs: the case's `update.installs` (none when
+   * the update is left to the user), 1 when the case declares no update.
+   */
   readonly installsPerPackage: number;
 }
 
@@ -131,7 +135,7 @@ function expectedShape(shape: UpdateAllShape, observation: UpdateAllObservation)
     case "one-batch":
       return { installs: 1, outcomeIds: ids };
     case "collapsed":
-      return { installs: 1, outcomeIds: null };
+      return { installs: observation.installsPerPackage, outcomeIds: null };
     case "skipped":
       return { installs: 0, outcomeIds: ids };
   }
@@ -166,6 +170,16 @@ export function updateAllViolations(
   return shapeProblems(shape, observation).map((problem) =>
     makeViolation("updateAll-shape", `${shape}: ${problem}`),
   );
+}
+
+/** updateAll-shape: the batch spawned exactly the installs the case pins, when it pins any. */
+export function batchInstallViolations(
+  expected: readonly (readonly string[])[] | undefined,
+  actual: readonly (readonly string[])[],
+): Violation[] {
+  if (expected === undefined || isDeepStrictEqual(actual, expected)) return [];
+  const detail = `installs ${JSON.stringify(actual)}, expected ${JSON.stringify(expected)}`;
+  return [makeViolation("updateAll-shape", detail)];
 }
 
 /** The violations no waiver covers. */

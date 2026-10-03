@@ -38,6 +38,28 @@ describe("fake network", () => {
     await expect(response.text()).resolves.toBe("hello from a fixture\n");
   });
 
+  it("answers a binary route byte for byte", async () => {
+    // Bytes no UTF-8 text survives: a lone continuation byte, 0xFF, NUL.
+    const archive = new Uint8Array([0x50, 0x4b, 0x80, 0xff, 0x00, 0xc3]);
+    await system.load({ platform: "win32", http: [{ url: "https://example.test/a.zip", bytes: archive }] });
+
+    const response = await fetch("https://example.test/a.zip");
+
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(archive);
+  });
+
+  it("reports where redirects ended, when the route says so", async () => {
+    const mirror = "http://mirror.example.test/feed.xml";
+    await system.load({
+      platform: "darwin",
+      http: [{ url: "https://example.test/feed.xml", body: "<rss/>", finalUrl: mirror }],
+    });
+
+    const response = await fetch("https://example.test/feed.xml");
+
+    expect(response.url).toBe(mirror);
+  });
+
   it("matches the method as well as the exact URL", async () => {
     await system.load({
       platform: "linux",
@@ -53,6 +75,21 @@ describe("fake network", () => {
     );
     expect(system.unscripted).toHaveLength(2);
     system.acknowledgeUnscripted();
+  });
+
+  it("traces the text body a request sent, and only a text body", async () => {
+    const url = "https://example.test/query";
+    await system.load({ platform: "linux", http: [{ url, method: "POST", json: {} }] });
+
+    await fetch(url, { method: "POST", body: JSON.stringify({ filter: "x" }) });
+    await fetch(url, { method: "POST", body: new URLSearchParams({ filter: "x" }) });
+    await fetch(url, { method: "POST" });
+
+    expect(system.trace.requests).toEqual([
+      { method: "POST", url, body: '{"filter":"x"}' },
+      { method: "POST", url },
+      { method: "POST", url },
+    ]);
   });
 
   it("fails like a dead network in explore mode, without recording", async () => {

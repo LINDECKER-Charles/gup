@@ -1,0 +1,50 @@
+# Fragment — `test/provider-contracts`
+
+Test suite only: no change to what gup does. Design note:
+[`docs/development/design/provider-contracts.md`](../../development/design/provider-contracts.md).
+
+## Internal
+
+- **providers/iac:** Move the ten infrastructure providers to contract cases on the fake machine — real `gh-releases`, `hashicorp-releases` and `install-source` underneath, every installer's upgrade argv pinned — replacing two flat suites that mocked all three ([`165b76e`](https://github.com/LINDECKER-Charles/gup/commit/165b76e))
+- **providers/os:** Move the whole `os` domain — winget, scoop, Chocolatey, the Homebrew formulae and casks, the Mac App Store, MacPorts, MSYS2, Cygwin, Npackd, Nix, Sparkle, Fink, pkgin and pkgx — to contract cases plus one knowledge file per provider, keeping the knowledge of the former `-gaps` suites and adding scoop's id check, the batch commands and the `requiresAdmin` rows to what is pinned ([`5dfd3c2`](https://github.com/LINDECKER-Charles/gup/commit/5dfd3c2), [`fb76fef`](https://github.com/LINDECKER-Charles/gup/commit/fb76fef), [`0cfa5bc`](https://github.com/LINDECKER-Charles/gup/commit/0cfa5bc), [`b717870`](https://github.com/LINDECKER-Charles/gup/commit/b717870))
+- **providers:** Split the package-gap suite into its own domains: vcpkg and mint under `lang-other`, the .NET SDK and the NuGet CLI under `dotnet-php`, with a stronger `dotnet --list-sdks` banner test found by a seeded mutation ([`48053c6`](https://github.com/LINDECKER-Charles/gup/commit/48053c6), [`50cf775`](https://github.com/LINDECKER-Charles/gup/commit/50cf775))
+- **providers:** Extend the contract harness for the migration: update routes through every installer, batch argv and failed-batch checks, machines that answer a re-query after an install, recorded scan timeouts, redirect targets, trace readers and a one-test spy for failures Node never produces on its own ([`60f865c`](https://github.com/LINDECKER-Charles/gup/commit/60f865c), [`9dcc557`](https://github.com/LINDECKER-Charles/gup/commit/9dcc557), [`4fbef13`](https://github.com/LINDECKER-Charles/gup/commit/4fbef13), [`0611848`](https://github.com/LINDECKER-Charles/gup/commit/0611848))
+- **providers/rust, providers/jvm:** Move cargo, rustup, Coursier and JBang to contract cases, rustup's own update and its toolchains as two scenarios ([`82044a1`](https://github.com/LINDECKER-Charles/gup/commit/82044a1), [`4f2b80b`](https://github.com/LINDECKER-Charles/gup/commit/4f2b80b))
+- **providers/dotnet-php, providers/lang-other:** Finish both domains: the .NET global tools, Composer (its global packages and itself), PHIVE and the Symfony CLI; RubyGems, Julia's Pkg, LuaRocks, Mix archives, Nimble, opam, pub global, R, cabal-install, Stack, Hex and the Flutter SDK, each self-updating tool behind and up to date ([`1317de0`](https://github.com/LINDECKER-Charles/gup/commit/1317de0), [`30338bf`](https://github.com/LINDECKER-Charles/gup/commit/30338bf))
+- **providers:** Split the toolchain-gap suite into its own domains: xcodes under `embedded-mobile`, swiftly under `toolchain`, pyenv under `python` and nvm under `node`, their clone, Homebrew, distro and hand-installed layouts as scenarios on the real install-source ([`73d46e2`](https://github.com/LINDECKER-Charles/gup/commit/73d46e2))
+- **providers/toolchain, providers/python, providers/node:** Finish the three domains: asdf, goenv, mise, proto and SDKMAN!; Conda, PDM, Poetry, Rye, pyenv-win, pip (and a pip3-only Python), pipx and uv tools; npm, pnpm, Yarn classic, Bun, Corepack (on the real shim-ownership check), Deno, fnm, Volta and nvm-windows ([`e9751c3`](https://github.com/LINDECKER-Charles/gup/commit/e9751c3), [`c6e0e7f`](https://github.com/LINDECKER-Charles/gup/commit/c6e0e7f), [`0e86fb2`](https://github.com/LINDECKER-Charles/gup/commit/0e86fb2))
+- **providers:** Merge the two suites of the package managers' self-updates into one case per target — winget, scoop, Chocolatey, gh, Homebrew (previously untested), npm, pnpm, Yarn, pip and pipx — each on a platform it exists on ([`72bf850`](https://github.com/LINDECKER-Charles/gup/commit/72bf850))
+- **providers:** Share the self-updating tool scenarios and the npm and PyPI registry routes, hand a collapsed `updateAll` several rows, let one update run several installs or none, and trace the environment a probe hands its child ([`9b5a7be`](https://github.com/LINDECKER-Charles/gup/commit/9b5a7be), [`94ee47f`](https://github.com/LINDECKER-Charles/gup/commit/94ee47f), [`ab4d960`](https://github.com/LINDECKER-Charles/gup/commit/ab4d960), [`3b3a41a`](https://github.com/LINDECKER-Charles/gup/commit/3b3a41a), [`906214c`](https://github.com/LINDECKER-Charles/gup/commit/906214c), [`407037a`](https://github.com/LINDECKER-Charles/gup/commit/407037a))
+- **providers/editor-plugins, providers/ide:** Move the Neovim plugin managers, the VS Code family (code, Cursor, Windsurf, VSCodium) and the JetBrains IDEs to contract cases — the Marketplace query body now pinned, WebStorm's update routed through scoop, winget, Toolbox, a hand install and a Homebrew cask, the macOS bundle walk on a fake disk ([`0f3e55b`](https://github.com/LINDECKER-Charles/gup/commit/0f3e55b), [`a24bc13`](https://github.com/LINDECKER-Charles/gup/commit/a24bc13), [`943d8fb`](https://github.com/LINDECKER-Charles/gup/commit/943d8fb))
+- **providers/dev-cli, providers/shell:** Move git-delta, Jujutsu, Lazydocker, Lazygit, tea, glab, the gh extensions, Oh My Posh, Starship, the PowerShell Gallery modules and Nerd Fonts — the font zip now extracted by the real adm-zip, served as a binary route ([`f68a923`](https://github.com/LINDECKER-Charles/gup/commit/f68a923), [`7afeae2`](https://github.com/LINDECKER-Charles/gup/commit/7afeae2), [`ad853e5`](https://github.com/LINDECKER-Charles/gup/commit/ad853e5))
+- **providers:** Split the Windows IDE and shell gap suite into its domains: Visual Studio under `ide`, PSResourceGet under `shell`, Git for Windows under `dev-cli` ([`df3b709`](https://github.com/LINDECKER-Charles/gup/commit/df3b709))
+- **providers/wsl, providers/containers, providers/security:** Move WSL and its six distribution managers (on the real `core/wsl`, outputs in UTF-16 as gup decodes them), dive, nerdctl, ORAS, the Docker, Podman and Rancher Desktop apps, and the Sigstore, Anchore, Trivy, ProjectDiscovery and Semgrep scanners; Semgrep's update now runs on every host OS ([`1a6746b`](https://github.com/LINDECKER-Charles/gup/commit/1a6746b), [`bc678bd`](https://github.com/LINDECKER-Charles/gup/commit/bc678bd), [`d502249`](https://github.com/LINDECKER-Charles/gup/commit/d502249))
+- **providers/kubernetes, providers/cloud, providers/embedded-mobile:** Move the ten Kubernetes CLIs with helm's plugins and repositories and krew, the twelve cloud CLIs, the Android SDK, the Arduino CLI, Expo, fastlane and PlatformIO — the last flat suites ([`ae6fb65`](https://github.com/LINDECKER-Charles/gup/commit/ae6fb65), [`d180fdc`](https://github.com/LINDECKER-Charles/gup/commit/d180fdc), [`c4816e3`](https://github.com/LINDECKER-Charles/gup/commit/c4816e3))
+- **providers/containers, providers/shell, providers:** Find Podman and Rancher Desktop at their Program Files fallback while `LOCALAPPDATA` is unset again (a behaviour the containers migration had lost), pin the apostrophe Nerd Fonts doubles in the font path it hands PowerShell, and keep the case data of parts 2 and 3 module-private unless a knowledge test reads it ([`989e7f3`](https://github.com/LINDECKER-Charles/gup/commit/989e7f3), [`dbfe11d`](https://github.com/LINDECKER-Charles/gup/commit/dbfe11d), [`507e767`](https://github.com/LINDECKER-Charles/gup/commit/507e767))
+- **lint:** Retire the transitional `providers-legacy` vitest project: every provider test now runs in `providers`, on the fake machine ([`2a7268d`](https://github.com/LINDECKER-Charles/gup/commit/2a7268d))
+- **chore:** Add `npm run fixtures:record`, which re-records the probe outputs the contract cases reference from the tools installed on the machine, through gup's real runner, redacted and secret-scanned before anything is written ([`76441e6`](https://github.com/LINDECKER-Charles/gup/commit/76441e6), [`cf24b0b`](https://github.com/LINDECKER-Charles/gup/commit/cf24b0b))
+- **providers:** Run winget, scoop, pip, npm, rustup, kubectl, the .NET SDK, Git for Windows and WSL on output recorded on a French Windows 11, neutralised before commit, their rows held as goldens ([`247b25e`](https://github.com/LINDECKER-Charles/gup/commit/247b25e))
+- **chore:** Add `scripts/coverage-delta.mjs`, the per-file coverage gate of the migration (a source file may not lose more than one point against the `int/wave-1` baseline) ([`bc129b8`](https://github.com/LINDECKER-Charles/gup/commit/bc129b8), [`8594823`](https://github.com/LINDECKER-Charles/gup/commit/8594823))
+
+## Migration report
+
+The 37 flat provider suites (`tests/providers/*.test.ts`) are gone. `ide-manual.test.ts`,
+which wave 3 deletes with the seven unregistered providers it tests, moved unchanged to
+`tests/providers/ide/` and is left out of the counts below.
+
+| | Before (`int/wave-1`) | After |
+|---|---:|---:|
+| Provider test lines | 25,037 in 37 flat files | 16,169 in 149 cases, contract and knowledge files |
+| Executed provider tests | 2,424 | 4,220 |
+| of which generated from contract cases / hand-written | — / 2,424 | 3,286 / 934 |
+| Contract cases | — | 357 |
+| Recorded fixtures | — | 12 files, 9 goldens |
+| Shared test support and self-tests | — | 1,658 lines |
+
+Every deleted test is mapped in the body of the commit that deleted it. No source file lost
+coverage beyond one point against `int/wave-1`, and 83 of 85 seeded mutations were caught (the
+two others are explained in the design note). A review pass then sampled 20 deleted tests and
+applied 40 fresh mutations: it restored one lost behaviour and closed one gap the old suite
+already had, the six other surviving mutations being equivalent on real output (design note,
+§5). The migration and the recordings surfaced about twenty provider findings, listed in the
+design note for their owners.

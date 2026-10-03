@@ -59,7 +59,19 @@ function spawnFault(argv: readonly string[]): SpawnFaultMode | undefined {
 
 function record(mode: SpawnRecord["mode"], argv: readonly string[], options: Options): void {
   const cwd = options.cwd === undefined ? undefined : String(options.cwd);
-  machine().spawns.push({ mode, argv, shell: Boolean(options.shell), ...(cwd && { cwd }) });
+  const { timeout, env } = options;
+  machine().spawns.push({
+    mode,
+    argv,
+    shell: Boolean(options.shell),
+    ...(cwd && { cwd }),
+    ...(timeout !== undefined && { timeout }),
+    ...(env !== undefined && { env: { ...env } }),
+  });
+}
+
+function hasInstalled(): boolean {
+  return machine().spawns.some((spawn) => spawn.mode === "inherit");
 }
 
 function isBareName(command: string): boolean {
@@ -91,6 +103,7 @@ function scriptedAnswer(argv: readonly string[]): RunResult | undefined {
   const key = argvKey(argv);
   const slot = machine().scripts.find((script) => argvKey(script.argv) === key);
   if (!slot) return undefined;
+  if (slot.afterInstall && hasInstalled()) return strippedResult(slot.afterInstall);
   const answer = slot.answers[Math.min(slot.calls, slot.answers.length - 1)];
   slot.calls += 1;
   return answer && strippedResult(answer);

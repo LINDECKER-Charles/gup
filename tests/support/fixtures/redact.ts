@@ -63,8 +63,13 @@ function replaceAll(
 
 function homePattern(context: RedactionContext): RegExp | null {
   if (context.home.length === 0) return null;
-  // Both separator styles: Windows tools print `C:\Users\u` and `C:/Users/u`.
-  const variants = new Set([context.home, context.home.replaceAll("\\", "/")]);
+  // Both separator styles: Windows tools print `C:\Users\u` and `C:/Users/u`;
+  // a JSON report (npm, pip) escapes the backslashes: `C:\\Users\\u`.
+  const variants = new Set([
+    context.home,
+    context.home.replaceAll("\\", "/"),
+    context.home.replaceAll("\\", "\\\\"),
+  ]);
   const alternatives = [...variants].map(escapeRegExp).join("|");
   // Not the prefix of a longer name: `C:\Users\u` must leave `C:\Users\uv` alone.
   const body = `(?:${alternatives})${TOKEN_EDGE_AFTER}`;

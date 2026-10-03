@@ -14,7 +14,7 @@ export type UpdateAllShape =
   | "per-package"
   /** One install for all rows, one outcome per row. */
   | "one-batch"
-  /** One install, one outcome, whatever the row count (self-updaters). */
+  /** One update (its installs), one outcome, whatever the row count (self-updaters). */
   | "collapsed"
   /** No install; every outcome skipped (manual-only providers). */
   | "skipped";
@@ -44,6 +44,23 @@ export interface UpdateExpectation {
   readonly onFailure?: Partial<UpdateOutcome>;
 }
 
+/**
+ * The case's `update()` replayed on another machine, where another installer
+ * owns the binary: how a delegating provider routes its upgrade (scoop,
+ * winget, choco, brew… or its manual message). One route per installer the
+ * provider maps keeps every package id it hands over pinned, through the real
+ * delegation rather than a mock of it.
+ */
+export interface UpdateRoute {
+  /** The installer that owns the binary on this machine; labels failures. */
+  readonly via: string;
+  readonly system: SystemSpec;
+  /** Install spawns in order; `[]` when the update is left to the user. */
+  readonly installs: readonly (readonly string[])[];
+  /** Default `{ id: packageId, success: true }`. */
+  readonly outcome?: Partial<UpdateOutcome>;
+}
+
 export interface ProviderContractCase {
   /** Several scenarios per provider are fine; label = `${id} · ${scenario}`. */
   readonly scenario?: string;
@@ -57,7 +74,15 @@ export interface ProviderContractCase {
   /** Exact rows, or a golden for fixture-backed scenarios. */
   readonly outdated: readonly OutdatedPackage[] | GoldenRef;
   readonly update?: UpdateExpectation;
+  /** `update.packageId` on further machines, one per installer the provider routes to. */
+  readonly routes?: readonly UpdateRoute[];
   readonly updateAll: UpdateAllShape;
+  /**
+   * The exact installs `updateAll(rows)` spawns for the nominal rows, for a
+   * provider whose batch command is not one of its per-package installs
+   * (`brew upgrade --formula`, `choco upgrade all -y`…).
+   */
+  readonly batchInstalls?: readonly (readonly string[])[];
   readonly waivers?: readonly Waiver[];
 }
 

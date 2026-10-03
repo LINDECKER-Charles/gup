@@ -28,6 +28,8 @@ export interface ResolvedAnswer {
 export interface ScriptSlot {
   readonly argv: readonly string[];
   readonly answers: readonly ResolvedAnswer[];
+  /** Answer once an install has run (see `CommandScript.afterInstall`). */
+  readonly afterInstall?: ResolvedAnswer;
   calls: number;
 }
 
@@ -35,8 +37,9 @@ export interface ResolvedRoute {
   readonly method: string;
   readonly url: string;
   readonly status: number;
-  readonly body: string;
+  readonly body: string | Uint8Array<ArrayBuffer>;
   readonly headers: Readonly<Record<string, string>>;
+  readonly finalUrl?: string;
 }
 
 export interface MachineState {
@@ -78,20 +81,23 @@ async function resolveScripts(scripts: readonly CommandScript[]): Promise<Script
     if (seen.has(key)) throw new Error(`two command scripts for ${key}: merge them with \`then\``);
     seen.add(key);
     const answers = await Promise.all([script, ...(script.then ?? [])].map(resolveAnswer));
-    slots.push({ argv: script.argv, answers, calls: 0 });
+    const afterInstall = script.afterInstall && (await resolveAnswer(script.afterInstall));
+    slots.push({ argv: script.argv, answers, ...(afterInstall && { afterInstall }), calls: 0 });
   }
   return slots;
 }
 
 async function resolveRoute(route: HttpRoute): Promise<ResolvedRoute> {
   const isJson = route.json !== undefined;
-  const body = isJson ? JSON.stringify(route.json) : await resolveText(route.body ?? "");
+  const text = isJson ? JSON.stringify(route.json) : await resolveText(route.body ?? "");
+  const body = route.bytes ?? text;
   return {
     method: route.method ?? "GET",
     url: route.url,
     status: route.status ?? 200,
     body,
     headers: { ...(isJson && { "content-type": "application/json" }), ...route.headers },
+    ...(route.finalUrl !== undefined && { finalUrl: route.finalUrl }),
   };
 }
 

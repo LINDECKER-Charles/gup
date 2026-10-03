@@ -1,0 +1,25 @@
+{
+  "fixtures": [
+    {
+      "file": "list-outdated.win32.json",
+      "argv": [
+        "pip",
+        "list",
+        "--outdated",
+        "--user",
+        "--format=json",
+        "--disable-pip-version-check"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      },
+      "neutralised": "package names replaced (package-NN, in order); versions and file types kept"
+    }
+  ]
+}

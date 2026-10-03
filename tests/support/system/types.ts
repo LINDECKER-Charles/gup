@@ -23,6 +23,12 @@ export interface CommandScript extends CommandAnswer {
   readonly argv: readonly string[];
   /** Answers for the 2nd, 3rd… identical call; the last one repeats. */
   readonly then?: readonly CommandAnswer[];
+  /**
+   * The answer once an install has run on this machine: a provider that
+   * re-queries after its upgrade (pkgin, MSYS2) sees the upgraded state.
+   * Takes precedence over `then`.
+   */
+  readonly afterInstall?: CommandAnswer;
 }
 
 export interface HttpRoute {
@@ -33,7 +39,11 @@ export interface HttpRoute {
   readonly status?: number;
   readonly json?: unknown;
   readonly body?: Text;
+  /** A binary body sent as is (an archive a provider downloads); `json` and `body` are text. */
+  readonly bytes?: Uint8Array<ArrayBuffer>;
   readonly headers?: Readonly<Record<string, string>>;
+  /** Where redirects ended (`Response.url`); default: the requested URL. */
+  readonly finalUrl?: string;
 }
 
 export interface FsNode {
@@ -90,11 +100,17 @@ export interface SpawnRecord {
   readonly argv: readonly string[];
   readonly shell: boolean;
   readonly cwd?: string;
+  /** The wall-clock cap (ms) the code under test asked the runner for, if any. */
+  readonly timeout?: number;
+  /** The environment the code under test handed the child, when it passed one. */
+  readonly env?: Readonly<Record<string, string | undefined>>;
 }
 
 export interface RequestRecord {
   readonly method: string;
   readonly url: string;
+  /** The body the code under test sent, when it is text (a POSTed query). */
+  readonly body?: string;
 }
 
 export interface Trace {

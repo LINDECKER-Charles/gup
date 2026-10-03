@@ -25,8 +25,9 @@ const RATE_LIMITED: ResolvedRoute = {
 
 function respond(route: ResolvedRoute, url: string): Response {
   const response = new Response(route.body, { status: route.status, headers: route.headers });
-  // A constructed Response has an empty url; the real one carries the request's.
-  Object.defineProperty(response, "url", { value: url });
+  // A constructed Response has an empty url; the real one carries the URL the
+  // redirects ended on.
+  Object.defineProperty(response, "url", { value: route.finalUrl ?? url });
   return response;
 }
 
@@ -61,7 +62,8 @@ type FetchInput = string | URL | Request;
 function requestOf(input: FetchInput, init?: RequestInit): RequestRecord {
   const url = input instanceof Request ? input.url : String(input);
   const method = init?.method ?? (input instanceof Request ? input.method : "GET");
-  return { method: method.toUpperCase(), url };
+  const body = typeof init?.body === "string" ? init.body : undefined;
+  return { method: method.toUpperCase(), url, ...(body !== undefined && { body }) };
 }
 
 function unscripted(method: string, url: string): never {
@@ -74,9 +76,10 @@ function unscripted(method: string, url: string): never {
 }
 
 export async function fakeFetch(input: FetchInput, init?: RequestInit): Promise<Response> {
-  const { method, url } = requestOf(input, init);
+  const request = requestOf(input, init);
+  const { method, url } = request;
   const state = machine();
-  state.requests.push({ method, url });
+  state.requests.push(request);
   init?.signal?.throwIfAborted();
   const fault = httpFault(url);
   if (fault) return faultResponse(fault, url);

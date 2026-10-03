@@ -45,9 +45,6 @@ export default defineConfig({
         name: "unit",
         include: ["tests/{core,commands,ui,security,scripts,cli}/**/*.test.ts"],
       }),
-      // Transitional: the flat provider suites, each mocking the runner on its
-      // own. Removed once every domain has moved to the contract harness.
-      project({ name: "providers-legacy", include: ["tests/providers/*.test.ts"] }),
       project({
         name: "providers",
         include: [

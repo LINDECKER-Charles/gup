@@ -91,7 +91,7 @@ describe("vitest project membership", () => {
     ["tests/security/scheduler-injection.test.ts", "unit"],
     ["tests/scripts/screenshots/scenes.test.ts", "unit"],
     ["tests/cli/startup.test.ts", "unit"],
-    ["tests/providers/winget.test.ts", "providers-legacy"],
+    ["tests/providers/os/winget.test.ts", "providers"],
     ["tests/providers/iac/contract.test.ts", "providers"],
     ["tests/platform/platform-simulation.test.ts", "providers"],
     ["tests/support/self-test/fake-runner.test.ts", "providers"],

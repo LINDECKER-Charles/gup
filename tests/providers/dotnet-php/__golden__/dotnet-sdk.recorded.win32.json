@@ -1,0 +1,9 @@
+[
+  {
+    "id": "10.0",
+    "name": ".NET SDK 10.0",
+    "current": "10.0.401",
+    "latest": "10.0.402",
+    "note": "LTS · support actif"
+  }
+]
