@@ -1,8 +1,9 @@
 /**
  * The words of updates that run inside the app (French, the language of the
- * interface): the run view, its dialogs and the update confirmation's extra
- * paragraphs. Exported so the tests assert the exact wording. Symbols come
- * from `STATUS_GLYPHS` where the run view draws them, never from here.
+ * interface): the run view, its dialogs, the update confirmation's extra
+ * paragraphs and the `gup doctor` line of the embedded terminal. Exported so
+ * the tests assert the exact wording. Symbols come from `STATUS_GLYPHS`
+ * where the run view draws them, never from here.
  */
 
 /** Windows elevates through a UAC window; elsewhere sudo asks in the terminal pane. */
@@ -147,3 +148,9 @@ export const RUN_NOTIFICATION = {
     `Mise à jour terminée : ${succeeded} mis à jour, ${skipped} ignoré(s), ${failed} échec(s).`,
 } as const;
 
+/** The `gup doctor` line of the embedded terminal ("Système" section). */
+export const TERMINAL_DIAGNOSTIC = {
+  label: "Terminal intégré",
+  available: "disponible — mises à jour dans l'interface",
+  unavailable: (reason: string): string => `${reason} — mises à jour hors de l'interface`,
+} as const;

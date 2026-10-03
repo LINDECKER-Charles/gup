@@ -4,6 +4,7 @@ import { listModule } from "../list.js";
 import { menuModule } from "../menu.js";
 import { updateModule } from "../update.js";
 import type { CliModule } from "./cli-module.js";
+import { embeddedTerminalModule } from "./embedded-terminal-module.js";
 
 /**
  * Every module of the command line, one line each, sorted by id. A feature
@@ -13,6 +14,7 @@ import type { CliModule } from "./cli-module.js";
 export const CLI_MODULES: readonly CliModule[] = [
   adminBatchModule,
   doctorModule,
+  embeddedTerminalModule,
   listModule,
   menuModule,
   updateModule,
