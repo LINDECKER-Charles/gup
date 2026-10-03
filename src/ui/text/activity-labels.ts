@@ -126,6 +126,20 @@ export function periodLabel(period: Period): string {
   return period.hasFixedEnd ? `${start} jusqu'au ${formatDate(period.until)}` : start;
 }
 
+/**
+ * The period opening a sentence: "Sur les 12 derniers mois", "Sur le dernier
+ * mois", "Sur tout l'historique", "Depuis le 01/01/2026" (and its end, if set).
+ */
+export function periodLead(period: Period): string {
+  const label = periodLabel(period);
+  const { scope } = period;
+  if (scope.kind === "date" && period.since !== null) {
+    return `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
+  }
+  const isPlural = scope.kind === "span" && scope.count > 1 && period.since !== null;
+  return `${isPlural ? "Sur les" : "Sur"} ${label}`;
+}
+
 function periodStartLabel(period: Period): string {
   const { scope } = period;
   if (scope.kind === "all" || period.since === null) return "tout l'historique";
