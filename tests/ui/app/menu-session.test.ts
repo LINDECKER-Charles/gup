@@ -1,130 +1,232 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { MenuState } from "../../../src/commands/menu-state.js";
 import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../../src/core/runner.js";
-import { MenuSession, type MenuController } from "../../../src/ui/app/menu-session.js";
-import { createTestHost, frame, press } from "../../support/tui/test-host.js";
+import type { ProviderScanResult } from "../../../src/core/types.js";
+import type {
+  Takeover,
+  TakeoverSurface,
+  ViewContext,
+  ViewDefinition,
+} from "../../../src/ui/app/view-definition.js";
+import type { Panel } from "../../../src/ui/panels/panel.js";
+import { providersView } from "../../../src/ui/views/providers-view.js";
+import { scanView } from "../../../src/ui/views/scan-view.js";
+import { bootMenu, defaultViews } from "../../support/tui/menu-driver.js";
 
 const pkg = (id: string, current: string, latest: string) => ({ id, current, latest });
-
-function setup() {
-  const state: MenuState = { scans: [], fast: false, filter: [], detectedCount: 0, providers: [] };
-  const controller: MenuController = {
-    scan: vi.fn(async (s: MenuState, events) => {
-      events.detecting();
-      events.planned(1);
-      events.started("Winget");
-      events.finished("Winget", { updates: 2, ms: 1000 });
-      events.completed(1000);
-      s.scans = [
-        {
-          providerId: "winget",
-          available: true,
-          packages: [pkg("Git.Git", "2.51.0", "2.52.0"), pkg("7zip.7zip", "25.00", "25.01")],
-        },
-      ];
-      s.detectedCount = 1;
-    }),
-    providersStatus: vi.fn(async () => ({
-      detected: [{ id: "winget", displayName: "Winget" }],
-      missing: [{ id: "brew", displayName: "Homebrew" }],
-    })),
-    updatePackages: vi.fn(async () => {}),
-    displayName: () => "Winget",
-  };
-  const { host, next } = createTestHost({ size: { cols: 110, rows: 26 } });
-  const exit = host.run((screen) =>
-    new MenuSession(screen, { state, controller, scanOnStart: true }).run(),
-  );
-  return { state, controller, exit, next };
-}
-
-async function ready(next: () => ReturnType<ReturnType<typeof createTestHost>["next"]>) {
-  const screen = await next();
-  await screen.waitForFrame((text) => text.includes("Git.Git"));
-  return screen;
-}
-
+const WINGET: ProviderScanResult = {
+  providerId: "winget",
+  available: true,
+  packages: [pkg("Git.Git", "2.51.0", "2.52.0"), pkg("7zip.7zip", "25.00", "25.01")],
+};
 const INITIAL_TIMEOUT_S = getInstallTimeoutSeconds();
 
 afterEach(() => {
   setInstallTimeoutSeconds(INITIAL_TIMEOUT_S);
 });
 
+/** The menu after its launch scan found WINGET, on Paquets. */
+async function scanned() {
+  const menu = await bootMenu({ scans: [WINGET], size: { cols: 110, rows: 26 } });
+  await menu.waitForText("Git.Git");
+  return menu;
+}
+
+/** A plain panel a test view hands the session. */
+function panelOf(overrides: Partial<Panel> = {}): Panel {
+  return {
+    title: "Essai",
+    isCapturingText: false,
+    hints: () => "essai",
+    render: () => [[{ text: "contenu d'essai", tone: "plain" }]],
+    press: vi.fn(),
+    click: vi.fn(),
+    scroll: vi.fn(),
+    ...overrides,
+  };
+}
+
+/** A group-1 view (sidebar label "Journal") built from `create`. */
+function testView(create: (context: ViewContext) => Panel): ViewDefinition {
+  return { id: "journal", label: "Journal", order: 50, group: 1, create };
+}
+
 describe("MenuSession", () => {
   it("scans on start, then lands on the package table", async () => {
-    const { exit, next } = setup();
-    const screen = await ready(next);
-    const text = await frame(screen);
+    const menu = await scanned();
+    const text = await menu.frame();
     expect(text).toContain("┏━ Paquets");
-    expect(text).toContain("2 mise(s) à jour");
-    await press(screen, "q");
-    await expect(exit).resolves.toEqual({ kind: "quit" });
+    expect(text).toContain(
+      "1 provider(s)  │  2 mise(s) à jour  │  mode normal · tous les providers",
+    );
+    await menu.press("q");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
   });
 
   it("updates the checked packages once confirmed, outside the screen", async () => {
-    const { controller, exit, next } = setup();
-    const screen = await ready(next);
-    await press(screen, "down", "down", "space", "enter");
-    expect(await frame(screen)).toContain("1 paquet(s) vont être mis à jour");
-    await press(screen, "o");
-    const ended = await exit;
+    const menu = await scanned();
+    await menu.press("down", "down", "space", "enter");
+    expect(await menu.frame()).toContain("1 paquet(s) vont être mis à jour");
+    await menu.press("o");
+    const ended = await menu.exit;
     expect(ended.kind).toBe("outside");
-    expect(controller.updatePackages).not.toHaveBeenCalled();
+    expect(menu.controller.updatePackages).not.toHaveBeenCalled();
     if (ended.kind === "outside") await ended.run();
-    const picked = vi.mocked(controller.updatePackages).mock.calls[0]![0];
+    const picked = vi.mocked(menu.controller.updatePackages).mock.calls[0]![0];
     expect(picked.map((p) => p.pkg.id)).toEqual(["7zip.7zip"]);
   });
 
   it("keeps the session open when the update is declined", async () => {
-    const { controller, next } = setup();
-    const screen = await ready(next);
-    await press(screen, "down", "enter", "n");
-    const text = await frame(screen);
+    const menu = await scanned();
+    await menu.press("down", "enter", "n");
+    const text = await menu.frame();
     expect(text).not.toContain("vont être mis à jour");
     expect(text).toContain("┏━ Paquets");
-    expect(controller.updatePackages).not.toHaveBeenCalled();
-    await press(screen, "q");
+    expect(menu.controller.updatePackages).not.toHaveBeenCalled();
   });
 
-  it("navigates the sidebar and loads the providers view on demand", async () => {
-    const { controller, next } = setup();
-    const screen = await ready(next);
-    await press(screen, "tab", "down");
-    await screen.waitForFrame((text) => text.includes("Homebrew"));
-    expect(controller.providersStatus).toHaveBeenCalledOnce();
-    const text = await frame(screen);
+  it("lists the views by group, then Quitter, with the Paquets count", async () => {
+    const menu = await scanned();
+    const rows = (await menu.frame())
+      .split("\n")
+      .slice(2, 9)
+      .map((row) => row.slice(1, 24).trim().replace(/ +/g, " "));
+    expect(rows).toEqual([
+      "Scan",
+      "▌ Paquets 2",
+      "",
+      "Providers",
+      "Options",
+      "",
+      "Quitter",
+    ]);
+  });
+
+  it("loads the providers view the first time it is shown, once", async () => {
+    const status = vi.fn(async () => ({
+      platform: "win32" as const,
+      detected: [{ id: "winget", displayName: "Winget" }],
+      missing: [{ id: "brew", displayName: "Homebrew" }],
+      incompatible: [],
+    }));
+    const views = [
+      ...defaultViews().filter((view) => view.id !== "providers"),
+      providersView({ status }),
+    ];
+    const menu = await bootMenu({ scans: [WINGET], views });
+    await menu.waitForText("Git.Git");
+    await menu.press("tab", "down");
+    const text = await menu.waitForText("Homebrew");
     expect(text).toContain("╭─ Providers");
     expect(text).toContain("┏━ Menu");
-    await press(screen, "q");
+    await menu.press("up", "down");
+    expect(status).toHaveBeenCalledOnce();
   });
 
-  it("offers views and Quitter in the sidebar, no bulk or target action", async () => {
-    const { next } = setup();
-    const screen = await ready(next);
-    const text = await frame(screen);
-    for (const entry of ["Scan", "Paquets", "Providers", "Options", "Quitter"]) {
-      expect(text).toContain(entry);
-    }
-    expect(text).not.toContain("Tout mettre à jour");
-    expect(text).not.toContain("Cible");
-    await press(screen, "q");
+  it("keeps a non-scan launch view in front while the launch scan runs", async () => {
+    const menu = await bootMenu({ scans: [WINGET], initialView: "options" });
+    await menu.waitForText("2 mise(s) à jour");
+    const text = await menu.frame();
+    expect(text).toContain("┏━ Options");
+    expect(text).not.toContain("Scan terminé");
+  });
+
+  it("starts on the previous results without scanning when asked to", async () => {
+    const menu = await bootMenu({
+      scanOnStart: false,
+      initialView: "packages",
+      state: { scans: [WINGET], detectedCount: 1 },
+    });
+    expect(await menu.waitForText("Git.Git")).toContain("┏━ Paquets");
+    expect(menu.controller.scan).not.toHaveBeenCalled();
+  });
+
+  it("says when the scan itself breaks", async () => {
+    const menu = await bootMenu({
+      controller: { scan: vi.fn(() => Promise.reject(new Error("registre illisible"))) },
+    });
+    expect(await menu.waitForText("Scan interrompu")).toContain("registre illisible");
   });
 
   it("edits the install timeout in a dialog the opening Enter does not submit", async () => {
-    const { next } = setup();
-    const screen = await ready(next);
-    await press(screen, "tab", "down", "down", "enter", "down", "enter");
+    const menu = await scanned();
+    await menu.press("tab", "down", "down", "enter", "down", "enter");
     await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(await frame(screen)).toContain("Timeout par install");
-    for (let i = 0; i < 6; i++) screen.mockInput.pressBackspace();
-    await screen.mockInput.typeText("abc");
-    await press(screen, "enter");
-    expect(await frame(screen)).toContain("un nombre de secondes >= 0");
-    for (let i = 0; i < 3; i++) screen.mockInput.pressBackspace();
-    await screen.mockInput.typeText("90");
-    await press(screen, "enter");
+    expect(await menu.frame()).toContain("Timeout par install");
+    for (let i = 0; i < 6; i++) menu.screen.mockInput.pressBackspace();
+    await menu.screen.mockInput.typeText("abc");
+    await menu.press("enter");
+    expect(await menu.frame()).toContain("un nombre de secondes >= 0");
+    for (let i = 0; i < 3; i++) menu.screen.mockInput.pressBackspace();
+    await menu.screen.mockInput.typeText("90");
+    await menu.press("enter");
     expect(getInstallTimeoutSeconds()).toBe(90);
-    expect(await frame(screen)).toContain("[90s]");
-    await press(screen, "q");
+    expect(await menu.frame()).toContain("[90s]");
+  });
+});
+
+describe("MenuSession views", () => {
+  it("tells a view it came to the front, and only then", async () => {
+    const onShow = vi.fn();
+    const menu = await bootMenu({
+      views: [scanView(), testView(() => panelOf({ onShow }))],
+      scanOnStart: false,
+    });
+    await menu.press("tab", "down", "down", "down");
+    expect(onShow).toHaveBeenCalledOnce();
+    expect(await menu.frame()).toContain("contenu d'essai");
+  });
+
+  it("lets the focused panel claim a key before the global bindings, never q", async () => {
+    const press = vi.fn();
+    const panel = panelOf({ press, wantsKey: (key) => key.name === "left" || key.name === "q" });
+    const menu = await bootMenu({ views: [testView(() => panel)], scanOnStart: false });
+    await menu.press("left");
+    expect(press).toHaveBeenCalledWith(expect.objectContaining({ name: "left" }));
+    expect(await menu.frame()).toContain("┏━ Essai");
+    await menu.press("q");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+  });
+
+  it("hands the whole body to a takeover until it is released", async () => {
+    const takeover: Takeover = { press: vi.fn(), tick: vi.fn(), draw: vi.fn() };
+    const start = vi.fn((surface: TakeoverSurface) => {
+      surface.setHints("vue plein écran");
+      return takeover;
+    });
+    let release = (): void => {};
+    const view = testView((context) =>
+      panelOf({
+        press: (key) => {
+          if (key.name === "x") release = context.takeOver(start);
+        },
+      }),
+    );
+    const menu = await bootMenu({ views: [view], scanOnStart: false });
+
+    await menu.press("x");
+    const during = await menu.frame();
+    expect(during).not.toContain("Menu");
+    expect(during).toContain("vue plein écran");
+    await menu.press("q");
+    expect(takeover.press).toHaveBeenCalledWith(expect.objectContaining({ name: "q" }));
+    await vi.waitFor(() => expect(takeover.tick).toHaveBeenCalled());
+
+    release();
+    release();
+    expect(await menu.frame()).toContain("┏━ Essai");
+    await menu.press("q");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+  });
+
+  it("adds each view's facts and badge to the title bar and the sidebar", async () => {
+    const view: ViewDefinition = {
+      ...testView(() => panelOf()),
+      facts: () => ["3 planifiées"],
+      badge: () => ({ text: "!", tone: "danger" }),
+    };
+    const menu = await bootMenu({ views: [scanView(), view], scanOnStart: false });
+    const text = await menu.frame();
+    expect(text).toContain("0 provider(s)  │  3 planifiées");
+    expect(text).toMatch(/Journal +!/);
   });
 });

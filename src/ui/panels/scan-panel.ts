@@ -18,6 +18,14 @@ export interface ProviderOutcome {
   readonly error?: string;
 }
 
+/** A screen following scans as they run: their events, a failure, animation frames. */
+export interface ScanObserver extends ScanEvents {
+  /** The scan itself broke (not one provider). */
+  failed(message: string): void;
+  /** One animation frame while the scan runs. */
+  tick(): void;
+}
+
 /** For non-interactive runs: the scan reports, nobody draws. */
 export const SILENT_SCAN: ScanEvents = {
   detecting() {},

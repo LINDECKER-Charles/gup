@@ -25,3 +25,8 @@ export function dim(s: string): string {
 export function describeFilter(filter: string[]): string {
   return filter.length === 0 ? "tous" : filter.join(", ");
 }
+
+/** Outdated packages across every scanned provider. */
+export function countPackages(scans: readonly ProviderScanResult[]): number {
+  return scans.reduce((count, scan) => count + scan.packages.length, 0);
+}

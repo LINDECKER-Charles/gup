@@ -3,6 +3,13 @@ import chalk from "chalk";
 import type { MenuState } from "../../commands/menu-state.js";
 import { screenHost, type ScreenHost } from "../tui/screen-host.js";
 import { MenuSession, type MenuController } from "./menu-session.js";
+import type { ViewDefinition } from "./view-definition.js";
+
+export interface MenuAppDeps {
+  readonly controller: MenuController;
+  readonly state: MenuState;
+  readonly views: readonly ViewDefinition[];
+}
 
 /**
  * gup's interactive mode: a full-screen OpenTUI app on the terminal's
@@ -16,24 +23,18 @@ import { MenuSession, type MenuController } from "./menu-session.js";
  * app comes back on Enter, rescanning to show what is left.
  */
 export class MenuApp {
-  readonly #controller: MenuController;
-  readonly #state: MenuState;
+  readonly #deps: MenuAppDeps;
   readonly #host: ScreenHost;
 
-  constructor(controller: MenuController, state: MenuState, host: ScreenHost = screenHost) {
-    this.#controller = controller;
-    this.#state = state;
+  constructor(deps: MenuAppDeps, host: ScreenHost = screenHost) {
+    this.#deps = deps;
     this.#host = host;
   }
 
   async run(): Promise<void> {
     for (;;) {
       const exit = await this.#host.run((screen) =>
-        new MenuSession(screen, {
-          state: this.#state,
-          controller: this.#controller,
-          scanOnStart: true,
-        }).run(),
+        new MenuSession(screen, { ...this.#deps, scanOnStart: true }).run(),
       );
       if (exit.kind === "quit") return;
       await exit.run();
