@@ -3,15 +3,25 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
-const { isElevatedMock } = vi.hoisted(() => ({ isElevatedMock: vi.fn() }));
-vi.mock("../../src/core/runner.js", () => ({ isElevated: isElevatedMock, runInherit: vi.fn() }));
+const { isElevatedMock, runInheritMock, timeoutMock } = vi.hoisted(() => ({
+  isElevatedMock: vi.fn(),
+  runInheritMock: vi.fn(),
+  timeoutMock: vi.fn(() => 1200),
+}));
+vi.mock("../../src/core/runner.js", () => ({
+  isElevated: isElevatedMock,
+  runInherit: runInheritMock,
+  getInstallTimeoutSeconds: timeoutMock,
+}));
 
 import {
+  elevatedWaitMs,
   flagForElevation,
   readBatchInput,
   runElevatedBatch,
   writeBatchOutput,
 } from "../../src/core/elevation.js";
+import { installLogBackend } from "../../src/core/log/log.js";
 
 describe("flagForElevation", () => {
   const rows = [
@@ -109,10 +119,12 @@ describe("runElevatedBatch", () => {
     });
 
     const outcomes = await runElevatedBatch(["choco:nodejs", "choco:python"], spawner);
-    expect(spawner).toHaveBeenCalledOnce();
+    expect(spawner).toHaveBeenCalledExactlyOnceWith(expect.any(String), 2);
     expect(JSON.parse(observedInput)).toEqual({
       version: 1,
       targets: ["choco:nodejs", "choco:python"],
+      installTimeoutSeconds: 1200,
+      logThreshold: "off",
     });
     expect(outcomes).toEqual([
       { id: "nodejs", success: true },
@@ -187,5 +199,89 @@ describe("runElevatedBatch", () => {
     });
     const outcomes = await runElevatedBatch(["malformed-target"], spawner);
     expect(outcomes[0]!.id).toBe("malformed-target");
+  });
+});
+
+describe("elevated child settings (payload)", () => {
+  async function payloadFile(content: unknown): Promise<string> {
+    const file = await mkSandboxFile("settings.json");
+    await writeFile(file, JSON.stringify(content), { encoding: "utf8", flag: "wx" });
+    return file;
+  }
+
+  it("hands the child the parent's effective timeout and log threshold", async () => {
+    timeoutMock.mockReturnValue(600);
+    installLogBackend({ isEnabled: (level) => level !== "trace", emit: () => {} });
+    try {
+      let payload: unknown;
+      await runElevatedBatch(["choco:nodejs"], async (inputFile) => {
+        payload = JSON.parse(await readFile(inputFile, "utf8"));
+      });
+      expect(payload).toMatchObject({ installTimeoutSeconds: 600, logThreshold: "debug" });
+    } finally {
+      installLogBackend(null);
+      timeoutMock.mockReturnValue(1200);
+    }
+  });
+
+  it("caps a timeout beyond what the payload carries at one day", async () => {
+    timeoutMock.mockReturnValue(1_000_000);
+    try {
+      let payload: { installTimeoutSeconds?: number } = {};
+      await runElevatedBatch(["choco:nodejs"], async (inputFile) => {
+        payload = JSON.parse(await readFile(inputFile, "utf8"));
+      });
+      expect(payload.installTimeoutSeconds).toBe(86_400);
+    } finally {
+      timeoutMock.mockReturnValue(1200);
+    }
+  });
+
+  it("accepts the optional settings and a payload without them", async () => {
+    const full = { version: 1, targets: ["a:b"], installTimeoutSeconds: 0, logThreshold: "trace" };
+    await expect(readBatchInput(await payloadFile(full))).resolves.toEqual(full);
+    await expect(readBatchInput(await payloadFile({ version: 1, targets: [] }))).resolves.toEqual({
+      version: 1,
+      targets: [],
+    });
+  });
+
+  it.each([
+    [{ installTimeoutSeconds: -1 }, /installTimeoutSeconds/],
+    [{ installTimeoutSeconds: 86_401 }, /installTimeoutSeconds/],
+    [{ installTimeoutSeconds: 1.5 }, /installTimeoutSeconds/],
+    [{ logThreshold: "verbose" }, /logThreshold/],
+  ])("refuses settings the parent never writes: %j", async (settings, error) => {
+    const file = await payloadFile({ version: 1, targets: [], ...settings });
+    await expect(readBatchInput(file)).rejects.toThrow(error);
+  });
+});
+
+describe("elevated wait", () => {
+  it("gives every package the full install timeout, plus time to accept the prompt", () => {
+    expect(elevatedWaitMs(1, 1200)).toBe(1_200_000 + 300_000);
+    expect(elevatedWaitMs(4, 1200)).toBe(4 * 1_200_000 + 300_000);
+  });
+
+  it("does not limit the wait when the install timeout is off", () => {
+    expect(elevatedWaitMs(10, 0)).toBe(0);
+  });
+
+  it.each([
+    ["win32", "powershell.exe"],
+    ["linux", "sudo"],
+  ] as const)("waits for the %s elevated child as long as its batch needs", async (platform, command) => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, "platform", { value: platform, configurable: true });
+    runInheritMock.mockReset();
+    runInheritMock.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0, failed: false });
+    try {
+      await runElevatedBatch(["choco:a", "choco:b", "choco:c"]);
+    } finally {
+      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+    }
+    const [spawned, , options] = runInheritMock.mock.calls[0]!;
+    expect(spawned).toBe(command);
+    expect(options).toEqual({ timeout: 3 * 1_200_000 + 300_000 });
   });
 });

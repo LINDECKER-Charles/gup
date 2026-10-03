@@ -1,7 +1,14 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { installLogBackend, log, type LogBackend, type LogLevel } from "../../../src/core/log/log.js";
+import {
+  applyLogThreshold,
+  effectiveLogThreshold,
+  installLogBackend,
+  log,
+  type LogBackend,
+  type LogLevel,
+} from "../../../src/core/log/log.js";
 
 afterEach(() => {
   installLogBackend(null);
@@ -55,6 +62,30 @@ describe("log facade", () => {
       },
     });
     expect(() => log.error("x.y")).not.toThrow();
+  });
+
+  it("reports the most verbose level the backend records as the threshold", () => {
+    expect(effectiveLogThreshold()).toBe("off");
+    installLogBackend(backendAt(["error", "warn", "info"]));
+    expect(effectiveLogThreshold()).toBe("info");
+    installLogBackend(backendAt([]));
+    expect(effectiveLogThreshold()).toBe("off");
+  });
+
+  it("forwards a threshold change to a backend that supports it, and tolerates one that does not", () => {
+    const setThreshold = vi.fn();
+    installLogBackend({ ...backendAt([]), setThreshold });
+    applyLogThreshold("trace");
+    expect(setThreshold).toHaveBeenCalledWith("trace");
+    installLogBackend(backendAt([]));
+    expect(() => applyLogThreshold("debug")).not.toThrow();
+    installLogBackend({
+      ...backendAt([]),
+      setThreshold: () => {
+        throw new Error("sink closed");
+      },
+    });
+    expect(() => applyLogThreshold("debug")).not.toThrow();
   });
 
   it("goes back to a no-op when the backend is removed", () => {

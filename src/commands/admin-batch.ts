@@ -1,6 +1,8 @@
 import chalk from "chalk";
-import { readBatchInput, writeBatchOutput } from "../core/elevation.js";
+import { readBatchInput, writeBatchOutput, type AdminBatchInput } from "../core/elevation.js";
+import { applyLogThreshold } from "../core/log/log.js";
 import { lookupProvider } from "../core/platform/lookup-provider.js";
+import { setInstallTimeoutSeconds } from "../core/runner.js";
 import type { UpdateOutcome } from "../core/types.js";
 
 /**
@@ -12,7 +14,8 @@ import type { UpdateOutcome } from "../core/types.js";
  * It runs in an already-elevated process and MUST NOT attempt to re-elevate
  * — that would be an infinite recursion guarded only by the user's UAC
  * patience. We therefore call `provider.update()` directly and never
- * `runElevatedBatch` from inside it.
+ * `runElevatedBatch` from inside it. It never reads the user's settings
+ * either: the parent's effective ones arrive in the payload.
  */
 export async function adminBatchCommand(inputFile: string): Promise<number> {
   let input;
@@ -25,6 +28,7 @@ export async function adminBatchCommand(inputFile: string): Promise<number> {
     return 2;
   }
 
+  applyParentSettings(input);
   const outcomes: UpdateOutcome[] = [];
   for (const target of input.targets) {
     outcomes.push(await runOneTarget(target));
@@ -40,6 +44,13 @@ export async function adminBatchCommand(inputFile: string): Promise<number> {
   }
 
   return outcomes.every((o) => o.success || o.skipped) ? 0 : 1;
+}
+
+/** Same install timeout and log threshold as the parent — absent fields keep the defaults. */
+function applyParentSettings(input: AdminBatchInput): void {
+  const { installTimeoutSeconds, logThreshold } = input;
+  if (installTimeoutSeconds !== undefined) setInstallTimeoutSeconds(installTimeoutSeconds);
+  if (logThreshold !== undefined) applyLogThreshold(logThreshold);
 }
 
 async function runOneTarget(target: string): Promise<UpdateOutcome> {

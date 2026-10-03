@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 
-import { isElevated, runInherit } from "./runner.js";
+import { effectiveLogThreshold, LOG_THRESHOLDS, type LogThreshold } from "./log/log.js";
+import { getInstallTimeoutSeconds, isElevated, runInherit } from "./runner.js";
 import type { OutdatedPackage, UpdateOutcome } from "./types.js";
 
 /**
@@ -12,12 +13,29 @@ import type { OutdatedPackage, UpdateOutcome } from "./types.js";
  * dispatch, and writes the matching {@link AdminBatchOutput} to `<file>.out`.
  *
  * The version field is mandatory so the IPC contract can evolve without the
- * parent and child silently drifting on stale on-disk payloads.
+ * parent and child silently drifting on stale on-disk payloads. The optional
+ * fields carry the parent's effective settings: the elevated child never
+ * reads the user's configuration (a user-writable file must not steer an
+ * elevated process), so it learns them from the parent that spawned it.
  */
 export interface AdminBatchInput {
   version: 1;
   targets: string[];
+  /** The parent's per-install timeout, 0 = none. */
+  installTimeoutSeconds?: number;
+  /** The parent's log threshold, so the child's log lines match it. */
+  logThreshold?: LogThreshold;
 }
+
+/** Upper bound of an install timeout carried by the payload: one day. */
+const MAX_INSTALL_TIMEOUT_S = 86_400;
+
+/**
+ * What the UAC prompt and the user's reading of it may take on top of the
+ * installs themselves, so the wait does not kill a batch that is still
+ * waiting to be accepted.
+ */
+const ELEVATION_PROMPT_GRACE_MS = 300_000;
 
 export interface AdminBatchOutput {
   version: 1;
@@ -27,9 +45,9 @@ export interface AdminBatchOutput {
 /**
  * Default hook used to spawn the elevated child. Extracted into a single
  * function so tests can replace the actual UAC / sudo call with a mock that
- * writes the output file synchronously.
+ * writes the output file synchronously. `targetCount` sizes the wait.
  */
-export type ElevatedSpawner = (inputFile: string) => Promise<void>;
+export type ElevatedSpawner = (inputFile: string, targetCount: number) => Promise<void>;
 
 /**
  * Run a pre-validated set of `provider:packageId` targets inside an elevated
@@ -50,7 +68,7 @@ export async function runElevatedBatch(
   const { inputFile, cleanup } = await writeBatchInput(targets);
   const outputFile = `${inputFile}.out`;
   try {
-    await spawner(inputFile);
+    await spawner(inputFile, targets.length);
     return await readBatchOutput(outputFile, targets);
   } catch (err) {
     return targets.map((t) => fallbackFailure(t, err));
@@ -83,7 +101,41 @@ export async function readBatchInput(file: string): Promise<AdminBatchInput> {
   if (!Array.isArray(parsed.targets) || parsed.targets.some((t) => typeof t !== "string")) {
     throw new Error("admin-batch: targets must be a string array");
   }
+  assertSettings(parsed);
   return parsed;
+}
+
+/** The optional settings, when present, must be exactly what the parent writes. */
+function assertSettings(input: AdminBatchInput): void {
+  const { installTimeoutSeconds, logThreshold } = input;
+  const isTimeoutValid =
+    installTimeoutSeconds === undefined ||
+    (Number.isInteger(installTimeoutSeconds) &&
+      installTimeoutSeconds >= 0 &&
+      installTimeoutSeconds <= MAX_INSTALL_TIMEOUT_S);
+  if (!isTimeoutValid) {
+    throw new Error(
+      `admin-batch: installTimeoutSeconds must be an integer in 0..${MAX_INSTALL_TIMEOUT_S}`,
+    );
+  }
+  if (logThreshold !== undefined && !LOG_THRESHOLDS.includes(logThreshold)) {
+    throw new Error("admin-batch: logThreshold must be a log level or off");
+  }
+}
+
+/**
+ * How long the parent waits for the elevated child: every install may take
+ * the full install timeout, plus the time to accept the prompt. Waiting a
+ * single timeout for the whole batch killed the waiter — not the child,
+ * which keeps installing in its own window — and lost every outcome.
+ * 0 (no limit) when the install timeout is off.
+ */
+export function elevatedWaitMs(
+  targetCount: number,
+  installTimeoutSeconds: number = getInstallTimeoutSeconds(),
+): number {
+  if (installTimeoutSeconds === 0) return 0;
+  return installTimeoutSeconds * 1000 * targetCount + ELEVATION_PROMPT_GRACE_MS;
 }
 
 /**
@@ -106,7 +158,12 @@ async function writeBatchInput(
   // "Insecure creation of file in the os temp dir".
   const dir = await mkdtemp(join(tmpdir(), "gup-elevate-"));
   const inputFile = join(dir, `${randomBytes(8).toString("hex")}.json`);
-  const payload: AdminBatchInput = { version: 1, targets };
+  const payload: AdminBatchInput = {
+    version: 1,
+    targets,
+    installTimeoutSeconds: Math.min(getInstallTimeoutSeconds(), MAX_INSTALL_TIMEOUT_S),
+    logThreshold: effectiveLogThreshold(),
+  };
   await writeFile(inputFile, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
   return {
     inputFile,
@@ -176,51 +233,56 @@ function fallbackFailure(target: string, err: unknown): UpdateOutcome {
  * without prompting again — one password for the whole batch. Same contract:
  * the child writes outcomes to `<inputFile>.out`.
  */
-async function defaultSpawner(inputFile: string): Promise<void> {
+async function defaultSpawner(inputFile: string, targetCount: number): Promise<void> {
   const node = process.execPath;
   const cli = process.argv[1];
   if (!cli) throw new Error("elevation: process.argv[1] is unset; cannot self-spawn");
-  assertNoControlChars(node);
-  assertNoControlChars(cli);
-  assertNoControlChars(inputFile);
+  for (const value of [node, cli, inputFile]) assertNoControlChars(value);
+  const launch: ElevatedLaunch = { node, cli, inputFile, timeout: elevatedWaitMs(targetCount) };
+  if (process.platform === "win32") return spawnWithUac(launch);
+  return spawnWithSudo(launch);
+}
 
-  if (process.platform === "win32") {
-    // Write a static PowerShell wrapper next to the input file. The script
-    // body is a hard-coded literal — none of the elevated paths are woven
-    // into it; they arrive as $args[0..2] positional parameters when we
-    // invoke `powershell.exe -File wrapper.ps1 <node> <cli> <inputFile>`.
-    //
-    // execa receives an argv VECTOR (no shell concatenation), and the
-    // wrapper itself never builds a shell line from the args — Start-Process
-    // -ArgumentList takes them as discrete strings. This structurally
-    // breaks the taint flow that CodeQL's
-    // `js/shell-command-injection-from-environment` query tracks: the only
-    // env-derived inputs flow as data through argv, never as code through a
-    // shell command line.
-    const ps1 = join(dirname(inputFile), "spawn.ps1");
-    const script =
-      "$ErrorActionPreference = 'Stop'\r\n" +
-      "Start-Process -FilePath $args[0] -ArgumentList $args[1],'__admin-batch',$args[2] -Verb RunAs -Wait\r\n";
-    await writeFile(ps1, script, { encoding: "utf8", flag: "wx" });
-    const res = await runInherit("powershell.exe", [
-      "-NoProfile",
-      "-NonInteractive",
-      "-ExecutionPolicy",
-      "Bypass",
-      "-File",
-      ps1,
-      node,
-      cli,
-      inputFile,
-    ]);
-    if (res.failed) throw new Error("PowerShell Start-Process élevé a échoué");
-    return;
-  }
+/** The elevated child to start, already checked, and how long to wait for it. */
+interface ElevatedLaunch {
+  readonly node: string;
+  readonly cli: string;
+  readonly inputFile: string;
+  readonly timeout: number;
+}
 
-  // POSIX: argv vector, no shell, no concat — node/cli/inputFile arrive as
-  // discrete sudo arguments. Same property as the Windows path now: only
-  // data flows through env-derived inputs, never code.
-  const res = await runInherit("sudo", [node, cli, "__admin-batch", inputFile]);
+async function spawnWithUac({ node, cli, inputFile, timeout }: ElevatedLaunch): Promise<void> {
+  // Write a static PowerShell wrapper next to the input file. The script
+  // body is a hard-coded literal — none of the elevated paths are woven
+  // into it; they arrive as $args[0..2] positional parameters when we
+  // invoke `powershell.exe -File wrapper.ps1 <node> <cli> <inputFile>`.
+  //
+  // execa receives an argv VECTOR (no shell concatenation), and the
+  // wrapper itself never builds a shell line from the args — Start-Process
+  // -ArgumentList takes them as discrete strings. This structurally
+  // breaks the taint flow that CodeQL's
+  // `js/shell-command-injection-from-environment` query tracks: the only
+  // env-derived inputs flow as data through argv, never as code through a
+  // shell command line.
+  const ps1 = join(dirname(inputFile), "spawn.ps1");
+  const script =
+    "$ErrorActionPreference = 'Stop'\r\n" +
+    "Start-Process -FilePath $args[0] -ArgumentList $args[1],'__admin-batch',$args[2] -Verb RunAs -Wait\r\n";
+  await writeFile(ps1, script, { encoding: "utf8", flag: "wx" });
+  const powershellArgs = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"];
+  const res = await runInherit("powershell.exe", [...powershellArgs, ps1, node, cli, inputFile], {
+    timeout,
+  });
+  if (res.failed) throw new Error("PowerShell Start-Process élevé a échoué");
+}
+
+/**
+ * POSIX: argv vector, no shell, no concat — node/cli/inputFile arrive as
+ * discrete sudo arguments. Same property as the Windows path: only data
+ * flows through env-derived inputs, never code.
+ */
+async function spawnWithSudo({ node, cli, inputFile, timeout }: ElevatedLaunch): Promise<void> {
+  const res = await runInherit("sudo", [node, cli, "__admin-batch", inputFile], { timeout });
   if (res.failed) throw new Error("sudo a échoué ou a été refusé");
 }
 

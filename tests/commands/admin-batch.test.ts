@@ -10,8 +10,17 @@ vi.mock("../../src/core/registry.js", () => ({
   ALL_PROVIDERS: [],
 }));
 
+// The elevated child must never read the user-writable settings file.
+const { configStoreMock } = vi.hoisted(() => ({ configStoreMock: vi.fn() }));
+vi.mock("../../src/core/config/store.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../src/core/config/store.js")>()),
+  configStore: configStoreMock,
+}));
+
 import { adminBatchCommand } from "../../src/commands/admin-batch.js";
+import { installLogBackend, type LogThreshold } from "../../src/core/log/log.js";
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
+import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../src/core/runner.js";
 
 const originalPlatform = process.platform;
 
@@ -165,5 +174,46 @@ describe("adminBatchCommand", () => {
     const code = await adminBatchCommand("/this/path/definitely/does/not/exist.json");
     expect(code).toBe(2);
     expect(stderrSpy).toHaveBeenCalled();
+  });
+
+  it("runs with the parent's timeout and log threshold, never its own settings", async () => {
+    const file = await mkInputFile();
+    await writeFile(
+      file,
+      JSON.stringify({
+        version: 1,
+        targets: ["choco:caddy"],
+        installTimeoutSeconds: 45,
+        logThreshold: "debug",
+      }),
+      { encoding: "utf8", flag: "wx" },
+    );
+    let timeoutDuringUpdate = -1;
+    getProviderMock.mockReturnValue({
+      id: "choco",
+      displayName: "Chocolatey",
+      isAvailable: vi.fn(),
+      listOutdated: vi.fn(),
+      update: vi.fn(async (id: string) => {
+        timeoutDuringUpdate = getInstallTimeoutSeconds();
+        return { id, success: true };
+      }),
+      updateAll: vi.fn(),
+    });
+    const thresholds: LogThreshold[] = [];
+    installLogBackend({
+      isEnabled: () => false,
+      emit: () => {},
+      setThreshold: (threshold) => thresholds.push(threshold),
+    });
+    try {
+      await expect(adminBatchCommand(file)).resolves.toBe(0);
+    } finally {
+      installLogBackend(null);
+      setInstallTimeoutSeconds(1200);
+    }
+    expect(timeoutDuringUpdate).toBe(45);
+    expect(thresholds).toEqual(["debug"]);
+    expect(configStoreMock).not.toHaveBeenCalled();
   });
 });

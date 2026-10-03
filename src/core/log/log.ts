@@ -11,6 +11,21 @@
 
 export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
 
+/** The least severe level recorded, or "off". */
+export type LogThreshold = LogLevel | "off";
+
+export const LOG_THRESHOLDS: readonly LogThreshold[] = [
+  "off",
+  "error",
+  "warn",
+  "info",
+  "debug",
+  "trace",
+];
+
+/** Most verbose first: the first one a backend records is its threshold. */
+const LEVELS_BY_VERBOSITY: readonly LogLevel[] = ["trace", "debug", "info", "warn", "error"];
+
 export type LogInput = { readonly [key: string]: unknown };
 
 export interface Logger {
@@ -27,6 +42,8 @@ export interface LogBackend {
   isEnabled(level: LogLevel): boolean;
   /** Must not throw. */
   emit(level: LogLevel, event: string, data: LogInput | undefined): void;
+  /** Record from `threshold` on. Optional: a fixed backend ignores it. */
+  setThreshold?(threshold: LogThreshold): void;
 }
 
 let backend: LogBackend | null = null;
@@ -34,6 +51,24 @@ let backend: LogBackend | null = null;
 /** Install the process-wide backend; null puts the facade back to a no-op. */
 export function installLogBackend(next: LogBackend | null): void {
   backend = next;
+}
+
+/**
+ * The threshold in effect: the most verbose level the backend records, "off"
+ * without a backend. The parent hands it to the elevated child, which never
+ * reads the user's settings.
+ */
+export function effectiveLogThreshold(): LogThreshold {
+  return LEVELS_BY_VERBOSITY.find((level) => isEnabled(level)) ?? "off";
+}
+
+/** Ask the backend to record from `threshold` on — the elevated child adopting its parent's. */
+export function applyLogThreshold(threshold: LogThreshold): void {
+  try {
+    backend?.setThreshold?.(threshold);
+  } catch {
+    // Same contract as every logging call: never a reason to fail.
+  }
 }
 
 function isEnabled(level: LogLevel): boolean {
