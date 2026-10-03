@@ -28,6 +28,8 @@ export interface ResolvedAnswer {
 export interface ScriptSlot {
   readonly argv: readonly string[];
   readonly answers: readonly ResolvedAnswer[];
+  /** Answer once an install has run (see `CommandScript.afterInstall`). */
+  readonly afterInstall?: ResolvedAnswer;
   calls: number;
 }
 
@@ -78,7 +80,8 @@ async function resolveScripts(scripts: readonly CommandScript[]): Promise<Script
     if (seen.has(key)) throw new Error(`two command scripts for ${key}: merge them with \`then\``);
     seen.add(key);
     const answers = await Promise.all([script, ...(script.then ?? [])].map(resolveAnswer));
-    slots.push({ argv: script.argv, answers, calls: 0 });
+    const afterInstall = script.afterInstall && (await resolveAnswer(script.afterInstall));
+    slots.push({ argv: script.argv, answers, ...(afterInstall && { afterInstall }), calls: 0 });
   }
   return slots;
 }

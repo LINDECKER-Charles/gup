@@ -161,6 +161,30 @@ describe("fake runner: run()", () => {
     });
   });
 
+  it("answers `afterInstall` once an install has run on the machine", async () => {
+    await system.load({
+      platform: "darwin",
+      bin: { pkgin: "/opt/pkg/bin/pkgin" },
+      commands: [
+        { argv: ["pkgin", "-l", "<", "list"], stdout: "pending", afterInstall: { stdout: "" } },
+      ],
+    });
+
+    await expect(run("pkgin", ["-l", "<", "list"])).resolves.toMatchObject({ stdout: "pending" });
+    await runInherit("sudo", ["pkgin", "-y", "upgrade"]);
+    await expect(run("pkgin", ["-l", "<", "list"])).resolves.toMatchObject({ stdout: "" });
+  });
+
+  it("traces the wall-clock cap a probe asked for", async () => {
+    await system.load(WINDOWS_TOFU);
+
+    await run("tofu", ["version"], { timeout: 60_000 });
+
+    expect(system.trace.spawns).toEqual([
+      { mode: "run", argv: ["tofu", "version"], shell: false, timeout: 60_000 },
+    ]);
+  });
+
   it("refuses two scripts for the same argv", async () => {
     await expect(
       system.load({

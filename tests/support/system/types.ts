@@ -23,6 +23,12 @@ export interface CommandScript extends CommandAnswer {
   readonly argv: readonly string[];
   /** Answers for the 2nd, 3rd… identical call; the last one repeats. */
   readonly then?: readonly CommandAnswer[];
+  /**
+   * The answer once an install has run on this machine: a provider that
+   * re-queries after its upgrade (pkgin, MSYS2) sees the upgraded state.
+   * Takes precedence over `then`.
+   */
+  readonly afterInstall?: CommandAnswer;
 }
 
 export interface HttpRoute {
@@ -90,6 +96,8 @@ export interface SpawnRecord {
   readonly argv: readonly string[];
   readonly shell: boolean;
   readonly cwd?: string;
+  /** The wall-clock cap (ms) the code under test asked the runner for, if any. */
+  readonly timeout?: number;
 }
 
 export interface RequestRecord {
