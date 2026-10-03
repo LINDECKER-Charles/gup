@@ -20,6 +20,9 @@ const STATES = {
   failed: { glyph: "✖", word: "échec" },
 };
 
+/** Column headers, read by screen readers only (the TUI draws none). */
+const COLUMNS = ["État", "Paquet", "Version installée", "Nouvelle version"];
+
 const classes = (...names) => names.filter(Boolean).join(" ") || undefined;
 
 /** @param {{ row: TuiRow }} props */
@@ -84,6 +87,28 @@ function Pane({ pane }) {
   );
 }
 
+/** @param {{ rows: TuiRow[] }} props */
+function PackageTable({ rows }) {
+  return (
+    <table className="tui-table">
+      <thead className="sr-only">
+        <tr>
+          {COLUMNS.map((column) => (
+            <th key={column} scope="col">
+              {column}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <Row key={row.kind === "group" ? `g-${row.provider}` : row.name} row={row} />
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 /** @param {{ scene: TuiScene }} props */
 export function TuiScene({ scene }) {
   return (
@@ -93,13 +118,7 @@ export function TuiScene({ scene }) {
         {scene.sidebar ? <Sidebar items={scene.sidebar} /> : null}
         <div className="tui-main">
           <p className="tui-title">{scene.panelTitle}</p>
-          <table className="tui-table">
-            <tbody>
-              {scene.rows.map((row) => (
-                <Row key={row.kind === "group" ? `g-${row.provider}` : row.name} row={row} />
-              ))}
-            </tbody>
-          </table>
+          <PackageTable rows={scene.rows} />
           {scene.pane ? <Pane pane={scene.pane} /> : null}
         </div>
       </div>
