@@ -293,9 +293,10 @@ export class PackagesPanel implements Panel {
   private headLines(list: PackageList, layout: Layout): Line[] {
     const indent = GUTTER + CHECKBOX_WIDTH + (layout.markOf ? MARK_WIDTH : 0);
     const { name, current, latest, note } = PACKAGE_COLUMNS;
+    const versions = `${fit(current, VERSION_WIDTH)}   ${fit(latest, VERSION_WIDTH)}`;
     const header: Line = [
-      seg(`${" ".repeat(indent)}${fit(name, layout.name)} ${fit(current, VERSION_WIDTH)}   `, "muted"),
-      seg(`${fit(latest, VERSION_WIDTH)} ${layout.note > 0 ? note : ""}`, "muted"),
+      seg(`${" ".repeat(indent)}${fit(name, layout.name)} ${versions}`, "muted"),
+      seg(` ${layout.note > 0 ? note : ""}`, "muted"),
     ];
     if (!this.#isFiltering && !list.filter) return [header];
     const cursor = this.#isFiltering ? "█" : "";
