@@ -37,6 +37,14 @@ export const MAX_HISTORY_LINE_LENGTH = 64 * 1024;
 /** Every string read is cut to this many characters. */
 export const MAX_FIELD_LENGTH = 4096;
 
+/**
+ * The instants a record can carry: from the Unix epoch to the start of year
+ * 9999. No gup wrote a line dated outside, and every local day of the range
+ * keeps a four-digit year, which day keys and charts rely on.
+ */
+const EARLIEST_INSTANT = 0;
+const LATEST_INSTANT = Date.UTC(9999, 0, 1);
+
 const MALFORMED: ParsedLine = { kind: "malformed" };
 const UNSUPPORTED: ParsedLine = { kind: "unsupported" };
 const TRIGGERS: ReadonlySet<string> = new Set<RunTrigger>(["menu", "cli", "schedule"]);
@@ -94,7 +102,8 @@ function checkVersion(version: unknown): void {
 function envelopeOf(record: JsonObject): Omit<HistoryEnvelope, "kind"> {
   const ts = requiredText(record, "ts");
   const at = Date.parse(ts);
-  if (Number.isNaN(at)) throw new LineRejected(MALFORMED);
+  // An unreadable instant (NaN) fails both comparisons.
+  if (!(at >= EARLIEST_INSTANT && at < LATEST_INSTANT)) throw new LineRejected(MALFORMED);
   const trigger = optionalText(record, "trigger", "line");
   return {
     v: HISTORY_SCHEMA_VERSION,

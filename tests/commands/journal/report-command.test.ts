@@ -115,6 +115,15 @@ describe("gup report", () => {
     expect(output(stderr)).toContain(REPORT_MESSAGES.malformed(1));
   });
 
+  it("charts the history around a line dated outside the calendar", async () => {
+    const outOfRange = updateEvent("pip", "clock-reset", { ts: "0999-06-01T00:00:00.000Z" });
+    writeFileSync(join(dir, "history", "0999-06.jsonl"), `${JSON.stringify(outOfRange)}\n`);
+
+    expect(await runReport({ since: "all" })).toBe(0);
+    expect(output(stdout)).toContain("2 mises à jour · 67 % réussies");
+    expect(output(stderr)).toContain(REPORT_MESSAGES.malformed(1));
+  });
+
   it.each([
     [{ format: "pdf" }, REPORT_MESSAGES.badFormat("pdf")],
     [{ since: "3x" }, REPORT_MESSAGES.badSince("3x")],
