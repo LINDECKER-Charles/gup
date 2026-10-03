@@ -141,8 +141,10 @@ Checked on every pair `gup` paints:
 - "Disabled" text (a provider foreign to your OS) is the dimmest grey that still
   reaches the target: visibly dimmed, never unreadable.
 - The tests hold this: every built-in theme passes with no adjustment, a
-  thousand random palettes pass after adjustment at both levels, and an audit
-  walks the whole menu under every theme and measures every cell on screen.
+  thousand random palettes pass after adjustment at both levels, random custom
+  colours on every theme and random terminal palettes pass as painted — on
+  true-colour and 256-colour terminals, at AA and AAA — and an audit walks the
+  whole menu under every theme and measures every cell on screen.
 
 ## Not by colour alone
 
@@ -160,7 +162,7 @@ Checked on every pair `gup` paints:
 | Terminal | What `gup` does |
 |---|---|
 | true colour | paints the theme as is |
-| 256 colours (older macOS Terminal.app) | moves every colour to the nearest of the 240 standard xterm colours — not your 16 themed ones — and re-checks the contrast on those exact colours |
+| 256 colours (older macOS Terminal.app) | moves every colour to the nearest of the 240 standard xterm colours — not your 16 themed ones — and re-checks the contrast on those exact colours; with the `terminal` theme, one of your terminal's own colours that the move leaves short is moved too |
 | 16 colours (Linux console) | RGB themes are not available; `gup` uses your terminal's ANSI colours with inverse-video selection |
 | `NO_COLOR` set | monochrome, whatever the theme; console output loses its colours too |
 

@@ -52,6 +52,10 @@ The settings are grouped in sections, one row per setting: `Label   [value]   hi
   first two, `r` rescans with them. The launch view and "scan at launch" apply
   the next time the menu opens; everything else applies at once (sort, Note
   column, animations, mouse, symbols, density, theme, colours).
+- In a narrow terminal (80 columns leave the Options panel 50), a hint that
+  does not fit beside its row is shown whole under the list while the cursor is
+  on that row, and the colour editor leaves out its "Affichée" column — the
+  contrast column already says when a colour was adjusted.
 
 ## Where the file lives
 
