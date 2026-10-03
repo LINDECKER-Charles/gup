@@ -245,13 +245,16 @@ describe("report page: packages", () => {
     expect(page.text("#packages-body tr .package-link")).toBe("nodejs");
   });
 
-  it("sends a search typed on another page to the packages", async () => {
+  it("sends a search typed on another page to the packages, the typing still in the box", async () => {
     const page = await openReport();
+    const input = page.$("#search") as unknown as { focus(): void };
 
+    input.focus();
     await search(page, "spotify");
 
     expect(page.window.location.hash).toBe("#/packages");
     expect(page.text("#packages-body .package-link")).toBe("Spotify.Spotify");
+    expect(page.window.document.activeElement).toBe(input);
   });
 
   it("sorts by a column, saying so to assistive technologies", async () => {
@@ -435,6 +438,16 @@ describe("report page: safety and comfort", () => {
     page.window.dispatchEvent(new page.window.Event("afterprint"));
     await page.settle();
     expect(page.$$(".session")).toHaveLength(50);
+  });
+
+  it("takes a link to another page to that page's top and heading", async () => {
+    const page = await openReport();
+    const link = page.$(".card-link[href='#/packages']") as unknown as { focus(): void };
+
+    link.focus();
+    await go(page, "#/packages");
+
+    expect(page.window.document.activeElement).toBe(page.$("#page-packages-title"));
   });
 });
 

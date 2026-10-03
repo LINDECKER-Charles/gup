@@ -60,6 +60,9 @@ function onRoute() {
 }
 
 function showPage(name) {
+  const previous = state.page;
+  // Read before the old page hides: a focus inside it is about to be lost.
+  const shouldFocus = state.focusPage || !isFocusOutsidePages();
   document.querySelectorAll("[data-page-section]").forEach((section) => {
     section.hidden = section.getAttribute("data-page-section") !== name;
   });
@@ -67,13 +70,23 @@ function showPage(name) {
     if (item.getAttribute("data-nav") === name) item.setAttribute("aria-current", "page");
     else item.removeAttribute("aria-current");
   });
-  const hasChanged = state.page !== name;
   state.page = name;
-  if (hasChanged && state.focusPage) {
-    const heading = document.querySelector("[data-page-section=\"" + name + "\"] h2");
-    if (heading !== null) heading.focus();
-  }
   state.focusPage = false;
+  if (previous === "" || previous === name) return;
+  // A page reached from another one is read from its top.
+  window.scrollTo(0, 0);
+  if (shouldFocus) focusHeading(name);
+}
+
+/** Focus in the header, the search or the drawer stays there when the page changes. */
+function isFocusOutsidePages() {
+  const active = document.activeElement;
+  return active !== null && active !== document.body && !byId(IDS.main).contains(active);
+}
+
+function focusHeading(name) {
+  const heading = document.querySelector("[data-page-section=\"" + name + "\"] h2");
+  if (heading !== null) heading.focus({ preventScroll: true });
 }
 
 // ---- Header ----------------------------------------------------------------
@@ -104,6 +117,21 @@ function periodText() {
   const range = periodRange();
   const days = { from: fmtDay(range.start), to: fmtDay(range.end) };
   return t("header.period", Object.assign({ label: META.period.label }, days));
+}
+
+/**
+ * The sticky header must not hide what takes the focus: the page's scroll
+ * padding (CSS) follows its height, which changes as it wraps.
+ */
+function trackHeaderHeight() {
+  const masthead = document.querySelector(".masthead");
+  const update = () => {
+    const isSticky = window.getComputedStyle(masthead).position === "sticky";
+    const height = isSticky ? masthead.offsetHeight : 0;
+    document.documentElement.style.setProperty("--masthead-height", height + "px");
+  };
+  update();
+  on(window, "resize", update);
 }
 
 function initFooter() {
@@ -229,6 +257,7 @@ function limitLists(limitOf) {
 function boot() {
   initTheme();
   initHeader();
+  trackHeaderHeight();
   initFooter();
   initSearch();
   initDrawer();

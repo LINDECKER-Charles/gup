@@ -5,7 +5,10 @@
  */
 export const BASE_CSS = String.raw`
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;
+  scroll-padding-top:calc(var(--masthead-height,0px) + 12px);
+}
 body{
   margin:0;background:var(--bg);color:var(--text);
   font:400 15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
