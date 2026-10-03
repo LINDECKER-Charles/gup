@@ -119,7 +119,7 @@ body:
       label: Command output or debug log
       description: >-
         The full output of the failing command, e.g.
-        `gup update <provider>:<package> 2>&1 | tee gup.log`. If your version has
+        `gup update -y <provider>:<package> 2>&1 | tee gup.log`. If your version has
         the `gup log` command, paste `gup log -n 50` or attach the archive from
         `gup log export`, after checking what it contains.
       render: shell

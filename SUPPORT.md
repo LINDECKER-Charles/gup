@@ -42,7 +42,9 @@ reproduce a problem on someone else's machine.
   The interactive app is a full-screen terminal program, and terminals differ.
 - The output of `gup doctor`.
 - The exact command you ran and its full output. For an update, capture it
-  with `gup update <provider>:<package> 2>&1 | tee gup.log`.
+  with `gup update -y <provider>:<package> 2>&1 | tee gup.log`: `-y` skips
+  the retry prompt, which needs a terminal and cannot open once the output
+  goes to a pipe.
 - If your version of `gup` has the `gup log` command, the debug log
   (`gup log -n 50`) or the diagnostic archive from `gup log export`.
 
