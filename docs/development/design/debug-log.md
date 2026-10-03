@@ -65,7 +65,7 @@ flowchart LR
 | `commands/journal/journal-module.ts` | The `CliModule`: `--log-level`, `gup log`, startup, crash hook, doctor line. |
 | `commands/journal/log-settings.ts` | Threshold precedence and the sink per command (pure). |
 | `commands/journal/log-session.ts` | Installs backend, tracer and observer; `session.*` records. |
-| `commands/journal/log-command.ts`, `log-show.ts`, `diagnostic.ts`, `since-option.ts` | `gup log show|path|export`. |
+| `commands/journal/log-command.ts`, `log-show.ts`, `diagnostic.ts` | `gup log show|path|export` (`--since` through `core/time/period.ts` since `feat/activity-journal`). |
 | `ui/log-line.ts` | A record as one readable line (`Line` for the TUI, ANSI text for the CLI), stripped of the terminal escapes and control characters a tool printed. |
 | `ui/text/log-labels.ts` | Every French string of the above, the diagnostic archive's README included. |
 
@@ -192,8 +192,8 @@ same file. Scan events (`scan.start/provider/end`) arrive with `feat/activity-jo
   archive has no `history-summary.json` nor `providers.json` yet: the first needs the insights
   of `feat/activity-journal` (which adds it with `--no-history`), the second a detection pass the
   plan keeps off by default (§13).
-- **Log `--since` parser** lives in `commands/journal/since-option.ts` because `core/time/` is
-  owned by `feat/activity-journal`; that branch folds it into `core/time/period.ts`.
+- **Log `--since` parser** lived in `commands/journal/since-option.ts` because `core/time/` is
+  owned by `feat/activity-journal`; that branch folded it into `core/time/period.ts`.
 - **A file sink at `off` installs nothing**; the elevated child always gets its memory backend,
   since its threshold arrives later in the payload.
 - **Secret names match on their end** (`NPM_TOKEN`, `_authToken`, `AWS_SECRET_ACCESS_KEY`), not
