@@ -61,6 +61,7 @@ export const RECURRENCE_COLUMNS = {
   name: "Paquet",
   provider: "Provider",
   updates: "Mises à jour",
+  failures: "Échecs",
   pace: "Rythme",
 } as const;
 

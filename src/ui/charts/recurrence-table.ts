@@ -1,15 +1,15 @@
 import type { PackageRecurrence } from "../../core/insights/types.js";
 import { CADENCE_LABELS, intervalLabel, RECURRENCE_COLUMNS } from "../text/activity-labels.js";
 import { formatCount } from "../text/fr-format.js";
-import { fit, seg, type Segment } from "../tui/styled-lines.js";
+import { fit, seg, type Segment, type Tone } from "../tui/styled-lines.js";
 import { barText } from "./bar-chart.js";
 import type { ChartGlyphs } from "./chart-glyphs.js";
 
 /**
- * Packages as a table of bars — name, provider, successful updates as a bar
- * and a count, typical interval and cadence — shared by the journal's
- * Récurrence tab and `gup report --format text`. Narrow tables drop the pace
- * columns first, then the provider.
+ * Packages as a table of bars — name, provider, successful updates (or
+ * failed attempts) as a bar and a count, typical interval and cadence —
+ * shared by the journal's Récurrence tab and `gup report --format text`.
+ * Narrow tables drop the pace columns first, then the provider.
  */
 
 export interface RecurrenceColumns {
@@ -20,12 +20,25 @@ export interface RecurrenceColumns {
   readonly showsPace: boolean;
 }
 
+/** What the bars count: the successful updates, or the failed attempts of a table sorted by them. */
+export type RecurrenceMeasure = "successes" | "failures";
+
 export interface RecurrenceRowContext {
   readonly columns: RecurrenceColumns;
-  /** Successes of the longest bar. */
+  readonly measure: RecurrenceMeasure;
+  /** The measure of the longest bar. */
   readonly max: number;
   readonly glyphs: ChartGlyphs;
 }
+
+const MEASURE_TITLES: Readonly<Record<RecurrenceMeasure, string>> = {
+  successes: RECURRENCE_COLUMNS.updates,
+  failures: RECURRENCE_COLUMNS.failures,
+};
+const MEASURE_TONES: Readonly<Record<RecurrenceMeasure, Tone>> = {
+  successes: "success",
+  failures: "danger",
+};
 
 const COUNT_WIDTH = 4;
 const INTERVAL_WIDTH = 6;
@@ -50,22 +63,23 @@ export function recurrenceColumns(width: number): RecurrenceColumns {
   return { name, provider, bar, showsPace };
 }
 
-export function recurrenceHeader(columns: RecurrenceColumns): Segment[] {
+export function recurrenceHeader(columns: RecurrenceColumns, measure: RecurrenceMeasure): Segment[] {
   const titles = [fit(RECURRENCE_COLUMNS.name, columns.name)];
   if (columns.provider > 0) titles.push(fit(RECURRENCE_COLUMNS.provider, columns.provider));
-  titles.push(fit(RECURRENCE_COLUMNS.updates, columns.bar + 1 + COUNT_WIDTH));
+  titles.push(fit(MEASURE_TITLES[measure], columns.bar + 1 + COUNT_WIDTH));
   const pace = columns.showsPace ? `  ${RECURRENCE_COLUMNS.pace}` : "";
   return [seg(`${titles.join(" ")}${pace}`, "muted")];
 }
 
 /** One package as a row of the table. */
 export function recurrenceRow(entry: PackageRecurrence, context: RecurrenceRowContext): Segment[] {
-  const { columns, max, glyphs } = context;
+  const { columns, measure, max, glyphs } = context;
+  const value = entry[measure];
   const cells: Segment[] = [seg(`${fit(entry.packageId, columns.name)} `)];
   if (columns.provider > 0) cells.push(seg(`${fit(entry.providerId, columns.provider)} `, "muted"));
   cells.push(
-    seg(barText({ value: entry.successes, max, cells: columns.bar }, glyphs), "success"),
-    seg(` ${formatCount(entry.successes).padStart(COUNT_WIDTH)}`),
+    seg(barText({ value, max, cells: columns.bar }, glyphs), MEASURE_TONES[measure]),
+    seg(` ${formatCount(value).padStart(COUNT_WIDTH)}`),
   );
   if (columns.showsPace) {
     const interval = intervalLabel(entry.medianIntervalDays).padStart(INTERVAL_WIDTH);

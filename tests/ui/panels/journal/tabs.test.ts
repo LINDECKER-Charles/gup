@@ -120,13 +120,16 @@ describe("Récurrence", () => {
     expect(lines.join("\n")).toMatch(/nodejs +choco +0 +— —/);
   });
 
-  it("orders by failures, then by recency, with s", async () => {
+  it("orders by failures, the bars then counting them, then by recency, with s", async () => {
     const { press, screen } = await journalOn("2");
 
     press("s");
     expect(screen()[1]).toContain(RECURRENCE_LABELS.sort("échecs"));
-    expect(screen()[3]).toMatch(/^› nodejs/);
+    expect(screen()[2]).toMatch(/Provider +Échecs +Rythme/);
+    expect(screen()[3]).toMatch(/^› nodejs +choco +█+ +1 /);
+    expect(screen()[4]).toMatch(/^ {2}Google\.Chrome +winget +0 /);
     press("s");
+    expect(screen()[2]).toMatch(/Provider +Mises à jour +Rythme/);
     expect(screen()[3]).toMatch(/^› Google\.Chrome/);
   });
 

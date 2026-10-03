@@ -3,6 +3,7 @@ import {
   recurrenceColumns,
   recurrenceHeader,
   recurrenceRow,
+  type RecurrenceMeasure,
 } from "../../charts/recurrence-table.js";
 import {
   CADENCE_DESCRIPTIONS,
@@ -31,8 +32,9 @@ import {
 /**
  * Tab 2, Récurrence: which packages get updated, how often and at which pace
  * — a bar per package, its typical interval and cadence. `s` cycles the
- * order (most updated, most failed, most recent); Entrée opens a package:
- * its counts, pace, first and last attempt, latest versions.
+ * order (most updated, most failed — the bars then count the failures —,
+ * most recent); Entrée opens a package: its counts, pace, first and last
+ * attempt, latest versions.
  */
 
 type SortMode = keyof typeof RECURRENCE_LABELS.sorts;
@@ -112,15 +114,21 @@ export class RecurrenceTab implements JournalTab {
     return [
       ...recordingBanner(history, width),
       [seg(`${title} `, "strong"), seg(sort, "muted")],
-      [seg(" ".repeat(CURSOR_GUTTER)), ...recurrenceHeader(columns)],
+      [seg(" ".repeat(CURSOR_GUTTER)), ...recurrenceHeader(columns, this.measure)],
     ];
   }
 
   private rows(frame: TabFrame): Line[] {
+    const { measure } = this;
     const columns = recurrenceColumns(frame.width - CURSOR_GUTTER);
-    const max = Math.max(1, ...this.#list.visible.map((entry) => entry.successes));
-    const context = { columns, max, glyphs: frame.glyphs };
+    const max = Math.max(1, ...this.#list.visible.map((entry) => entry[measure]));
+    const context = { columns, measure, max, glyphs: frame.glyphs };
     return listWindow(this.#list, (entry) => recurrenceRow(entry, context), frame);
+  }
+
+  /** The bars show what the table is sorted by: the failures, or the successful updates. */
+  private get measure(): RecurrenceMeasure {
+    return this.#sort === "failures" ? "failures" : "successes";
   }
 }
 

@@ -47,14 +47,12 @@ function topPackages(insights: Insights, ctx: ChartContext): Line[] {
   if (entries.length === 0) return [];
   const columns = recurrenceColumns(ctx.width - INDENT.length);
   const max = Math.max(1, ...entries.map((entry) => entry.successes));
+  const context = { columns, measure: "successes", max, glyphs: ctx.glyphs } as const;
   return [
     [],
     [seg(TEXT_REPORT_LABELS.topPackages, "strong")],
-    [seg(INDENT), ...recurrenceHeader(columns)],
-    ...entries.map((entry): Line => [
-      seg(INDENT),
-      ...recurrenceRow(entry, { columns, max, glyphs: ctx.glyphs }),
-    ]),
+    [seg(INDENT), ...recurrenceHeader(columns, context.measure)],
+    ...entries.map((entry): Line => [seg(INDENT), ...recurrenceRow(entry, context)]),
   ];
 }
 
