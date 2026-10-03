@@ -296,7 +296,13 @@ The user must explicitly choose: no automatic escalation → config destruction 
 
 ## 7. Interactive mode (menu)
 
-The menu is a state machine on top of the same registry.
+The menu is a full-screen OpenTUI app (`ui/app/`) over the same registry. A
+`MenuSession` owns one alternate screen: a sidebar, the main panel
+(Scan, Paquets, Providers or Options — `ui/panels/`, plain objects that render
+lines and take keys), dialogs on top. A session ends either on *quit* or with
+an *outside* job: any update, because installers need the real terminal. The
+app then destroys the screen, runs the job, waits for Enter, and starts a new
+session that rescans. In state-machine terms:
 
 ```mermaid
 stateDiagram-v2
@@ -332,7 +338,7 @@ stateDiagram-v2
     Idle --> [*]: Quit
 ```
 
-The state (`MenuState`) holds four things: `scans`, `fast`, `filter`, `detectedCount`. No other persistence. Rescanning = reloading state.
+The state (`MenuState`) holds `scans`, `fast`, `filter`, `detectedCount` and `providers` (the last detection, for the filter list). No other persistence. Rescanning = reloading state.
 
 ---
 
@@ -488,8 +494,10 @@ src/
     ├── table.ts                    # cli-table3 + chalk rendering
     ├── select.ts                   # multi-package checkbox
     ├── scan-progress.ts            # live scan screen + summary line
-    ├── prompts/                    # select, checkbox, confirm, input (OpenTUI views)
-    ├── tui/                        # OpenTUI loader, prompt host, list cursor, scan screen
+    ├── app/                        # full-screen menu: sessions, layout, input routing, sidebar
+    ├── panels/                     # Scan, Paquets, Providers, Options (pure state + lines)
+    ├── prompts/                    # one-shot screens: scan, package picker, confirm, select
+    ├── tui/                        # OpenTUI loader, screen host, chrome, panels, dialogs
     ├── skip-controller.ts          # Ctrl+C / timeout → SKIP outcome
     ├── apply-update.ts             # single seam: dispatch + finalize + record
     └── retry-failed.ts             # retry strategy prompt

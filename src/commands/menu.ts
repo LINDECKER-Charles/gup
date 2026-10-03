@@ -1,162 +1,103 @@
 import chalk from "chalk";
-import {
-  ALL_PROVIDERS,
-  detectAvailableProviders,
-  getProvider,
-} from "../core/registry.js";
-import { promptPackageSelection } from "../ui/select.js";
-import { renderScanTable, renderProvidersStatus } from "../ui/table.js";
-import { scanWithProgress } from "../ui/scan-progress.js";
-import {
-  maybeRetryFailures,
-  type OutcomeWithProvider,
-} from "../ui/retry-failed.js";
+import { ALL_PROVIDERS, detectAvailableProviders, getProvider } from "../core/registry.js";
+import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
 import { applyEach, applyUpdate } from "../ui/apply-update.js";
+import { MenuApp } from "../ui/app/menu-app.js";
+import type { MenuController } from "../ui/app/menu-session.js";
+import { maybeRetryFailures, type OutcomeWithProvider } from "../ui/retry-failed.js";
+import { runScan } from "../ui/scan-progress.js";
+import type { SelectedPackage } from "../ui/select.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
-import { confirm } from "../ui/prompts/confirm.js";
-import { input } from "../ui/prompts/input.js";
-import { select, type SelectEntry } from "../ui/prompts/select.js";
-import { gupVersion } from "../core/version.js";
-import { runOptions } from "./menu-options.js";
-import { describeFilter, dim, type MenuState } from "./menu-state.js";
-import type {
-  OutdatedPackage,
-  Provider,
-  UpdateOutcome,
-} from "../core/types.js";
+import { dim, type MenuState } from "./menu-state.js";
 
-
-type MenuAction =
-  | "scan"
-  | "review"
-  | "select"
-  | "all"
-  | "target"
-  | "doctor"
-  | "options"
-  | "quit";
-
+/** `gup` with no subcommand: the full-screen interactive app. */
 export async function menuCommand(): Promise<number> {
   const state: MenuState = {
     scans: [],
     fast: false,
     filter: [],
     detectedCount: 0,
+    providers: [],
   };
-
-  printHeader();
-  await initialScan(state);
-
-  for (;;) {
-    const action = await select<MenuAction>({
-      message: "Action",
-      choices: mainMenuChoices(totalUpdates(state)),
-      context: statusLines(state),
-    });
-    if (action === "quit") return 0;
-    await runAction(action, state);
-  }
+  await new MenuApp(menuController, state).run();
+  return 0;
 }
 
-function mainMenuChoices(total: number): SelectEntry<MenuAction>[] {
-  // The update actions stay listed, greyed out, when there is nothing to do:
-  // a menu whose entries come and go is harder to learn than one that dims.
-  const whenUpdates = total === 0 ? { disabled: "aucune mise à jour" } : {};
-  return [
-    { label: "Scan", hint: "rescanne tous les providers", value: "scan" },
-    { label: "Review", hint: "voir la liste détaillée", value: "review", ...whenUpdates },
-    { label: "Update selected", hint: "choix multiple", value: "select", ...whenUpdates },
-    { label: "Update all", hint: `${total} paquet(s)`, value: "all", ...whenUpdates },
-    { separator: true },
-    { label: "Update target", hint: "provider:package", value: "target" },
-    { label: "Providers", hint: "status / install hints", value: "doctor" },
-    { label: "Options", hint: "fast mode, filtre providers", value: "options" },
-    { separator: true },
-    { label: "Quit", value: "quit" },
-  ];
+/** What the app needs from gup's core: scanning, provider status, updates. */
+export const menuController: MenuController = {
+  async scan(state, events) {
+    const run = await runScan(
+      { fast: state.fast, ...(state.filter.length > 0 && { only: state.filter }) },
+      events,
+    );
+    state.scans = run.results;
+    state.detectedCount = run.detected.length;
+    state.providers = run.detected.map((p) => ({ id: p.id, displayName: p.displayName }));
+  },
+
+  async providersStatus() {
+    const detected = await detectAvailableProviders();
+    const ids = new Set(detected.map((p) => p.id));
+    return {
+      detected: detected.map(info),
+      missing: ALL_PROVIDERS.filter((p) => !ids.has(p.id)).map(info),
+    };
+  },
+
+  async updatePackages(packages) {
+    const entries = await applyGrouped(groupByProvider(packages));
+    summarize(await maybeRetryFailures(entries));
+  },
+
+  async updateTargets(targets) {
+    const entries: OutcomeWithProvider[] = [];
+    const session = beginSkipSession();
+    try {
+      for (const target of targets) {
+        if (session.isAbortRequested()) break;
+        const parsed = parseTarget(target);
+        if (!parsed) continue;
+        printSectionHeader(`${parsed.provider.displayName} : ${parsed.packageId}`, 1);
+        const outcome = await applyUpdate(parsed.provider, parsed.packageId);
+        entries.push({ providerId: parsed.provider.id, outcome });
+      }
+    } finally {
+      session.dispose();
+    }
+    summarize(await maybeRetryFailures(entries));
+  },
+
+  validateTargets(raw) {
+    const targets = raw.split(/[\s,]+/).filter(Boolean);
+    if (targets.length === 0) return "saisir au moins une cible";
+    const invalid = targets.find((t) => !parseTarget(t, { quiet: true }));
+    return invalid ? `cible invalide : ${invalid} (format provider:package)` : true;
+  },
+
+  displayName(providerId) {
+    return getProvider(providerId)?.displayName ?? providerId;
+  },
+};
+
+function info(p: Provider) {
+  return {
+    id: p.id,
+    displayName: p.displayName,
+    ...(p.installHint && { installHint: p.installHint }),
+  };
 }
 
-async function runAction(
-  action: Exclude<MenuAction, "quit">,
-  state: MenuState,
-): Promise<void> {
-  switch (action) {
-    case "scan":
-      return initialScan(state);
-    case "review":
-      process.stdout.write(`\n${renderScanTable(state.scans)}\n`);
-      return;
-    case "select":
-      return runSelect(state);
-    case "all":
-      return runAll(state);
-    case "target":
-      return runTarget();
-    case "doctor":
-      return runDoctor();
-    case "options":
-      return runOptions(state);
-  }
-}
-
-function printHeader(): void {
-  const title = chalk.bold("gup");
-  const sub = chalk.dim("global updater");
-  const version = chalk.dim(`v${gupVersion()}`);
-  const line = chalk.dim("─".repeat(60));
-  process.stdout.write(`\n  ${title}  ${sub}${" ".repeat(40 - "global updater".length)}${version}\n`);
-  process.stdout.write(`  ${line}\n`);
-}
-
-/** Shown above the menu: the state the next action will run against. */
-function statusLines(state: MenuState): string[] {
-  const total = totalUpdates(state);
-  const updates = total === 0 ? "à jour" : `${total} mise(s) à jour disponible(s)`;
-  const mode = `${state.fast ? "fast" : "normal"}  ·  ${describeFilter(state.filter)}`;
-  return [
-    `${"status".padEnd(8)} ${state.detectedCount} provider(s) détecté(s)  ·  ${updates}`,
-    `${"mode".padEnd(8)} ${mode}`,
-  ];
-}
-
-async function initialScan(state: MenuState): Promise<void> {
-  const { results, detectedCount } = await scanWithProgress({
-    fast: state.fast,
-    ...(state.filter.length > 0 && { only: state.filter }),
-  });
-  state.scans = results;
-  state.detectedCount = detectedCount;
-}
-
-async function runSelect(state: MenuState): Promise<void> {
-  const selection = await promptPackageSelection(state.scans);
-  if (selection.length === 0) {
-    process.stdout.write(dim("  aucune sélection\n"));
-    return;
-  }
-  const ok = await confirm({
-    message: `Appliquer ${selection.length} mise(s) à jour ?`,
-    default: true,
-  });
-  if (!ok) return;
-
+function groupByProvider(packages: readonly SelectedPackage[]): Map<string, OutdatedPackage[]> {
   const grouped = new Map<string, OutdatedPackage[]>();
-  for (const sel of selection) {
-    const list = grouped.get(sel.providerId) ?? [];
-    list.push(sel.pkg);
-    grouped.set(sel.providerId, list);
+  for (const { providerId, pkg } of packages) {
+    grouped.set(providerId, [...(grouped.get(providerId) ?? []), pkg]);
   }
-
-  const entries = await applyGrouped(grouped);
-  const outcomes = await maybeRetryFailures(entries);
-  summarize(outcomes);
-  await initialScan(state);
+  return grouped;
 }
 
 /**
  * Run a provider→packages map one package at a time, under a skip session so a
- * timed-out / Ctrl+C'd install is skipped and the batch continues. Shared by
- * "Update selected" and "Update all".
+ * timed-out / Ctrl+C'd install is skipped and the batch continues.
  */
 async function applyGrouped(
   grouped: Map<string, OutdatedPackage[]>,
@@ -178,86 +119,22 @@ async function applyGrouped(
   return entries;
 }
 
-async function runAll(state: MenuState): Promise<void> {
-  const total = totalUpdates(state);
-  const ok = await confirm({
-    message: `Mettre à jour les ${total} paquet(s) ?`,
-    default: true,
-  });
-  if (!ok) return;
-
-  const grouped = new Map<string, OutdatedPackage[]>();
-  for (const scan of state.scans) {
-    if (scan.packages.length === 0) continue;
-    grouped.set(scan.providerId, scan.packages);
-  }
-
-  const entries = await applyGrouped(grouped);
-  const outcomes = await maybeRetryFailures(entries);
-  summarize(outcomes);
-  await initialScan(state);
-}
-
-async function runTarget(): Promise<void> {
-  const raw = await input({
-    message: "Cible(s) [provider:packageId, espace/virgule]",
-    validate: (v) => v.trim().length > 0 || "saisir au moins une cible",
-  });
-  const targets = raw
-    .split(/[\s,]+/)
-    .map((t) => t.trim())
-    .filter(Boolean);
-
-  const entries: OutcomeWithProvider[] = [];
-  const session = beginSkipSession();
-  try {
-    for (const target of targets) {
-      if (session.isAbortRequested()) break;
-      const parsed = parseTarget(target);
-      if (!parsed) continue;
-      const { providerId, provider, packageId } = parsed;
-      printSectionHeader(`${provider.displayName} : ${packageId}`, 1);
-      entries.push({ providerId, outcome: await applyUpdate(provider, packageId) });
-    }
-  } finally {
-    session.dispose();
-  }
-  const outcomes = await maybeRetryFailures(entries);
-  summarize(outcomes);
-}
-
 interface ParsedTarget {
-  providerId: string;
   provider: Provider;
   packageId: string;
 }
 
 /** Split `provider:packageId` and resolve the provider, or report why not. */
-function parseTarget(target: string): ParsedTarget | null {
+function parseTarget(target: string, opts: { quiet?: boolean } = {}): ParsedTarget | null {
   const idx = target.indexOf(":");
-  if (idx === -1) {
-    process.stderr.write(chalk.red(`  format invalide: ${target}\n`));
-    return null;
+  const provider = idx > 0 ? getProvider(target.slice(0, idx)) : undefined;
+  const packageId = target.slice(idx + 1);
+  if (provider && packageId) return { provider, packageId };
+  if (!opts.quiet) {
+    const reason = idx === -1 ? "format invalide" : "provider inconnu";
+    process.stderr.write(chalk.red(`  ${reason}: ${target}\n`));
   }
-  const providerId = target.slice(0, idx);
-  const provider = getProvider(providerId);
-  if (!provider) {
-    process.stderr.write(chalk.red(`  provider inconnu: ${providerId}\n`));
-    return null;
-  }
-  return { providerId, provider, packageId: target.slice(idx + 1) };
-}
-
-async function runDoctor(): Promise<void> {
-  const detected = (await detectAvailableProviders()).map((p) => p.id);
-  const missing = ALL_PROVIDERS.filter((p) => !detected.includes(p.id)).map(
-    (p) => ({
-      id: p.id,
-      displayName: p.displayName,
-      ...(p.installHint && { installHint: p.installHint }),
-    }),
-  );
-  process.stdout.write(`\n${renderProvidersStatus(detected, missing)}\n`);
+  return null;
 }
 
 function summarize(outcomes: UpdateOutcome[]): void {
@@ -268,24 +145,14 @@ function summarize(outcomes: UpdateOutcome[]): void {
 
   process.stdout.write("\n");
   if (succeeded.length > 0) {
-    process.stdout.write(
-      chalk.green(`  OK   ${succeeded.length} mise(s) à jour effectuée(s)\n`),
-    );
+    process.stdout.write(chalk.green(`  OK   ${succeeded.length} mise(s) à jour effectuée(s)\n`));
   }
-  writeGroup(
-    skipped,
-    chalk.yellow,
-    `  SKIP ${skipped.length} action(s) manuelle(s) requise(s)\n`,
-  );
+  writeGroup(skipped, chalk.yellow, `  SKIP ${skipped.length} action(s) manuelle(s) requise(s)\n`);
   writeGroup(failed, chalk.red, `  FAIL ${failed.length}/${outcomes.length} échec(s)\n`);
 }
 
 /** Coloured header, then one `- <id> — <message>` line per entry. */
-function writeGroup(
-  outcomes: UpdateOutcome[],
-  color: (s: string) => string,
-  header: string,
-): void {
+function writeGroup(outcomes: UpdateOutcome[], color: (s: string) => string, header: string): void {
   if (outcomes.length === 0) return;
   process.stdout.write(color(header));
   for (const o of outcomes) {
@@ -297,8 +164,3 @@ function writeGroup(
 function printSectionHeader(label: string, count: number): void {
   process.stdout.write(`\n${chalk.bold(`  → ${label}`)} ${dim(`(${count})`)}\n`);
 }
-
-function totalUpdates(state: MenuState): number {
-  return state.scans.reduce((sum, s) => sum + s.packages.length, 0);
-}
-

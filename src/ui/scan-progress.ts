@@ -1,13 +1,10 @@
 import chalk from "chalk";
 import type { Provider, ProviderScanResult } from "../core/types.js";
 import { recordScan } from "../core/history/store.js";
-import {
-  detectAvailableProviders,
-  scanAll,
-  type ScanOptions,
-} from "../core/registry.js";
-import { canPrompt } from "./tui/prompt-host.js";
-import { SILENT_PROGRESS, withScanView, type ScanProgress } from "./tui/scan-view.js";
+import { detectAvailableProviders, scanAll, type ScanOptions } from "../core/registry.js";
+import { SILENT_SCAN, type ScanEvents } from "./panels/scan-panel.js";
+import { withScanScreen } from "./prompts/scan-screen.js";
+import { canPrompt } from "./tui/screen-host.js";
 
 export interface ScanWithProgressResult {
   results: ProviderScanResult[];
@@ -15,97 +12,82 @@ export interface ScanWithProgressResult {
   detectedCount: number;
 }
 
-type BaseScanOptions = Omit<ScanOptions, "onProviderStart" | "onProviderEnd">;
+export type BaseScanOptions = Omit<ScanOptions, "onProviderStart" | "onProviderEnd">;
 
-interface ScanRun extends ScanWithProgressResult {
+export interface ScanRun {
+  results: ProviderScanResult[];
+  /** Every provider detected on the machine, before `only`/`fast` filtering. */
+  detected: Provider[];
   planned: number;
   elapsedMs: number;
 }
 
 /**
- * Runs detection then scanAll under a live progress band (in a terminal):
- * a [done/total] counter, the providers currently scanning and the latest
- * failure. Detection gets its own phase because probing every provider's
- * `isAvailable()` takes a noticeable moment. Once the band is gone, a single
- * summary line stays in the scrollback; piped or redirected, only that line
- * is written.
+ * Detection then scanAll, reporting each step to `events`: the phase change,
+ * the planned count, and every provider as it starts and finishes. Records
+ * the scan in the history. Shared by the menu and the one-shot commands.
  */
-export async function scanWithProgress(
-  baseOptions: BaseScanOptions = {},
-): Promise<ScanWithProgressResult> {
-  const work = (progress: ScanProgress): Promise<ScanRun> => detectAndScan(baseOptions, progress);
-  const run = canPrompt() ? await withScanView(work) : await work(SILENT_PROGRESS);
-  reportScanDone(run);
-  return { results: run.results, detectedCount: run.detectedCount };
+export async function runScan(options: BaseScanOptions, events: ScanEvents): Promise<ScanRun> {
+  events.detecting();
+  const detected = await detectAvailableProviders();
+  const planned = countPlanned(detected, options);
+  events.planned(planned);
+  const startedAt = Date.now();
+  const started = new Map<string, number>();
+  const results =
+    planned === 0
+      ? []
+      : await scanAll({
+          ...options,
+          detected,
+          onProviderStart: (p) => {
+            started.set(p.id, Date.now());
+            events.started(p.displayName);
+          },
+          onProviderEnd: (p, r) => events.finished(p.displayName, outcomeOf(r, started.get(p.id))),
+        });
+  const elapsedMs = Date.now() - startedAt;
+  if (planned > 0) recordScan({ results, durationMs: elapsedMs, options });
+  events.completed(elapsedMs);
+  return { results, detected, planned, elapsedMs };
 }
 
-async function detectAndScan(
-  baseOptions: BaseScanOptions,
-  progress: ScanProgress,
-): Promise<ScanRun> {
-  progress.detecting();
-  const detected = await detectAvailableProviders();
-  const planned = countPlanned(detected, baseOptions);
-  if (planned === 0) {
-    return { results: [], detectedCount: detected.length, planned, elapsedMs: 0 };
-  }
+/**
+ * `runScan` for the one-shot commands: on a terminal, under a full-screen
+ * scan view; piped or redirected, silently. Either way one summary line is
+ * left in the scrollback.
+ */
+export async function scanWithProgress(
+  options: BaseScanOptions = {},
+): Promise<ScanWithProgressResult> {
+  const run = canPrompt()
+    ? await withScanScreen((events) => runScan(options, events))
+    : await runScan(options, SILENT_SCAN);
+  reportScanDone(run);
+  return { results: run.results, detectedCount: run.detected.length };
+}
 
-  const startedAt = Date.now();
-  const results = await scanAll({
-    ...baseOptions,
-    detected,
-    ...progressCallbacks(progress, planned),
-  });
-  const elapsedMs = Date.now() - startedAt;
-  recordScan({ results, durationMs: elapsedMs, options: baseOptions });
-  return { results, detectedCount: detected.length, planned, elapsedMs };
+function outcomeOf(result: ProviderScanResult, startedAt: number | undefined) {
+  const ms = startedAt === undefined ? 0 : Date.now() - startedAt;
+  return { updates: result.packages.length, ms, ...(result.error && { error: result.error }) };
 }
 
 function reportScanDone({ results, planned, elapsedMs }: ScanRun): void {
   if (planned === 0) {
-    process.stdout.write(chalk.dim("·  aucun provider disponible\n"));
+    process.stdout.write(chalk.dim("  aucun provider disponible\n"));
     return;
   }
   const elapsed = (elapsedMs / 1000).toFixed(1);
   const updates = results.reduce((n, r) => n + r.packages.length, 0);
   process.stdout.write(
-    `${chalk.green("◇")}  ${chalk.dim(
-      `scan terminé en ${elapsed}s — ${planned} provider(s), ${updates} mise(s) à jour`,
-    )}\n`,
+    chalk.dim(
+      `  scan terminé en ${elapsed}s — ${planned} provider(s), ${updates} mise(s) à jour\n`,
+    ),
   );
 }
 
-/**
- * Progress callbacks for `scanAll`. They close over the counter, the set of
- * in-flight providers and the latest failure, so the caller does not have to
- * carry them.
- */
-function progressCallbacks(progress: ScanProgress, total: number) {
-  const inFlight = new Set<string>();
-  let done = 0;
-  let lastError: string | undefined;
-  const report = (): void =>
-    progress.scanning({ done, total, inFlight: [...inFlight], ...(lastError && { lastError }) });
-
-  return {
-    onProviderStart: (provider: Provider) => {
-      inFlight.add(provider.displayName);
-      report();
-    },
-    onProviderEnd: (provider: Provider, result: ProviderScanResult) => {
-      inFlight.delete(provider.displayName);
-      done++;
-      if (result.error) lastError = `${provider.displayName} : ${result.error}`;
-      report();
-    },
-  };
-}
-
 /** How many detected providers survive the `only` / `fast` filters. */
-function countPlanned(
-  detected: Provider[],
-  options: Pick<ScanOptions, "only" | "fast">,
-): number {
+function countPlanned(detected: Provider[], options: Pick<ScanOptions, "only" | "fast">): number {
   return detected.filter((p) => {
     if (options.only?.length && !options.only.includes(p.id)) return false;
     if (options.fast && p.slow) return false;

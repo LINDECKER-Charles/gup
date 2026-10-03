@@ -5,14 +5,16 @@ import type { ProviderScanResult } from "../core/types.js";
  * Shared state of the interactive menu, plus the formatting helpers that go
  * with it.
  *
- * This module exists so `menu.ts` and `menu-options.ts` can share the type and
- * the helpers without importing each other.
+ * Lives apart from `menu.ts` so the UI panels can read and edit it without
+ * importing the command that drives them.
  */
 export interface MenuState {
   scans: ProviderScanResult[];
   fast: boolean;
   filter: string[];
   detectedCount: number;
+  /** Providers found on this machine by the last scan, for the filter list. */
+  providers: Array<{ id: string; displayName: string }>;
 }
 
 export function dim(s: string): string {

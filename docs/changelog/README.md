@@ -9,7 +9,7 @@ and the pull request when there was one. Generated from `git log` on
 | Version | Published | Commits | In one sentence |
 |---|---|---:|---|
 | [Unreleased](unreleased.md) | `main` after 0.4.0 | 0 | Nothing yet. |
-| [`0.4.0`](0.4.0.md) | not yet published | 36 | 0.4.0 fixes the terminal freezes seen on Windows, rebuilds the interactive UI on OpenTUI in place of `@inquirer/prompts` and `ora`, and moves the runtime floor to Node >= 26.9.0. |
+| [`0.4.0`](0.4.0.md) | not yet published | 37 | 0.4.0 fixes the terminal freezes seen on Windows, rebuilds the interactive UI on OpenTUI in place of `@inquirer/prompts` and `ora`, and moves the runtime floor to Node >= 26.9.0. |
 | [`0.3.2`](0.3.2.md) | 2026-08-09 | 15 | Version 0.3.2 adds 19 providers (MSYS2, Cygwin, Npackd, Fink, pkgin, Nix, pkgx, nvm, pyenv, swiftly, mint, vcpkg, Visual Studio, Git for Windows, .NET SDK, NuGet, PSResourceGet, Sparkle, xcodes), taking the registry from 134 to 153 entries. |
 | [`0.3.1`](0.3.1.md) | 2026-08-08 | 11 | gup 0.3.1 introduces a local activity history: every scan and every update attempt is appended synchronously to a monthly JSONL shard under the platform state directory, opt-out via GUP_HISTORY=0 and relocatable via GUP_HISTORY_DIR, and never read back by the tool. |
 | [`0.3.0`](0.3.0.md) | 2026-08-08 | 32 | 0.3.0 makes gup genuinely cross-platform: four new macOS providers (Homebrew formulae and casks, Mac App Store, MacPorts), brew/apt/dnf install-source detection so package-manager-owned binaries are no longer hidden from the scan, and JetBrains/Eclipse discovery on macOS. |

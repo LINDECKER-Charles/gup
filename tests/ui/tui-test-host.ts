@@ -1,22 +1,22 @@
 import { createTestRenderer, type TestRendererSetup } from "@opentui/core/testing";
-import { createPromptHost, type PromptHost } from "../../src/ui/tui/prompt-host.js";
+import { createScreenHost, type ScreenHost } from "../../src/ui/tui/screen-host.js";
 
 /**
- * A prompt host backed by OpenTUI's in-memory renderer: same lifecycle as the
- * real footer (one renderer per run, destroyed after), no terminal involved.
- * `next()` hands back the renderer of the run in progress so the test can
- * press keys and read the frame.
+ * A screen host backed by OpenTUI's in-memory renderer: same lifecycle as the
+ * real one (one renderer per run, destroyed after), no terminal involved.
+ * `next()` hands back the renderer of the run in progress, once something is
+ * drawn on it, so the test can press keys and read the frame.
  */
 export interface TestHost {
-  readonly host: PromptHost;
+  readonly host: ScreenHost;
   next(): Promise<TestRendererSetup>;
 }
 
-export function createTestHost(width = 80, height = 24): TestHost {
+export function createTestHost(width = 100, height = 30): TestHost {
   const pending: TestRendererSetup[] = [];
   const waiting: Array<(setup: TestRendererSetup) => void> = [];
 
-  const host = createPromptHost(async () => {
+  const host = createScreenHost(async () => {
     const setup = await createTestRenderer({ width, height });
     const waiter = waiting.shift();
     if (waiter) waiter(setup);
@@ -31,7 +31,7 @@ export function createTestHost(width = 80, height = 24): TestHost {
 
   return {
     host,
-    // The renderer exists before the prompt mounts on it: wait for a first
+    // The renderer exists before the screen mounts on it: wait for a first
     // drawn frame, or the first keys would reach a screen with no listener.
     next: async () => {
       const setup = await created();
@@ -41,20 +41,24 @@ export function createTestHost(width = 80, height = 24): TestHost {
   };
 }
 
+const NAMED: Record<string, (setup: TestRendererSetup) => void> = {
+  up: (s) => s.mockInput.pressArrow("up"),
+  down: (s) => s.mockInput.pressArrow("down"),
+  left: (s) => s.mockInput.pressArrow("left"),
+  right: (s) => s.mockInput.pressArrow("right"),
+  enter: (s) => s.mockInput.pressEnter(),
+  escape: (s) => s.mockInput.pressEscape(),
+  tab: (s) => s.mockInput.pressTab(),
+  "ctrl+c": (s) => s.mockInput.pressCtrlC(),
+  space: (s) => s.mockInput.pressKey(" "),
+};
+
 /** Press keys one by one, letting the renderer process each before the next. */
 export async function press(setup: TestRendererSetup, ...keys: string[]): Promise<void> {
   for (const key of keys) {
-    if (key === "down" || key === "up" || key === "left" || key === "right") {
-      setup.mockInput.pressArrow(key);
-    } else if (key === "enter") {
-      setup.mockInput.pressEnter();
-    } else if (key === "ctrl+c") {
-      setup.mockInput.pressCtrlC();
-    } else if (key === "space") {
-      setup.mockInput.pressKey(" ");
-    } else {
-      setup.mockInput.pressKey(key);
-    }
+    const named = NAMED[key];
+    if (named) named(setup);
+    else setup.mockInput.pressKey(key);
     await setup.flush();
   }
 }

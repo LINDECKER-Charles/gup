@@ -2,7 +2,7 @@
 
 > Source document for the explanatory site. Aimed at intermediate / advanced developers. Covers **the entirety** of `gup`'s operation: motivation, model, architecture, command lifecycle, internal contracts, resilience patterns, security, build.
 >
-> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 26.9), ESM, `execa`, `commander`, `@opentui/core`, `chalk`, `cli-table3`, `p-limit`. No browser runtime: this is a CLI whose interactive moments (prompts, live scan) are drawn by OpenTUI's native renderer, loaded on demand.
+> Repo: `LINDECKER-Charles/gup` · Stack: strict TypeScript (Node ≥ 26.9), ESM, `execa`, `commander`, `@opentui/core`, `chalk`, `cli-table3`, `p-limit`. No browser runtime: `gup` with no subcommand is a full-screen OpenTUI app (sidebar, panels, dialogs), drawn by OpenTUI's native renderer, loaded on demand; the one-shot commands stay plain line output.
 
 ---
 
@@ -14,7 +14,7 @@ It is deliberately an **orchestrator of existing tools**. `gup` does not invent 
 
 Three ways to use it:
 
-1. **Interactive menu** (bare `gup` command) — automatic scan, then a Review / Update selected / Update all / Update target / Providers / Options menu.
+1. **Interactive app** (bare `gup` command) — a full-screen OpenTUI app: automatic scan, then a package table to check and update, plus Providers and Options views.
 2. **Non-interactive** (`gup list`, `gup update --all -y`) — suitable for automation and CI.
 3. **Targeted** (`gup update winget:Microsoft.PowerShell npm-g:typescript`) — bypasses the scan entirely.
 
@@ -107,7 +107,7 @@ src/
 │   ├── list.ts               # gup list
 │   ├── update.ts             # gup update
 │   ├── doctor.ts             # gup doctor
-│   └── menu.ts               # gup (no subcmd) — interactive REPL
+│   └── menu.ts               # gup (no subcmd) — controller of the full-screen app
 ├── core/
 │   ├── types.ts              # Provider, OutdatedPackage, UpdateOutcome, UpdateOptions, ProviderScanResult
 │   ├── runner.ts             # run, runInherit, commandExists, whichFirst, isElevated
@@ -145,8 +145,10 @@ src/
     ├── scan-progress.ts      # detection + scan under the live scan screen, one summary line after
     ├── select.ts             # package checkbox grouped by provider
     ├── retry-failed.ts       # post-batch retry-strategy prompt
-    ├── prompts/              # select, checkbox, confirm, input — OpenTUI views
-    └── tui/                  # OpenTUI loader, prompt host, list cursor, scan screen
+    ├── app/                  # the full-screen menu: MenuApp (sessions), MenuSession (layout, input), sidebar
+    ├── panels/               # Scan, Paquets, Providers, Options — state + lines + keys, no terminal
+    ├── prompts/              # stand-alone screens for one-shot commands: scan, package picker, confirm, select
+    └── tui/                  # OpenTUI loader, screen host, chrome, bordered panel, dialogs, styled lines
 ```
 
 ### Guiding principle #1: **provider isolation**
@@ -178,41 +180,34 @@ An uncaught exception inside a provider would collapse the entire parallel scan.
    └─> calls program.action() → menuCommand()  (src/commands/menu.ts)
 
 2. menuCommand() initializes MenuState:
-     { scans: [], fast: false, filter: [], detectedCount: 0 }
+     { scans: [], fast: false, filter: [], detectedCount: 0, providers: [] }
+   and runs MenuApp (src/ui/app/menu-app.ts) with menuController.
 
-3. printHeader()  →  ASCII title + version
-4. initialScan(state)
-     └─> ui/scan-progress.scanWithProgress({ fast, only? })
-           ├─ live scan screen "détection des providers…"
-           ├─ detectAvailableProviders(): Promise.all(ALL_PROVIDERS.map(p => p.isAvailable()))
-           ├─ filter (only / fast)  →  planned[]
-           ├─ scanAll({ detected, onProviderStart, onProviderEnd })
-           │     └─> pLimit(4) wraps each provider.listOutdated()
-           │           ├─ live render(): in-flight set, [done/total], top-3 + "+N"
-           │           ├─ catch error → ProviderScanResult.error
-           │           └─ filter `pkg.manual === true`
-           └─ spinner.stopAndPersist(`scan completed in Xs — N providers, M updates`)
+3. MenuApp loops over sessions, each one on the terminal's alternate screen
+   (ScreenHost: one OpenTUI renderer per session, destroyed when it ends):
+     MenuSession = title bar · sidebar (Menu) · main panel · key-hint bar · dialogs
+     └─ on start: controller.scan(state, scanPanel)
+           └─> ui/scan-progress.runScan({ fast, only? }, events)
+                 ├─ detecting → detectAvailableProviders()  (bounded, fail-soft)
+                 ├─ planned(n) → scanAll(...) with onProviderStart / onProviderEnd
+                 │     each provider: started(name) → finished(name, { updates, ms, error? })
+                 └─ completed(ms) → recordScan(...)
+           the Scan panel draws it live, then the app opens Paquets
 
-5. Infinite menu loop:
-     printStatus(state)  →  "K provider(s) detected · M update(s)"
-     select<MenuAction>  →  Scan / Review / Update selected / Update all
-                              / Update target / Providers / Options / Quit
+4. Inside a session (keyboard: ↑↓ / tab / q, mouse: clicks and wheel):
+     - Scan       → live progress, then per-provider results; r rescans
+     - Paquets    → table grouped by provider; space / click check, a all,
+                    / filter, Enter → confirm dialog → session ends "outside"
+     - Tout mettre à jour → confirm dialog → "outside"
+     - Cible…     → input dialog (provider:package, validated) → "outside"
+     - Providers  → detected / missing with install hints
+     - Options    → fast mode, install timeout (dialog), provider filter (in place)
+     - Quitter / q → session ends "quit" → menuCommand returns 0
 
-   Each action:
-     - Scan      → initialScan(state)  (rescan)
-     - Review    → renderScanTable(state.scans)
-     - select    → ui/select.promptPackageSelection(state.scans)
-                   ├─ checkbox grouped by provider
-                   ├─ confirm "Apply N updates?"
-                   ├─ group by providerId → provider.updateAll(pkgs) (or .update if 1)
-                   ├─ maybeRetryFailures(entries) (cf. §10)
-                   └─ summarize(outcomes)
-                   then rescan
-     - all       → confirm → loop over scans → provider.updateAll → retry → summarize → rescan
-     - target    → input "provider:packageId, space/comma" → loop .update
-     - doctor    → renderProvidersStatus(detected, missing)
-     - options   → toggle fast / filter by providers (checkbox)
-     - quit      → return 0
+5. "outside": the session ends and its renderer is destroyed, so the main
+   screen is back and nothing holds the keyboard. The update runs there
+   (installers inherit the terminal), then maybeRetryFailures + summarize,
+   "Entrée pour revenir à gup", and a new session starts with a rescan.
 ```
 
 ### 4.2 `gup list`
@@ -627,13 +622,13 @@ Probe only, no scan. Outputs `renderProvidersStatus(detected, missing)`. No `--j
 
 ### 9.5 `menu.ts`
 
-The "default" mode. REPL in `for(;;)`. Maintains a `MenuState` shared between iterations:
+The "default" mode, now a thin controller: `menuCommand()` builds the `MenuState` and hands `menuController` (scan, provider status, updates, target validation) to `MenuApp`, which owns the screen. The state is shared across sessions:
 - `scans`: latest scan results (reused until a rescan).
 - `fast`: fast-mode flag.
 - `filter`: list of providers to scan (empty = all).
-- `detectedCount`: number of detected providers (shown in the status bar).
+- `detectedCount`, `providers`: what the last detection found (title bar, filter list).
 
-The menu invalidates `scans` after every update batch (auto-rescan) → the user immediately sees the updated packages disappear from the list.
+Every update runs outside the screen and is followed by a new session that rescans → the user immediately sees the updated packages disappear from the table.
 
 ---
 
@@ -674,7 +669,7 @@ Wraps `cli-table3`. Two helpers:
 
 ### 11.2 `scan-progress.ts`
 
-The most user-facing element. In a terminal, detection and scan run under a live screen (`ui/tui/scan-view.ts`):
+`runScan(options, events)` is the scan itself — detection, `scanAll`, history record — reporting every step to a `ScanEvents` listener. The menu feeds those events to its Scan panel; `scanWithProgress` (the one-shot commands) shows the same panel on its own screen (`ui/prompts/scan-screen.ts`):
 
 ```
 ◐  scan 12/47  ██████░░░░░░░░░░░░░░░░░░
@@ -688,7 +683,7 @@ When it closes, one summary line stays in the scrollback: duration, number of pr
 
 ### 11.3 `select.ts`
 
-Builds a **grouped by provider** `checkbox` (`ui/prompts/checkbox.ts`): one group per provider with updates, a header row that checks or unchecks the whole group, packages indented under it with the version jump and the note on the right.
+Opens the **Paquets** table on its own screen (`ui/prompts/package-picker.ts`), the same panel as in the menu: one group per provider, a checkbox per package, the version jump and the note in columns. Space or a click checks a package, Space on a provider checks the whole group, `a` checks everything shown, `/` filters, and Enter with nothing checked takes the package — or the provider — under the cursor. The model behind it (`ui/panels/package-list.ts`) keeps checked packages through filtering.
 
 ### 11.4 `retry-failed.ts`
 

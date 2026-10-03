@@ -2,7 +2,7 @@ import semver from "semver";
 
 export type Tui = typeof import("@opentui/core");
 
-/** First Node release with `node:ffi` (OpenTUI's native renderer loads through it) on by default. */
+/** First Node release with `node:ffi` on by default — OpenTUI loads its renderer through it. */
 const MIN_NODE = "26.9.0";
 
 let pending: Promise<Tui> | null = null;

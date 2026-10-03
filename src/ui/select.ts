@@ -1,6 +1,6 @@
-import { ALL_PROVIDERS } from "../core/registry.js";
+import { getProvider } from "../core/registry.js";
 import type { OutdatedPackage, ProviderScanResult } from "../core/types.js";
-import { checkbox, type CheckboxGroup } from "./prompts/checkbox.js";
+import { pickPackages } from "./prompts/package-picker.js";
 
 export interface SelectedPackage {
   providerId: string;
@@ -8,25 +8,14 @@ export interface SelectedPackage {
 }
 
 /**
- * Package picker grouped by provider: one group per provider with updates,
- * checking a group header checks all of its packages.
- * Returns the flat list of selected (providerId, pkg) tuples.
+ * Package picker for `gup update`: the outdated packages grouped by
+ * provider, one checkbox each. Returns the flat list of picked
+ * (providerId, pkg) tuples — empty when nothing is outdated or the user
+ * leaves without picking.
  */
 export async function promptPackageSelection(
   scans: ProviderScanResult[],
 ): Promise<SelectedPackage[]> {
-  const groups: CheckboxGroup<SelectedPackage>[] = [...scans]
-    .sort((a, b) => a.providerId.localeCompare(b.providerId))
-    .filter((scan) => scan.packages.length > 0)
-    .map((scan) => ({
-      title: ALL_PROVIDERS.find((p) => p.id === scan.providerId)?.displayName ?? scan.providerId,
-      choices: scan.packages.map((pkg) => ({
-        label: pkg.name ?? pkg.id,
-        hint: `${pkg.current} → ${pkg.latest}${pkg.note ? `  [${pkg.note}]` : ""}`,
-        value: { providerId: scan.providerId, pkg },
-      })),
-    }));
-
-  if (groups.length === 0) return [];
-  return checkbox({ message: "Paquets à mettre à jour", groups });
+  if (scans.every((scan) => scan.packages.length === 0)) return [];
+  return pickPackages(scans, (id) => getProvider(id)?.displayName ?? id);
 }

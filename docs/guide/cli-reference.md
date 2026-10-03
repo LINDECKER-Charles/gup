@@ -74,24 +74,40 @@ Prints every provider detected on the machine, then the ones that are missing
 or off `PATH` with a hint on how to install them. Run it first when a package
 you expected never shows up in a scan.
 
-## Interactive menu
+## Interactive app
 
-`gup` with no subcommand scans once, then loops on a menu.
+`gup` with no subcommand opens a full-screen app: a menu on the left, the
+selected view on the right, the keys that apply at the bottom. It scans on
+start and opens the package table when there is something to update.
 
-| Action | Effect |
+| Menu entry | Effect |
 |---|---|
-| **Scan** | Rescan every provider |
-| **Review** | Print the detailed table of the last scan |
-| **Update selected** | Multi-select picker, then confirm |
-| **Update all** | Everything from the last scan, after confirmation |
-| **Update target** | Prompts for `provider:packageId` (space- or comma-separated) |
-| **Providers** | Same output as `gup doctor` |
-| **Options** | Fast mode, provider filter, install timeout |
-| **Quit** | Exit `0` |
+| **Scan** | Live progress, then the result per provider; `r` rescans |
+| **Paquets** | The outdated packages, grouped by provider, one checkbox each |
+| **Tout mettre à jour** | Everything from the last scan, after confirmation |
+| **Cible…** | Asks for `provider:packageId` (space- or comma-separated) |
+| **Providers** | Same information as `gup doctor` |
+| **Options** | Fast mode, install timeout, provider filter |
+| **Quitter** | Exit `0` (also `q`) |
 
-The **Options** screen holds the same three knobs the flags expose. Fast mode
-and the provider filter change what the *next* scan looks at, so rescan to
-apply them; the timeout applies to the next install immediately.
+**Picking packages.** In **Paquets**, `Space` or a click checks a package;
+on a provider's row it checks the whole provider. `a` checks everything shown,
+`/` filters by name or provider, and checked packages stay checked while you
+filter. `Enter` updates what is checked — or, with nothing checked, the package
+(or provider) under the cursor. A confirmation lists what will be updated.
+
+**While it updates**, gup leaves the full-screen view: installers need the
+terminal, and their output stays visible. Press `Enter` afterwards to come
+back; gup rescans so the table shows what is left.
+
+**Keys:** `↑↓` move · `Tab` / `←` switch between the menu and the view ·
+`Enter` open or confirm · `Esc` close a dialog or clear the filter · `q` quit ·
+`Ctrl+C` exit at once. The mouse works too: click menu entries and rows,
+scroll the lists with the wheel.
+
+The **Options** view holds the same three knobs the flags expose. Fast mode
+and the provider filter change what the *next* scan looks at, so rescan (`r`)
+to apply them; the timeout applies to the next install immediately.
 
 ## Targeting a package
 
