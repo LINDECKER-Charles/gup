@@ -67,7 +67,11 @@ describe("INTERFACE_SECTION", () => {
 
   it("defaults the screens to the comfortable density, automatic symbols and the mouse", () => {
     const { density, glyphs, mouse } = INTERFACE_SECTION.defaults;
-    expect({ density, glyphs, mouse }).toEqual({ density: "comfortable", glyphs: "auto", mouse: true });
+    expect({ density, glyphs, mouse }).toEqual({
+      density: "comfortable",
+      glyphs: "auto",
+      mouse: true,
+    });
   });
 
   it("reads every field and falls back per field", async () => {

@@ -89,7 +89,9 @@ function bestCorner(requirements: readonly ContrastRequirement[]): Xterm256Color
   const black = xterm256Color(XTERM_BLACK_SLOT);
   const white = xterm256Color(XTERM_WHITE_SLOT);
   const worst = (corner: Xterm256Color): number =>
-    Math.min(...requirements.map(({ grounds, target }) => worstRatio(corner.rgb, grounds) / target));
+    Math.min(
+      ...requirements.map(({ grounds, target }) => worstRatio(corner.rgb, grounds) / target),
+    );
   return worst(white) >= worst(black) ? white : black;
 }
 

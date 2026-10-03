@@ -55,7 +55,10 @@ describe("SettingsService", () => {
   it("reports the issues of every section it knows, read or not", async () => {
     await writeFile(
       file,
-      JSON.stringify({ version: 1, sections: { interface: { v: 1, mouse: 3 }, scan: { v: 1, fast: 1 } } }),
+      JSON.stringify({
+        version: 1,
+        sections: { interface: { v: 1, mouse: 3 }, scan: { v: 1, fast: 1 } },
+      }),
       "utf8",
     );
     const settings = new SettingsService(new ConfigStore({ file }));

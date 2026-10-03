@@ -122,7 +122,9 @@ describe("correctLightness", () => {
   it("reaches the target on every ground, as painted", () => {
     const grounds = [hex("#0B0D13"), hex("#222535")];
     const corrected = correctLightness(hex("#B00020"), grounds, 4.5);
-    for (const ground of grounds) expect(oracleRatio(corrected, ground)).toBeGreaterThanOrEqual(4.5);
+    for (const ground of grounds) {
+      expect(oracleRatio(corrected, ground)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it("keeps the hue of a coloured input", () => {
