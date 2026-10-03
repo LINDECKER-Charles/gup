@@ -5,7 +5,7 @@ Picking packages is checking them: Entrée updates the checked set and nothing e
 
 ## Added
 
-- **ui:** Paquets ends with a selection bar — how many packages are checked out of how many, and a clickable `Entrée  Mettre à jour (n)` button once one is; clicking the bar is pressing Entrée ([`3269fcd`](https://github.com/LINDECKER-Charles/gup/commit/3269fcd))
+- **ui:** Paquets ends with a selection bar — how many packages are checked out of how many, and a clickable `Entrée  Mettre à jour (n)` button once one is; clicking the bar is pressing Entrée. On an 80-column terminal it still says how to check (on the row above it) and keeps the count whole beside the button ([`3269fcd`](https://github.com/LINDECKER-Charles/gup/commit/3269fcd), `fix(ui): keep the selection bar readable on 80-column terminals`)
 
 ## Changed
 
