@@ -1,3 +1,5 @@
+import type { RunTrigger } from "../state/run-context.js";
+
 /**
  * On-disk schema of the activity history.
  *
@@ -9,6 +11,9 @@
  *
  * Every record carries {@link HISTORY_SCHEMA_VERSION} so a later reader can
  * tell a v1 line from a v2 one instead of guessing from the fields present.
+ * Optional fields added since (`trigger`, per-provider `durationMs`,
+ * `scheduleId`) are additive: a v1 reader that ignores them still reads every
+ * line correctly, so the version stays 1.
  */
 
 /** Bump on any change that a v1 reader could not interpret correctly. */
@@ -31,6 +36,8 @@ export interface HistoryEnvelope {
   /** `process.platform` — the same machine can log from Windows and from WSL. */
   platform: string;
   kind: "scan" | "update";
+  /** What started the emitting process (menu, command line, schedule), when known. */
+  trigger?: RunTrigger;
 }
 
 /** Per-provider slice of a scan. */
@@ -40,6 +47,8 @@ export interface ScanProviderRecord {
   outdated: number;
   /** Set when the provider was reachable but its scan failed. */
   error?: string;
+  /** Wall-clock time of this provider's scan, when the caller measured it. */
+  durationMs?: number;
 }
 
 /** One completed scan of the machine, whatever triggered it. */
@@ -75,6 +84,11 @@ export interface UpdateEvent extends HistoryEnvelope {
   retry?: string;
   /** True when the attempt went through the elevated (UAC / sudo) batch. */
   elevated?: boolean;
+  /**
+   * The schedule this attempt belongs to, whether the scheduler ran it or the
+   * user ran the schedule by hand (`trigger` tells the two apart).
+   */
+  scheduleId?: string;
 }
 
 export type HistoryEvent = ScanEvent | UpdateEvent;

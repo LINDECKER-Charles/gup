@@ -126,6 +126,34 @@ describe("recordUpdate", () => {
     expect(event).not.toHaveProperty("retry");
     expect(event).not.toHaveProperty("elevated");
     expect(event).not.toHaveProperty("message");
+    expect(event).not.toHaveProperty("scheduleId");
+    expect(event).not.toHaveProperty("trigger");
+  });
+
+  it("records the schedule an attempt belongs to", () => {
+    store.recordUpdate({ providerId: "npm-g", outcome: outcome(), scheduleId: "s-1" });
+    expect(readEvents()[0]).toMatchObject({ scheduleId: "s-1" });
+  });
+});
+
+describe("run trigger", () => {
+  it("stamps every record with what started the process, once known", async () => {
+    store.recordUpdate({ providerId: "p", outcome: outcome({ id: "before" }) });
+    const run = await import("../../src/core/state/run-context.js");
+    run.setRunTrigger("schedule");
+    store.recordUpdate({ providerId: "p", outcome: outcome({ id: "after" }) });
+    store.recordScan({ durationMs: 1, results: [] });
+
+    const [before, after, scan] = readEvents();
+    expect(before).not.toHaveProperty("trigger");
+    expect(after).toMatchObject({ packageId: "after", trigger: "schedule" });
+    expect(scan).toMatchObject({ kind: "scan", trigger: "schedule" });
+  });
+
+  it("shares its run id with the run context", async () => {
+    const run = await import("../../src/core/state/run-context.js");
+    store.recordUpdate({ providerId: "p", outcome: outcome() });
+    expect(readEvents()[0]!.runId).toBe(run.RUN_ID);
   });
 });
 
@@ -154,6 +182,18 @@ describe("recordScan", () => {
         { providerId: "scoop", outdated: 0, error: "scan failed" },
       ],
     });
+  });
+
+  it("records each provider's scan time when the caller measured it", () => {
+    store.recordScan({
+      durationMs: 900,
+      results: [scanResult({ providerId: "npm-g" }), scanResult({ providerId: "pip" })],
+      providerDurations: new Map([["npm-g", 412.4]]),
+    });
+
+    const [npm, pip] = (readEvents()[0] as ScanEvent).providers;
+    expect(npm).toEqual({ providerId: "npm-g", outdated: 0, durationMs: 412 });
+    expect(pip).toEqual({ providerId: "pip", outdated: 0 });
   });
 
   it("defaults to a full, unfiltered scan when no options are passed", () => {
