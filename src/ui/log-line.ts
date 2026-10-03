@@ -1,7 +1,7 @@
-import chalk from "chalk";
 import { stripVTControlCharacters } from "node:util";
 import type { LogLevel } from "../core/log/log.js";
 import type { LogData, LogRecord, LogValue } from "../core/log/types.js";
+import { lineToAnsi } from "./charts/ansi-lines.js";
 import { formatDuration } from "./text/fr-format.js";
 import {
   COMMAND_END_LABELS,
@@ -31,18 +31,6 @@ const LEVEL_TONES: Readonly<Record<LogLevel, Tone>> = {
   info: "plain",
   debug: "muted",
   trace: "muted",
-};
-
-const PAINT: Readonly<Record<Tone, (value: string) => string>> = {
-  plain: (value) => value,
-  strong: (value) => chalk.bold(value),
-  muted: (value) => chalk.dim(value),
-  disabled: (value) => chalk.gray(value),
-  accent: (value) => chalk.cyan(value),
-  success: (value) => chalk.green(value),
-  warning: (value) => chalk.yellow(value),
-  danger: (value) => chalk.red(value),
-  onAccent: (value) => chalk.inverse(value),
 };
 
 type Summary = (data: LogData) => string;
@@ -76,10 +64,7 @@ export function logRecordLine(record: LogRecord, width?: number): Line {
 
 /** The record as one line of terminal text; uncoloured under `NO_COLOR` or into a pipe. */
 export function logRecordText(record: LogRecord): string {
-  return logRecordLine(record)
-    .map((segment) => PAINT[segment.tone](segment.text))
-    .join("")
-    .trimEnd();
+  return lineToAnsi(logRecordLine(record));
 }
 
 function summaryOf(record: LogRecord): string {
