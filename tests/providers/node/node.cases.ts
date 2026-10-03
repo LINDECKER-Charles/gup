@@ -1,115 +1,226 @@
-import { NvmProvider } from "../../../src/providers/node/nvm.js";
+import { BunGlobalProvider } from "../../../src/providers/node/bun-global.js";
+import { CorepackProvider } from "../../../src/providers/node/corepack.js";
+import { NpmGlobalProvider } from "../../../src/providers/node/npm-global.js";
+import { PnpmGlobalProvider } from "../../../src/providers/node/pnpm-global.js";
+import { YarnGlobalProvider } from "../../../src/providers/node/yarn-global.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
-import { githubLatest } from "../../support/system/releases.js";
-import type { FsNode, HttpRoute, SystemSpec } from "../../support/system/types.js";
+import type { CommandScript, HttpRoute, SystemSpec } from "../../support/system/types.js";
 
 /**
- * Node.js package managers and version managers. The machines and outputs a
+ * The global packages of the JavaScript package managers (the runtimes and
+ * version managers are in runtimes.cases.ts). The machines and outputs a
  * knowledge test starts from are exported; the rest of the case data stays
  * private.
  */
 
-// --- nvm ------------------------------------------------------------------------
+const NODE_DIR = "C:\\Program Files\\nodejs";
 
-export const NVM_HOME = "/home/u/.nvm";
-/** The directory reaches the script through the environment, never spliced in. */
-export const NVM_VERSION_ARGV = [
-  "bash",
-  "-c",
-  '. "$GUP_NVM_DIR/nvm.sh" --no-use >/dev/null 2>&1 && nvm --version',
-];
-/** nvm-sh tags with a `v`, which the checkout needs as published. */
-export const NVM_RELEASE = githubLatest("nvm-sh/nvm", "v0.40.6");
-export const NVM_MANUAL_MESSAGE =
-  "Installation nvm hors dépôt git — mettre à jour en suivant https://github.com/nvm-sh/nvm#installing-and-updating";
-
-/** The README's manual upgrade, minus the `cd`: fetch the tags, check out the release. */
-export function nvmUpgradeArgvs(dir: string, tag: string): string[][] {
-  return [
-    ["git", "-C", dir, "fetch", "--tags", "origin"],
-    ["git", "-C", dir, "checkout", tag],
-  ];
-}
-
-export interface NvmInstall {
-  /** Where nvm.sh lives. Default ~/.nvm. */
-  readonly dir?: string;
-  /** A git clone (the install script's layout) or a copied tree. Default clone. */
-  readonly isClone?: boolean;
-  /** What `nvm --version` prints. */
-  readonly version: string;
-  readonly release?: HttpRoute;
-  readonly env?: Readonly<Record<string, string>>;
-}
-
-/** An nvm install on Linux, with bash and git on PATH. */
-export function nvmMachine(install: NvmInstall): SystemSpec {
-  const dir = install.dir ?? NVM_HOME;
-  const fs: Record<string, FsNode> = { [`${dir}/nvm.sh`]: { kind: "file" } };
-  if (install.isClone ?? true) fs[`${dir}/.git`] = { kind: "dir" };
+/** The npm registry's latest version of `name`, or an answer without one. */
+export function npmLatestRoute(name: string, version?: string): HttpRoute {
   return {
-    platform: "linux",
-    bin: { bash: "/bin/bash", git: "/usr/bin/git" },
-    commands: [{ argv: NVM_VERSION_ARGV, stdout: install.version }],
-    http: [install.release ?? NVM_RELEASE],
-    fs,
-    ...(install.env && { env: install.env }),
+    url: `https://registry.npmjs.org/${name}/latest`,
+    json: version ? { name, version } : { name },
   };
 }
 
-const NVM_ROW = { id: "nvm", name: "nvm", current: "0.40.5", latest: "0.40.6" };
+// --- npm ------------------------------------------------------------------------
 
-/** Never `curl | bash`: the README's own manual recipe, on the tag GitHub published. */
-const NVM_CLONE: ProviderContractCase = {
-  scenario: "git clone",
-  create: () => new NvmProvider(),
-  system: nvmMachine({ version: "0.40.5" }),
-  outdated: [{ ...NVM_ROW, note: "dépôt git — checkout du tag" }],
-  update: {
-    packageId: "nvm",
-    installs: nvmUpgradeArgvs(NVM_HOME, "v0.40.6"),
-    outcome: {
-      message:
-        'nvm mis à jour vers v0.40.6 — dépôt laissé en HEAD détaché sur le tag (recette officielle nvm) ; recharger le shell (source "$NVM_DIR/nvm.sh") pour activer la nouvelle version.',
-    },
-    onFailure: {
-      success: false,
-      message: `Échec de git checkout v0.40.6 — modifications locales dans ${NVM_HOME} ?`,
-    },
-  },
-  updateAll: "collapsed",
+export const NPM_OUTDATED_ARGV = ["npm", "outdated", "-g", "--json", "--long"];
+
+/** npm printing `report` for `npm outdated -g --json`. */
+export function npmMachine(report: string): SystemSpec {
+  return {
+    platform: "win32",
+    bin: { npm: `${NODE_DIR}\\npm.cmd` },
+    // npm exits 1 when something is outdated; the report is on stdout all the same.
+    commands: [{ argv: NPM_OUTDATED_ARGV, stdout: report, exitCode: 1 }],
+  };
+}
+
+/** `@latest`, so a new major is installed too. */
+const NPM: ProviderContractCase = {
+  create: () => new NpmGlobalProvider(),
+  system: npmMachine(
+    JSON.stringify({
+      typescript: { current: "5.4.5", wanted: "5.4.5", latest: "5.6.2", location: "" },
+      "@angular/cli": { current: "17.3.0", wanted: "17.3.0", latest: "18.2.4", location: "" },
+    }),
+  ),
+  outdated: [
+    { id: "typescript", name: "typescript", current: "5.4.5", latest: "5.6.2" },
+    { id: "@angular/cli", name: "@angular/cli", current: "17.3.0", latest: "18.2.4" },
+  ],
+  update: { packageId: "typescript", installs: [["npm", "install", "-g", "typescript@latest"]] },
+  updateAll: "one-batch",
+  batchInstalls: [["npm", "install", "-g", "typescript@latest", "@angular/cli@latest"]],
 };
 
-/** A copied tree cannot move to a tag: visible, not `manual: true`, and skipped. */
-const NVM_COPY: ProviderContractCase = {
-  scenario: "copied tree",
-  create: () => new NvmProvider(),
-  system: nvmMachine({ version: "0.40.5", isClone: false }),
-  outdated: [{ ...NVM_ROW, note: "installation non-git — mise à jour manuelle" }],
-  update: {
-    packageId: "nvm",
-    installs: [],
-    outcome: { success: false, skipped: true, message: NVM_MANUAL_MESSAGE },
-  },
-  updateAll: "skipped",
+// --- pnpm -----------------------------------------------------------------------
+
+export const PNPM_OUTDATED_ARGV = ["pnpm", "outdated", "--global", "--format", "json"];
+
+/** pnpm printing `report` for `pnpm outdated --global --format json`. */
+export function pnpmMachine(report: string): SystemSpec {
+  return {
+    platform: "darwin",
+    bin: { pnpm: "/Users/u/Library/pnpm/pnpm" },
+    commands: [{ argv: PNPM_OUTDATED_ARGV, stdout: report, exitCode: 1 }],
+  };
+}
+
+/** A deprecated package says so; a current one is not listed. */
+const PNPM: ProviderContractCase = {
+  create: () => new PnpmGlobalProvider(),
+  system: pnpmMachine(
+    JSON.stringify({
+      vercel: {
+        current: "37.0.0",
+        wanted: "37.0.0",
+        latest: "37.6.0",
+        dependencyType: "dependencies",
+      },
+      tslint: {
+        current: "5.20.0",
+        wanted: "5.20.0",
+        latest: "6.1.3",
+        isDeprecated: true,
+        dependencyType: "dependencies",
+      },
+      zx: { current: "8.1.8", wanted: "8.1.8", latest: "8.1.8", dependencyType: "dependencies" },
+    }),
+  ),
+  outdated: [
+    { id: "vercel", name: "vercel", current: "37.0.0", latest: "37.6.0" },
+    { id: "tslint", name: "tslint", current: "5.20.0", latest: "6.1.3", note: "deprecated" },
+  ],
+  update: { packageId: "vercel", installs: [["pnpm", "add", "-g", "vercel@latest"]] },
+  updateAll: "one-batch",
+  // `add`, not `update`: `pnpm update` respects semver and would skip a major.
+  batchInstalls: [["pnpm", "add", "-g", "vercel@latest", "tslint@latest"]],
 };
 
-/** A checkout past the releases feed: a checkout would be a downgrade, so none runs. */
-const NVM_AHEAD: ProviderContractCase = {
-  scenario: "checkout ahead of the release",
-  create: () => new NvmProvider(),
-  system: nvmMachine({ version: "0.41.0" }),
-  outdated: [],
-  update: {
-    packageId: "nvm",
-    installs: [],
-    outcome: {
-      success: false,
-      skipped: true,
-      message: "nvm est déjà sur la dernière version publiée (0.40.6) — aucun checkout.",
-    },
-  },
-  updateAll: "collapsed",
+// --- Yarn classic ---------------------------------------------------------------
+
+export const YARN_VERSION_ARGV = ["yarn", "--version"];
+export const YARN_LIST_ARGV = ["yarn", "global", "list", "--depth=0"];
+
+/** Yarn printing `version` and `listing`, the registry answering `http`. */
+export function yarnMachine(
+  version: Omit<CommandScript, "argv">,
+  listing: string,
+  http: readonly HttpRoute[] = [],
+): SystemSpec {
+  return {
+    platform: "linux",
+    bin: { yarn: "/usr/local/bin/yarn" },
+    commands: [
+      { argv: YARN_VERSION_ARGV, ...version },
+      { argv: YARN_LIST_ARGV, stdout: listing },
+    ],
+    http,
+  };
+}
+
+const YARN_LISTING = [
+  'info "typescript@5.0.0" has binaries:',
+  "   - tsc",
+  "   - tsserver",
+  'info "prettier@3.0.0" has binaries:',
+  "   - prettier",
+  'info "nodemon@3.1.0" has binaries:',
+  "   - nodemon",
+  "Done in 0.12s.",
+].join("\n");
+
+/** Yarn 1 only; one registry lookup per package. */
+const YARN: ProviderContractCase = {
+  create: () => new YarnGlobalProvider(),
+  system: yarnMachine({ stdout: "1.22.22" }, YARN_LISTING, [
+    npmLatestRoute("typescript", "5.6.2"),
+    npmLatestRoute("prettier", "3.0.0"),
+    npmLatestRoute("nodemon", "3.1.7"),
+  ]),
+  outdated: [
+    { id: "typescript", name: "typescript", current: "5.0.0", latest: "5.6.2" },
+    { id: "nodemon", name: "nodemon", current: "3.1.0", latest: "3.1.7" },
+  ],
+  update: { packageId: "typescript", installs: [["yarn", "global", "add", "typescript@latest"]] },
+  updateAll: "one-batch",
+  batchInstalls: [["yarn", "global", "add", "typescript@latest", "nodemon@latest"]],
 };
 
-export const nodeCases: readonly ProviderContractCase[] = [NVM_CLONE, NVM_COPY, NVM_AHEAD];
+// --- Bun ------------------------------------------------------------------------
+
+export const BUN_LIST_ARGV = ["bun", "pm", "ls", "-g"];
+
+/** Bun printing `listing` for `bun pm ls -g`, the registry answering `http`. */
+export function bunMachine(listing: string, http: readonly HttpRoute[] = []): SystemSpec {
+  return {
+    platform: "win32",
+    bin: { bun: "C:\\Users\\u\\.bun\\bin\\bun.exe" },
+    commands: [{ argv: BUN_LIST_ARGV, stdout: listing }],
+    http,
+  };
+}
+
+/** The box-drawing tree `bun pm ls -g` prints; a scoped name keeps its `@`. */
+const BUN: ProviderContractCase = {
+  create: () => new BunGlobalProvider(),
+  system: bunMachine(
+    [
+      "C:\\Users\\u\\.bun\\install\\global node_modules (3)",
+      "├── typescript@5.0.0",
+      "├── prettier@3.0.0",
+      "└── @scope/pkg@1.0.0",
+    ].join("\n"),
+    [
+      npmLatestRoute("typescript", "5.1.0"),
+      npmLatestRoute("prettier", "3.0.0"),
+      npmLatestRoute("@scope/pkg", "2.0.0"),
+    ],
+  ),
+  outdated: [
+    { id: "typescript", name: "typescript", current: "5.0.0", latest: "5.1.0" },
+    { id: "@scope/pkg", name: "@scope/pkg", current: "1.0.0", latest: "2.0.0" },
+  ],
+  update: { packageId: "typescript", installs: [["bun", "add", "-g", "typescript@latest"]] },
+  updateAll: "one-batch",
+  // `bun update -g` upgrades every global package, selected or not.
+  batchInstalls: [["bun", "update", "-g"]],
+};
+
+// --- Corepack -------------------------------------------------------------------
+
+/** Node's own directory: corepack and the shims it installed for pnpm and yarn. */
+export const COREPACK_BIN = `${NODE_DIR}\\corepack.cmd`;
+
+const COREPACK_SHIMS: Readonly<Record<string, string>> = {
+  corepack: COREPACK_BIN,
+  pnpm: `${NODE_DIR}\\pnpm.cmd`,
+  yarn: `${NODE_DIR}\\yarn.cmd`,
+};
+
+/** Corepack serving pnpm 9.0.0 (behind) and yarn 4.5.0 (current). */
+export const COREPACK_MACHINE: SystemSpec = {
+  platform: "win32",
+  bin: COREPACK_SHIMS,
+  commands: [
+    { argv: ["pnpm", "--version"], stdout: "9.0.0\n" },
+    { argv: ["yarn", "--version"], stdout: "4.5.0" },
+  ],
+  http: [npmLatestRoute("pnpm", "9.5.0"), npmLatestRoute("yarn", "4.5.0")],
+};
+
+/** The global default is activated, not a project pin (`corepack use`). */
+const COREPACK: ProviderContractCase = {
+  create: () => new CorepackProvider(),
+  system: COREPACK_MACHINE,
+  outdated: [{ id: "pnpm", name: "pnpm", current: "9.0.0", latest: "9.5.0" }],
+  update: {
+    packageId: "pnpm",
+    installs: [["corepack", "prepare", "pnpm@latest", "--activate"]],
+  },
+  updateAll: "per-package",
+};
+
+export const nodeCases: readonly ProviderContractCase[] = [NPM, PNPM, YARN, BUN, COREPACK];

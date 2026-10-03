@@ -14,7 +14,7 @@ import {
   type NvmInstall,
   nvmMachine,
   nvmUpgradeArgvs,
-} from "./node.cases.js";
+} from "./runtimes.cases.js";
 
 /**
  * nvm, the POSIX Node version manager: a sourced shell function, found
