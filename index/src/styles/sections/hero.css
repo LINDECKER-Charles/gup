@@ -22,7 +22,7 @@
   background: var(--surface);
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--label-tracking-tight);
   text-transform: var(--label-case);
   color: var(--fg-muted);
 }
@@ -83,7 +83,7 @@
   margin-block-start: 26px;
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--label-tracking-tight);
   text-transform: var(--label-case);
   color: var(--fg-dim);
 }

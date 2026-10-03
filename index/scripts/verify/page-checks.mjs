@@ -1,9 +1,10 @@
 /**
  * Browser checks run on every locale: a clean load (no console error, failed
  * request or CSP violation — hydration errors included), heading outline,
- * in-page links, image sizes, skip link; then the same page with JavaScript
- * off (prerendered content complete and visible) and under reduced motion
- * (nothing left hidden, terminal complete).
+ * in-page links, image sizes, skip link, no letter-spacing on the scripts it
+ * breaks (Arabic joining, the Devanagari/Bengali headline bar); then the same
+ * page with JavaScript off (prerendered content complete and visible) and
+ * under reduced motion (nothing left hidden, terminal complete).
  *
  * @typedef {import("../../build/page-context.mjs").PageContext} PageContext
  * @typedef {{ report: ReturnType<import("./report.mjs").createReport>,
@@ -45,6 +46,24 @@ function unsizedImages(page) {
   );
 }
 
+/** Classes of the elements that letter-space Arabic, Devanagari, Bengali or Han text. */
+function spacedScriptText(page) {
+  return page.evaluate(() => {
+    const SCRIPTS = /[\p{Script=Arabic}\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Han}]/u;
+    const spaced = new Set();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const element = walker.currentNode.parentElement;
+      if (!element || !SCRIPTS.test(walker.currentNode.data)) continue;
+      const spacing = getComputedStyle(element).letterSpacing;
+      if (spacing !== "normal" && parseFloat(spacing) !== 0) {
+        spaced.add(element.className || element.tagName.toLowerCase());
+      }
+    }
+    return [...spaced];
+  });
+}
+
 async function skipLinkWorks(page) {
   await page.keyboard.press("Tab");
   const focused = await page.evaluate(() => document.activeElement?.className);
@@ -70,6 +89,9 @@ async function checkRendered({ report, browser, origin }, target) {
   );
   report.check(`${id}: every in-page link has a target`, missing.length === 0, missing.join(", "));
   report.check(`${id}: images declare their size`, (await unsizedImages(page)) === 0);
+  const spaced = await spacedScriptText(page);
+  const label = `${id}: no letter-spacing on Arabic, Indic or Han text`;
+  report.check(label, spaced.length === 0, spaced.join(", "));
   report.check(`${id}: skip link is the first stop and lands on #top`, await skipLinkWorks(page));
   await context.close();
 }

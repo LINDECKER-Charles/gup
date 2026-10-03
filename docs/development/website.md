@@ -116,7 +116,11 @@ versions and CLI output stays on 0–9 in every language.
 
 Non-Latin scripts render from system fonts (`src/styles/foundation/scripts.css`): no webfont
 download, no uppercase, no letter-spacing (it breaks Arabic joining and the Devanagari/Bengali
-headline bar), taller line height. Only Latin faces are self-hosted.
+headline bar), taller line height. Only Latin faces are self-hosted. Each script lists its faces
+once and the sans, display **and mono** stacks are built from that list: the mono labels
+(navigation, kickers, buttons) otherwise fall to whatever the OS picks for a monospace request —
+Times New Roman for Arabic, NSimSun for Chinese on Windows. Text is only letter-spaced through the
+`--*-tracking` tokens, which the non-Latin scripts set to 0.
 
 ### Glossary
 
@@ -180,8 +184,8 @@ looked at and what it changed. A native speaker has not reviewed these yet: one
 |---|---|
 | `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda, Arabic punctuation), Arabic count agreement. |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
-| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`. |
-| `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no-JS and reduced-motion rendering, overflow at 1440/820/390 px. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu. |
+| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, and every non-Latin script rendering its sans, display and mono faces from its own fonts. |
+| `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no letter-spacing on Arabic, Indic or Han text, no-JS and reduced-motion rendering, overflow at 1440/820/390 px. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu. |
 | `npm run lhci` | Lighthouse mobile ≥ 0.95 on performance (best of 3), accessibility, best practices and SEO (median of 3). |
 
 Budgets: HTML ≤ 30 KB gzipped per locale, JavaScript ≤ 62 KB, CSS ≤ 12 KB, preloaded fonts

@@ -54,6 +54,7 @@
   --display-leading: 1.06;
   --label-case: uppercase;
   --label-tracking: 0.14em;
+  --label-tracking-tight: 0.06em;
   --body-leading: 1.6;
 
   /* Layout. */
