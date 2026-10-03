@@ -162,6 +162,9 @@ export class RunView implements Takeover {
    */
   finish(): Promise<void> {
     this.model.markDone();
+    // A notice speaks of the run in flight ("Ctrl+C ×2 pour tout arrêter"):
+    // the summary replaces it.
+    this.#notice = null;
     this.panes.blur();
     const firstFailure = this.model.items.findIndex((item) => item.state === "failed");
     this.select(Math.max(0, firstFailure));

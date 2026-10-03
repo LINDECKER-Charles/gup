@@ -250,6 +250,17 @@ describe("run view", () => {
     expect(results).toMatch(/↷ 2 ignoré\(s\) {3}✖ 0 échec\(s\) {3}⊘ 1 annulé\(s\)/);
   });
 
+  it("leaves the results on Ctrl+C, the notices of the run gone", async () => {
+    const { menu, pty } = await launched({ packages: [pkg("alpha")] });
+    await installsStarted(pty, 1);
+    await menu.press("ctrl+c");
+    const results = await shown(menu, RUN_TITLES.done);
+    expect(results).toMatch(/↷ alpha /);
+    expect(results).not.toContain(RUN_NOTICES.ctrlCFirst);
+    await menu.press("ctrl+c");
+    expect(await shown(menu, "┏━ Paquets")).toContain("alpha");
+  });
+
   it("keeps the list to the rows it needs while no terminal is on screen", async () => {
     // More successes than the retention keeps: the first one's output is gone.
     const packages = Array.from({ length: RETAINED_RECENT_PANES + 2 }, (_, i) => pkg(`p${i}`));
