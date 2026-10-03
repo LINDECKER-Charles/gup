@@ -84,8 +84,6 @@ start and opens the package table when there is something to update.
 |---|---|
 | **Scan** | Live progress, then the result per provider; `r` rescans |
 | **Paquets** | The outdated packages, grouped by provider, one checkbox each |
-| **Tout mettre à jour** | Everything from the last scan, after confirmation |
-| **Cible…** | Asks for `provider:packageId` (space- or comma-separated) |
 | **Providers** | Same information as `gup doctor` |
 | **Options** | Fast mode, install timeout, provider filter |
 | **Quitter** | Exit `0` (also `q`) |
@@ -95,6 +93,8 @@ on a provider's row it checks the whole provider. `a` checks everything shown,
 `/` filters by name or provider, and checked packages stay checked while you
 filter. `Enter` updates what is checked — or, with nothing checked, the package
 (or provider) under the cursor. A confirmation lists what will be updated.
+To update everything, press `a` then `Enter`; to update one known package
+without scanning, use `gup update provider:packageId`.
 
 **While it updates**, gup leaves the full-screen view: installers need the
 terminal, and their output stays visible. Press `Enter` afterwards to come

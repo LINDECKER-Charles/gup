@@ -198,8 +198,6 @@ An uncaught exception inside a provider would collapse the entire parallel scan.
      - Scan       → live progress, then per-provider results; r rescans
      - Paquets    → table grouped by provider; space / click check, a all,
                     / filter, Enter → confirm dialog → session ends "outside"
-     - Tout mettre à jour → confirm dialog → "outside"
-     - Cible…     → input dialog (provider:package, validated) → "outside"
      - Providers  → detected / missing with install hints
      - Options    → fast mode, install timeout (dialog), provider filter (in place)
      - Quitter / q → session ends "quit" → menuCommand returns 0

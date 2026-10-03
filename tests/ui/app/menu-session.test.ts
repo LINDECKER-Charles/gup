@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MenuState } from "../../../src/commands/menu-state.js";
+import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../../src/core/runner.js";
 import { MenuSession, type MenuController } from "../../../src/ui/app/menu-session.js";
 import { createTestHost, frame, press } from "../../support/tui/test-host.js";
 
@@ -28,8 +29,6 @@ function setup() {
       missing: [{ id: "brew", displayName: "Homebrew" }],
     })),
     updatePackages: vi.fn(async () => {}),
-    updateTargets: vi.fn(async () => {}),
-    validateTargets: (raw) => (raw.includes(":") ? true : "format provider:package"),
     displayName: () => "Winget",
   };
   const { host, next } = createTestHost({ size: { cols: 110, rows: 26 } });
@@ -44,6 +43,12 @@ async function ready(next: () => ReturnType<ReturnType<typeof createTestHost>["n
   await screen.waitForFrame((text) => text.includes("Git.Git"));
   return screen;
 }
+
+const INITIAL_TIMEOUT_S = getInstallTimeoutSeconds();
+
+afterEach(() => {
+  setInstallTimeoutSeconds(INITIAL_TIMEOUT_S);
+});
 
 describe("MenuSession", () => {
   it("scans on start, then lands on the package table", async () => {
@@ -84,7 +89,7 @@ describe("MenuSession", () => {
   it("navigates the sidebar and loads the providers view on demand", async () => {
     const { controller, next } = setup();
     const screen = await ready(next);
-    await press(screen, "tab", "down", "down", "down");
+    await press(screen, "tab", "down");
     await screen.waitForFrame((text) => text.includes("Homebrew"));
     expect(controller.providersStatus).toHaveBeenCalledOnce();
     const text = await frame(screen);
@@ -93,21 +98,33 @@ describe("MenuSession", () => {
     await press(screen, "q");
   });
 
-  it("asks for a target, refuses a malformed one, then runs it outside the screen", async () => {
-    const { controller, exit, next } = setup();
+  it("offers views and Quitter in the sidebar, no bulk or target action", async () => {
+    const { next } = setup();
     const screen = await ready(next);
-    await press(screen, "tab", "down", "down", "enter");
+    const text = await frame(screen);
+    for (const entry of ["Scan", "Paquets", "Providers", "Options", "Quitter"]) {
+      expect(text).toContain(entry);
+    }
+    expect(text).not.toContain("Tout mettre à jour");
+    expect(text).not.toContain("Cible");
+    await press(screen, "q");
+  });
+
+  it("edits the install timeout in a dialog the opening Enter does not submit", async () => {
+    const { next } = setup();
+    const screen = await ready(next);
+    await press(screen, "tab", "down", "down", "enter", "down", "enter");
     await new Promise((resolve) => setTimeout(resolve, 10));
-    // The Enter that opened the dialog must not reach the field and submit it empty.
-    expect(await frame(screen)).not.toContain("format provider:package");
-    await screen.mockInput.typeText("nope");
+    expect(await frame(screen)).toContain("Timeout par install");
+    for (let i = 0; i < 6; i++) screen.mockInput.pressBackspace();
+    await screen.mockInput.typeText("abc");
     await press(screen, "enter");
-    expect(await frame(screen)).toContain("format provider:package");
-    for (let i = 0; i < 4; i++) screen.mockInput.pressBackspace();
-    await screen.mockInput.typeText("winget:Git.Git");
+    expect(await frame(screen)).toContain("un nombre de secondes >= 0");
+    for (let i = 0; i < 3; i++) screen.mockInput.pressBackspace();
+    await screen.mockInput.typeText("90");
     await press(screen, "enter");
-    const ended = await exit;
-    if (ended.kind === "outside") await ended.run();
-    expect(controller.updateTargets).toHaveBeenCalledWith(["winget:Git.Git"]);
+    expect(getInstallTimeoutSeconds()).toBe(90);
+    expect(await frame(screen)).toContain("[90s]");
+    await press(screen, "q");
   });
 });

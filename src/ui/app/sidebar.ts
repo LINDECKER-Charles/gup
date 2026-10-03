@@ -1,28 +1,26 @@
 import { fillLine, fit, seg, type Line } from "../tui/styled-lines.js";
 
 export type ViewId = "scan" | "packages" | "providers" | "options";
-export type ActionId = "update-all" | "target" | "quit";
+export type ActionId = "quit";
 export type NavId = ViewId | ActionId;
 
 export interface NavEntry {
   readonly id: NavId;
   readonly label: string;
-  /** Views open in the main area; actions run (or ask) when chosen. */
+  /** Views open in the main area; the one action (quit) runs when chosen. */
   readonly isAction: boolean;
 }
 
 export const NAV: readonly NavEntry[] = [
   { id: "scan", label: "Scan", isAction: false },
   { id: "packages", label: "Paquets", isAction: false },
-  { id: "update-all", label: "Tout mettre à jour", isAction: true },
-  { id: "target", label: "Cible…", isAction: true },
   { id: "providers", label: "Providers", isAction: false },
   { id: "options", label: "Options", isAction: false },
   { id: "quit", label: "Quitter", isAction: true },
 ];
 
-/** Entries preceded by a blank row: views, actions and the exit read as groups. */
-const STARTS_GROUP = new Set<NavId>(["update-all", "providers", "quit"]);
+/** Entries preceded by a blank row: work views, information views and the exit read as groups. */
+const STARTS_GROUP = new Set<NavId>(["providers", "quit"]);
 
 /** Outer width of the sidebar box, border included. */
 export const SIDEBAR_WIDTH = 26;

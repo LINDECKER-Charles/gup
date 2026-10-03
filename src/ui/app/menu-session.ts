@@ -26,8 +26,6 @@ export interface MenuController {
   scan(state: MenuState, events: ScanEvents): Promise<void>;
   providersStatus(): Promise<{ detected: ProviderInfo[]; missing: ProviderInfo[] }>;
   updatePackages(packages: SelectedPackage[]): Promise<void>;
-  updateTargets(targets: string[]): Promise<void>;
-  validateTargets(raw: string): true | string;
   displayName(providerId: string): string;
 }
 
@@ -171,16 +169,9 @@ export class MenuSession {
     const entry: NavEntry | undefined = NAV[index];
     if (!entry) return;
     this.#navCursor = index;
-    if (!entry.isAction) {
-      this.show(entry.id as ViewId);
-      this.#focus = "main";
-    } else if (entry.id === "update-all") {
-      void this.confirmUpdate(this.allPackages());
-    } else if (entry.id === "target") {
-      void this.askTarget();
-    } else {
-      this.#exit({ kind: "quit" });
-    }
+    if (entry.isAction) return this.#exit({ kind: "quit" });
+    this.show(entry.id as ViewId);
+    this.#focus = "main";
   }
 
   private show(view: ViewId): void {
@@ -237,18 +228,6 @@ export class MenuSession {
     }
   }
 
-  private async askTarget(): Promise<void> {
-    const { controller } = this.#deps;
-    const raw = await this.#dialogs.ask({
-      title: "Mettre à jour une cible",
-      text: ["provider:package — plusieurs cibles séparées par des espaces ou des virgules."],
-      validate: (value) => controller.validateTargets(value),
-    });
-    this.draw();
-    if (!raw) return;
-    const targets = raw.split(/[\s,]+/).filter(Boolean);
-    this.#exit({ kind: "outside", run: () => controller.updateTargets(targets) });
-  }
 
   private async editTimeout(): Promise<void> {
     const value = await this.#dialogs.ask({

@@ -77,19 +77,3 @@ describe("menuController.updatePackages", () => {
     expect(update).not.toHaveBeenCalled();
   });
 });
-
-describe("menuController targets", () => {
-  it("updates each provider:package target", async () => {
-    const update = choco();
-    await menuController.updateTargets(["choco:git", "choco:7zip"]);
-    expect(update.mock.calls).toEqual([["git"], ["7zip"]]);
-  });
-
-  it("refuses a target without both halves or with an unknown provider", () => {
-    choco();
-    expect(menuController.validateTargets("choco:git")).toBe(true);
-    expect(menuController.validateTargets("  ")).toBe("saisir au moins une cible");
-    expect(menuController.validateTargets("choco:")).toBe("cible invalide : choco: (format provider:package)");
-    expect(menuController.validateTargets("nope:x")).toBe("cible invalide : nope:x (format provider:package)");
-  });
-});
