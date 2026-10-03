@@ -21,6 +21,7 @@ import {
   OPTIONS_SECTIONS,
   TIMEOUT_OUT_OF_RANGE,
 } from "../../../../src/ui/text/options-labels.js";
+import { COLORS_UNAVAILABLE } from "../../../../src/ui/text/theme-labels.js";
 import { seg } from "../../../../src/ui/tui/styled-lines.js";
 import {
   key,
@@ -94,13 +95,21 @@ describe("OptionsPanel list", () => {
     const { panel, settings } = setup();
     press(panel, "down", "down", "down");
     expect(panel.wantsKey(key("left"))).toBe(false);
-    press(panel, "down");
+    press(panel, "down", "down");
     expect(cursorRow(panel)).toContain("Niveau de contraste");
     expect(panel.wantsKey(key("left"))).toBe(true);
     press(panel, "right");
     expect(settings.get("theme").contrast).toBe("AAA");
     press(panel, "left");
     expect(settings.get("theme").contrast).toBe("AA");
+  });
+
+  it("never activates a disabled row, and says why it is disabled", () => {
+    const { panel } = setup();
+    press(panel, "down", "down", "down", "down");
+    expect(cursorRow(panel)).toContain(COLORS_UNAVAILABLE.trusted);
+    press(panel, "enter");
+    expect(panel.title).toBe("Options");
   });
 
   it("writes each comfort row to the interface settings, the mouse switching at once", () => {

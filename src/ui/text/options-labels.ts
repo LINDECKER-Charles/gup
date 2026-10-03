@@ -21,6 +21,7 @@ export const OPTION_LABELS = {
   timeout: "Timeout install",
   filter: "Filtre providers",
   theme: "Thème",
+  colors: "Couleurs perso.",
   contrast: "Niveau de contraste",
   glyphs: "Symboles",
   density: "Densité",
@@ -97,6 +98,9 @@ export const LAUNCH_VIEW_VALUES: Readonly<Record<ViewId, string>> = {
 export const TIMEOUT_VALUE = (seconds: number): string => (seconds > 0 ? `${seconds}s` : "OFF");
 /** A number of seconds the settings file could not keep (fractional, or beyond a day). */
 export const TIMEOUT_OUT_OF_RANGE = "un nombre entier de secondes, de 0 à 86400";
+
+export const COLORS_VALUE = (count: number): string =>
+  count === 0 ? "aucune" : `${count} modifiée(s)`;
 
 export const FILTER_VIEW = {
   title: "Filtre providers",

@@ -1,12 +1,13 @@
 import type { PaintMode, ResolvedTheme } from "../theme/resolve-theme.js";
-import type { ContrastLevel, ThemeId } from "../theme/palette.js";
+import type { ContrastLevel, CustomizableToken, ThemeId } from "../theme/palette.js";
 import type { Tone } from "../tui/styled-lines.js";
 import { formatDecimal } from "./fr-format.js";
 
 /**
  * The theme engine's words (French, the language of the interface): theme
- * names and descriptions, contrast ratios and statuses, the theme picker.
- * Tests import these rather than repeat them.
+ * names and descriptions, colour roles, contrast ratios and statuses, the
+ * theme picker and the colour editor. Tests import these rather than repeat
+ * them.
  */
 
 export const THEME_LABELS: Readonly<Record<ThemeId, string>> = {
@@ -33,6 +34,18 @@ export const THEME_DESCRIPTIONS: Readonly<Record<ThemeId, string>> = {
   "catppuccin-mocha": "tons pastel sur fond sombre",
   "github-light": "variante ajustée pour l'AA",
   monochrome: "sans couleur, sélection en vidéo inverse",
+};
+
+/** The colour roles a user can tune, as the colour editor names them. */
+export const ROLE_LABELS: Readonly<Record<CustomizableToken, string>> = {
+  accent: "Accent",
+  success: "Succès",
+  warning: "Attention",
+  danger: "Erreur",
+  text: "Texte",
+  muted: "Texte secondaire",
+  background: "Fond",
+  highlight: "Surbrillance",
 };
 
 /** Why a theme cannot be painted on this terminal. */
@@ -120,6 +133,51 @@ export const THEME_SAMPLE = {
   title: "gup · barre de titre",
   yes: "Oui",
   no: "Non",
+} as const;
+
+export const COLOR_EDITOR = {
+  title: "Couleurs",
+  hints:
+    "↑↓ rôle · entrée #hex · ←→ teinte · +/- luminosité · a garder · suppr thème · échap retour",
+  base: (theme: string) => `Thème de base : ${theme} — les rôles non modifiés suivent le thème.`,
+  columns: {
+    role: "Rôle",
+    chosen: "Choisie",
+    shown: "Affichée",
+    ratio: "Contraste",
+    sample: "Aperçu",
+  },
+  themeValue: "(thème)",
+  ground: "—",
+  groundCorrected: "ajusté ⚠",
+  groundNote: "fond de référence",
+  corrected: (count: number, level: ContrastLevel) =>
+    `⚠ ${count} couleur(s) ajustée(s) automatiquement pour rester lisible (${level}). ` +
+    "a : garder la valeur ajustée.",
+  samples: {
+    accent: "› sélection",
+    success: "✔ à jour",
+    warning: "2.51.0",
+    danger: "✖ échec",
+    text: "Git.Git",
+    muted: "note",
+    background: "fond de référence",
+    highlight: "› ligne sélectionnée",
+  } satisfies Readonly<Record<CustomizableToken, string>>,
+} as const;
+
+export const HEX_DIALOG = {
+  title: (role: string) => `Couleur — ${role}`,
+  text: "Format #RRGGBB ou #RGB. Une couleur trop peu contrastée sera ajustée automatiquement.",
+  invalid: "format attendu : #RRGGBB",
+} as const;
+
+/** Why the colour editor cannot open with the theme painted now. */
+export const COLORS_UNAVAILABLE = {
+  noColor: "NO_COLOR actif",
+  monochrome: "sans objet en monochrome",
+  depth16: THEME_UNAVAILABLE_16,
+  trusted: "indisponible — palette du terminal inconnue",
 } as const;
 
 /** Shown in the title bar while a theme is previewed but not saved. */

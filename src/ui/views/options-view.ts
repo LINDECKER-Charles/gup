@@ -21,8 +21,9 @@ export interface OptionsViewPorts {
 }
 
 /**
- * Options: scan and install settings, the theme (with a live preview), the
- * comfort settings, and the settings file — each saved as soon as it changes.
+ * Options: scan and install settings, the theme (with a live preview), its
+ * colours, the comfort settings, and the settings file — each saved as soon
+ * as it changes.
  */
 export function optionsView(ports: OptionsViewPorts = {}): ViewDefinition {
   const sections: readonly SectionFactory[] = [

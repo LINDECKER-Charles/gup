@@ -99,7 +99,7 @@ describe("Options view in the menu", () => {
   it("switches the symbol set at once", async () => {
     const { menu } = await themedMenu();
     expect(await menu.frame()).toContain("┏━ Options");
-    await menu.press("down", "down", "down", "down", "down", "enter", "enter");
+    await menu.press("down", "down", "down", "down", "down", "down", "enter", "enter");
     const frame = await menu.waitForText("[ASCII]");
     expect(frame).not.toContain("┏");
     expect(frame).toContain("*= Options");
@@ -127,7 +127,7 @@ describe("Options view in the menu", () => {
     ];
     const { menu, settings } = await themedMenu({ scans, scanOnStart: true });
     setUiPreferencesSource(menuPreferencesSource(settings, () => true));
-    await menu.press(...Array.from({ length: 11 }, () => "down"), "enter");
+    await menu.press(...Array.from({ length: 12 }, () => "down"), "enter");
     expect(settings.get("interface").packageSort).toBe("name");
     await menu.press("tab", "up");
     const frame = await menu.waitForText("Alpha.App");

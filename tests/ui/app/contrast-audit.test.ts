@@ -27,8 +27,9 @@ import { CAMPBELL, TERMINAL_APP_BASIC } from "../../support/tui/reference-palett
  * The end-to-end guarantee: the whole menu, driven through every registered
  * view, every Options sub-view and every dialog, paints no text below 4.5:1
  * and no border below 3:1, under every built-in theme — the terminal theme
- * on real palettes, monochrome with a real terminal's text colour. Whatever
- * code path paints a cell, if it escapes the theme, it fails here.
+ * on real palettes, monochrome with a real terminal's text colour — and with
+ * a custom colour the user made unreadable on purpose. Whatever code path
+ * paints a cell, if it escapes the theme, it fails here.
  */
 
 const pkg = (id: string, current: string, latest: string) => ({ id, current, latest });
@@ -175,6 +176,26 @@ async function walkTheOptions(menu: MenuDriver, capture: Capture): Promise<void>
 }
 
 /**
+ * The colour editor, its hex dialog, and an accent typed unreadable on
+ * purpose — the background's own colour: it must be painted moved, readable.
+ */
+async function walkTheColours(menu: MenuDriver, capture: Capture, unreadable: string) {
+  await menu.press("HOME", "down", "down", "down", "down", "enter");
+  await capture("colour editor", "Thème de base");
+  await menu.press("enter");
+  await pause(FOCUS_SETTLE_MS);
+  await capture("colour editor, hex dialog", "Format #RRGGBB");
+  for (let i = 0; i < "#RRGGBB".length; i++) menu.screen.mockInput.pressBackspace();
+  await menu.screen.mockInput.typeText(unreadable);
+  await menu.press("enter");
+  await capture("colour editor, an unreadable accent adjusted", "ajustée(s) automatiquement");
+  await escape(menu);
+}
+
+const hexOf = (color: wcag.Rgb): string =>
+  `#${color.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+
+/**
  * The theme engine over `settings` on `audited`'s terminal. A cell left
  * unpainted shows the terminal's background: on a terminal that does not say
  * which, an RGB theme's own stands in for it (it paints every cell anyway).
@@ -213,6 +234,8 @@ async function violationsOf(audited: Audited, legacy?: AppearanceFactory): Promi
   };
   await walkTheViews(menu, capture);
   await walkTheOptions(menu, capture);
+  const isTunable = audited.theme !== "monochrome" && legacy === undefined;
+  if (isTunable) await walkTheColours(menu, capture, hexOf(painted.ground));
   return frames.flatMap(([state, frame]) =>
     frameContrastViolations(frame, {
       ground: painted.ground,
