@@ -42,9 +42,10 @@ export function optionsView(ports: OptionsViewPorts = {}): ViewDefinition {
       const settings = (ports.settings ?? settingsService)();
       return new OptionsPanel(sections, createOptionsHost(context, { settings }));
     },
+    // An unsaved preview first: a narrow title bar cuts its end.
     facts: ({ state, screen }) => [
-      scanModeFact(state.fast, state.filter.length),
       ...(isPreviewShown(screen.appearance) ? [PREVIEW_FACT] : []),
+      scanModeFact(state.fast, state.filter.length),
     ],
   };
 }

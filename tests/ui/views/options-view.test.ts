@@ -167,6 +167,13 @@ describe("Options in an 80 × 24 terminal", () => {
     const editor = await menu.waitForText(COLOR_EDITOR.columns.ratio);
     expect(editor.split("\n").at(-1)).toContain("échap retour");
   });
+
+  it("says in the title bar that the theme on screen is only previewed", async () => {
+    const { menu } = await themedMenu({ size: { cols: 80, rows: 24 } });
+    await menu.press("down", "down", "down", "enter", "down");
+    await menu.screen.waitForFrame((frame) => frame.includes("Contraste minimal 4,8:1"));
+    expect((await menu.frame()).split("\n")[0]).toContain(PREVIEW_FACT);
+  });
 });
 
 describe("Options and the settings file", () => {

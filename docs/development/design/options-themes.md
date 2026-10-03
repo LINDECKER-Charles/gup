@@ -293,7 +293,7 @@ keeps its menu meaning, the sidebar), and every key while a sub-view is open; th
   screens paint), the contrast report and the paint mode's note. Below 66 columns it goes under
   the list, the contrast report right after the description, so a short panel cuts the sample
   rather than the verdict. The title bar carries `aperçu du thème` while a preview is on screen
-  (`ViewDefinition.facts`).
+  (`ViewDefinition.facts`), before the scan mode so an 80-column bar still shows it.
 - **Colour editor.** The saved theme's eight customizable roles: Choisie (the custom hex or
   `(thème)`), Affichée (the painted colour), Contraste (worst ratio on the background and the
   highlight; `2,1 → 4,6:1 ⚠` from the engine's correction report; grounds show `—`), Aperçu (the
