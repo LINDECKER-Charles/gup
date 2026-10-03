@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import AdmZip from "adm-zip";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { stripVTControlCharacters } from "node:util";
@@ -112,5 +113,41 @@ describe("gup log", () => {
 
   it("prints the log directory", async () => {
     await expect(gup("log", "path")).resolves.toEqual({ code: 0, out: `${logs}\n`, err: "" });
+  });
+});
+
+describe("gup log export", () => {
+  it("writes the diagnostic archive in the reports directory and asks for a review", async () => {
+    seedLog([[5, { event: "session.start", data: { note: "password=hunter2" } }]]);
+    const { code, out } = await gup("log", "export");
+    expect(code).toBe(0);
+    const [name] = readdirSync(join(dir, "reports"));
+    expect(name).toMatch(/^gup-diagnostic-\d{8}-\d{6}\.zip$/);
+    expect(out).toContain(`archive de diagnostic : ${join(dir, "reports", name!)}`);
+    expect(out).toContain("relisez-la avant de la partager");
+    const archive = new AdmZip(join(dir, "reports", name!));
+    const entries = archive.getEntries().map((entry) => entry.entryName).sort();
+    expect(entries).toEqual(["README.txt", `logs/gup-${utcDay(new Date())}.jsonl`, "system.json"]);
+    expect(archive.readAsText(`logs/gup-${utcDay(new Date())}.jsonl`)).toContain("password=***");
+  });
+
+  it("never replaces an existing --out without --force", async () => {
+    const out = join(dir, "diag.zip");
+    writeFileSync(out, "mine");
+    await expect(gup("log", "export", "--out", out)).resolves.toMatchObject({
+      code: 1,
+      err: expect.stringContaining("existe déjà — utilisez --force"),
+    });
+    expect(readFileSync(out, "utf8")).toBe("mine");
+    await expect(gup("log", "export", "--out", out, "--force")).resolves.toMatchObject({ code: 0 });
+    expect(new AdmZip(out).getEntries().length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("still describes the machine when there is no log yet", async () => {
+    await expect(gup("log", "export", "--since", "all")).resolves.toMatchObject({ code: 0 });
+    expect(existsSync(logs)).toBe(false);
+    const [name] = readdirSync(join(dir, "reports"));
+    const entries = new AdmZip(join(dir, "reports", name!)).getEntries().map((entry) => entry.entryName);
+    expect(entries.sort()).toEqual(["README.txt", "system.json"]);
   });
 });

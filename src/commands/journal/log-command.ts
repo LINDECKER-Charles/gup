@@ -1,12 +1,13 @@
 import type { Command } from "commander";
 import { stateDir } from "../../core/state/app-dirs.js";
 import { LOG_COMMAND_LABELS, LOG_MESSAGES } from "../../ui/text/log-labels.js";
+import { exportDiagnostic, type ExportOptions } from "./diagnostic.js";
 import { showLog, type ShowOptions } from "./log-show.js";
 
 const FAILURE_EXIT_CODE = 1;
 
 /**
- * `gup log [show|path]`. `show` is the default: `gup log -n 20 -l warn`
+ * `gup log [show|path|export]`. `show` is the default: `gup log -n 20 -l warn`
  * reads the log. None of them writes to the log (the journal module installs
  * no sink for them).
  */
@@ -25,6 +26,13 @@ export function registerLogCommand(program: Command): void {
     .command("path")
     .description(LOG_COMMAND_LABELS.path)
     .action(() => process.exit(printLogPath()));
+  log
+    .command("export")
+    .description(LOG_COMMAND_LABELS.export)
+    .option("-s, --since <période>", LOG_COMMAND_LABELS.since)
+    .option("-o, --out <fichier>", LOG_COMMAND_LABELS.out)
+    .option("--force", LOG_COMMAND_LABELS.force)
+    .action(async (options: ExportOptions) => process.exit(await exportDiagnostic(options)));
 }
 
 /** `gup log path`: the log directory on stdout (pipeable), or why there is none. */
