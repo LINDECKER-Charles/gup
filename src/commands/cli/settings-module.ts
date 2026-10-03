@@ -1,11 +1,10 @@
 import chalk from "chalk";
 import { applyPersistedInstallTimeout } from "../../core/config/install-section.js";
-import { configStore, type ConfigStore } from "../../core/config/store.js";
 import { installConsole } from "../../core/process/output-router.js";
 import { getProvider } from "../../core/registry.js";
 import { setUiPreferencesSource } from "../../ui/app/ui-preferences.js";
 import { describeConfigStatus } from "../../ui/settings/config-status.js";
-import { SettingsService } from "../../ui/settings/settings-service.js";
+import { settingsService, type SettingsService } from "../../ui/settings/settings-service.js";
 import { appearanceSource, menuPreferencesSource } from "../../ui/settings/settings-sources.js";
 import { isNoColor } from "../../ui/theme/resolve-theme.js";
 import { themedAppearance } from "../../ui/theme/runtime/themed-appearance.js";
@@ -34,13 +33,14 @@ import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli-module.
  */
 
 export interface SettingsModuleDeps {
-  readonly store: () => ConfigStore;
+  /** Asked for only when a command runs outside the elevated child. */
+  readonly settings: () => SettingsService;
   readonly env: NodeJS.ProcessEnv;
   readonly isKnownProvider: (providerId: string) => boolean;
 }
 
 const DEFAULT_DEPS: SettingsModuleDeps = {
-  store: configStore,
+  settings: settingsService,
   env: process.env,
   isKnownProvider: (providerId) => getProvider(providerId) !== undefined,
 };
@@ -58,9 +58,8 @@ export const settingsModule = createSettingsModule();
 
 function installSettings(deps: SettingsModuleDeps): void {
   if (isNoColor(deps.env)) chalk.level = 0;
-  const store = deps.store();
-  const settings = new SettingsService(store);
-  applyPersistedInstallTimeout(store, deps.env);
+  const settings = deps.settings();
+  applyPersistedInstallTimeout(settings.get("install"), deps.env);
   reportProblems(settings, deps.isKnownProvider);
   configureScreens({
     createAppearance: themedAppearance(appearanceSource(settings)),
@@ -83,7 +82,7 @@ function reportProblems(
 }
 
 function configDiagnostic(deps: SettingsModuleDeps): DiagnosticLine {
-  const status = new SettingsService(deps.store()).status();
+  const status = deps.settings().status();
   const { text, level } = describeConfigStatus(status);
   return {
     label: CONFIG_DIAGNOSTIC_LABEL,

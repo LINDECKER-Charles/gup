@@ -16,7 +16,7 @@ import { ConfigStore } from "../../../src/core/config/store.js";
 import { ADMIN_BATCH_COMMAND } from "../../../src/core/elevation.js";
 import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../../src/core/runner.js";
 import { setUiPreferencesSource, uiPreferences } from "../../../src/ui/app/ui-preferences.js";
-import { INTERFACE_SECTION } from "../../../src/ui/settings/interface-section.js";
+import { SettingsService } from "../../../src/ui/settings/settings-service.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
 import { configureScreens } from "../../../src/ui/tui/screen-host.js";
 import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings-labels.js";
@@ -49,9 +49,9 @@ async function writeSettings(sections: unknown): Promise<void> {
 }
 
 function moduleOver(overrides: Partial<SettingsModuleDeps> = {}): CliModule {
-  const store = new ConfigStore({ file });
+  const settings = new SettingsService(new ConfigStore({ file }));
   return createSettingsModule({
-    store: () => store,
+    settings: () => settings,
     env: {},
     isKnownProvider: (providerId) => providerId === "winget",
     ...overrides,
@@ -95,9 +95,9 @@ describe("settingsModule", () => {
   });
 
   it("never reads the settings for the elevated batch", async () => {
-    const store = vi.fn(() => new ConfigStore({ file }));
-    await run([moduleOver({ store })], ADMIN_BATCH_COMMAND, () => undefined);
-    expect(store).not.toHaveBeenCalled();
+    const settings = vi.fn(() => new SettingsService(new ConfigStore({ file })));
+    await run([moduleOver({ settings })], ADMIN_BATCH_COMMAND, () => undefined);
+    expect(settings).not.toHaveBeenCalled();
   });
 
   it("prints each problem with the file once, on stderr, before the command", async () => {
@@ -133,11 +133,11 @@ describe("settingsModule", () => {
   });
 
   it("opens the screens with the mouse preference, as it is when they open", async () => {
-    const store = new ConfigStore({ file });
-    await run([moduleOver({ store: () => store })], "list", () => undefined);
+    const settings = new SettingsService(new ConfigStore({ file }));
+    await run([moduleOver({ settings: () => settings })], "list", () => undefined);
     const installed = vi.mocked(configureScreens).mock.calls.at(-1)?.[0];
     expect(installed?.rendererOptions?.()).toEqual({ useMouse: true });
-    store.write(INTERFACE_SECTION, { ...INTERFACE_SECTION.defaults, mouse: false });
+    settings.update("interface", { mouse: false });
     expect(installed?.rendererOptions?.()).toEqual({ useMouse: false });
   });
 
@@ -175,8 +175,8 @@ describe("settingsModule diagnostics", () => {
     await writeSettings({ interface: { v: 1, mouse: "non" } });
     const [invalid] = (await moduleOver().diagnostics?.()) ?? [];
     expect(invalid?.status).toBe("warn");
-    const disabled = new ConfigStore({ file: null, isDisabled: true });
-    const [off] = (await moduleOver({ store: () => disabled }).diagnostics?.()) ?? [];
+    const disabled = new SettingsService(new ConfigStore({ file: null, isDisabled: true }));
+    const [off] = (await moduleOver({ settings: () => disabled }).diagnostics?.()) ?? [];
     expect(off).toEqual({
       label: "Configuration",
       value: CONFIG_STATE_LABELS.disabled,

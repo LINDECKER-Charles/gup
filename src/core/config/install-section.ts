@@ -1,6 +1,5 @@
 import { DEFAULT_INSTALL_TIMEOUT_S, setInstallTimeoutSeconds } from "../runner.js";
 import { defineSection } from "./section.js";
-import type { ConfigStore } from "./store.js";
 
 /**
  * The `install` section: the per-install wall-clock cap. Unlike the scan
@@ -31,11 +30,15 @@ export const INSTALL_SECTION = defineSection<InstallSettings>({
 
 /**
  * Make the persisted timeout the effective one, unless `GUP_INSTALL_TIMEOUT`
- * is set: the environment wins over the file. The `--timeout` flag, applied
- * afterwards by the update action, wins over both.
+ * is set (not empty, as the runner reads it): the environment wins over the
+ * file. The `--timeout` flag, applied afterwards by the update action, wins
+ * over both.
  */
-export function applyPersistedInstallTimeout(store: ConfigStore, env: NodeJS.ProcessEnv): void {
+export function applyPersistedInstallTimeout(
+  persisted: InstallSettings,
+  env: NodeJS.ProcessEnv,
+): void {
   const fromEnv = env[TIMEOUT_ENV];
   if (fromEnv !== undefined && fromEnv !== "") return;
-  setInstallTimeoutSeconds(store.read(INSTALL_SECTION).timeoutSeconds);
+  setInstallTimeoutSeconds(persisted.timeoutSeconds);
 }

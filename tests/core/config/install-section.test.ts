@@ -47,42 +47,38 @@ describe("INSTALL_SECTION", () => {
 });
 
 describe("install timeout precedence: --timeout > GUP_INSTALL_TIMEOUT > file > default", () => {
+  /** The install section as the file has it. */
+  const persisted = async (install: unknown) => (await storeWith(install)).read(INSTALL_SECTION);
+
   it("applies the file's timeout when the environment says nothing", async () => {
-    applyPersistedInstallTimeout(await storeWith({ v: 1, timeoutSeconds: 600 }), {});
+    applyPersistedInstallTimeout(await persisted({ v: 1, timeoutSeconds: 600 }), {});
     expect(getInstallTimeoutSeconds()).toBe(600);
   });
 
   it("keeps the default without a file", () => {
     setInstallTimeoutSeconds(42);
-    applyPersistedInstallTimeout(new ConfigStore({ file }), {});
+    applyPersistedInstallTimeout(new ConfigStore({ file }).read(INSTALL_SECTION), {});
     expect(getInstallTimeoutSeconds()).toBe(DEFAULT_INSTALL_TIMEOUT_S);
   });
 
   it("lets GUP_INSTALL_TIMEOUT win over the file", async () => {
     setInstallTimeoutSeconds(90);
-    applyPersistedInstallTimeout(await storeWith({ v: 1, timeoutSeconds: 600 }), {
+    applyPersistedInstallTimeout(await persisted({ v: 1, timeoutSeconds: 600 }), {
       GUP_INSTALL_TIMEOUT: "90",
     });
     expect(getInstallTimeoutSeconds()).toBe(90);
   });
 
   it("treats an empty GUP_INSTALL_TIMEOUT as unset, like the runner", async () => {
-    applyPersistedInstallTimeout(await storeWith({ v: 1, timeoutSeconds: 600 }), {
+    applyPersistedInstallTimeout(await persisted({ v: 1, timeoutSeconds: 600 }), {
       GUP_INSTALL_TIMEOUT: "",
     });
     expect(getInstallTimeoutSeconds()).toBe(600);
   });
 
   it("lets the --timeout flag, applied by the action afterwards, win over both", async () => {
-    applyPersistedInstallTimeout(await storeWith({ v: 1, timeoutSeconds: 600 }), {});
+    applyPersistedInstallTimeout(await persisted({ v: 1, timeoutSeconds: 600 }), {});
     setInstallTimeoutSeconds(30);
     expect(getInstallTimeoutSeconds()).toBe(30);
-  });
-
-  it("never reads a disabled store's disk", () => {
-    const store = new ConfigStore({ file, isDisabled: true });
-    applyPersistedInstallTimeout(store, {});
-    expect(getInstallTimeoutSeconds()).toBe(DEFAULT_INSTALL_TIMEOUT_S);
-    expect(store.status().state).toBe("disabled");
   });
 });
