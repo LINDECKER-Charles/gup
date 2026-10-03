@@ -2,9 +2,20 @@ import type { BoxRenderable, TextRenderable } from "@opentui/core";
 import { gupVersion } from "../../core/version.js";
 import type { Screen } from "./screen-host.js";
 import { fillLine, seg, toStyledText, type Line } from "./styled-lines.js";
+import { panelFrame } from "./text-panel.js";
 
 /** Rows the chrome itself takes: the title bar and the key-hint bar. */
 export const CHROME_ROWS = 2;
+
+/** Room inside a lone panel that fills the whole body (the one-shot screens). */
+export function bodyPanelSize(screen: Pick<Screen, "renderer" | "appearance">): {
+  readonly width: number;
+  readonly height: number;
+} {
+  const frame = panelFrame(screen.appearance.density);
+  const { terminalWidth, terminalHeight } = screen.renderer;
+  return { width: terminalWidth - frame.cols, height: terminalHeight - CHROME_ROWS - frame.rows };
+}
 
 /**
  * The frame every gup screen shares: a title bar carrying the version and a
@@ -16,6 +27,7 @@ export class Chrome {
   readonly #screen: Screen;
   readonly #top: TextRenderable;
   readonly #status: TextRenderable;
+  readonly #root: BoxRenderable;
   #facts: readonly string[] = [];
   #hints = "";
 
@@ -27,7 +39,9 @@ export class Chrome {
       flexDirection: "column",
       width: "100%",
       height: "100%",
+      backgroundColor: screen.appearance.background(),
     });
+    this.#root = root;
     this.#top = new tui.TextRenderable(renderer, { id: "gup-top", height: 1 });
     this.body = new tui.BoxRenderable(renderer, {
       id: "gup-body",
@@ -40,6 +54,7 @@ export class Chrome {
     root.add(this.#status);
     renderer.root.add(root);
     renderer.on("resize", () => this.draw());
+    screen.appearance.onChange(() => this.draw());
     this.draw();
   }
 
@@ -55,13 +70,15 @@ export class Chrome {
   }
 
   private draw(): void {
-    const { tui, renderer } = this.#screen;
+    const { renderer, appearance } = this.#screen;
+    this.#root.backgroundColor = appearance.background();
     const title: Line = [
       seg(" gup ", "onAccent"),
       seg(`v${gupVersion()}`, "onAccent"),
       ...this.#facts.map((fact) => seg(`  │  ${fact}`, "onAccent")),
     ];
-    this.#top.content = toStyledText(tui, [fillLine(title, renderer.terminalWidth, "accent")]);
-    this.#status.content = toStyledText(tui, [[seg(` ${this.#hints}`, "muted")]]);
+    const width = renderer.terminalWidth;
+    this.#top.content = toStyledText(this.#screen, [fillLine(title, width, "accent")]);
+    this.#status.content = toStyledText(this.#screen, [[seg(` ${this.#hints}`, "muted")]]);
   }
 }

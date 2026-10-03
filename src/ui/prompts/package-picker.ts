@@ -2,9 +2,9 @@ import type { KeyEvent } from "@opentui/core";
 import type { ProviderScanResult, SelectedPackage } from "../../core/types.js";
 import { PackageList } from "../panels/package-list.js";
 import { PackagesPanel } from "../panels/packages-panel.js";
-import { Chrome, CHROME_ROWS } from "../tui/chrome.js";
+import { bodyPanelSize, Chrome } from "../tui/chrome.js";
 import { screenHost, type Screen, type ScreenHost } from "../tui/screen-host.js";
-import { PANEL_FRAME, TextPanel } from "../tui/text-panel.js";
+import { TextPanel } from "../tui/text-panel.js";
 import { printAnswer } from "./dialog-screen.js";
 
 /**
@@ -34,10 +34,7 @@ function mountPicker(
   const view = new TextPanel(screen, chrome.body, { id: "gup-packages", title: "Paquets" });
   const packages = new PackagesPanel(resolve);
   packages.setList(list);
-  const viewport = () => ({
-    width: screen.renderer.terminalWidth - PANEL_FRAME.cols,
-    height: screen.renderer.terminalHeight - CHROME_ROWS - PANEL_FRAME.rows,
-  });
+  const viewport = () => bodyPanelSize(screen);
   const draw = (): void => {
     view.show(packages.render(viewport()));
     chrome.setHints(`${packages.hints()} · q annuler`);

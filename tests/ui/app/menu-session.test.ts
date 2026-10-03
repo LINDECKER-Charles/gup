@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MenuState } from "../../../src/commands/menu-state.js";
 import { MenuSession, type MenuController } from "../../../src/ui/app/menu-session.js";
-import { createTestHost, frame, press } from "../tui-test-host.js";
+import { createTestHost, frame, press } from "../../support/tui/test-host.js";
 
 const pkg = (id: string, current: string, latest: string) => ({ id, current, latest });
 
@@ -32,7 +32,7 @@ function setup() {
     validateTargets: (raw) => (raw.includes(":") ? true : "format provider:package"),
     displayName: () => "Winget",
   };
-  const { host, next } = createTestHost(110, 26);
+  const { host, next } = createTestHost({ size: { cols: 110, rows: 26 } });
   const exit = host.run((screen) =>
     new MenuSession(screen, { state, controller, scanOnStart: true }).run(),
   );

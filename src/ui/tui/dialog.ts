@@ -31,7 +31,6 @@ export interface InputSpec extends DialogBase {
 }
 
 const MAX_WIDTH = 76;
-const ACCENT = 6;
 
 /** The keys a dialog reacts to while it is on top. */
 interface ActiveDialog {
@@ -107,9 +106,10 @@ export class DialogLayer {
       const field = new tui.InputRenderable(renderer, {
         id: "gup-dialog-input",
         value: spec.default ?? "",
+        ...this.inputColors(),
       });
       const hint = new tui.TextRenderable(renderer, { id: "gup-dialog-hint", wrapMode: "none" });
-      const say = (line: Line): void => void (hint.content = toStyledText(tui, [line]));
+      const say = (line: Line): void => void (hint.content = toStyledText(this.#screen, [line]));
       box.add(field);
       box.add(hint);
       say([seg("Entrée valider · Échap annuler", "muted")]);
@@ -162,7 +162,7 @@ export class DialogLayer {
     const text = lines.length > 0 ? [...lines, ""] : [];
     return new Promise<T>((resolve) => {
       const draw = (controls: readonly Line[]): void => {
-        body.content = toStyledText(this.#screen.tui, [
+        body.content = toStyledText(this.#screen, [
           ...text.map((t): Line => [seg(t)]),
           ...controls,
         ]);
@@ -179,17 +179,26 @@ export class DialogLayer {
     });
   }
 
+  /**
+   * Dialogs keep a double border, coloured like a focused panel. Their box
+   * must hide what is under it: on a screen that leaves the terminal's own
+   * background, it is filled with the terminal's default background.
+   */
   private createBox(title: string): { box: BoxRenderable; body: TextRenderable } {
-    const { renderer, tui } = this.#screen;
+    const { renderer, tui, appearance } = this.#screen;
+    const look = appearance.border(true);
+    const background = appearance.background();
     const box = new tui.BoxRenderable(renderer, {
       id: "gup-dialog",
       position: "absolute",
       zIndex: 100,
-      title: ` ${title} `,
+      title: ` ${appearance.glyphs(title)} `,
       border: true,
       borderStyle: "double",
-      borderColor: tui.RGBA.fromIndex(ACCENT),
-      backgroundColor: tui.RGBA.defaultBackground(),
+      borderColor: look.color,
+      ...(look.customChars && { customBorderChars: look.customChars }),
+      ...(look.titleColor && { titleColor: look.titleColor }),
+      backgroundColor: background === "transparent" ? tui.RGBA.defaultBackground() : background,
       shouldFill: true,
       paddingX: 1,
       flexDirection: "column",
@@ -198,6 +207,20 @@ export class DialogLayer {
     box.add(body);
     renderer.root.add(box);
     return { box, body };
+  }
+
+  /** The text field painted like the rest of the screen. */
+  private inputColors() {
+    const look = this.#screen.appearance.input();
+    return {
+      textColor: look.textColor,
+      focusedTextColor: look.textColor,
+      backgroundColor: look.backgroundColor,
+      focusedBackgroundColor: look.backgroundColor,
+      placeholderColor: look.placeholderColor,
+      cursorColor: look.cursorColor,
+      attributes: look.attributes,
+    };
   }
 
   /** Size the box to its content and center it. */

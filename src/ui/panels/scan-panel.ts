@@ -1,3 +1,4 @@
+import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
 import { fit, seg, type Line } from "../tui/styled-lines.js";
 import { PAGE_STEP, placeholder, type Panel, type Viewport } from "./panel.js";
@@ -33,7 +34,9 @@ interface Progress {
   readonly outcome?: ProviderOutcome;
 }
 
-const SPINNER = ["◐", "◓", "◑", "◒"];
+const SPINNER = STATUS_GLYPHS.running;
+const DONE = `${STATUS_GLYPHS.success} `;
+const FAILED = `${STATUS_GLYPHS.failed} `;
 const BAR_WIDTH = 30;
 const NAME_WIDTH = 30;
 const RESULT_WIDTH = 34;
@@ -128,7 +131,7 @@ export class ScanPanel implements Panel, ScanEvents {
 
   private headline(): Line {
     if (this.#failure)
-      return [seg("✖ ", "danger"), seg(`Scan interrompu : ${this.#failure}`, "danger")];
+      return [seg(FAILED, "danger"), seg(`Scan interrompu : ${this.#failure}`, "danger")];
     if (this.#phase === "detecting") {
       return [seg(this.spinner(), "accent"), seg("  détection des providers…")];
     }
@@ -140,7 +143,7 @@ export class ScanPanel implements Panel, ScanEvents {
       );
       const seconds = (this.#elapsedMs / 1000).toFixed(1);
       return [
-        seg("✔ ", "success"),
+        seg(DONE, "success"),
         seg(`Scan terminé en ${seconds}s`, "strong"),
         seg(` — ${this.#total} provider(s), ${updates} mise(s) à jour`, "muted"),
       ];
@@ -167,7 +170,7 @@ export class ScanPanel implements Panel, ScanEvents {
   }
 
   private spinner(): string {
-    return SPINNER[this.#frame % SPINNER.length] ?? "◐";
+    return SPINNER[this.#frame % SPINNER.length] ?? "";
   }
 }
 
@@ -177,7 +180,7 @@ function progressLine({ name, outcome }: Progress): Line {
   const time = seg(`${(outcome.ms / 1000).toFixed(1)}s`.padStart(7), "muted");
   if (outcome.error) {
     return [
-      seg("  ✖ ", "danger"),
+      seg(`  ${FAILED}`, "danger"),
       seg(fit(name, NAME_WIDTH)),
       seg(fit(outcome.error, RESULT_WIDTH), "danger"),
       time,
@@ -185,7 +188,7 @@ function progressLine({ name, outcome }: Progress): Line {
   }
   const result = outcome.updates > 0 ? `${outcome.updates} mise(s) à jour` : "à jour";
   return [
-    seg("  ✔ ", "success"),
+    seg(`  ${DONE}`, "success"),
     seg(fit(name, NAME_WIDTH)),
     seg(fit(result, RESULT_WIDTH), outcome.updates > 0 ? "warning" : "muted"),
     time,

@@ -11,7 +11,7 @@ import { ScanPanel, type ScanEvents } from "../panels/scan-panel.js";
 import { Chrome, CHROME_ROWS } from "../tui/chrome.js";
 import { DialogLayer } from "../tui/dialog.js";
 import type { KeyPress, Screen } from "../tui/screen-host.js";
-import { PANEL_FRAME, TextPanel } from "../tui/text-panel.js";
+import { panelFrame, TextPanel } from "../tui/text-panel.js";
 import {
   entryAtRow,
   NAV,
@@ -276,9 +276,10 @@ export class MenuSession {
 
   private viewport(): Viewport {
     const { terminalWidth, terminalHeight } = this.#screen.renderer;
+    const frame = panelFrame(this.#screen.appearance.density);
     return {
-      width: Math.max(10, terminalWidth - SIDEBAR_WIDTH - PANEL_FRAME.cols),
-      height: Math.max(3, terminalHeight - CHROME_ROWS - PANEL_FRAME.rows),
+      width: Math.max(10, terminalWidth - SIDEBAR_WIDTH - frame.cols),
+      height: Math.max(3, terminalHeight - CHROME_ROWS - frame.rows),
     };
   }
 
@@ -288,7 +289,8 @@ export class MenuSession {
     this.#main.show(panel.render(this.viewport()));
     this.#main.setFocused(this.#focus === "main");
     this.#sidebar.setFocused(this.#focus === "sidebar");
-    this.#sidebar.show(renderSidebar(this.sidebarState(), SIDEBAR_WIDTH - PANEL_FRAME.cols));
+    const frame = panelFrame(this.#screen.appearance.density);
+    this.#sidebar.show(renderSidebar(this.sidebarState(), SIDEBAR_WIDTH - frame.cols));
     this.#chrome.setFacts(this.facts());
     this.#chrome.setHints(this.hints(panel));
   }
