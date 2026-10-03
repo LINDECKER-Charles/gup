@@ -1,5 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { inferSourceFromPath } from "../../src/core/install-source.js";
+import { inferSourceFromPath, upgradeNeedsRoot } from "../../src/core/install-source.js";
+
+describe("upgradeNeedsRoot", () => {
+  it("is true for a distro package the manager can name", () => {
+    expect(upgradeNeedsRoot("apt", { apt: "pyenv" })).toBe(true);
+    expect(upgradeNeedsRoot("dnf", { dnf: "dotnet-sdk-8.0" })).toBe(true);
+  });
+
+  it("is false when the distro has no package to upgrade (manual SKIP, no sudo)", () => {
+    expect(upgradeNeedsRoot("dnf", { apt: "pyenv" })).toBe(false);
+  });
+
+  it("is false for managers that never run under sudo", () => {
+    expect(upgradeNeedsRoot("brew", { brew: "pyenv" })).toBe(false);
+    expect(upgradeNeedsRoot("winget", { winget: "Microsoft.DotNet.SDK.8" })).toBe(false);
+    expect(upgradeNeedsRoot("manual", { apt: "pyenv" })).toBe(false);
+  });
+});
 
 describe("inferSourceFromPath", () => {
   it("detects scoop shims", () => {

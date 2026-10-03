@@ -488,6 +488,28 @@ describe("updateCommand: admin batch elevation", () => {
     expect(runElevatedBatchMock).toHaveBeenCalledWith(["choco:nodejs"]);
   });
 
+  it.each([
+    ["win32", "1 paquet(s) nécessitent les droits administrateur. Ouvrir une invite UAC pour les traiter en bloc ?"],
+    ["darwin", "1 paquet(s) nécessitent les droits administrateur : sudo demandera votre mot de passe. Les traiter en bloc ?"],
+  ] as const)("names the %s elevation mechanism in the batch question", async (platform, question) => {
+    const originalPlatform = process.platform;
+    const adminPkg = { id: "gettext", current: "1", latest: "2", requiresAdmin: true };
+    scanWithProgressMock.mockResolvedValueOnce({
+      results: [{ providerId: "macports", available: true, packages: [adminPkg] }],
+      detectedCount: 1,
+    });
+    promptPackageSelectionMock.mockResolvedValueOnce([{ providerId: "macports", pkg: adminPkg }]);
+    getProviderMock.mockReturnValue(mkProvider({ id: "macports" }));
+    confirmMock.mockResolvedValueOnce(false);
+    Object.defineProperty(process, "platform", { value: platform, configurable: true });
+    try {
+      await updateCommand({});
+    } finally {
+      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+    }
+    expect(confirmMock.mock.calls[0]![0]).toEqual({ message: question, default: true });
+  });
+
   it("does not invoke runElevatedBatch when no package is marked requiresAdmin", async () => {
     const pkg = { id: "fzf", current: "1", latest: "2" };
     scanWithProgressMock.mockResolvedValueOnce({

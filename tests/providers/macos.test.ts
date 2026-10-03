@@ -6,21 +6,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * gem provider from flooding a Mac scan with SIP-locked stdlib gems.
  */
 
-const { commandExistsMock, runMock, runInheritMock, whichFirstMock } = vi.hoisted(
-  () => ({
+const { commandExistsMock, runMock, runInheritMock, whichFirstMock, isElevatedMock } =
+  vi.hoisted(() => ({
     commandExistsMock: vi.fn(),
     runMock: vi.fn(),
     runInheritMock: vi.fn(),
     whichFirstMock: vi.fn(),
-  }),
-);
+    isElevatedMock: vi.fn(),
+  }));
 
 vi.mock("../../src/core/runner.js", () => ({
   commandExists: commandExistsMock,
   run: runMock,
   runInherit: runInheritMock,
   whichFirst: whichFirstMock,
-  isElevated: vi.fn(),
+  isElevated: isElevatedMock,
 }));
 
 import { BrewProvider, parseBrewOutdated } from "../../src/providers/os/brew.js";
@@ -362,6 +362,22 @@ describe("MacPortsProvider", () => {
       "-N",
       "upgrade",
       "outdated",
+    ]);
+  });
+
+  it("flags every row for the single sudo batch when gup is not root", async () => {
+    runMock.mockResolvedValueOnce(mkRun("gettext  0.21_0 < 0.22_1"));
+    isElevatedMock.mockResolvedValueOnce(false);
+    await expect(new MacPortsProvider().listOutdated()).resolves.toEqual([
+      { id: "gettext", name: "gettext", current: "0.21_0", latest: "0.22_1", requiresAdmin: true },
+    ]);
+  });
+
+  it("leaves rows to update in place when gup already runs as root", async () => {
+    runMock.mockResolvedValueOnce(mkRun("gettext  0.21_0 < 0.22_1"));
+    isElevatedMock.mockResolvedValueOnce(true);
+    await expect(new MacPortsProvider().listOutdated()).resolves.toEqual([
+      { id: "gettext", name: "gettext", current: "0.21_0", latest: "0.22_1" },
     ]);
   });
 

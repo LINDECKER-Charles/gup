@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 
-import { runInherit } from "./runner.js";
-import type { UpdateOutcome } from "./types.js";
+import { isElevated, runInherit } from "./runner.js";
+import type { OutdatedPackage, UpdateOutcome } from "./types.js";
 
 /**
  * Shape of the temp file written by the parent before spawning the elevated
@@ -57,6 +57,17 @@ export async function runElevatedBatch(
   } finally {
     await cleanup();
   }
+}
+
+/**
+ * Scan rows whose update needs UAC or sudo, made ready for the elevated
+ * batch: flagged `requiresAdmin` unless this process already runs elevated
+ * (the batch child itself, or gup started with sudo), in which case they
+ * update in place without any prompt.
+ */
+export async function flagForElevation(rows: OutdatedPackage[]): Promise<OutdatedPackage[]> {
+  if (rows.length === 0 || (await isElevated())) return rows;
+  return rows.map((row) => ({ ...row, requiresAdmin: true }));
 }
 
 /**
@@ -160,9 +171,10 @@ function fallbackFailure(target: string, err: unknown): UpdateOutcome {
  * configured in "inline" mode can keep the output in the parent console;
  * we do not probe for sudo yet to keep the failure mode predictable.
  *
- * POSIX: there is no choco-grade admin requirement on Linux/macOS that this
- * CLI surfaces today, but `sudo` is the canonical fallback if the need
- * arises. Same contract: the child writes outcomes to `<inputFile>.out`.
+ * POSIX: `sudo` runs the child as root, so the providers whose updates shell
+ * `sudo` themselves (MacPorts, Fink, pkgin, apt/dnf delegations) run inside it
+ * without prompting again — one password for the whole batch. Same contract:
+ * the child writes outcomes to `<inputFile>.out`.
  */
 async function defaultSpawner(inputFile: string): Promise<void> {
   const node = process.execPath;

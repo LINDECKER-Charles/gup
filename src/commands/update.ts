@@ -154,9 +154,9 @@ async function runSelection(
   opts: { yes?: boolean } = {},
 ): Promise<number> {
   // Split admin-required packages out so we can batch them behind a single
-  // UAC prompt instead of letting each provider SKIP them at update time.
-  // `requiresAdmin` is set at scan time (see ChocoProvider.listOutdated),
-  // and is only true when the current process is NOT already elevated.
+  // UAC or sudo prompt instead of letting each provider SKIP (choco) or
+  // prompt (sudo) on its own at update time. `requiresAdmin` is set at scan
+  // time and is only true when the current process is NOT already elevated.
   const adminSelection = selection.filter((s) => s.pkg.requiresAdmin);
   const grouped = groupByProvider(selection.filter((s) => !s.pkg.requiresAdmin));
 
@@ -323,12 +323,15 @@ function recordAdminBatch(
 }
 
 function confirmElevation(count: number): Promise<boolean> {
-  return confirm({
-    message:
-      `${count} paquet(s) nécessitent les droits administrateur. ` +
-      `Ouvrir une invite UAC pour les traiter en bloc ?`,
-    default: true,
-  });
+  return confirm({ message: elevationQuestion(count), default: true });
+}
+
+/** Windows elevates through a UAC prompt; elsewhere sudo asks in this terminal. */
+function elevationQuestion(count: number): string {
+  const need = `${count} paquet(s) nécessitent les droits administrateur`;
+  return process.platform === "win32"
+    ? `${need}. Ouvrir une invite UAC pour les traiter en bloc ?`
+    : `${need} : sudo demandera votre mot de passe. Les traiter en bloc ?`;
 }
 
 function elevationDeclined(

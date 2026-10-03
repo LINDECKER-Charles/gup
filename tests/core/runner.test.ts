@@ -393,10 +393,30 @@ describe("runner.whichFirst / commandExists", () => {
 });
 
 describe("runner.isElevated", () => {
-  it("returns true on non-win32 platforms without probing", async () => {
+  const originalGetuid = process.getuid;
+  const setGetuid = (getuid: (() => number) | undefined): void => {
+    Object.defineProperty(process, "getuid", { value: getuid, configurable: true, writable: true });
+  };
+  afterEach(() => setGetuid(originalGetuid));
+
+  it("reports root as elevated on POSIX, without probing", async () => {
     setPlatform("linux");
+    setGetuid(() => 0);
     await expect(isElevated()).resolves.toBe(true);
     expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a regular POSIX user as not elevated", async () => {
+    setPlatform("darwin");
+    setGetuid(() => 501);
+    await expect(isElevated()).resolves.toBe(false);
+    expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it("reports not elevated when the platform has no uid to check", async () => {
+    setPlatform("linux");
+    setGetuid(undefined);
+    await expect(isElevated()).resolves.toBe(false);
   });
 
   it("returns true on win32 when `net session` succeeds", async () => {

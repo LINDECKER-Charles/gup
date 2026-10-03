@@ -3,11 +3,40 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
+const { isElevatedMock } = vi.hoisted(() => ({ isElevatedMock: vi.fn() }));
+vi.mock("../../src/core/runner.js", () => ({ isElevated: isElevatedMock, runInherit: vi.fn() }));
+
 import {
+  flagForElevation,
   readBatchInput,
   runElevatedBatch,
   writeBatchOutput,
 } from "../../src/core/elevation.js";
+
+describe("flagForElevation", () => {
+  const rows = [
+    { id: "gettext", current: "0.21", latest: "0.22" },
+    { id: "libiconv", current: "1.16", latest: "1.17", note: "x" },
+  ];
+
+  it("routes every row to the elevated batch when the process is not elevated", async () => {
+    isElevatedMock.mockResolvedValueOnce(false);
+    await expect(flagForElevation(rows)).resolves.toEqual([
+      { id: "gettext", current: "0.21", latest: "0.22", requiresAdmin: true },
+      { id: "libiconv", current: "1.16", latest: "1.17", note: "x", requiresAdmin: true },
+    ]);
+  });
+
+  it("leaves rows untouched when the process already runs elevated", async () => {
+    isElevatedMock.mockResolvedValueOnce(true);
+    await expect(flagForElevation(rows)).resolves.toEqual(rows);
+  });
+
+  it("does not probe elevation for an empty scan", async () => {
+    await expect(flagForElevation([])).resolves.toEqual([]);
+    expect(isElevatedMock).not.toHaveBeenCalled();
+  });
+});
 
 /**
  * Per-test sandbox: a freshly-mkdtemp'd directory with user-scoped perms

@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { posix as posixPath } from "node:path";
 
+import { flagForElevation } from "../../core/elevation.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit, whichFirst } from "../../core/runner.js";
 import {
@@ -9,11 +10,21 @@ import {
   describeSource,
   detectInstallSource,
   resolveBinaryPath,
+  upgradeNeedsRoot,
+  type PackageIds,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 const ID = "pyenv";
+
+/**
+ * Upstream package names, verified rather than guessed: `brew install pyenv`
+ * is what pyenv's own README documents, and Debian ships a `pyenv` package
+ * from trixie onwards. Fedora has none, so no `dnf` id — a dnf-owned binary
+ * gets MANUAL_MESSAGE.
+ */
+const PACKAGE_IDS: PackageIds = { brew: "pyenv", apt: "pyenv" };
 
 /**
  * Shown when no automatic path applies: either nothing on the machine claims
@@ -102,11 +113,7 @@ export class PyenvProvider implements Provider {
       return await delegateUpdate({
         id: ID,
         binary: "pyenv",
-        // Both ids are the upstream package names, verified rather than
-        // guessed: `brew install pyenv` is what pyenv's own README documents,
-        // and Debian ships a `pyenv` package from trixie onwards. Fedora has
-        // none, so no `dnf` id — a dnf-owned binary gets MANUAL_MESSAGE.
-        packageIds: { brew: "pyenv", apt: "pyenv" },
+        packageIds: PACKAGE_IDS,
         manualMessage: MANUAL_MESSAGE,
       });
     } catch {
@@ -206,7 +213,7 @@ async function scan(): Promise<OutdatedPackage[]> {
   const order = compareReleases(version.release, latest);
   if (order === null || order >= 0) return [];
 
-  return [await buildRow(version.raw, latest)];
+  return buildRows(version.raw, latest);
 }
 
 /**
@@ -215,21 +222,25 @@ async function scan(): Promise<OutdatedPackage[]> {
  *
  * The git checkout is tested first and wins. A clone install puts the binary
  * in `$PYENV_ROOT/bin`, which no package manager owns, so detectInstallSource
- * answers "manual" while `git pull` handles the upgrade perfectly.
+ * answers "manual" while `git pull` handles the upgrade perfectly. A distro
+ * package upgrades through `sudo apt-get`, so that row joins the CLI's single
+ * elevated batch instead of prompting on its own.
  */
-async function buildRow(current: string, latest: string): Promise<OutdatedPackage> {
+async function buildRows(current: string, latest: string): Promise<OutdatedPackage[]> {
   if (await gitCheckoutRoot()) {
-    return {
-      id: ID,
-      name: "pyenv",
-      current,
-      latest,
-      note: "clone git — git pull --ff-only",
-    };
+    return [
+      {
+        id: ID,
+        name: "pyenv",
+        current,
+        latest,
+        note: "clone git — git pull --ff-only",
+      },
+    ];
   }
 
   const source = await detectInstallSource("pyenv");
-  return {
+  const row: OutdatedPackage = {
     id: ID,
     name: "pyenv",
     current,
@@ -239,6 +250,7 @@ async function buildRow(current: string, latest: string): Promise<OutdatedPackag
         ? "source inconnue — mise à jour manuelle"
         : describeSource(source),
   };
+  return upgradeNeedsRoot(source, PACKAGE_IDS) ? flagForElevation([row]) : [row];
 }
 
 /**

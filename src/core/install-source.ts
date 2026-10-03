@@ -180,6 +180,9 @@ interface UpgradeCommand {
   shell?: boolean;
 }
 
+/** Distro package managers write system prefixes, so their upgrades run under it. */
+const SUDO = "sudo";
+
 /**
  * Upgrade command per package manager, or null when `packageIds` does not
  * carry the id that manager needs — in which case the caller falls back to
@@ -224,15 +227,25 @@ const UPGRADE_COMMANDS: Record<
   apt: (ids) =>
     ids.apt
       ? {
-          command: "sudo",
+          command: SUDO,
           args: ["apt-get", "install", "--only-upgrade", "-y", ids.apt],
         }
       : null,
   dnf: (ids) =>
     ids.dnf
-      ? { command: "sudo", args: ["dnf", "upgrade", "-y", ids.dnf] }
+      ? { command: SUDO, args: ["dnf", "upgrade", "-y", ids.dnf] }
       : null,
 };
+
+/**
+ * True when the upgrade runPmUpdate would run for `source` goes through
+ * `sudo` (a distro package). A scan asks so the row can join the single
+ * elevated batch (see flagForElevation) instead of prompting mid-run.
+ */
+export function upgradeNeedsRoot(source: InstallSource, packageIds: PackageIds): boolean {
+  if (source === "manual") return false;
+  return UPGRADE_COMMANDS[source](packageIds)?.command === SUDO;
+}
 
 // eslint-disable-next-line max-params -- public signature called from ~40 providers; the 4 arguments are cohesive, and delegateUpdate already offers the object-shaped variant.
 export async function runPmUpdate(

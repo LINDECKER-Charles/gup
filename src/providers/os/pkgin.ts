@@ -1,3 +1,4 @@
+import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
@@ -80,8 +81,8 @@ export class PkginProvider implements Provider {
     if (candidates === null) return [];
 
     const rows = parsePkginOutdated(listing, candidates);
-    if (rows.length > 0) return rows;
-    return (await remoteCatalogueIsPopulated()) ? [] : [refreshRow()];
+    if (rows.length > 0) return flagForElevation(rows);
+    return (await remoteCatalogueIsPopulated()) ? [] : flagForElevation([refreshRow()]);
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
@@ -379,9 +380,9 @@ async function remoteCatalogueIsPopulated(): Promise<boolean> {
  * for the silly reason that sudo is missing on a box where the rights are
  * already there.
  *
- * Rows carry no `requiresAdmin`: `isElevated()` reports true on POSIX, so the
- * CLI's elevation batch — a Windows UAC affordance — would never fire. Same
- * call as MacPorts.
+ * Rows carry `requiresAdmin` unless gup already runs as root, so the CLI runs
+ * them in its single `sudo` batch, where this function takes the root branch.
+ * Same call as MacPorts.
  *
  * Wrapped because `runInherit` validates its argv and throws on a package id
  * carrying control characters; `update()` takes that id straight from the CLI.

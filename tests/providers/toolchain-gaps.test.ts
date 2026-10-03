@@ -7,21 +7,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * living behind the opposite platform gate.
  */
 
-const { commandExistsMock, runMock, runInheritMock, whichFirstMock } = vi.hoisted(
-  () => ({
+const { commandExistsMock, runMock, runInheritMock, whichFirstMock, isElevatedMock } =
+  vi.hoisted(() => ({
     commandExistsMock: vi.fn(),
     runMock: vi.fn(),
     runInheritMock: vi.fn(),
     whichFirstMock: vi.fn(),
-  }),
-);
+    isElevatedMock: vi.fn(),
+  }));
 
 vi.mock("../../src/core/runner.js", () => ({
   commandExists: commandExistsMock,
   run: runMock,
   runInherit: runInheritMock,
   whichFirst: whichFirstMock,
-  isElevated: vi.fn(),
+  isElevated: isElevatedMock,
 }));
 
 const {
@@ -38,13 +38,20 @@ const {
   resolveBinaryPathMock: vi.fn(),
 }));
 
-vi.mock("../../src/core/install-source.js", () => ({
-  delegateUpdate: delegateUpdateMock,
-  detectInstallSource: detectInstallSourceMock,
-  describeSource: describeSourceMock,
-  runPmUpdate: runPmUpdateMock,
-  resolveBinaryPath: resolveBinaryPathMock,
-}));
+// upgradeNeedsRoot stays real: it reads the same command table runPmUpdate uses.
+vi.mock("../../src/core/install-source.js", async () => {
+  const actual = await vi.importActual<typeof import("../../src/core/install-source.js")>(
+    "../../src/core/install-source.js",
+  );
+  return {
+    delegateUpdate: delegateUpdateMock,
+    detectInstallSource: detectInstallSourceMock,
+    describeSource: describeSourceMock,
+    runPmUpdate: runPmUpdateMock,
+    resolveBinaryPath: resolveBinaryPathMock,
+    upgradeNeedsRoot: actual.upgradeNeedsRoot,
+  };
+});
 
 const { fetchGitHubReleaseLatestMock } = vi.hoisted(() => ({
   fetchGitHubReleaseLatestMock: vi.fn(),
@@ -976,6 +983,37 @@ describe("PyenvProvider.listOutdated", () => {
     const rows = await new PyenvProvider().listOutdated();
     expect(rows[0]).toMatchObject({ note: "source inconnue — mise à jour manuelle" });
     expect(rows[0]).not.toHaveProperty("manual");
+  });
+
+  it("flags a distro package for the single sudo batch when gup is not root", async () => {
+    pyenvRuns({});
+    fetchGitHubReleaseLatestMock.mockResolvedValueOnce("2.9.0");
+    detectInstallSourceMock.mockResolvedValueOnce("apt");
+    isElevatedMock.mockResolvedValueOnce(false);
+
+    const rows = await new PyenvProvider().listOutdated();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.requiresAdmin).toBe(true);
+  });
+
+  it("leaves a distro package to update in place when gup already runs as root", async () => {
+    pyenvRuns({});
+    fetchGitHubReleaseLatestMock.mockResolvedValueOnce("2.9.0");
+    detectInstallSourceMock.mockResolvedValueOnce("apt");
+    isElevatedMock.mockResolvedValueOnce(true);
+
+    const rows = await new PyenvProvider().listOutdated();
+    expect(rows[0]?.requiresAdmin).toBeUndefined();
+  });
+
+  it("never flags a source whose upgrade needs no sudo (dnf has no pyenv package)", async () => {
+    pyenvRuns({});
+    fetchGitHubReleaseLatestMock.mockResolvedValueOnce("2.9.0");
+    detectInstallSourceMock.mockResolvedValueOnce("dnf");
+
+    const rows = await new PyenvProvider().listOutdated();
+    expect(rows[0]?.requiresAdmin).toBeUndefined();
+    expect(isElevatedMock).not.toHaveBeenCalled();
   });
 
   it("returns [] rather than throwing when the spawn is rejected", async () => {

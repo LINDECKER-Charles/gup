@@ -426,13 +426,19 @@ async function isCommandFile(candidate: string, isWindows: boolean): Promise<boo
   }
 }
 
+const ROOT_UID = 0;
+
 /**
+ * Whether this process already holds administrator rights.
+ *
  * Windows: `net session` requires admin privileges, so its exit code is a
- * reliable cheap probe for elevation. Non-Windows always reports true since
- * the providers that care about this (choco) are Windows-only anyway.
+ * reliable cheap probe. POSIX: running as root — the sudo'd elevated batch
+ * child, or a user who started gup with sudo. Providers whose update needs
+ * UAC or sudo flag their rows `requiresAdmin` only when this is false, so a
+ * single prompt covers the whole batch.
  */
 export async function isElevated(): Promise<boolean> {
-  if (process.platform !== "win32") return true;
+  if (process.platform !== "win32") return process.getuid?.() === ROOT_UID;
   const result = await run("net", ["session"]);
   return !result.failed;
 }
