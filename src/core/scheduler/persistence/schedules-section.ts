@@ -24,6 +24,11 @@ import {
 
 export interface SchedulesSection {
   readonly schedules: readonly Schedule[];
+  /**
+   * Runs that finished up to this instant were seen in the menu's
+   * Planification view (ISO 8601, UTC); later ones are announced. Null: never.
+   */
+  readonly seenRunsUntil: string | null;
 }
 
 const ID_PATTERN = /^[0-9a-f]{8}$/;
@@ -40,12 +45,14 @@ const INVALID = -1;
 export const SCHEDULES_SECTION: ConfigSectionDef<SchedulesSection> = defineSection({
   key: "scheduler",
   version: 1,
-  defaults: { schedules: [] },
+  // Every field has a default: the store writes the fields its defaults name.
+  defaults: { schedules: [], seenRunsUntil: null },
   parse: (read) => ({
     schedules: read.objects("schedules", MAX_SCHEDULES).flatMap((entry) => {
       const parsed = parseSchedule(entry);
       return parsed ? [parsed] : [];
     }),
+    seenRunsUntil: isoText(read, "seenRunsUntil") ?? null,
   }),
 });
 

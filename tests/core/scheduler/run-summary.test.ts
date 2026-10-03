@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { TickPlan, TargetResult } from "../../../src/core/scheduler/model/types.js";
-import { runStatusOf, summarizeRun } from "../../../src/core/scheduler/run-summary.js";
+import type {
+  RunKind,
+  SchedulerState,
+  ScheduleRunRecord,
+  TargetResult,
+  TickPlan,
+} from "../../../src/core/scheduler/model/types.js";
+import {
+  runStatusOf,
+  summarizeRun,
+  unseenRuns,
+} from "../../../src/core/scheduler/run-summary.js";
 import { buildReport } from "../../../src/core/update/update-report.js";
 import type { PlannedUpdate } from "../../../src/core/update/update-ports.js";
 import { outcome, pkg } from "../../support/builders.js";
@@ -107,5 +117,37 @@ describe("summarizeRun", () => {
         { target: "npm-g:typescript", status: "no-update" },
       ],
     });
+  });
+});
+
+describe("unseenRuns", () => {
+  const finishedAt = (iso: string, status: ScheduleRunRecord["status"], kind: RunKind) => ({
+    kind,
+    status,
+    startedAt: iso,
+    finishedAt: iso,
+    targets: status === "failed" ? [result("failed")] : [result("updated")],
+  });
+  const schedules = ["a1b2c3d4", "0badf00d", "cafe0001", "cafe0002"].map((id) => schedule({ id }));
+  const state: SchedulerState = {
+    v: 1,
+    schedules: {
+      a1b2c3d4: { lastRun: finishedAt("2026-10-05T09:05:00.000Z", "success", "on-time") },
+      "0badf00d": { lastRun: finishedAt("2026-10-05T10:05:00.000Z", "failed", "catch-up") },
+      cafe0001: { lastRun: finishedAt("2026-10-05T11:00:00.000Z", "success", "manual") },
+      cafe0002: { lastRun: finishedAt("2026-10-05T11:00:00.000Z", "missed", "on-time") },
+      deadbeef: { lastRun: finishedAt("2026-10-05T11:00:00.000Z", "failed", "on-time") },
+    },
+  };
+
+  it("counts the scheduled runs of existing schedules, never the user's own nor a missed one", () => {
+    expect(unseenRuns({ schedules, state, seenUntil: null })).toEqual({ runs: 2, failures: 1 });
+  });
+
+  it("forgets what finished before the user last looked", () => {
+    const seenUntil = new Date("2026-10-05T09:30:00Z");
+    expect(unseenRuns({ schedules, state, seenUntil })).toEqual({ runs: 1, failures: 1 });
+    const later = new Date("2026-10-05T12:00:00Z");
+    expect(unseenRuns({ schedules, state, seenUntil: later })).toEqual({ runs: 0, failures: 0 });
   });
 });

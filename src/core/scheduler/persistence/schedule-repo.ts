@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { ConfigStore } from "../../config/store.js";
+import { toCron } from "../model/recurrence.js";
 import type { Schedule, ScheduleDraft } from "../model/types.js";
 import { SCHEDULES_SECTION, type SchedulesSection } from "./schedules-section.js";
 
@@ -28,21 +29,33 @@ function randomScheduleId(): string {
 }
 
 export class ScheduleRepo {
-  readonly #store: ConfigStore;
+  readonly #openStore: () => ConfigStore;
   readonly #newId: () => string;
+  #store: ConfigStore;
 
-  constructor(store: ConfigStore, newId: () => string = randomScheduleId) {
-    this.#store = store;
+  /** `openStore` builds the store; {@link reload} calls it again to forget what was read. */
+  constructor(openStore: () => ConfigStore, newId: () => string = randomScheduleId) {
+    this.#openStore = openStore;
     this.#newId = newId;
+    this.#store = openStore();
   }
 
   /** The repository of the schedules file `file` (null: in memory, nothing persisted). */
   static open(file: string | null): ScheduleRepo {
-    return new ScheduleRepo(new ConfigStore({ file, maxBytes: SCHEDULES_FILE_MAX_BYTES }));
+    return new ScheduleRepo(() => new ConfigStore({ file, maxBytes: SCHEDULES_FILE_MAX_BYTES }));
+  }
+
+  /**
+   * Forget what was read: the next read sees the file as it is now, changes
+   * made by another gup included (the menu stays open for long). A store in
+   * memory starts over empty.
+   */
+  reload(): void {
+    this.#store = this.#openStore();
   }
 
   list(): readonly Schedule[] {
-    return this.#store.read(SCHEDULES_SECTION).schedules;
+    return this.#section().schedules;
   }
 
   /** A schedule by id or unique prefix (at least {@link MIN_ID_PREFIX} characters). */
@@ -71,10 +84,25 @@ export class ScheduleRepo {
         createdAt: stamp,
         armedAt: stamp,
       };
-      return { schedules: [...current.schedules, created] };
+      return { ...current, schedules: [...current.schedules, created] };
     });
     if (!created) throw new Error("scheduler: schedule not created");
     return created;
+  }
+
+  /**
+   * Give the schedule `id` the edited fields of `draft`, keeping its identity
+   * and creation date. Re-arms when its recurrence changes or it is switched
+   * on, so an edit never replays past occurrences. Null when no schedule has
+   * this id any more (removed from another terminal).
+   */
+  replace(id: string, draft: ScheduleDraft, now: Date): Schedule | null {
+    let replaced: Schedule | null = null;
+    this.#change([id], (schedule) => {
+      replaced = edited(schedule, draft, now);
+      return replaced;
+    });
+    return replaced;
   }
 
   /** Delete the schedules with these exact ids; returns how many existed. */
@@ -83,7 +111,7 @@ export class ScheduleRepo {
     this.#store.update(SCHEDULES_SECTION, (current) => {
       const kept = current.schedules.filter((schedule) => !ids.includes(schedule.id));
       removed = current.schedules.length - kept.length;
-      return { schedules: kept };
+      return { ...current, schedules: kept };
     });
     return removed;
   }
@@ -107,10 +135,29 @@ export class ScheduleRepo {
     );
   }
 
+  /** Until when the user has seen the runs' results in the menu; null when never. */
+  seenUntil(): Date | null {
+    const iso = this.#section().seenRunsUntil;
+    return iso === null ? null : new Date(iso);
+  }
+
+  /** The user has seen every run finished up to `until`. */
+  markSeen(until: Date): void {
+    this.#store.update(SCHEDULES_SECTION, (current) => ({
+      ...current,
+      seenRunsUntil: until.toISOString(),
+    }));
+  }
+
+  #section(): SchedulesSection {
+    return this.#store.read(SCHEDULES_SECTION);
+  }
+
   /** Apply `edit` to the listed schedules; null leaves one unchanged. Returns the change count. */
   #change(ids: readonly string[], edit: (schedule: Schedule) => Schedule | null): number {
     let changed = 0;
     this.#store.update(SCHEDULES_SECTION, (current) => ({
+      ...current,
       schedules: current.schedules.map((schedule) => {
         const next = ids.includes(schedule.id) ? edit(schedule) : null;
         if (next === null) return schedule;
@@ -128,4 +175,18 @@ export class ScheduleRepo {
       if (!taken.has(id)) return id;
     }
   }
+}
+
+function edited(schedule: Schedule, draft: ScheduleDraft, now: Date): Schedule {
+  const isRetimed = toCron(schedule.recurrence) !== toCron(draft.recurrence);
+  const isSwitchedOn = draft.enabled && !schedule.enabled;
+  return {
+    ...schedule,
+    name: draft.name.trim(),
+    recurrence: draft.recurrence,
+    targets: draft.targets,
+    enabled: draft.enabled,
+    options: draft.options,
+    ...((isRetimed || isSwitchedOn) && { armedAt: now.toISOString() }),
+  };
 }

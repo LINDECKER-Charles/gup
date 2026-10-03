@@ -6,6 +6,7 @@ import type {
   RunKind,
   RunStatus,
   Schedule,
+  SchedulerState,
   ScheduleRunRecord,
   TargetResult,
   TickPlan,
@@ -89,4 +90,34 @@ function resultOf(outcome: UpdateOutcome, pkg: OutdatedPackage): Omit<TargetResu
   const message = outcome.message !== undefined ? { message: outcome.message } : {};
   if (outcome.success) return { status: "updated", from: pkg.current, to: pkg.latest, ...message };
   return { status: outcome.skipped === true ? "skipped" : "failed", ...message };
+}
+
+/** Runs made by the OS trigger that the user has not looked at yet. */
+export interface UnseenRuns {
+  readonly runs: number;
+  /** Those with at least one failed package. */
+  readonly failures: number;
+}
+
+export interface SeenRunsInput {
+  readonly schedules: readonly Schedule[];
+  readonly state: SchedulerState;
+  /** Runs that finished up to then were seen; null: never. */
+  readonly seenUntil: Date | null;
+}
+
+/**
+ * The schedules' last runs that finished after `seenUntil` — scheduled
+ * ones only: a "run now" happened under the user's eyes, and a missed
+ * occurrence ran nothing.
+ */
+export function unseenRuns(input: SeenRunsInput): UnseenRuns {
+  const seen = input.seenUntil?.getTime() ?? Number.NEGATIVE_INFINITY;
+  const unseen = input.schedules.flatMap((schedule) => {
+    const lastRun = input.state.schedules[schedule.id]?.lastRun;
+    if (!lastRun || lastRun.kind === "manual" || lastRun.status === "missed") return [];
+    return Date.parse(lastRun.finishedAt) > seen ? [lastRun] : [];
+  });
+  const failures = unseen.filter((run) => run.targets.some((t) => t.status === "failed"));
+  return { runs: unseen.length, failures: failures.length };
 }

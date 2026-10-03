@@ -21,7 +21,7 @@ afterEach(async () => {
 
 function repo(ids: readonly string[] = ["a1b2c3d4", "a1b2ffff", "0badf00d"]): ScheduleRepo {
   const queue = [...ids];
-  return new ScheduleRepo(new ConfigStore({ file }), () => queue.shift() ?? "ffffffff");
+  return new ScheduleRepo(() => new ConfigStore({ file }), () => queue.shift() ?? "ffffffff");
 }
 
 const draft: ScheduleDraft = {
@@ -91,6 +91,56 @@ describe("ScheduleRepo", () => {
     repo(["0badf00d"]).create(draft, MONDAY);
     mine.create(draft, MONDAY);
     expect(repo().list().map((schedule) => schedule.id)).toEqual(["0badf00d", "a1b2c3d4"]);
+  });
+
+  it("sees another process's change only once reloaded", () => {
+    const menu = repo();
+    expect(menu.list()).toEqual([]);
+    repo().create(draft, MONDAY);
+    expect(menu.list()).toEqual([]);
+    menu.reload();
+    expect(menu.list()).toHaveLength(1);
+  });
+});
+
+describe("ScheduleRepo.replace", () => {
+  const later = new Date("2026-10-20T07:00:00Z");
+  const cron = (expression: string): ScheduleDraft["recurrence"] => ({ kind: "cron", expression });
+
+  it("keeps the identity and the arming date when only names and packages change", () => {
+    const store = repo();
+    const created = store.create(draft, MONDAY);
+    const edit = { ...draft, name: " Navigateurs ", targets: [target("winget", "Mozilla.Firefox")] };
+    expect(store.replace(created.id, edit, later)).toEqual({
+      ...created,
+      name: "Navigateurs",
+      targets: edit.targets,
+    });
+    expect(store.list()).toEqual([store.find(created.id)]);
+  });
+
+  it("re-arms when the recurrence changes or the schedule is switched on", () => {
+    const store = repo();
+    const { id } = store.create({ ...draft, enabled: false }, MONDAY);
+    const retimed = { ...draft, enabled: false, recurrence: cron("0 8 * * 1") };
+    expect(store.replace(id, retimed, later)?.armedAt).toBe(later.toISOString());
+    const evenLater = new Date("2026-11-02T07:00:00Z");
+    const switchedOn = { ...retimed, enabled: true };
+    expect(store.replace(id, switchedOn, evenLater)?.armedAt).toBe(evenLater.toISOString());
+  });
+
+  it("returns null for a schedule removed in the meantime", () => {
+    expect(repo().replace("deadbeef", draft, later)).toBeNull();
+  });
+});
+
+describe("ScheduleRepo seen runs", () => {
+  it("remembers until when runs were seen, through other changes", () => {
+    const store = repo();
+    expect(store.seenUntil()).toBeNull();
+    store.markSeen(MONDAY);
+    store.create(draft, MONDAY);
+    expect(repo().seenUntil()).toEqual(MONDAY);
   });
 });
 
