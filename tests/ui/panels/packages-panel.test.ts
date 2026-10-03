@@ -6,12 +6,20 @@ import {
   PackagesPanel,
   type PackagesOptions,
 } from "../../../src/ui/panels/packages-panel.js";
+import {
+  LAUNCH_NOTICES,
+  PACKAGES_HINTS,
+  SELECTION_BAR,
+} from "../../../src/ui/text/packages-labels.js";
 import type { KeyPress } from "../../../src/ui/tui/screen-host.js";
 
 const key = (name: string, sequence = name): KeyPress => ({ name, sequence, ctrl: false });
-const text = (lines: readonly (readonly { text: string }[])[]) =>
-  lines.map((l) => l.map((s) => s.text).join("")).join("\n");
+const lines = (rendered: readonly (readonly { text: string }[])[]) =>
+  rendered.map((l) => l.map((s) => s.text).join(""));
+const text = (rendered: readonly (readonly { text: string }[])[]) => lines(rendered).join("\n");
 const VIEW = { width: 100, height: 20 };
+/** Content rows of VIEW: 0 = column header, 1 = Winget, 2 = Git.Git, 3 = 7zip.7zip. */
+const BAR_ROW = VIEW.height - 1;
 const SCANS: ProviderScanResult[] = [
   {
     providerId: "winget",
@@ -24,11 +32,17 @@ const SCANS: ProviderScanResult[] = [
 ];
 
 function panel(options: PackagesOptions = {}) {
-  const onSubmit = vi.fn();
+  const onLaunch = vi.fn();
   const onRescan = vi.fn();
-  const view = new PackagesPanel({ onLaunch: onSubmit, onRescan }, options);
+  const view = new PackagesPanel({ onLaunch, onRescan }, options);
   view.setList(new PackageList(SCANS, () => "Winget"));
-  return { view, onSubmit, onRescan };
+  const launched = () =>
+    onLaunch.mock.calls.map((call) => call[0].map((s: { pkg: { id: string } }) => s.pkg.id));
+  return { view, onLaunch, onRescan, launched };
+}
+
+function press(view: PackagesPanel, ...names: string[]): void {
+  for (const name of names) view.press(key(name));
 }
 
 function scheduleAction() {
@@ -51,22 +65,67 @@ describe("PackagesPanel", () => {
     expect(out).toContain("pinned");
   });
 
-  it("submits the checked packages on Enter", () => {
-    const { view, onSubmit } = panel();
-    for (const k of ["down", "space", "down", "space", "return"]) view.press(key(k));
-    expect(onSubmit.mock.calls[0]![0].map((s: { pkg: { id: string } }) => s.pkg.id)).toEqual([
-      "Git.Git",
-      "7zip.7zip",
-    ]);
+  it("launches the checked packages on Enter", () => {
+    const { view, launched } = panel();
+    press(view, "down", "space", "down", "space", "return");
+    expect(launched()).toEqual([["Git.Git", "7zip.7zip"]]);
   });
 
-  it("submits the package under the cursor when nothing is checked", () => {
-    const { view, onSubmit } = panel();
-    view.press(key("down"));
-    view.press(key("return"));
-    expect(onSubmit.mock.calls[0]![0].map((s: { pkg: { id: string } }) => s.pkg.id)).toEqual([
-      "Git.Git",
-    ]);
+  it("launches nothing with nothing checked, not even the row under the cursor", () => {
+    const { view, onLaunch } = panel();
+    press(view, "down", "return");
+    expect(onLaunch).not.toHaveBeenCalled();
+    expect(text(view.render(VIEW))).toContain(LAUNCH_NOTICES.empty);
+    press(view, "down");
+    expect(text(view.render(VIEW))).not.toContain(LAUNCH_NOTICES.empty);
+  });
+
+  it("drops the notice when a new scan replaces the table", () => {
+    const { view } = panel();
+    press(view, "return");
+    view.setList(new PackageList(SCANS, () => "Winget"));
+    expect(text(view.render(VIEW))).not.toContain(LAUNCH_NOTICES.empty);
+  });
+
+  it("launches the checked packages the filter hides too", () => {
+    const { view, launched } = panel();
+    press(view, "down", "space", "/");
+    for (const c of "7z") view.press(key(c, c));
+    press(view, "return", "down", "space", "return");
+    expect(text(view.render(VIEW))).not.toContain("Git.Git");
+    expect(launched()).toEqual([["Git.Git", "7zip.7zip"]]);
+  });
+
+  it("holds Entrée back while a scan runs, the button drawn inert", () => {
+    const { view, onLaunch } = panel({ isScanning: () => true });
+    press(view, "a", "return");
+    expect(onLaunch).not.toHaveBeenCalled();
+    const rendered = view.render(VIEW);
+    expect(text(rendered)).toContain(LAUNCH_NOTICES.scanning);
+    expect(rendered.at(-1)!.at(-1)).toMatchObject({ tone: "disabled" });
+    expect(view.hints()).not.toContain("entrée");
+  });
+
+  it("keeps the selection bar on the last row, with the count and the launch key", () => {
+    const { view } = panel();
+    expect(lines(view.render(VIEW))[BAR_ROW]).toBe(SELECTION_BAR.empty);
+    expect(view.hints()).not.toContain("entrée");
+    press(view, "down", "space");
+    const rendered = lines(view.render(VIEW));
+    expect(rendered).toHaveLength(VIEW.height);
+    expect(rendered[BAR_ROW]).toMatch(/^● 1 sur 2 coché\(s\) .*Mettre à jour \(1\)/);
+    expect(view.hints()).toContain(PACKAGES_HINTS.launch(1));
+  });
+
+  it("names a by what it will do: check everything shown, or clear it", () => {
+    const { view } = panel();
+    expect(view.hints()).toContain(PACKAGES_HINTS.checkAll);
+    press(view, "a");
+    expect(view.hints()).toContain(PACKAGES_HINTS.clearAll);
+    expect(lines(view.render(VIEW))[BAR_ROW]).toMatch(/^● 2 sur 2 coché\(s\)/);
+    press(view, "a");
+    expect(view.hints()).toContain(PACKAGES_HINTS.checkAll);
+    expect(lines(view.render(VIEW))[BAR_ROW]).toBe(SELECTION_BAR.empty);
   });
 
   it("filters while typing after /, without treating letters as commands", () => {
@@ -81,14 +140,13 @@ describe("PackagesPanel", () => {
     expect(out).not.toContain("Git.Git");
   });
 
-  it("toggles the clicked row", () => {
-    const { view, onSubmit } = panel();
-    // Content rows: 0 = column header, 1 = Winget, 2 = Git.Git, 3 = 7zip.7zip
+  it("toggles the clicked row, and launches from a click on the selection bar", () => {
+    const { view, launched } = panel();
+    view.click(BAR_ROW, VIEW);
+    expect(text(view.render(VIEW))).toContain(LAUNCH_NOTICES.empty);
     view.click(3, VIEW);
-    view.press(key("return"));
-    expect(onSubmit.mock.calls[0]![0].map((s: { pkg: { id: string } }) => s.pkg.id)).toEqual([
-      "7zip.7zip",
-    ]);
+    view.click(BAR_ROW, VIEW);
+    expect(launched()).toEqual([["7zip.7zip"]]);
   });
 
   it("says when everything is up to date", () => {
