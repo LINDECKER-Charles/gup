@@ -57,6 +57,7 @@ import {
 } from "../../../src/ui/text/run-labels.js";
 import { PROMPT_IDLE_MS } from "../../../src/ui/run/prompt-hint.js";
 import { NOTIFY_MIN_RUN_MS } from "../../../src/ui/run/run-view.js";
+import { RETAINED_RECENT_PANES } from "../../../src/ui/run/terminal-panes.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
@@ -70,6 +71,8 @@ const PACKAGES = [pkg("alpha"), pkg("beta"), pkg("gamma")];
 const PANE_POINT = { x: 4, y: 25 } as const;
 /** Generous: other suites load the machine in parallel. */
 const SETTLE_MS = 10_000;
+/** Rows of the status list above the packages: the progress (or summary) line and a notice row. */
+const LIST_TOP_ROWS = 2;
 const POLL_MS = 10;
 
 interface RunMenuOptions {
@@ -167,6 +170,14 @@ async function pressCtrlG(menu: MenuDriver): Promise<void> {
   await menu.screen.flush();
 }
 
+/** Content rows of the status list titled `title`: between its top and bottom borders. */
+function statusListRows(frame: string, title: string): number {
+  const lines = frame.split("\n");
+  const top = lines.findIndex((line) => line.startsWith(`╭─ ${title} `));
+  const bottom = lines.findIndex((line, index) => index > top && line.startsWith("╰"));
+  return bottom - top - 1;
+}
+
 describe("run view", () => {
   it("updates inside the screen, one terminal per package, then back to Paquets pruned", async () => {
     const { menu, pty } = await launched();
@@ -237,6 +248,19 @@ describe("run view", () => {
     const results = await shown(menu, RUN_TITLES.done);
     expect(pty.spawned).toHaveLength(2);
     expect(results).toMatch(/↷ 2 ignoré\(s\) {3}✖ 0 échec\(s\) {3}⊘ 1 annulé\(s\)/);
+  });
+
+  it("keeps the list to the rows it needs while no terminal is on screen", async () => {
+    // More successes than the retention keeps: the first one's output is gone.
+    const packages = Array.from({ length: RETAINED_RECENT_PANES + 2 }, (_, i) => pkg(`p${i}`));
+    const { menu, pty } = await launched({ packages });
+    for (let count = 1; count <= packages.length; count++) {
+      await installsStarted(pty, count);
+      pty.last().emitExit({ exitCode: 0 });
+    }
+    // No failure: the cursor starts on the first package, shown as a placeholder.
+    const results = await shown(menu, PANE_LABELS.notRetained);
+    expect(statusListRows(results, RUN_TITLES.done)).toBe(LIST_TOP_ROWS + packages.length);
   });
 
   it("refuses q while the run goes on", async () => {
@@ -354,9 +378,9 @@ describe("run view", () => {
       },
     });
     const { menu, pty } = await launched();
-    expect(await shown(menu, "Une mise à jour planifiée est en cours")).toContain(
-      RUN_HINTS.waiting,
-    );
+    const waiting = await shown(menu, "Une mise à jour planifiée est en cours");
+    expect(waiting).toContain(RUN_HINTS.waiting);
+    expect(statusListRows(waiting, RUN_TITLES.running)).toBe(LIST_TOP_ROWS + PACKAGES.length);
     await menu.press("x", "o");
     expect(await shown(menu, RUN_TITLES.done)).toMatch(/⊘ 3 annulé\(s\)/);
     expect(pty.spawned).toHaveLength(0);

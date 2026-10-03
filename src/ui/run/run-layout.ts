@@ -54,6 +54,12 @@ export class RunLayout {
     });
     body.add(this.#root);
     this.status = new TextPanel(screen, this.#root, { id: "gup-run-status", title: "", height: 3 });
+    // The list is exactly as tall as `fit` says. A panel grows by default, and
+    // with no pane on screen (waiting, a result whose output was not kept) the
+    // terminal frame no longer holds its share: the list would take half of
+    // the free rows as blank lines, and jump as the cursor moves.
+    this.status.box.flexGrow = 0;
+    this.status.box.flexShrink = 0;
     this.#frame = new tui.BoxRenderable(renderer, {
       id: "gup-run-terminal",
       border: true,
