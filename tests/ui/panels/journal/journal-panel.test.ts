@@ -122,6 +122,7 @@ describe("JournalPanel", () => {
         title: EXPORT_LABELS.title,
         text: [EXPORT_LABELS.period("12 derniers mois"), "", EXPORT_LABELS.footer],
         choices: [
+          { label: EXPORT_LABELS.html, value: "html" },
           { label: EXPORT_LABELS.json, value: "json" },
           { label: EXPORT_LABELS.csv, value: "csv" },
           { label: EXPORT_LABELS.diagnostic, value: "diagnostic" },
@@ -146,6 +147,31 @@ describe("JournalPanel", () => {
     await settle();
 
     expect(text(journal.render(WIDE)).at(-1)).toBe(EXPORT_LABELS.failed("EACCES"));
+  });
+
+  it.each(["1", "2", "3", "4"])("opens the HTML report of the period with o on tab %s", async (tab) => {
+    const path = "C:\reports\gup-report.html";
+    const source = scriptedSource(journalData(), { ok: true, path, opened: true });
+    const { journal } = await shown(source);
+
+    journal.press(key(tab));
+    journal.press(key("o"));
+    await settle();
+
+    expect(source.export).toHaveBeenCalledWith("html", expect.objectContaining({ key: "12m" }));
+    expect(text(journal.render(WIDE)).at(-1)).toBe(EXPORT_LABELS.opened(path));
+  });
+
+  it("gives the report's path when the browser could not be opened", async () => {
+    const path = "C:\reports\gup-report.html";
+    const { journal } = await shown(scriptedSource(journalData(), { ok: true, path, opened: false }));
+
+    journal.press(key("o"));
+    await settle();
+
+    const status = journal.render(WIDE).at(-1);
+    expect(text([status ?? []])[0]).toBe(EXPORT_LABELS.notOpened(path));
+    expect(status?.[0]?.tone).toBe("warning");
   });
 
   it("writes the diagnostic archive from the Debug tab with x", async () => {

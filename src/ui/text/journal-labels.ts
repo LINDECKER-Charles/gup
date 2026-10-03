@@ -23,7 +23,7 @@ export const JOURNAL_LABELS = {
 export const TAB_LABELS = ["Activité", "Récurrence", "Événements", "Debug"] as const;
 
 export const JOURNAL_HINTS = {
-  activity: "1-4 onglets · p période · e exporter · r recharger",
+  activity: "1-4 onglets · p période · o rapport HTML · e exporter · r recharger",
   recurrence: "↑↓ naviguer · entrée détails · s tri · p période · e exporter",
   events: "↑↓ naviguer · / filtrer · f type · entrée détails · e exporter",
   debug: "↑↓ naviguer · l niveau · / filtrer · entrée détails · x diagnostic",
@@ -116,10 +116,13 @@ export const EXPORT_LABELS = {
   title: "Exporter le journal",
   period: (label: string) => `Période : ${label}`,
   footer: "Un fichier autonome, lisible hors ligne. Rien n'est envoyé.",
+  html: "Rapport HTML (s'ouvre dans le navigateur)",
   json: "Données JSON (tous les événements)",
   csv: "Tableur CSV (mises à jour)",
   diagnostic: "Archive de diagnostic .zip (pour un rapport de bug)",
   running: "export en cours…",
   written: (path: string) => `${STATUS_GLYPHS.success} Export écrit — ${path}`,
+  opened: (path: string) => `${STATUS_GLYPHS.success} Rapport ouvert dans le navigateur — ${path}`,
+  notOpened: (path: string) => `Rapport écrit, ouverture automatique impossible — ouvrez : ${path}`,
   failed: (reason: string) => `${STATUS_GLYPHS.failed} Export impossible : ${reason}`,
 } as const;

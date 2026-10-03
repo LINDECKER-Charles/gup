@@ -91,6 +91,24 @@ describe("journal source", () => {
     expect(writeDiagnostic).toHaveBeenCalledWith({ period: PERIOD, withHistory: true });
   });
 
+  it.each([true, false])("writes the HTML report and opens it (opened: %s)", async (isOpened) => {
+    const opening = { opened: isOpened, launcher: isOpened ? "explorer.exe" : null };
+    const exportHistory = vi.fn(async () => written("C:\\r\\gup-report.html", opening));
+    const source = createJournalSource({ exportHistory });
+
+    await expect(source.export("html", PERIOD)).resolves.toEqual({
+      ok: true,
+      path: "C:\\r\\gup-report.html",
+      opened: isOpened,
+    });
+    expect(exportHistory).toHaveBeenCalledWith({
+      format: "html",
+      period: PERIOD,
+      target: { kind: "file" },
+      open: true,
+    });
+  });
+
   it("turns an export failure into an outcome, never a rejection", async () => {
     const source = createJournalSource({
       exportHistory: async () => {

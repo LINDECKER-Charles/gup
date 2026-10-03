@@ -92,22 +92,30 @@ async function exportTo(
   deps: JournalSourceDeps,
 ): Promise<ExportOutcome> {
   try {
-    return { ok: true, path: await exportedFile(format, period, deps) };
+    return { ok: true, ...(await exportedFile(format, period, deps)) };
   } catch (error) {
     return { ok: false, error: reasonOf(error) };
   }
 }
 
-/** The file an export wrote, in the reports directory. */
+/** The file an export wrote, in the reports directory; the HTML report is opened too. */
 async function exportedFile(
   format: ExportFormat,
   period: Period,
   deps: JournalSourceDeps,
-): Promise<string> {
-  if (format === "diagnostic") return deps.writeDiagnostic({ period, withHistory: true });
-  const { path } = await deps.exportHistory({ format, period, target: { kind: "file" } });
+): Promise<{ readonly path: string; readonly opened?: boolean }> {
+  if (format === "diagnostic") {
+    return { path: await deps.writeDiagnostic({ period, withHistory: true }) };
+  }
+  const isReport = format === "html";
+  const { path, opened } = await deps.exportHistory({
+    format,
+    period,
+    target: { kind: "file" },
+    ...(isReport && { open: true }),
+  });
   if (path === null) throw new TypeError("a file export returned no path");
-  return path;
+  return isReport ? { path, opened: opened?.opened === true } : { path };
 }
 
 function reasonOf(error: unknown): string {

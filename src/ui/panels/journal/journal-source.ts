@@ -13,7 +13,7 @@ import type { LOG_SOURCE_LABELS } from "../../text/log-labels.js";
  * calls never reject — a failure comes back as data the panel shows.
  */
 
-export type ExportFormat = "json" | "csv" | "diagnostic";
+export type ExportFormat = "html" | "json" | "csv" | "diagnostic";
 
 export interface JournalHistory {
   readonly insights: Insights;
@@ -43,7 +43,8 @@ export interface JournalData {
 }
 
 export type ExportOutcome =
-  | { readonly ok: true; readonly path: string }
+  /** `opened`: the HTML report was handed to the browser (absent for other formats). */
+  | { readonly ok: true; readonly path: string; readonly opened?: boolean }
   | { readonly ok: false; readonly error: string };
 
 export interface JournalSource {
