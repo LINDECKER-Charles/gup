@@ -24,6 +24,8 @@ kbd,
 }
 
 /* The narrow header's scroll fade sits on the inline end. */
-[dir="rtl"] .nav-links {
-  mask-image: linear-gradient(to left, black 82%, transparent);
+@media (max-width: 859px) {
+  [dir="rtl"] .nav-links {
+    mask-image: linear-gradient(to left, black 82%, transparent);
+  }
 }

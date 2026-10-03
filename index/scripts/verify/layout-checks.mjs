@@ -22,6 +22,8 @@ const VIEWPORTS = Object.freeze([
   { name: "mobile", width: 390, height: 844 },
 ]);
 const OVERFLOW_TOLERANCE_PX = 1;
+/** Below this width the section links become a sideways-scrolling row (nav.css). */
+const NARROW_HEADER_MAX_PX = 859;
 
 const overflowOf = (page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -57,6 +59,7 @@ function rtlGeometry(page) {
       brandIsRight: box(".nav-brand").left > box(".nav-cta").left,
       terminal: getComputedStyle(document.querySelector(".term")).direction,
       code: getComputedStyle(document.querySelector(".cmd-line code")).direction,
+      isLinkRowFaded: getComputedStyle(document.querySelector(".nav-links")).maskImage !== "none",
     };
   });
 }
@@ -80,6 +83,10 @@ async function checkRightToLeft({ report, browser, origin }, pages) {
       geometry.terminal === "ltr" && geometry.code === "ltr",
     );
     report.check(`${name}: no overflow`, overflow <= OVERFLOW_TOLERANCE_PX, `${overflow}px`);
+    report.check(
+      `${name}: header links faded only where they scroll`,
+      geometry.isLinkRowFaded === viewport.width <= NARROW_HEADER_MAX_PX,
+    );
     await context.close();
   }
 }
