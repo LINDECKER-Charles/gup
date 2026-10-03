@@ -1,6 +1,11 @@
+import { realpathSync } from "node:fs";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   COMMAND_REFUSALS,
+  installationProbe,
   PACKAGE_NAME,
   resolveTaskCommand,
   type InstallationFacts,
@@ -85,5 +90,22 @@ describe("resolveTaskCommand", () => {
       packageName: () => PACKAGE_NAME,
     });
     expect(resolveTaskCommand(windows)).toEqual({ error: COMMAND_REFUSALS.unsafePath(percent) });
+  });
+});
+
+describe("installationProbe", () => {
+  it("tells whether a path exists and which package an entry point belongs to", async () => {
+    const root = await mkdtemp(join(tmpdir(), "gup-probe-"));
+    try {
+      const entry = join(root, "gup", "dist", "cli.js");
+      await mkdir(dirname(entry), { recursive: true });
+      await writeFile(entry, "");
+      const probe = installationProbe(process.platform);
+      expect(probe.exists(entry)).toBe(true);
+      expect(probe.exists(join(root, "gone.js"))).toBe(false);
+      expect(probe.packageRoot(entry)).toBe(join(realpathSync(root), "gup"));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

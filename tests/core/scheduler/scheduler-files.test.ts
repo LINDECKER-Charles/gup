@@ -1,11 +1,14 @@
 import { existsSync } from "node:fs";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  AGENT_STDERR_CAP_BYTES,
+  ensureSchedulerDir,
   purgeSchedulerFiles,
   schedulerFiles,
+  trimAgentStderr,
 } from "../../../src/core/scheduler/persistence/scheduler-files.js";
 
 describe("schedulerFiles", () => {
@@ -57,6 +60,26 @@ describe("purgeSchedulerFiles", () => {
       expect(existsSync(join(dir, "mine.txt"))).toBe(true);
     } finally {
       await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("ensureSchedulerDir / trimAgentStderr", () => {
+  it("creates the directory, and empties launchd's stderr file once it outgrows its cap", async () => {
+    const root = await mkdtemp(join(tmpdir(), "gup-files-"));
+    try {
+      const files = schedulerFiles({ env: { GUP_SCHEDULER_DIR: join(root, "nested", "scheduler") } })!;
+      ensureSchedulerDir(files);
+      expect(existsSync(files.dir)).toBe(true);
+      trimAgentStderr(files);
+      await writeFile(files.agentStderr, "x".repeat(AGENT_STDERR_CAP_BYTES));
+      trimAgentStderr(files);
+      expect((await stat(files.agentStderr)).size).toBe(AGENT_STDERR_CAP_BYTES);
+      await writeFile(files.agentStderr, "x".repeat(AGENT_STDERR_CAP_BYTES + 1));
+      trimAgentStderr(files);
+      expect((await stat(files.agentStderr)).size).toBe(0);
+    } finally {
+      await rm(root, { recursive: true, force: true });
     }
   });
 });

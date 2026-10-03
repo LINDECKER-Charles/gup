@@ -135,7 +135,7 @@ function targetIssues(
 
 function targetProblem(target: ScheduleTarget, providers: ProviderFacts): string | null {
   const packageProblem = packageIdProblem(target.packageId);
-  if (packageProblem) return `${targetKey(target)} : ${packageProblem}`;
+  if (packageProblem) return packageProblem;
   const fact = providers.lookup(target.providerId);
   if (!fact.isFound) return fact.error;
   if (!fact.canUpdateUnattended) {

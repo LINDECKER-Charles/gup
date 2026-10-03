@@ -1,4 +1,4 @@
-import { rmdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmdirSync, rmSync, statSync, truncateSync } from "node:fs";
 import { pathFlavour } from "../../platform/path-flavour.js";
 import { stateDir, type DirContext } from "../../state/app-dirs.js";
 
@@ -31,6 +31,9 @@ const FILE_NAMES = {
 
 /** Lock files the config store and the state store leave next to their files. */
 const LOCK_SUFFIX = ".lock";
+const DIR_MODE = 0o700;
+/** launchd appends the agent's stderr forever; past this, the tick starts it afresh. */
+export const AGENT_STDERR_CAP_BYTES = 1024 * 1024;
 
 /** The scheduler's files for `context`, or null when the platform gives no state dir. */
 export function schedulerFiles(context: Partial<DirContext> = {}): SchedulerFiles | null {
@@ -59,5 +62,19 @@ export function purgeSchedulerFiles(files: SchedulerFiles): void {
     rmdirSync(files.dir);
   } catch {
     // Not empty (the batch lock's display file, the user's own files) or already gone.
+  }
+}
+
+/** Create the scheduler's directory (owner-only on POSIX) if needed. */
+export function ensureSchedulerDir(files: SchedulerFiles): void {
+  mkdirSync(files.dir, { recursive: true, mode: DIR_MODE });
+}
+
+/** Empty the launchd stderr file once it outgrows {@link AGENT_STDERR_CAP_BYTES}. */
+export function trimAgentStderr(files: SchedulerFiles): void {
+  try {
+    if (statSync(files.agentStderr).size > AGENT_STDERR_CAP_BYTES) truncateSync(files.agentStderr);
+  } catch {
+    // Absent (not macOS, or nothing written yet): nothing to trim.
   }
 }

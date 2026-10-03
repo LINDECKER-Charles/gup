@@ -6,16 +6,13 @@ import {
   InstallRecordStore,
   type InstallRecord,
 } from "../../../src/core/scheduler/persistence/install-record.js";
-import type {
-  OsTrigger,
-  TriggerRegistration,
-} from "../../../src/core/scheduler/trigger/os-trigger.js";
 import { TICK_COMMAND, type TaskCommand } from "../../../src/core/scheduler/trigger/task-command.js";
 import {
   TriggerSync,
   type CurrentRegistration,
   type TriggerSyncDeps,
 } from "../../../src/core/scheduler/trigger/trigger-sync.js";
+import { FakeTrigger } from "./fake-trigger.js";
 
 const THIS_GUP = "/usr/lib/node_modules/@charles_lindecker/gup/dist/cli.js";
 const OTHER_GUP = "/home/a/.nvm/versions/node/v26.9.0/lib/node_modules/@charles_lindecker/gup/dist/cli.js";
@@ -25,32 +22,6 @@ const command = (node = "/usr/bin/node", entry = THIS_GUP): TaskCommand => ({
   entry,
   args: [TICK_COMMAND],
 });
-
-class FakeTrigger implements OsTrigger {
-  readonly mechanism = "crontab";
-  installed: TriggerRegistration | null = null;
-  readonly calls: string[] = [];
-  failure: string | null = null;
-
-  async install(registration: TriggerRegistration): Promise<void> {
-    this.calls.push("install");
-    if (this.failure) throw new Error(this.failure);
-    this.installed = registration;
-  }
-
-  async uninstall(): Promise<void> {
-    this.calls.push("uninstall");
-    this.installed = null;
-  }
-
-  async status() {
-    return { isInstalled: this.installed !== null, isDisabledByUser: false };
-  }
-
-  async location(): Promise<string> {
-    return "crontab";
-  }
-}
 
 let dir: string;
 let records: InstallRecordStore;

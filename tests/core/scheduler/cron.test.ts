@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CronExpression } from "../../../src/core/scheduler/model/cron.js";
-import { toCron } from "../../../src/core/scheduler/model/recurrence.js";
+import { toCron, upcomingRuns } from "../../../src/core/scheduler/model/recurrence.js";
 
 // The suite runs with TZ=UTC (tests/support/test-env.ts): local time is UTC.
 const SATURDAY_10H = new Date("2026-10-03T10:00:00Z");
@@ -110,5 +110,16 @@ describe("CronExpression across a DST change", () => {
       if (previous === undefined) delete process.env["TZ"];
       else process.env["TZ"] = previous;
     }
+  });
+});
+
+describe("upcomingRuns", () => {
+  it("previews the next occurrences of a recurrence, none for an invalid one", () => {
+    const weekly = { kind: "weekly", weekday: 1, at: { hour: 9, minute: 0 } } as const;
+    expect(iso(upcomingRuns(weekly, SATURDAY_10H, 2))).toEqual([
+      "2026-10-05T09:00:00.000Z",
+      "2026-10-12T09:00:00.000Z",
+    ]);
+    expect(upcomingRuns({ kind: "cron", expression: "nope" }, SATURDAY_10H, 2)).toEqual([]);
   });
 });

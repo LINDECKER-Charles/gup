@@ -46,9 +46,9 @@ describe("validateDraft", () => {
   it("refuses targets that could stand for a whole provider or inject options", () => {
     const targets = [target("winget", ""), target("npm-g", "*"), target("npm-g", "-g")];
     expect(messages(draft({ targets }))).toEqual([
-      expect.stringMatching(/^target:0: winget: : identifiant de paquet manquant/),
-      expect.stringMatching(/^target:1: npm-g:\* : les jokers/),
-      expect.stringMatching(/^target:2: npm-g:-g : un identifiant de paquet ne commence pas/),
+      expect.stringMatching(/^target:0: identifiant de paquet manquant/),
+      expect.stringMatching(/^target:1: les jokers/),
+      expect.stringMatching(/^target:2: un identifiant de paquet ne commence pas/),
     ]);
   });
 

@@ -1,7 +1,8 @@
-import { readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { pathFlavour } from "../../platform/path-flavour.js";
 import { hasControlCharacter } from "../model/schedule-target.js";
+import type { InstallationProbe } from "./trigger-sync.js";
 
 /**
  * The command the OS trigger runs: this gup, by absolute path, with its own
@@ -83,6 +84,14 @@ export function resolveTaskCommand(facts: InstallationFacts): TaskCommand | { er
 export function packageRootOf(entry: string, platform: NodeJS.Platform): string {
   const { dirname } = pathFlavour(platform);
   return dirname(dirname(entry));
+}
+
+/** The running machine's answers to "does this path exist, which package owns this entry". */
+export function installationProbe(platform: NodeJS.Platform): InstallationProbe {
+  return {
+    exists: (path) => existsSync(path),
+    packageRoot: (entry) => packageRootOf(realpathOr(entry), platform),
+  };
 }
 
 /** True when the OS would re-interpret `path` in the trigger's command line. */

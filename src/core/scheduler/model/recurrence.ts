@@ -1,3 +1,4 @@
+import { CronExpression } from "./cron.js";
 import type { Recurrence } from "./types.js";
 
 /**
@@ -26,6 +27,12 @@ export function toCron(recurrence: Recurrence): string {
 }
 
 /** Fields separated by single spaces, no leading or trailing blanks. */
-export function normalizeCron(expression: string): string {
+function normalizeCron(expression: string): string {
   return expression.trim().split(/\s+/).join(" ");
+}
+
+/** The next `count` occurrences after `from` (none for an invalid expression), for previews. */
+export function upcomingRuns(recurrence: Recurrence, from: Date, count: number): Date[] {
+  const parsed = CronExpression.tryParse(toCron(recurrence));
+  return parsed.ok ? parsed.cron.nextRuns(from, count) : [];
 }
