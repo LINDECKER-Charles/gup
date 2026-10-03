@@ -220,4 +220,57 @@ export default [
       "security/detect-unsafe-regex": "off",
     },
   },
+  {
+    // Settings and state that gup writes for its own user. Every path is a
+    // per-user root resolved by core/state/app-dirs.ts (%APPDATA%,
+    // %LOCALAPPDATA%, ~/Library/…, $XDG_*_HOME) — or the user's own
+    // GUP_CONFIG_DIR / GUP_*_DIR override, the same trust boundary as their
+    // home directory — joined with constant basenames (`config.json`,
+    // `schedules.json`, `state.json`, `<file>.lock`, a UTC-dated log name).
+    // Writes go through `wx` temp files and atomic renames; nothing here
+    // derives a path from a provider's output or a network response. Globs
+    // naming modules that later branches add are listed up front so each
+    // lands with its justification already reviewed.
+    files: [
+      "src/core/config/**/*.ts",
+      "src/core/state/file-lock.ts",
+      "src/core/update/batch-lock.ts",
+      "src/core/log/**/*.ts",
+      "src/core/history/reader.ts",
+      "src/core/scheduler/persistence/**/*.ts",
+    ],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
+    // User-requested exports and OS trigger artefacts: the output path is the
+    // user's own `--out` argument or a dated name under the reports/state
+    // dir, created with `wx` (never overwriting without `--force`); the
+    // scheduler writes its task XML / launchd plist / crontab block to
+    // fixed, per-user locations or to a private mkdtemp dir; the PTY exit
+    // file lives in a private mkdtemp dir with a random name, opened `wx`.
+    files: [
+      "src/core/export/output-file.ts",
+      "src/commands/journal/diagnostic*.ts",
+      "src/core/scheduler/trigger/windows-task.ts",
+      "src/core/scheduler/trigger/launchd-agent.ts",
+      "src/core/scheduler/trigger/crontab-trigger.ts",
+      "src/core/pty/exit-file.ts",
+    ],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
+    // Secret redaction for the debug log. Every pattern is literal-prefixed
+    // with single bounded quantifiers (`{1,256}`…) and no nested repetition;
+    // a test feeds 1 MiB of adversarial input and bounds the time. The rule
+    // flags any quantified group, which is exactly what bounded redaction
+    // needs.
+    files: ["src/core/log/redact.ts"],
+    rules: {
+      "security/detect-unsafe-regex": "off",
+    },
+  },
 ];
