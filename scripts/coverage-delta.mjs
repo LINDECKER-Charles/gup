@@ -11,7 +11,8 @@
 //     [--current coverage/coverage-summary.json] [--scope src/providers/os/]…
 //     [--metric branches]… [--tolerance 1]
 //
-// Exit codes: 0 when no file regressed, 1 when one did, 2 on a usage error.
+// Exit codes: 0 when no file regressed, 1 when one did, 2 on a usage error
+// (missing option, unreadable or malformed report).
 import { existsSync, readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 
@@ -105,19 +106,28 @@ function report(context) {
   return failures;
 }
 
-function main() {
-  let options;
+/** Options and both reports, or a usage error explaining what is wrong. */
+function loadContext(argv) {
+  const options = parseOptions(argv);
   try {
-    options = parseOptions(process.argv.slice(2));
+    return {
+      ...options,
+      baseline: readSummary(options.baseline),
+      current: readSummary(options.current),
+    };
+  } catch (error) {
+    throw new Error(`cannot read a coverage summary: ${error.message}`, { cause: error });
+  }
+}
+
+function main() {
+  let context;
+  try {
+    context = loadContext(process.argv.slice(2));
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return USAGE_ERROR;
   }
-  const context = {
-    ...options,
-    baseline: readSummary(options.baseline),
-    current: readSummary(options.current),
-  };
   return report(context) === 0 ? 0 : REGRESSION;
 }
 

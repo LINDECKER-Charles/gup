@@ -37,6 +37,7 @@ function report(root: string, files: Summary): string {
 interface Run {
   readonly code: number;
   readonly stdout: string;
+  readonly stderr: string;
 }
 
 let dir: string;
@@ -57,11 +58,11 @@ async function compare(before: Summary, after: Summary, args: readonly string[])
   await writeFile(current, report("/home/u/wt/head", after));
   const argv = [SCRIPT, "--baseline", baseline, "--current", current, ...args];
   try {
-    const { stdout } = await execFileAsync(process.execPath, argv, { cwd: REPO_ROOT });
-    return { code: 0, stdout };
+    const { stdout, stderr } = await execFileAsync(process.execPath, argv, { cwd: REPO_ROOT });
+    return { code: 0, stdout, stderr };
   } catch (error) {
-    const failure = error as { code: number; stdout: string };
-    return { code: failure.code, stdout: failure.stdout };
+    const failure = error as Run;
+    return { code: failure.code, stdout: failure.stdout, stderr: failure.stderr };
   }
 }
 
@@ -121,5 +122,12 @@ describe("coverage-delta", () => {
     const run = await compare({}, {}, ["--baseline", ""]);
 
     expect(run.code).toBe(2);
+  });
+
+  it("reports an unreadable report as a usage error, not a crash", async () => {
+    const run = await compare({}, {}, ["--current", join(dir, "missing.json")]);
+
+    expect(run.code).toBe(2);
+    expect(run.stderr).toMatch(/^cannot read a coverage summary: ENOENT/);
   });
 });
