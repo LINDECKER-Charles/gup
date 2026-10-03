@@ -38,10 +38,10 @@ Thanks for contributing. The typical contribution is **adding a provider** — a
 | Request a provider | The [*New provider*](https://github.com/LINDECKER-Charles/gup/issues/new?template=provider_request.yml) form: the commands to list and update the packages of that source |
 | Add a provider | [§ 2](#2-provider-addition-workflow): usually one file, one registry line and its tests |
 | Improve the documentation | [`docs/`](docs/README.md), in English — see [§ 10](#10-documentation) |
-| Improve the landing page or its translations | [`index/`](index/), a static Vite + React site (`cd index && npm ci && npm run build`, then `npm run verify`); commit scope `landing` |
+| Improve the landing page or its translations | [`index/`](index/), a static Vite + React site (`cd index && npm ci && npm run build`, then `npm run verify`, which drives Playwright's Chromium); commit scope `landing` |
 | Triage | Reproduce open bugs on your platform, ask for missing details, point duplicates to the original issue |
 
-Proposals that change behaviour start as an issue (the [*Feature request*](https://github.com/LINDECKER-Charles/gup/issues/new?template=feature_request.yml) form), so the scope question is settled before code is written.
+A change of behaviour starts as a [*Feature request*](https://github.com/LINDECKER-Charles/gup/issues/new?template=feature_request.yml) — why is in [GOVERNANCE.md § How decisions are made](GOVERNANCE.md#how-decisions-are-made).
 
 ---
 
@@ -244,7 +244,7 @@ Inherit the pattern in `src/providers/wsl/` — the helper `core/wsl.ts` bridges
 
 ### 5.3 "Manual-only" providers
 
-If **every** update requires a GUI action (e.g. JetBrains Toolbox, Eclipse Marketplace), the file exists to document the case but is **not** added to `ALL_PROVIDERS`. See the *Manual-only providers* comment among the IDE imports of `src/core/registry.ts`.
+If **every** update requires a GUI action (e.g. JetBrains plugins, Eclipse Marketplace features), the file exists to document the case but is **not** added to `ALL_PROVIDERS`. See the *Manual-only providers* comment among the IDE imports of `src/core/registry.ts`.
 
 ### 5.4 Providers sharing a binary with another
 
@@ -308,10 +308,10 @@ Comment and blank lines do not count (`skipComments`, `skipBlankLines`): the lim
 
 `tests/**` and `scripts/**` are exempt from the size limits but keep `max-params`, `complexity` and the unused-code rule: a long test file measures coverage, a complex test function usually checks too many things at once.
 
-Two **named exceptions**, disabled explicitly in `eslint.config.js` with the reason next to them:
+Two **named exceptions**, where the rule is miscalibrated rather than the code:
 
-- `src/core/registry.ts` (file length): the flat catalogue of providers, one import and one instantiation each. Splitting it would add files without reducing what a reader must understand.
-- `src/providers/<domain>/` (files per folder): the domain folder already is the unit of splitting the rule asks for; a sub-level such as `kubernetes/cluster/` would add navigation without adding meaning.
+- `src/core/registry.ts` (file length), disabled in `eslint.config.js` with the reason next to it: the flat catalogue of providers, one import and one instantiation each. Splitting it would add files without reducing what a reader must understand.
+- `src/providers/<domain>/` (files per folder, a review rule): the domain folder already is the unit of splitting the rule asks for; a sub-level such as `kubernetes/cluster/` would add navigation without adding meaning.
 
 A one-off exception elsewhere needs an inline `eslint-disable` with a comment that justifies it.
 
@@ -441,12 +441,10 @@ flowchart TD
 
 ## 11. Reporting a bug
 
-Use the [*Bug report*](https://github.com/LINDECKER-Charles/gup/issues/new?template=bug_report.yml) form; [SUPPORT.md](SUPPORT.md#what-to-include) lists what to include. For a provider bug, these usually make it reproducible:
+Use the [*Bug report*](https://github.com/LINDECKER-Charles/gup/issues/new?template=bug_report.yml) form; [SUPPORT.md](SUPPORT.md#what-to-include) lists what to include. A provider bug also needs:
 
-- Output of `gup doctor` (detected providers vs missing).
-- Output of `gup list --provider <id> --json` (or a redacted snippet if data is sensitive).
-- OS + tool versions (`<bin> --version`).
-- Verbose output when relevant: `gup update <id>:<pkg> 2>&1 | tee gup.log`.
+- the output of `gup list --provider <id> --json`, or a redacted snippet if the data is sensitive;
+- the version of the tool behind the provider (`<bin> --version`).
 
 ---
 
