@@ -1,6 +1,8 @@
 import type { CapturedFrame } from "@opentui/core";
 import type { TestRendererSetup } from "@opentui/core/testing";
 import { MenuApp } from "../../../src/ui/app/menu-app.js";
+import { sidebarEntries } from "../../../src/ui/app/sidebar.js";
+import type { ViewDefinition, ViewId } from "../../../src/ui/app/view-definition.js";
 import type { ScreenHost } from "../../../src/ui/tui/screen-host.js";
 import { createTestHost, press } from "../../../tests/support/tui/test-host.js";
 import type { Scene, Stage } from "./scene.js";
@@ -25,7 +27,7 @@ export async function captureScene(scene: Scene): Promise<CapturedFrame> {
   ).run();
   try {
     const setup = await Promise.race([next(), app.then(() => endedEarly(scene))]);
-    await scene.play(stageOf(setup));
+    await scene.play(stageOf(setup, views));
     await setup.renderOnce();
     return setup.captureSpans();
   } finally {
@@ -53,11 +55,26 @@ function endsOn(signal: AbortSignal, host: ScreenHost): ScreenHost {
   return { run: (mount) => host.run((screen) => Promise.race([mount(screen), aborted])) };
 }
 
-function stageOf(setup: TestRendererSetup): Stage {
+function stageOf(setup: TestRendererSetup, views: readonly ViewDefinition[]): Stage {
   return {
     press: (...keys) => press(setup, ...keys),
+    open: (view) => press(setup, ...sidebarKeys(views, view)),
     waitForText: (text) => waitForText(setup, text),
   };
+}
+
+/**
+ * The keys that open `view` from whichever view is in front: Tab gives the
+ * sidebar the keyboard, Up reaches its first entry (the cursor stops there),
+ * Down walks to the view's entry, Entrée opens it. The entries come in the
+ * production sidebar order, so the count never goes stale.
+ */
+function sidebarKeys(views: readonly ViewDefinition[], view: ViewId): string[] {
+  const entries = sidebarEntries(views);
+  const index = entries.findIndex((entry) => entry.id === view);
+  if (index === -1) throw new Error(`the menu has no ${view} view`);
+  const toFirst = Array<string>(entries.length - 1).fill("up");
+  return ["tab", ...toFirst, ...Array<string>(index).fill("down"), "enter"];
 }
 
 /**

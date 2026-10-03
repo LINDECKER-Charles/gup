@@ -114,7 +114,9 @@ app. The screenshot commands need Node ≥ 26.9, like the UI tests.
    `title` `gup — <view label as the app shows it>` built from the labels
    constants, an `alt` text, a size from `SCENE_SIZES`, the `fixture()`, and a
    `play()` that drives the app with key presses and ends on a `waitForText`
-   of something only the target state shows.
+   of something only the target state shows. Reach a view with
+   `stage.open("<view id>")`, never by counting sidebar rows: it follows the
+   menu's own order, so a view added later does not shift the scene.
 3. **Catalogue.** List it in `scripts/screenshots/scenes/catalog.ts`, in
    gallery order.
 4. **Render.** Run `npm run screenshots`, open the SVG in a browser, and

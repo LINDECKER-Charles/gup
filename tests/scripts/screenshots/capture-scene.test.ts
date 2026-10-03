@@ -7,6 +7,8 @@ import { enterSandbox } from "../../../scripts/screenshots/sandbox/env-sandbox.j
 import { freezeClock } from "../../../scripts/screenshots/sandbox/frozen-clock.js";
 import { captureScene } from "../../../scripts/screenshots/scenes/capture-scene.js";
 import type { Scene } from "../../../scripts/screenshots/scenes/scene.js";
+import type { ViewDefinition } from "../../../src/ui/app/view-definition.js";
+import { optionsView } from "../../../src/ui/views/options-view.js";
 import { providersView } from "../../../src/ui/views/providers-view.js";
 
 // The generator's setup, as scripts/screenshots/setup.ts installs it.
@@ -17,6 +19,14 @@ vi.mock("../../../src/core/runner.js", async (importOriginal) => {
 
 /** What the scan finds that only shows once it is over, on Paquets. */
 const SCANNED = "Visual Studio Code";
+/** Only the Providers view shows it, once its port answered: a missing provider's install command. */
+const PROVIDERS_LOADED = "npm install -g pnpm";
+/**
+ * Above captureScene's 10 s wait for a text, so a scene that cannot reach its
+ * state fails with the frame dumped rather than a bare timeout; a loaded
+ * machine gets the margin too.
+ */
+const CAPTURE_BUDGET_MS = 20_000;
 
 let leaveSandbox: () => void;
 let thaw: () => void;
@@ -55,7 +65,7 @@ function slowProviders(ms: number): AppFixture {
   return { ...fixture, views: fixture.views.map((view) => (view.id === slow.id ? slow : view)) };
 }
 
-describe("captureScene", () => {
+describe("captureScene", { timeout: CAPTURE_BUDGET_MS }, () => {
   it("captures the frame the scene brought the app to, at the scene's size", async () => {
     const frame = await captureScene(sceneOf((stage) => stage.waitForText(SCANNED)));
     expect([frame.cols, frame.rows]).toEqual([100, 28]);
@@ -65,11 +75,28 @@ describe("captureScene", () => {
   it("waits for what a view loads while the renderer sits idle", async () => {
     const play: Scene["play"] = async (stage) => {
       await stage.waitForText(SCANNED);
-      await stage.press("tab", "down", "enter");
-      await stage.waitForText("Non installés");
+      await stage.open("providers");
+      await stage.waitForText(PROVIDERS_LOADED);
     };
     const frame = await captureScene(sceneOf(play, () => slowProviders(300)));
-    expect(textOf(frame)).toContain("Winget");
+    expect(textOf(frame)).toContain(PROVIDERS_LOADED);
+  });
+
+  it("opens a view through the sidebar wherever the menu lists it", async () => {
+    // A work view after Paquets, where the scheduler's Planification goes:
+    // every information view moves one entry down.
+    const inserted: ViewDefinition = { ...optionsView(), id: "schedules", group: 0, order: 99 };
+    const withInsertedView = (): AppFixture => {
+      const fixture = appFixture();
+      return { ...fixture, views: [...fixture.views, inserted] };
+    };
+    const play: Scene["play"] = async (stage) => {
+      await stage.waitForText(SCANNED);
+      await stage.open("providers");
+      await stage.waitForText(PROVIDERS_LOADED);
+    };
+    const frame = await captureScene(sceneOf(play, withInsertedView));
+    expect(textOf(frame)).toContain(PROVIDERS_LOADED);
   });
 
   it("ends the app and lets a held scan finish when the scene fails", async () => {

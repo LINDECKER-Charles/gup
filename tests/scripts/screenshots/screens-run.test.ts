@@ -41,6 +41,13 @@ const SCENES: readonly Scene[] = [
   },
 ];
 
+/**
+ * Four captures per test at most, each allowed captureScene's 10 s wait: a
+ * failing scene dumps its frame rather than timing out, and a loaded machine
+ * gets the margin.
+ */
+const RUN_BUDGET_MS = 45_000;
+
 let dir: string;
 let leaveSandbox: () => void;
 let thaw: () => void;
@@ -73,7 +80,7 @@ async function contents(): Promise<Record<string, string>> {
   return Object.fromEntries(names.map((name, index) => [name, files[index] ?? ""]));
 }
 
-describe("ScreensRun", () => {
+describe("ScreensRun", { timeout: RUN_BUDGET_MS }, () => {
   it("renders byte-identical screenshots on consecutive runs", async () => {
     expect(await generate("write")).toEqual(["written", "written", "written"]);
     const first = await contents();

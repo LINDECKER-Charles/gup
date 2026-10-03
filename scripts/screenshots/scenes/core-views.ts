@@ -11,15 +11,6 @@ function times(count: number, key: string): string[] {
 }
 
 /**
- * Bring a view to the front from the sidebar: Tab gives it the keyboard on
- * Paquets, each step down shows the next entry, Entrée hands the keyboard to
- * the view.
- */
-function viaSidebar(stepsBelowPackages: number): string[] {
-  return ["tab", ...times(stepsBelowPackages, "down"), "enter"];
-}
-
-/**
  * The views the menu has had since 0.4.0: Scan, Paquets, Providers, Options.
  * Package rows sort by provider name (Cargo, Chocolatey, npm, pipx, Scoop,
  * Winget), so the Winget group is row 13 and `pnpm` row 7.
@@ -54,13 +45,13 @@ export const CORE_SCENES: readonly Scene[] = [
     id: "providers",
     title: `gup — ${VIEW_LABELS.providers}`,
     alt:
-      "Providers view: the 14 providers detected on the machine, then the ones not " +
-      "installed, each with the command that installs it.",
+      "Providers view: the 14 providers detected on the machine, then the first of " +
+      "those not installed, each with the command that installs it.",
     size: SCENE_SIZES.default,
     fixture: () => appFixture(),
     play: async (stage) => {
       await stage.waitForText(SCAN_DONE);
-      await stage.press(...viaSidebar(1));
+      await stage.open("providers");
       await stage.waitForText("Non installés");
     },
   },
@@ -72,7 +63,7 @@ export const CORE_SCENES: readonly Scene[] = [
     fixture: () => appFixture(),
     play: async (stage) => {
       await stage.waitForText(SCAN_DONE);
-      await stage.press(...viaSidebar(2));
+      await stage.open("options");
       await stage.waitForText("Mode rapide");
     },
   },

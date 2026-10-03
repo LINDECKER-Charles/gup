@@ -111,12 +111,14 @@ is verified by the CI step of wave 3.
 | `catalogue-problems.test.ts` | the shipped catalogue is valid; unsafe or duplicate ids, alt text and sizes refused |
 | `env-sandbox.test.ts` | `GUP_*` hidden, data dirs in a temporary tree, Unicode glyphs whatever the host, full restore |
 | `no-spawn.test.ts` | every process-starting runner export refused and recorded, process-free helpers real, unknown exports refused, a refusal the app swallowed still on record |
-| `capture-scene.test.ts` | the frame of the reached state, waiting for data a view loads while the renderer idles, teardown when a scene fails (held scan released) |
+| `capture-scene.test.ts` | the frame of the reached state, waiting for data a view loads while the renderer idles, opening a view wherever the sidebar lists it, teardown when a scene fails (held scan released) |
 | `screens-run.test.ts` | byte-identical consecutive runs; check mode fails on stale, missing and orphan files and writes nothing; write mode deletes orphans |
 
-The pipeline tests drive two scenes that wait for fixture data only (a provider, a package),
-not the shipped catalogue: the catalogue follows UI strings and keys that other wave-2
-branches change, and its own check is the generator's run.
+The pipeline tests wait for fixture data only (a provider, a package, an install command)
+and reach views with `Stage.open`, not the shipped catalogue: the catalogue follows UI
+strings and keys that other wave-2 branches change, and its own check is the generator's
+run. One test inserts a view ahead of Providers, as the scheduler's Planification will be,
+and still opens Providers.
 
 ## 6. Deviations from the plan and the spec (`oss-docs.md` §4.3)
 
@@ -137,6 +139,9 @@ branches change, and its own check is the generator's run.
 - **`waitForText` retries until a 10 s deadline** (`performance.now()`, `Date` being frozen):
   OpenTUI's wait gives up as soon as the renderer is idle, which it is while a view loads
   data.
+- **`Stage.open(view)`**, not in the spec: Tab, Up to the sidebar's first entry, Down to the
+  view's entry in the production order (`sidebarEntries`), Entrée. Counting rows from Paquets
+  would break as soon as Planification and Journal join the sidebar (§10.1 of the plan).
 - **Fixture shapes.** Display names come from the registry (no `displayNames` map); a scan
   step carries its duration and its outcome is derived from the results (one source); the
   hold is `{ finished, running }` instead of `holdScanAfter` plus outcome-less steps. The
@@ -157,9 +162,10 @@ branches change, and its own check is the generator's run.
 ## 7. Notes for the wave-3 pass (`docs/feature-guides`, phase C)
 
 1. Merge-time breakage is expected and loud: after the 0.5.0 views merge, `packages-select`
-   (multi-select keys and hints), `providers` (→ `providers-os`, three groups) and `options`
-   (→ `options-themes`) need new key scripts or wait texts; a scene that cannot reach its
-   state fails alone with the frame dumped.
+   (multi-select keys and hints, row counts) needs a new key script, and `providers`
+   (→ `providers-os`, three groups) and `options` (→ `options-themes`) may need new wait
+   texts — they reach their view with `Stage.open`, so new sidebar entries do not move them.
+   A scene that cannot reach its state fails alone with the frame dumped.
 2. Fixture ports in `app-fixture.ts` for every new view port that reaches the system (the
    guard names it), and guards for the modules that start processes outside the runner, if
    any lands (node-pty's loader, the report opener, the OS scheduler backend).

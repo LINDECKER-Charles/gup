@@ -1,3 +1,4 @@
+import type { ViewId } from "../../../src/ui/app/view-definition.js";
 import type { AppFixture } from "../fixtures/app-fixture.js";
 
 /** A terminal size, in cells. */
@@ -10,6 +11,11 @@ export interface SceneSize {
 export interface Stage {
   /** Keys as the TUI test host names them (`down`, `space`, `tab`, `enter`…) or characters. */
   press(...keys: string[]): Promise<void>;
+  /**
+   * Bring `view` to the front through the sidebar, as a user would, wherever
+   * the menu lists it: a view another feature adds does not shift the scenes.
+   */
+  open(view: ViewId): Promise<void>;
   /** Resolves once `text` is on screen; throws with the frame dumped otherwise. */
   waitForText(text: string): Promise<void>;
 }
