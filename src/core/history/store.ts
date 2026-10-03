@@ -1,5 +1,5 @@
 import { appendFileSync, mkdirSync } from "node:fs";
-import chalk from "chalk";
+import { installConsole } from "../process/output-router.js";
 import { RUN_ID, runTrigger } from "../state/run-context.js";
 import { gupVersion } from "../version.js";
 import { historyLocation } from "./paths.js";
@@ -183,11 +183,14 @@ function isEnabled(): boolean {
 
 /**
  * Warn on stderr, never stdout: `gup list --json` pipes stdout into other
- * tools and a warning there would corrupt the payload.
+ * tools and a warning there would corrupt the payload. Through the output
+ * router: during an in-app update the warning lands in the install pane, and
+ * while a full screen is mounted it waits for the exit instead of painting
+ * over the frame.
  */
 function warnOnce(err: unknown): void {
   if (warned) return;
   warned = true;
   const reason = err instanceof Error ? err.message : String(err);
-  process.stderr.write(chalk.dim(`  historique non écrit — ${reason}\n`));
+  installConsole.warn(`  historique non écrit — ${reason}`);
 }

@@ -9,9 +9,16 @@ const { execaMock } = vi.hoisted(() => ({ execaMock: vi.fn() }));
 vi.mock("execa", () => ({ execa: execaMock }));
 
 import {
+  routeInheritTo,
+  type InheritExit,
+  type InheritProcess,
+  type InheritSink,
+} from "../../src/core/process/inherit-sink.js";
+import {
   consumeInterrupt,
   getInstallTimeoutSeconds,
   isElevated,
+  killProcessTree,
   normalizeExitCode,
   run,
   runInherit,
@@ -191,6 +198,135 @@ describe("runner.runInherit", () => {
 
   it("rejects unsafe command name without invoking execa", async () => {
     await expect(runInherit("foo;bar")).rejects.toThrow(/runner:/);
+    expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it("forwards the working directory and the shell routing, nothing else", async () => {
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    await runInherit("scoop", ["update", "x"], { cwd: "C:\\tmp", shell: true, timeout: 0 });
+    const [, , opts] = execaMock.mock.calls[0]!;
+    expect(opts).toMatchObject({ cwd: "C:\\tmp", shell: true });
+    expect(opts).not.toHaveProperty("timeout");
+  });
+
+  it("reports a failed exit when the spawn itself throws", async () => {
+    execaMock.mockImplementationOnce(() => {
+      throw new Error("spawn EINVAL");
+    });
+    await expect(runInherit("foo")).resolves.toMatchObject({ exitCode: -1, failed: true });
+  });
+});
+
+describe("runner.runInherit with an install sink", () => {
+  interface FakeChild {
+    readonly process: InheritProcess;
+    readonly kill: ReturnType<typeof vi.fn>;
+    exit(result: InheritExit): void;
+  }
+
+  function fakeChild(): FakeChild {
+    let resolveExit!: (exit: InheritExit) => void;
+    const exited = new Promise<InheritExit>((resolve) => {
+      resolveExit = resolve;
+    });
+    const kill = vi.fn();
+    return { process: { exited, kill }, kill, exit: (result) => resolveExit(result) };
+  }
+
+  function sinkStarting(child: FakeChild): InheritSink & { start: ReturnType<typeof vi.fn> } {
+    return { mode: "pty", start: vi.fn(() => child.process), note: vi.fn() };
+  }
+
+  let restore: () => void = () => {};
+  afterEach(() => {
+    restore();
+    consumeInterrupt();
+    setInstallTimeoutSeconds(1200);
+  });
+
+  it("hands the sanitised request to the sink and never spawns through execa", async () => {
+    const child = fakeChild();
+    const sink = sinkStarting(child);
+    restore = routeInheritTo(sink);
+    const pending = runInherit("winget", ["upgrade", "--id", "Git.Git"], { cwd: "C:\\x" });
+    child.exit({ exitCode: 0, failed: false });
+    await expect(pending).resolves.toEqual({ stdout: "", stderr: "", exitCode: 0, failed: false });
+    expect(sink.start).toHaveBeenCalledWith({
+      command: "winget",
+      args: ["upgrade", "--id", "Git.Git"],
+      cwd: "C:\\x",
+    });
+    expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses an unsafe command before the sink sees it", async () => {
+    const sink = sinkStarting(fakeChild());
+    restore = routeInheritTo(sink);
+    await expect(runInherit("a&b")).rejects.toThrow(/runner:/);
+    expect(sink.start).not.toHaveBeenCalled();
+  });
+
+  it("kills the sink's process on skipCurrent and flags the result aborted", async () => {
+    const child = fakeChild();
+    restore = routeInheritTo(sinkStarting(child));
+    const pending = runInherit("winget", ["upgrade"]);
+    expect(skipCurrent()).toBe(true);
+    expect(child.kill).toHaveBeenCalledTimes(1);
+    child.exit({ exitCode: 1, failed: true });
+    await expect(pending).resolves.toMatchObject({ aborted: true, failed: true });
+    expect(consumeInterrupt().aborted).toBe(true);
+  });
+
+  it("kills the sink's process when the install timeout fires", async () => {
+    vi.useFakeTimers();
+    try {
+      const child = fakeChild();
+      restore = routeInheritTo(sinkStarting(child));
+      setInstallTimeoutSeconds(1);
+      const pending = runInherit("winget", ["upgrade"]);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(child.kill).toHaveBeenCalledTimes(1);
+      child.exit({ exitCode: -1, failed: true });
+      await expect(pending).resolves.toMatchObject({ timedOut: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("normalises the sink's exit code like the terminal path's", async () => {
+    setPlatform("win32");
+    const child = fakeChild();
+    restore = routeInheritTo(sinkStarting(child));
+    const pending = runInherit("vs_installer.exe");
+    child.exit({ exitCode: 3221225786, failed: true });
+    await expect(pending).resolves.toMatchObject({ exitCode: -1073741510 });
+  });
+
+  it("spawns through execa again once the route is restored", async () => {
+    restore = routeInheritTo(sinkStarting(fakeChild()));
+    restore();
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    await runInherit("foo");
+    expect(execaMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("runner.killProcessTree", () => {
+  it("runs taskkill on the whole tree on Windows", () => {
+    setPlatform("win32");
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    killProcessTree(4242);
+    expect(execaMock).toHaveBeenCalledWith("taskkill", ["/pid", "4242", "/t", "/f"], {
+      reject: false,
+      windowsHide: true,
+    });
+  });
+
+  it("does nothing off Windows or without a pid", () => {
+    setPlatform("linux");
+    killProcessTree(4242);
+    setPlatform("win32");
+    killProcessTree(undefined);
     expect(execaMock).not.toHaveBeenCalled();
   });
 });

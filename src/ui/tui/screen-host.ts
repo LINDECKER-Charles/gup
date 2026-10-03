@@ -1,4 +1,5 @@
 import type { CliRenderer, KeyEvent } from "@opentui/core";
+import { setFullScreen } from "../../core/process/output-router.js";
 import { loadTui, type Tui } from "./load-tui.js";
 import { PromptCancelledError } from "./prompt-cancelled.js";
 import { destroyRenderer } from "./teardown.js";
@@ -27,16 +28,25 @@ export type RendererFactory = (tui: Tui) => Promise<CliRenderer>;
  * only and is destroyed whatever happens, so nothing keeps stdin in raw mode
  * once the session is over — in particular not while an installer runs with
  * the terminal inherited. Ctrl+C rejects with {@link PromptCancelledError}.
+ *
+ * While the renderer is up, the output router holds back gup's own console
+ * lines (a history warning, a provider's progress note): written now, they
+ * would paint over the frame. They are printed once the process exits.
  */
 export function createScreenHost(createRenderer: RendererFactory): ScreenHost {
   return {
     async run(mount) {
       const tui = await loadTui();
       const renderer = await createRenderer(tui);
+      setFullScreen(true);
       try {
         return await untilCancelled(renderer, mount({ renderer, tui }));
       } finally {
-        await destroyRenderer(renderer);
+        try {
+          await destroyRenderer(renderer);
+        } finally {
+          setFullScreen(false);
+        }
       }
     },
   };

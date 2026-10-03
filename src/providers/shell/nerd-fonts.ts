@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import AdmZip from "adm-zip";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { installConsole } from "../../core/process/output-router.js";
 import { runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -146,7 +147,7 @@ async function downloadFamilyZip(
 ): Promise<DownloadedZip | DownloadError> {
   const releases = "https://github.com/ryanoasis/nerd-fonts/releases";
   const url = `${releases}/download/${latest}/${packageId}.zip`;
-  process.stdout.write(`  ↓ ${url}\n`);
+  installConsole.log(`  ↓ ${url}`);
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(120_000) });
     if (!res.ok) {
@@ -188,7 +189,7 @@ async function installFamily(req: InstallRequest): Promise<UpdateOutcome> {
     }
     await pinFamilyVersion(packageId, latest);
     const count = installed.length;
-    process.stdout.write(`  ✓ ${count} fichier(s) installé(s) dans ${userDir}\n`);
+    installConsole.log(`  ✓ ${count} fichier(s) installé(s) dans ${userDir}`);
     return { id: packageId, success: true };
   } catch (err) {
     return failed(packageId, err instanceof Error ? err.message : String(err));

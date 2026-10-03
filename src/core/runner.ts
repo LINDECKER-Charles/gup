@@ -1,4 +1,10 @@
 import { execa, type Options, type ResultPromise } from "execa";
+import {
+  activeInheritSink,
+  type InheritExit,
+  type InheritProcess,
+  type InheritRequest,
+} from "./process/inherit-sink.js";
 
 // PATH resolution lives in process/which.ts; providers keep importing it from
 // here, next to the spawn functions it serves.
@@ -172,9 +178,10 @@ export function consumeInterrupt(): InterruptFlags {
  * installer children (msiexec, setup.exe) that a SIGTERM to the direct child
  * leaves orphaned; `taskkill /T` takes the tree down. Fire-and-forget — we
  * never await it and swallow any error. No-op when there's no pid (e.g. the
- * mocked child in tests) or off Windows (cancelSignal already SIGTERMs there).
+ * mocked child in tests) or off Windows, where the caller signals the child
+ * (execa's cancelSignal) or its process group itself.
  */
-function treeKillWindows(pid: number | undefined): void {
+export function killProcessTree(pid: number | undefined): void {
   if (process.platform !== "win32" || !pid || pid <= 0) return;
   void execa("taskkill", ["/pid", String(pid), "/t", "/f"], {
     reject: false,
@@ -246,7 +253,20 @@ export async function run(
 }
 
 /**
- * Stream output to the user's terminal (used during interactive updates).
+ * Every option a `runInherit` caller uses: scoop's PowerShell shim needs the
+ * shell, the Visual Studio and Cygwin installers a working directory. Narrower
+ * than execa's options on purpose — whatever is accepted here must make sense
+ * for every install sink, not only for the terminal.
+ */
+export interface InheritOptions {
+  readonly cwd?: string;
+  readonly shell?: boolean;
+  /** Per-call cap in ms; 0 disables it. Defaults to the install timeout. */
+  readonly timeout?: number;
+}
+
+/**
+ * Run an install with the user's terminal attached (used during updates).
  *
  * Unlike {@link run}, this path:
  * - applies the per-install wall-clock timeout (so a wedged installer can't
@@ -254,66 +274,107 @@ export async function run(
  * - registers the child as interruptible so the Ctrl+C handler can skip it,
  * - does NOT pass `windowsHide`: an installer that ignores `--silent` and
  *   falls back to its GUI must show its window, otherwise it waits on a click
- *   to an invisible window and blocks indefinitely.
+ *   to an invisible window and blocks indefinitely,
+ * - hands the child to the active install sink instead of the terminal when
+ *   one is routed (`process/inherit-sink.ts`). The request a sink receives has
+ *   already been through both sanitisers.
  */
 export async function runInherit(
   command: string,
   args: string[] = [],
-  options: Options = {},
+  options: InheritOptions = {},
 ): Promise<RunResult> {
-  const safeCommand = sanitizeCommand(command);
-  const safeArgs = sanitizeArgs(args);
-
-  // We manage the timeout ourselves (own timer + tree-kill), so strip any
-  // caller `timeout` from the execa options to avoid double-arming execa's
-  // native timeout alongside ours.
-  const { timeout: timeoutOverride, ...execaOptions } = options;
-  const timeoutMs =
-    typeof timeoutOverride === "number"
-      ? timeoutOverride
-      : installTimeoutSeconds * 1000;
-
-  // One controller drives both skip levers — the timeout timer and the manual
-  // Ctrl+C handler both abort it, which makes execa kill the child.
-  const controller = new AbortController();
-  const proc = execa(safeCommand, safeArgs, {
-    reject: false,
-    stdio: "inherit",
-    cancelSignal: controller.signal,
-    ...execaOptions,
-  }) as ResultPromise;
-
-  const interrupts = armInterrupts(proc, controller, timeoutMs);
+  const request = inheritRequest(command, args, options);
+  const sink = activeInheritSink();
+  const child = sink ? sink.start(request) : startInTerminal(request);
+  const interrupts = armInterrupts(() => child.kill(), timeoutMsOf(options.timeout));
   try {
-    const result = await proc;
+    const exit = await child.exited;
     if (interrupts.flags.timedOut) pendingInterrupt.timedOut = true;
     if (interrupts.flags.aborted) pendingInterrupt.aborted = true;
-    return inheritResult(result, interrupts.flags);
+    return inheritResult(exit, interrupts.flags);
   } finally {
     interrupts.dispose();
   }
 }
 
+function inheritRequest(command: string, args: string[], options: InheritOptions): InheritRequest {
+  return {
+    command: sanitizeCommand(command),
+    args: sanitizeArgs(args),
+    ...(options.cwd !== undefined && { cwd: options.cwd }),
+    ...(options.shell !== undefined && { shell: options.shell }),
+  };
+}
+
+function timeoutMsOf(timeout: number | undefined): number {
+  return typeof timeout === "number" ? timeout : installTimeoutSeconds * 1000;
+}
+
+/** The execa options that place a request: its working directory and shell routing. */
+function placementOf(request: InheritRequest): Options {
+  return {
+    ...(request.cwd !== undefined && { cwd: request.cwd }),
+    ...(request.shell !== undefined && { shell: request.shell }),
+  };
+}
+
+/**
+ * No sink routed: the child gets the user's terminal. One abort controller
+ * serves both skip levers (timeout timer, Ctrl+C); on Windows the tree kill
+ * also takes down the installer's own children.
+ */
+function startInTerminal(request: InheritRequest): InheritProcess {
+  const controller = new AbortController();
+  try {
+    const proc = execa(request.command, [...request.args], {
+      reject: false,
+      stdio: "inherit",
+      cancelSignal: controller.signal,
+      ...placementOf(request),
+    }) as ResultPromise;
+    return {
+      exited: settled(proc),
+      kill: () => {
+        controller.abort();
+        killProcessTree(proc.pid);
+      },
+    };
+  } catch {
+    return exitedProcess();
+  }
+}
+
+/** The exit of an execa child, as a promise that never rejects. */
+function settled(proc: ResultPromise): Promise<InheritExit> {
+  return proc.then(
+    (result) => ({
+      exitCode: typeof result.exitCode === "number" ? result.exitCode : NO_EXIT_CODE,
+      failed: Boolean(result.failed) || result.exitCode !== 0,
+    }),
+    () => ({ exitCode: NO_EXIT_CODE, failed: true }),
+  );
+}
+
+/** A child that could not even be started: already exited, failed. */
+function exitedProcess(): InheritProcess {
+  return { exited: Promise.resolve({ exitCode: NO_EXIT_CODE, failed: true }), kill: () => {} };
+}
+
 /**
  * Wire both skip levers — the wall-clock timer and the Ctrl+C handler — onto
- * the child's abort controller. Returns the flags they set plus the teardown
- * that clears the timer and restores the previous interruptible child.
+ * the child's kill. Returns the flags they set plus the teardown that clears
+ * the timer and restores the previous interruptible child.
  */
 function armInterrupts(
-  proc: ResultPromise,
-  controller: AbortController,
+  kill: () => void,
   timeoutMs: number,
 ): { flags: InterruptFlags; dispose: () => void } {
   const flags: InterruptFlags = { timedOut: false, aborted: false };
   const abort = (reason: "manual" | "timeout"): void => {
     if (reason === "manual") flags.aborted = true;
     else flags.timedOut = true;
-    try {
-      controller.abort();
-    } catch {
-      /* AbortController.abort doesn't throw; stay defensive anyway */
-    }
-    treeKillWindows((proc as { pid?: number }).pid);
+    kill();
   };
 
   const previous = abortCurrent;
@@ -331,18 +392,15 @@ function armInterrupts(
 }
 
 /**
- * `stdio: "inherit"` means the child wrote straight to the terminal, so there
- * is nothing to hand back but the exit status and the interrupt cause.
+ * The child wrote to the terminal (or into a sink), so there is nothing to
+ * hand back but the exit status and the interrupt cause.
  */
-function inheritResult(
-  result: { exitCode?: unknown; failed?: unknown },
-  flags: InterruptFlags,
-): RunResult {
+function inheritResult(exit: InheritExit, flags: InterruptFlags): RunResult {
   const out: RunResult = {
     stdout: "",
     stderr: "",
-    exitCode: exitCodeOf(result.exitCode),
-    failed: Boolean(result.failed) || result.exitCode !== 0,
+    exitCode: normalizeExitCode(exit.exitCode),
+    failed: exit.failed,
   };
   if (flags.timedOut) out.timedOut = true;
   if (flags.aborted) out.aborted = true;
