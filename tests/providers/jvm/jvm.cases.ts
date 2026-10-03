@@ -1,5 +1,9 @@
 import { CoursierCsProvider } from "../../../src/providers/jvm/coursier-cs.js";
 import { JBangProvider } from "../../../src/providers/jvm/jbang.js";
+import {
+  type SelfUpdatingTool,
+  selfUpdatingToolCases,
+} from "../../support/contract/self-updating-tool.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
 import { githubLatest } from "../../support/system/releases.js";
 import type { SystemSpec } from "../../support/system/types.js";
@@ -12,79 +16,55 @@ import type { SystemSpec } from "../../support/system/types.js";
 
 // --- Coursier -----------------------------------------------------------------
 
-export const COURSIER_VERSION_ARGV = ["cs", "--version"];
 export const COURSIER_RELEASE = githubLatest("coursier/coursier", "v2.1.12");
 
-/** `cs` installed by its own launcher, printing `banner`, GitHub answering `release`. */
-export function coursierMachine(banner: string, release = COURSIER_RELEASE): SystemSpec {
+/** `cs` installed by its own launcher, printing `banner`. */
+export function coursierMachine(banner: string): SystemSpec {
   return {
     platform: "linux",
     bin: { cs: "/home/u/.local/share/coursier/bin/cs" },
-    commands: [{ argv: COURSIER_VERSION_ARGV, stdout: banner }],
-    http: [release],
+    commands: [{ argv: ["cs", "--version"], stdout: banner }],
   };
 }
 
-const COURSIER_BANNER = "Coursier 2.1.10 (commit deadbeef)";
-
-const COURSIER: ProviderContractCase = {
+const COURSIER: SelfUpdatingTool = {
   create: () => new CoursierCsProvider(),
-  system: coursierMachine(COURSIER_BANNER),
-  outdated: [
-    {
-      id: "coursier-cs",
-      name: "Coursier (cs)",
-      current: "2.1.10",
-      latest: "2.1.12",
-      note: "runs `cs update` for installed apps",
-    },
-  ],
+  system: coursierMachine("Coursier 2.1.10 (commit deadbeef)"),
+  release: COURSIER_RELEASE,
+  row: {
+    id: "coursier-cs",
+    name: "Coursier (cs)",
+    current: "2.1.10",
+    latest: "2.1.12",
+    note: "runs `cs update` for installed apps",
+  },
+  upToDate: githubLatest("coursier/coursier", "v2.1.10"),
   // `cs update` refreshes every installed app shim along with the launcher.
-  update: { packageId: "coursier-cs", installs: [["cs", "update"]] },
-  updateAll: "collapsed",
-};
-
-const COURSIER_UP_TO_DATE: ProviderContractCase = {
-  scenario: "up to date",
-  create: () => new CoursierCsProvider(),
-  system: coursierMachine(COURSIER_BANNER, githubLatest("coursier/coursier", "v2.1.10")),
-  outdated: [],
-  updateAll: "collapsed",
+  installs: [["cs", "update"]],
 };
 
 // --- JBang --------------------------------------------------------------------
 
-export const JBANG_VERSION_ARGV = ["jbang", "version"];
+export const JBANG_RELEASE = githubLatest("jbangdev/jbang", "v0.119.0");
 
-/** JBang printing `stdout` for `jbang version`, GitHub answering `tag`. */
-export function jbangMachine(stdout: string, tag = "v0.119.0"): SystemSpec {
+/** JBang printing `stdout` for `jbang version`. */
+export function jbangMachine(stdout: string): SystemSpec {
   return {
     platform: "win32",
     bin: { jbang: "C:\\Users\\u\\.jbang\\bin\\jbang.cmd" },
-    commands: [{ argv: JBANG_VERSION_ARGV, stdout }],
-    http: [githubLatest("jbangdev/jbang", tag)],
+    commands: [{ argv: ["jbang", "version"], stdout }],
   };
 }
 
-const JBANG: ProviderContractCase = {
+const JBANG: SelfUpdatingTool = {
   create: () => new JBangProvider(),
   system: jbangMachine("0.118.0"),
-  outdated: [{ id: "jbang", name: "JBang", current: "0.118.0", latest: "0.119.0" }],
-  update: { packageId: "jbang", installs: [["jbang", "version", "--update"]] },
-  updateAll: "collapsed",
+  release: JBANG_RELEASE,
+  row: { id: "jbang", name: "JBang", current: "0.118.0", latest: "0.119.0" },
+  upToDate: githubLatest("jbangdev/jbang", "v0.118.0"),
+  installs: [["jbang", "version", "--update"]],
 };
 
-const JBANG_UP_TO_DATE: ProviderContractCase = {
-  scenario: "up to date",
-  create: () => new JBangProvider(),
-  system: jbangMachine("0.118.0", "v0.118.0"),
-  outdated: [],
-  updateAll: "collapsed",
-};
-
-export const jvmCases: readonly ProviderContractCase[] = [
-  COURSIER,
-  COURSIER_UP_TO_DATE,
-  JBANG,
-  JBANG_UP_TO_DATE,
-];
+export const jvmCases: readonly ProviderContractCase[] = [COURSIER, JBANG].flatMap(
+  selfUpdatingToolCases,
+);

@@ -7,6 +7,10 @@ import {
   type ReleasedTool,
   releasedToolCases,
 } from "../../support/contract/released-tool.js";
+import {
+  type SelfUpdatingTool,
+  selfUpdatingToolCases,
+} from "../../support/contract/self-updating-tool.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
 import { githubLatest } from "../../support/system/releases.js";
 import type { HttpRoute, SystemSpec } from "../../support/system/types.js";
@@ -91,45 +95,33 @@ export function packagistRoute(versions: readonly string[]): HttpRoute {
   return { url: PACKAGIST_COMPOSER_URL, json };
 }
 
-/** Composer 2.7.7, Packagist answering `route`. */
-export function composerSelfMachine(route: HttpRoute): SystemSpec {
-  return {
-    platform: "win32",
-    bin: { composer: COMPOSER_BIN },
-    commands: [
-      {
-        argv: ["composer", "--version", "--no-ansi"],
-        stdout: "Composer version 2.7.7 2024-06-10 22:11:12",
-      },
-    ],
-    http: [route],
-  };
-}
-
-const COMPOSER_SELF: ProviderContractCase = {
-  create: () => new ComposerSelfProvider(),
-  system: composerSelfMachine(packagistRoute(["dev-main", "v2.8.0-RC1", "v2.8.0", "v2.7.7"])),
-  outdated: [{ id: "composer-self", name: "Composer", current: "2.7.7", latest: "2.8.0" }],
-  update: {
-    packageId: "composer-self",
-    installs: [["composer", "self-update", "--no-interaction"]],
-  },
-  updateAll: "collapsed",
+/** Composer 2.7.7 on Windows; each scenario adds its Packagist answer. */
+export const COMPOSER_SELF_MACHINE: SystemSpec = {
+  platform: "win32",
+  bin: { composer: COMPOSER_BIN },
+  commands: [
+    {
+      argv: ["composer", "--version", "--no-ansi"],
+      stdout: "Composer version 2.7.7 2024-06-10 22:11:12",
+    },
+  ],
 };
 
-/** Packagist spells the version with a `v`; the banner does not. */
-const COMPOSER_SELF_UP_TO_DATE: ProviderContractCase = {
-  scenario: "up to date",
+const COMPOSER_SELF: SelfUpdatingTool = {
   create: () => new ComposerSelfProvider(),
-  system: composerSelfMachine(packagistRoute(["v2.7.7"])),
-  outdated: [],
-  updateAll: "collapsed",
+  system: COMPOSER_SELF_MACHINE,
+  release: packagistRoute(["dev-main", "v2.8.0-RC1", "v2.8.0", "v2.7.7"]),
+  row: { id: "composer-self", name: "Composer", current: "2.7.7", latest: "2.8.0" },
+  // Packagist spells the version with a `v`; the banner does not.
+  upToDate: packagistRoute(["v2.7.7"]),
+  installs: [["composer", "self-update", "--no-interaction"]],
 };
 
 // --- PHIVE ----------------------------------------------------------------------
 
-function phiveMachine(tag: string): SystemSpec {
-  return {
+const PHIVE: SelfUpdatingTool = {
+  create: () => new PhiveProvider(),
+  system: {
     platform: "linux",
     bin: { phive: "/usr/local/bin/phive" },
     commands: [
@@ -139,24 +131,11 @@ function phiveMachine(tag: string): SystemSpec {
           "Phive 0.15.2 - Copyright (C) 2015-2024 by Arne Blankerts, Sebastian Heuer and Contributors",
       },
     ],
-    http: [githubLatest("phar-io/phive", tag)],
-  };
-}
-
-const PHIVE: ProviderContractCase = {
-  create: () => new PhiveProvider(),
-  system: phiveMachine("0.16.0"),
-  outdated: [{ id: "phive", name: "PHIVE", current: "0.15.2", latest: "0.16.0" }],
-  update: { packageId: "phive", installs: [["phive", "selfupdate"]] },
-  updateAll: "collapsed",
-};
-
-const PHIVE_UP_TO_DATE: ProviderContractCase = {
-  scenario: "up to date",
-  create: () => new PhiveProvider(),
-  system: phiveMachine("0.15.2"),
-  outdated: [],
-  updateAll: "collapsed",
+  },
+  release: githubLatest("phar-io/phive", "0.16.0"),
+  row: { id: "phive", name: "PHIVE", current: "0.15.2", latest: "0.16.0" },
+  upToDate: githubLatest("phar-io/phive", "0.15.2"),
+  installs: [["phive", "selfupdate"]],
 };
 
 // --- Symfony CLI ----------------------------------------------------------------
@@ -190,10 +169,7 @@ const SYMFONY_CLI: ReleasedTool = {
 
 export const phpCases: readonly ProviderContractCase[] = [
   COMPOSER_GLOBAL,
-  COMPOSER_SELF,
-  COMPOSER_SELF_UP_TO_DATE,
-  PHIVE,
-  PHIVE_UP_TO_DATE,
+  ...[COMPOSER_SELF, PHIVE].flatMap(selfUpdatingToolCases),
   ...releasedToolCases(SYMFONY_CLI),
   // The Symfony CLI reads the GitHub API itself: a release without a tag lists nothing.
   nothingListedCase(SYMFONY_CLI, "release without a tag", {
