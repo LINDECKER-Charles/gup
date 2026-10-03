@@ -5,8 +5,9 @@ import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli/cli-mod
 
 /**
  * `gup doctor`: which providers this machine has, which it lacks (with how to
- * install them), then a "Système" section where each CLI module reports its
- * own state (embedded terminal, scheduling, settings, journal…).
+ * install them), which are foreign to this OS, then a "Système" section where
+ * each CLI module reports its own state (embedded terminal, scheduling,
+ * settings, journal…).
  *
  * Detection goes through readProviderStatus(): eight probes at a time, each
  * capped, and providers foreign to this OS never probed — one wedged
@@ -14,9 +15,7 @@ import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli/cli-mod
  * same way.
  */
 export async function doctorCommand(modules: readonly CliModule[] = []): Promise<number> {
-  const report = await readProviderStatus();
-  const detected = report.detected.map((provider) => provider.id);
-  process.stdout.write(`${renderProvidersStatus(detected, [...report.missing])}\n`);
+  process.stdout.write(`${renderProvidersStatus(await readProviderStatus())}\n`);
   const system = await systemDiagnostics(modules);
   if (system.length > 0) process.stdout.write(`${renderSystem(system)}\n`);
   return 0;
@@ -71,7 +70,9 @@ export const doctorModule: CliModule = {
   register(program, context) {
     program
       .command("doctor")
-      .description("Affiche les providers détectés et ceux non installés.")
+      .description(
+        "Affiche les providers détectés, ceux non installés et ceux incompatibles avec ce système.",
+      )
       .action(async () => {
         const code = await doctorCommand(context.modules);
         process.exit(code);
