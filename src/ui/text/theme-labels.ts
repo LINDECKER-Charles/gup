@@ -151,7 +151,6 @@ export const COLOR_EDITOR = {
   themeValue: "(thème)",
   ground: "—",
   groundCorrected: "ajusté ⚠",
-  groundNote: "fond de référence",
   corrected: (count: number, level: ContrastLevel) =>
     `⚠ ${count} couleur(s) ajustée(s) automatiquement pour rester lisible (${level}). ` +
     "a : garder la valeur ajustée.",

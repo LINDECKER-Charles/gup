@@ -36,7 +36,7 @@ describe("colour editor", () => {
     expect(text(lines)).toContain(COLOR_EDITOR.base("Sombre (gup)"));
     const accent = text([lineWith(lines, "Accent")]);
     expect(accent).toMatch(/^› Accent\s+\(thème\)\s+#9FA5FF\s+6,\d:1\s+✔/);
-    expect(text([lineWith(lines, "Fond ")])).toContain(COLOR_EDITOR.groundNote);
+    expect(text([lineWith(lines, "Fond ")])).toContain(COLOR_EDITOR.samples.background);
   });
 
   it("saves a typed colour under the theme it belongs to, refusing anything but #RGB / #RRGGBB", async () => {
