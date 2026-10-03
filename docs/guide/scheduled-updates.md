@@ -77,11 +77,12 @@ flowchart LR
 
 Times are the machine's local time when the run is evaluated: "09:00" means
 09:00 wherever the laptop is. A local time skipped by a daylight-saving change
-runs at the next valid minute. A schedule runs **at most once an hour** and
-must fire within a year; day-of-month and day-of-week combine with OR, as in
-cron.
+runs at the next valid minute, and a time the clock goes through twice runs
+once. A schedule runs **at most once an hour** and must fire within a year;
+day-of-month and day-of-week combine with OR, as in cron.
 
-Limits: 50 schedules, 50 packages per schedule, names up to 60 characters.
+Limits: 50 schedules, 50 packages per schedule, names up to 60 characters,
+cron expressions up to 120 (stored with single spaces between fields).
 
 ## What a scheduled run never does
 

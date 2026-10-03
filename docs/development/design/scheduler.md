@@ -81,13 +81,25 @@ pipeline's `PlannedUpdate` / `UpdatePlan`.
 - **Validation** (`validateDraft`): name 1–60, ≤ 50 targets, ≤ 50 schedules,
   no duplicate, provider known and supported here (`lookupProvider`
   messages), `canUpdateUnattended`, fires within a year, **at most hourly**
-  (smallest gap over the next 24 occurrences).
+  (smallest gap over the next 24 occurrences), a custom expression of at
+  most 120 characters once its blanks are collapsed.
+- **What is saved reads back.** The schedules file is read leniently: a
+  schedule with a malformed field is dropped whole, and the next write
+  rewrites the section from what was read. So every bound the file applies
+  is one the model validates first (`MAX_CRON_LENGTH` and the others live in
+  `validate-schedule.ts`), and a custom expression is stored in its
+  evaluated form, single spaces between fields (`storedRecurrence`): a tab
+  typed on the command line would otherwise be a control character the file
+  refuses.
 - **Due** (`evaluateDue`): anchor = `min(now, max(armedAt, lastAttemptAt))`;
   the first occurrence after it decides; the latest passed occurrence runs
   once — on time within 30 minutes, else catch-up (or *missed* without
   catch-up). Consuming sets the anchor to now: any number of missed windows
   collapse into one run; a clock set backwards cannot freeze a schedule;
-  creating, re-timing or re-enabling re-arms.
+  creating, re-timing or re-enabling re-arms. Across DST (pinned in
+  Europe/Paris): a local time the spring-forward night skips runs on time at
+  the next valid minute — never "missed" — and one the fall-back night
+  repeats runs once.
 
 ## 4. Runs
 
@@ -215,7 +227,15 @@ per process (`processSchedulerServices()`).
 ## 9. Testing
 
 Pure builders and parsers are tested for every platform on any platform
-(`path.win32`/`path.posix` chosen from the context). Adapters run against a
+(`path.win32`/`path.posix` chosen from the context), and their output is
+also read back by a parser (`artifact-syntax.test.ts`): the plist and the
+task XML are well-formed (happy-dom's XML parser, a dev dependency already)
+and decode to exactly the registered paths, markup and shell syntax
+included; the task's command line splits into the registered argv; the cron
+line is five valid fields firing every 15 minutes, then the argv `/bin/sh`
+would see. The gesture's whole-provider filter is proven by a fake registry
+that knows `nvim-lazy` (otherwise validation, not the gesture, refused its
+aggregate row). Adapters run against a
 scripted runner (exact argv, unreadable crontab never overwritten, status
 mapping). Behavioural tables cover due evaluation, planning, summaries and
 validation; `ScheduledRun` is tested with fakes (idle, busy, consume-before-
@@ -235,8 +255,13 @@ dir and only a disabled schedule (no trigger registered): list, editor, quit.
 `tests/integration/scheduler-windows.test.ts` registers a uniquely named
 `gup-it-<random>` task running a probe script (never gup, never the user's
 schedules), reads the normalised XML back, runs it headless, checks the probe
-saw `__schedule-tick` and TTYs, deletes it and verifies it is gone; `afterAll`
-deletes it whatever happened. Green on this machine.
+saw `__schedule-tick` and TTYs, deletes it and verifies it is gone; a second
+`gup-it-<random>-sync` task is driven by `TriggerSync` as `gup schedule`
+drives it — first registration recorded, a start leaving it alone, the last
+schedule switched off removing the task (`schtasks /Query` fails) and
+`install.json`, a removal with nothing registered still succeeding.
+`afterAll` deletes both whatever happened. Green on this machine;
+`Get-ScheduledTask 'gup-*'` is empty afterwards.
 
 ## 10. Foundation contracts extended (additive) and touch points
 
