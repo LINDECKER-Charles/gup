@@ -1,6 +1,7 @@
 import pLimit from "p-limit";
 
 import { filterByOwnership } from "./ownership.js";
+import { isSupportedOn } from "./platform/is-supported-on.js";
 
 // --- OS-level / Windows -----------------------------------------------------
 import { WingetProvider } from "../providers/os/winget.js";
@@ -451,12 +452,23 @@ const DETECTION_CONCURRENCY = 8;
 /** A probe still pending after this reads as "not installed". */
 const DETECTION_TIMEOUT_MS = 15_000;
 
-export async function detectAvailableProviders(): Promise<Provider[]> {
+/**
+ * The installed providers among `candidates` (every registered provider by
+ * default; a scheduled run passes only the ones its targets need).
+ *
+ * A provider gup does not support on this platform is never probed: no spawn,
+ * and no chance for a same-named shim (`brew.cmd` → WSL, the NCAR `ncl`) to
+ * light it up.
+ */
+export async function detectAvailableProviders(
+  candidates: readonly Provider[] = ALL_PROVIDERS,
+): Promise<Provider[]> {
+  const supported = candidates.filter((p) => isSupportedOn(p));
   const limit = pLimit(DETECTION_CONCURRENCY);
   const checks = await Promise.all(
-    ALL_PROVIDERS.map((p) => limit(() => probeAvailability(p))),
+    supported.map((p) => limit(() => probeAvailability(p))),
   );
-  return ALL_PROVIDERS.filter((_, i) => checks[i]);
+  return supported.filter((_, i) => checks[i]);
 }
 
 /**
@@ -482,12 +494,16 @@ async function probeAvailability(provider: Provider): Promise<boolean> {
  * Returns the filtered list of providers that will be scanned, without
  * actually running the scans. Useful for UI that needs to know the total
  * upfront (e.g. progress counters).
+ *
+ * The platform gate applies to an injected `detected` list too, so no caller
+ * (a scheduled run, a test, a stale list) can scan an unsupported provider.
  */
 export async function getProvidersToScan(
   options: ScanOptions = {},
 ): Promise<Provider[]> {
   const available = options.detected ?? (await detectAvailableProviders());
   return available.filter((p) => {
+    if (!isSupportedOn(p)) return false;
     if (options.only?.length && !options.only.includes(p.id)) return false;
     if (options.fast && p.slow) return false;
     return true;

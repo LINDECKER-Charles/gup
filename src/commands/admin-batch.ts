@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { readBatchInput, writeBatchOutput } from "../core/elevation.js";
-import { getProvider } from "../core/registry.js";
+import { lookupProvider } from "../core/platform/lookup-provider.js";
 import type { UpdateOutcome } from "../core/types.js";
 
 /**
@@ -49,10 +49,11 @@ async function runOneTarget(target: string): Promise<UpdateOutcome> {
   }
   const providerId = target.slice(0, idx);
   const packageId = target.slice(idx + 1);
-  const provider = getProvider(providerId);
-  if (!provider) {
-    return { id: packageId, success: false, message: `Provider inconnu: ${providerId}` };
-  }
+  // Defence in depth for the elevated path: a tampered or stale batch file
+  // cannot send an elevated process into a provider foreign to this host.
+  const lookup = lookupProvider(providerId);
+  if (!lookup.isFound) return { id: packageId, success: false, message: lookup.error };
+  const { provider } = lookup;
   process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
   return provider.update(packageId);
 }

@@ -1,6 +1,8 @@
 import { confirm } from "../ui/prompts/confirm.js";
 import chalk from "chalk";
 import { runElevatedBatch } from "../core/elevation.js";
+import { isSupportedOn } from "../core/platform/is-supported-on.js";
+import { lookupProvider } from "../core/platform/lookup-provider.js";
 import { ALL_PROVIDERS, getProvider } from "../core/registry.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection, type SelectedPackage } from "../ui/select.js";
@@ -109,16 +111,19 @@ function resolveTargets(targets: string[]): ResolvedTarget[] | null {
   for (const target of targets) {
     const idx = target.indexOf(":");
     if (idx === -1) {
-      process.stderr.write(formatBadTargetMessage(target, ALL_PROVIDERS));
+      // Only suggest providers that can act here: never
+      // `gup list --provider winget` on a Mac.
+      const actionable = ALL_PROVIDERS.filter((p) => isSupportedOn(p));
+      process.stderr.write(formatBadTargetMessage(target, actionable));
       return null;
     }
     const providerId = target.slice(0, idx);
-    const provider = getProvider(providerId);
-    if (!provider) {
-      process.stderr.write(`Provider inconnu: ${providerId}\n`);
+    const lookup = lookupProvider(providerId);
+    if (!lookup.isFound) {
+      process.stderr.write(`${lookup.error}\n`);
       return null;
     }
-    resolved.push({ providerId, provider, packageId: target.slice(idx + 1) });
+    resolved.push({ providerId, provider: lookup.provider, packageId: target.slice(idx + 1) });
   }
   return resolved;
 }

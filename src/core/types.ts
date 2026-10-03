@@ -1,3 +1,9 @@
+/**
+ * A set of `process.platform` values. Always one of the named sets of
+ * `core/platform/platforms.ts`, never an inline array.
+ */
+export type PlatformSet = readonly NodeJS.Platform[];
+
 export interface OutdatedPackage {
   /** Stable identifier within the provider (used for targeted update). */
   id: string;
@@ -89,6 +95,14 @@ export interface Provider {
    * Declarative — no centralized opt-in list to maintain.
    */
   readonly slow?: boolean;
+  /**
+   * Platforms gup supports this provider on; omitted means every platform.
+   * Enforced once, by the registry: elsewhere the provider is never probed,
+   * scanned or updated, and listings show it as incompatible. Declare a named
+   * set — `readonly platforms = PLATFORMS.windows;` — and never gate
+   * isAvailable() on `process.platform` yourself.
+   */
+  readonly platforms?: PlatformSet;
 
   isAvailable(): Promise<boolean>;
   listOutdated(): Promise<OutdatedPackage[]>;

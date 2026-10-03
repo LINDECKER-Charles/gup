@@ -11,6 +11,9 @@ vi.mock("../../src/core/registry.js", () => ({
 }));
 
 import { adminBatchCommand } from "../../src/commands/admin-batch.js";
+import { PLATFORMS } from "../../src/core/platform/platforms.js";
+
+const originalPlatform = process.platform;
 
 const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
@@ -124,6 +127,38 @@ describe("adminBatchCommand", () => {
       success: false,
       message: expect.stringContaining("Provider inconnu"),
     });
+  });
+
+  it("refuses a target whose provider does not run on this platform", async () => {
+    const file = await mkInputFile();
+    await writeFile(file, JSON.stringify({ version: 1, targets: ["brew-cask:firefox"] }), {
+      encoding: "utf8",
+      flag: "wx",
+    });
+    const provider = {
+      id: "brew-cask",
+      displayName: "Homebrew (casks)",
+      platforms: PLATFORMS.macos,
+      isAvailable: vi.fn(),
+      listOutdated: vi.fn(),
+      update: vi.fn(),
+      updateAll: vi.fn(),
+    };
+    getProviderMock.mockReturnValue(provider);
+    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+
+    try {
+      await expect(adminBatchCommand(file)).resolves.toBe(1);
+    } finally {
+      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+    }
+    const out = JSON.parse(await readFile(`${file}.out`, "utf8"));
+    expect(out.outcomes[0]).toEqual({
+      id: "firefox",
+      success: false,
+      message: "Provider brew-cask indisponible sur Windows (macOS uniquement)",
+    });
+    expect(provider.update).not.toHaveBeenCalled();
   });
 
   it("returns exit 2 and prints to stderr when the input file is unreadable or malformed", async () => {
