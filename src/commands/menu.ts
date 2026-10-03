@@ -1,19 +1,21 @@
 import { getProvider } from "../core/registry.js";
 import { requestsFrom } from "../core/update/update-plan.js";
 import { MenuApp } from "../ui/app/menu-app.js";
+import { uiPreferences } from "../ui/app/ui-preferences.js";
 import type { MenuController } from "../ui/app/menu-session.js";
 import { runScan } from "../ui/scan-progress.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 import type { MenuState } from "./menu-state.js";
 import { menuViews } from "./menu-views.js";
-import { runWithConsole } from "./update.js";
+import { updateOnConsole } from "./update.js";
 
 /** `gup` with no subcommand: the full-screen interactive app. */
 export async function menuCommand(): Promise<number> {
+  const { scan } = uiPreferences().current();
   const state: MenuState = {
     scans: [],
-    fast: false,
-    filter: [],
+    fast: scan.fast,
+    filter: [...scan.filter],
     detectedCount: 0,
     providers: [],
   };
@@ -38,8 +40,8 @@ export const menuController: MenuController = {
     state.providers = run.detected.map((p) => ({ id: p.id, displayName: p.displayName }));
   },
 
-  async updatePackages(packages) {
-    await runWithConsole(requestsFrom(packages));
+  updateOutside(packages, request = {}) {
+    return updateOnConsole(requestsFrom(packages, request));
   },
 
   displayName(providerId) {

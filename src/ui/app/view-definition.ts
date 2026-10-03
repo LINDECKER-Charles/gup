@@ -5,6 +5,7 @@ import type { ScanObserver } from "../panels/scan-panel.js";
 import type { DialogLayer } from "../tui/dialog.js";
 import type { KeyPress, Screen } from "../tui/screen-host.js";
 import type { Tone } from "../tui/styled-lines.js";
+import type { UiPreferences } from "./ui-preferences.js";
 import type { UpdateLauncher } from "./update-launcher.js";
 
 /**
@@ -52,6 +53,8 @@ export interface ViewContext {
   readonly dialogs: DialogLayer;
   /** Updates the given packages; the launcher in effect decides where (outside, in the screen). */
   readonly updates: UpdateLauncher;
+  /** The user's menu preferences, as they are now (they change live). */
+  readonly preferences: () => UiPreferences;
   displayName(providerId: string): string;
   redraw(): void;
   /** Bring a registered view to the front (ignored for one that is not registered). */

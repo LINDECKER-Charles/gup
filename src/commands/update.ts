@@ -8,7 +8,7 @@ import { setInstallTimeoutSeconds } from "../core/runner.js";
 import { requestsFrom } from "../core/update/update-plan.js";
 import { runUpdates } from "../core/update/update-pipeline.js";
 import type { UpdateRequest } from "../core/update/update-ports.js";
-import { exitCodeOf } from "../core/update/update-report.js";
+import { exitCodeOf, type UpdateReport } from "../core/update/update-report.js";
 import { confirm } from "../ui/prompts/confirm.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection } from "../ui/select.js";
@@ -128,20 +128,28 @@ function runSelection(
   return runWithConsole(requestsFrom(selection), opts);
 }
 
-/**
- * Run updates on the plain terminal: a Ctrl+C skip session as the gate, the
- * console prompts for elevation and retries (none with `yes`), the summary
- * at the end. Returns the exit code: 1 when anything failed.
- */
-export async function runWithConsole(
+/** `updateOnConsole`, as an exit code: 1 when anything failed. */
+async function runWithConsole(
   requests: readonly UpdateRequest[],
   opts: { yes?: boolean } = {},
 ): Promise<number> {
+  return exitCodeOf(await updateOnConsole(requests, opts));
+}
+
+/**
+ * Run updates on the plain terminal: a Ctrl+C skip session as the gate, the
+ * console prompts for elevation and retries (none with `yes`), the summary
+ * at the end. Shared by `gup update` and the menu's outside updates.
+ */
+export async function updateOnConsole(
+  requests: readonly UpdateRequest[],
+  opts: { yes?: boolean } = {},
+): Promise<UpdateReport> {
   const session = beginSkipSession();
   try {
     const report = await runUpdates(requests, consolePorts({ gate: session, ...yesFlag(opts) }));
     printReport(report);
-    return exitCodeOf(report);
+    return report;
   } finally {
     session.dispose();
   }

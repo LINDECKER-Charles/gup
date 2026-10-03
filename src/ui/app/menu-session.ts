@@ -1,6 +1,7 @@
 import type { KeyEvent } from "@opentui/core";
-import { countPackages, type MenuState } from "../../commands/menu-state.js";
+import { countPackages, withoutUpdated, type MenuState } from "../../commands/menu-state.js";
 import type { SelectedPackage } from "../../core/types.js";
+import type { UpdateReport } from "../../core/update/update-report.js";
 import type { Viewport } from "../panels/panel.js";
 import type { ScanEvents } from "../panels/scan-panel.js";
 import { ScanBus } from "../scan-progress.js";
@@ -15,7 +16,8 @@ import { DialogLayer } from "../tui/dialog.js";
 import type { KeyPress, Screen } from "../tui/screen-host.js";
 import { panelFrame, TextPanel } from "../tui/text-panel.js";
 import { entryAtRow, QUIT, renderSidebar, SIDEBAR_WIDTH } from "./sidebar.js";
-import type { UpdateLauncher } from "./update-launcher.js";
+import { uiPreferences, type UiPreferences } from "./ui-preferences.js";
+import { launcherFactory, type LaunchRequest, type LauncherContext } from "./update-launcher.js";
 import type {
   Takeover,
   TakeoverSurface,
@@ -28,12 +30,29 @@ import { ViewRegistry } from "./view-registry.js";
 /** What the menu needs from the rest of gup. Implemented by the menu command. */
 export interface MenuController {
   scan(state: MenuState, events: ScanEvents): Promise<void>;
-  updatePackages(packages: readonly SelectedPackage[]): Promise<void>;
   displayName(providerId: string): string;
+  /**
+   * Update on the plain terminal, once the screen is gone: the pipeline and
+   * console output of `gup update`. Resolves with what happened.
+   */
+  updateOutside(
+    packages: readonly SelectedPackage[],
+    request?: LaunchRequest,
+  ): Promise<UpdateReport>;
 }
 
-/** How a session ends: the user quits, or a job needs the terminal back. */
-export type SessionExit = { kind: "quit" } | { kind: "outside"; run: () => Promise<void> };
+/**
+ * How a session ends: the user quits, or an update needs the terminal back —
+ * the app runs it after the screen is gone, then mounts a new session on
+ * `returnTo` (default Paquets).
+ */
+export type SessionExit =
+  | { readonly kind: "quit" }
+  | {
+      readonly kind: "outside";
+      readonly run: () => Promise<UpdateReport>;
+      readonly returnTo?: ViewId;
+    };
 
 export interface SessionDeps {
   readonly state: MenuState;
@@ -92,8 +111,14 @@ export class MenuSession {
   run(): Promise<SessionExit> {
     return new Promise<SessionExit>((resolve) => {
       const timer = setInterval(() => this.tick(), FRAME_MS);
+      const redraw = (): void => this.draw();
+      const unsubscribe = [
+        this.#screen.appearance.onChange(redraw),
+        uiPreferences().subscribe(redraw),
+      ];
       this.#exit = (exit) => {
         clearInterval(timer);
+        for (const stop of unsubscribe) stop();
         resolve(exit);
       };
       this.wireInput();
@@ -106,15 +131,12 @@ export class MenuSession {
 
   private createContext(): ViewContext {
     const { state, controller } = this.#deps;
-    const launcher: UpdateLauncher = {
-      isRunning: false,
-      launch: (packages) => this.confirmUpdate(packages),
-    };
     return {
       screen: this.#screen,
       state,
       dialogs: this.#dialogs,
-      updates: launcher,
+      updates: launcherFactory()(this.launcherContext()),
+      preferences,
       displayName: (providerId) => controller.displayName(providerId),
       redraw: () => this.draw(),
       show: (view) => {
@@ -125,6 +147,19 @@ export class MenuSession {
       onScansChanged: (listener) => this.#scans.onResults(listener),
       observeScan: (observer) => this.#scans.observe(observer),
       takeOver: (start) => this.takeOver(start),
+    };
+  }
+
+  private launcherContext(): LauncherContext {
+    return {
+      screen: this.#screen,
+      dialogs: this.#dialogs,
+      state: this.#deps.state,
+      controller: this.#deps.controller,
+      preferences,
+      takeOver: (start) => this.takeOver(start),
+      exit: (exit) => this.#exit(exit),
+      afterUpdate: (report, returnTo) => this.afterUpdate(report, returnTo),
     };
   }
 
@@ -265,22 +300,24 @@ export class MenuSession {
     this.#main.box.visible = isVisible;
   }
 
-  private async confirmUpdate(packages: readonly SelectedPackage[]): Promise<null> {
-    if (packages.length === 0) return null;
-    const shown = packages
-      .slice(0, 8)
-      .map((p) => `• ${p.pkg.name ?? p.pkg.id}  ${p.pkg.current} → ${p.pkg.latest}`);
-    const more =
-      packages.length > shown.length ? [`… et ${packages.length - shown.length} autre(s)`] : [];
-    const isConfirmed = await this.#dialogs.confirm({
-      title: "Mettre à jour",
-      text: [`${packages.length} paquet(s) vont être mis à jour :`, "", ...shown, ...more],
-    });
-    this.draw();
-    if (isConfirmed) {
-      this.#exit({ kind: "outside", run: () => this.#deps.controller.updatePackages(packages) });
+  /**
+   * An update ran inside the screen. Rescan when the preferences ask for it
+   * (the Scan view comes to the front unless the update was launched from
+   * another view); otherwise drop what was updated, and go back.
+   */
+  private afterUpdate(report: UpdateReport, returnTo?: ViewId): void {
+    if (!preferences().rescanAfterUpdate) {
+      const { state } = this.#deps;
+      state.scans = withoutUpdated(state.scans, report);
+      this.#scans.announceResults();
+      this.#views.show(returnTo ?? "packages");
+    } else if (returnTo) {
+      this.#views.show(returnTo);
+      void this.scan();
+    } else {
+      this.rescan();
     }
-    return null;
+    this.draw();
   }
 
   private tick(): void {
@@ -289,7 +326,8 @@ export class MenuSession {
       return this.draw();
     }
     if (!this.#scans.isRunning) return;
-    this.#scans.tick();
+    // Animations off: the spinner stands still, the progress still redraws.
+    if (preferences().animations) this.#scans.tick();
     this.draw();
   }
 
@@ -329,4 +367,8 @@ export class MenuSession {
     if (this.#focus === "sidebar" || !panel) return SIDEBAR_HINTS;
     return `${panel.hints()} · ${PANEL_HINTS_TAIL}`;
   }
+}
+
+function preferences(): UiPreferences {
+  return uiPreferences().current();
 }

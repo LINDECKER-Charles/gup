@@ -1,3 +1,4 @@
+import { uiPreferences } from "../app/ui-preferences.js";
 import { ScanPanel, type ScanEvents } from "../panels/scan-panel.js";
 import { bodyPanelSize, Chrome } from "../tui/chrome.js";
 import { screenHost, type ScreenHost } from "../tui/screen-host.js";
@@ -21,7 +22,8 @@ export function withScanScreen<T>(
     const draw = (): void => panel.show(scan.render(bodyPanelSize(screen)));
     chrome.setHints("Ctrl+C interrompre");
     const timer = setInterval(() => {
-      scan.tick();
+      // Animations off: the spinner stands still, the progress still redraws.
+      if (uiPreferences().current().animations) scan.tick();
       draw();
     }, FRAME_MS);
     draw();

@@ -1,13 +1,20 @@
 import type { TestRendererSetup } from "@opentui/core/testing";
-import { vi } from "vitest";
+import { onTestFinished, vi } from "vitest";
 import type { MenuState } from "../../../src/commands/menu-state.js";
 import type { ProviderStatusReport } from "../../../src/core/platform/types.js";
 import type { ProviderScanResult } from "../../../src/core/types.js";
+import type { UpdateReport } from "../../../src/core/update/update-report.js";
 import {
   MenuSession,
   type MenuController,
   type SessionExit,
 } from "../../../src/ui/app/menu-session.js";
+import {
+  DEFAULT_UI_PREFERENCES,
+  setUiPreferencesSource,
+  type UiPreferences,
+} from "../../../src/ui/app/ui-preferences.js";
+import { setLauncherFactory, type LauncherFactory } from "../../../src/ui/app/update-launcher.js";
 import type { ViewDefinition, ViewId } from "../../../src/ui/app/view-definition.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
@@ -36,6 +43,10 @@ export interface MenuDriverOptions {
   readonly initialView?: ViewId;
   readonly state?: Partial<MenuState>;
   readonly createAppearance?: AppearanceFactory;
+  /** Installed as the launcher slot for this test only. */
+  readonly launcher?: LauncherFactory;
+  /** The menu preferences for this test only; change them live with `setPreferences`. */
+  readonly preferences?: Partial<UiPreferences>;
 }
 
 export interface MenuDriver {
@@ -48,7 +59,18 @@ export interface MenuDriver {
   frame(): Promise<string>;
   /** The frame once it contains `text`. */
   waitForText(text: string): Promise<string>;
+  /** Change the preferences as the settings would, notifying the menu. */
+  setPreferences(patch: Partial<UiPreferences>): void;
 }
+
+/** The report of an update that did nothing. */
+export const EMPTY_REPORT: UpdateReport = {
+  entries: [],
+  cancelled: [],
+  succeeded: [],
+  skipped: [],
+  failed: [],
+};
 
 const NO_PROVIDERS: ProviderStatusReport = {
   platform: "win32",
@@ -76,12 +98,38 @@ export function scriptedController(scans: readonly ProviderScanResult[]): MenuCo
       state.scans = [...scans];
       state.detectedCount = scans.length;
     }),
-    updatePackages: vi.fn(async () => {}),
+    updateOutside: vi.fn(async () => EMPTY_REPORT),
     displayName: vi.fn((providerId: string) => providerId),
   };
 }
 
+/**
+ * Install the test's slots (launcher, preferences) until the test ends, and
+ * hand back the live preference setter.
+ */
+function installSlots(options: MenuDriverOptions): (patch: Partial<UiPreferences>) => void {
+  if (options.launcher) setLauncherFactory(options.launcher);
+  let current: UiPreferences = { ...DEFAULT_UI_PREFERENCES, ...options.preferences };
+  const listeners = new Set<() => void>();
+  setUiPreferencesSource({
+    current: () => current,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+  });
+  onTestFinished(() => {
+    setLauncherFactory(null);
+    setUiPreferencesSource(null);
+  });
+  return (patch) => {
+    current = { ...current, ...patch };
+    for (const listener of listeners) listener();
+  };
+}
+
 export async function bootMenu(options: MenuDriverOptions = {}): Promise<MenuDriver> {
+  const setPreferences = installSlots(options);
   const state: MenuState = {
     scans: [],
     fast: false,
@@ -116,5 +164,6 @@ export async function bootMenu(options: MenuDriverOptions = {}): Promise<MenuDri
       await screen.waitForFrame((current) => current.includes(text));
       return frame(screen);
     },
+    setPreferences,
   };
 }

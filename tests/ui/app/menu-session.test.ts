@@ -8,6 +8,9 @@ import type {
   ViewDefinition,
 } from "../../../src/ui/app/view-definition.js";
 import type { Panel } from "../../../src/ui/panels/panel.js";
+import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
+import { toAscii } from "../../../src/ui/theme/glyphs.js";
+import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
 import { providersView } from "../../../src/ui/views/providers-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
 import { bootMenu, defaultViews } from "../../support/tui/menu-driver.js";
@@ -69,9 +72,9 @@ describe("MenuSession", () => {
     await menu.press("o");
     const ended = await menu.exit;
     expect(ended.kind).toBe("outside");
-    expect(menu.controller.updatePackages).not.toHaveBeenCalled();
+    expect(menu.controller.updateOutside).not.toHaveBeenCalled();
     if (ended.kind === "outside") await ended.run();
-    const picked = vi.mocked(menu.controller.updatePackages).mock.calls[0]![0];
+    const picked = vi.mocked(menu.controller.updateOutside).mock.calls[0]![0];
     expect(picked.map((p) => p.pkg.id)).toEqual(["7zip.7zip"]);
   });
 
@@ -81,7 +84,7 @@ describe("MenuSession", () => {
     const text = await menu.frame();
     expect(text).not.toContain("vont être mis à jour");
     expect(text).toContain("┏━ Paquets");
-    expect(menu.controller.updatePackages).not.toHaveBeenCalled();
+    expect(menu.controller.updateOutside).not.toHaveBeenCalled();
   });
 
   it("lists the views by group, then Quitter, with the Paquets count", async () => {
@@ -228,5 +231,62 @@ describe("MenuSession views", () => {
     const text = await menu.frame();
     expect(text).toContain("0 provider(s)  │  3 planifiées");
     expect(text).toMatch(/Journal +!/);
+  });
+});
+
+describe("MenuSession preferences", () => {
+  /** A scan that shows its spinner until the test ends. */
+  const endlessScan = vi.fn(async (_state: unknown, events: { detecting(): void }) => {
+    events.detecting();
+    return new Promise<void>(() => {});
+  });
+  const SPINNER = /[◐◓◑◒] {2}détection/;
+
+  async function spinnerFrames(animations: boolean): Promise<string[]> {
+    const menu = await bootMenu({ controller: { scan: endlessScan }, preferences: { animations } });
+    const first = (await menu.waitForText("détection")).match(SPINNER)?.[0] ?? "";
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const later = (await menu.frame()).match(SPINNER)?.[0] ?? "";
+    return [first, later];
+  }
+
+  it("keeps the spinner still while animations are off", async () => {
+    const [still, stillLater] = await spinnerFrames(false);
+    expect(stillLater).toBe(still);
+    const [turning, turned] = await spinnerFrames(true);
+    expect(turned).not.toBe(turning);
+  });
+
+  it("redraws when a preference changes, without a key", async () => {
+    const view = testView((context) =>
+      panelOf({
+        render: () => [
+          [{ text: context.preferences().animations ? "animé" : "immobile", tone: "plain" }],
+        ],
+      }),
+    );
+    const menu = await bootMenu({ views: [view], scanOnStart: false });
+    expect(await menu.frame()).toContain("animé");
+    menu.setPreferences({ animations: false });
+    expect(await menu.frame()).toContain("immobile");
+  });
+
+  it("redraws when the appearance changes, without a key", async () => {
+    let isAscii = false;
+    const listeners = new Set<() => void>();
+    const createAppearance: AppearanceFactory = (renderer, tui) => ({
+      ...legacyAppearance(renderer, tui),
+      glyphs: (text) => (isAscii ? toAscii(text) : text),
+      onChange: (listener) => {
+        listeners.add(listener);
+        return () => void listeners.delete(listener);
+      },
+    });
+    const view = testView(() => panelOf({ render: () => [[{ text: "✔ prêt", tone: "plain" }]] }));
+    const menu = await bootMenu({ views: [view], scanOnStart: false, createAppearance });
+    expect(await menu.frame()).toContain("✔ prêt");
+    isAscii = true;
+    for (const listener of listeners) listener();
+    expect(await menu.frame()).toContain("+ prêt");
   });
 });

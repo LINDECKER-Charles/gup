@@ -49,7 +49,7 @@ beforeEach(() => {
   vi.spyOn(process.stdout, "write").mockReturnValue(true);
 });
 
-describe("menuController.updatePackages", () => {
+describe("menuController.updateOutside", () => {
   it("batches the admin packages behind one elevation prompt and updates the rest in place", async () => {
     const update = choco();
     confirmMock.mockResolvedValueOnce(true);
@@ -58,7 +58,7 @@ describe("menuController.updatePackages", () => {
       { id: "python", success: true },
     ]);
 
-    await menuController.updatePackages([
+    const report = await menuController.updateOutside([
       { providerId: "choco", pkg: pkg("nodejs", true) },
       { providerId: "choco", pkg: pkg("fzf") },
       { providerId: "choco", pkg: pkg("python", true) },
@@ -67,12 +67,17 @@ describe("menuController.updatePackages", () => {
     expect(confirmMock).toHaveBeenCalledOnce();
     expect(runElevatedBatchMock).toHaveBeenCalledExactlyOnceWith(["choco:nodejs", "choco:python"]);
     expect(update).toHaveBeenCalledExactlyOnceWith("fzf");
+    expect(report.entries.map((entry) => [entry.key, entry.outcome.success])).toEqual([
+      ["choco:fzf", true],
+      ["choco:nodejs", true],
+      ["choco:python", true],
+    ]);
   });
 
   it("leaves the admin packages alone when the prompt is declined", async () => {
     const update = choco();
     confirmMock.mockResolvedValueOnce(false);
-    await menuController.updatePackages([{ providerId: "choco", pkg: pkg("nodejs", true) }]);
+    await menuController.updateOutside([{ providerId: "choco", pkg: pkg("nodejs", true) }]);
     expect(runElevatedBatchMock).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();
   });

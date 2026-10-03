@@ -14,6 +14,11 @@ export function requestsFrom(
   }));
 }
 
+/** A package's identity across a run, its retries and the UI: `providerId:packageId`. */
+export function updateKeyOf(providerId: string, packageId: string): string {
+  return `${providerId}:${packageId}`;
+}
+
 /**
  * Order the work: packages that need administrator rights go to one elevated
  * batch (a single UAC or sudo prompt) after the others; the others are
@@ -26,7 +31,7 @@ export function planUpdates(
 ): UpdatePlan {
   const planned = requests.map((request): PlannedUpdate => ({
     ...request,
-    key: `${request.providerId}:${request.packageId}`,
+    key: updateKeyOf(request.providerId, request.packageId),
     providerName: nameOf(request.providerId),
   }));
   const isElevated = (item: PlannedUpdate): boolean => item.pkg?.requiresAdmin === true;

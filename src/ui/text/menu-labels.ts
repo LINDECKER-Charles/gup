@@ -1,3 +1,5 @@
+import type { OutdatedPackage } from "../../core/types.js";
+
 /**
  * The interactive menu's own words (French, the language of the interface):
  * sidebar, title bar facts, key hints. Views keep their strings in their own
@@ -31,6 +33,14 @@ export function scanModeFact(isFast: boolean, filteredProviders: number): string
     filteredProviders === 0 ? "tous les providers" : `${filteredProviders} provider(s) filtrés`;
   return `${isFast ? "mode rapide" : "mode normal"} · ${filter}`;
 }
+
+export const CONFIRM_UPDATE = {
+  title: "Mettre à jour",
+  heading: (count: number) => `${count} paquet(s) vont être mis à jour :`,
+  item: (pkg: Pick<OutdatedPackage, "id" | "name" | "current" | "latest">) =>
+    `• ${pkg.name ?? pkg.id}  ${pkg.current} → ${pkg.latest}`,
+  more: (count: number) => `… et ${count} autre(s)`,
+} as const;
 
 export const TIMEOUT_DIALOG = {
   title: "Timeout par install",
