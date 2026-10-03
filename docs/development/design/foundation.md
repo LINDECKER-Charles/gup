@@ -21,17 +21,21 @@ The foundation is mostly plumbing. These are the only behaviour changes:
 | The menu batches administrator packages behind one UAC / `sudo` prompt, like `gup update`; on macOS/Linux, MacPorts, Fink, pkgin and apt/dnf delegations ask for the password once per batch. | `core/update`, `core/elevation` |
 | Windows exit codes are signed 32-bit (Visual Studio's "cancelled" code is recognised again). | `core/runner` |
 | The elevated wait is sized to the number of packages (no more waiter killed mid-batch). | `core/elevation` |
-| `gup doctor` uses the bounded detection (no hang) and gains a "Système" section. | `commands/doctor` |
+| `gup doctor` uses the bounded detection (no hang) and gains a "Système" section, made of the feature modules' diagnostics: no foundation module reports one, so the section stays hidden until a feature branch adds the first line. | `commands/doctor` |
 | A skipped install reads `ignorée par l'utilisateur`. | `core/update/finalize-outcome` |
 | The focused panel has a heavy border (focus no longer told by colour alone). | `ui/theme/legacy-appearance` |
 | The sidebar loses "Tout mettre à jour" and "Cible…" (`a` + Entrée; `gup update provider:id`). | `ui/app` |
 | After an update the menu drops the updated packages instead of rescanning; `r` rescans from Paquets. | `ui/app`, `ui/panels/packages-panel` |
 | ASCII symbols and borders on `GUP_ASCII=1`, `TERM=linux|dumb`, or POSIX without a UTF-8 locale. | `ui/theme/glyphs` |
 | Closing the console, Ctrl+Break or a kill while a screen is up restores the terminal and exits with 128 + signal. | `ui/tui/screen-host` |
+| `gup --help` lists the commands in `CLI_MODULES` order (by module id): `doctor`, `list`, `update`. | `commands/cli` |
 
 Everything else — the span intents of every screen, CLI output, exit codes, `--json` — is
-unchanged, and tests pin it (`tests/commands/update.test.ts` kept its expectations; a regression
-test pins the legacy appearance's palette slots).
+unchanged, and tests pin it: `tests/commands/update.test.ts` kept its expectations, except the
+three assertions that spied on the deleted `maybeRetryFailures`, which now check the same thing
+(no retry question under `--yes` or after a declined confirmation) through the prompt; a
+regression test pins the legacy appearance's palette slots. `gup list --json --fast` and
+`gup doctor` print byte-identical output on the same machine.
 
 ---
 
@@ -125,7 +129,9 @@ One path for `gup update`, the menu and scheduled runs:
 provider, then one elevated batch), runs, offers retries, and returns an `UpdateReport`. The
 ports are the only coupling to a UI: `UpdateObserver` (planned, started, finished,
 elevationStarted, cancelled, waiting), `UpdateDecisions` (`AUTO_DECISIONS` for `-y`,
-`HEADLESS_DECISIONS` for scheduled runs: never elevate, never retry) and an `AbortGate`.
+`HEADLESS_DECISIONS` for scheduled runs: never elevate, never retry, and `unattended` — every
+attempt then passes `UpdateOptions.unattended`, so winget runs with `--disable-interactivity`)
+and an `AbortGate`.
 `updateKeyOf(providerId, packageId)` is the identity of a package across a run, its retries and
 the UI. The console side is `ui/update-console.ts` (`consolePorts`, `printReport`);
 `commands/update.ts#updateOnConsole` runs it with a Ctrl+C skip session.
@@ -175,6 +181,10 @@ it calls the latest `interceptCtrlC` handler or rejects with `PromptCancelledErr
 are created with `exitOnCtrlC: false` and `exitSignals: []`: while a screen is up, the host
 handles SIGBREAK, SIGTERM, SIGHUP (and SIGINT on POSIX) — stop the install in flight, release the
 screen as above, exit 128 + signal. The batch lock needs no release there: the exit frees it.
+The host knows no batch: `skipCurrent()` only stops the install in flight, and the pipeline would
+move on to the next package during the teardown. A launcher that runs a batch inside the screen
+(in-app updates) closes its own gate on the same signals while the batch runs, so nothing new
+starts before the exit.
 
 ### 3.9 Menu: views, session, launcher, preferences (`src/ui/app/`, `src/ui/views/`)
 
@@ -360,6 +370,9 @@ Recorded so the integration agent and the wave-2 branches are not surprised.
   foreign provider in a request is reported *skipped*; `OutcomeEntry.key` and
   `UpdateDecisions.declinedElevation` are additive members; `launchDetached` reads a missing
   binary as launched on Windows (cmd.exe routing), so its integration assertion runs on POSIX.
+- **`UpdateDecisions.unattended`** (additive) is how `HEADLESS_DECISIONS` sets
+  `UpdateOptions.unattended` (F-5): decisions are the one port a scheduled run already swaps, so
+  no caller has to remember a second flag.
 
 ## 10. Folder budget after the foundation
 

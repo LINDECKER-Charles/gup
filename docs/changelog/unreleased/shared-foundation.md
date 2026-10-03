@@ -11,7 +11,7 @@ note: [`../../development/design/foundation.md`](../../development/design/founda
 - **ui:** Draw symbols and borders in ASCII on `GUP_ASCII=1`, `TERM=linux` or `TERM=dumb`, and on macOS/Linux without a UTF-8 locale; every stand-in is one column wide, so layouts do not move ([`7116328`](https://github.com/LINDECKER-Charles/gup/commit/7116328))
 - **ui:** `r` rescans from Paquets ([`cf0b908`](https://github.com/LINDECKER-Charles/gup/commit/cf0b908))
 - **cli:** `gup doctor` ends with a "Système" section where each part of gup reports its own state ([`71453ef`](https://github.com/LINDECKER-Charles/gup/commit/71453ef))
-- **providers/os:** winget runs non-interactive in unattended updates, so a prompt fails fast instead of holding a scheduled run until the install timeout ([`b3a42db`](https://github.com/LINDECKER-Charles/gup/commit/b3a42db))
+- **providers/os:** winget runs non-interactive in unattended updates, so a prompt fails fast instead of holding a scheduled run until the install timeout ([`b3a42db`](https://github.com/LINDECKER-Charles/gup/commit/b3a42db), [`df8bada`](https://github.com/LINDECKER-Charles/gup/commit/df8bada))
 - **core/history:** History records carry what started the run (`trigger`: menu, cli, schedule), per-provider scan durations and the schedule an update belongs to; the schema version stays 1 ([`d83bce5`](https://github.com/LINDECKER-Charles/gup/commit/d83bce5))
 
 ## Changed
