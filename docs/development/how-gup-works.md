@@ -199,7 +199,9 @@ to scan is reported in its row, not as a process failure.
 updateCommand({ all, yes, only, fast, targets })
 
 (a) targets given:
-    → resolveTargets: "provider:packageId", lookupProvider (unknown or foreign → exit 2)
+    → resolveTargets: resolveUpdateTarget per target (core/platform/update-target.ts):
+      "provider:packageId", no empty or `-…` package id, no control character,
+      lookupProvider (unknown or foreign) → any refusal exits 2
     → updateOnConsole(requests)            no scan
 
 (b) --all:
@@ -711,7 +713,9 @@ entry), `schedules-controller.ts` (the Planification view's port).
 ### 9.6 `admin-batch.ts`
 
 The hidden `__admin-batch <file>` command the elevated batch starts as administrator: reads the
-targets, calls `provider.update()` for each one under its operation context, writes the outcomes
+targets, re-checks each one with `resolveUpdateTarget` — the check `gup update` applies, since the
+payload sat in the temp directory — and fails the ones it refuses without running them, calls
+`provider.update()` for each other one under its operation context, writes the outcomes
 and its debug-log lines back to a file the unelevated parent validates. It never touches the
 history and never reads the settings.
 

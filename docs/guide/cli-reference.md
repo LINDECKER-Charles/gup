@@ -233,6 +233,10 @@ Targets are `provider:packageId`.
   The table prints a display name when the provider supplies one: winget shows `Spotify`, but the
   id to target is `Spotify.Spotify`. When in doubt, `gup list --json` gives you both.
 
+A package id is never empty and never starts with `-` (the provider's tool would read it as an
+option), and no target holds a control character: such a target exits `2` before anything runs.
+The elevated helper re-checks the targets of its batch the same way.
+
 A target without a `:` exits `2` and prints the accepted forms. Passing a provider *name* where a
 package id belongs is detected and answered with the commands that would have worked:
 

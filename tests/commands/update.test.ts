@@ -89,6 +89,22 @@ describe("updateCommand: --targets", () => {
     expect(getProviderMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["an option", "p:--registry=http://attacker.invalid", "« - »"],
+    ["an empty package id", "p:", "identifiant de paquet manquant"],
+    ["a control character", "p:pkg\u001b]0;title\u0007", "caractère de contrôle"],
+  ])("returns 2 without updating anything when a target holds %s", async (_case, target, reason) => {
+    const p = mkProvider();
+    getProviderMock.mockReturnValue(p);
+
+    expect(await updateCommand({ targets: ["p:ok", target] })).toBe(2);
+
+    const message = String(stderrSpy.mock.calls[0]![0]);
+    expect(message).toContain(reason);
+    expect(message.trimEnd()).not.toMatch(/[\u0000-\u001f\u007f]/);
+    expect(p.update).not.toHaveBeenCalled();
+  });
+
   it("returns 2 and prints stderr when the provider is unknown", async () => {
     getProviderMock.mockReturnValueOnce(undefined);
     const code = await updateCommand({ targets: ["nope:foo"] });

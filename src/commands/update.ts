@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import type { Command } from "commander";
 import { isSupportedOn } from "../core/platform/is-supported-on.js";
-import { lookupProvider } from "../core/platform/lookup-provider.js";
+import { resolveUpdateTarget, type InvalidUpdateTarget } from "../core/platform/update-target.js";
 import { ALL_PROVIDERS } from "../core/registry.js";
 import type { Provider, ProviderScanResult, SelectedPackage } from "../core/types.js";
 import { setInstallTimeoutSeconds } from "../core/runner.js";
@@ -95,28 +95,26 @@ async function chooseSelection(
 /**
  * Validate every `provider:packageId` up front, before opening a skip session:
  * a typo must not leave a session dangling behind it. Returns null after
- * writing the diagnostic to stderr.
+ * writing the diagnostic to stderr. The elevated child applies the same check.
  */
 function resolveTargets(targets: string[]): UpdateRequest[] | null {
   const requests: UpdateRequest[] = [];
   for (const target of targets) {
-    const idx = target.indexOf(":");
-    if (idx === -1) {
-      // Only suggest providers that can act here: never
-      // `gup list --provider winget` on a Mac.
-      const actionable = ALL_PROVIDERS.filter((p) => isSupportedOn(p));
-      process.stderr.write(formatBadTargetMessage(target, actionable));
+    const resolved = resolveUpdateTarget(target);
+    if (!resolved.isValid) {
+      process.stderr.write(badTargetMessage(target, resolved));
       return null;
     }
-    const providerId = target.slice(0, idx);
-    const lookup = lookupProvider(providerId);
-    if (!lookup.isFound) {
-      process.stderr.write(`${lookup.error}\n`);
-      return null;
-    }
-    requests.push({ providerId, packageId: target.slice(idx + 1) });
+    requests.push({ providerId: resolved.provider.id, packageId: resolved.packageId });
   }
   return requests;
+}
+
+/** A target with no provider gets examples; the others, the check's own reason. */
+function badTargetMessage(target: string, { problem, error }: InvalidUpdateTarget): string {
+  if (problem !== "format") return `${error}\n`;
+  // Only suggest providers that can act here: never `gup list --provider winget` on a Mac.
+  return formatBadTargetMessage(target, ALL_PROVIDERS.filter((p) => isSupportedOn(p)));
 }
 
 async function runTargets(targets: string[], opts: { yes?: boolean } = {}): Promise<number> {
