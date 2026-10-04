@@ -52,8 +52,9 @@ const BROWSERS: Readonly<Partial<Record<NodeJS.Platform, readonly string[]>>> = 
 
 /**
  * The CLI's environment: none of the developer's `GUP_*` settings, every
- * gup directory in the sandbox, no settings file, no debug log, and the
- * fixture's time zone (the report counts days in it).
+ * gup directory in the sandbox, no settings file, no debug log, English
+ * (the docs' language) and the fixture's time zone (the report counts days
+ * in it).
  */
 function sandboxEnv(sandbox: string): NodeJS.ProcessEnv {
   const kept = Object.entries(process.env).filter(([name]) => !GUP_VARIABLE.test(name));
@@ -65,6 +66,7 @@ function sandboxEnv(sandbox: string): NodeJS.ProcessEnv {
     GUP_SCHEDULER_DIR: join(sandbox, "scheduler"),
     GUP_CONFIG: "0",
     GUP_LOG_LEVEL: "off",
+    GUP_LANG: "en",
     TZ: FIXTURE_CLOCK.timeZone,
   };
 }
