@@ -21,7 +21,7 @@ import { isPtyRequired } from "../../support/e2e/scope.js";
  * OS.
  */
 
-const COMMANDS = ["list", "update", "doctor", "log", "report", "schedule"];
+const COMMANDS = ["list", "update", "doctor", "language", "log", "report", "schedule"];
 const HIDDEN_COMMANDS = ["__admin-batch", "__schedule-tick"];
 const MECHANISMS: Partial<Record<NodeJS.Platform, string>> = {
   win32: "windows-task",
@@ -81,6 +81,38 @@ describe("gup, from the command line", () => {
     const run = await gup([], "q\n");
     expectExit([], run, 1);
     expect(run.stderr).toContain("cette action demande un terminal interactif");
+  });
+});
+
+/**
+ * The suites run gup in French (`GUP_LANG`, tests/support/locale.ts); here it
+ * runs as a fresh install does — no `GUP_LANG` — then as the install line
+ * that picks French leaves it.
+ */
+describe("gup's language", () => {
+  function withoutLang(): Sandbox {
+    const { GUP_LANG: _lang, ...env } = sandbox.env;
+    return { ...sandbox, env };
+  }
+
+  it("speaks English when nothing chose another language", async () => {
+    const english = withoutLang();
+    const help = await runCli(["--help"], { sandbox: english });
+    expectExit(["--help"], help, 0);
+    expect(help.stdout).toContain("Usage: gup [options] [command]");
+    const language = await runCli(["language"], { sandbox: english });
+    expect(language.stdout).toContain("Language: English (default)");
+  });
+
+  it("speaks French from the run after gup language fr, until gup language en", async () => {
+    const fresh = withoutLang();
+    const saved = await runCli(["language", "fr"], { sandbox: fresh });
+    expectExit(["language", "fr"], saved, 0);
+    expect(saved.stdout).toBe("gup parle désormais français.");
+    const help = await runCli(["--help"], { sandbox: fresh });
+    expect(help.stdout).toContain("Utilisation : gup [options] [commande]");
+    const back = await runCli(["language", "en"], { sandbox: fresh });
+    expect(back.stdout).toBe("gup now speaks English.");
   });
 });
 
