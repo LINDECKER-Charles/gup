@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { SCENES } from "../../data/scenes/index.js";
 import { useI18n } from "../../i18n/use-i18n.js";
+import { RichText } from "../RichText.jsx";
 import { LineScene } from "./LineScene.jsx";
 import { PackagesScene } from "./PackagesScene.jsx";
 import { RunScene } from "./RunScene.jsx";
@@ -65,7 +66,7 @@ export function Terminal() {
         <SceneView scene={scene} />
       </div>
       <figcaption className="term-caption" dir={locale.dir}>
-        {terminal.caption}
+        <RichText text={terminal.caption} />
       </figcaption>
     </figure>
   );

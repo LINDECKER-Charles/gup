@@ -62,7 +62,9 @@ export default {
     terminal: {
       label: "gup 运行演示",
       tabs: { app: "界面", update: "更新", json: "JSON" },
-      caption: "界面目前为法语。命令、参数和 JSON 输出在任何语言下都一样。",
+      caption:
+        "界面默认为英语，运行 `gup language fr` 即可切换为法语。命令、参数和 JSON 输出在任何" +
+        "语言下都一样。",
     },
   },
   features: {
@@ -273,7 +275,10 @@ export default {
       },
       language: {
         q: "界面是什么语言？",
-        a: "界面目前为法语。命令、参数和 JSON 输出与语言无关，本站提供八种语言版本。",
+        a:
+          "默认为英语。`gup language fr` 会将界面切换为法语并保存这一选择；`GUP_LANG=fr` 则只对" +
+          "单个 shell 生效，并优先于该选择。命令、参数和 JSON 输出与语言无关，本站提供八种语言" +
+          "版本。",
       },
     },
   },

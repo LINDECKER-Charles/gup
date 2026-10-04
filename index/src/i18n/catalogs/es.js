@@ -67,8 +67,8 @@ export default {
       label: "gup en acción",
       tabs: { app: "Interfaz", update: "Actualización", json: "JSON" },
       caption:
-        "La interfaz está en francés. Los comandos, las opciones y la salida JSON son " +
-        "iguales en todos los idiomas.",
+        "La interfaz está en inglés por defecto y en francés con `gup language fr`. Los " +
+        "comandos, las opciones y la salida JSON son iguales en todos los idiomas.",
     },
   },
   features: {
@@ -308,8 +308,10 @@ export default {
       language: {
         q: "¿En qué idioma está la interfaz?",
         a:
-          "Por ahora, la interfaz está en francés. Los comandos, las opciones y la salida " +
-          "JSON no dependen del idioma, y este sitio está disponible en ocho idiomas.",
+          "En inglés por defecto. `gup language fr` la cambia al francés y guarda esa " +
+          "elección; `GUP_LANG=fr` hace lo mismo en un solo shell y tiene prioridad sobre ella. " +
+          "Los comandos, las opciones y la salida JSON no dependen del idioma, y este sitio " +
+          "está disponible en ocho idiomas.",
       },
     },
   },
