@@ -61,14 +61,28 @@ Requirements: **Node ≥ 26.9**, any shell — the interactive UI is OpenTUI, wh
 
 Install Node through a version manager rather than over your system Node, so this floor does not fight your other projects: [nvm-windows](https://github.com/coreybutler/nvm-windows), [fnm](https://github.com/Schniz/fnm) or [Volta](https://volta.sh/) on Windows; fnm, Volta or [nvm](https://github.com/nvm-sh/nvm) on macOS and Linux. On an older Node, npm only warns (`EBADENGINE`), then the UI tests and the interactive app fail to load.
 
-### Two deliberate version pins
+### node-pty, the optional native dependency
 
-Both show up in `npm outdated`; neither is an oversight, so please don't "fix" them without checking these reasons still hold.
+[node-pty](https://github.com/microsoft/node-pty) is the pseudo-terminal behind updates that run inside the interactive app. It is an **optional** dependency with install scripts, so `npm install` behaves differently per OS:
+
+| OS | What `npm install` does with node-pty | Without it |
+|---|---|---|
+| Windows, macOS | uses the prebuilt binary it ships; npm 11 prints an `install-scripts` warning for it, which is expected | — |
+| Linux | compiles it with node-gyp: needs Python 3 and a C/C++ toolchain (`build-essential`, or your distribution's equivalent). If the build fails, npm skips the optional dependency and the install still succeeds | the menu updates outside the screen, and the real-PTY integration and end-to-end suites skip on Linux (they fail on Windows and macOS, where node-pty must load) |
+
+`GUP_PTY=off` turns the embedded terminal off for a run, to test the fallback. Why the install scripts are there and what users see: [installation.md § npm 11 and install scripts](docs/guide/installation.md#npm-11-and-install-scripts).
+
+### Deliberate version pins
+
+They show up in `npm outdated` or as Dependabot pull requests; none is an oversight, so please don't "fix" them without checking these reasons still hold.
 
 | Package | Pinned to | Why |
 |---|---|---|
 | `typescript` | `^6` | typescript-eslint does not support the TypeScript 7 API yet — `npm run lint` and `npm run lint:security` both fail outright on TS 7 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)). `tsc --noEmit` and the build are fine on 7; the linters are the blocker. |
 | `@types/node` | `^26` | Matched to the `engines.node` floor on purpose. Typing against the *minimum* supported runtime is what makes `tsc` reject an API that only exists on a newer Node line — bumping these types to the latest silently removes that guard. Raise it only together with `engines`. |
+| `@opentui/core` | exact | A young API with a native renderer: the screen host's teardown order (conhost), the embedded terminal, frame timing and the screenshot generator are checked against this version. |
+| `node-pty` | exact | gup releases each Windows pseudo-console through node-pty internals that are checked against the pinned version (a unit test ties the pin to `package.json`); a bump means re-checking `releaseConpty` in `src/core/pty/pty-session.ts`. |
+| `croner` | exact | Schedules are evaluated by it: a behaviour change in cron parsing or DST handling would move users' updates. |
 
 ---
 
@@ -92,7 +106,7 @@ flowchart TD
 
 ### 2.1 Pick the category
 
-The file goes into `src/providers/<category>/`. Existing categories: `os/`, `wsl/`, `node/`, `python/`, `rust/`, `dotnet-php/`, `jvm/`, `lang-other/`, `toolchain/`, `cloud/`, `iac/`, `kubernetes/`, `containers/`, `security/`, `dev-cli/`, `ide/`, `editor-plugins/`, `embedded-mobile/`, `shell/`. See [`docs/development/architecture.md`](docs/development/architecture.md#11-tree-layout) for the full map.
+The file goes into `src/providers/<category>/`. Existing categories: `os/`, `wsl/`, `node/`, `python/`, `rust/`, `dotnet-php/`, `jvm/`, `lang-other/`, `toolchain/`, `cloud/`, `iac/`, `kubernetes/`, `containers/`, `security/`, `dev-cli/`, `ide/`, `editor-plugins/`, `embedded-mobile/`, `shell/`. See [`docs/development/architecture.md`](docs/development/architecture.md#14-tree-layout) for the full map.
 
 Only create a new category if **3+ providers** would logically fall into it — otherwise drop the file into `lang-other/` or `dev-cli/`.
 
@@ -144,38 +158,42 @@ non-trivial parser or a multi-step update also gets a knowledge test
 
 ## 3. Provider anatomy
 
+What gup calls on your provider, and what your provider calls back:
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant Registry
+    participant Pipeline as update pipeline
     participant P as YourProvider
     participant Runner as core/runner.ts
     participant Tool as External tool
 
+    Note over Registry: skipped on an OS outside your platforms
     Registry->>P: isAvailable()
     P->>Runner: commandExists("your-bin")
     Runner-->>P: boolean
     P-->>Registry: available
 
-    Note over Registry: if available and not filtered
-
     Registry->>P: listOutdated()
     P->>Runner: run("your-bin", ["list", "--outdated"])
-    Runner->>Tool: spawn argv
+    Runner->>Tool: spawn argv, output captured
     Tool-->>Runner: stdout
     Runner-->>P: { stdout, failed }
     P->>P: parse stdout → OutdatedPackage[]
     P-->>Registry: OutdatedPackage[]
 
-    Note over Registry: user pick
-
-    Registry->>P: update("pkg-id")
+    Note over Pipeline: the user checks packages, one call per package
+    Pipeline->>P: update("pkg-id") through applyUpdate
     P->>Runner: runInherit("your-bin", ["upgrade", "pkg-id"])
-    Runner->>Tool: spawn stdio=inherit
-    Tool-->>Runner: streaming output
+    Runner->>Tool: spawn argv in the active sink
+    Note over Runner,Tool: user's terminal · embedded terminal pane · pipe to the log
+    Tool-->>Runner: exit code
     Runner-->>P: { failed }
-    P-->>Registry: UpdateOutcome
+    P-->>Pipeline: UpdateOutcome
 ```
+
+Your provider never knows where its install runs: `runInherit` gives it the user's terminal (`gup update`), a pane of the embedded terminal (the interactive app) or a pipe to the debug log (a scheduled run). The pipeline records the outcome, batches `requiresAdmin` rows behind one elevation prompt and offers retries — see [architecture.md § Update pipeline](docs/development/architecture.md#6-update-pipeline).
 
 ### Signature
 
@@ -218,16 +236,17 @@ export class YourProvider implements Provider {
 ```mermaid
 flowchart LR
     Update[update returns] --> Success{success?}
-    Success -->|true| OK[green OK]
-    Success -->|false + skipped| SKIP[yellow SKIP<br/>manual action]
-    Success -->|false + retryable| RETRY[red FAIL<br/>+ retry prompt]
-    Success -->|false| FAIL[red FAIL]
+    Success -->|true| OK["✔ updated"]
+    Success -->|false + skipped| SKIP["↷ skipped<br/>manual action"]
+    Success -->|false + retryable| RETRY["✖ failed<br/>+ retry offer"]
+    Success -->|false| FAIL["✖ failed"]
 ```
 
 - `success: true` → success.
-- `success: false, skipped: true` → action requires the user (manual download, GUI). Neither failure nor success.
-- `success: false, retryable: true` → the failure can be worked around with `--force`/`uninstallPrevious`/`reinstall`. Surfaced as `FAIL` but proposes a retry.
+- `success: false, skipped: true` → action requires the user (manual download, GUI). Neither failure nor success; never retried.
+- `success: false, retryable: true` → the failure can be worked around with `--force`/`uninstallPrevious`/`reinstall`. Counted as a failure, and the user is offered a retry (never under `-y`, never in a scheduled run).
 - `success: false` → real failure, message in `message`.
+- Throwing is caught (`erreur inattendue : …`) but is a bug: return an outcome.
 
 ---
 
@@ -244,6 +263,11 @@ flowchart LR
 | **`readonly platforms = PLATFORMS.windows`** (or `macos`, `notWindows`) when gup supports the source on some OSes only — never test `process.platform` in `isAvailable()`, and no install hint for the other OSes | The registry is the only gate: elsewhere the provider is never probed, scanned or updated, and listings grey it out without a hint. Pinned by `tests/core/platform/platform-gate-source.test.ts`. |
 | **`skipped: true`** when the provider knows no automation is possible | Avoids a false `FAIL`. |
 | **`manual: true`** in `OutdatedPackage` for an item no command can update | `scanAll` filters it — the item never shows up in lists. A source whose every item is manual gets no provider (§5.3). |
+| **`requiresAdmin: true`** on a row whose update needs UAC or `sudo` (Chocolatey goes through `flagForElevation`) — never prompt from `update()` | The pipeline runs every such row in one elevated batch behind one prompt; inside it, your provider already has the rights. |
+| **`readonly canUpdateUnattended = false`** when *every* update needs an administrator | Scheduled runs never elevate: such a provider cannot be scheduled, and the menu says why. |
+| **`aggregate: true`** on a row whose update acts on the whole provider ("all plugins", a refresh marker) | A schedule names packages, never a provider: such a row is never a scheduling target. |
+| **`options.unattended`** honoured when your tool can stop on a prompt (winget: `--disable-interactivity`) | A scheduled run has nobody to answer; a prompt must fail fast instead of holding the run until its timeout. |
+| **No `console.*`, no direct stdout or stderr** — `log.debug("domain.action", data)` for diagnostics | Output while the full-screen app is mounted would paint over it; the debug log records what you need (drift test: `tests/security/provider-output.test.ts`). |
 | **No new npm dependency without discussion** | Footprint is intentionally minimal. |
 
 ---
@@ -280,7 +304,10 @@ npm run lint                  # eslint on src, tests and scripts
 npm run test:run              # the unit, providers and integration projects
 npm run test:e2e:smoke        # build, then the built CLI in a sandbox and in a real terminal
 npm run security              # audit-ci + lint:security + test:security
+npm run screenshots:check     # after a change to the interactive app: are the docs' screenshots current?
 ```
+
+A change to what the interactive app draws — a label, a key hint, a layout — changes the generated screenshots in `docs/assets/screens/`: run `npm run screenshots` and commit the result with the change. CI's **Screenshots up to date** step fails otherwise ([documentation.md § Screenshots](docs/development/documentation.md#screenshots)).
 
 On Windows, `check.cmd` runs all of them and prints one summary (`check.cmd -E2E full` adds the
 real tools of your machine, read-only). The tests need Node ≥ 26.9. Where a new test goes, how to
@@ -398,6 +425,8 @@ The scope says where the change lives. It is **required** whenever the changed f
 | `src/providers/<domain>/**` | `type(providers/<domain>)`; `type(providers)` when several domains change | `feat(providers/cloud): …` |
 | `src/cli.ts`, `src/commands/**` | `type(cli)` | `feat(cli): …` |
 | `src/ui/**` | `type(ui)` | `fix(ui): …` |
+| `src/report/**` (the HTML report) | `type(report)` | `fix(report): …` |
+| `src/pty-exec.ts` (the PTY trampoline) | `type(core/pty)`, with the module it belongs to | `perf(core/pty): …` |
 | `tests/**` | the scope of the code under test, in the same commit | — |
 | `.github/workflows/<name>.yml` | `ci(<name>)` | `ci(security): …` |
 | `.github/dependabot.yml` | `ci(dependabot)` | `ci(dependabot): …` |
@@ -440,7 +469,7 @@ flowchart TD
    |---|---|---|
    | `test (node 26 / windows-latest)` | `ci.yml` | typecheck (src and tests), build, the unit, providers and integration tests, the end-to-end smoke on Windows |
    | `test (node 26 / macos-latest)` | `ci.yml` | the same on macOS |
-   | `test (node 26 / ubuntu-latest)` | `ci.yml` | the same on Linux, plus lint, security lint and the coverage floors |
+   | `test (node 26 / ubuntu-latest)` | `ci.yml` | the same on Linux, plus lint, security lint, the coverage floors and **Screenshots up to date** |
    | `security tests + eslint` | `security.yml` | the `eslint-plugin-security` ruleset and the security test suite |
    | `npm audit (audit-ci)` | `security.yml` | known advisories in the dependency tree (`audit-ci.json`) |
    | `codeql` | `security.yml` | CodeQL `security-extended` and `security-and-quality` queries |
@@ -459,7 +488,11 @@ flowchart TD
 - Users' pages go to `docs/guide/`, contributors' pages to `docs/development/`; the [documentation index](docs/README.md) lists every page and must list a new one.
 - **Mermaid** diagrams are welcome in `docs/` and in this file when they explain a mechanism: stable diagram types only (`flowchart`, `sequenceDiagram`, `stateDiagram-v2`, `classDiagram`, `gitGraph`), about 20 nodes at most, no custom colours. Check that they render in the pull request's rich diff.
 - **`README.md` is also the npm page**, and npm renders neither Mermaid nor relative image paths: no diagrams there, and images by absolute `raw.githubusercontent.com` URL.
+- **Screenshots are generated**, never captured by hand: `npm run screenshots` renders the real views on fixture data into `docs/assets/screens/`. A UI change commits them regenerated; a new view gets a scene ([how](docs/development/documentation.md#adding-a-scene)).
 - A behaviour change updates the page that documents it in the same pull request; a new provider updates the [providers catalog](docs/guide/providers-catalog.md) and the provider count in the README.
+- A change that adds an extension point, a process, a file gup writes or a security-relevant behaviour also updates [`architecture.md`](docs/development/architecture.md) (and [`SECURITY.md`](SECURITY.md) when it changes the threat model), and gets a [design record](docs/development/design/README.md#adding-a-record).
+
+The full conventions — where a page goes, the Mermaid rules, the screenshot pipeline, link checking: [`docs/development/documentation.md`](docs/development/documentation.md).
 
 ---
 

@@ -42,9 +42,9 @@ or by request. Nobody needs a role to send a pull request.
   justification first: the install footprint is kept small on purpose, and
   every dependency is code that runs on the user's machine with their
   privileges. Native code is pinned to an exact version (today
-  `@opentui/core`, whose renderer loads through `node:ffi`); the other
-  deliberate version pins and their reasons are listed in
-  [CONTRIBUTING.md § Two deliberate version pins](CONTRIBUTING.md#two-deliberate-version-pins).
+  `@opentui/core`, whose renderer loads through `node:ffi`, and the optional
+  `node-pty`); every deliberate version pin and its reason is listed in
+  [CONTRIBUTING.md § Deliberate version pins](CONTRIBUTING.md#deliberate-version-pins).
 - **Releases** follow [docs/development/releasing.md](docs/development/releasing.md).
   Only a maintainer tags and publishes.
 - **Security reports** are handled privately, as described in
