@@ -130,6 +130,41 @@ function everyTone(screen: Screen): void {
   new TextPanel(screen, chrome.body, { id: "q", title: "Menu", width: 12 });
 }
 
+/** The title bar's cells, one span per column. */
+function titleCells(setup: TestRendererSetup): CapturedSpan[] {
+  const [top] = setup.captureSpans().lines;
+  return (top?.spans ?? []).flatMap((span) => [...span.text].map(() => span));
+}
+
+/**
+ * OpenTUI 0.5.14 turns inverse video off within a row, but not when it moves
+ * to the next one: a title bar reversed to the last column drew the next
+ * row's first cells — the sidebar's `╭─` — reversed too (seen in a ConPTY
+ * stream: `…⎋[7m … ⎋[38;5;8m╭─`, no `⎋[27m`). Colours are reset there.
+ */
+describe("ThemedAppearance: the title bar's last column", () => {
+  it("stops an inverse title bar one cell short, so the inverse ends in its row", async () => {
+    const { TextAttributes } = await loadTui();
+    await onScreen(factory({}), everyTone, async (setup) => {
+      const cells = titleCells(setup);
+      const isInverse = (cell: CapturedSpan | undefined) =>
+        ((cell?.attributes ?? 0) & TextAttributes.INVERSE) !== 0;
+      expect(cells).toHaveLength(80);
+      expect(isInverse(cells.at(-2))).toBe(true);
+      expect(isInverse(cells.at(-1))).toBe(false);
+    });
+  });
+
+  it("fills a title bar painted in colour to the last column", async () => {
+    const settings = settingsSource({ theme: theme("dark") });
+    await onScreen(factory({ settings }), everyTone, async (setup) => {
+      const cells = titleCells(setup);
+      expect(cells).toHaveLength(80);
+      expect(hexOf(cells.at(-1)!.bg)).toBe(hexOf(cells.at(0)!.bg));
+    });
+  });
+});
+
 describe("ThemedAppearance: the white-on-white fix", () => {
   it("paints plain text in the terminal's own colour when the palette is unknown", async () => {
     await onScreen(factory({}), everyTone, async (setup) => {

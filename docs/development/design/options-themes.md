@@ -398,6 +398,10 @@ the test, an appearance control resolving for real).
   tested on any OS.
 - conhost does not render SGR 2 (DIM): in trusted mode muted text then looks plain; meaning is
   carried by glyphs and labels. Palette modes never use DIM.
+- OpenTUI 0.5.14 turns inverse video off within a row but not at a row change (a ConPTY stream
+  shows `⎋[7m` … then `⎋[38;5;8m╭─`, no `⎋[27m`; colours do get `⎋[49m`). In trusted and
+  monochrome modes the title bar is reversed: it stops one column short of the right edge
+  (`chrome.ts`), so the sidebar's `╭─` below it is not drawn reversed.
 
 ---
 

@@ -13,6 +13,14 @@ const HINT_SEPARATOR = " · ";
 const CUT_MARK = "…";
 /** The hint bar's leading blank. */
 const HINT_INDENT = 1;
+/**
+ * Columns an inverse title bar leaves unfilled at the right edge. OpenTUI
+ * 0.5.14 turns inverse video off within a row but not when it moves to the
+ * next one, so a bar reversed to the last column drew the next row's first
+ * cells — the sidebar's `╭─` — reversed as well. Ending the inverse in its
+ * own row works around it; a coloured fill is reset at the row change.
+ */
+const INVERSE_ROW_END = 1;
 
 /**
  * The key hints that fit `width` columns: `hints` cut between two of its
@@ -106,8 +114,15 @@ export class Chrome {
       ...this.#facts.map((fact) => seg(`  │  ${fact}`, "onAccent")),
     ];
     const width = renderer.terminalWidth;
-    this.#top.content = toStyledText(this.#screen, [fillLine(title, width, "accent")]);
+    const filled = width - (this.isFillInverse() ? INVERSE_ROW_END : 0);
+    this.#top.content = toStyledText(this.#screen, [fillLine(title, filled, "accent")]);
     const hints = fitHints(this.#hints, this.#pinnedHints, width - HINT_INDENT);
     this.#status.content = toStyledText(this.#screen, [[seg(` ${hints}`, "muted")]]);
+  }
+
+  /** The title bar is reversed rather than coloured (palette unknown, monochrome). */
+  private isFillInverse(): boolean {
+    const { appearance, tui } = this.#screen;
+    return (appearance.style("onAccent", "accent").attributes & tui.TextAttributes.INVERSE) !== 0;
   }
 }
