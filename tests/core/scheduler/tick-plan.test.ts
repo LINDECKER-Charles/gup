@@ -6,6 +6,7 @@ import {
   type TickPlanInput,
 } from "../../../src/core/scheduler/model/tick-plan.js";
 import { pkg, scan } from "../../support/builders.js";
+import { useLocale } from "../../support/locale.js";
 import { providerFacts, schedule, target } from "./scheduler-fixtures.js";
 
 const providers = providerFacts({
@@ -114,5 +115,26 @@ describe("neededProviders", () => {
       schedule({ targets: [target("winget", "d"), target("npm-g", "e")] }),
     ];
     expect(neededProviders(due, providers)).toEqual(["winget", "npm-g"]);
+  });
+});
+
+describe("planTick in English", () => {
+  useLocale("en");
+
+  it("stores its skip reasons in English", () => {
+    const due = [schedule({ targets: [target("choco", "vlc"), target("winget", "Git.Git")] })];
+    const scans = [scan("winget", [], { error: "network unavailable" })];
+    expect(resolvedOf({ due, scans })).toEqual([
+      {
+        target: "choco:vlc",
+        status: "skipped",
+        message: '"Chocolatey" asks for sudo/admin on every update',
+      },
+      {
+        target: "winget:Git.Git",
+        status: "skipped",
+        message: "provider scan failed: network unavailable",
+      },
+    ]);
   });
 });

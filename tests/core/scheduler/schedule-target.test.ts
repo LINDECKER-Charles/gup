@@ -4,6 +4,7 @@ import {
   TARGET_MESSAGES,
   targetKey,
 } from "../../../src/core/scheduler/model/schedule-target.js";
+import { useLocale } from "../../support/locale.js";
 
 describe("parseTarget", () => {
   it("reads provider:packageId, splitting on the first colon", () => {
@@ -39,5 +40,19 @@ describe("parseTarget", () => {
 
   it("keys a target the way the update pipeline keys a package", () => {
     expect(targetKey({ providerId: "winget", packageId: "Git.Git" })).toBe("winget:Git.Git");
+  });
+});
+
+describe("parseTarget in English", () => {
+  useLocale("en");
+
+  it.each([
+    [":Git.Git", '":Git.Git": invalid provider id'],
+    ["npm-g:*", '"npm-g:*": wildcards (* ?) are refused — a schedule targets specific packages'],
+    [`npm-g:${"x".repeat(257)}`, "id too long (256 characters at most)"],
+  ])("says why %j is not a target", (text, reason) => {
+    const parsed = parseTarget(text);
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.reason).toContain(reason);
   });
 });
