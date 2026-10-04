@@ -3,13 +3,15 @@
 Commit-level history of `gup`, one file per version, newest first. Every commit
 since the first one is accounted for: each bullet links the commit(s) it covers
 and the pull request when there was one. Generated from `git log` on
-2026-08-22 and verified against it; for the narrative of each release, see
+2026-08-22, extended at each release since, and verified against it; for the
+narrative of each release, see
 [`../releases/`](../releases/README.md).
 
 | Version | Published | Commits | In one sentence |
 |---|---|---:|---|
-| [Unreleased](unreleased.md) | `main` after 0.4.0 | 486 | The 0.5.0 cycle: updates run inside the interactive app in an embedded terminal, packages are picked by checking them, a debug log, an activity journal and an HTML report read the history back, chosen packages update on a schedule, ten themes hold every text to WCAG AA, providers of other systems are greyed out, the landing site speaks eight languages, and the provider tests run as contracts on a fake machine. |
-| [`0.4.0`](0.4.0.md) | not yet published | 38 | 0.4.0 fixes the terminal freezes seen on Windows, rebuilds the interactive UI on OpenTUI in place of `@inquirer/prompts` and `ora`, and moves the runtime floor to Node >= 26.9.0. |
+| [Unreleased](unreleased.md) | `main` after 0.5.0 | 0 | Nothing yet. |
+| [`0.5.0`](0.5.0.md) | 2026-10-04 | 541 | 0.5.0 runs updates inside the interactive app in an embedded terminal, picks packages by checking them, reads the history back as a debug log, an activity journal and an HTML report, updates chosen packages on a schedule, holds every text of ten themes to WCAG AA, greys out the providers of other systems, translates the landing site into eight languages and runs the provider tests as contracts on a fake machine; as the first version published since 0.3.2, it also ships 0.4.0. |
+| [`0.4.0`](0.4.0.md) | never published | 38 | 0.4.0 fixes the terminal freezes seen on Windows, rebuilds the interactive UI on OpenTUI in place of `@inquirer/prompts` and `ora`, and moves the runtime floor to Node >= 26.9.0. |
 | [`0.3.2`](0.3.2.md) | 2026-08-09 | 15 | Version 0.3.2 adds 19 providers (MSYS2, Cygwin, Npackd, Fink, pkgin, Nix, pkgx, nvm, pyenv, swiftly, mint, vcpkg, Visual Studio, Git for Windows, .NET SDK, NuGet, PSResourceGet, Sparkle, xcodes), taking the registry from 134 to 153 entries. |
 | [`0.3.1`](0.3.1.md) | 2026-08-08 | 11 | gup 0.3.1 introduces a local activity history: every scan and every update attempt is appended synchronously to a monthly JSONL shard under the platform state directory, opt-out via GUP_HISTORY=0 and relocatable via GUP_HISTORY_DIR, and never read back by the tool. |
 | [`0.3.0`](0.3.0.md) | 2026-08-08 | 32 | 0.3.0 makes gup genuinely cross-platform: four new macOS providers (Homebrew formulae and casks, Mac App Store, MacPorts), brew/apt/dnf install-source detection so package-manager-owned binaries are no longer hidden from the scan, and JetBrains/Eclipse discovery on macOS. |
@@ -21,6 +23,8 @@ and the pull request when there was one. Generated from `git log` on
 
 "Published" is the npm publication date (UTC). `0.2.2` was published to npm
 without a tag or a GitHub Release; its range ends at the version-bump commit.
+`0.4.0` was never published nor tagged: its changes first shipped in `0.5.0`,
+and its range ends at `f1864a9`, the last commit it describes.
 
 ## How to read an entry
 

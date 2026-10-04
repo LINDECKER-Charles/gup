@@ -224,7 +224,7 @@ cancels everything.
 
 Installs run in the app's terminal pane through
 [node-pty](https://github.com/microsoft/node-pty), an optional dependency with a native part. When
-it cannot be used, the confirmation says why and the update runs outside the app, as in gup 0.4:
+it cannot be used, the confirmation says why and the update runs outside the app, as before 0.5.0:
 the screen gives the terminal back, installers print there, and `Entrée` brings you back to the
 menu.
 

@@ -1,6 +1,6 @@
 {
   "name": "@charles_lindecker/gup",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": false,
   "description": "gup (Global Updater) — one CLI to scan and update everything installed on your machine across 153 sources: winget, scoop, chocolatey, MSYS2, Cygwin, Homebrew (formulae + casks), MacPorts, Mac App Store, Nix, pkgx, npm-g, pnpm-g, yarn-g, bun, pip, pipx, uv, cargo, gem, .NET SDK + tools, NuGet, composer, helm, kubectl, krew, terraform, pulumi, az, gcloud, Visual Studio, vscode extensions, JetBrains, pwsh modules, gh extensions, symfony-cli, nvm, pyenv, WSL distros. Windows, macOS and Linux. Parallel scan, fail-soft, JSON output, --fast mode, surgical targeting.",
   "type": "module",

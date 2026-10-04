@@ -45,7 +45,7 @@ To trust node-pty for every global install, once:
 
 Without node-pty — scripts ignored, the optional install skipped, `GUP_PTY=off` — gup works
 exactly as it does elsewhere; only an update started from the interactive app leaves the
-full-screen view and runs in your terminal, as in gup 0.4. `gup doctor` says which, on its
+full-screen view and runs in your terminal, as before 0.5.0. `gup doctor` says which, on its
 **Terminal intégré** line (see [Troubleshooting](troubleshooting.md#the-embedded-terminal-is-unavailable)).
 
 ## From source
