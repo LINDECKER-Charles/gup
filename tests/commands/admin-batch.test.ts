@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -209,6 +209,34 @@ describe("adminBatchCommand", () => {
     const code = await adminBatchCommand("/this/path/definitely/does/not/exist.json");
     expect(code).toBe(2);
     expect(stderrSpy).toHaveBeenCalled();
+  });
+
+  it("returns exit 2 and says so, in the parent's language, when it cannot write the outcomes", async () => {
+    getProviderMock.mockReturnValue({
+      id: "choco",
+      displayName: "Chocolatey",
+      isAvailable: vi.fn(),
+      listOutdated: vi.fn(),
+      update: vi.fn(async (id: string) => ({ id, success: true })),
+      updateAll: vi.fn(),
+    });
+    try {
+      for (const [locale, words] of [
+        ["fr", "échec d'écriture des outcomes"],
+        ["en", "could not write the outcomes"],
+      ] as const) {
+        const file = await mkInputFile();
+        const input = { version: 1, targets: ["choco:caddy"], locale };
+        await writeFile(file, JSON.stringify(input), { encoding: "utf8", flag: "wx" });
+        // A directory where the outcome file goes: writing it fails.
+        await mkdir(`${file}.out`);
+        stderrSpy.mockClear();
+        await expect(adminBatchCommand(file)).resolves.toBe(2);
+        expect(stderrSpy.mock.calls.join("")).toContain(words);
+      }
+    } finally {
+      setActiveLocale(SUITE_LOCALE);
+    }
   });
 
   it("speaks the parent's language, or English for a parent that sends none", async () => {
