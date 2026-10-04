@@ -979,7 +979,7 @@ necessary, no `any`. Comments say *why*, never *what*.
 dev                  # tsx src/cli.ts (no-build dev loop)
 build                # tsup → dist/cli.js + dist/pty-exec.js
 start                # node dist/cli.js
-typecheck            # tsc --noEmit, on src then on the tests (tsconfig.tests.json)
+typecheck            # tsc --noEmit, on src then on the tests (tests/tsconfig.json)
 typecheck:scripts    # tsc on the screenshot generator
 test, test:run, test:unit, test:integration, test:security, test:coverage, test:coverage:ci
 test:e2e:smoke, test:e2e, test:e2e:mutate   # build, then the end-to-end suites (testing.md §6)

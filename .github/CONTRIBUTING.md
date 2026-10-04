@@ -434,8 +434,8 @@ The scope says where the change lives. It is **required** whenever the changed f
 | `index/**` (landing page) | `type(landing)` | `feat(landing): …` |
 | `.github/SUPPORT.md`, `.github/GOVERNANCE.md`, `.github/ISSUE_TEMPLATE/**`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/CODEOWNERS` | `docs(community)` | `docs(community): …` |
 | `docs/**`, `README.md`, `.github/CONTRIBUTING.md`, `.github/SECURITY.md`, `CHANGELOG.md`, `CITATION.cff` | `docs`, optionally with the topic as scope | `docs(changelog): …` |
-| `package.json`, `package-lock.json`, `tsconfig*.json`, `tsup.config.ts` | `build(deps)`; Dependabot bumps use `chore(deps)` / `chore(deps-dev)` | `build(deps): …` |
-| `eslint.config*.js`, `vitest.config.ts`, `audit-ci.json`, `.semgrep.yml`, `.gitleaks.toml` | `build(lint)` | `build(lint): …` |
+| `package.json`, `package-lock.json`, `tsconfig.json`, `tsup.config.ts` | `build(deps)`; Dependabot bumps use `chore(deps)` / `chore(deps-dev)` | `build(deps): …` |
+| `eslint.config*.js`, `vitest.config.ts`, `tests/tsconfig.json`, `audit-ci.json`, `.semgrep.yml`, `.gitleaks.toml` | `build(lint)` | `build(lint): …` |
 | `scripts/**`, `.gitignore`, `.gitattributes` | `chore`, no scope | `chore: …` |
 | The version bump of a release | `chore(release): x.y.z` | `chore(release): 0.4.0` |
 

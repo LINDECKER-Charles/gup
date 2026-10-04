@@ -90,7 +90,7 @@ put 26 first on `PATH` for the session:
 | `npm run test:e2e` | build, then every end-to-end suite, read-only (real tools, network) |
 | `npm run test:e2e:mutate` | build, then every end-to-end suite, the sandboxed mutating ones included |
 | `npm run fixtures:record -- --provider <id>…` | re-record provider fixtures from the tools installed here ([`provider-contracts.md`](design/provider-contracts.md#7-recorded-fixtures-s11)) |
-| `npm run typecheck` | `tsc` on `src`, then on `tsconfig.tests.json` (tests, scripts, configs) |
+| `npm run typecheck` | `tsc` on `src`, then on `tests/tsconfig.json` (tests, scripts, configs) |
 | `npm run lint` | `eslint src tests scripts` |
 | `scripts\check.cmd` (Windows) | every gate above in parallel, then the end-to-end smoke alone; `scripts\check.cmd -E2E full` or `-E2E mutate` for more, `-E2E none` for less |
 

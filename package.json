@@ -76,7 +76,7 @@
     "build": "tsup",
     "prepare": "npm run build",
     "start": "node dist/cli.js",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests",
     "typecheck:scripts": "tsc -p scripts/screenshots",
     "test": "vitest --project unit --project \"providers*\"",
     "test:run": "vitest run",

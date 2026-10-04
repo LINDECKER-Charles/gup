@@ -23,3 +23,6 @@
   (`build: stop shipping SECURITY.md in the npm package`)
 - **chore:** `check.cmd` moves to `scripts/`, beside the `check.ps1` it launches, and runs as
   `scripts\check.cmd` from the repository root (`chore: move check.cmd under scripts`)
+- **lint:** `tsconfig.tests.json` becomes `tests/tsconfig.json`; `npm run typecheck` checks it with
+  `tsc -p tests`, on the same files as before: `src`, `tests`, `scripts` and `vitest.config.ts`
+  (`build(lint): move the test tsconfig under tests`)
