@@ -188,12 +188,6 @@ describe("PsResourceProvider.listOutdated", () => {
 });
 
 describe("PsResourceProvider.update", () => {
-  it("doubles an embedded single quote, PowerShell's literal-string escape", async () => {
-    await system.load(psResourceMachine({ shell: "powershell" }));
-    await provider().update("Foo'Bar");
-    expect(installArgvs()).toEqual([updateResourceArgv("powershell", "Foo''Bar")]);
-  });
-
   it("fails, spawning nothing, without a PowerShell host", async () => {
     await system.load({ platform: "win32" });
     await expect(provider().update("Az.Accounts")).resolves.toEqual({

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import * as runner from "../../../src/core/runner.js";
 import type { OutdatedPackage } from "../../../src/core/types.js";
 import {
-  isSafeNpackdPackageName,
   NpackdProvider,
   parseNpackdBareSearch,
   parseNpackdUpdateable,
@@ -49,39 +48,6 @@ function olderNpackd(elevated: boolean, bare: string): ReturnType<typeof npackdM
     ],
   };
 }
-
-describe("isSafeNpackdPackageName", () => {
-  it("accepts a real reverse-domain Npackd id", () => {
-    expect(isSafeNpackdPackageName("com.googlecode.windirstat.WinDirStat")).toBe(true);
-    expect(isSafeNpackdPackageName("org.7-zip.SevenZIP64")).toBe(true);
-  });
-
-  it("refuses an empty name", () => {
-    expect(isSafeNpackdPackageName("")).toBe(false);
-  });
-
-  it("refuses a leading dash, which NpackdCL would read as an option", () => {
-    expect(isSafeNpackdPackageName("--version")).toBe(false);
-    expect(isSafeNpackdPackageName("-x")).toBe(false);
-  });
-
-  it("refuses '..' the way Package::isValidName does", () => {
-    expect(isSafeNpackdPackageName("com..example")).toBe(false);
-    expect(isSafeNpackdPackageName("..")).toBe(false);
-  });
-
-  it("refuses whitespace and control characters", () => {
-    for (const name of [
-      "com.example App",
-      "com.example\tApp",
-      "com.example\nApp",
-      "com.example\u0000App",
-      "com.example\u007fApp",
-    ]) {
-      expect(isSafeNpackdPackageName(name)).toBe(false);
-    }
-  });
-});
 
 describe("parseNpackdUpdateable", () => {
   it("reports `?` for the installed version when `installed` is omitted", () => {
@@ -319,16 +285,6 @@ describe("NpackdProvider.update", () => {
     });
   });
 
-  it("refuses an unsafe id before even resolving the binary", async () => {
-    // No NpackdCL here: a later check would have answered MISSING_CLI instead.
-    await system.load({ platform: "win32", elevated: true });
-    await expect(new NpackdProvider().update("--version")).resolves.toEqual({
-      id: "--version",
-      success: false,
-      skipped: true,
-      message: INVALID_ID_MESSAGE,
-    });
-  });
 });
 
 describe("NpackdProvider.updateAll", () => {

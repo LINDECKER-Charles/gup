@@ -7,7 +7,8 @@ import { SCOOP_MACHINE } from "./windows.cases.js";
 /**
  * Scoop prints a whitespace-aligned `status` table, and its command is a
  * `.cmd`/`.ps1` shim that only a shell can start — the one shell-routed
- * spawn gup allows, which is why the package id is validated first.
+ * spawn gup allows, which is why the package id is validated first
+ * (tests/security/providers/package-id-allowlists.test.ts).
  */
 
 const HEADER = [
@@ -50,15 +51,4 @@ describe("ScoopProvider.update", () => {
     ]);
   });
 
-  it("refuses an id outside scoop's charset before any shell sees it", async () => {
-    await system.load(SCOOP_MACHINE);
-    for (const id of ["gh & calc", "gh;rm", "$(calc)", "a/b/c", ""]) {
-      await expect(new ScoopProvider().update(id)).resolves.toEqual({
-        id,
-        success: false,
-        message: `Identifiant de paquet Scoop invalide : ${id}`,
-      });
-    }
-    expect(installs()).toEqual([]);
-  });
 });

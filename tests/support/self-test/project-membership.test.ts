@@ -82,13 +82,13 @@ describe("vitest project membership", () => {
     expect(misrouted(files, routes)).toEqual({});
   });
 
-  // The paths the wave-2 branches are planned to add: each lands in the
-  // project whose setup it needs.
+  // Where each kind of test lands: in the project whose setup it needs.
   it.each([
     ["tests/core/config/store.test.ts", "unit"],
     ["tests/commands/schedule/schedule-command.test.ts", "unit"],
     ["tests/ui/views/journal-view.test.ts", "unit"],
     ["tests/security/scheduler-injection.test.ts", "unit"],
+    ["tests/security/providers/package-id-allowlists.test.ts", "providers"],
     ["tests/scripts/screenshots/scenes.test.ts", "unit"],
     ["tests/cli/startup.test.ts", "unit"],
     ["tests/providers/os/winget.test.ts", "providers"],

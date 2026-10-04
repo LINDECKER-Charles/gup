@@ -1,5 +1,5 @@
 import { tmpdir } from "node:os";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import type { TestProjectInlineConfiguration } from "vitest/config";
 import { sandboxRoot, sharedTestEnv } from "./tests/support/test-env.js";
 
@@ -30,6 +30,14 @@ function project(test: ProjectOptions): TestProjectInlineConfiguration {
   };
 }
 
+/**
+ * Security rules that only a provider on the fake machine can show (an id
+ * refused before any spawn, a quote doubled in the argv): tests/security
+ * still gathers every rule for `npm run test:security`, but these run in the
+ * providers project, whose setup fakes the machine.
+ */
+const SECURITY_ON_THE_FAKE_MACHINE = "tests/security/providers/**/*.test.ts";
+
 // Real-machine suites only exist when explicitly asked for: they spawn the
 // built CLI and read the machine's real tools.
 const isE2eEnabled = process.env["GUP_E2E"] === "1";
@@ -44,12 +52,14 @@ export default defineConfig({
       project({
         name: "unit",
         include: ["tests/{core,commands,ui,security,scripts,cli}/**/*.test.ts"],
+        exclude: [...configDefaults.exclude, SECURITY_ON_THE_FAKE_MACHINE],
       }),
       project({
         name: "providers",
         include: [
           "tests/providers/*/**/*.test.ts",
           "tests/platform/**/*.test.ts",
+          SECURITY_ON_THE_FAKE_MACHINE,
           "tests/support/self-test/**/*.test.ts",
         ],
         // The fake machine: runner, fs, os, platform, env and fetch.

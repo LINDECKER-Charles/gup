@@ -121,15 +121,6 @@ describe("NerdFontsProvider.update — refusals", () => {
     await expect(provider().update("FiraCode")).resolves.toMatchObject({ message: WINDOWS_ONLY });
   });
 
-  it("refuses a family name that could leave the release or the fonts directory", async () => {
-    await system.load(fontsMachine({}));
-    await expect(provider().update("../etc/passwd")).resolves.toEqual({
-      id: "../etc/passwd",
-      success: false,
-      message: 'Nom de famille invalide: "../etc/passwd"',
-    });
-    expect(system.trace.requests).toEqual([]);
-  });
 });
 
 describe("NerdFontsProvider.update — download", () => {
@@ -220,18 +211,6 @@ describe("NerdFontsProvider.update — install", () => {
     const pins = { Meslo: "v3.3.0", FiraCode: NERD_FONTS_TAG };
     await expect(fsPromises.readFile(NERD_FONTS_LOCKFILE, "utf8")).resolves.toBe(
       `${JSON.stringify(pins, null, 2)}\n`,
-    );
-  });
-
-  it("quotes an apostrophe of the user's font path for PowerShell", async () => {
-    const local = "C:\\Users\\o'brien\\AppData\\Local";
-    const fonts = firaCodeRelease({ "FiraCodeNerdFont-Regular.ttf": "ttf" });
-    await system.load({ ...fonts, env: { LOCALAPPDATA: local } });
-    await expect(provider().update("FiraCode")).resolves.toEqual({ id: "FiraCode", success: true });
-    const [registration] = installArgvs();
-    expect(registration?.at(-1)).toContain(
-      "-Value 'C:\\Users\\o''brien\\AppData\\Local\\Microsoft\\Windows\\Fonts\\" +
-        "FiraCodeNerdFont-Regular.ttf' -Force",
     );
   });
 
