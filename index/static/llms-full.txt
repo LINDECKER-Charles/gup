@@ -56,8 +56,9 @@ due, in which case the OS scheduler starts a short-lived gup process.
 | `gup schedule` | List, add and run per-package scheduled updates |
 | `gup report` | Activity journal as an offline HTML report, or `--format json|csv|text` |
 
-Shared flags: `--fast`, `--provider <ids…>`, `--only <id>`, `--json`, `-y`,
-`--timeout <seconds>` (per-install wall clock; default 1200, `0` disables).
+Flags: `--fast` and `--provider <ids…>` on `gup list` and `gup update`;
+`--json` on `gup list`; `-y` and `--timeout <seconds>` on `gup update`
+(per-install wall clock; default 1200, `0` disables).
 Environment: `GUP_INSTALL_TIMEOUT` (seconds; `--timeout` wins).
 
 Exit codes: `0` success · `1` partial failure (at least one update failed) ·
@@ -152,7 +153,7 @@ read from those declarations at build time.
 - `src/providers/<domain>/<id>.ts` — one isolated module per source.
 - `src/ui/**` — the full-screen OpenTUI app. Packages are checked with `space` (`a` for all) and updated with `enter` inside an OpenTUI embedded terminal (Ghostty VT core) fed by a pseudo-terminal, so installer prompts and progress bars work without leaving the interface. Updated packages then leave the list without a rescan. Where no pseudo-terminal is available (`node-pty` missing, `GUP_PTY=off`), the confirmation says why and the update runs in the plain terminal instead.
 
-Lifecycle of a run: `isAvailable()` probes in parallel (`where`/`which`, milliseconds) → flags and filters are applied (`--fast` drops slow providers, `--provider` restricts, `--only` targets) → `listOutdated()` fans out under `pLimit(4)` and `manual` packages are filtered once → selection → `runInherit()` streams stdout/stderr live, and every attempt is appended to the history log.
+Lifecycle of a run: `isAvailable()` probes in parallel (`where`/`which`, milliseconds) → flags and filters are applied (`--fast` drops slow providers, `--provider` restricts the scan to the given ids) → `listOutdated()` fans out under `pLimit(4)` and `manual` packages are filtered once → selection → `runInherit()` streams stdout/stderr live, and every attempt is appended to the history log.
 
 Reading order:
 https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/architecture.md then

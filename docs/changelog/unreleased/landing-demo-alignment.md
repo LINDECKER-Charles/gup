@@ -10,6 +10,8 @@
   and the CLI's sources: the build's tests fail when a mock shows a label, a key hint or a mark
   the interface does not write, a sidebar the registered views do not build, or a provider the
   registry does not register.
+- **landing:** `tests/rules/cli-citations.test.mjs`: every `gup` command and flag the page, its
+  examples, the terminal demo and the llms texts cite must be one the CLI registers.
 
 ## Fixed
 
@@ -31,6 +33,8 @@
 - **landing:** the FAQ no longer promises "no direct download", and `llms.txt` /
   `llms-full.txt` no longer say gup is not a downloader or only goes online for version checks:
   the `nerd-fonts` provider (Windows) downloads the font families' release archives itself.
+- **landing:** `llms-full.txt` no longer documents an `--only <id>` flag the CLI does not have,
+  and says which command each flag belongs to.
 
 ## Internal
 
