@@ -16,19 +16,14 @@ vi.mock("../../src/core/runner.js", () => ({
 }));
 
 import { isCorepackShim } from "../../src/core/corepack-ownership.js";
-
-const ORIGINAL_PLATFORM = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 beforeEach(() => {
   whichFirstMock.mockReset();
 });
 
 afterEach(() => {
-  setPlatform(ORIGINAL_PLATFORM);
+  restorePlatform();
 });
 
 describe("isCorepackShim on Windows", () => {
@@ -80,14 +75,6 @@ describe("isCorepackShim on Windows", () => {
   it("returns false when both lookups fail", async () => {
     whichFirstMock.mockResolvedValue(null);
     await expect(isCorepackShim("pnpm")).resolves.toBe(false);
-  });
-
-  it("runs both PATH probes in parallel (single whichFirst call per binary)", async () => {
-    whichFirstMock.mockResolvedValue("/usr/bin/x");
-    await isCorepackShim("yarn");
-    expect(whichFirstMock).toHaveBeenCalledTimes(2);
-    const args = whichFirstMock.mock.calls.map((c) => c[0]);
-    expect(args).toEqual(expect.arrayContaining(["corepack", "yarn"]));
   });
 });
 

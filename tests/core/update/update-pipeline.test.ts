@@ -32,6 +32,7 @@ import type {
   UpdatePorts,
   UpdateRequest,
 } from "../../../src/core/update/update-ports.js";
+import { restorePlatform, setPlatform } from "../../support/platform.js";
 
 function provider(id: string, outcomes: Record<string, Partial<UpdateOutcome>> = {}) {
   const update = vi.fn(async (packageId: string) => ({
@@ -149,8 +150,7 @@ describe("runUpdates: direct installs", () => {
 
   it("skips a package whose provider is unknown or foreign to this platform, without recording it", async () => {
     providers.set("brew", { ...provider("brew"), platforms: PLATFORMS.macos });
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    setPlatform("win32");
     try {
       const run = ports();
       const report = await runUpdates([request("ghost", "x"), request("brew", "jq")], run);
@@ -161,7 +161,7 @@ describe("runUpdates: direct installs", () => {
       expect(run.observer.events).not.toContain("started ghost:x");
       expect(recordUpdateMock).not.toHaveBeenCalled();
     } finally {
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
   });
 

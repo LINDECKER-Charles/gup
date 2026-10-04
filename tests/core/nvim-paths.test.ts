@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { posix as posixPath, win32 as winPath } from "node:path";
 import { nvimConfigDir, nvimDataDir } from "../../src/core/nvim-paths.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 /**
  * Expectations are built with the *target* platform's joiner, never the host's:
@@ -9,12 +10,7 @@ import { nvimConfigDir, nvimDataDir } from "../../src/core/nvim-paths.js";
  * exact same case — passing on one leg of the CI matrix and failing on another.
  */
 
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
-
 describe("nvim-paths", () => {
-  const originalPlatform = process.platform;
   let savedEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
@@ -26,7 +22,7 @@ describe("nvim-paths", () => {
   });
 
   afterEach(() => {
-    setPlatform(originalPlatform);
+    restorePlatform();
     process.env = savedEnv;
     vi.restoreAllMocks();
   });

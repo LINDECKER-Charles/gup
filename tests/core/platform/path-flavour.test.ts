@@ -1,14 +1,9 @@
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { pathFlavour } from "../../../src/core/platform/path-flavour.js";
+import { restorePlatform, setPlatform } from "../../support/platform.js";
 
-const originalPlatform = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
-
-afterEach(() => setPlatform(originalPlatform));
+afterEach(() => restorePlatform());
 
 describe("pathFlavour", () => {
   it("builds Windows paths for win32 and POSIX paths elsewhere, whatever the host", () => {

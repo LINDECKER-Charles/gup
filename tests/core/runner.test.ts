@@ -26,12 +26,7 @@ import {
   setInstallTimeoutSeconds,
   skipCurrent,
 } from "../../src/core/runner.js";
-
-const originalPlatform = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 function mkExecaResult(over: Partial<{
   stdout: unknown;
@@ -53,7 +48,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  setPlatform(originalPlatform);
+  restorePlatform();
 });
 
 describe("runner.run", () => {

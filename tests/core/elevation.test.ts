@@ -22,6 +22,7 @@ import {
   writeBatchOutput,
 } from "../../src/core/elevation.js";
 import { installLogBackend } from "../../src/core/log/log.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 describe("flagForElevation", () => {
   const rows = [
@@ -324,14 +325,13 @@ describe("elevated wait", () => {
     ["win32", "powershell.exe"],
     ["linux", "sudo"],
   ] as const)("waits for the %s elevated child as long as its batch needs", async (platform, command) => {
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, "platform", { value: platform, configurable: true });
+    setPlatform(platform);
     runInheritMock.mockReset();
     runInheritMock.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0, failed: false });
     try {
       await runElevatedBatch(["choco:a", "choco:b", "choco:c"]);
     } finally {
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
     const [spawned, , options] = runInheritMock.mock.calls[0]!;
     expect(spawned).toBe(command);

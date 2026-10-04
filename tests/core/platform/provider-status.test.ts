@@ -11,12 +11,7 @@ vi.mock("../../../src/core/registry.js", () => registry);
 
 import { PLATFORMS } from "../../../src/core/platform/platforms.js";
 import { readProviderStatus } from "../../../src/core/platform/provider-status.js";
-
-const originalPlatform = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
+import { restorePlatform, setPlatform } from "../../support/platform.js";
 
 function fakeProvider(fields: Pick<Provider, "id"> & Partial<Provider>): Provider {
   return {
@@ -39,7 +34,7 @@ beforeEach(() => {
   registry.detectAvailableProviders.mockResolvedValue([npm]);
 });
 
-afterEach(() => setPlatform(originalPlatform));
+afterEach(() => restorePlatform());
 
 describe("readProviderStatus", () => {
   it("sorts providers into detected, missing and incompatible, in registry order", async () => {

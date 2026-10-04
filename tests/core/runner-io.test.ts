@@ -14,12 +14,7 @@ import { setCommandTracer } from "../../src/core/process/command-tracer.js";
 import { routeInheritTo, type InheritSink } from "../../src/core/process/inherit-sink.js";
 import { TRUNCATED_OUTPUT_LINE } from "../../src/core/process/line-splitter.js";
 import { createPipeSink, launchDetached, run, runInherit } from "../../src/core/runner.js";
-
-const originalPlatform = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 interface PipedChild {
   readonly stdout: PassThrough;
@@ -53,7 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
   setCommandTracer(null);
-  setPlatform(originalPlatform);
+  restorePlatform();
 });
 
 describe("command tracing", () => {
