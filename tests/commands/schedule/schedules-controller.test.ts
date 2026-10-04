@@ -59,6 +59,14 @@ describe("SchedulesController reads", () => {
     expect(controller.providerName("nope")).toBe("nope");
   });
 
+  it("names a schedule by its id for the Journal, and nothing for an id it does not know", async () => {
+    const { controller } = await controllerWith();
+    const outcome = await controller.create(draft);
+    if (!outcome.isSaved) throw new Error("not saved");
+    expect(controller.scheduleName(outcome.schedule.id)).toBe("Outils dev");
+    expect(controller.scheduleName("0badc0de")).toBeUndefined();
+  });
+
   it("validates an edit without counting the schedule it replaces", async () => {
     const { controller } = await controllerWith();
     const outcome = await controller.create(draft);

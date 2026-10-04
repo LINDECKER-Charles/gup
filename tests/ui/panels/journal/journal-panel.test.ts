@@ -9,6 +9,7 @@ import { EMPTY_ACTIVITY } from "../../../../src/ui/text/journal/activity-labels.
 import { EXPORT_LABELS, JOURNAL_LABELS } from "../../../../src/ui/text/journal/journal-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import { lineWidth, type Line } from "../../../../src/ui/tui/styled-lines.js";
+import { updateEvent } from "../../../support/history-fixtures.js";
 import { JOURNAL_NOW, journalData, scriptedSource } from "./journal-data.js";
 
 const WIDE: Viewport = { width: 90, height: 26 };
@@ -94,6 +95,20 @@ describe("JournalPanel", () => {
     setting = "all";
     journal.onShow();
     expect(source.load).toHaveBeenLastCalledWith(expect.objectContaining({ key: "12m" }));
+  });
+
+  it("names the schedule an update ran for in its detail, and keeps the id of one it cannot name", async () => {
+    const events = [
+      updateEvent("winget", "Git.Git", { ts: "2026-10-02T09:00:00.000Z", scheduleId: "a1b2c3d4" }),
+      updateEvent("pip", "rich", { ts: "2026-10-01T09:00:00.000Z", scheduleId: "0badc0de" }),
+    ];
+    const scheduleName = (id: string) => (id === "a1b2c3d4" ? "Outils dev" : undefined);
+    const { journal } = await shown(scriptedSource(journalData(events)), { scheduleName });
+
+    for (const name of ["3", "return"]) journal.press(key(name));
+    expect(text(journal.render(WIDE)).join("\n")).toMatch(/Planification +Outils dev/);
+    for (const name of ["escape", "down", "return"]) journal.press(key(name));
+    expect(text(journal.render(WIDE)).join("\n")).toMatch(/Planification +0badc0de/);
   });
 
   it("leaves Ctrl combinations to the tab", async () => {

@@ -8,12 +8,15 @@ import { JOURNAL_LABELS } from "../text/journal/journal-labels.js";
 export interface JournalViewPorts {
   /** The journal settings (the period it opens on); default: the process-wide service. */
   readonly settings?: () => SettingsService;
+  /** A schedule's name from its id, for the event detail; undefined when unknown. */
+  readonly scheduleName?: (scheduleId: string) => string | undefined;
 }
 
 /**
  * Journal: the activity of a period — at a glance, per package, event by
  * event — and the debug log, read when the view comes to the front. The
- * source (history, log, exports) is the composition root's.
+ * source (history, log, exports) and the schedule names are the composition
+ * root's.
  */
 export function journalView(source: JournalSource, ports: JournalViewPorts = {}): ViewDefinition {
   const settings = ports.settings ?? settingsService;
@@ -34,6 +37,7 @@ export function journalView(source: JournalSource, ports: JournalViewPorts = {})
         choose: (spec) => context.dialogs.choose(spec),
         glyphMode: () => context.screen.appearance.glyphMode,
         defaultPeriod,
+        ...(ports.scheduleName && { scheduleName: ports.scheduleName }),
       }),
   };
 }

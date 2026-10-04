@@ -26,6 +26,8 @@ export interface EventDetail {
 export interface DetailContext {
   readonly width: number;
   readonly now: Date;
+  /** A schedule's name from its id; without it, or for an id it does not know, the id shows. */
+  readonly scheduleName?: ((scheduleId: string) => string | undefined) | undefined;
 }
 
 interface Columns {
@@ -102,7 +104,8 @@ function subjectCells(event: UpdateEvent, columns: Columns, middle: number): Seg
   return cells;
 }
 
-function updateDetail(event: UpdateEvent, { width, now }: DetailContext): EventDetail {
+function updateDetail(event: UpdateEvent, context: DetailContext): EventDetail {
+  const { width, now, scheduleName } = context;
   const look = STATUS_LOOK[event.status];
   const hasVersions = event.from !== undefined || event.to !== undefined;
   const fields: DetailField[] = [
@@ -112,7 +115,7 @@ function updateDetail(event: UpdateEvent, { width, now }: DetailContext): EventD
     [EVENT_LABELS.duration, optionalDuration(event.durationMs)],
     [EVENT_LABELS.retry, event.retry],
     [EVENT_LABELS.elevated, event.elevated ? EVENT_LABELS.yes : undefined],
-    [EVENT_LABELS.schedule, event.scheduleId],
+    [EVENT_LABELS.schedule, scheduleOf(event.scheduleId, scheduleName)],
     ...sessionFields(event),
   ];
   const message = event.message ? textBlock(EVENT_LABELS.message, event.message, width) : [];
@@ -159,6 +162,18 @@ function sessionFields(event: HistoryEvent): DetailField[] {
     [EVENT_LABELS.trigger, event.trigger === undefined ? undefined : TRIGGER_LABELS[event.trigger]],
     [EVENT_LABELS.session, event.runId.slice(0, SESSION_ID_LENGTH)],
   ];
+}
+
+/**
+ * The schedule an update ran for, by its name. One the lookup does not know
+ * (deleted since, or the schedules unreadable) keeps its id.
+ */
+function scheduleOf(
+  scheduleId: string | undefined,
+  nameOf: DetailContext["scheduleName"],
+): string | undefined {
+  if (scheduleId === undefined) return undefined;
+  return nameOf?.(scheduleId) ?? scheduleId;
 }
 
 function versionsOf(event: UpdateEvent): string {

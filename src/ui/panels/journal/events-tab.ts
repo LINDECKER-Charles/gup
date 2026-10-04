@@ -39,8 +39,14 @@ const IN_TYPE: Readonly<Record<EventType, (event: HistoryEvent) => boolean>> = {
 
 export class EventsTab implements JournalTab {
   readonly #list = new BrowsableList<HistoryEvent>({ searchText: eventSearchText });
+  readonly #scheduleName: ((scheduleId: string) => string | undefined) | undefined;
   #history: JournalHistory | null = null;
   #type: EventType = "all";
+
+  /** `scheduleName`: a schedule's name from its id, for the detail (unknown ids show as such). */
+  constructor(scheduleName?: (scheduleId: string) => string | undefined) {
+    this.#scheduleName = scheduleName;
+  }
 
   get isModal(): boolean {
     return this.#list.isModal;
@@ -62,7 +68,8 @@ export class EventsTab implements JournalTab {
     if (notice) return [...recordingBanner(history, frame.width), ...notice];
     const current = this.#list.current;
     if (this.#list.isDetailOpen && current) {
-      const { title, body } = eventDetail(current, frame);
+      const context = { ...frame, scheduleName: this.#scheduleName };
+      const { title, body } = eventDetail(current, context);
       return detailView(title, body, { list: this.#list, ...frame });
     }
     const head = this.headLines(history, frame.width);

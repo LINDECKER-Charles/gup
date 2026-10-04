@@ -125,6 +125,15 @@ export class SchedulesController implements SchedulesPort {
     return getProvider(providerId)?.displayName ?? providerId;
   }
 
+  /**
+   * A schedule's name, as last read — for the Journal, whose history keeps
+   * only the id. Undefined for one deleted since, or when the schedules
+   * cannot be read.
+   */
+  scheduleName(id: string): string | undefined {
+    return this.snapshot().schedules.find((schedule) => schedule.id === id)?.name;
+  }
+
   now(): Date {
     return this.#ready()?.clock() ?? new Date();
   }

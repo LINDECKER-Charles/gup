@@ -15,15 +15,16 @@ import { menuSchedules } from "./schedule/schedules-controller.js";
  * Composition root of the interactive menu: every view, one line each, sorted
  * by module name (the sidebar orders them by their own group and order). A
  * feature adds its view here and nowhere else; the ports between features
- * (the journal's Options rows) are wired here too.
+ * (the journal's schedule names, its Options rows) are wired here too.
  */
 export function menuViews(): readonly ViewDefinition[] {
+  const schedules = menuSchedules();
   return [
-    journalView(journalSource),
+    journalView(journalSource, { scheduleName: (id) => schedules.scheduleName(id) }),
     optionsView({ extraSections: [journalOptions({ logLevel: currentLogLevel })] }),
     packagesView(),
     providersView({ status: readProviderStatus }),
     scanView(),
-    schedulesView(menuSchedules()),
+    schedulesView(schedules),
   ];
 }
