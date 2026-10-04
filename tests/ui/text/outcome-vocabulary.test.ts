@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MANUAL_SKIP_MESSAGE } from "../../../src/core/update/finalize-outcome.js";
+import { INTERRUPT_MESSAGES } from "../../../src/core/update/finalize-outcome.js";
 import { KPI_LABELS } from "../../../src/ui/text/journal/activity-labels.js";
 import { EVENT_LABELS } from "../../../src/ui/text/journal/journal-labels.js";
 import { UPDATE_STATUS_LABELS } from "../../../src/ui/text/journal/log-labels.js";
@@ -20,7 +20,7 @@ import {
  */
 describe("the words of an update's outcome", () => {
   it("say « ignorée » for a skip, in the run as in the Journal", () => {
-    expect(MANUAL_SKIP_MESSAGE).toMatch(/^ignorée /);
+    expect(INTERRUPT_MESSAGES.manualSkip).toMatch(/^ignorée /);
     expect(RUN_SUMMARY.skipped(1)).toBe("1 ignorée");
     expect(RUN_SUMMARY.skipped(2)).toBe("2 ignorées");
     expect(KPI_LABELS.skips(1)).toBe("1 ignorée");

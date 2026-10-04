@@ -44,7 +44,7 @@ import { runInherit } from "../../../src/core/runner.js";
 import { decodePayload } from "../../../src/core/pty/trampoline-payload.js";
 import { inScreenLauncher } from "../../../src/ui/app/in-screen-launcher.js";
 import type { UiPreferences } from "../../../src/ui/app/ui-preferences.js";
-import { MANUAL_SKIP_MESSAGE } from "../../../src/core/update/finalize-outcome.js";
+import { INTERRUPT_MESSAGES } from "../../../src/core/update/finalize-outcome.js";
 import { RUN_HINTS, RUN_NOTICES } from "../../../src/ui/text/run-key-labels.js";
 import {
   ELEVATE_DIALOG,
@@ -262,7 +262,7 @@ describe("run view", () => {
     await menu.press("s");
     expect(hoisted.terminate).toHaveBeenCalledOnce();
     await installsStarted(pty, 2);
-    expect(await shown(menu, MANUAL_SKIP_MESSAGE)).toMatch(/→ alpha /);
+    expect(await shown(menu, INTERRUPT_MESSAGES.manualSkip)).toMatch(/→ alpha /);
   });
 
   it("x asks first: Non keeps going, Oui interrupts the package and cancels the rest", async () => {

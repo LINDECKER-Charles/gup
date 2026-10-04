@@ -1,8 +1,20 @@
+import { localized } from "../i18n/localized.js";
 import { consumeInterrupt, getInstallTimeoutSeconds } from "../runner.js";
 import type { UpdateOutcome } from "../types.js";
 
-/** The skip message, whatever skipped it: Ctrl+C in the console, `s` in the run view. */
-export const MANUAL_SKIP_MESSAGE = "ignorée par l'utilisateur";
+/** The messages of an interrupted install, in the interface's language. */
+export const INTERRUPT_MESSAGES = localized({
+  en: {
+    /** The user's skip, whatever skipped it: Ctrl+C in the console, `s` in the run view. */
+    manualSkip: "skipped by the user",
+    /** The install outlived the install timeout and was killed. */
+    timedOut: (seconds: number) => `timeout (${seconds}s) — install skipped`,
+  },
+  fr: {
+    manualSkip: "ignorée par l'utilisateur",
+    timedOut: (seconds) => `timeout (${seconds}s) — install ignorée`,
+  },
+});
 
 /** Between an outcome's message and the provider's recovery note. */
 const RECOVERY_SEPARATOR = " — ";
@@ -16,10 +28,8 @@ const RECOVERY_SEPARATOR = " — ";
  */
 export function finalizeOutcome(outcome: UpdateOutcome): UpdateOutcome {
   const { timedOut, aborted } = consumeInterrupt();
-  if (timedOut) {
-    return skippedAs(outcome, `timeout (${getInstallTimeoutSeconds()}s) — install ignorée`);
-  }
-  if (aborted) return skippedAs(outcome, MANUAL_SKIP_MESSAGE);
+  if (timedOut) return skippedAs(outcome, INTERRUPT_MESSAGES.timedOut(getInstallTimeoutSeconds()));
+  if (aborted) return skippedAs(outcome, INTERRUPT_MESSAGES.manualSkip);
   const message = messageWithRecovery(outcome.message, outcome.recovery);
   return message === undefined ? outcome : { ...outcome, message };
 }
@@ -32,7 +42,7 @@ export function skippedAs(outcome: UpdateOutcome, reason: string): UpdateOutcome
 
 /** Whether {@link finalizeOutcome} made `outcome` the user's skip. */
 export function isManualSkip(outcome: UpdateOutcome): boolean {
-  return outcome.message === messageWithRecovery(MANUAL_SKIP_MESSAGE, outcome.recovery);
+  return outcome.message === messageWithRecovery(INTERRUPT_MESSAGES.manualSkip, outcome.recovery);
 }
 
 function messageWithRecovery(

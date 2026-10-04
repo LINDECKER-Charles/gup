@@ -1,12 +1,31 @@
 import chalk from "chalk";
+import { localized } from "../core/i18n/localized.js";
 import { redactText } from "../core/log/redact.js";
 import { readProviderStatus } from "../core/platform/provider-status.js";
 import { renderProvidersStatus } from "../ui/table.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli/cli-module.js";
 
+const DOCTOR_LABELS = localized({
+  en: {
+    description:
+      "Shows the providers detected, not installed and incompatible with this system.",
+    /** The section the CLI modules report in. */
+    system: "System",
+    unavailable: (reason: string) => `diagnostic unavailable (${reason})`,
+    timedOut: "timed out",
+  },
+  fr: {
+    description:
+      "Affiche les providers détectés, ceux non installés et ceux incompatibles avec ce système.",
+    system: "Système",
+    unavailable: (reason) => `diagnostic indisponible (${reason})`,
+    timedOut: "délai dépassé",
+  },
+});
+
 /**
  * `gup doctor`: which providers this machine has, which it lacks (with how to
- * install them), which are foreign to this OS, then a "Système" section where
+ * install them), which are foreign to this OS, then a "System" section where
  * each CLI module reports its own state (embedded terminal, scheduling,
  * settings, journal…). The bug report form asks for this output, so the
  * section's values are redacted like the log (home directory → `~`): every
@@ -44,11 +63,11 @@ async function systemDiagnostics(modules: readonly CliModule[]): Promise<Diagnos
 /** One module's lines, or a single "unavailable" line when it fails or hangs. */
 async function boundedDiagnostics(cliModule: CliModule): Promise<readonly DiagnosticLine[]> {
   const unavailable = (reason: string): DiagnosticLine[] => [
-    { label: cliModule.id, value: `diagnostic indisponible (${reason})`, status: "warn" },
+    { label: cliModule.id, value: DOCTOR_LABELS.unavailable(reason), status: "warn" },
   ];
   let timer: NodeJS.Timeout | undefined;
   const deadline = new Promise<DiagnosticLine[]>((resolve) => {
-    timer = setTimeout(() => resolve(unavailable("délai dépassé")), DIAGNOSTIC_TIMEOUT_MS);
+    timer = setTimeout(() => resolve(unavailable(DOCTOR_LABELS.timedOut)), DIAGNOSTIC_TIMEOUT_MS);
   });
   try {
     return await Promise.race([cliModule.diagnostics?.() ?? Promise.resolve([]), deadline]);
@@ -64,7 +83,10 @@ function renderSystem(lines: readonly DiagnosticLine[]): string {
     ({ label, value, status }) =>
       `  ${STATUS_MARKS[status]} ${label.padEnd(LABEL_WIDTH)} ${redactText(value)}`,
   );
-  const heading = [chalk.bold("  Système"), chalk.dim(`  ${"─".repeat(RULE_WIDTH)}`)];
+  const heading = [
+    chalk.bold(`  ${DOCTOR_LABELS.system}`),
+    chalk.dim(`  ${"─".repeat(RULE_WIDTH)}`),
+  ];
   return ["", ...heading, ...rows].join("\n");
 }
 
@@ -74,9 +96,7 @@ export const doctorModule: CliModule = {
   register(program, context) {
     program
       .command("doctor")
-      .description(
-        "Affiche les providers détectés, ceux non installés et ceux incompatibles avec ce système.",
-      )
+      .description(DOCTOR_LABELS.description)
       .action(async () => {
         const code = await doctorCommand(context.modules);
         process.exit(code);

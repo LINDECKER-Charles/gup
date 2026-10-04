@@ -1,5 +1,6 @@
 import { realpath } from "node:fs/promises";
 
+import { localize } from "./i18n/localized.js";
 import { run, runInherit } from "./runner.js";
 import type { UpdateOutcome } from "./types.js";
 
@@ -306,6 +307,6 @@ export function describeSource(source: InstallSource): string {
     case "dnf":
       return "via dnf";
     case "manual":
-      return "manuel";
+      return localize({ en: "manual", fr: "manuel" });
   }
 }

@@ -17,7 +17,7 @@ import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli-module.
  * The interface language on the command line: chosen before commander is
  * built (`cli.ts` calls {@link applyStartupLocale}), shown and changed with
  * `gup language [code]` — the command an install line chains to pick French —
- * and reported on `gup doctor`'s "Système" section.
+ * and reported on `gup doctor`'s "System" section.
  */
 
 export interface LanguageModuleDeps {
@@ -89,7 +89,7 @@ export function languageCommand(code: string | undefined, deps: LanguageModuleDe
   return 0;
 }
 
-/** The "Système" line of `gup doctor`: the language and its source, and a `GUP_LANG` it ignored. */
+/** The "System" line of `gup doctor`: the language and its source, and a `GUP_LANG` it ignored. */
 export function languageDiagnostic(choice: LocaleChoice): DiagnosticLine {
   const value = LANGUAGE_LABELS.diagnosticValue(LANGUAGE_LABELS.sources[choice.source]);
   if (choice.ignoredEnv === undefined) {

@@ -15,7 +15,7 @@ import { TOO_FREQUENT } from "../../../src/core/scheduler/model/validate-schedul
 import { MAX_DEFERRALS } from "../../../src/core/scheduler/scheduler-timing.js";
 import { TargetResolver, type TargetScan } from "../../../src/core/scheduler/target-resolver.js";
 import type { UpdateOutcome } from "../../../src/core/types.js";
-import { MANUAL_SKIP_MESSAGE } from "../../../src/core/update/finalize-outcome.js";
+import { INTERRUPT_MESSAGES } from "../../../src/core/update/finalize-outcome.js";
 import { updateKeyOf } from "../../../src/core/update/update-plan.js";
 import type { PlannedUpdate, UpdateRequest } from "../../../src/core/update/update-ports.js";
 import { buildReport } from "../../../src/core/update/update-report.js";
@@ -312,7 +312,7 @@ describe("ScheduledRun.tick", () => {
         "winget:Git.Git": outcome("Git.Git", {
           success: false,
           skipped: true,
-          message: MANUAL_SKIP_MESSAGE,
+          message: INTERRUPT_MESSAGES.manualSkip,
         }),
       },
       beforeAttempt: (self) => self.run.stop(),
@@ -333,7 +333,7 @@ describe("ScheduledRun.tick", () => {
         "winget:Git.Git": outcome("Git.Git", {
           success: false,
           skipped: true,
-          message: `${MANUAL_SKIP_MESSAGE} — version précédente restaurée`,
+          message: `${INTERRUPT_MESSAGES.manualSkip} — version précédente restaurée`,
           recovery: "version précédente restaurée",
         }),
       },

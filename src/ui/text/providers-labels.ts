@@ -56,6 +56,7 @@ export function providersSummaryParts(report: ProviderStatusReport): string[] {
   return parts;
 }
 
+/** `gup doctor`'s provider groups, in the interface's languages. */
 export const DOCTOR_PROVIDER_LABELS = localized({
   en: {
     detected: "Detected providers",
@@ -69,6 +70,7 @@ export const DOCTOR_PROVIDER_LABELS = localized({
   },
 });
 
+/** The `--provider` warning of `gup update` and `gup list`, in the interface's languages. */
 export const IGNORED_PROVIDER_LABELS = localized({
   en: {
     prefix: "Warning:",

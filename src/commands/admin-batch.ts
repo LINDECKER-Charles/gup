@@ -6,6 +6,7 @@ import {
   type AdminBatchInput,
 } from "../core/elevation.js";
 import { DEFAULT_LOCALE, setActiveLocale } from "../core/i18n/locale.js";
+import { localized } from "../core/i18n/localized.js";
 import { elevatedLogBuffer } from "../core/log/elevated-bridge.js";
 import { applyLogThreshold } from "../core/log/log.js";
 import { resolveUpdateTarget } from "../core/platform/update-target.js";
@@ -13,6 +14,11 @@ import { setInstallTimeoutSeconds } from "../core/runner.js";
 import { withOperation } from "../core/state/run-context.js";
 import type { UpdateOutcome } from "../core/types.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
+
+const ADMIN_BATCH_LABELS = localized({
+  en: { writeFailed: (reason: string) => `could not write the outcomes — ${reason}` },
+  fr: { writeFailed: (reason) => `échec d'écriture des outcomes — ${reason}` },
+});
 
 /**
  * Elevated-child entrypoint for {@link runElevatedBatch}. Reads the JSON
@@ -47,9 +53,8 @@ export async function adminBatchCommand(inputFile: string): Promise<number> {
   try {
     await writeBatchOutput(`${inputFile}.out`, outcomes, elevatedLogBuffer.drain());
   } catch (err) {
-    process.stderr.write(
-      `${chalk.red("admin-batch:")} échec d'écriture des outcomes — ${err instanceof Error ? err.message : String(err)}\n`,
-    );
+    const reason = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`${chalk.red("admin-batch:")} ${ADMIN_BATCH_LABELS.writeFailed(reason)}\n`);
     return 2;
   }
 

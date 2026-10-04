@@ -1,3 +1,4 @@
+import { LOCALES, type Locale } from "../i18n/locale.js";
 import type { InheritRequest } from "../process/inherit-sink.js";
 
 /**
@@ -27,12 +28,18 @@ const PAYLOAD_KEYS: ReadonlySet<string> = new Set([
   "cwd",
   "shell",
   "exitFile",
+  "locale",
 ]);
 
 export interface TrampolinePayload extends InheritRequest {
   readonly v: typeof PAYLOAD_VERSION;
   /** Where the trampoline writes the exit code before exiting (Windows fast path). */
   readonly exitFile?: string;
+  /**
+   * The parent's language: the trampoline runs in a process of its own, where
+   * nothing else chooses one, and speaks it in what it prints.
+   */
+  readonly locale?: Locale;
 }
 
 /** Throws when the encoded request would not fit on the command line. */
@@ -67,6 +74,7 @@ function payloadOf(value: unknown): TrampolinePayload {
   const cwd = optionalField(record, "cwd", "string");
   const shell = optionalField(record, "shell", "boolean");
   const exitFile = optionalField(record, "exitFile", "string");
+  const locale = optionalLocale(record);
   return {
     v: PAYLOAD_VERSION,
     command,
@@ -74,7 +82,15 @@ function payloadOf(value: unknown): TrampolinePayload {
     ...(cwd !== undefined && { cwd: cwd as string }),
     ...(shell !== undefined && { shell: shell as boolean }),
     ...(exitFile !== undefined && { exitFile: exitFile as string }),
+    ...(locale !== undefined && { locale }),
   };
+}
+
+/** One of the languages gup speaks, written exactly as the parent writes it; absent is allowed. */
+function optionalLocale(record: Record<string, unknown>): Locale | undefined {
+  const value = optionalField(record, "locale", "string");
+  if (value === undefined) return undefined;
+  return LOCALES.find((locale) => locale === value) ?? refuse("locale");
 }
 
 function versionOneRecord(value: unknown): Record<string, unknown> {

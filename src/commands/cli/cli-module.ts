@@ -21,7 +21,7 @@ export interface StartupContext {
   readonly options: Readonly<Record<string, unknown>>;
 }
 
-/** One line of the "Système" section of `gup doctor`. */
+/** One line of the "System" section of `gup doctor`, in the interface's language. */
 export interface DiagnosticLine {
   readonly label: string;
   readonly value: string;
@@ -48,7 +48,7 @@ export interface CliModule {
   triggerFor?(commandPath: string): RunTrigger | undefined;
   /** Composition: install this module's slots for the command about to run. */
   beforeAction?(context: StartupContext): void | Promise<void>;
-  /** Lines for the "Système" section of `gup doctor`. */
+  /** Lines for the "System" section of `gup doctor`. */
   diagnostics?(): Promise<readonly DiagnosticLine[]>;
   /** The process is about to exit on an uncaught error. Must not throw. */
   onCrash?(error: unknown): void;
