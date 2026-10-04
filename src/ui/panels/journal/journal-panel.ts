@@ -1,3 +1,4 @@
+import { JOURNAL_SECTION } from "../../../core/config/journal-section.js";
 import { buildInsights } from "../../../core/insights/build-insights.js";
 import {
   nextPeriod,
@@ -24,10 +25,11 @@ import { RecurrenceTab } from "./recurrence-tab.js";
 /**
  * The Journal view: four tabs over one load of the period — Activité,
  * Récurrence, Événements, Debug — switched with 1-4 or [ ]. `p` steps the
- * period, `r` reloads, `o` opens the HTML report of the period in the
- * browser, `e` exports. A load never blanks the screen: the
- * previous data stays until the new one arrives (the title shows ↻), and a
- * load overtaken by a newer one is dropped.
+ * period, `r` reloads, `o` writes the HTML report of the period (opened in
+ * the browser when the setting says so), `e` exports. The period is the
+ * `journal.period` setting until `p` picks one. A load never blanks the
+ * screen: the previous data stays until the new one arrives (the title shows
+ * ↻), and a load overtaken by a newer one is dropped.
  */
 
 export interface JournalPanelDeps {
@@ -37,10 +39,14 @@ export interface JournalPanelDeps {
   /** The glyph mode of the screen, read at every draw (it follows the appearance). */
   readonly glyphMode: () => GlyphMode;
   readonly now?: () => Date;
-  readonly initialPeriod?: PeriodPreset;
+  /**
+   * The period the view shows (the `journal.period` setting), read again at
+   * each load until `p` picks another one.
+   */
+  readonly defaultPeriod?: () => PeriodPreset;
 }
 
-const DEFAULT_PERIOD: PeriodPreset = "12m";
+const DEFAULT_PERIOD = JOURNAL_SECTION.defaults.period;
 /** Rows above a tab's content: the tab bar. */
 const TAB_BAR_ROWS = 1;
 const TAB_GAP = "  ";
@@ -54,6 +60,8 @@ export class JournalPanel implements Panel {
   readonly #tabs: readonly JournalTab[];
   #tabIndex = 0;
   #period: Period;
+  /** `p` picked the period: the setting no longer decides it. */
+  #isPeriodChosen = false;
   #data: JournalData | null = null;
   #isLoading = false;
   /** Loads started: a result whose number is not the latest is stale. */
@@ -64,7 +72,7 @@ export class JournalPanel implements Panel {
   constructor(deps: JournalPanelDeps) {
     this.#deps = deps;
     this.#now = deps.now ?? (() => new Date());
-    this.#period = presetPeriod(deps.initialPeriod ?? DEFAULT_PERIOD, this.#now());
+    this.#period = presetPeriod(this.defaultPeriod(), this.#now());
     this.#tabs = [
       new ActivityTab(),
       new RecurrenceTab(),
@@ -143,6 +151,7 @@ export class JournalPanel implements Panel {
       "]": () => this.showTab((this.#tabIndex + 1) % count),
       p: () => {
         this.#period = nextPeriod(this.#period, this.#now());
+        this.#isPeriodChosen = true;
         this.load();
       },
       r: () => this.load(),
@@ -155,10 +164,18 @@ export class JournalPanel implements Panel {
     this.#tabIndex = index;
   }
 
-  /** Load the period afresh (it ends now); a load overtaken by a newer one is dropped. */
+  private defaultPeriod(): PeriodPreset {
+    return this.#deps.defaultPeriod?.() ?? DEFAULT_PERIOD;
+  }
+
+  /**
+   * Load the period afresh (it ends now) — the setting's, until `p` picked
+   * one; a load overtaken by a newer one is dropped.
+   */
   private load(): void {
     const ticket = ++this.#loadCount;
-    this.#period = parsePeriod(this.#period.key, this.#now()) ?? this.#period;
+    const key = this.#isPeriodChosen ? this.#period.key : this.defaultPeriod();
+    this.#period = parsePeriod(key, this.#now()) ?? this.#period;
     const period = this.#period;
     this.#isLoading = true;
     this.#deps.redraw();

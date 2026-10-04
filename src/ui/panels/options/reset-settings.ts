@@ -7,7 +7,8 @@ import type { OptionsHost } from "./option-row.js";
  * Put a group of settings back to their defaults, the way the Options view
  * groups them: Apparence (theme, colours, contrast, symbols, density),
  * Confort (the rest of the `interface` section), Scan & installation (fast
- * mode, filter, timeout — applied to the session at once too). Every step
+ * mode, filter, timeout — applied to the session at once too); Tout adds the
+ * sections other features put on the page (the journal settings). Every step
  * runs even when one cannot be persisted; the first failure is rethrown at
  * the end, the values staying in effect for the session.
  */
@@ -39,7 +40,13 @@ function stepsOf(scope: ResetScope, host: OptionsHost): Step[] {
     case "scan":
       return scanSteps(host);
     case "all":
-      return [...appearanceSteps(host), ...comfortSteps(host), ...scanSteps(host)];
+      return [
+        ...appearanceSteps(host),
+        ...comfortSteps(host),
+        ...scanSteps(host),
+        // Their consumers follow the settings: the log session hears the reset.
+        () => host.settings.reset(["log", "journal"]),
+      ];
   }
 }
 

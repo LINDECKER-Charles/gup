@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildInsights } from "../../../../src/core/insights/build-insights.js";
-import { parsePeriod } from "../../../../src/core/time/period.js";
+import { parsePeriod, type PeriodPreset } from "../../../../src/core/time/period.js";
 import type { GlyphMode } from "../../../../src/ui/theme/glyphs.js";
 import { JournalPanel, type JournalPanelDeps } from "../../../../src/ui/panels/journal/journal-panel.js";
 import type { JournalData, JournalSource } from "../../../../src/ui/panels/journal/journal-source.js";
@@ -78,6 +78,22 @@ describe("JournalPanel", () => {
     expect(source.load).toHaveBeenLastCalledWith(expect.objectContaining({ key: "all" }));
     expect(journal.title).toBe("Journal · tout l'historique ↻");
     expect(text(journal.render(WIDE)).join("\n")).toContain("3 mises à jour");
+  });
+
+  it("shows the period the settings name, and follows them until p picks one", async () => {
+    const source = scriptedSource();
+    let setting: PeriodPreset = "30d";
+    const { journal } = await shown(source, { defaultPeriod: () => setting });
+    expect(journal.title).toBe("Journal · 30 derniers jours");
+
+    setting = "90d";
+    journal.onShow();
+    expect(source.load).toHaveBeenLastCalledWith(expect.objectContaining({ key: "90d" }));
+
+    journal.press(key("p"));
+    setting = "all";
+    journal.onShow();
+    expect(source.load).toHaveBeenLastCalledWith(expect.objectContaining({ key: "12m" }));
   });
 
   it("leaves Ctrl combinations to the tab", async () => {

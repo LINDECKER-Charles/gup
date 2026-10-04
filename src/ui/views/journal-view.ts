@@ -1,14 +1,23 @@
+import type { PeriodPreset } from "../../core/time/period.js";
 import type { ViewDefinition } from "../app/view-definition.js";
 import { JournalPanel } from "../panels/journal/journal-panel.js";
 import type { JournalSource } from "../panels/journal/journal-source.js";
+import { settingsService, type SettingsService } from "../settings/settings-service.js";
 import { JOURNAL_LABELS } from "../text/journal/journal-labels.js";
+
+export interface JournalViewPorts {
+  /** The journal settings (the period it opens on); default: the process-wide service. */
+  readonly settings?: () => SettingsService;
+}
 
 /**
  * Journal: the activity of a period — at a glance, per package, event by
  * event — and the debug log, read when the view comes to the front. The
  * source (history, log, exports) is the composition root's.
  */
-export function journalView(source: JournalSource): ViewDefinition {
+export function journalView(source: JournalSource, ports: JournalViewPorts = {}): ViewDefinition {
+  const settings = ports.settings ?? settingsService;
+  const defaultPeriod = (): PeriodPreset => settings().get("journal").period;
   return {
     id: "journal",
     label: JOURNAL_LABELS.view,
@@ -24,6 +33,7 @@ export function journalView(source: JournalSource): ViewDefinition {
         },
         choose: (spec) => context.dialogs.choose(spec),
         glyphMode: () => context.screen.appearance.glyphMode,
+        defaultPeriod,
       }),
   };
 }

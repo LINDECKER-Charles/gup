@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { JournalData, JournalSource } from "../../../src/ui/panels/journal/journal-source.js";
+import { ConfigStore } from "../../../src/core/config/store.js";
+import { SettingsService } from "../../../src/ui/settings/settings-service.js";
 import { journalView } from "../../../src/ui/views/journal-view.js";
 import { bootMenu, defaultViews } from "../../support/tui/menu-driver.js";
 import { journalData, scriptedSource } from "../panels/journal/journal-data.js";
@@ -101,5 +103,22 @@ describe("journal view", () => {
 
     await menu.waitForText("Rapport ouvert dans le navigateur");
     expect(source.export).toHaveBeenCalledWith("html", expect.objectContaining({ key: "12m" }));
+  });
+});
+
+describe("journal view and the settings", () => {
+  it("opens on the period chosen in Options", async () => {
+    const settings = new SettingsService(new ConfigStore({ file: null, isDisabled: true }));
+    settings.update("journal", { period: "30d" });
+    const source = scriptedSource();
+    const menu = await bootMenu({
+      views: [...defaultViews(), journalView(source, { settings: () => settings })],
+      initialView: "journal",
+      scanOnStart: false,
+      size: { cols: 120, rows: 30 },
+    });
+
+    await menu.waitForText("Journal · 30 derniers jours ");
+    expect(source.load).toHaveBeenCalledWith(expect.objectContaining({ key: "30d" }));
   });
 });
