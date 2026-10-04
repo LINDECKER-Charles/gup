@@ -239,4 +239,5 @@ a frequency the argument errors come first: `parseAddArgs` runs before the regis
    drift test now enforces (spec step 8, which wave 2 could not edit there).
    `docs/feature-guides` consolidates these pages later.
 5. **`swiftly` hint unchanged**: its fallback ("macOS et Linux uniquement…") is still shown on
-   the BSDs; its Windows-worded test still exercises that fallback.
+   the BSDs, so its test reads it under a simulated `freebsd`, where gup shows it, not under
+   Windows, where swiftly is incompatible and no hint is ever shown.
