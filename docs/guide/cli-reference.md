@@ -91,6 +91,10 @@ With no target and no `--all`, it scans and opens the package picker.
 Passing explicit targets skips the scan entirely: `gup` goes straight to the provider and asks it
 to update that package.
 
+On Windows, gup never updates itself while it runs: `gup update npm-g:@charles_lindecker/gup`
+ends as a skip that gives the command to run once gup has exited
+([Updating gup itself](installation.md#updating-gup-itself)).
+
 `-y` is the CI switch. Beyond the confirmation it also suppresses the
 [retry offer](#retrying-failed-updates), because every retry strategy bypasses an installer
 integrity check and that needs a human to say yes.

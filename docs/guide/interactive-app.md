@@ -101,6 +101,11 @@ cursor**: with nothing checked it updates nothing and says how to check
 `∞` marks a package an enabled schedule already covers. The order inside each provider follows
 Options › **Package sort** (by name, or biggest version jump first).
 
+On Windows, gup's own row — `@charles_lindecker/gup`, under npm — is listed without a checkbox:
+a running gup cannot replace itself. `space` on it says so and gives the command to run once gup
+has exited, and gup prints that command as you quit
+([why](installation.md#updating-gup-itself)).
+
 ## Updating
 
 Press Enter with packages checked. The confirmation lists them; it adds a line when some need

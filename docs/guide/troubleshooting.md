@@ -18,6 +18,7 @@ here? [Collect a diagnostic](#collecting-a-diagnostic-for-a-bug-report) and open
   - [The update waits for another gup](#the-update-waits-for-another-gup)
   - [Administrator packages were skipped](#administrator-packages-were-skipped)
   - [An install hangs](#an-install-hangs)
+  - [gup does not update itself (Windows)](#gup-does-not-update-itself-windows)
 - [Providers and packages](#providers-and-packages)
   - [A provider is "not installed", or greyed out](#a-provider-is-not-installed-or-greyed-out)
   - [A package I expected is missing](#a-package-i-expected-is-missing)
@@ -175,6 +176,25 @@ in the app's run view (or Ctrl+C in a terminal) — the batch goes on. The per-i
 (20 minutes by default) does it for you; change it in Options › **Install timeout**, with
 `GUP_INSTALL_TIMEOUT`, or `gup update --timeout`. If the installer is waiting for an answer, press
 `t` in the run view to type into it ([how](interactive-app.md#answering-an-installer)).
+
+### gup does not update itself (Windows)
+
+Its row in **Packages** has no checkbox, and `gup update npm-g:@charles_lindecker/gup` ends as a
+skip.
+
+**Why.** A running gup keeps its native modules loaded (OpenTUI's renderer, node-pty's ConPTY),
+and Windows does not replace a DLL that is loaded: an `npm install -g` started from inside gup
+would fail half way and could leave the package broken. On Windows gup leaves its own update for
+after it exits.
+
+**Fix.** Quit gup — it prints the command as it exits — then run, from any terminal:
+
+```bash
+npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty
+```
+
+If an update started from inside an older gup stopped half way and the `gup` command is gone,
+the same command reinstalls it. More: [installation.md § Updating gup itself](installation.md#updating-gup-itself).
 
 ## Providers and packages
 

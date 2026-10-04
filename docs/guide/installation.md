@@ -121,18 +121,29 @@ machine in front of you.
 
 ## Updating gup itself
 
-Installed from npm, `gup` is a global npm package like any other — its own `npm-g` provider picks
-it up, so it updates itself:
+Installed from npm, `gup` is a global npm package like any other: its own `npm-g` provider lists
+it as `npm-g:@charles_lindecker/gup` when a newer version is out.
+
+**macOS and Linux:** gup updates itself like any other package — check its row in **Packages**,
+or:
 
 ```bash
 gup update npm-g:@charles_lindecker/gup
 ```
 
-Or through npm directly:
+**Windows: quit gup first.** A running gup keeps its native modules loaded — OpenTUI's
+renderer, node-pty's ConPTY — and Windows does not replace a DLL that is loaded: an
+`npm install -g` started from inside gup would fail half way and could leave the package
+broken. So on Windows gup leaves its own update for after it exits. Its row in **Packages** is
+listed but cannot be checked, `gup update npm-g:@charles_lindecker/gup` — or a schedule naming
+it — ends as a skip that gives the command to run instead, and the app prints that command when
+you quit. Once gup has exited, from any terminal:
 
 ```bash
 npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty
 ```
+
+The same command updates gup on every system.
 
 > The `self` provider is a different thing: it updates the **package managers** `gup` drives
 > (winget, scoop, choco, npm, pnpm, yarn, pip, pipx, gh, brew), not `gup` itself.
