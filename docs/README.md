@@ -29,6 +29,8 @@ stays light; everything dense lives here.
 |---|---|
 | [`development/architecture.md`](development/architecture.md) | Layers & responsibilities, data model, provider lifecycle, parallel scan, update pipeline + retry, security — **mermaid diagrams**. |
 | [`development/how-gup-works.md`](development/how-gup-works.md) | End-to-end technical walkthrough: motivation, model, internal contracts, resilience patterns, build. |
+| [`development/testing.md`](development/testing.md) | Test strategy: the pyramid, what each layer fakes, how to run it in each shell, where a new test goes, the end-to-end suites, CI and coverage — **mermaid diagrams**. |
+| [`development/testing-windows-checklist.md`](development/testing-windows-checklist.md), [`development/testing-macos-checklist.md`](development/testing-macos-checklist.md) | The manual test campaigns run before a release: what no automated layer can see on a real Windows or Mac machine. |
 | [`development/roadmap.md`](development/roadmap.md) | Changes already decided but waiting on an external trigger — a date or an upstream release. Each entry carries its trigger, the exact edits, and what must not change. |
 | [`development/releasing.md`](development/releasing.md) | How a version goes from `main` to npm, the GitHub Release and the landing page: pre-flight, changelog and notes, checks, tag, publish, hotfixes — **mermaid diagram**. |
 

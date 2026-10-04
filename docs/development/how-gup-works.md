@@ -803,21 +803,25 @@ Significant attack surface (shell-out to ~150 third-party tools). See `SECURITY.
 
 ## 16. Tests
 
-Stack: Vitest + v8 coverage. Cross-platform CI: Windows + macOS + Ubuntu × Node 26. The prompt suites drive the real views through OpenTUI's in-memory test renderer (`@opentui/core/testing`): keys in, frame text out.
+Stack: Vitest (four projects) + v8 coverage, typechecked and linted like `src`. Cross-platform CI: Windows + macOS + Ubuntu × Node 26. The whole strategy — what each layer fakes, how to run it, where a new test goes, CI and the manual checklists — is in [`testing.md`](testing.md); in short:
+
+| Layer | Where | What it proves |
+|---|---|---|
+| Unit | `tests/{core,commands,cli,ui,security}` | pure logic and builders; the terminal UI on OpenTUI's in-memory test renderer (keys in, frame text out), held to WCAG contrast on every view |
+| Providers | `tests/providers/<domain>`, `tests/platform` | every provider on a simulated machine: contract cases (detection, fail-soft under injected faults, argv, `updateAll`), parsers on recorded tool output, every case replayed on each OS it supports |
+| Security | `tests/security` | the pins: `shell: true` allowlist, https-only `fetch`, the single spawn chokepoint, argv hardening through `run()` and the embedded terminal, package-id allowlists, report escaping |
+| Integration | `tests/integration` | real spawns, a real pseudo-terminal (ConPTY on Windows), the Task Scheduler round trip (opt-in) |
+| End-to-end | `tests/e2e` | the built CLI on the real machine, in a sandbox: commands, the menu in a real terminal, a real update in a throw-away npm prefix (opt-in) |
 
 ```bash
-npm run typecheck             # tsc strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes
-npm run test                  # watch
-npm run test:run              # one-shot
-npm run test:coverage         # + coverage report
+npm run typecheck             # tsc on src, then on the tests, tooling and configs
+npm run test                  # watch: unit + providers
+npm run test:run              # unit, providers and integration, once
+npm run test:coverage         # + coverage (fails on the safety-critical floors only)
+npm run test:e2e:smoke        # build, then the end-to-end smoke
 npm run test:security         # security suite only
 npm run lint                  # eslint
 ```
-
-Three kinds of tests:
-1. **Unit**: parsers of each provider (winget table, scoop status, npm outdated JSON, helm search…), helpers (`gh-releases.ts`, `install-source.ts`, `normalizeVersion`).
-2. **Security pins**: `shell-usage.test.ts` (allowlist of `shell: true`), `http-targets.test.ts` (https-only), `install-source.test.ts` (binary ↔ PM mappings).
-3. **Integration**: very limited — the CLI shells out to real tools that may not be installed in CI.
 
 Strict conventions: `tsconfig.json` enables `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. No `as` cast unless necessary, no `any`. Code review: "no comments stating WHAT, only WHY when non-obvious".
 
@@ -837,8 +841,10 @@ Strict conventions: `tsconfig.json` enables `strict`, `noUncheckedIndexedAccess`
 dev              # tsx src/cli.ts (no-build dev loop)
 build            # tsup → dist/
 start            # node dist/cli.js
-typecheck        # tsc --noEmit
-test, test:run, test:security, test:coverage, test:coverage:ci
+typecheck        # tsc --noEmit, on src then on the tests (tsconfig.tests.json)
+test, test:run, test:unit, test:integration, test:security, test:coverage, test:coverage:ci
+test:e2e:smoke, test:e2e, test:e2e:mutate   # build, then the end-to-end suites (testing.md §6)
+fixtures:record  # re-record provider fixtures from the real tools installed here
 lint, lint:security
 audit:deps, audit:deps:ci
 security         # composite: audit + lint security + tests security

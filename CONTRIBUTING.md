@@ -84,7 +84,8 @@ flowchart TD
     Register --> Smoke[Smoke test:<br/>tsx src/cli.ts doctor<br/>tsx src/cli.ts list --provider id]
     Smoke --> Pass{Detected?<br/>Scan ok?<br/>Update ok?}
     Pass -->|no| Impl
-    Pass -->|yes| Tests[npm run typecheck<br/>npm run lint<br/>npm run security]
+    Pass -->|yes| Case[Contract case in<br/>tests/providers/&lt;domain&gt;/*.cases.ts]
+    Case --> Tests[npm run typecheck<br/>npm run lint<br/>npm run test:run<br/>npm run security]
     Tests --> Doc[Update docs/guide/providers-catalog.md<br/>+ the provider count in README.md]
     Doc --> PR([Pull Request])
 ```
@@ -126,6 +127,18 @@ npx tsx src/cli.ts doctor                       # provider detected?
 npx tsx src/cli.ts list --provider <your-id>    # scan correct?
 npx tsx src/cli.ts update <your-id>:<pkg>       # update works?
 ```
+
+### 2.5 Tests
+
+A new provider gets at least one **contract case** in
+`tests/providers/<domain>/<domain>.cases.ts`: the simulated machine it runs on (binaries, the
+probe output, the HTTP answers) and the rows it must return. The contract then generates the
+detection, fail-soft, argv and `updateAll` tests, replays the scan under every fault it can
+inject, and the platform simulation runs the case on every other OS the provider supports. A
+non-trivial parser or a multi-step update also gets a knowledge test
+(`tests/providers/<domain>/<your-id>.test.ts`), ideally on output recorded from the real tool
+(`npm run fixtures:record -- --provider <your-id>`). How and why:
+[`docs/development/testing.md`](docs/development/testing.md#4-where-does-my-test-go).
 
 ---
 
@@ -262,12 +275,17 @@ Mark outcomes `retryable: true` when the upstream error message suggests `--forc
 ## 6. Tests & quality before PR
 
 ```powershell
-npm run typecheck             # tsc strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes
-npm run lint                  # eslint
-npm run test:run              # vitest one-shot
-npm run test:security         # security suite (shell-usage, http-targets, install-source)
+npm run typecheck             # tsc on src, then on the tests, the tooling and the configs
+npm run lint                  # eslint on src, tests and scripts
+npm run test:run              # the unit, providers and integration projects
+npm run test:e2e:smoke        # build, then the built CLI in a sandbox and in a real terminal
 npm run security              # audit-ci + lint:security + test:security
 ```
+
+On Windows, `check.cmd` runs all of them and prints one summary (`check.cmd -E2E full` adds the
+real tools of your machine, read-only). The tests need Node ≥ 26.9. Where a new test goes, how to
+run one layer, the end-to-end suites, CI and the manual checklists:
+[`docs/development/testing.md`](docs/development/testing.md).
 
 Cross-platform CI: **Windows** + **macOS** + **Ubuntu**, Node **26**. Every PR that adds a provider must pass all three.
 
@@ -275,7 +293,10 @@ Because the matrix now runs on three OSes, a provider must never build a path wi
 
 ### Coverage
 
-If parsing is non-trivial, add a unit test in `tests/providers/<your-provider>.test.ts` — not mandatory for a trivial wrapper, recommended as soon as there's a regex or a field merge.
+There is no percentage to reach. A behaviour ships with the test that would fail if it broke;
+the modules where an untested branch can do harm (the runner, install-source, elevation, the
+update pipeline, the scheduler, log redaction…) have coverage floors that CI enforces
+([`testing.md` §8](docs/development/testing.md#8-coverage)).
 
 ---
 
@@ -417,16 +438,16 @@ flowchart TD
 
    | Check | Workflow | What it runs |
    |---|---|---|
-   | `test (node 26 / windows-latest)` | `ci.yml` | typecheck, build, unit tests on Windows |
-   | `test (node 26 / macos-latest)` | `ci.yml` | typecheck, build, unit tests on macOS |
-   | `test (node 26 / ubuntu-latest)` | `ci.yml` | typecheck, lint, security lint, build, unit tests on Linux |
+   | `test (node 26 / windows-latest)` | `ci.yml` | typecheck (src and tests), build, the unit, providers and integration tests, the end-to-end smoke on Windows |
+   | `test (node 26 / macos-latest)` | `ci.yml` | the same on macOS |
+   | `test (node 26 / ubuntu-latest)` | `ci.yml` | the same on Linux, plus lint, security lint and the coverage floors |
    | `security tests + eslint` | `security.yml` | the `eslint-plugin-security` ruleset and the security test suite |
    | `npm audit (audit-ci)` | `security.yml` | known advisories in the dependency tree (`audit-ci.json`) |
    | `codeql` | `security.yml` | CodeQL `security-extended` and `security-and-quality` queries |
    | `semgrep` | `security.yml` | the rules in `.semgrep.yml` plus the `p/typescript` and `p/nodejs` packs |
    | `gitleaks` | `security.yml` | secret scan of the whole history (`.gitleaks.toml`) |
 
-   The `docs` workflow (`docs.yml`) also checks Markdown links and anchors when documentation changes. It is not required — a path-filtered workflow cannot be — but a red run is fixed before merging.
+   The `docs` workflow (`docs.yml`) also checks Markdown links and anchors when documentation changes. It is not required — a path-filtered workflow cannot be — but a red run is fixed before merging. Neither are `packed install` (`ci.yml`: the packed tarball installed without its install scripts on Windows and macOS, then `gup doctor`) and the `e2e` workflow (the full end-to-end suites on real macOS and Windows runners, weekly or with the `e2e-full` label), but a red run there is read before merging too.
 5. **Review.** Every review conversation must be resolved before the merge.
 6. **Merge.** The maintainer merges, with a merge commit that keeps your commits as they are — which is why their messages matter. The repository admin can bypass the ruleset; contributions are merged with all eight checks green.
 

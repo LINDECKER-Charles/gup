@@ -4,6 +4,7 @@ Technical view of `gup`. Audience: contributors, maintainers, security review.
 
 > For the full provider list and implementation status: [`providers-catalog.md`](../guide/providers-catalog.md).
 > To add a provider: [`../CONTRIBUTING.md`](../../CONTRIBUTING.md).
+> How each layer below is tested, and where a new test goes: [`testing.md`](testing.md).
 
 ---
 
