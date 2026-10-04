@@ -5,7 +5,8 @@
 Every image below is the real interactive app, rendered headless on fixture data with a
 frozen clock: no real machine, package or path appears in them. The app runs its default
 theme (`terminal`) in a truecolor terminal using GitHub Dark Default, unless a section
-says otherwise; its text is French, the language of gup's interface.
+says otherwise; its text is English, the interface's default language (`gup language fr`
+switches it to French).
 `npm run screenshots` regenerates them; `npm run screenshots:check` fails when one is out
 of date. See [Documentation conventions](../../development/documentation.md#screenshots)
 to add one.
@@ -28,13 +29,13 @@ to add one.
 
 ### packages-select
 
-**gup — Paquets** · 100 × 28
+**gup — Packages** · 100 × 28
 
-![The Paquets view: 12 outdated packages grouped by provider, Winget fully checked, npm partly checked, scheduled packages marked, a failed Scoop scan shown inline, the selection bar and its update button at the bottom.](packages-select.svg)
+![The Packages view: 12 outdated packages grouped by provider, Winget fully checked, npm partly checked, scheduled packages marked, a failed Scoop scan shown inline, the selection bar and its update button at the bottom.](packages-select.svg)
 
 ### confirm-update
 
-**gup — Mettre à jour** · 100 × 28
+**gup — Update** · 100 × 28
 
 ![Update confirmation listing the six checked packages with their current and target versions, one tagged admin, and the note that a single UAC prompt comes at the end.](confirm-update.svg)
 
@@ -48,19 +49,19 @@ to add one.
 
 ### update-running
 
-**gup — Mise à jour** · 120 × 32
+**gup — Update** · 120 × 32
 
 ![In-app update: three packages done, PowerToys downloading with winget's progress bar in the embedded terminal pane below, 7-Zip queued and nodejs-lts waiting for the administrator step.](update-running.svg)
 
 ### update-retry
 
-**gup — Mise à jour** · 120 × 32
+**gup — Update** · 120 × 32
 
 ![End of an in-app update: five packages updated, PowerToys failed, and gup offers to retry it with a stronger strategy, the safe one first, or to leave the failure.](update-retry.svg)
 
 ### update-summary
 
-**gup — Mise à jour** · 120 × 32
+**gup — Update** · 120 × 32
 
 ![Results of an in-app update: five updated, one failure under the cursor, its installer output kept in the pane below, and the key that writes the HTML report.](update-summary.svg)
 
@@ -68,13 +69,13 @@ to add one.
 
 ### schedules
 
-**gup — Planification** · 120 × 32
+**gup — Schedules** · 120 × 32
 
-![Planification view: the Task Scheduler trigger active, three schedules with their recurrence, package count, next and last run; the cursor on the one whose last run failed, its per-package results below.](schedules.svg)
+![Schedules view: the Task Scheduler trigger active, three schedules with their recurrence, package count, next and last run; the cursor on the one whose last run failed, its per-package results below.](schedules.svg)
 
 ### schedule-edit
 
-**gup — Planification** · 120 × 32
+**gup — Schedules** · 120 × 32
 
 ![Schedule editor: name, a weekly recurrence on Monday at 09:00 with catch-up, the cron expression and the next run times, and the three packages the schedule updates.](schedule-edit.svg)
 
@@ -84,19 +85,19 @@ to add one.
 
 **gup — Journal** · 120 × 32
 
-![Journal, Activité tab: a year of updates as a calendar heatmap, the headline figures (updates, success rate, failures, scans), the outdated-package trend and the slowest provider scans.](journal-activity.svg)
+![Journal, Activity tab: a year of updates as a calendar heatmap, the headline figures (updates, success rate, failures, scans), the outdated-package trend and the slowest provider scans.](journal-activity.svg)
 
 ### journal-recurrence
 
 **gup — Journal** · 120 × 32
 
-![Journal, Récurrence tab: the packages updated most often, a bar for each with its update count, typical interval and cadence.](journal-recurrence.svg)
+![Journal, Recurrence tab: the packages updated most often, a bar for each with its update count, typical interval and cadence.](journal-recurrence.svg)
 
 ### journal-events
 
 **gup — Journal** · 120 × 32
 
-![Journal, Événements tab: every scan and update attempt, newest first, with its outcome, provider, package, versions and duration; scheduled runs among them.](journal-events.svg)
+![Journal, Events tab: every scan and update attempt, newest first, with its outcome, provider, package, versions and duration; scheduled runs among them.](journal-events.svg)
 
 ### journal-debug
 
@@ -122,57 +123,57 @@ to add one.
 
 **gup — Options** · 100 × 28
 
-![Options, JOURNAL section: the debug log's level under the cursor, the period the Journal opens on and whether the HTML report opens in the browser; the file row reads désactivé, as screenshots use no settings file.](options-journal.svg)
+![Options, JOURNAL section: the debug log's level under the cursor, the period the Journal opens on and whether the HTML report opens in the browser; the file row reads disabled, as screenshots use no settings file.](options-journal.svg)
 
 ## Themes
 
 ### theme-dark
 
-**gup — Paquets · Sombre (gup)** · 100 × 28
+**gup — Packages · Dark (gup)** · 100 × 28
 
-![The Paquets view in the Sombre (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-dark.svg)
+![The Packages view in the Dark (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-dark.svg)
 
 ### theme-light
 
-**gup — Paquets · Clair (gup)** · 100 × 28
+**gup — Packages · Light (gup)** · 100 × 28
 
-![The Paquets view in the Clair (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-light.svg)
+![The Packages view in the Light (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-light.svg)
 
 ### theme-high-contrast
 
-**gup — Paquets · Contraste élevé** · 100 × 28
+**gup — Packages · High contrast** · 100 × 28
 
-![The Paquets view in the Contraste élevé theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-high-contrast.svg)
+![The Packages view in the High contrast theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-high-contrast.svg)
 
 ### theme-colorblind
 
-**gup — Paquets · Daltonisme (Okabe-Ito)** · 100 × 28
+**gup — Packages · Colorblind (Okabe-Ito)** · 100 × 28
 
-![The Paquets view in the Daltonisme (Okabe-Ito) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-colorblind.svg)
+![The Packages view in the Colorblind (Okabe-Ito) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-colorblind.svg)
 
 ### theme-dracula
 
-**gup — Paquets · Dracula** · 100 × 28
+**gup — Packages · Dracula** · 100 × 28
 
-![The Paquets view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-dracula.svg)
+![The Packages view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-dracula.svg)
 
 ### theme-catppuccin-mocha
 
-**gup — Paquets · Catppuccin Mocha** · 100 × 28
+**gup — Packages · Catppuccin Mocha** · 100 × 28
 
-![The Paquets view in the Catppuccin Mocha theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-catppuccin-mocha.svg)
+![The Packages view in the Catppuccin Mocha theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-catppuccin-mocha.svg)
 
 ### theme-github-light
 
-**gup — Paquets · GitHub (clair)** · 100 × 28
+**gup — Packages · GitHub (light)** · 100 × 28
 
-![The Paquets view in the GitHub (clair) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-github-light.svg)
+![The Packages view in the GitHub (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-github-light.svg)
 
 ### theme-monochrome
 
-**gup — Paquets · Monochrome** · 100 × 28
+**gup — Packages · Monochrome** · 100 × 28
 
-![The Paquets view in the Monochrome theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-monochrome.svg)
+![The Packages view in the Monochrome theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-monochrome.svg)
 
 ## HTML report
 

@@ -1,5 +1,12 @@
 # screenshots-in-english
 
+## Documentation
+
+- The screenshots show the interface in English, now gup's default language: the 24 terminal
+  screenshots with their titles and alt texts, the gallery page, and the HTML report's picture,
+  which `npm run screenshots:report` already asked for in English but which had not been taken
+  again since (`docs: regenerate the screenshots in English`)
+
 ## Internal
 
 - **chore:** The screenshot generator renders in English, the docs' language, which it now

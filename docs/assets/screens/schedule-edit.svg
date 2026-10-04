@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968.0 594.0" width="968.0" height="594.0" role="img" aria-labelledby="t d">
-<title id="t">gup — Planification</title>
+<title id="t">gup — Schedules</title>
 <desc id="d">Schedule editor: name, a weekly recurrence on Monday at 09:00 with catch-up, the cron expression and the next run times, and the three packages the schedule updates.</desc>
 <style>
 text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:16px}
@@ -25,55 +25,55 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <circle cx="22.0" cy="17.0" r="5.5" fill="#ff5f57"/>
 <circle cx="40.0" cy="17.0" r="5.5" fill="#febc2e"/>
 <circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
-<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Planification</text>
+<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Schedules</text>
 <rect class="c0" x="16.0" y="42.0" width="936.0" height="17.0"/>
 <rect class="c1" x="234.4" y="76.0" width="702.0" height="17.0"/>
 <rect class="c1" x="31.6" y="110.0" width="171.6" height="17.0"/>
-<text class="c2 b" x="16.0" y="55.0" textLength="491.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  14 détectés  │  12 mises à jour  │  mode normal</text>
+<text class="c2 b" x="16.0" y="55.0" textLength="452.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  14 detected  │  12 updates  │  normal mode</text>
 <text class="c3" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
 <text class="c4" x="31.6" y="72.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Menu </text>
 <text class="c3" x="78.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────╮</text>
 <text class="c0" x="218.8" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┏━</text>
-<text class="c4" x="234.4" y="72.0" textLength="195.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Modifier « Outils dev » </text>
-<text class="c0" x="429.4" y="72.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</text>
+<text class="c4" x="234.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Edit "Dev tools" </text>
+<text class="c0" x="374.8" y="72.0" textLength="577.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</text>
 <text class="c3" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="89.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scan              </text>
 <text class="c3" x="211.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c0" x="234.4" y="89.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› </text>
-<text class="c5" x="250.0" y="89.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Nom              </text>
-<text class="c4 b" x="382.6" y="89.0" textLength="93.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[Outils dev]</text>
+<text class="c5" x="250.0" y="89.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Name             </text>
+<text class="c4 b" x="382.6" y="89.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[Dev tools]</text>
 <text class="c0" x="944.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Paquets           </text>
+<text class="c4" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Packages          </text>
 <text class="c6" x="187.6" y="106.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12</text>
 <text class="c3" x="211.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="250.0" y="106.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Fréquence        </text>
-<text class="c4 b" x="382.6" y="106.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[Chaque semaine]</text>
+<text class="c5" x="250.0" y="106.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Frequency        </text>
+<text class="c4 b" x="382.6" y="106.0" textLength="93.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[Every week]</text>
 <text class="c0" x="944.2" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="31.6" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌ </text>
-<text class="c4 b" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Planification     </text>
+<text class="c4 b" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Schedules         </text>
 <text class="c5" x="187.6" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3</text>
 <text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="250.0" y="123.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Jour             </text>
-<text class="c4 b" x="382.6" y="123.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[lundi]</text>
+<text class="c5" x="250.0" y="123.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Day              </text>
+<text class="c4 b" x="382.6" y="123.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[Monday]</text>
 <text class="c0" x="944.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="250.0" y="140.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Heure            </text>
+<text class="c5" x="250.0" y="140.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Time             </text>
 <text class="c4 b" x="382.6" y="140.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[09:00]</text>
 <text class="c0" x="944.2" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="157.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Providers         </text>
 <text class="c3" x="211.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="250.0" y="157.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Rattrapage       </text>
-<text class="c4 b" x="382.6" y="157.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[oui]</text>
-<text class="c5" x="421.6" y="157.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   relance à la prochaine occasion si l'heure est manquée</text>
+<text class="c5" x="250.0" y="157.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Catch-up         </text>
+<text class="c4 b" x="382.6" y="157.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[yes]</text>
+<text class="c5" x="421.6" y="157.0" textLength="413.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   runs at the next opportunity if the time is missed</text>
 <text class="c0" x="944.2" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="174.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Journal           </text>
@@ -84,17 +84,17 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
 <text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="191.0" textLength="702.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  cron 0 9 * * 1 · prochaines : lun. 21 sept. 09:00 · lun. 28 sept. 09:00 · lun. 5 oct. 0…</text>
+<text class="c5" x="234.4" y="191.0" textLength="702.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  cron 0 9 * * 1 · next: Mon, Sep 21 09:00 · Mon, Sep 28 09:00 · Mon, Oct 5 09:00         </text>
 <text class="c0" x="944.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c0" x="944.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c5" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quitter           </text>
+<text class="c5" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4 b" x="234.4" y="225.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Paquets (3)</text>
+<text class="c4 b" x="234.4" y="225.0" textLength="109.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Packages (3)</text>
 <text class="c0" x="944.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -117,7 +117,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c0" x="234.4" y="293.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  + Ajouter un paquet…</text>
+<text class="c0" x="234.4" y="293.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  + Add a package…</text>
 <text class="c0" x="944.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -126,12 +126,12 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c0" x="234.4" y="327.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ Enregistrer ]</text>
+<text class="c0" x="234.4" y="327.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ Save ]</text>
 <text class="c0" x="944.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4" x="250.0" y="344.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[ Annuler ]</text>
+<text class="c4" x="250.0" y="344.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[ Cancel ]</text>
 <text class="c0" x="944.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -183,5 +183,5 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="944.2" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="565.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯</text>
 <text class="c0" x="218.8" y="565.0" textLength="733.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
-<text class="c5" x="16.0" y="582.0" textLength="889.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Ctrl+S enregistrer · entrée modifier · échap annuler · espace basculer · suppr retirer · … · tab menu · q quitter</text>
+<text class="c5" x="16.0" y="582.0" textLength="756.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Ctrl+S save · enter edit · esc cancel · space toggle · del remove · ↑↓ field · tab menu · q quit</text>
 </svg>

@@ -29,7 +29,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="t" x="406.0" y="21.0" text-anchor="middle">gup — Providers</text>
 <rect class="c0" x="16.0" y="42.0" width="780.0" height="17.0"/>
 <rect class="c1" x="31.6" y="144.0" width="171.6" height="17.0"/>
-<text class="c2 b" x="16.0" y="55.0" textLength="491.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  14 détectés  │  12 mises à jour  │  mode normal</text>
+<text class="c2 b" x="16.0" y="55.0" textLength="452.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  14 detected  │  12 updates  │  normal mode</text>
 <text class="c3" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
 <text class="c4" x="31.6" y="72.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Menu </text>
 <text class="c3" x="78.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────╮</text>
@@ -40,139 +40,139 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="47.2" y="89.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scan              </text>
 <text class="c3" x="211.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="89.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ○ </text>
-<text class="c4" x="265.6" y="89.0" textLength="241.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Volta                          </text>
-<text class="c5" x="507.4" y="89.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">volta</text>
+<text class="c5" x="234.4" y="89.0" textLength="280.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      → winget install DenoLand.Deno</text>
 <text class="c0" x="788.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Paquets           </text>
+<text class="c4" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Packages          </text>
 <text class="c6" x="187.6" y="106.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12</text>
 <text class="c3" x="211.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="106.0" textLength="265.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      → winget install Volta.Volta</text>
+<text class="c5" x="234.4" y="106.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ○ </text>
+<text class="c4" x="265.6" y="106.0" textLength="241.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Volta                          </text>
+<text class="c5" x="507.4" y="106.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">volta</text>
 <text class="c0" x="788.2" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Planification     </text>
+<text class="c4" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Schedules         </text>
 <text class="c5" x="187.6" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3</text>
 <text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="123.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ○ </text>
-<text class="c4" x="265.6" y="123.0" textLength="241.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Poetry                         </text>
-<text class="c5" x="507.4" y="123.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">poetry</text>
+<text class="c5" x="234.4" y="123.0" textLength="265.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      → winget install Volta.Volta</text>
 <text class="c0" x="788.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="140.0" textLength="210.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      → pipx install poetry</text>
+<text class="c5" x="234.4" y="140.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ○ </text>
+<text class="c4" x="265.6" y="140.0" textLength="241.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Poetry                         </text>
+<text class="c5" x="507.4" y="140.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">poetry</text>
 <text class="c0" x="788.2" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="31.6" y="157.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌ </text>
 <text class="c4 b" x="47.2" y="157.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Providers         </text>
 <text class="c3" x="211.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="157.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ○ </text>
-<text class="c4" x="265.6" y="157.0" textLength="241.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">kubectl                        </text>
-<text class="c5" x="507.4" y="157.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">kubectl</text>
+<text class="c5" x="234.4" y="157.0" textLength="210.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      → pipx install poetry</text>
 <text class="c0" x="788.2" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="174.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Journal           </text>
 <text class="c3" x="211.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="174.0" textLength="319.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      → winget install Kubernetes.kubectl</text>
+<text class="c5" x="234.4" y="174.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ○ </text>
+<text class="c4" x="265.6" y="174.0" textLength="241.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">kubectl                        </text>
+<text class="c5" x="507.4" y="174.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">kubectl</text>
 <text class="c0" x="788.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
 <text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="191.0" textLength="319.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      → winget install Kubernetes.kubectl</text>
 <text class="c0" x="788.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">– </text>
-<text class="c4 b" x="250.0" y="208.0" textLength="241.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Incompatibles avec Windows (14)</text>
 <text class="c0" x="788.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c5" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quitter           </text>
+<text class="c5" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="225.0" textLength="514.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Réservés à un autre système : gup ne les détecte ni ne les met à</text>
+<text class="c7" x="234.4" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">– </text>
+<text class="c4 b" x="250.0" y="225.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Incompatible with Windows (14)</text>
 <text class="c0" x="788.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="242.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  jour ici.</text>
+<text class="c5" x="234.4" y="242.0" textLength="514.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Meant for another OS: gup neither detects nor updates them here.</text>
 <text class="c0" x="788.2" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="259.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Homebrew                       brew      macOS/Linux uniquement</text>
+<text class="c7" x="234.4" y="259.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Homebrew                       brew      macOS/Linux only</text>
 <text class="c0" x="788.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="276.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Homebrew (casks)               brew-cask macOS uniquement</text>
+<text class="c7" x="234.4" y="276.0" textLength="429.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Homebrew (casks)               brew-cask macOS only</text>
 <text class="c0" x="788.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="293.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Mac App Store                  mas       macOS uniquement</text>
+<text class="c7" x="234.4" y="293.0" textLength="429.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Mac App Store                  mas       macOS only</text>
 <text class="c0" x="788.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="310.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – MacPorts                       macports  macOS uniquement</text>
+<text class="c7" x="234.4" y="310.0" textLength="429.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – MacPorts                       macports  macOS only</text>
 <text class="c0" x="788.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="327.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Sparkle (apps macOS)           sparkle   macOS uniquement</text>
+<text class="c7" x="234.4" y="327.0" textLength="429.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Sparkle (macOS apps)           sparkle   macOS only</text>
 <text class="c0" x="788.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="344.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Fink                           fink      macOS uniquement</text>
+<text class="c7" x="234.4" y="344.0" textLength="429.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Fink                           fink      macOS only</text>
 <text class="c0" x="788.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="361.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Nix                            nix       macOS/Linux uniquement</text>
+<text class="c7" x="234.4" y="361.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Nix                            nix       macOS/Linux only</text>
 <text class="c0" x="788.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="378.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – pkgx                           pkgx      macOS/Linux uniquement</text>
+<text class="c7" x="234.4" y="378.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – pkgx                           pkgx      macOS/Linux only</text>
 <text class="c0" x="788.2" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="395.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – pkgin (pkgsrc)                 pkgin     macOS/Linux uniquement</text>
+<text class="c7" x="234.4" y="395.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – pkgin (pkgsrc)                 pkgin     macOS/Linux only</text>
 <text class="c0" x="788.2" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="412.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – nvm (Node version manager)     nvm       macOS/Linux uniquement</text>
+<text class="c7" x="234.4" y="412.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – nvm (Node version manager)     nvm       macOS/Linux only</text>
 <text class="c0" x="788.2" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="429.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – pyenv                          pyenv     macOS/Linux uniquement</text>
+<text class="c7" x="234.4" y="429.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – pyenv                          pyenv     macOS/Linux only</text>
 <text class="c0" x="788.2" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="446.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Mint (Swift)                   mint      macOS/Linux uniquement</text>
+<text class="c7" x="234.4" y="446.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – Mint (Swift)                   mint      macOS/Linux only</text>
 <text class="c0" x="788.2" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="463.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – swiftly (Swift)                swiftly   macOS/Linux uniquement</text>
+<text class="c7" x="234.4" y="463.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – swiftly (Swift)                swiftly   macOS/Linux only</text>
 <text class="c0" x="788.2" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="480.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – xcodes (Xcode version manager) xcodes    macOS uniquement</text>
+<text class="c7" x="234.4" y="480.0" textLength="429.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  – xcodes (Xcode version manager) xcodes    macOS only</text>
 <text class="c0" x="788.2" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="497.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯</text>
 <text class="c0" x="218.8" y="497.0" textLength="577.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
-<text class="c5" x="16.0" y="514.0" textLength="265.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ défiler · tab menu · q quitter</text>
+<text class="c5" x="16.0" y="514.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ scroll · tab menu · q quit</text>
 </svg>
