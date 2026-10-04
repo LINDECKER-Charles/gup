@@ -1,7 +1,7 @@
 /**
  * The marks the TUI mocks draw, as gup draws them in a Unicode terminal:
  * `STATUS_GLYPHS` (src/ui/theme/glyphs.ts) and the package checkboxes and
- * cursor of Paquets (src/ui/panels/packages-panel.ts). Held to those sources
+ * cursor of Packages (src/ui/panels/packages-panel.ts). Held to those sources
  * by tests/rules/scenes-truth.test.mjs.
  */
 export const TUI_GLYPHS = Object.freeze({

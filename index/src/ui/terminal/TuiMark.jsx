@@ -1,6 +1,7 @@
 /**
- * A mark the TUI draws (a status glyph, a checkbox), with the French word a
- * screen reader says instead: the glyph alone reads as noise or nothing.
+ * A mark the TUI draws (a status glyph, a checkbox), with the word a screen
+ * reader says instead, in the scene's language: the glyph alone reads as
+ * noise or nothing.
  *
  * @param {{ glyph: string, word: string, className?: string }} props
  */

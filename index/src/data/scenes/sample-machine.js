@@ -1,6 +1,6 @@
 /**
  * The machine both TUI mocks show: what a scan found outdated, grouped by
- * provider as Paquets groups it, which packages are checked, and which one an
+ * provider as Packages groups it, which packages are checked, and which one an
  * enabled schedule covers. The "Update" tab runs exactly the checked ones.
  *
  * Package names, versions and the detected-provider count are illustrative
@@ -12,7 +12,7 @@
  * @property {string} from
  * @property {string} to
  * @property {boolean} isChecked
- * @property {boolean} [isScheduled]  Covered by an enabled schedule: Paquets marks it `∞`.
+ * @property {boolean} [isScheduled]  Covered by an enabled schedule: Packages marks it `∞`.
  *
  * @typedef {{ provider: string, packages: readonly SamplePackage[] }} SampleGroup
  */
@@ -23,7 +23,7 @@ const pkg = (name, [from, to], isChecked, isScheduled = false) =>
 export const SAMPLE_MACHINE = Object.freeze({
   /** Providers the scan detected: the title bar's first fact. */
   detected: 47,
-  /** Enabled schedules: Planification's sidebar badge. */
+  /** Enabled schedules: the sidebar badge of Schedules. */
   schedules: 1,
   /** @type {readonly SampleGroup[]} */
   groups: Object.freeze([

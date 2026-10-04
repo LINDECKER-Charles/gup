@@ -1,5 +1,18 @@
 # landing-interface-language
 
+## Changed
+
+- **landing:** The terminal demo shows gup's interface in the page's language when gup speaks
+  it, in English otherwise: the French page keeps the French Packages and run view, the seven
+  other pages show the English ones — the words a screen reader says for the marks included.
+  Each TUI mock exists once per interface language, and the drift detector holds each one to
+  its own language's catalogs (the English mocks to the `en` blocks of `localized({ en, fr })`,
+  the French ones to the `fr` blocks; outside the catalogs only marks, punctuation and key
+  names count for every language), so a French label in the English mock fails the site's
+  tests, as does an interface language the mocks do not speak. `verify` checks the language
+  each prerendered demo is in
+  (`feat(landing): show the terminal demo in the page's interface language`)
+
 ## Fixed
 
 - **landing:** The site no longer says gup's interface is French. The terminal caption and the
