@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { routeInheritTo } from "../../src/core/process/inherit-sink.js";
-import { detectEmbeddedTerminal } from "../../src/core/pty/pty-loader.js";
+import { detectEmbeddedTerminal, type PtyModule } from "../../src/core/pty/pty-loader.js";
 import { createPtySink, type PtyBackend } from "../../src/core/pty/pty-sink.js";
 import type { TrampolineLocation } from "../../src/core/pty/trampoline.js";
 import {
@@ -30,8 +30,6 @@ import { bundleTrampoline, sourceTrampoline } from "../support/pty/trampoline-bu
 
 const IS_WINDOWS = process.platform === "win32";
 const IS_REQUIRED = IS_WINDOWS || process.platform === "darwin";
-/** Well under the ConPTY output flush the exit file saves (node-pty waits 1 s after an exit). */
-const FAST_EXIT_BUDGET_MS = 500;
 const FAST_EXIT_ATTEMPTS = 3;
 const SEQUENTIAL_SESSIONS = 20;
 const SLOW_TEST_MS = 120_000;
@@ -50,6 +48,7 @@ interface PaneRun {
   readonly pane?: RecordingPane;
   readonly trampoline?: TrampolineLocation;
   readonly options?: InheritOptions;
+  readonly pty?: PtyModule;
 }
 
 /** `runInherit` with the PTY sink routed to one pane, as the run view does. */
@@ -61,7 +60,7 @@ async function runInPane(
   if (!backend) throw new Error("embedded terminal unavailable");
   const pane = run.pane ?? recordingPane();
   const sink = createPtySink(
-    { pty: backend.pty, trampoline: run.trampoline ?? backend.trampoline },
+    { pty: run.pty ?? backend.pty, trampoline: run.trampoline ?? backend.trampoline },
     { current: () => pane },
   );
   const restore = routeInheritTo(sink);
@@ -74,6 +73,27 @@ async function runInPane(
 
 /** A node one-liner, the most portable "installer" there is. */
 const node = (script: string): [string, string[]] => [process.execPath, ["-e", script]];
+
+interface ExitWatch {
+  readonly pty: PtyModule;
+  /** When node-pty reported the exit of the session spawned through `pty`. */
+  exitEventAt(): Promise<number>;
+}
+
+/** `pty`, noting when node-pty itself reports the exit — before the session's own listener. */
+function watchingExitEvent(pty: PtyModule): ExitWatch {
+  let exitEventAt: Promise<number> | null = null;
+  return {
+    pty: {
+      spawn(file, args, options) {
+        const handle = pty.spawn(file, args, options);
+        exitEventAt = new Promise((resolve) => handle.onExit(() => resolve(performance.now())));
+        return handle;
+      },
+    },
+    exitEventAt: () => exitEventAt ?? Promise.reject(new Error("nothing was spawned")),
+  };
+}
 
 /** The pane's text without the VT control sequences ConPTY interleaves. */
 function visibleText(pane: RecordingPane): string {
@@ -222,17 +242,24 @@ describe.skipIf(!backend || !IS_WINDOWS)("embedded terminal on ConPTY", () => {
     expect(result).toMatchObject({ exitCode: 7, failed: true });
   });
 
-  it(`reports a success well before ConPTY's flush (< ${FAST_EXIT_BUDGET_MS} ms)`, async () => {
-    const durations: number[] = [];
+  // node-pty reports a ConPTY child's exit after a fixed one-second flush; the
+  // exit file, written before the trampoline exits and polled every 100 ms,
+  // reports a success first. Measured against node-pty's own event rather than
+  // the clock: a busy machine (the whole suite in parallel) delays the spawn
+  // and node's start-up, and both paths alike, but never turns one into the
+  // other. Without the fast path the result can only follow that event.
+  it("reports a success before node-pty's own exit event (ConPTY's flush)", async () => {
+    const leads: number[] = [];
     for (let attempt = 0; attempt < FAST_EXIT_ATTEMPTS; attempt++) {
-      const startedAt = performance.now();
-      await runInPane(...node(""));
-      durations.push(Math.round(performance.now() - startedAt));
+      const watch = watchingExitEvent(backend!.pty);
+      const { result } = await runInPane(...node(""), { pty: watch.pty });
+      const reportedAt = performance.now();
+      expect(result).toMatchObject({ exitCode: 0, failed: false });
+      leads.push(Math.round((await watch.exitEventAt()) - reportedAt));
     }
-    // The best of a few runs: the machine may be busy, the fast path may not.
-    expect(Math.min(...durations), `durations: ${durations.join(", ")} ms`).toBeLessThan(
-      FAST_EXIT_BUDGET_MS,
-    );
+    // The best of a few runs: one poll may still be late on a saturated machine.
+    const leadsReport = `lead over node-pty's event: ${leads.join(", ")} ms`;
+    expect(Math.max(...leads), leadsReport).toBeGreaterThan(0);
   });
 
   it("leaves no exit file behind once the install settled", async () => {
