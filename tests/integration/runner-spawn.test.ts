@@ -3,19 +3,22 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { routeInheritTo } from "../../src/core/process/inherit-sink.js";
 import {
   commandExists,
+  createPipeSink,
+  launchDetached,
   run,
   runInherit,
   whichFirst,
 } from "../../src/core/runner.js";
 
 /**
- * The only tests in this repo that actually spawn a process.
+ * The runner on real processes.
  *
- * Every other suite mocks `execa` wholesale (`tests/core/runner.test.ts` sets
- * `vi.mock("execa")`), which means the whole test suite can be green while the
- * spawn layer is broken. That blind spot became load-bearing when execa 9 → 10
+ * `tests/core/runner.test.ts` mocks `execa` wholesale (`vi.mock("execa")`),
+ * which means the unit suites can be green while the spawn layer is broken.
+ * That blind spot became load-bearing when execa 9 → 10
  * replaced its Windows implementation: cross-spawn was dropped for execa's own
  * PATH resolver and cmd.exe escaper, so *every* command gup runs on Windows is
  * now constructed differently — and nothing exercised it.
@@ -36,9 +39,9 @@ import {
  * twice: once for execa to locate `where.exe`, once for `where.exe` to scan for
  * its argument.
  *
- * Raised per suite rather than globally: this is the only file that spawns real
- * children, so every other suite keeps failing fast on the 5 s default. A
- * genuine hang still fails the build, 30 s later instead of 5.
+ * Raised per suite rather than globally, so the suites that spawn nothing keep
+ * failing fast on the 5 s default. A genuine hang still fails the build, 30 s
+ * later instead of 5.
  */
 const SPAWN_TIMEOUT_MS = 30_000;
 
@@ -67,34 +70,8 @@ async function argvRoundTrip(args: string[]): Promise<string[]> {
 }
 
 describe("runner: real process spawn", () => {
-  it("passes argv as a vector, with no shell interpretation", async () => {
-    // Metacharacters that a shell would act on. If any of these split the
-    // command or vanish, the argv-vector guarantee the whole security model
-    // rests on is broken.
-    const payload = [
-      "plain",
-      "with space",
-      'double"quote',
-      "single'quote",
-      "semi;colon",
-      "amp&ersand",
-      "pipe|char",
-      "caret^char",
-      "percent%VAR%",
-      "dollar$HOME",
-      "back`tick",
-      "paren(then)",
-      "gt>lt<",
-      "star*glob",
-      "accents éàî",
-    ];
-    await expect(argvRoundTrip(payload)).resolves.toEqual(payload);
-  });
-
-  it("does not expand environment-variable syntax of either shell", async () => {
-    const payload = ["$HOME", "%USERPROFILE%", "${PATH}", "%PATH%"];
-    await expect(argvRoundTrip(payload)).resolves.toEqual(payload);
-  });
+  // Shell metacharacters and variable syntax as literal argv entries, through
+  // the runner and the embedded terminal: tests/security/command-injection.
 
   it("preserves an empty argument", async () => {
     await expect(argvRoundTrip(["", "after"])).resolves.toEqual(["", "after"]);
@@ -150,6 +127,36 @@ describe("runner: real process spawn", () => {
     await expect(
       runInherit(process.execPath, ["-e", "process.exit(2)"]),
     ).resolves.toMatchObject({ failed: true, exitCode: 2 });
+  });
+
+  it("runInherit through the pipe sink delivers the child's lines, keyboard closed", async () => {
+    const lines: Array<[string, string]> = [];
+    const restore = routeInheritTo(
+      createPipeSink({ capBytes: 4096, onLine: (line, stream) => lines.push([line, stream]) }),
+    );
+    try {
+      const script =
+        'process.stdin.on("data", () => process.exit(9)); process.stdin.on("end", () => {' +
+        ' console.log("première"); console.error("erreur"); process.stdout.write("fin"); });';
+      await expect(runInherit(process.execPath, ["-e", script])).resolves.toMatchObject({
+        exitCode: 0,
+        failed: false,
+      });
+    } finally {
+      restore();
+    }
+    expect(lines).toContainEqual(["première", "stdout"]);
+    expect(lines).toContainEqual(["erreur", "stderr"]);
+    expect(lines).toContainEqual(["fin", "stdout"]);
+  });
+
+  it("launchDetached reports a started process", async () => {
+    await expect(launchDetached(process.execPath, ["-e", "0"])).resolves.toBe(true);
+  });
+
+  // Windows only spawns a missing binary through cmd.exe (see launchDetached).
+  it.skipIf(process.platform === "win32")("launchDetached reports a missing binary as not started", async () => {
+    await expect(launchDetached(join(dir, "no-such-binary"))).resolves.toBe(false);
   });
 }, SPAWN_TIMEOUT_MS);
 
@@ -226,5 +233,24 @@ describe.runIf(process.platform === "win32")("runner: Windows .cmd shims", () =>
       if (previous === undefined) delete process.env["PATH"];
       else process.env["PATH"] = previous;
     }
+  });
+}, SPAWN_TIMEOUT_MS);
+
+// ---------------------------------------------------------------------------
+// Windows-only: exit codes beyond 0..255
+// ---------------------------------------------------------------------------
+
+describe.runIf(process.platform === "win32")("runner: Windows exit codes", () => {
+  it("reports codes as signed 32-bit values, the way installers document them", async () => {
+    // 0xC000013A, STATUS_CONTROL_C_EXIT: Visual Studio's "cancelled".
+    const cancelled = "process.exit(-1073741510)";
+    await expect(run(process.execPath, ["-e", cancelled])).resolves.toMatchObject({
+      exitCode: -1073741510,
+      failed: true,
+    });
+    await expect(runInherit(process.execPath, ["-e", "process.exit(-1)"])).resolves.toMatchObject({
+      exitCode: -1,
+      failed: true,
+    });
   });
 }, SPAWN_TIMEOUT_MS);

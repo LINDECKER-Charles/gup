@@ -1,7 +1,9 @@
 # robots.txt — gup (Global Updater CLI)
 # Site is served from GitHub Pages on the LINDECKER-Charles/gup repo, under the
-# /gup/ path. If you change the deploy URL, update the Sitemap directive below,
-# the canonical block in index.html, sitemap.xml and llms.txt together.
+# /gup/ path, with one prerendered page per language (/gup/, /gup/fr/, …). The
+# sitemap below is generated at build time with the hreflang alternates of
+# every language. If you change the deploy URL, update the Sitemap directive
+# below together with src/data/links.js, llms.txt and the web manifest.
 #
 # Default: fully open. For a public OSS landing page, maximum discoverability
 # (Google, Bing, DuckDuckGo, plus AI answer engines like ChatGPT, Claude,

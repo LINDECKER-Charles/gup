@@ -1,62 +1,59 @@
 /**
- * Platform support, section 02.
+ * Per-OS coverage cards and the cross-platform chips (section 02). Names only:
+ * badges and footnotes are copy, they live in the catalogs under
+ * `coverage.platforms.<id>`.
  *
- * ACCURACY NOTE — the source design shipped a Linux card listing
- * "apt, dnf, pacman, Flatpak, Nix, Homebrew" under the headline "macOS et
- * Linux, en natif". Checked against the registry, only one of those six is
- * true on a native Linux host:
+ * ACCURACY NOTE — checked against the registry (src/providers/os/):
  *
- *   - `brew` (src/providers/os/brew.ts) is the sole OS-level provider that
- *     runs natively on Linux — it is deliberately not darwin-gated so it
- *     covers Linuxbrew, and only excludes win32.
+ *   - `brew` and `nix` declare `PLATFORMS.notWindows`: Linuxbrew and native
+ *     Nix (Nix itself and the user profile) run on Linux as on macOS. So do
+ *     `pkgx` and `pkgin`, left off the cards as niche.
  *   - `apt` and `dnf` are `InstallSource` delegation targets
- *     (src/core/install-source.ts), not providers. They upgrade one already
- *     detected binary whose ownership `dpkg -S` / `rpm -qf` resolved. gup
- *     never runs a distro-wide upgrade on a native Linux host.
- *   - pacman, Flatpak and Nix exist only as `wsl-*` providers, whose
- *     isAvailable() goes through isWslAvailable() — hard-gated on
- *     `process.platform === "win32"` (src/core/wsl.ts). They are unreachable
- *     off Windows by construction.
+ *     (src/core/install-source.ts), not providers: they upgrade one detected
+ *     binary whose owner `dpkg -S` / `rpm -qf` resolved. gup never runs a
+ *     distro-wide upgrade on a native Linux host — hence `isDelegated`.
+ *   - pacman and Flatpak exist only as `wsl-*` providers, declared
+ *     `PLATFORMS.windows`: they belong to the Windows card's WSL bridge, never
+ *     to the Linux card.
  *
- * The cards below say what the code does. The visual design is unchanged.
+ * The cards name each system's main managers, not all of them. How many
+ * providers each system supports is derived from the declarations
+ * (`providersBySystem` in facts.js).
  */
 
-export const platforms = {
-  label: "02 / PLATEFORMES",
-  flag: "NOUVEAU",
-  title: ["Trois systèmes.", "Un seul binaire."],
-  lead: "Le même exécutable sur Windows, macOS et Linux — même contrat de provider, même sortie JSON. Ce qui change d'un système à l'autre, c'est la couche OS que gup sait piloter.",
-  cards: [
+const manager = (name) => Object.freeze({ name, isDelegated: false });
+const delegated = (name) => Object.freeze({ name, isDelegated: true });
+
+export const PLATFORMS = Object.freeze({
+  systems: Object.freeze([
     {
+      id: "windows",
       name: "Windows",
-      badge: "CIBLE HISTORIQUE",
-      isNew: false,
-      icon: "windows",
-      managers: ["winget", "scoop", "chocolatey", "noyau WSL"],
-      foot: "Pont WSL : apt, dnf, pacman, Flatpak, Nix et Linuxbrew dans tes distros",
+      managers: [manager("winget"), manager("scoop"), manager("chocolatey"), manager("WSL")],
     },
     {
+      id: "macos",
       name: "macOS",
-      badge: "NATIF",
-      isNew: true,
-      icon: "macos",
-      managers: ["Homebrew", "Casks", "MacPorts", "Mac App Store"],
-      foot: "Apple Silicon et Intel · mas-cli optionnel · résolution des symlinks du Cellar",
+      managers: [
+        manager("Homebrew"),
+        manager("Homebrew Casks"),
+        manager("MacPorts"),
+        manager("Mac App Store"),
+      ],
     },
     {
+      id: "linux",
       name: "Linux",
-      badge: "NATIF",
-      isNew: true,
-      icon: "linux",
-      managers: ["Homebrew / Linuxbrew", "apt · délégation", "dnf · délégation"],
-      foot: "Ownership d'un binaire résolue par dpkg -S / rpm -qf, puis mise à jour rendue à son gestionnaire",
+      managers: [
+        manager("Homebrew / Linuxbrew"),
+        manager("Nix"),
+        delegated("apt"),
+        delegated("dnf"),
+      ],
     },
-  ],
-  /**
-   * Everything above the OS layer, identical on the three systems. These are
-   * the providers that make the "same binary everywhere" claim real.
-   */
-  crossPlatform: [
+  ]),
+  /** Everything above the OS layer: identical on the three systems. */
+  crossPlatform: Object.freeze([
     "npm",
     "pnpm",
     "yarn",
@@ -78,9 +75,5 @@ export const platforms = {
     "pwsh modules",
     "asdf",
     "mise",
-  ],
-  banner: {
-    title: "Ton Mac, ton serveur, ta tour Windows.",
-    cta: "Installer",
-  },
-};
+  ]),
+});

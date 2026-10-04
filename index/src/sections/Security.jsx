@@ -1,48 +1,56 @@
-/** 07 · Security — why a tool that runs privileged commands is worth trusting. */
-import { Shell } from "../ui/Shell.jsx";
-import { SectionLabel } from "../ui/SectionLabel.jsx";
-import { security } from "../data/content.js";
+/**
+ * 04 · Security — why a tool that runs privileged commands is worth trusting:
+ * three compact cards with neutral tool tags, then the policy and the
+ * contribution guide.
+ */
+import { LINKS } from "../data/links.js";
+import { STRUCTURE } from "../data/structure.js";
+import { useI18n } from "../i18n/use-i18n.js";
+import { Icon } from "../ui/Icon.jsx";
+import { RichText } from "../ui/RichText.jsx";
+import { Section } from "../ui/Section.jsx";
 
-const SWEEP_STAGGER_S = 1.2;
+const DOC_LINKS = [
+  { id: "policy", href: LINKS.resources.security },
+  { id: "contributing", href: LINKS.resources.contributing },
+];
+
+function TrustCard({ item, copy, order }) {
+  return (
+    <li className="trust-card" data-reveal={order}>
+      <h3 className="trust-title">{copy.title}</h3>
+      <p className="trust-text">
+        <RichText text={copy.text} />
+      </p>
+      <ul className="tags">
+        {item.tags.map((tag) => (
+          <li key={tag} className="chip chip--quiet" translate="no">
+            {tag}
+          </li>
+        ))}
+      </ul>
+    </li>
+  );
+}
 
 export function Security() {
-  const [title, subtitle] = security.title;
+  const { security } = useI18n().messages;
 
   return (
-    <section className="section" id="securite" aria-labelledby="securite-title">
-      <Shell>
-        <SectionLabel reveal="27">{security.label}</SectionLabel>
-
-        <div className="sec-split" data-reveal="28">
-          <h2 className="display display--section" id="securite-title">
-            {title}
-            <br />
-            {subtitle}
-          </h2>
-          <p className="lead">{security.lead}</p>
-        </div>
-
-        <ul className="sec-grid" data-reveal="29">
-          {security.cards.map((card, i) => (
-            <li className="card card--tilt sec-card" data-tilt="1" key={card.label}>
-              <span
-                className="sec-card-sweep"
-                aria-hidden="true"
-                style={{ animationDelay: `${i * SWEEP_STAGGER_S}s` }}
-              />
-              <h3>{card.label}</h3>
-              <p>{card.desc}</p>
-              <ul className="sec-card-tags">
-                {card.tags.map((tag) => (
-                  <li className="chip chip--quiet" key={tag}>
-                    {tag}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      </Shell>
-    </section>
+    <Section id="security" kicker={security.kicker} title={security.title} lead={security.lead}>
+      <ul className="trust-cards">
+        {STRUCTURE.security.map((item, index) => (
+          <TrustCard key={item.id} item={item} copy={security.items[item.id]} order={index} />
+        ))}
+      </ul>
+      <p className="link-row">
+        {DOC_LINKS.map((link) => (
+          <a key={link.id} className="link-arrow" href={link.href} hrefLang="en">
+            <span>{security.links[link.id]}</span>
+            <Icon name="arrow" size={14} />
+          </a>
+        ))}
+      </p>
+    </Section>
   );
 }

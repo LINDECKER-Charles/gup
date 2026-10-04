@@ -3,18 +3,18 @@ import { homedir } from "node:os";
 import { posix as posixPath } from "node:path";
 
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import { run, runInherit, commandExists, whichFirst } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Nix as the *native* package manager on macOS and Linux.
  *
- * Gated on `process.platform !== "win32"` on purpose: on Windows, Nix only ever
+ * Not supported on Windows on purpose (`platforms`): there, Nix only ever
  * lives inside a WSL distro, and the `wsl-nix` provider already enumerates
- * those. Without the gate the same install would be reported twice — once
- * through `wsl.exe`, once through whatever `nix` shim leaked onto the Windows
- * PATH.
+ * those. Without the restriction the same install would be reported twice —
+ * once through `wsl.exe`, once through whatever `nix` shim leaked onto the
+ * Windows PATH.
  *
  * Scope is deliberately narrow — two rows, nothing else:
  *
@@ -37,14 +37,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class NixProvider implements Provider {
   readonly id = "nix";
   readonly displayName = "Nix";
-  readonly installHint = pickInstallHint({
-    darwin: "https://nixos.org/download",
-    linux: "https://nixos.org/download",
-    fallback: "Sous Windows, Nix s'installe dans WSL — voir le provider wsl-nix.",
-  });
+  readonly installHint = "https://nixos.org/download";
+  /** On Windows, Nix lives in WSL and belongs to the `wsl-nix` provider. */
+  readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     try {
       return await commandExists("nix");
     } catch {

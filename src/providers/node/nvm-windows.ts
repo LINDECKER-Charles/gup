@@ -1,4 +1,3 @@
-import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run } from "../../core/runner.js";
 import {
   delegateUpdate,
@@ -7,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * nvm-windows (coreybutler/nvm-windows) — distinct from the Linux/macOS
@@ -19,17 +19,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class NvmWindowsProvider implements Provider {
   readonly id = "nvm-windows";
   readonly displayName = "nvm-windows";
-  // Projet Windows-only : hors win32 on renvoie vers les équivalents POSIX
-  // (nvm-sh ou fnm), qui sont des outils distincts — jamais vers un paquet
-  // brew `nvm-windows`, qui n'existe pas.
-  readonly installHint = pickInstallHint({
-    win32: "winget install CoreyButler.NVMforWindows",
-    fallback:
-      "Windows uniquement — équivalents macOS/Linux : brew install nvm ou brew install fnm",
-  });
+  readonly installHint = "winget install CoreyButler.NVMforWindows";
+  /** A Windows-only project; elsewhere nvm (POSIX) holds the role. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
     if (!(await commandExists("nvm"))) return false;
     // Disambiguate from a stray `nvm` shell shim by checking the help banner.
     const { stdout, failed } = await run("nvm", ["version"]);

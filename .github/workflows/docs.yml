@@ -1,0 +1,38 @@
+name: docs
+
+# Checks that every relative link and anchor in the Markdown files resolves.
+# Not a required check: a path-filtered workflow cannot be one without blocking
+# the pull requests it never runs on.
+on:
+  pull_request:
+    branches: [main]
+    paths: ["**/*.md", "docs/assets/**", ".github/workflows/docs.yml"]
+  push:
+    branches: [main]
+    paths: ["**/*.md", "docs/assets/**", ".github/workflows/docs.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  links:
+    name: markdown links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Offline: relative links and anchors only. External URLs (badges, npm,
+      # commits) would make the job flaky and say nothing about our docs.
+      # Third-party: pinned to a commit, as a tag can be moved to other code
+      # (tests/security/workflow-pins.test.ts); Dependabot bumps both.
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --offline --include-fragments --no-progress
+            --exclude-path node_modules --exclude-path index/node_modules
+            --exclude-path docs/archived --exclude-path coverage
+            './**/*.md'
+          fail: true

@@ -29,12 +29,9 @@ vi.mock("../../src/ui/select.js", () => ({
   promptPackageSelection: promptPackageSelectionMock,
 }));
 
-const { maybeRetryFailuresMock } = vi.hoisted(() => ({
-  maybeRetryFailuresMock: vi.fn(),
-}));
-vi.mock("../../src/ui/retry-failed.js", () => ({
-  maybeRetryFailures: maybeRetryFailuresMock,
-}));
+// The retry tiers are asked through the standalone select prompt.
+const { selectMock } = vi.hoisted(() => ({ selectMock: vi.fn() }));
+vi.mock("../../src/ui/prompts/select.js", () => ({ select: selectMock }));
 
 const { confirmMock } = vi.hoisted(() => ({ confirmMock: vi.fn() }));
 vi.mock("../../src/ui/prompts/confirm.js", () => ({ confirm: confirmMock }));
@@ -47,6 +44,9 @@ vi.mock("../../src/core/elevation.js", () => ({
 }));
 
 import { updateCommand } from "../../src/commands/update.js";
+import { PLATFORMS } from "../../src/core/platform/platforms.js";
+import { ALL_PROVIDERS } from "../../src/core/registry.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
@@ -73,15 +73,11 @@ beforeEach(() => {
   getProviderMock.mockReset();
   scanWithProgressMock.mockReset();
   promptPackageSelectionMock.mockReset();
-  maybeRetryFailuresMock.mockReset();
+  selectMock.mockReset();
   confirmMock.mockReset();
   runElevatedBatchMock.mockReset();
   stdoutSpy.mockClear();
   stderrSpy.mockClear();
-  // Default: pass entries through unchanged.
-  maybeRetryFailuresMock.mockImplementation(async (entries: Array<{ outcome: unknown }>) =>
-    entries.map((e) => e.outcome),
-  );
 });
 
 describe("updateCommand: --targets", () => {
@@ -93,11 +89,65 @@ describe("updateCommand: --targets", () => {
     expect(getProviderMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["an option", "p:--registry=http://attacker.invalid", "« - »"],
+    ["an empty package id", "p:", "identifiant de paquet manquant"],
+    ["a control character", "p:pkg\u001b]0;title\u0007", "caractère de contrôle"],
+  ])("returns 2 without updating anything when a target holds %s", async (_case, target, reason) => {
+    const p = mkProvider();
+    getProviderMock.mockReturnValue(p);
+
+    expect(await updateCommand({ targets: ["p:ok", target] })).toBe(2);
+
+    const message = String(stderrSpy.mock.calls[0]![0]);
+    expect(message).toContain(reason);
+    expect(message.trimEnd()).not.toMatch(/[\u0000-\u001f\u007f]/);
+    expect(p.update).not.toHaveBeenCalled();
+  });
+
   it("returns 2 and prints stderr when the provider is unknown", async () => {
     getProviderMock.mockReturnValueOnce(undefined);
     const code = await updateCommand({ targets: ["nope:foo"] });
     expect(code).toBe(2);
     expect(stderrSpy.mock.calls[0]![0]).toMatch(/Provider inconnu: nope/);
+  });
+
+  it("never suggests a provider that does not run on this platform", async () => {
+    ALL_PROVIDERS.push({
+      id: "brew-cask",
+      displayName: "Homebrew (casks)",
+      platforms: PLATFORMS.macos,
+      isAvailable: async () => true,
+      listOutdated: async () => [],
+      update: async (id) => ({ id, success: true }),
+      updateAll: async () => [],
+    });
+    setPlatform("win32");
+    try {
+      expect(await updateCommand({ targets: ["brew-cask"] })).toBe(2);
+    } finally {
+      ALL_PROVIDERS.length = 0;
+      restorePlatform();
+    }
+    const message = String(stderrSpy.mock.calls[0]![0]);
+    expect(message).toMatch(/Format invalide/);
+    expect(message).not.toMatch(/--provider brew-cask/);
+  });
+
+  it("returns 2 without updating when the provider does not run on this platform", async () => {
+    const p = { ...mkProvider({ id: "brew-cask" }), platforms: PLATFORMS.macos };
+    getProviderMock.mockReturnValue(p);
+    setPlatform("win32");
+    try {
+      const code = await updateCommand({ targets: ["brew-cask:firefox"] });
+      expect(code).toBe(2);
+    } finally {
+      restorePlatform();
+    }
+    expect(stderrSpy.mock.calls[0]![0]).toBe(
+      "Provider brew-cask indisponible sur Windows (macOS uniquement)\n",
+    );
+    expect(p.update).not.toHaveBeenCalled();
   });
 
   it("dispatches a single valid target to provider.update and reports success (exit 0)", async () => {
@@ -152,13 +202,14 @@ describe("updateCommand: --targets", () => {
     expect(p.update).toHaveBeenCalledWith("scope:pkg@1");
   });
 
-  it("forwards yes:true to maybeRetryFailures (skip the retry prompt)", async () => {
+  it("with yes:true never offers a retry (no hash bypass without explicit consent)", async () => {
     const p = mkProvider({
-      update: vi.fn().mockResolvedValue({ id: "x", success: true }),
+      update: vi.fn().mockResolvedValue({ id: "x", success: false, retryable: true }),
     });
     getProviderMock.mockReturnValue(p);
     await updateCommand({ targets: ["p:x"], yes: true });
-    expect(maybeRetryFailuresMock).toHaveBeenCalledWith(expect.any(Array), { yes: true });
+    expect(selectMock).not.toHaveBeenCalled();
+    expect(p.update).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -170,6 +221,18 @@ describe("updateCommand: scan + interactive selection", () => {
     const out = stdoutSpy.mock.calls.map((c) => String(c[0])).join("");
     expect(out).toMatch(/à jour.*aucune/);
     expect(promptPackageSelectionMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the scan errors instead of 'à jour' when a provider could not scan", async () => {
+    const results = [
+      { providerId: "npm-g", available: true, packages: [], error: "npm outdated a échoué (E503)" },
+    ];
+    scanWithProgressMock.mockResolvedValueOnce({ results, detectedCount: 1 });
+    const code = await updateCommand({});
+    expect(code).toBe(0);
+    const out = stdoutSpy.mock.calls.map((c) => String(c[0])).join("");
+    expect(out).toContain("scan error: npm outdated a échoué (E503)");
+    expect(out).not.toMatch(/à jour —/);
   });
 
   it("returns 0 with 'Aucune sélection' when interactive prompt yields []", async () => {
@@ -275,7 +338,7 @@ describe("updateCommand: --all", () => {
     expect(code).toBe(0);
     expect(confirmMock).not.toHaveBeenCalled();
     expect(provA.update).toHaveBeenCalledWith("x");
-    expect(maybeRetryFailuresMock).toHaveBeenCalledWith(expect.any(Array), { yes: true });
+    expect(selectMock).not.toHaveBeenCalled();
   });
 
   it("without --yes asks for confirmation and proceeds when confirmed", async () => {
@@ -310,7 +373,7 @@ describe("updateCommand: --all", () => {
     const code = await updateCommand({ all: true });
     expect(code).toBe(1);
     expect(getProviderMock).not.toHaveBeenCalled();
-    expect(maybeRetryFailuresMock).not.toHaveBeenCalled();
+    expect(selectMock).not.toHaveBeenCalled();
   });
 
   it("forwards only/fast to the underlying scan", async () => {
@@ -446,6 +509,27 @@ describe("updateCommand: admin batch elevation", () => {
     expect(runElevatedBatchMock).toHaveBeenCalledWith(["choco:nodejs"]);
   });
 
+  it.each([
+    ["win32", "1 paquet nécessite les droits administrateur. Ouvrir une invite UAC pour le traiter ?"],
+    ["darwin", "1 paquet nécessite les droits administrateur : sudo demandera votre mot de passe dans le terminal. Le traiter ?"],
+  ] as const)("names the %s elevation mechanism in the batch question", async (platform, question) => {
+    const adminPkg = { id: "gettext", current: "1", latest: "2", requiresAdmin: true };
+    scanWithProgressMock.mockResolvedValueOnce({
+      results: [{ providerId: "macports", available: true, packages: [adminPkg] }],
+      detectedCount: 1,
+    });
+    promptPackageSelectionMock.mockResolvedValueOnce([{ providerId: "macports", pkg: adminPkg }]);
+    getProviderMock.mockReturnValue(mkProvider({ id: "macports" }));
+    confirmMock.mockResolvedValueOnce(false);
+    setPlatform(platform);
+    try {
+      await updateCommand({});
+    } finally {
+      restorePlatform();
+    }
+    expect(confirmMock.mock.calls[0]![0]).toEqual({ message: question, default: true });
+  });
+
   it("does not invoke runElevatedBatch when no package is marked requiresAdmin", async () => {
     const pkg = { id: "fzf", current: "1", latest: "2" };
     scanWithProgressMock.mockResolvedValueOnce({
@@ -462,5 +546,31 @@ describe("updateCommand: admin batch elevation", () => {
     await updateCommand({});
     expect(runElevatedBatchMock).not.toHaveBeenCalled();
     expect(confirmMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateCommand: --provider ids gup cannot act on", () => {
+  const stderrText = (): string => stderrSpy.mock.calls.map((call) => String(call[0])).join("");
+
+  it("warns about a provider foreign to this OS before scanning", async () => {
+    const brewCask = { ...mkProvider({ id: "brew-cask" }), platforms: PLATFORMS.macos };
+    getProviderMock.mockReturnValue(brewCask);
+    scanWithProgressMock.mockResolvedValueOnce({ results: [], detectedCount: 0 });
+    setPlatform("win32");
+    try {
+      expect(await updateCommand({ only: ["brew-cask"], all: true })).toBe(0);
+    } finally {
+      restorePlatform();
+    }
+    expect(stderrText()).toContain(
+      "Provider brew-cask indisponible sur Windows (macOS uniquement) — ignoré.",
+    );
+    expect(scanWithProgressMock).toHaveBeenCalledWith({ only: ["brew-cask"] });
+  });
+
+  it("does not check --provider when targets name the packages", async () => {
+    getProviderMock.mockReturnValue(mkProvider({ id: "npm-g" }));
+    await updateCommand({ targets: ["npm-g:typescript"], only: ["nope"], yes: true });
+    expect(stderrText()).not.toContain("ignoré");
   });
 });

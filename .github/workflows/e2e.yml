@@ -1,0 +1,122 @@
+name: e2e
+
+# The full end-to-end suites on real macOS and Windows machines (GitHub's
+# hosted runners): every provider the runner image has scanned for drift,
+# a real update in a throw-away npm prefix through the CLI and through the
+# menu's run view, a schedule run by the OS scheduler, then the provider
+# fixtures recorded on macOS and Linux for review. Not a required check:
+# real tools and the network make it slower and less deterministic than the
+# per-pull-request smoke run in ci.yml.
+#
+# Runs weekly (drift in a tool's output shows up without a push), on demand,
+# and on a pull request labelled `e2e-full` (again on every push to it).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mutate:
+        description: "Run the suites that change something (sandboxed update, scheduled task)"
+        type: boolean
+        default: true
+      record-fixtures:
+        description: "Record the provider fixtures on macOS and Linux"
+        type: boolean
+        default: true
+  schedule:
+    - cron: "41 4 * * 2"
+  pull_request:
+    branches: [main]
+    types: [labeled, opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: e2e (${{ matrix.os }})
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'e2e-full')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    env:
+      GUP_E2E: "1"
+      # Hosted runners are thrown away after the job: the mutating suites run
+      # unless a manual dispatch turned them off.
+      GUP_MUTATE: ${{ (github.event_name != 'workflow_dispatch' || inputs.mutate) && '1' || '' }}
+      # Screens of failed menu tests, the scan JSON, the JUnit report.
+      GUP_E2E_ARTIFACTS: ${{ github.workspace }}/e2e-artifacts
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # A --reporter on the command line replaces the config's list, so the
+      # job summary reporter is named again next to JUnit.
+      - name: End-to-end suites
+        run: >-
+          npx vitest run --project e2e
+          --reporter=default
+          --reporter=./tests/support/e2e/summary-reporter.ts
+          --reporter=junit --outputFile.junit=e2e-artifacts/junit.xml
+
+      - name: Keep the artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-${{ matrix.os }}
+          path: e2e-artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Real tool output for the contract cases' fixtures, from machines the
+  # Windows dev box cannot be: download, review the diff (the recorder
+  # redacts user, home and host names and refuses anything secret-shaped),
+  # and commit what is right.
+  record-fixtures:
+    name: record fixtures (${{ matrix.os }})
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.record-fixtures) ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'e2e-full'))
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run fixtures:record -- --all
+
+      - name: What changed
+        run: git status --short -- tests/fixtures/providers
+
+      - name: Keep the recordings
+        uses: actions/upload-artifact@v7
+        with:
+          name: fixtures-${{ matrix.os }}
+          path: tests/fixtures/providers/
+          retention-days: 14

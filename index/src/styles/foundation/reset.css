@@ -7,32 +7,26 @@
 }
 
 html {
-  /* `clip` rather than `hidden`: it contains the fixed decorative layers
-     without creating a scroll container, which would break the sticky nav and
-     the sticky architecture stage. */
+  /* `clip`, not `hidden`: contains the fixed backdrop without creating a
+     scroll container, which would break the sticky header. */
   overflow-x: clip;
   background: var(--bg);
   color-scheme: dark;
-  /* Every in-page anchor lands under the sticky header without it. */
-  scroll-padding-top: calc(var(--nav-h) + 16px);
+  scroll-padding-block-start: calc(var(--nav-h) + 16px);
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  padding: 0;
   overflow-x: clip;
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--sans);
-  font-feature-settings: "ss01", "cv11";
-  /* Ligatures OFF, page-wide (inherited). Geist fuses `--` into a single
-     long dash (Geist Mono did too before 1.701 dropped its ligatures), so
-     `pip list --outdated` rendered as `pip list--outdated` and `--fast` as
-     `–fast`: a command a reader cannot retype from what they see. This page
-     is mostly shell commands; correctness of the glyphs beats the flourish. */
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: var(--body-leading);
+  /* Ligatures off page-wide: Geist fuses `--` into a dash, so `--fast` would
+     render as a flag nobody can retype. Correct glyphs beat the flourish. */
   font-variant-ligatures: none;
-  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -42,26 +36,40 @@ a {
   text-decoration: none;
 }
 a:hover {
-  color: var(--violet-text-soft);
-}
-
-::selection {
-  background: var(--violet);
-  color: var(--fg-bright);
+  color: var(--violet-text);
 }
 
 :focus-visible {
   outline: 2px solid var(--violet-text);
-  outline-offset: 3px;
+  outline-offset: 2px;
   border-radius: 4px;
+}
+
+::selection {
+  background: var(--violet);
+  color: var(--violet-ink);
 }
 
 img,
 svg {
-  max-width: 100%;
+  max-inline-size: 100%;
 }
 
 button {
   font: inherit;
   color: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
 }

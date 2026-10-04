@@ -6,9 +6,9 @@ import {
   fetchGitHubReleaseLatest,
   normalizeVersion,
 } from "../../core/gh-releases.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Mint (yonaskolb/Mint) — builds Swift Package Manager executables and
@@ -49,15 +49,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class MintProvider implements Provider {
   readonly id = "mint";
   readonly displayName = "Mint (Swift)";
-  readonly installHint = pickInstallHint({
-    win32: "Indisponible sur Windows — https://github.com/yonaskolb/Mint",
-    fallback: "brew install mint",
-  });
+  readonly installHint = "brew install mint";
+  /** Mint needs a Swift toolchain and ships no Windows support. */
+  readonly platforms = PLATFORMS.notWindows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
-    // Mint needs a Swift toolchain and ships no Windows support.
-    if (process.platform === "win32") return false;
     try {
       if (!(await commandExists("mint"))) return false;
       // `mint` is also the binary name of the unrelated mint-lang toolchain,

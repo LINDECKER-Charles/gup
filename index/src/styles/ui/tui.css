@@ -1,0 +1,258 @@
+/* The structured TUI mocks: the frame every gup screen shares (title bar,
+   body, key hints), titled boxes, Paquets (sidebar, package table, selection
+   bar) and the run view (status list, embedded terminal pane). Real layout,
+   not box-drawing art, so it reflows and never misaligns when a glyph falls
+   back to another font. Tones follow the TUI's: accent title bar and button,
+   success for what is checked or done, warning for the installed version. */
+
+.tui {
+  display: grid;
+  gap: 12px;
+}
+
+/* The title bar, on the accent fill like gup's. */
+.tui-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  padding: 1px 10px;
+  border-radius: 4px;
+  background: var(--violet);
+  color: var(--violet-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+.tui-fact {
+  display: inline-flex;
+  gap: 12px;
+}
+.tui-hints {
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+/* A key and what it does never part across lines. */
+.tui-hint {
+  white-space: nowrap;
+}
+
+.tui-body {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px 8px;
+}
+.tui--takeover .tui-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* A panel: the title sits on the top border; the focused one is heavy. */
+.tui-box {
+  position: relative;
+  padding: 12px 8px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+}
+.tui-box.is-focused {
+  border: 2px solid var(--violet);
+}
+.tui-box-title {
+  position: absolute;
+  inset-block-start: -0.75em;
+  inset-inline-start: 10px;
+  padding-inline: 6px;
+  background: var(--bg-deep);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+}
+.tui-box.is-focused .tui-box-title {
+  font-weight: 600;
+  color: var(--violet-text);
+}
+.tui-gutter {
+  display: inline-block;
+  flex: none;
+  inline-size: 2ch;
+  color: var(--violet-text);
+}
+
+/* Sidebar */
+.tui-side li {
+  display: flex;
+  padding-block: 1px;
+  padding-inline-end: 6px;
+  color: var(--fg-muted);
+}
+.tui-side .starts-group {
+  margin-block-start: 1.6em;
+}
+.tui-side .is-current {
+  background: var(--surface-raised);
+  font-weight: 600;
+  color: var(--fg);
+}
+.tui-label {
+  flex: 1;
+}
+.tui-badge {
+  color: var(--fg-dim);
+}
+
+/* Package table */
+.tui-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+.tui-table th {
+  padding-block-end: 2px;
+  padding-inline: 6px;
+  font-weight: 400;
+  text-align: start;
+  color: var(--fg-muted);
+}
+.tui-table td {
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.tui-mark {
+  inline-size: 1%;
+  color: var(--fg-dim);
+}
+.tui-row .tui-box-mark {
+  margin-inline-start: 2ch;
+}
+.tui-flag {
+  margin-inline-start: 1ch;
+  color: var(--violet-text);
+}
+.tui-group td {
+  padding-block-start: 6px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.is-checked .tui-box-mark {
+  color: var(--green);
+}
+.tui-count {
+  margin-inline-start: 2ch;
+  font-weight: 400;
+  color: var(--fg-dim);
+}
+.tui-name {
+  inline-size: 100%;
+  color: var(--fg);
+}
+.tui-row.is-checked .tui-name,
+.tui-row.is-running .tui-name {
+  font-weight: 600;
+}
+.tui-from {
+  color: var(--amber);
+}
+.tui-to {
+  color: var(--green);
+}
+.tui-arrow,
+.tui-provider,
+.tui-versions {
+  color: var(--fg-dim);
+}
+/* The run view aligns provider and versions right after the name; the
+   duration takes the slack, at the right edge. */
+.tui-run-table .tui-name {
+  inline-size: auto;
+}
+.tui-run-table .tui-clock {
+  inline-size: 100%;
+}
+.tui-row.is-cursor td {
+  background: var(--surface-raised);
+}
+
+/* Selection bar: the count, then the launch button on the accent fill. */
+.tui-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-block-start: 12px;
+  padding-inline: 6px;
+}
+.tui-bar-count {
+  color: var(--green);
+}
+.tui-button {
+  padding-inline: 1ch;
+  border-radius: 3px;
+  background: var(--violet);
+  font-weight: 600;
+  white-space: pre;
+  color: var(--violet-ink);
+}
+
+/* Run view: progress line and package rows. */
+.tui-run-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 3ch;
+  padding-inline: 6px;
+  margin-block-end: 8px;
+}
+.tui-progress-track {
+  flex: 1 1 10ch;
+  max-inline-size: 40ch;
+  block-size: 0.7em;
+  border-radius: 2px;
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+.tui-progress-bar {
+  display: block;
+  inline-size: var(--progress);
+  block-size: 100%;
+  background: var(--violet);
+  animation: gup-fill 1.8s var(--ease-out) both;
+}
+.tui-done {
+  font-weight: 600;
+  color: var(--fg);
+}
+.tui-clock {
+  margin-inline-start: auto;
+  text-align: end;
+  color: var(--fg-dim);
+}
+.tui-status--success {
+  color: var(--green);
+}
+.tui-status--skipped,
+.tui-status--running {
+  color: var(--amber);
+}
+.tui-status--failed {
+  color: var(--red);
+}
+
+/* The embedded terminal: the installer's own output, verbatim. */
+.tui-pane-out {
+  margin: 0;
+  padding-inline: 6px;
+  font: inherit;
+  color: var(--fg-muted);
+  white-space: pre;
+  overflow: hidden;
+}
+
+@media (max-width: 560px) {
+  .tui-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tui-side,
+  .tui-from,
+  .tui-provider,
+  .tui-versions {
+    display: none;
+  }
+}

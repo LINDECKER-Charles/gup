@@ -1,4 +1,3 @@
-import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run } from "../../core/runner.js";
 import {
   delegateUpdate,
@@ -8,6 +7,7 @@ import {
 import type { InstallSource } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * xcodes (XcodesOrg/xcodes) — the Xcode version manager. macOS-only, since the
@@ -48,18 +48,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class XcodesProvider implements Provider {
   readonly id = "xcodes";
   readonly displayName = "xcodes (Xcode version manager)";
-  readonly installHint = pickInstallHint({
-    darwin: "brew install xcodesorg/made/xcodes",
-    // Pas de commande d'installation hors macOS : xcodes pilote les
-    // téléchargements développeur d'Apple et n'a ni build ni équivalent
-    // ailleurs. Suggérer un `brew install` sur Windows ou Linux enverrait sur
-    // une impasse.
-    fallback:
-      "macOS uniquement — xcodes ne cible pas cette plateforme : https://github.com/XcodesOrg/xcodes",
-  });
+  readonly installHint = "brew install xcodesorg/made/xcodes";
+  /** xcodes drives Apple's developer downloads (Xcode). */
+  readonly platforms = PLATFORMS.macos;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "darwin") return false;
     try {
       return await commandExists("xcodes");
     } catch {

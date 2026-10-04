@@ -1,5 +1,8 @@
+import { formatDuration } from "../text/fr-format.js";
+import { NO_SCAN_YET } from "../text/menu-labels.js";
+import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
-import { fit, seg, type Line } from "../tui/styled-lines.js";
+import { fit, seg, wrapLine, type Line } from "../tui/styled-lines.js";
 import { PAGE_STEP, placeholder, type Panel, type Viewport } from "./panel.js";
 
 /** What a scan reports as it goes — to a screen, or to nobody. */
@@ -15,6 +18,14 @@ export interface ProviderOutcome {
   readonly updates: number;
   readonly ms: number;
   readonly error?: string;
+}
+
+/** A screen following scans as they run: their events, a failure, animation frames. */
+export interface ScanObserver extends ScanEvents {
+  /** The scan itself broke (not one provider). */
+  failed(message: string): void;
+  /** One animation frame while the scan runs. */
+  tick(): void;
 }
 
 /** For non-interactive runs: the scan reports, nobody draws. */
@@ -33,10 +44,26 @@ interface Progress {
   readonly outcome?: ProviderOutcome;
 }
 
-const SPINNER = ["◐", "◓", "◑", "◒"];
+const SPINNER = STATUS_GLYPHS.running;
+const DONE = `${STATUS_GLYPHS.success} `;
+const FAILED = `${STATUS_GLYPHS.failed} `;
 const BAR_WIDTH = 30;
+/** What comes before the name: "  √ ". */
+const MARK_WIDTH = 4;
+/** The name and result columns on a wide panel, their trailing blank included. */
 const NAME_WIDTH = 30;
 const RESULT_WIDTH = 34;
+/** Narrowest they get: a provider name stays recognisable, "12 mise(s) à jour" whole. */
+const MIN_NAME_WIDTH = 12;
+const MIN_RESULT_WIDTH = 18;
+/** Right-aligned duration column: "2 min 05 s" plus a leading gap. */
+const TIME_WIDTH = 11;
+
+/** Widths of the name and result columns, each ending with a blank. */
+interface Columns {
+  readonly name: number;
+  readonly result: number;
+}
 
 /**
  * Live progress of a scan, then its result per provider: what is running,
@@ -103,13 +130,15 @@ export class ScanPanel implements Panel, ScanEvents {
   }
 
   render(viewport: Viewport): readonly Line[] {
-    if (this.#phase === "idle") return placeholder("Aucun scan pour l'instant — r pour scanner.");
-    const head = [this.headline(), []];
+    if (this.#phase === "idle") return placeholder(NO_SCAN_YET);
+    const head = [...this.headLines(viewport.width), []];
     const rows = this.sortedRows().slice(
       this.#offset,
       this.#offset + viewport.height - head.length,
     );
-    return [...head, ...rows.map(progressLine)];
+    const columns = columnsFor(viewport.width);
+    const spinner = this.spinner();
+    return [...head, ...rows.map((row) => progressLine(row, columns, spinner))];
   }
 
   press(key: KeyPress): void {
@@ -126,9 +155,19 @@ export class ScanPanel implements Panel, ScanEvents {
     this.#offset = Math.max(0, Math.min(this.#offset + step, this.#providers.size - 1));
   }
 
+  /**
+   * The headline on as many rows as `width` needs once the scan is over: at
+   * 80 columns the summary and a failure's reason are never cut. The
+   * progress bar of a running scan stays on its one row.
+   */
+  private headLines(width: number): Line[] {
+    const headline = this.headline();
+    return this.#phase === "done" ? wrapLine(headline, width) : [headline];
+  }
+
   private headline(): Line {
     if (this.#failure)
-      return [seg("✖ ", "danger"), seg(`Scan interrompu : ${this.#failure}`, "danger")];
+      return [seg(FAILED, "danger"), seg(`Scan interrompu : ${this.#failure}`, "danger")];
     if (this.#phase === "detecting") {
       return [seg(this.spinner(), "accent"), seg("  détection des providers…")];
     }
@@ -138,10 +177,9 @@ export class ScanPanel implements Panel, ScanEvents {
         (n, p) => n + (p.outcome?.updates ?? 0),
         0,
       );
-      const seconds = (this.#elapsedMs / 1000).toFixed(1);
       return [
-        seg("✔ ", "success"),
-        seg(`Scan terminé en ${seconds}s`, "strong"),
+        seg(DONE, "success"),
+        seg(`Scan terminé en ${formatDuration(this.#elapsedMs)}`, "strong"),
         seg(` — ${this.#total} provider(s), ${updates} mise(s) à jour`, "muted"),
       ];
     }
@@ -167,27 +205,44 @@ export class ScanPanel implements Panel, ScanEvents {
   }
 
   private spinner(): string {
-    return SPINNER[this.#frame % SPINNER.length] ?? "◐";
+    return SPINNER[this.#frame % SPINNER.length] ?? "";
   }
 }
 
-function progressLine({ name, outcome }: Progress): Line {
-  if (!outcome)
-    return [seg("  ⠿ ", "accent"), seg(fit(name, NAME_WIDTH)), seg("en cours…", "muted")];
-  const time = seg(`${(outcome.ms / 1000).toFixed(1)}s`.padStart(7), "muted");
+/**
+ * The columns `width` holds with the duration in view: the result shrinks
+ * first, then the name, each down to its minimum — narrower than that, the
+ * row runs past the panel.
+ */
+function columnsFor(width: number): Columns {
+  const room = width - MARK_WIDTH - TIME_WIDTH;
+  const result = Math.min(RESULT_WIDTH, Math.max(MIN_RESULT_WIDTH, room - NAME_WIDTH));
+  return { name: Math.min(NAME_WIDTH, Math.max(MIN_NAME_WIDTH, room - result)), result };
+}
+
+/** A provider's row: the spinner while it runs, then its outcome and time. */
+function progressLine({ name, outcome }: Progress, columns: Columns, spinner: string): Line {
+  const nameCell = seg(cell(name, columns.name));
+  if (!outcome) return [seg(`  ${spinner} `, "accent"), nameCell, seg("en cours…", "muted")];
+  const time = seg(formatDuration(outcome.ms).padStart(TIME_WIDTH), "muted");
   if (outcome.error) {
     return [
-      seg("  ✖ ", "danger"),
-      seg(fit(name, NAME_WIDTH)),
-      seg(fit(outcome.error, RESULT_WIDTH), "danger"),
+      seg(`  ${FAILED}`, "danger"),
+      nameCell,
+      seg(cell(outcome.error, columns.result), "danger"),
       time,
     ];
   }
   const result = outcome.updates > 0 ? `${outcome.updates} mise(s) à jour` : "à jour";
   return [
-    seg("  ✔ ", "success"),
-    seg(fit(name, NAME_WIDTH)),
-    seg(fit(result, RESULT_WIDTH), outcome.updates > 0 ? "warning" : "muted"),
+    seg(`  ${DONE}`, "success"),
+    nameCell,
+    seg(cell(result, columns.result), outcome.updates > 0 ? "warning" : "muted"),
     time,
   ];
+}
+
+/** `text` cut to `width` columns with one blank kept at the end, so cells never touch. */
+function cell(text: string, width: number): string {
+  return `${fit(text, width - 1)} `;
 }

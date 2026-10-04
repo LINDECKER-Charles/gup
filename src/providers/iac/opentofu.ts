@@ -56,8 +56,8 @@ export class OpenTofuProvider implements Provider {
         scoop: "opentofu",
         choco: "opentofu",
         winget: "OpenTofu.Tofu",
-        // Formule homebrew-core "opentofu" (le binaire s'appelle `tofu`).
-        // Le cask homonyme "tofu" est un autre logiciel : pas de brewCask.
+        // homebrew-core formula "opentofu" (the binary is called `tofu`).
+        // The cask named "tofu" is another program: no brewCask.
         brew: "opentofu",
       },
       manualMessage:

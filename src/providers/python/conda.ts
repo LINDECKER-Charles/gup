@@ -15,8 +15,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CondaProvider implements Provider {
   readonly id = "conda";
   readonly displayName = "Conda";
-  // Homebrew ne distribue pas `conda` seul : il n'existe que via les casks
-  // miniconda / anaconda, qui embarquent la distribution complète.
+  // Homebrew does not ship `conda` alone: it only comes with the miniconda /
+  // anaconda casks, which bundle the full distribution.
   readonly installHint = pickInstallHint({
     win32: "https://docs.conda.io/projects/conda/en/stable/",
     fallback: "brew install --cask miniconda",

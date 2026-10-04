@@ -1,5 +1,4 @@
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import {
   describeSource,
   detectInstallSource,
@@ -9,6 +8,7 @@ import {
 } from "../../core/install-source.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Git for Windows — the distribution itself (git.exe plus its bundled MSYS2
@@ -52,16 +52,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class GitForWindowsProvider implements Provider {
   readonly id = "git-for-windows";
   readonly displayName = "Git for Windows";
-  // Windows-only distribution: elsewhere `git` comes from the system package
-  // manager (or the Command Line Tools on macOS), never from a package called
-  // "git-for-windows".
-  readonly installHint = pickInstallHint({
-    win32: "winget install Git.Git",
-    fallback: "Windows uniquement — équivalent macOS/Linux : brew install git",
-  });
+  readonly installHint = "winget install Git.Git";
+  /** A Windows-only distribution of git. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
     if (!(await commandExists("git").catch(() => false))) return false;
     return (await readInstalledVersion()) !== null;
   }

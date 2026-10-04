@@ -62,7 +62,7 @@ export class KubectlProvider implements Provider {
         scoop: "kubectl",
         choco: "kubernetes-cli",
         winget: "Kubernetes.kubectl",
-        // La formule Homebrew s'appelle kubernetes-cli, pas kubectl.
+        // The Homebrew formula is called kubernetes-cli, not kubectl.
         brew: "kubernetes-cli",
       },
       manualMessage:

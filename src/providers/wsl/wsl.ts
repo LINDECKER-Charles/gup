@@ -1,6 +1,6 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Only covers the WSL host kernel + WSL.exe — packages inside distributions
@@ -9,13 +9,11 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class WslProvider implements Provider {
   readonly id = "wsl";
   readonly displayName = "WSL (kernel)";
-  readonly installHint = pickInstallHint({
-    win32: "Windows feature — `wsl --install`",
-    fallback: "WSL est une fonctionnalité Windows — inexistante sur cette plateforme.",
-  });
+  readonly installHint = "Windows feature — `wsl --install`";
+  /** WSL is a Windows feature. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
     if (!(await commandExists("wsl"))) return false;
     const { failed } = await run("wsl", ["--version"]);
     return !failed;

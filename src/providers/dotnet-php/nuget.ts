@@ -69,9 +69,9 @@ export class NugetProvider implements Provider {
         name: "NuGet CLI",
         current,
         latest,
-        // Signalé, pas masqué : `manual: true` retirerait la ligne du scan
-        // (registry.ts filtre `!pkg.manual`) et l'utilisateur ne saurait jamais
-        // que son nuget.exe a vieilli.
+        // Reported, not hidden: `manual: true` would drop the row from the scan
+        // (registry.ts filters on `!pkg.manual`) and the user would never learn
+        // that their nuget.exe is out of date.
         ...(process.platform !== "win32" && {
           note: "sous Mono : update -self non garanti",
         }),

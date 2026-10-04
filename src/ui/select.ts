@@ -1,11 +1,6 @@
 import { getProvider } from "../core/registry.js";
-import type { OutdatedPackage, ProviderScanResult } from "../core/types.js";
+import type { ProviderScanResult, SelectedPackage } from "../core/types.js";
 import { pickPackages } from "./prompts/package-picker.js";
-
-export interface SelectedPackage {
-  providerId: string;
-  pkg: OutdatedPackage;
-}
 
 /**
  * Package picker for `gup update`: the outdated packages grouped by

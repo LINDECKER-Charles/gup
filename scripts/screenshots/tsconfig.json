@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "noEmit": true
+  },
+  "include": [
+    "./**/*.ts",
+    "../../src/**/*.ts",
+    "../../tests/support/tui/*.ts",
+    "../../tests/support/pty/fake-pty.ts"
+  ]
+}

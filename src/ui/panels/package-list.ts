@@ -1,5 +1,10 @@
-import type { OutdatedPackage, ProviderScanResult } from "../../core/types.js";
-import type { SelectedPackage } from "../select.js";
+import type {
+  OutdatedPackage,
+  ProviderScanResult,
+  SelectedPackage,
+} from "../../core/types.js";
+import type { PackageSort } from "../app/ui-preferences.js";
+import { orderPackages } from "./package-order.js";
 
 export type PackageRow =
   | { readonly kind: "group"; readonly providerId: string; readonly title: string }
@@ -10,6 +15,14 @@ export type PackageRow =
       readonly title: string;
       readonly error: string;
     };
+
+export interface PackageListOptions {
+  /**
+   * Package order inside each provider (default: as scanned). Read on every
+   * use, so a preference changed while the list is on screen applies at once.
+   */
+  readonly sort?: () => PackageSort;
+}
 
 interface Group {
   readonly providerId: string;
@@ -22,18 +35,26 @@ interface Group {
  * The outdated packages of a scan, grouped by provider, with a cursor, a
  * text filter and a set of checked packages.
  *
- * Checked packages survive filtering: narrowing the list to find one more
- * package never loses what was already picked. Toggling a group or "all"
+ * The checked set is the only selection: nothing acts on the row under the
+ * cursor. Checked packages survive filtering — narrowing the list to find one
+ * more package never loses what was already picked. Toggling a group or "all"
  * only acts on what the filter currently shows.
  */
 export class PackageList {
-  readonly #groups: readonly Group[];
+  readonly #scanned: readonly Group[];
+  readonly #sortOf: () => PackageSort;
+  #ordered: { readonly sort: PackageSort; readonly groups: readonly Group[] } | null = null;
   readonly #checked = new Set<string>();
   #filter = "";
   #cursor = 0;
 
-  constructor(scans: readonly ProviderScanResult[], nameOf: (providerId: string) => string) {
-    this.#groups = [...scans]
+  constructor(
+    scans: readonly ProviderScanResult[],
+    nameOf: (providerId: string) => string,
+    options: PackageListOptions = {},
+  ) {
+    this.#sortOf = options.sort ?? (() => "provider");
+    this.#scanned = [...scans]
       .filter((scan) => scan.packages.length > 0 || scan.error)
       .sort((a, b) => nameOf(a.providerId).localeCompare(nameOf(b.providerId)))
       .map((scan) => ({
@@ -45,7 +66,7 @@ export class PackageList {
   }
 
   get rows(): PackageRow[] {
-    return this.#groups.flatMap((group) => this.groupRows(group));
+    return this.groups().flatMap((group) => this.groupRows(group));
   }
 
   get cursor(): number {
@@ -56,26 +77,29 @@ export class PackageList {
     return this.#filter;
   }
 
+  /** The longest name, and current or latest version, of every package, filter or not. */
+  get longest(): { readonly name: number; readonly version: number } {
+    let name = 0;
+    let version = 0;
+    for (const pkg of this.#scanned.flatMap((group) => group.packages)) {
+      name = Math.max(name, (pkg.name ?? pkg.id).length);
+      version = Math.max(version, pkg.current.length, pkg.latest.length);
+    }
+    return { name, version };
+  }
+
   /** Every package, filter or not. */
   get total(): number {
-    return this.#groups.reduce((n, g) => n + g.packages.length, 0);
+    return this.groups().reduce((n, g) => n + g.packages.length, 0);
   }
 
   /** Checked packages in display order, including those the filter hides. */
   get selection(): SelectedPackage[] {
-    return this.#groups.flatMap((g) =>
+    return this.groups().flatMap((g) =>
       g.packages
         .filter((pkg) => this.#checked.has(keyOf(g.providerId, pkg)))
         .map((pkg) => ({ providerId: g.providerId, pkg })),
     );
-  }
-
-  /** What Enter acts on when nothing is checked: the package or group under the cursor. */
-  get underCursor(): SelectedPackage[] {
-    const row = this.rows[this.#cursor];
-    if (row?.kind === "package") return [{ providerId: row.providerId, pkg: row.pkg }];
-    if (row?.kind !== "group") return [];
-    return this.visiblePackages(row.providerId).map((pkg) => ({ providerId: row.providerId, pkg }));
   }
 
   setFilter(text: string): void {
@@ -111,16 +135,33 @@ export class PackageList {
 
   /** Check every visible package, or clear them all when they already are. */
   toggleAllVisible(): void {
-    this.setAll(this.#groups.map((g) => g.providerId));
+    this.setAll(this.groups().map((g) => g.providerId));
+  }
+
+  /**
+   * True when the filter shows packages and every one of them is checked:
+   * `a` then clears them. Checked packages the filter hides do not count.
+   */
+  isAllVisibleChecked(): boolean {
+    const keys = this.visibleKeys(this.groups().map((g) => g.providerId));
+    return keys.length > 0 && this.areChecked(keys);
   }
 
   private setAll(providerIds: readonly string[]): void {
-    const keys = providerIds.flatMap((id) => this.visiblePackages(id).map((pkg) => keyOf(id, pkg)));
-    const isEveryChecked = keys.every((key) => this.#checked.has(key));
+    const keys = this.visibleKeys(providerIds);
+    const isEveryChecked = this.areChecked(keys);
     for (const key of keys) {
       if (isEveryChecked) this.#checked.delete(key);
       else this.#checked.add(key);
     }
+  }
+
+  private visibleKeys(providerIds: readonly string[]): string[] {
+    return providerIds.flatMap((id) => this.visiblePackages(id).map((pkg) => keyOf(id, pkg)));
+  }
+
+  private areChecked(keys: readonly string[]): boolean {
+    return keys.every((key) => this.#checked.has(key));
   }
 
   private flip(key: string): void {
@@ -128,8 +169,21 @@ export class PackageList {
     else this.#checked.add(key);
   }
 
+  /** The groups, packages in the preferred order — re-ordered only when the order changes. */
+  private groups(): readonly Group[] {
+    const sort = this.#sortOf();
+    const cached = this.#ordered;
+    if (cached?.sort === sort) return cached.groups;
+    const groups = this.#scanned.map((group) => ({
+      ...group,
+      packages: orderPackages(group.packages, sort),
+    }));
+    this.#ordered = { sort, groups };
+    return groups;
+  }
+
   private visiblePackages(providerId: string): readonly OutdatedPackage[] {
-    const group = this.#groups.find((g) => g.providerId === providerId);
+    const group = this.groups().find((g) => g.providerId === providerId);
     if (!group) return [];
     return this.matchesGroup(group)
       ? group.packages

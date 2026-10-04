@@ -1,0 +1,549 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+/**
+ * The run view inside the real menu, on OpenTUI's in-memory renderer: the
+ * real in-screen launcher, pipeline, runner and PTY sink, with three things
+ * replaced — node-pty (an in-memory fake the test drives), the kill lever
+ * (it ends the fake child instead of running taskkill), and the provider
+ * lookup (a provider whose installs go through `runInherit`). The elevated
+ * batch is replaced too: no UAC prompt from a unit test.
+ */
+const hoisted = vi.hoisted(() => ({
+  providers: new Map<string, unknown>(),
+  /** The test is over: every child still running, or started from now on, exits at once. */
+  isDraining: false,
+  terminate: vi.fn((_pid: number): void => {}),
+  runElevatedBatch: vi.fn(),
+}));
+vi.mock("../../../src/core/platform/lookup-provider.js", () => ({
+  lookupProvider: (id: string) => {
+    const provider = hoisted.providers.get(id);
+    return provider
+      ? { isFound: true, provider }
+      : { isFound: false, error: `Provider inconnu: ${id}` };
+  },
+}));
+vi.mock("../../../src/core/pty/pty-kill.js", () => ({
+  ptyKill: { terminate: hoisted.terminate },
+}));
+vi.mock("../../../src/core/pty/exit-file.js", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  // The Windows fast path is covered by the PTY suites; here the fake child ends on its exit event.
+  createExitFileSlot: () => {
+    throw new Error("no exit file in the UI suites");
+  },
+}));
+vi.mock("../../../src/core/elevation.js", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  runElevatedBatch: hoisted.runElevatedBatch,
+}));
+
+import type { OutdatedPackage } from "../../../src/core/types.js";
+import { setBatchGuard } from "../../../src/core/update/update-extensions.js";
+import { runInherit } from "../../../src/core/runner.js";
+import { decodePayload } from "../../../src/core/pty/trampoline-payload.js";
+import { inScreenLauncher } from "../../../src/ui/app/in-screen-launcher.js";
+import type { UiPreferences } from "../../../src/ui/app/ui-preferences.js";
+import { MANUAL_SKIP_MESSAGE } from "../../../src/core/update/finalize-outcome.js";
+import {
+  ELEVATE_DIALOG,
+  PANE_LABELS,
+  RETRY_DIALOG_TITLE,
+  RUN_HINTS,
+  RUN_NOTICES,
+  RUN_NOTIFICATION,
+  RUN_TITLES,
+  STOP_DIALOG,
+} from "../../../src/ui/text/run-labels.js";
+import { PROMPT_IDLE_MS } from "../../../src/ui/run/terminal/prompt-hint.js";
+import { DIALOG_HINTS } from "../../../src/ui/text/menu-labels.js";
+import { NOTIFY_MIN_RUN_MS } from "../../../src/ui/run/run-view.js";
+import { RETAINED_RECENT_PANES } from "../../../src/ui/run/terminal/terminal-panes.js";
+import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
+import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
+import type { ViewDefinition } from "../../../src/ui/app/view-definition.js";
+import { EXPORT_LABELS, JOURNAL_HINTS } from "../../../src/ui/text/journal/journal-labels.js";
+import { journalView } from "../../../src/ui/views/journal-view.js";
+import { outcome, pkg, scan } from "../../support/builders.js";
+import { installerProvider } from "../../support/pty/fake-installer.js";
+import { fakePty, type FakePty } from "../../support/pty/fake-pty.js";
+import { bootMenu, defaultViews, type MenuDriver } from "../../support/tui/menu-driver.js";
+import { journalData, scriptedSource } from "../panels/journal/journal-data.js";
+
+const TRAMPOLINE = { script: "pty-exec.js", execArgv: [] };
+const PACKAGES = [pkg("alpha"), pkg("beta"), pkg("gamma")];
+/** Left of any dialog, low in the body: inside the terminal pane at 100 × 30. */
+const PANE_POINT = { x: 4, y: 25 } as const;
+/** Generous: other suites load the machine in parallel. */
+const SETTLE_MS = 10_000;
+/** Rows of the status list above the packages: the progress (or summary) line and a notice row. */
+const LIST_TOP_ROWS = 2;
+const POLL_MS = 10;
+
+interface RunMenuOptions {
+  readonly packages?: readonly OutdatedPackage[];
+  readonly platform?: NodeJS.Platform;
+  readonly preferences?: Partial<UiPreferences>;
+  readonly retryable?: readonly string[];
+  readonly clock?: () => number;
+  readonly createAppearance?: AppearanceFactory;
+  readonly views?: readonly ViewDefinition[];
+  readonly size?: { readonly cols: number; readonly rows: number };
+}
+
+interface RunMenu {
+  readonly menu: MenuDriver;
+  readonly pty: FakePty;
+}
+
+let current: FakePty | null = null;
+
+afterEach(() => {
+  // End the run the test left behind, so no install stays armed (its timeout,
+  // the runner's skip slot) into the next test.
+  hoisted.isDraining = true;
+  for (const call of current?.spawned ?? []) call.handle.emitExit({ exitCode: 1 });
+  hoisted.providers.clear();
+  setBatchGuard(null);
+});
+
+/** The menu with the in-screen launcher; every package checked, launched and confirmed. */
+async function launched(options: RunMenuOptions = {}): Promise<RunMenu> {
+  hoisted.isDraining = false;
+  const pty = fakePty({
+    onSpawn: (handle) => {
+      if (hoisted.isDraining) queueMicrotask(() => handle.emitExit({ exitCode: 1 }));
+    },
+  });
+  current = pty;
+  hoisted.terminate.mockImplementation(() => pty.last().emitExit({ exitCode: 1 }));
+  hoisted.runElevatedBatch.mockImplementation(async (targets: string[]) =>
+    targets.map((target) => outcome(target.split(":")[1]!)),
+  );
+  hoisted.providers.set(
+    "essai",
+    installerProvider({ id: "essai", displayName: "Essai", retryable: options.retryable ?? [] }),
+  );
+  const menu = await bootMenu({
+    scans: [scan("essai", [...(options.packages ?? PACKAGES)])],
+    launcher: inScreenLauncher({
+      loadSupport: async () => ({ isAvailable: true, pty: pty.module, trampoline: TRAMPOLINE }),
+      platform: options.platform ?? "win32",
+      ...(options.clock && { clock: options.clock }),
+    }),
+    ...menuOptions(options),
+  });
+  await shown(menu, (options.packages ?? PACKAGES)[0]!.id);
+  await menu.press("a", "enter");
+  await shown(menu, "être mis à jour :");
+  await menu.press("o");
+  return { menu, pty };
+}
+
+/** What a test sets on the menu itself, passed on as given. */
+function menuOptions({ preferences, createAppearance, views, size }: RunMenuOptions) {
+  return {
+    ...(preferences && { preferences }),
+    ...(createAppearance && { createAppearance }),
+    ...(views && { views }),
+    ...(size && { size }),
+  };
+}
+
+/** Wait until `count` installs have started in the fake pseudo-terminal. */
+async function installsStarted(pty: FakePty, count: number): Promise<void> {
+  await vi.waitFor(() => expect(pty.spawned).toHaveLength(count), {
+    timeout: SETTLE_MS,
+    interval: POLL_MS,
+  });
+}
+
+/** What the installers received from the keyboard, as text. */
+function typed(pty: FakePty): string {
+  return pty.spawned
+    .flatMap((call) => call.handle.written)
+    .map((data) => (typeof data === "string" ? data : data.toString("latin1")))
+    .join("");
+}
+
+/**
+ * The frame once it shows `text`. The pipeline moves on its own (awaits, the
+ * batch guard's polling): wait in wall time, not in a fixed number of frames.
+ */
+async function shown(menu: MenuDriver, text: string): Promise<string> {
+  return vi.waitFor(
+    async () => {
+      const frame = await menu.frame();
+      expect(frame).toContain(text);
+      return frame;
+    },
+    { timeout: SETTLE_MS, interval: POLL_MS },
+  );
+}
+
+/** The key-hint bar: the frame's last line, without its leading blank. */
+function hintBar(frame: string): string {
+  return (frame.trimEnd().split("\n").at(-1) ?? "").trim();
+}
+
+async function pressCtrlG(menu: MenuDriver): Promise<void> {
+  menu.screen.mockInput.pressKey("g", { ctrl: true });
+  await menu.screen.flush();
+}
+
+/** Content rows of the status list titled `title`: between its top and bottom borders. */
+function statusListRows(frame: string, title: string): number {
+  const lines = frame.split("\n");
+  const top = lines.findIndex((line) => line.startsWith(`╭─ ${title} `));
+  const bottom = lines.findIndex((line, index) => index > top && line.startsWith("╰"));
+  return bottom - top - 1;
+}
+
+describe("run view", () => {
+  it("updates inside the screen, one terminal per package, then back to Paquets pruned", async () => {
+    const { menu, pty } = await launched();
+    await installsStarted(pty, 1);
+    expect(decodePayload(pty.spawned[0]!.args[1]!).args).toEqual(["alpha"]);
+    pty.last().emitData("Téléchargement de alpha…\r\n");
+    const running = await shown(menu, "Téléchargement de alpha");
+    expect(running).toContain(RUN_TITLES.running);
+    expect(running).toContain("essai · alpha");
+    expect(running).toContain(RUN_HINTS.running(false));
+
+    pty.last().emitExit({ exitCode: 0 });
+    await installsStarted(pty, 2);
+    pty.last().emitExit({ exitCode: 3 });
+    await installsStarted(pty, 3);
+    pty.last().emitExit({ exitCode: 0 });
+
+    const results = await shown(menu, RUN_TITLES.done);
+    expect(results).toMatch(/√ 2 mis à jour {3}→ 0 ignorée {3}× 1 échec/);
+    expect(results).toMatch(/› × beta /);
+    expect(results).toContain(PANE_LABELS.output("essai · beta"));
+    await menu.press("enter");
+    const back = await shown(menu, "┏━ Paquets");
+    expect(back).toContain("beta");
+    expect(back).not.toContain("alpha");
+    expect(back).not.toContain("gamma");
+  });
+
+  it("offers the journal's HTML report on the results only, and says where it went", async () => {
+    const report = "C:\\r\\rapport.html";
+    const source = scriptedSource(journalData(), { ok: true, path: report, opened: true });
+    const views = [...defaultViews(), journalView(source)];
+    const { menu, pty } = await launched({ packages: [pkg("alpha")], views });
+    await installsStarted(pty, 1);
+    await menu.press("o");
+    expect(source.export).not.toHaveBeenCalled();
+
+    pty.last().emitExit({ exitCode: 0 });
+    expect(await shown(menu, RUN_TITLES.done)).toContain(JOURNAL_HINTS.report);
+    await menu.press("o");
+
+    await shown(menu, EXPORT_LABELS.opened(report));
+    expect(source.export).toHaveBeenCalledTimes(1);
+    expect(source.export).toHaveBeenCalledWith("html", expect.objectContaining({ key: "12m" }));
+  });
+
+  it("keeps the way back and the HTML report on the results bar at 80 columns", async () => {
+    const source = scriptedSource(journalData(), { ok: true, path: "C:\\r\\r.html", opened: true });
+    const views = [...defaultViews(), journalView(source)];
+    const size = { cols: 80, rows: 24 };
+    const { menu, pty } = await launched({ packages: [pkg("alpha")], views, size });
+    await installsStarted(pty, 1);
+    pty.last().emitExit({ exitCode: 0 });
+    const bar = hintBar(await shown(menu, RUN_TITLES.done));
+    expect(bar).toContain(RUN_HINTS.done.back);
+    expect(bar).toContain(JOURNAL_HINTS.report);
+  });
+
+  it("s skips the install in flight and goes on with the next package", async () => {
+    const { menu, pty } = await launched();
+    await installsStarted(pty, 1);
+    await menu.press("s");
+    expect(hoisted.terminate).toHaveBeenCalledOnce();
+    await installsStarted(pty, 2);
+    expect(await shown(menu, MANUAL_SKIP_MESSAGE)).toMatch(/→ alpha /);
+  });
+
+  it("x asks first: Non keeps going, Oui interrupts the package and cancels the rest", async () => {
+    const { menu, pty } = await launched();
+    await installsStarted(pty, 1);
+    await menu.press("x");
+    const asking = await menu.frame();
+    expect(asking).toContain("les 2 paquets restants");
+    expect(hintBar(asking)).toBe(DIALOG_HINTS.confirm);
+    await menu.press("n");
+    expect(hoisted.terminate).not.toHaveBeenCalled();
+    expect(hintBar(await menu.frame())).toBe(RUN_HINTS.running(false));
+
+    await menu.press("x", "o");
+    const results = await shown(menu, RUN_TITLES.done);
+    expect(hoisted.terminate).toHaveBeenCalledOnce();
+    expect(pty.spawned).toHaveLength(1);
+    expect(results).toMatch(/▪ 2 annulées/);
+  });
+
+  it("Ctrl+C skips the install in flight without leaving gup", async () => {
+    const { menu, pty } = await launched();
+    await installsStarted(pty, 1);
+    await menu.press("ctrl+c");
+    await installsStarted(pty, 2);
+    expect(await menu.frame()).toContain(RUN_NOTICES.ctrlCFirst);
+    expect(hoisted.terminate).toHaveBeenCalledOnce();
+  });
+
+  it("Ctrl+C twice in a row stops the run", async () => {
+    const { menu, pty } = await launched();
+    await installsStarted(pty, 1);
+    await menu.press("ctrl+c");
+    await installsStarted(pty, 2);
+    await menu.press("ctrl+c");
+    const results = await shown(menu, RUN_TITLES.done);
+    expect(pty.spawned).toHaveLength(2);
+    expect(results).toMatch(/→ 2 ignorées {3}× 0 échec {3}▪ 1 annulée/);
+  });
+
+  it("leaves the results on Ctrl+C, the notices of the run gone", async () => {
+    const { menu, pty } = await launched({ packages: [pkg("alpha")] });
+    await installsStarted(pty, 1);
+    await menu.press("ctrl+c");
+    const results = await shown(menu, RUN_TITLES.done);
+    expect(results).toMatch(/→ alpha /);
+    expect(results).not.toContain(RUN_NOTICES.ctrlCFirst);
+    await menu.press("ctrl+c");
+    expect(await shown(menu, "┏━ Paquets")).toContain("alpha");
+  });
+
+  it("keeps the list to the rows it needs while no terminal is on screen", async () => {
+    // More successes than the retention keeps: the first one's output is gone.
+    const packages = Array.from({ length: RETAINED_RECENT_PANES + 2 }, (_, i) => pkg(`p${i}`));
+    const { menu, pty } = await launched({ packages });
+    for (let count = 1; count <= packages.length; count++) {
+      await installsStarted(pty, count);
+      pty.last().emitExit({ exitCode: 0 });
+    }
+    // No failure: the cursor starts on the first package, shown as a placeholder.
+    const results = await shown(menu, PANE_LABELS.notRetained);
+    expect(statusListRows(results, RUN_TITLES.done)).toBe(LIST_TOP_ROWS + packages.length);
+  });
+
+  it("refuses q while the run goes on", async () => {
+    const { menu, pty } = await launched();
+    await installsStarted(pty, 1);
+    await menu.press("q");
+    expect(await menu.frame()).toContain(RUN_NOTICES.quit);
+    pty.last().emitExit({ exitCode: 0 });
+    await installsStarted(pty, 2);
+  });
+
+  it("t hands the keyboard to the installer; Ctrl+C reaches it, Ctrl+G takes it back", async () => {
+    const { menu, pty } = await launched();
+    await installsStarted(pty, 1);
+    await menu.press("t");
+    expect(await menu.frame()).toContain(RUN_HINTS.typing);
+    expect(await menu.frame()).toContain(PANE_LABELS.focused);
+    await menu.press("y", "enter", "q", "ctrl+c");
+    expect(typed(pty)).toBe("y\rq\x03");
+    expect(hoisted.terminate).not.toHaveBeenCalled();
+
+    await pressCtrlG(menu);
+    await menu.press("y");
+    expect(typed(pty)).toBe("y\rq\x03");
+    expect(await menu.frame()).toContain(RUN_HINTS.running(false));
+  });
+
+  it("while a dialog is open, a click on the pane then Entrée sends nothing to the installer", async () => {
+    const { menu, pty } = await launched();
+    await installsStarted(pty, 1);
+    await menu.press("x");
+    await menu.screen.mockMouse.click(PANE_POINT.x, PANE_POINT.y);
+    await menu.press("enter");
+    expect(typed(pty)).toBe("");
+    expect(hoisted.terminate).not.toHaveBeenCalled();
+    expect(await menu.frame()).not.toContain(STOP_DIALOG.title);
+  });
+
+  it("waits for the UAC window: s refused, x stops after the step", async () => {
+    const { menu, pty } = await launched({
+      packages: [pkg("alpha"), pkg("nodejs", { requiresAdmin: true })],
+    });
+    let finishBatch = (): void => {};
+    hoisted.runElevatedBatch.mockImplementation(
+      (targets: string[]) =>
+        new Promise((resolve) => {
+          finishBatch = () => resolve(targets.map((target) => outcome(target.split(":")[1]!)));
+        }),
+    );
+    await installsStarted(pty, 1);
+    pty.last().emitExit({ exitCode: 0 });
+    const question = await shown(menu, ELEVATE_DIALOG.title);
+    expect(question).toContain("Ouvrir une invite UAC");
+    // Asked by the pipeline, not after a key: the bar still trades its keys for the dialog's.
+    expect(hintBar(question)).toBe(DIALOG_HINTS.confirm);
+    await menu.press("o");
+
+    const waiting = await shown(menu, PANE_LABELS.admin.uac);
+    expect(waiting).toContain(PANE_LABELS.approveUac);
+    expect(waiting).toContain(RUN_HINTS.elevating.uac);
+    expect(waiting).toMatch(/nodejs .* fenêtre admin…/);
+    await menu.press("t");
+    const typing = await menu.frame();
+    expect(typing).toContain(RUN_NOTICES.typeElsewhere);
+    expect(typing).not.toContain(RUN_NOTICES.skipAdmin.uac);
+    await menu.press("s");
+    expect(await menu.frame()).toContain(RUN_NOTICES.skipAdmin.uac);
+    await menu.press("x");
+    expect(await menu.frame()).toContain(RUN_NOTICES.stopAfterStep);
+    expect(hoisted.terminate).not.toHaveBeenCalled();
+
+    finishBatch();
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/√ nodejs .* admin/);
+  });
+
+  it("runs the sudo step in the pane on macOS and Linux: one password, typed there", async () => {
+    hoisted.runElevatedBatch.mockReset();
+    const { menu, pty } = await launched({
+      packages: [pkg("nodejs", { requiresAdmin: true })],
+      platform: "linux",
+    });
+    hoisted.runElevatedBatch.mockImplementation(async (targets: string[]) => {
+      await runInherit("sudo", ["node", "gup", "__admin-batch"]);
+      return targets.map((target) => outcome(target.split(":")[1]!));
+    });
+    expect(await shown(menu, ELEVATE_DIALOG.title)).toContain("sudo demandera votre");
+    await menu.press("o");
+    await installsStarted(pty, 1);
+    pty.last().emitData("[sudo] Mot de passe de charles : ");
+    const prompt = await shown(menu, PANE_LABELS.admin.sudo);
+    expect(prompt).toContain(RUN_HINTS.elevating.sudo);
+    expect(prompt).not.toContain(PANE_LABELS.approveUac);
+
+    await menu.press("t", "s", "e", "c", "enter");
+    expect(typed(pty)).toBe("sec\r");
+    pty.last().emitExit({ exitCode: 0 });
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/√ nodejs /);
+  });
+
+  it("offers a retry strategy for recoverable failures and replays them in the view", async () => {
+    const { menu, pty } = await launched({ packages: [pkg("alpha")], retryable: ["alpha"] });
+    await installsStarted(pty, 1);
+    pty.last().emitExit({ exitCode: 3 });
+    expect(await shown(menu, RETRY_DIALOG_TITLE)).toContain("Aucun — laisser les échecs");
+    await menu.press("down", "enter");
+
+    await installsStarted(pty, 2);
+    expect(decodePayload(pty.spawned[1]!.args[1]!).args).toEqual(["alpha", "--force"]);
+    expect(await shown(menu, "retry --force")).toMatch(/[│╱─╲] alpha /);
+    pty.last().emitExit({ exitCode: 0 });
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/√ alpha .* retry --force/);
+  });
+
+  it("says when another gup run holds the update batch, and gives up on x", async () => {
+    setBatchGuard({
+      enter: (wait) => {
+        wait.onWait({ kind: "scheduled", pid: 7, startedAt: new Date().toISOString() });
+        const isAborted = () => expect(wait.isAborted()).toBe(true);
+        return vi
+          .waitFor(isAborted, { timeout: SETTLE_MS, interval: POLL_MS })
+          .then(() => () => {});
+      },
+    });
+    const { menu, pty } = await launched();
+    const waiting = await shown(menu, "Une mise à jour planifiée est en cours");
+    expect(waiting).toContain(RUN_HINTS.waiting);
+    expect(statusListRows(waiting, RUN_TITLES.running)).toBe(LIST_TOP_ROWS + PACKAGES.length);
+    await menu.press("x", "o");
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/▪ 3 annulées/);
+    expect(pty.spawned).toHaveLength(0);
+  });
+
+  it("hints that a silent installer may be waiting for an answer, without typing it", async () => {
+    let now = 0;
+    const { menu, pty } = await launched({ clock: () => now });
+    await installsStarted(pty, 1);
+    pty.last().emitData("Mot de passe : ");
+    await shown(menu, "Mot de passe");
+    expect(await menu.frame()).not.toContain(RUN_NOTICES.prompt);
+    now = PROMPT_IDLE_MS;
+    await shown(menu, RUN_NOTICES.prompt);
+    expect(typed(pty)).toBe("");
+  });
+
+  it("notifies the terminal when a run of a minute or more ends, if asked to", async () => {
+    let now = 0;
+    const { menu, pty } = await launched({
+      packages: [pkg("alpha")],
+      preferences: { notifyOnDone: true },
+      clock: () => now,
+    });
+    const notify = vi.spyOn(menu.screen.renderer, "triggerNotification").mockReturnValue(true);
+    await installsStarted(pty, 1);
+    now = NOTIFY_MIN_RUN_MS;
+    pty.last().emitExit({ exitCode: 0 });
+    await shown(menu, RUN_TITLES.done);
+    expect(notify).toHaveBeenCalledWith(RUN_NOTIFICATION.body(1, 0, 0), RUN_NOTIFICATION.title);
+  });
+
+  it("stays quiet after a short run", async () => {
+    const { menu, pty } = await launched({
+      packages: [pkg("alpha")],
+      preferences: { notifyOnDone: true },
+    });
+    const notify = vi.spyOn(menu.screen.renderer, "triggerNotification").mockReturnValue(true);
+    await installsStarted(pty, 1);
+    pty.last().emitExit({ exitCode: 0 });
+    await shown(menu, RUN_TITLES.done);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("draws the installer's output on the terminal's own background under a themed screen", async () => {
+    const themed: AppearanceFactory = (renderer, tui) => ({
+      ...legacyAppearance(renderer, tui),
+      background: () => tui.RGBA.fromInts(30, 30, 46),
+    });
+    const { menu, pty } = await launched({ createAppearance: themed });
+    await installsStarted(pty, 1);
+    pty.last().emitData("sortie de l'installeur\r\n");
+    await shown(menu, "sortie de l'installeur");
+    const lines = menu.screen.captureSpans().lines;
+    const paneSpan = lines
+      .flatMap((line) => line.spans)
+      .find((span) => span.text.includes("sortie de l'installeur"));
+    expect(paneSpan?.bg.intent).toBe("default");
+    const titleSpan = lines.flatMap((line) => line.spans).find((s) => s.text.includes("alpha"));
+    expect(titleSpan?.bg.intent).toBe("rgb");
+  });
+
+  it("stops following the appearance once the run view is gone", async () => {
+    const listeners = new Set<() => void>();
+    const tracked: AppearanceFactory = (renderer, tui) => ({
+      ...legacyAppearance(renderer, tui),
+      onChange: (listener) => {
+        listeners.add(listener);
+        return () => void listeners.delete(listener);
+      },
+    });
+    const { menu, pty } = await launched({ createAppearance: tracked, packages: [pkg("alpha")] });
+    await installsStarted(pty, 1);
+    const whileRunning = listeners.size;
+    pty.last().emitExit({ exitCode: 0 });
+    await shown(menu, RUN_TITLES.done);
+    await menu.press("enter");
+    await shown(menu, "┏━ Paquets");
+    // The run's status panel was the only listener the run view added.
+    expect(listeners.size).toBe(whileRunning - 1);
+    for (const listener of listeners) listener();
+    expect(await menu.frame()).toContain("┏━ Paquets");
+  });
+
+  it("closes its gate on the signals that end gup, only while the batch runs", async () => {
+    const { menu, pty } = await launched({ packages: [pkg("alpha")] });
+    await installsStarted(pty, 1);
+    const whileRunning = process.listenerCount("SIGTERM");
+    pty.last().emitExit({ exitCode: 0 });
+    await shown(menu, RUN_TITLES.done);
+    // The screen host keeps its own listener; the run's gate is gone with the batch.
+    expect(process.listenerCount("SIGTERM")).toBe(whileRunning - 1);
+  });
+});

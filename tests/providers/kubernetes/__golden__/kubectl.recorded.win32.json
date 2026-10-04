@@ -1,0 +1,10 @@
+[
+  {
+    "id": "kubectl",
+    "name": "kubectl",
+    "current": "1.36.1",
+    "latest": "1.36.2",
+    "note": "manuel",
+    "manual": true
+  }
+]

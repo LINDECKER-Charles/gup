@@ -1,0 +1,21 @@
+{
+  "fixtures": [
+    {
+      "file": "status.win32.txt",
+      "argv": [
+        "scoop",
+        "status"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      },
+      "neutralised": "the one app name replaced (tool-a, same length); layout and warning kept"
+    }
+  ]
+}

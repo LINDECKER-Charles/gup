@@ -1,6 +1,6 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Envelope returned by `brew outdated --json=v2`. Both keys are always
@@ -38,20 +38,17 @@ export interface BrewOutdatedEntry {
 export class BrewProvider implements Provider {
   readonly id = "brew";
   readonly displayName = "Homebrew";
-  readonly installHint = pickInstallHint({
-    win32: "Homebrew ne cible pas Windows — utiliser winget/scoop, ou WSL (provider wsl-brew).",
-    fallback:
-      'https://brew.sh — /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"',
-  });
+  readonly installHint =
+    'https://brew.sh — /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"';
+  /**
+   * Homebrew targets macOS and Linux only. The Windows exclusion is not
+   * cosmetic: people do put a `brew.cmd` shim on the Windows PATH to forward
+   * into WSL (that bridge is what the `wsl-brew` provider covers), and such a
+   * shim must never make gup run `brew outdated` and `brew upgrade` on Windows.
+   */
+  readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    // Homebrew targets macOS and Linux only. The explicit win32 exclusion is
-    // not cosmetic: people do put a `brew.cmd` shim on the Windows PATH to
-    // forward into WSL (that bridge is what the `wsl-brew` provider covers),
-    // and without this guard such a shim would make gup run `brew outdated`
-    // and `brew upgrade` on Windows — commands this provider never issued
-    // there before.
-    if (process.platform === "win32") return false;
     return commandExists("brew");
   }
 

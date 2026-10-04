@@ -5,8 +5,8 @@ import {
   runInDistro,
   runInDistroInherit,
 } from "../../core/wsl.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Pacman inside Arch-family WSL distros.
@@ -19,10 +19,9 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class WslPacmanProvider implements Provider {
   readonly id = "wsl-pacman";
   readonly displayName = "WSL · pacman (Arch)";
-  readonly installHint = pickInstallHint({
-    win32: "wsl --install -d archlinux",
-    fallback: "WSL est une fonctionnalité Windows — inexistante sur cette plateforme.",
-  });
+  readonly installHint = "wsl --install -d archlinux";
+  /** Reaches into WSL distros, a Windows feature. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

@@ -1,0 +1,91 @@
+/* 01 · Features — eight cards; three carry a decorative mini visual. */
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.feature-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-end: 6px;
+  color: var(--violet-text);
+}
+.feature-title {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.feature-text {
+  font-size: 14.5px;
+  color: var(--fg-muted);
+}
+
+.feature-visual {
+  display: flex;
+  gap: 6px;
+  margin-block-start: auto;
+  padding-block-start: 12px;
+}
+.feature-bars {
+  align-items: flex-end;
+  block-size: 52px;
+}
+.feature-bars span {
+  flex: 1;
+  block-size: var(--bar);
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(var(--violet-lit), oklch(0.68 0.2 275 / 0.35));
+}
+.feature-swatch,
+.feature-os {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.feature-swatch span {
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--fg);
+  color: var(--violet-ink);
+}
+.feature-swatch span + span {
+  border: 1px solid var(--line-strong);
+  background: var(--bg-deep);
+  color: var(--fg);
+}
+.feature-os {
+  flex-direction: column;
+}
+.feature-os span {
+  padding: 4px 10px;
+  border-inline-start: 2px solid var(--green);
+  background: var(--bg-deep);
+  color: var(--fg);
+}
+.feature-os .is-off {
+  border-inline-start-color: var(--deco-ghost);
+  color: var(--fg-dim);
+  text-decoration: line-through;
+}
+
+@media (max-width: 1080px) {
+  .features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

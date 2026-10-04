@@ -1,0 +1,40 @@
+{
+  "fixtures": [
+    {
+      "file": "pin-list.win32.txt",
+      "argv": [
+        "winget",
+        "pin",
+        "list"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      }
+    },
+    {
+      "file": "upgrade.win32.txt",
+      "argv": [
+        "winget",
+        "upgrade",
+        "--include-unknown",
+        "--accept-source-agreements"
+      ],
+      "platform": "win32",
+      "os": "Windows 11 Pro 10.0.26200",
+      "recordedAt": "2026-10-03",
+      "gup": "76441e6",
+      "redactions": {
+        "<HOME>": 0,
+        "<USER>": 0,
+        "<HOST>": 0
+      },
+      "neutralised": "package names and ids replaced (App NN, VendorNN.AppNN; same length where a cell fills its column); versions, sources, layout and messages kept"
+    }
+  ]
+}

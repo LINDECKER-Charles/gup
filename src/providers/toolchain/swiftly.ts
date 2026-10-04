@@ -8,6 +8,7 @@ import type { InstallSource } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * swiftly (swiftlang/swiftly) — the official Swift toolchain installer and
@@ -44,17 +45,18 @@ export class SwiftlyProvider implements Provider {
   readonly id = "swiftly";
   readonly displayName = "swiftly (Swift)";
   readonly installHint = pickInstallHint({
-    // Le canal officiel d'abord : c'est le seul qui laisse `swiftly
-    // self-update` fonctionner. La formule Homebrew existe mais range swiftly
-    // hors de son propre répertoire, d'où la mise à jour déléguée à brew.
+    // The official channel first: it is the only one that lets `swiftly
+    // self-update` work. The Homebrew formula exists but stores swiftly
+    // outside its own directory, hence the update delegated to brew.
     darwin: "https://www.swift.org/install/macos/swiftly/ (ou brew install swiftly)",
     linux: "https://www.swift.org/install/linux/swiftly/",
     fallback:
       "macOS et Linux uniquement — swiftly ne cible pas Windows : https://www.swift.org/install/",
   });
+  /** swiftly ships no Windows build. */
+  readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     try {
       return await commandExists("swiftly");
     } catch {

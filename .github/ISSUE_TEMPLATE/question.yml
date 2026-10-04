@@ -1,0 +1,39 @@
+name: Question
+description: Ask how to do something with gup.
+title: "[question] "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The [documentation](https://github.com/LINDECKER-Charles/gup/blob/main/docs/README.md) and [SUPPORT.md](https://github.com/LINDECKER-Charles/gup/blob/main/SUPPORT.md) answer the most common questions. If something is broken rather than unclear, use the **Bug report** form.
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What did you try?
+      description: Commands, keys or settings, and what happened.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: gup version
+      description: Output of `gup --version`.
+      placeholder: 0.5.0
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple silicon)
+        - macOS (Intel)
+        - Linux
+        - WSL

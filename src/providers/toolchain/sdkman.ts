@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { pathFlavour } from "../../core/platform/path-flavour.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
@@ -71,8 +71,9 @@ export class SdkmanProvider implements Provider {
   }
 }
 
+/** `~/.sdkman/bin/sdkman-init.sh`, with the separators of the platform gup runs on. */
 function initScript(): string {
-  return join(homedir(), ".sdkman", "bin", "sdkman-init.sh");
+  return pathFlavour().join(homedir(), ".sdkman", "bin", "sdkman-init.sh");
 }
 
 async function runSdk(cmd: string): Promise<string> {

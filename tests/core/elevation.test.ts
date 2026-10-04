@@ -1,13 +1,55 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
+const { isElevatedMock, runInheritMock, timeoutMock } = vi.hoisted(() => ({
+  isElevatedMock: vi.fn(),
+  runInheritMock: vi.fn(),
+  timeoutMock: vi.fn(() => 1200),
+}));
+vi.mock("../../src/core/runner.js", () => ({
+  isElevated: isElevatedMock,
+  runInherit: runInheritMock,
+  getInstallTimeoutSeconds: timeoutMock,
+}));
+
 import {
+  elevatedWaitMs,
+  flagForElevation,
   readBatchInput,
   runElevatedBatch,
   writeBatchOutput,
 } from "../../src/core/elevation.js";
+import { installLogBackend } from "../../src/core/log/log.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
+import { useTempDirs } from "../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
+
+describe("flagForElevation", () => {
+  const rows = [
+    { id: "gettext", current: "0.21", latest: "0.22" },
+    { id: "libiconv", current: "1.16", latest: "1.17", note: "x" },
+  ];
+
+  it("routes every row to the elevated batch when the process is not elevated", async () => {
+    isElevatedMock.mockResolvedValueOnce(false);
+    await expect(flagForElevation(rows)).resolves.toEqual([
+      { id: "gettext", current: "0.21", latest: "0.22", requiresAdmin: true },
+      { id: "libiconv", current: "1.16", latest: "1.17", note: "x", requiresAdmin: true },
+    ]);
+  });
+
+  it("leaves rows untouched when the process already runs elevated", async () => {
+    isElevatedMock.mockResolvedValueOnce(true);
+    await expect(flagForElevation(rows)).resolves.toEqual(rows);
+  });
+
+  it("does not probe elevation for an empty scan", async () => {
+    await expect(flagForElevation([])).resolves.toEqual([]);
+    expect(isElevatedMock).not.toHaveBeenCalled();
+  });
+});
 
 /**
  * Per-test sandbox: a freshly-mkdtemp'd directory with user-scoped perms
@@ -16,7 +58,7 @@ import {
  * file in the os temp dir" on these helper test fixtures.
  */
 async function mkSandboxFile(name: string): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "gup-elevation-test-"));
+  const dir = await tempDir("gup-elevation-test-");
   return join(dir, name);
 }
 
@@ -80,10 +122,12 @@ describe("runElevatedBatch", () => {
     });
 
     const outcomes = await runElevatedBatch(["choco:nodejs", "choco:python"], spawner);
-    expect(spawner).toHaveBeenCalledOnce();
+    expect(spawner).toHaveBeenCalledExactlyOnceWith(expect.any(String), 2);
     expect(JSON.parse(observedInput)).toEqual({
       version: 1,
       targets: ["choco:nodejs", "choco:python"],
+      installTimeoutSeconds: 1200,
+      logThreshold: "off",
     });
     expect(outcomes).toEqual([
       { id: "nodejs", success: true },
@@ -158,5 +202,163 @@ describe("runElevatedBatch", () => {
     });
     const outcomes = await runElevatedBatch(["malformed-target"], spawner);
     expect(outcomes[0]!.id).toBe("malformed-target");
+  });
+});
+
+describe("elevated log bridge", () => {
+  const childRecord = (event: string) =>
+    JSON.stringify({ v: 1, ts: "2026-10-03T12:00:00.000Z", level: "info", event, runId: "child", pid: 7 });
+
+  it("writes the child's log next to its outcomes only when there is one", async () => {
+    const withLog = await mkSandboxFile("with-log.json");
+    await writeBatchOutput(withLog, [{ id: "git", success: true }], [childRecord("cmd.end")]);
+    expect(JSON.parse(await readFile(withLog, "utf8"))).toEqual({
+      version: 1,
+      outcomes: [{ id: "git", success: true }],
+      log: [childRecord("cmd.end")],
+    });
+    const withoutLog = await mkSandboxFile("without-log.json");
+    await writeBatchOutput(withoutLog, [{ id: "git", success: true }], []);
+    expect(JSON.parse(await readFile(withoutLog, "utf8"))).not.toHaveProperty("log");
+  });
+
+  it("forwards the child's records to this process's log, whatever the outcomes say", async () => {
+    const forward = vi.fn();
+    installLogBackend({ isEnabled: () => true, emit: () => {}, forward });
+    try {
+      const good = await runElevatedBatch(["choco:git"], async (inputFile) => {
+        await writeBatchOutput(`${inputFile}.out`, [{ id: "git", success: true }], [
+          childRecord("update.start"),
+          "garbage",
+        ]);
+      });
+      expect(good).toEqual([{ id: "git", success: true }]);
+      const mismatched = await runElevatedBatch(["choco:git", "choco:7zip"], async (inputFile) => {
+        await writeBatchOutput(`${inputFile}.out`, [{ id: "git", success: true }], [childRecord("cmd.end")]);
+      });
+      expect(mismatched.every((outcome) => !outcome.success)).toBe(true);
+      expect(forward.mock.calls.map(([record]) => (record as { event: string }).event)).toEqual([
+        "update.start",
+        "cmd.end",
+      ]);
+    } finally {
+      installLogBackend(null);
+    }
+  });
+
+  it("never lets a malformed log change the outcomes", async () => {
+    const outcomes = await runElevatedBatch(["choco:git"], async (inputFile) => {
+      await writeFile(
+        `${inputFile}.out`,
+        JSON.stringify({ version: 1, outcomes: [{ id: "git", success: true }], log: { not: "a list" } }),
+        { encoding: "utf8", flag: "wx" },
+      );
+    });
+    expect(outcomes).toEqual([{ id: "git", success: true }]);
+  });
+});
+
+describe("elevated child settings (payload)", () => {
+  async function payloadFile(content: unknown): Promise<string> {
+    const file = await mkSandboxFile("settings.json");
+    await writeFile(file, JSON.stringify(content), { encoding: "utf8", flag: "wx" });
+    return file;
+  }
+
+  it("hands the child the parent's effective timeout and log threshold", async () => {
+    timeoutMock.mockReturnValue(600);
+    installLogBackend({ isEnabled: (level) => level !== "trace", emit: () => {} });
+    try {
+      let payload: unknown;
+      await runElevatedBatch(["choco:nodejs"], async (inputFile) => {
+        payload = JSON.parse(await readFile(inputFile, "utf8"));
+      });
+      expect(payload).toMatchObject({ installTimeoutSeconds: 600, logThreshold: "debug" });
+    } finally {
+      installLogBackend(null);
+      timeoutMock.mockReturnValue(1200);
+    }
+  });
+
+  it("caps a timeout beyond what the payload carries at one day", async () => {
+    timeoutMock.mockReturnValue(1_000_000);
+    try {
+      let payload: { installTimeoutSeconds?: number } = {};
+      await runElevatedBatch(["choco:nodejs"], async (inputFile) => {
+        payload = JSON.parse(await readFile(inputFile, "utf8"));
+      });
+      expect(payload.installTimeoutSeconds).toBe(86_400);
+    } finally {
+      timeoutMock.mockReturnValue(1200);
+    }
+  });
+
+  it("accepts the optional settings and a payload without them", async () => {
+    const full = { version: 1, targets: ["a:b"], installTimeoutSeconds: 0, logThreshold: "trace" };
+    await expect(readBatchInput(await payloadFile(full))).resolves.toEqual(full);
+    await expect(readBatchInput(await payloadFile({ version: 1, targets: [] }))).resolves.toEqual({
+      version: 1,
+      targets: [],
+    });
+  });
+
+  it.each([
+    [{ installTimeoutSeconds: -1 }, /installTimeoutSeconds/],
+    [{ installTimeoutSeconds: 86_401 }, /installTimeoutSeconds/],
+    [{ installTimeoutSeconds: 1.5 }, /installTimeoutSeconds/],
+    [{ logThreshold: "verbose" }, /logThreshold/],
+  ])("refuses settings the parent never writes: %j", async (settings, error) => {
+    const file = await payloadFile({ version: 1, targets: [], ...settings });
+    await expect(readBatchInput(file)).rejects.toThrow(error);
+  });
+});
+
+describe("elevated wait", () => {
+  it("gives every package the full install timeout, plus time to accept the prompt", () => {
+    expect(elevatedWaitMs(1, 1200)).toBe(1_200_000 + 300_000);
+    expect(elevatedWaitMs(4, 1200)).toBe(4 * 1_200_000 + 300_000);
+  });
+
+  it("does not limit the wait when the install timeout is off", () => {
+    expect(elevatedWaitMs(10, 0)).toBe(0);
+  });
+
+  it.each([
+    ["win32", "powershell.exe"],
+    ["linux", "sudo"],
+  ] as const)("waits for the %s elevated child as long as its batch needs", async (platform, command) => {
+    setPlatform(platform);
+    runInheritMock.mockReset();
+    runInheritMock.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0, failed: false });
+    try {
+      await runElevatedBatch(["choco:a", "choco:b", "choco:c"]);
+    } finally {
+      restorePlatform();
+    }
+    const [spawned, , options] = runInheritMock.mock.calls[0]!;
+    expect(spawned).toBe(command);
+    expect(options).toEqual({ timeout: 3 * 1_200_000 + 300_000 });
+  });
+});
+
+describe("UAC launcher", () => {
+  it.each([
+    ["ends in a backslash", "C:\\tools\\gup\\"],
+    ["holds a quote", String.raw`C:\tools\"gup\cli.js`],
+  ])("never hands the elevated child a path that %s", async (_case, cli) => {
+    const previousCli = process.argv[1];
+    setPlatform("win32");
+    process.argv[1] = cli;
+    runInheritMock.mockReset();
+    try {
+      const outcomes = await runElevatedBatch(["choco:a"]);
+      expect(outcomes).toEqual([
+        expect.objectContaining({ success: false, message: expect.stringContaining("quote") }),
+      ]);
+    } finally {
+      process.argv[1] = previousCli ?? "";
+      restorePlatform();
+    }
+    expect(runInheritMock).not.toHaveBeenCalled();
   });
 });

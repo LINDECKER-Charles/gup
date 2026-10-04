@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { posix as posixPath } from "node:path";
 
+import { flagForElevation } from "../../core/elevation.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit, whichFirst } from "../../core/runner.js";
 import {
@@ -9,11 +10,22 @@ import {
   describeSource,
   detectInstallSource,
   resolveBinaryPath,
+  upgradeNeedsRoot,
+  type PackageIds,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 const ID = "pyenv";
+
+/**
+ * Upstream package names, verified rather than guessed: `brew install pyenv`
+ * is what pyenv's own README documents, and Debian ships a `pyenv` package
+ * from trixie onwards. Fedora has none, so no `dnf` id — a dnf-owned binary
+ * gets MANUAL_MESSAGE.
+ */
+const PACKAGE_IDS: PackageIds = { brew: "pyenv", apt: "pyenv" };
 
 /**
  * Shown when no automatic path applies: either nothing on the machine claims
@@ -31,9 +43,9 @@ const MANUAL_MESSAGE =
  * pyenv-win (pyenv-win/pyenv-win, covered by `./pyenv-win.ts`) is a *separate
  * upstream project*, not a Windows build of this one: different repository,
  * different version line, different self-update story. Both expose a binary
- * named `pyenv`, so the two providers gate on opposite platforms — that one
- * requires win32, this one refuses it — and a machine never shows two rows for
- * what the user thinks of as "pyenv".
+ * named `pyenv`, so the two providers declare opposite platforms — that one
+ * Windows only, this one everything but Windows — and a machine never shows
+ * two rows for what the user thinks of as "pyenv".
  *
  * Scope is the pyenv binary itself. The Python versions it manages stay out:
  * `pyenv install <x>` adds an interpreter rather than upgrading one, and pyenv
@@ -66,17 +78,17 @@ export class PyenvProvider implements Provider {
   readonly id = ID;
   readonly displayName = "pyenv";
   readonly installHint = pickInstallHint({
-    win32:
-      "Windows : passer par pyenv-win, un projet distinct — https://github.com/pyenv-win/pyenv-win",
     darwin: "brew install pyenv",
     linux: "curl -fsSL https://pyenv.run | bash",
     fallback: "Installeur officiel : curl -fsSL https://pyenv.run | bash",
   });
+  /**
+   * On Windows the `pyenv` on PATH belongs to pyenv-win, whose provider
+   * already owns that row.
+   */
+  readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    // On Windows the `pyenv` on PATH belongs to pyenv-win, whose provider
-    // already owns that row.
-    if (process.platform === "win32") return false;
     try {
       return await commandExists("pyenv");
     } catch {
@@ -102,11 +114,7 @@ export class PyenvProvider implements Provider {
       return await delegateUpdate({
         id: ID,
         binary: "pyenv",
-        // Both ids are the upstream package names, verified rather than
-        // guessed: `brew install pyenv` is what pyenv's own README documents,
-        // and Debian ships a `pyenv` package from trixie onwards. Fedora has
-        // none, so no `dnf` id — a dnf-owned binary gets MANUAL_MESSAGE.
-        packageIds: { brew: "pyenv", apt: "pyenv" },
+        packageIds: PACKAGE_IDS,
         manualMessage: MANUAL_MESSAGE,
       });
     } catch {
@@ -206,7 +214,7 @@ async function scan(): Promise<OutdatedPackage[]> {
   const order = compareReleases(version.release, latest);
   if (order === null || order >= 0) return [];
 
-  return [await buildRow(version.raw, latest)];
+  return buildRows(version.raw, latest);
 }
 
 /**
@@ -215,21 +223,25 @@ async function scan(): Promise<OutdatedPackage[]> {
  *
  * The git checkout is tested first and wins. A clone install puts the binary
  * in `$PYENV_ROOT/bin`, which no package manager owns, so detectInstallSource
- * answers "manual" while `git pull` handles the upgrade perfectly.
+ * answers "manual" while `git pull` handles the upgrade perfectly. A distro
+ * package upgrades through `sudo apt-get`, so that row joins the CLI's single
+ * elevated batch instead of prompting on its own.
  */
-async function buildRow(current: string, latest: string): Promise<OutdatedPackage> {
+async function buildRows(current: string, latest: string): Promise<OutdatedPackage[]> {
   if (await gitCheckoutRoot()) {
-    return {
-      id: ID,
-      name: "pyenv",
-      current,
-      latest,
-      note: "clone git — git pull --ff-only",
-    };
+    return [
+      {
+        id: ID,
+        name: "pyenv",
+        current,
+        latest,
+        note: "clone git — git pull --ff-only",
+      },
+    ];
   }
 
   const source = await detectInstallSource("pyenv");
-  return {
+  const row: OutdatedPackage = {
     id: ID,
     name: "pyenv",
     current,
@@ -239,6 +251,7 @@ async function buildRow(current: string, latest: string): Promise<OutdatedPackag
         ? "source inconnue — mise à jour manuelle"
         : describeSource(source),
   };
+  return upgradeNeedsRoot(source, PACKAGE_IDS) ? flagForElevation([row]) : [row];
 }
 
 /**
@@ -311,7 +324,7 @@ function isInside(child: string, parent: string): boolean {
  * caller here resolves it against gup's cwd, which has nothing to do with
  * pyenv. Rejecting it falls through to the next candidate instead.
  *
- * POSIX paths by construction: isAvailable() has already refused win32.
+ * POSIX paths by construction: the registry never runs this provider on win32.
  */
 async function pyenvRoot(): Promise<string | null> {
   const { stdout, failed } = await run("pyenv", ["root"]);

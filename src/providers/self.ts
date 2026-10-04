@@ -7,7 +7,9 @@ import {
   normalizeVersion,
 } from "../core/gh-releases.js";
 import { delegateUpdate } from "../core/install-source.js";
-import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
+import type { OutdatedPackage, PlatformSet, Provider, UpdateOutcome } from "../core/types.js";
+import { isSupportedOn } from "../core/platform/is-supported-on.js";
+import { PLATFORMS } from "../core/platform/platforms.js";
 
 /**
  * Meta-provider that surfaces self-updates of the package managers themselves
@@ -115,14 +117,12 @@ interface SelfTarget {
    * spawn per scan, and would light up on the strength of a shim that merely
    * forwards elsewhere (a `brew.cmd` bridging into WSL, say).
    */
-  platforms?: readonly NodeJS.Platform[];
+  platforms?: PlatformSet;
 }
 
 /** Targets that can exist on the running platform. */
 function activeTargets(): SelfTarget[] {
-  return TARGETS.filter(
-    (t) => !t.platforms || t.platforms.includes(process.platform),
-  );
+  return TARGETS.filter((t) => isSupportedOn(t));
 }
 
 async function runStdout(cmd: string, args: string[]): Promise<string> {
@@ -227,6 +227,9 @@ const TARGETS: SelfTarget[] = [
     id: "winget",
     displayName: "Winget",
     binary: "winget",
+    // Windows package managers, like their providers: a POSIX shim of the
+    // same name is never asked for its version.
+    platforms: PLATFORMS.windows,
     manual: true,
     manualMessage:
       "Mise à jour via le Microsoft Store (App Installer) ou https://github.com/microsoft/winget-cli/releases",
@@ -248,6 +251,7 @@ const TARGETS: SelfTarget[] = [
     id: "scoop",
     displayName: "Scoop",
     binary: "scoop",
+    platforms: PLATFORMS.windows,
     current: async () => {
       const out = await runStdout("scoop", ["--version"]);
       const after = out.split(/Current Scoop version:/i)[1] ?? out;
@@ -266,6 +270,7 @@ const TARGETS: SelfTarget[] = [
     id: "choco",
     displayName: "Chocolatey",
     binary: "choco",
+    platforms: PLATFORMS.windows,
     current: async () => parseFirstSemver(await runStdout("choco", ["--version"])),
     latest: async () => fetchGitHubReleaseLatest("chocolatey/choco"),
     update: async () => {
@@ -291,7 +296,8 @@ const TARGETS: SelfTarget[] = [
     id: "brew",
     displayName: "Homebrew",
     binary: "brew",
-    platforms: ["darwin", "linux"],
+    // The same set as the brew provider: Linuxbrew included, Windows never.
+    platforms: PLATFORMS.notWindows,
     current: async () => {
       const out = await runStdout("brew", ["--version"]);
       // A brew checkout ahead of the last tag reports a git-describe suffix

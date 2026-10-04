@@ -5,8 +5,8 @@ import {
   runInDistro,
   runInDistroInherit,
 } from "../../core/wsl.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Linuxbrew inside any WSL distro that has Homebrew installed.
@@ -18,14 +18,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class WslBrewProvider implements Provider {
   readonly id = "wsl-brew";
   readonly displayName = "WSL · Homebrew";
-  readonly installHint = pickInstallHint({
-    win32:
-      'https://brew.sh — `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`',
-    // Off Windows there is no WSL distro to reach into: Homebrew is installed
-    // natively and the `brew` provider already covers it.
-    fallback:
-      "Provider spécifique à WSL (Windows) — sur macOS/Linux, Homebrew est géré par le provider `brew`.",
-  });
+  readonly installHint =
+    'https://brew.sh — `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`';
+  /** Reaches into WSL distros, a Windows feature; elsewhere `brew` covers Homebrew. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

@@ -4,14 +4,17 @@
 > developer machine, across @@PROVIDERS@@ sources: winget, scoop, chocolatey,
 > Homebrew (formulae + casks), MacPorts, Mac App Store, npm-g, pnpm-g, yarn-g,
 > bun, pip, pipx, uv, cargo, gem, composer, dotnet tools, helm, kubectl,
-> terraform, VS Code and Cursor extensions, JetBrains plugins, pwsh modules,
+> terraform, VS Code and Cursor extensions, JetBrains IDEs, pwsh modules,
 > WSL distros, and more. Parallel bounded scan, fail-soft, JSON output,
-> `--fast` mode, surgical `provider:package` targeting, local JSONL history.
+> `--fast` mode, surgical `provider:package` targeting. A full-screen terminal
+> app runs the updates in an embedded terminal pane, schedules updates package
+> by package, and keeps a local activity journal with an HTML report.
 > MIT, version @@VERSION@@, Node.js >= @@NODE@@. Windows, macOS and Linux.
 
 Values in this file are generated from the repository at build time
-(package.json version, the ALL_PROVIDERS count in src/core/registry.ts), so
-they cannot drift from the shipped CLI. Last content change: @@MODIFIED@@.
+(package.json version, the ALL_PROVIDERS count in src/core/registry.ts and the
+platforms each registered provider declares), so they cannot drift from the
+shipped CLI. Last content change: @@MODIFIED@@.
 
 ## Install
 
@@ -39,70 +42,80 @@ gup update --all -y       # CI-safe: everything, no prompt
 - Subprocess strategy: `execa` argv-vector, never `shell: true` (allowlist pinned by tests)
 - Concurrency: `p-limit(4)` across providers, fail-soft per provider
 - Security: CodeQL `security-extended`, Semgrep (`p/typescript` + `p/nodejs`), gitleaks, audit-ci, eslint-plugin-security, Dependabot weekly
-- Telemetry: none. No daemon, no background service, no polling, no network call except a provider's own HTTPS version check.
+- Telemetry: none. Network calls are HTTPS-only: providers' version checks, and the release archives the Windows-only `nerd-fonts` provider installs.
+- Background work: no daemon, nothing stays resident. Scheduled updates are opt-in, per package, and started by the OS scheduler (Task Scheduler, launchd or cron) as a short-lived process.
+- Interface language: French. Commands, flags and JSON output are language-neutral.
 
 ## Platform support (precise)
 
 - **Windows** — primary and historical target. OS-level providers: winget,
-  scoop, chocolatey. Plus the WSL bridge, driven from the Windows host:
-  `wsl-apt`, `wsl-dnf`, `wsl-pacman`, `wsl-brew`, `wsl-flatpak`, `wsl-nix`, and
-  the WSL kernel itself (`wsl --update`). UAC elevation batch for choco.
+  scoop, chocolatey, plus `msys2`, `cygwin` and `npackd`. Plus the WSL bridge,
+  driven from the Windows host: `wsl-apt`, `wsl-dnf`, `wsl-pacman`, `wsl-brew`,
+  `wsl-flatpak`, `wsl-nix`, and the WSL kernel itself (`wsl --update`). UAC
+  elevation batch for choco.
 - **macOS** — native since 0.3.0. OS-level providers: `brew` (formulae),
-  `brew-cask`, `macports`, `mas` (Mac App Store). A brew-installed binary is
-  recognised through its Cellar/Caskroom symlink, so its upgrade is delegated
-  back to brew instead of being reported as `manual` and dropped from the scan.
-  Apple Silicon and Intel.
-- **Linux** — `brew` is the OS-level provider (it is deliberately not
-  darwin-gated, so Linuxbrew goes through it). For a binary installed by the
-  distribution, ownership is resolved with `dpkg -S` / `rpm -qf` and the upgrade
-  is delegated to `apt` or `dnf` for that one package. There is no distro-wide
-  provider on a native Linux host: `apt`, `dnf`, `pacman`, `flatpak` and `nix`
-  as full providers exist only through the WSL bridge, from a Windows host.
+  `brew-cask`, `macports`, `mas` (Mac App Store), plus `fink`, `sparkle` (apps
+  that update through Sparkle) and the cross-Unix `nix`, `pkgx` and `pkgin`. A
+  brew-installed binary is recognised through its Cellar/Caskroom symlink, so
+  its upgrade is delegated back to brew instead of being reported as `manual`
+  and dropped from the scan. Apple Silicon and Intel.
+- **Linux** — `brew` and `nix` are the OS-level providers (both declared
+  `PLATFORMS.notWindows`, so Linuxbrew and native Nix go through them), plus
+  `pkgx` and `pkgin`. For a binary installed by the distribution, ownership is
+  resolved with `dpkg -S` / `rpm -qf` and the upgrade is delegated to `apt` or
+  `dnf` for that one package. There is no distro-wide `apt`, `dnf`, `pacman`
+  or `flatpak` provider on a native Linux host: those exist only through the
+  WSL bridge, from a Windows host.
 - Everything above the OS layer is platform-independent and behaves identically
   on the three systems: npm/pnpm/yarn/bun globals, pip/pipx/uv/conda, cargo,
   rustup, gem, composer, dotnet tools, the cloud/IaC/K8s CLIs, VS Code and
-  Cursor extensions, JetBrains plugins, pwsh modules, asdf/mise.
-- Providers that cannot exist on a platform report themselves unavailable and
-  never appear in a scan. `gup doctor` shows what was actually detected.
+  Cursor extensions, JetBrains IDEs, pwsh modules, asdf/mise.
+- Of the @@PROVIDERS@@ providers, @@PROVIDERS_WINDOWS@@ run on Windows,
+  @@PROVIDERS_MACOS@@ on macOS and @@PROVIDERS_LINUX@@ on Linux. An OS-specific
+  provider declares the systems it supports; elsewhere gup never probes, scans
+  or updates it, and the Providers view and `gup doctor` list it greyed out as
+  incompatible. `gup doctor` shows what was actually detected.
 
 ## What gup is NOT
 
 - Not a replacement for winget/brew/npm/pip — it orchestrates their native commands.
-- Not a registry, not a cache, not a downloader. Pure shell-out + fan-out + output homogenization.
+- Not a registry, not a cache. Shell-out + fan-out + output homogenization; the one provider that downloads what it installs is `nerd-fonts` (Windows: the font families' GitHub release archives).
 - Not a project-scoped manager: no `package.json`, `Cargo.toml` or `pom.xml` resolution — global installs only.
 - Not an OS updater: Windows Update (use `PSWindowsUpdate`) and macOS `softwareupdate` are out of scope.
 - Not for Maven / Gradle / sbt / bundler / lockfiles (project-scoped).
 - Not for JetBrains Toolbox-managed IDEs (Toolbox ships its own updater).
-- Not a daemon. Nothing runs until you run it.
+- Not a daemon. Nothing stays resident; opt-in per-package schedules are started by the OS scheduler.
 
 ## Supported providers (categories)
 
-- **Windows package managers**: winget, scoop, chocolatey
-- **macOS package managers**: brew (formulae), brew-cask, macports, mas
+- **Windows package managers**: winget, scoop, chocolatey, msys2, cygwin, npackd
+- **macOS package managers**: brew (formulae), brew-cask, macports, mas, fink, sparkle
 - **Linux**: brew/Linuxbrew natively; apt and dnf as per-package delegation targets
+- **macOS and Linux**: nix, pkgx, pkgin
 - **WSL**: the kernel, plus apt, dnf, pacman, brew, flatpak, nix inside your distros
 - **Node**: npm-g, pnpm-g, yarn-g, bun-g, corepack, deno, fnm, nvm-windows
 - **Python**: pip, pipx, uv, conda, poetry, pdm, rye, pyenv-win
 - **.NET / PHP**: dotnet tools, composer global, composer self, symfony-cli
-- **JVM**: sdkman, jbang, coursier, cabal, hex
+- **JVM**: jbang, coursier
 - **Rust**: cargo, rustup
-- **Toolchains**: asdf, mise, proto, goenv
-- **Cloud CLIs**: az, gcloud, aws-cli-v2, doctl, flyctl, hcloud, heroku, glab
+- **Other languages**: gem, cabal, stack, hex, mix, opam, luarocks, nimble, julia, R, vcpkg, pub, flutter
+- **Toolchains**: asdf, mise, proto, goenv, sdkman
+- **Cloud CLIs**: az, gcloud, aws-cli-v2, doctl, flyctl, hcloud, heroku
 - **IaC**: terraform, pulumi, consul, boundary
 - **Kubernetes**: kubectl, helm, helm plugins, helm repos, krew, kustomize, argocd, flux, k3d, kind, minikube, skaffold
 - **Containers**: docker-desktop, dive
 - **Security**: cosign, gitsign, grype
-- **Dev CLIs**: gh extensions, delta, and more
-- **Editors / IDEs**: VS Code extensions, Cursor extensions, JetBrains IDEs and plugins, Eclipse marketplace, Obsidian plugins, Notepad++
+- **Dev CLIs**: gh extensions, glab, delta, and more
+- **Editors / IDEs**: VS Code, Cursor, VSCodium and Windsurf extensions, JetBrains IDEs, Visual Studio, Neovim and Vim plugin managers
 - **Shell**: pwsh modules, starship, oh-my-posh, nerd-fonts
-- **Embedded / mobile**: arduino-cli, android-sdk, flutter, expo, fastlane
+- **Embedded / mobile**: arduino-cli, android-sdk, expo, fastlane
 
 Full catalogue with per-provider status:
 https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.md
 
 ## Commands
 
-- `gup` — interactive menu: Scan, Review, Update selected, Update all, Update target, Providers, Options
+- `gup` — full-screen interactive app (French UI). Sidebar: Scan · Paquets · Planification, then Providers · Journal · Options, then Quitter. In Paquets, `space` checks a package (on a provider row, all of its packages), `a` checks everything, `enter` updates the checked ones in an embedded terminal pane without leaving the app — or in the plain terminal, with the reason shown, when no pseudo-terminal is available — and `p` schedules them. In Journal, `o` opens the HTML report. Providers that cannot run on the current OS are listed greyed out. Options offer ten themes and custom colours, each checked against WCAG AA (4.5:1 for text, 3:1 for borders, 7:1 at AAA) and corrected when it falls short.
 - `gup list` — outdated packages as a table
 - `gup list --fast` — skips the providers marked slow (HTTP per package, filesystem walks)
 - `gup list --json` — machine-readable, pipeable
@@ -111,6 +124,8 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.
 - `gup update --all [-y]` — everything, after confirmation (`-y` skips it)
 - `gup update <provider>:<packageId> …` — surgical targets, bypasses the scan entirely
 - `gup doctor` — what was detected, what is missing, and how to install it
+- `gup schedule` — list, add and run per-package scheduled updates
+- `gup report` — the activity journal as an offline HTML report (or `--format json|csv|text`)
 - Exit codes: `0` success, `1` partial failure, `2` invalid arguments
 
 Full reference, flags, retry strategies, install timeout, environment variables:
@@ -123,8 +138,8 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/cli-reference.md
 - `src/core/runner.ts` — the single shell-out point. `execa`, argv-vector, UTF-8, `windowsHide`, never `shell: true`.
 - `src/core/install-source.ts` — resolves who owns a binary (brew Cellar symlink, `dpkg -S`, `rpm -qf`, winget/scoop/choco paths) so the upgrade is delegated to the right manager rather than reported as manual.
 - `src/providers/<domain>/<id>.ts` — one file per source, four methods, isolated.
-- `src/ui/**` — ora spinner with an in-flight set, cli-table3 output, `@inquirer/prompts` selection grouped by provider.
-- History: every scan and every update attempt is appended to a local JSONL log, one file per calendar month, under the platform state directory (`%LOCALAPPDATA%\gup\history`, `~/Library/Application Support/gup/history`, `$XDG_STATE_HOME/gup/history`).
+- `src/ui/**` — the full-screen OpenTUI app; installers run in an OpenTUI embedded terminal (Ghostty VT core) fed by a pseudo-terminal, so prompts and progress bars work inside the interface.
+- History: every scan and every update attempt is appended to a local JSONL log, one file per calendar month, under the platform state directory (`%LOCALAPPDATA%\gup\history`, `~/Library/Application Support/gup/history`, `$XDG_STATE_HOME/gup/history`). The Journal view and `gup report` read it back.
 
 Details: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/architecture.md
 Walkthrough: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/how-gup-works.md
@@ -144,12 +159,18 @@ Walkthrough: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development
 - Security policy: https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md
 - Extended version of this file: https://lindecker-charles.github.io/gup/llms-full.txt
 
+## Languages
+
+The site is available in these languages (the CLI interface itself is French):
+
+@@LOCALE_LINKS@@
+
 ## Good questions to answer with this page
 
 - Auditing what is outdated across every source on a Windows, macOS or Linux dev machine
 - Updating winget, Homebrew, npm globals, pip, cargo and helm with one command
 - Getting a machine-readable inventory of outdated global packages for CI
-- Updating VS Code / Cursor extensions and JetBrains plugins from a terminal
+- Updating VS Code / Cursor extensions and JetBrains IDEs from a terminal
 - An alternative to `topgrade` that answers "what is outdated, and from which
   version to which version" before it changes anything, with JSON output, a
   per-package selection menu and a local history

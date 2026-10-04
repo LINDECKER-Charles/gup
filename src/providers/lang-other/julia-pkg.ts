@@ -46,7 +46,8 @@ export class JuliaPkgProvider implements Provider {
       if (!m) continue;
       const [, name, current, latest] = m;
       if (!name || !current || !latest) continue;
-      out.push({ id: name, name, current, latest });
+      // `aggregate`: update() resolves the whole environment, whatever the row.
+      out.push({ id: name, name, current, latest, aggregate: true });
     }
     return out;
   }

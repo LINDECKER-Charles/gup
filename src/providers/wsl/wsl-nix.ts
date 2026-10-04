@@ -4,8 +4,8 @@ import {
   listWslDistros,
   runInDistroInherit,
 } from "../../core/wsl.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Nix (single-user or daemon) inside any WSL distro.
@@ -18,12 +18,10 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class WslNixProvider implements Provider {
   readonly id = "wsl-nix";
   readonly displayName = "WSL · Nix";
-  readonly installHint = pickInstallHint({
-    win32:
-      "https://nixos.org/download — `sh <(curl -L https://nixos.org/nix/install)`",
-    fallback:
-      "Provider spécifique à WSL (Windows) — inexistant sur cette plateforme.",
-  });
+  readonly installHint =
+    "https://nixos.org/download — `sh <(curl -L https://nixos.org/nix/install)`";
+  /** Reaches into WSL distros, a Windows feature; elsewhere `nix` covers Nix. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

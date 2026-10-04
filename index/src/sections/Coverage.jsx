@@ -1,45 +1,95 @@
 /**
- * 06 · Coverage — the provider count, big, plus two counter-rotating rails of
- * the domains and the managers behind it.
- *
- * The number is a Counter so it counts up on entry, but it renders the real
- * figure server-side: this is the page's single most quotable fact, and it has
- * to be in the HTML for anything that does not run JavaScript. The caption is
- * folded into the heading for assistive tech — a heading that reads just
- * "134" names nothing.
+ * 02 · Coverage — the provider count, one card per OS (with how many of the
+ * registered providers gup supports there), the managers that behave the same
+ * everywhere, and the full registry inventory by domain in a collapsed
+ * <details>: real, crawlable long-tail content that costs no vertical space
+ * until asked for.
  */
-import { Shell } from "../ui/Shell.jsx";
-import { Counter } from "../ui/Counter.jsx";
-import { Marquee } from "../ui/Marquee.jsx";
-import { LegacyAnchor } from "../ui/LegacyAnchor.jsx";
-import { facts } from "../data/facts.js";
-import { coverage } from "../data/content.js";
-import { DOCS } from "../data/site.js";
+import { facts, providersByDomain, providersBySystem } from "../data/facts.js";
+import { LINKS } from "../data/links.js";
+import { PLATFORMS } from "../data/platforms.js";
+import { useI18n } from "../i18n/use-i18n.js";
+import { Icon } from "../ui/Icon.jsx";
+import { RichText } from "../ui/RichText.jsx";
+import { Section } from "../ui/Section.jsx";
+
+function SystemCard({ system, coverage }) {
+  const copy = coverage.platforms[system.id];
+  return (
+    <li className="os-card" data-reveal={0}>
+      <p className="os-head">
+        <Icon name={system.id} size={28} className="os-icon" />
+        <span className="badge">{copy.badge}</span>
+      </p>
+      <h3 className="os-name">{system.name}</h3>
+      <dl className="os-count">
+        <dt>{coverage.supported}</dt>
+        <dd dir="ltr">
+          <span className="os-count-value">{providersBySystem[system.id]}</span>
+          {` / ${facts.providerCount}`}
+        </dd>
+      </dl>
+      <ul className="os-managers">
+        {system.managers.map((manager) => (
+          <li key={manager.name}>
+            <span translate="no">{manager.name}</span>
+            {manager.isDelegated ? (
+              <span className="os-delegated"> · {coverage.delegated}</span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      <p className="os-foot">
+        <RichText text={copy.foot} />
+      </p>
+    </li>
+  );
+}
+
+function Inventory({ coverage }) {
+  return (
+    <details className="inventory">
+      <summary>
+        <span>{coverage.allProviders}</span>
+        <Icon name="chevron" className="inventory-chevron" />
+      </summary>
+      <dl className="inventory-list">
+        {Object.entries(providersByDomain).map(([domain, ids]) => (
+          <div key={domain} className="inventory-row">
+            <dt>{coverage.domains[domain]}</dt>
+            <dd translate="no">{ids.join(" · ")}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
+  );
+}
 
 export function Coverage() {
+  const { coverage } = useI18n().messages;
+
   return (
-    <section className="section" id="couverture" aria-labelledby="couverture-title">
-      <LegacyAnchor ids={["providers"]} />
-      <Shell>
-        <div className="cover" data-reveal="26" data-cam="1">
-          <span className="mono-label">{coverage.label}</span>
-          <h2 className="cover-number" id="couverture-title">
-            <Counter value={facts.providerCount} />
-            <span className="sr-only"> {coverage.caption}</span>
-          </h2>
-          <p className="cover-caption" aria-hidden="true">
-            {coverage.caption}
-          </p>
-          <p className="cover-lead">
-            {coverage.lead.before}
-            <code className="code-inline">{coverage.lead.code}</code>
-            {coverage.lead.after}{" "}
-            <a href={DOCS.providers}>{coverage.catalogLabel}</a>
-          </p>
-          <Marquee items={coverage.categories} container="cover-rail" />
-          <Marquee items={coverage.managers} container="cover-rail" reverse />
-        </div>
-      </Shell>
-    </section>
+    <Section id="coverage" kicker={coverage.kicker} title={coverage.title} lead={coverage.lead}>
+      <ul className="os-grid">
+        {PLATFORMS.systems.map((system) => (
+          <SystemCard key={system.id} system={system} coverage={coverage} />
+        ))}
+      </ul>
+      <div className="everywhere">
+        <h3 className="everywhere-title">{coverage.everywhere}</h3>
+        <ul className="chips">
+          {PLATFORMS.crossPlatform.map((name) => (
+            <li key={name} className="chip" translate="no">
+              {name}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <Inventory coverage={coverage} />
+      <a className="link-arrow" href={LINKS.resources.providers} hrefLang="en">
+        <span>{coverage.catalogLink}</span>
+        <Icon name="arrow" size={14} />
+      </a>
+    </Section>
   );
 }

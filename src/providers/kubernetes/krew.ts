@@ -12,8 +12,8 @@ export class KrewProvider implements Provider {
   readonly id = "krew";
   readonly displayName = "Krew (kubectl plugins)";
   readonly installHint = pickInstallHint({
-    // Sur Windows l'installation passe par le script officiel : pas de
-    // paquet natif. Homebrew fournit la formule sur macOS et Linuxbrew.
+    // On Windows the install goes through the official script: no native
+    // package. Homebrew provides the formula on macOS and Linuxbrew.
     win32: "https://krew.sigs.k8s.io/docs/user-guide/setup/install/",
     fallback: "brew install krew",
   });

@@ -1,3 +1,9 @@
+/**
+ * A set of `process.platform` values. Always one of the named sets of
+ * `core/platform/platforms.ts`, never an inline array.
+ */
+export type PlatformSet = readonly NodeJS.Platform[];
+
 export interface OutdatedPackage {
   /** Stable identifier within the provider (used for targeted update). */
   id: string;
@@ -21,6 +27,13 @@ export interface OutdatedPackage {
    * its own SKIP message at update time.
    */
   requiresAdmin?: boolean;
+  /**
+   * True when updating this row acts on the whole provider rather than on
+   * what the id names: a synthetic row ("all plugins", a refresh marker) or a
+   * manager that can only upgrade everything at once. Such a row is never a
+   * scheduling target — a schedule names packages, never a provider.
+   */
+  aggregate?: boolean;
 }
 
 export interface UpdateOutcome {
@@ -41,6 +54,13 @@ export interface UpdateOutcome {
    * as an opt-in retry pass so the user explicitly authorizes the bypass.
    */
   retryable?: boolean;
+  /**
+   * What the provider did to undo the damage of an attempt that did not
+   * finish (npm-g moving the copy npm had staged back in place). Unlike
+   * `message`, it survives an interrupt rewriting the outcome as a skip:
+   * `finalizeOutcome` appends it to whatever message the outcome ends with.
+   */
+  recovery?: string;
 }
 
 export interface UpdateOptions {
@@ -68,6 +88,21 @@ export interface UpdateOptions {
    * uninstallPrevious — per-app config outside %APPDATA% may be lost.
    */
   reinstall?: boolean;
+  /**
+   * Nobody watches this run (a scheduled update): a provider whose tool can
+   * stop on a prompt must tell it not to (winget --disable-interactivity),
+   * since an unanswered prompt would hold the run until its timeout.
+   */
+  unattended?: boolean;
+}
+
+/**
+ * A package picked for an update, with the provider it belongs to. Lives in
+ * core because the update pipeline consumes it, and core never imports ui.
+ */
+export interface SelectedPackage {
+  providerId: string;
+  pkg: OutdatedPackage;
 }
 
 export interface ProviderScanResult {
@@ -89,6 +124,20 @@ export interface Provider {
    * Declarative — no centralized opt-in list to maintain.
    */
   readonly slow?: boolean;
+  /**
+   * Platforms gup supports this provider on; omitted means every platform.
+   * Enforced once, by the registry: elsewhere the provider is never probed,
+   * scanned or updated, and listings show it as incompatible. Declare a named
+   * set — `readonly platforms = PLATFORMS.windows;` — and never gate
+   * isAvailable() on `process.platform` yourself.
+   */
+  readonly platforms?: PlatformSet;
+  /**
+   * False when update() always needs an administrator (UAC or sudo), which a
+   * run nobody watches can never grant: unattended runs skip the provider.
+   * Omitted means true.
+   */
+  readonly canUpdateUnattended?: boolean;
 
   isAvailable(): Promise<boolean>;
   listOutdated(): Promise<OutdatedPackage[]>;

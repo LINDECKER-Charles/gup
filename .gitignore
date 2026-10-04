@@ -11,4 +11,7 @@ coverage/
 CLAUDE.md
 docs/archived/*
 !docs/archived/README.md
-design
+/design/
+
+# End-to-end artifacts (GUP_E2E_ARTIFACTS in the e2e workflow)
+e2e-artifacts/

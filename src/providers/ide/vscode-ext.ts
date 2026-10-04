@@ -17,8 +17,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class VsCodeExtProvider implements Provider {
   readonly id = "vscode-ext";
   readonly displayName = "VS Code extensions";
-  // Le cask macOS n'ajoute pas `code` au PATH : c'est la palette de commandes
-  // qui pose le shim, d'où le rappel explicite.
+  // The macOS cask does not put `code` on the PATH: the command palette
+  // installs the shim, hence the explicit reminder.
   readonly installHint = pickInstallHint({
     win32: "VS Code: https://code.visualstudio.com",
     darwin:

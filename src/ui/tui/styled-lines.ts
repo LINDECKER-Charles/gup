@@ -1,12 +1,24 @@
 import type { StyledText, TextChunk } from "@opentui/core";
-import type { Tui } from "./load-tui.js";
+import { withHomeShortened } from "../../core/log/redact.js";
+import type { Screen } from "./screen-host.js";
 
 /**
  * What a piece of text means, not which color it is. Every screen paints
- * through these tones, so panels, dialogs and bars read the same.
+ * through these tones, so panels, dialogs and bars read the same; the
+ * screen's {@link Screen.appearance} decides what each one looks like.
+ * `disabled` is something that exists but cannot be acted on here (a provider
+ * foreign to this OS), distinct from `muted` secondary information.
  */
 export type Tone =
-  "plain" | "strong" | "muted" | "accent" | "success" | "warning" | "danger" | "onAccent";
+  | "plain"
+  | "strong"
+  | "muted"
+  | "disabled"
+  | "accent"
+  | "success"
+  | "warning"
+  | "danger"
+  | "onAccent";
 
 /** Background behind a segment: the title bar, or the row under the cursor. */
 export type Fill = "accent" | "highlight";
@@ -24,36 +36,27 @@ export function seg(text: string, tone: Tone = "plain", fill?: Fill): Segment {
 }
 
 /**
- * ANSI palette slots rather than RGB values: the terminal maps them through
- * its own theme, exactly like chalk does for the rest of gup's output. OpenTUI's
- * named colors are fixed RGB (`cyan` is #00FFFF), unreadable on a light theme.
+ * Lines → one StyledText, ready for a TextRenderable's `content`, painted and
+ * glyph-translated by the screen's appearance.
  */
-const FG_SLOT: Partial<Record<Tone, number>> = {
-  accent: 6,
-  success: 2,
-  warning: 3,
-  danger: 1,
-  onAccent: 0,
-};
-const BG_SLOT: Record<Fill, number> = { accent: 6, highlight: 8 };
-
-/** Lines → one StyledText, ready for a TextRenderable's `content`. */
-export function toStyledText(tui: Tui, lines: readonly Line[]): StyledText {
+export function toStyledText(
+  screen: Pick<Screen, "tui" | "appearance">,
+  lines: readonly Line[],
+): StyledText {
   const chunks: TextChunk[] = [];
   lines.forEach((line, index) => {
     if (index > 0) chunks.push({ __isChunk: true, text: "\n" });
-    for (const segment of line) chunks.push(paint(tui, segment));
+    for (const segment of line) chunks.push(paint(screen, segment));
   });
-  return new tui.StyledText(chunks);
+  return new screen.tui.StyledText(chunks);
 }
 
-function paint(tui: Tui, { text, tone, fill }: Segment): TextChunk {
-  const painted: TextChunk = { __isChunk: true, text };
-  const fg = FG_SLOT[tone];
-  if (fg !== undefined) painted.fg = tui.RGBA.fromIndex(fg);
-  if (fill) painted.bg = tui.RGBA.fromIndex(BG_SLOT[fill]);
-  if (tone === "strong" || tone === "onAccent") painted.attributes = tui.TextAttributes.BOLD;
-  if (tone === "muted") painted.attributes = tui.TextAttributes.DIM;
+function paint({ appearance }: Pick<Screen, "appearance">, segment: Segment): TextChunk {
+  const style = appearance.style(segment.tone, segment.fill);
+  const painted: TextChunk = { __isChunk: true, text: appearance.glyphs(segment.text) };
+  if (style.fg) painted.fg = style.fg;
+  if (style.bg) painted.bg = style.bg;
+  if (style.attributes !== 0) painted.attributes = style.attributes;
   return painted;
 }
 
@@ -100,4 +103,92 @@ export function fit(text: string, width: number): string {
   if (width <= 0) return "";
   if (text.length <= width) return text.padEnd(width);
   return `${text.slice(0, Math.max(0, width - 1))}…`;
+}
+
+/**
+ * `line` word-wrapped to `width` columns, each piece in the tone of its
+ * segment: rows break between words and never start with a blank, and a
+ * word wider than a row is cut across rows, so nothing is lost. A line that
+ * fits comes back as it is.
+ */
+export function wrapLine(line: Line, width: number): Line[] {
+  if (width <= 0 || lineWidth(line) <= width) return [line];
+  const rows: Segment[][] = [[]];
+  for (const token of tokensOf(line)) placeToken(rows, token, width);
+  return rows.map(withoutTrailingBlank).filter((row) => row.length > 0);
+}
+
+/** The end of a path names the file: it keeps this share of a middle-cut text. */
+const ELLIPSIS_TAIL_SHARE = 2 / 3;
+
+/**
+ * `text` in `width` columns at most, its middle replaced by "…" when it is
+ * longer — "C:\Users\…\gup-rapport.html": both ends of a path stay readable,
+ * the file name first. The end keeps at least `minTail` characters when the
+ * width allows.
+ */
+export function middleEllipsis(text: string, width: number, minTail = 0): string {
+  if (text.length <= width) return text;
+  if (width <= 1) return "…".slice(0, Math.max(0, width));
+  const share = Math.ceil((width - 1) * ELLIPSIS_TAIL_SHARE);
+  const tail = Math.min(width - 1, Math.max(share, minTail));
+  const head = width - 1 - tail;
+  return `${text.slice(0, head)}…${text.slice(text.length - tail)}`;
+}
+
+/**
+ * A path as the screen shows it: from `~`, and — given a `width` — cut in
+ * its middle to fit it, its file name kept whole when the width has room
+ * for it and the "…" before it.
+ */
+export function shownPath(path: string, width = Number.POSITIVE_INFINITY): string {
+  const shown = withHomeShortened(path);
+  return middleEllipsis(shown, width, fileNameOf(shown).length + 1);
+}
+
+/** The last segment of a path, whichever separator it uses (`\` or `/`). */
+export function fileNameOf(path: string): string {
+  return path.slice(Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1);
+}
+
+const BLANKS = /(\s+)/;
+
+/** Runs of blanks and of other characters, each in the style of its segment. */
+function tokensOf(line: Line): Segment[] {
+  return line.flatMap((segment) =>
+    segment.text
+      .split(BLANKS)
+      .filter((text) => text !== "")
+      .map((text) => ({ ...segment, text })),
+  );
+}
+
+function isBlank(segment: Segment): boolean {
+  return segment.text.trim() === "";
+}
+
+/** Append `token` to the last row, or to new rows when it does not fit. */
+function placeToken(rows: Segment[][], token: Segment, width: number): void {
+  const row = rows[rows.length - 1] as Segment[];
+  const room = width - lineWidth(row);
+  if (isBlank(token)) {
+    if (token.text.length <= room && row.length > 0) row.push(token);
+    else if (row.length > 0) rows.push([]);
+    return;
+  }
+  if (token.text.length <= room) {
+    row.push(token);
+    return;
+  }
+  if (row.length > 0) rows.push([]);
+  for (let start = 0; start < token.text.length; start += width) {
+    if (start > 0) rows.push([]);
+    const piece = { ...token, text: token.text.slice(start, start + width) };
+    (rows[rows.length - 1] as Segment[]).push(piece);
+  }
+}
+
+function withoutTrailingBlank(row: readonly Segment[]): Segment[] {
+  const last = row[row.length - 1];
+  return last !== undefined && isBlank(last) ? row.slice(0, -1) : [...row];
 }

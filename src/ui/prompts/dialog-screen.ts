@@ -13,8 +13,9 @@ export function withDialog<T>(
   host: ScreenHost = screenHost,
 ): Promise<T> {
   return host.run((screen) => {
-    new Chrome(screen);
+    const chrome = new Chrome(screen);
     const dialogs = new DialogLayer(screen);
+    dialogs.onChange(() => chrome.setHints(dialogs.hints()));
     screen.renderer.keyInput.on("keypress", (key: KeyEvent) => dialogs.press(key));
     return open(dialogs);
   });
@@ -25,5 +26,5 @@ export function withDialog<T>(
  * gone, so the session still reads as a log of what was decided.
  */
 export function printAnswer(question: string, answer: string): void {
-  process.stdout.write(`${chalk.green("◇")}  ${question} ${chalk.dim(`· ${answer}`)}\n`);
+  process.stdout.write(`${chalk.green("◊")}  ${question} ${chalk.dim(`· ${answer}`)}\n`);
 }

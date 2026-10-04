@@ -1,0 +1,62 @@
+[
+  {
+    "id": "package-01",
+    "name": "package-01",
+    "current": "8.4.2",
+    "latest": "8.5.0"
+  },
+  {
+    "id": "package-02",
+    "name": "package-02",
+    "current": "50.0.1",
+    "latest": "50.0.2"
+  },
+  {
+    "id": "package-03",
+    "name": "package-03",
+    "current": "1.29.0",
+    "latest": "2.3.0"
+  },
+  {
+    "id": "package-04",
+    "name": "package-04",
+    "current": "2.2.0",
+    "latest": "2.3.0"
+  },
+  {
+    "id": "package-05",
+    "name": "package-05",
+    "current": "6.33.6",
+    "latest": "7.36.2"
+  },
+  {
+    "id": "package-06",
+    "name": "package-06",
+    "current": "2.46.5",
+    "latest": "2.49.0"
+  },
+  {
+    "id": "package-07",
+    "name": "package-07",
+    "current": "2.13.0",
+    "latest": "2.15.1"
+  },
+  {
+    "id": "package-08",
+    "name": "package-08",
+    "current": "311",
+    "latest": "312"
+  },
+  {
+    "id": "package-09",
+    "name": "package-09",
+    "current": "1.178.0",
+    "latest": "1.179.0"
+  },
+  {
+    "id": "package-10",
+    "name": "package-10",
+    "current": "3.4.11",
+    "latest": "3.5.0"
+  }
+]

@@ -1,15 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { pickInstallHint } from "../../src/core/install-hint.js";
-
-const ORIGINAL_PLATFORM = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 afterEach(() => {
-  setPlatform(ORIGINAL_PLATFORM);
+  restorePlatform();
 });
 
 describe("pickInstallHint", () => {

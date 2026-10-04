@@ -1,6 +1,7 @@
+import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Fink — the oldest of the macOS ports trees, dpkg-based, installed under
@@ -42,20 +43,20 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
  * (`list` carries 0, which is what keeps the scan password-free — fink never
  * re-execs itself under sudo for it). We pass our own `sudo` rather than let
  * `restart_as_root` do it, exactly like {@link MacPortsProvider}: fink's own
- * path dies outright when `RootMethod` is neither `sudo` nor `su`.
- * `requiresAdmin` stays unset for the same reason it does there — `isElevated()`
- * reports true on POSIX, so that batching path could never fire.
+ * path dies outright when `RootMethod` is neither `sudo` nor `su`. As there,
+ * the row carries `requiresAdmin` unless gup already runs as root, so the CLI
+ * folds it into its single `sudo` batch.
  */
 export class FinkProvider implements Provider {
   readonly id = "fink";
   readonly displayName = "Fink";
-  readonly installHint = pickInstallHint({
-    darwin: "https://www.finkproject.org/download/",
-    fallback: "macOS uniquement — https://www.finkproject.org/",
-  });
+  readonly installHint = "https://www.finkproject.org/download/";
+  /** Fink targets macOS only. */
+  readonly platforms = PLATFORMS.macos;
+  /** `fink update-all` always runs under sudo. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "darwin") return false;
     return commandExists("fink");
   }
 
@@ -68,15 +69,16 @@ export class FinkProvider implements Provider {
     if (failed) return [];
     const names = parseFinkOutdated(stdout);
     if (names.length === 0) return [];
-    return [
+    return flagForElevation([
       {
         id: FINK_ROW_ID,
+        aggregate: true,
         name: "Fink (paquets installés)",
         current: "?",
         latest: `${names.length} pkg`,
         note: "sudo fink --yes update-all — d'après le dernier fink selfupdate",
       },
-    ];
+    ]);
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {

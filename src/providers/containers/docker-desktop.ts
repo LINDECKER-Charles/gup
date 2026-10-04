@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { win32 as winPath } from "node:path";
 import { run } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 interface GitHubReleaseJson {
   tag_name?: string;
@@ -19,14 +19,12 @@ interface GitHubReleaseJson {
 export class DockerDesktopProvider implements Provider {
   readonly id = "docker-desktop";
   readonly displayName = "Docker Desktop";
-  // La détection repose sur les chemins d'installation Windows et sur
-  // VersionInfo (PowerShell) : le provider ne remonte donc rien ailleurs, même
-  // là où Docker Desktop existe bel et bien.
-  readonly installHint = pickInstallHint({
-    win32: "winget install Docker.DockerDesktop",
-    darwin: "brew install --cask docker-desktop (suivi gup : Windows uniquement)",
-    fallback: "Suivi par gup sous Windows uniquement.",
-  });
+  readonly installHint = "winget install Docker.DockerDesktop";
+  /**
+   * Tracked from its Windows install paths and VersionInfo only, though the
+   * app exists on macOS too.
+   */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     return dockerDesktopExe() !== null;
@@ -71,9 +69,9 @@ export class DockerDesktopProvider implements Provider {
 }
 
 function dockerDesktopExe(): string | null {
-  // `winPath.join` plutôt que `join` : ces chemins sont des chemins Windows
-  // quelle que soit la machine qui exécute le code, et les tests simulent
-  // win32 depuis un hôte POSIX où `join` produirait des slashes.
+  // `winPath.join` rather than `join`: these are Windows paths whatever
+  // machine runs the code, and the tests simulate win32 from a POSIX host,
+  // where `join` would produce forward slashes.
   const candidates = [
     process.env["ProgramFiles"]
       ? winPath.join(

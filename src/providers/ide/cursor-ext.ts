@@ -14,8 +14,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CursorExtProvider implements Provider {
   readonly id = "cursor-ext";
   readonly displayName = "Cursor extensions";
-  // Sur macOS le cask installe l'app mais pas toujours le binaire `cursor`
-  // dans le PATH : la palette de commandes est le seul moyen fiable.
+  // On macOS the cask installs the app but not always the `cursor` binary
+  // on the PATH: the command palette is the only reliable way.
   readonly installHint = pickInstallHint({
     win32: "https://www.cursor.com/",
     darwin:

@@ -4,8 +4,8 @@ import { homedir } from "node:os";
 import { posix as posixPath } from "node:path";
 import pLimit from "p-limit";
 import { commandExists, run } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Sparkle — the de-facto self-update framework for macOS apps distributed
@@ -55,17 +55,15 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class SparkleProvider implements Provider {
   readonly id = "sparkle";
   readonly displayName = "Sparkle (apps macOS)";
-  readonly installHint = pickInstallHint({
-    darwin:
-      "Rien à installer : gup lit le flux Sparkle (SUFeedURL) des apps de /Applications.",
-    fallback: "macOS uniquement — https://sparkle-project.org",
-  });
+  readonly installHint =
+    "Rien à installer : gup lit le flux Sparkle (SUFeedURL) des apps de /Applications.";
+  /** Reads the Sparkle feeds of the macOS app bundles in /Applications. */
+  readonly platforms = PLATFORMS.macos;
   // Filesystem walk over every .app bundle plus one HTTP request per app that
   // declares a feed.
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "darwin") return false;
     try {
       // `plutil` ships with every macOS install; probing it is really a probe
       // of "are we on a usable macOS", and it keeps the provider honest on a

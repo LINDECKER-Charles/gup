@@ -10,8 +10,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 
 /**
  * Starship cross-shell prompt. `starship --version` prints "starship 1.21.1".
- * Pas de self-update — délégation au PM d'origine (scoop / choco / winget /
- * cargo). Si binaire posé manuellement, on signale `manual:true`.
+ * No self-update — delegated to the package manager that installed it (scoop
+ * / choco / winget / cargo). A binary dropped by hand is reported `manual:true`.
  */
 export class StarshipProvider implements Provider {
   readonly id = "starship";

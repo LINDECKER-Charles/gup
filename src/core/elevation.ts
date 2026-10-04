@@ -3,8 +3,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 
-import { runInherit } from "./runner.js";
-import type { UpdateOutcome } from "./types.js";
+import { ingestElevatedLines } from "./log/elevated-bridge.js";
+import { effectiveLogThreshold, LOG_THRESHOLDS, type LogThreshold } from "./log/log.js";
+import { getInstallTimeoutSeconds, isElevated, runInherit } from "./runner.js";
+import type { OutdatedPackage, UpdateOutcome } from "./types.js";
 
 /**
  * Shape of the temp file written by the parent before spawning the elevated
@@ -12,24 +14,54 @@ import type { UpdateOutcome } from "./types.js";
  * dispatch, and writes the matching {@link AdminBatchOutput} to `<file>.out`.
  *
  * The version field is mandatory so the IPC contract can evolve without the
- * parent and child silently drifting on stale on-disk payloads.
+ * parent and child silently drifting on stale on-disk payloads. The optional
+ * fields carry the parent's effective settings: the elevated child never
+ * reads the user's configuration (a user-writable file must not steer an
+ * elevated process), so it learns them from the parent that spawned it.
  */
 export interface AdminBatchInput {
   version: 1;
   targets: string[];
+  /** The parent's per-install timeout, 0 = none. */
+  installTimeoutSeconds?: number;
+  /** The parent's log threshold, so the child's log lines match it. */
+  logThreshold?: LogThreshold;
 }
+
+/**
+ * The hidden command the elevated child runs. The Windows wrapper script
+ * spells it as a literal on purpose: that script is a constant, with no
+ * value woven into it.
+ */
+export const ADMIN_BATCH_COMMAND = "__admin-batch";
+
+/** Upper bound of an install timeout carried by the payload: one day. */
+const MAX_INSTALL_TIMEOUT_S = 86_400;
+
+/**
+ * What the UAC prompt and the user's reading of it may take on top of the
+ * installs themselves, so the wait does not kill a batch that is still
+ * waiting to be accepted.
+ */
+const ELEVATION_PROMPT_GRACE_MS = 300_000;
 
 export interface AdminBatchOutput {
   version: 1;
   outcomes: UpdateOutcome[];
+  /**
+   * The child's debug log records, for the parent to write: the elevated
+   * child never writes into the user's log directory. Optional both ways, so
+   * a parent and a child of different versions still understand each other.
+   */
+  log?: string[];
 }
 
 /**
  * Default hook used to spawn the elevated child. Extracted into a single
  * function so tests can replace the actual UAC / sudo call with a mock that
- * writes the output file synchronously.
+ * writes the output file synchronously. `targetCount` sizes the wait.
  */
-export type ElevatedSpawner = (inputFile: string) => Promise<void>;
+export type ElevatedSpawner = (inputFile: string, targetCount: number) => Promise<void>;
 
 /**
  * Run a pre-validated set of `provider:packageId` targets inside an elevated
@@ -50,13 +82,24 @@ export async function runElevatedBatch(
   const { inputFile, cleanup } = await writeBatchInput(targets);
   const outputFile = `${inputFile}.out`;
   try {
-    await spawner(inputFile);
+    await spawner(inputFile, targets.length);
     return await readBatchOutput(outputFile, targets);
   } catch (err) {
     return targets.map((t) => fallbackFailure(t, err));
   } finally {
     await cleanup();
   }
+}
+
+/**
+ * Scan rows whose update needs UAC or sudo, made ready for the elevated
+ * batch: flagged `requiresAdmin` unless this process already runs elevated
+ * (the batch child itself, or gup started with sudo), in which case they
+ * update in place without any prompt.
+ */
+export async function flagForElevation(rows: OutdatedPackage[]): Promise<OutdatedPackage[]> {
+  if (rows.length === 0 || (await isElevated())) return rows;
+  return rows.map((row) => ({ ...row, requiresAdmin: true }));
 }
 
 /**
@@ -72,7 +115,41 @@ export async function readBatchInput(file: string): Promise<AdminBatchInput> {
   if (!Array.isArray(parsed.targets) || parsed.targets.some((t) => typeof t !== "string")) {
     throw new Error("admin-batch: targets must be a string array");
   }
+  assertSettings(parsed);
   return parsed;
+}
+
+/** The optional settings, when present, must be exactly what the parent writes. */
+function assertSettings(input: AdminBatchInput): void {
+  const { installTimeoutSeconds, logThreshold } = input;
+  const isTimeoutValid =
+    installTimeoutSeconds === undefined ||
+    (Number.isInteger(installTimeoutSeconds) &&
+      installTimeoutSeconds >= 0 &&
+      installTimeoutSeconds <= MAX_INSTALL_TIMEOUT_S);
+  if (!isTimeoutValid) {
+    throw new Error(
+      `admin-batch: installTimeoutSeconds must be an integer in 0..${MAX_INSTALL_TIMEOUT_S}`,
+    );
+  }
+  if (logThreshold !== undefined && !LOG_THRESHOLDS.includes(logThreshold)) {
+    throw new Error("admin-batch: logThreshold must be a log level or off");
+  }
+}
+
+/**
+ * How long the parent waits for the elevated child: every install may take
+ * the full install timeout, plus the time to accept the prompt. Waiting a
+ * single timeout for the whole batch killed the waiter — not the child,
+ * which keeps installing in its own window — and lost every outcome.
+ * 0 (no limit) when the install timeout is off.
+ */
+export function elevatedWaitMs(
+  targetCount: number,
+  installTimeoutSeconds: number = getInstallTimeoutSeconds(),
+): number {
+  if (installTimeoutSeconds === 0) return 0;
+  return installTimeoutSeconds * 1000 * targetCount + ELEVATION_PROMPT_GRACE_MS;
 }
 
 /**
@@ -80,8 +157,16 @@ export async function readBatchInput(file: string): Promise<AdminBatchInput> {
  * forbids overwriting an existing file at the same path — the elevated
  * child must hit a freshly-created location, never a pre-staged one.
  */
-export async function writeBatchOutput(file: string, outcomes: UpdateOutcome[]): Promise<void> {
-  const payload: AdminBatchOutput = { version: 1, outcomes };
+export async function writeBatchOutput(
+  file: string,
+  outcomes: UpdateOutcome[],
+  log: readonly string[] = [],
+): Promise<void> {
+  const payload: AdminBatchOutput = {
+    version: 1,
+    outcomes,
+    ...(log.length > 0 && { log: [...log] }),
+  };
   await writeFile(file, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
 }
 
@@ -95,7 +180,12 @@ async function writeBatchInput(
   // "Insecure creation of file in the os temp dir".
   const dir = await mkdtemp(join(tmpdir(), "gup-elevate-"));
   const inputFile = join(dir, `${randomBytes(8).toString("hex")}.json`);
-  const payload: AdminBatchInput = { version: 1, targets };
+  const payload: AdminBatchInput = {
+    version: 1,
+    targets,
+    installTimeoutSeconds: Math.min(getInstallTimeoutSeconds(), MAX_INSTALL_TIMEOUT_S),
+    logThreshold: effectiveLogThreshold(),
+  };
   await writeFile(inputFile, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
   return {
     inputFile,
@@ -111,6 +201,7 @@ async function readBatchOutput(file: string, targets: string[]): Promise<UpdateO
   try {
     const raw = await readFile(file, "utf8");
     const parsed = JSON.parse(raw) as AdminBatchOutput;
+    forwardChildLog(parsed);
     if (parsed.version !== 1 || !Array.isArray(parsed.outcomes)) {
       throw new Error("malformed output payload");
     }
@@ -132,6 +223,21 @@ async function readBatchOutput(file: string, targets: string[]): Promise<UpdateO
     );
   } catch (err) {
     return targets.map((t) => fallbackFailure(t, err));
+  }
+}
+
+/**
+ * The child's log, written to this process's log before the outcomes are
+ * checked: when they turn out malformed, its lines are what explains why.
+ * Isolated: a bad log never changes what the outcomes say.
+ */
+function forwardChildLog(output: unknown): void {
+  try {
+    if (typeof output === "object" && output !== null) {
+      ingestElevatedLines((output as { log?: unknown }).log);
+    }
+  } catch {
+    // The bridge does not throw; this guard keeps the outcomes safe if it ever does.
   }
 }
 
@@ -160,55 +266,65 @@ function fallbackFailure(target: string, err: unknown): UpdateOutcome {
  * configured in "inline" mode can keep the output in the parent console;
  * we do not probe for sudo yet to keep the failure mode predictable.
  *
- * POSIX: there is no choco-grade admin requirement on Linux/macOS that this
- * CLI surfaces today, but `sudo` is the canonical fallback if the need
- * arises. Same contract: the child writes outcomes to `<inputFile>.out`.
+ * POSIX: `sudo` runs the child as root, so the providers whose updates shell
+ * `sudo` themselves (MacPorts, Fink, pkgin, apt/dnf delegations) run inside it
+ * without prompting again — one password for the whole batch. Same contract:
+ * the child writes outcomes to `<inputFile>.out`.
  */
-async function defaultSpawner(inputFile: string): Promise<void> {
+async function defaultSpawner(inputFile: string, targetCount: number): Promise<void> {
   const node = process.execPath;
   const cli = process.argv[1];
   if (!cli) throw new Error("elevation: process.argv[1] is unset; cannot self-spawn");
-  assertNoControlChars(node);
-  assertNoControlChars(cli);
-  assertNoControlChars(inputFile);
+  for (const value of [node, cli, inputFile]) assertNoControlChars(value);
+  const launch: ElevatedLaunch = { node, cli, inputFile, timeout: elevatedWaitMs(targetCount) };
+  if (process.platform === "win32") return spawnWithUac(launch);
+  return spawnWithSudo(launch);
+}
 
-  if (process.platform === "win32") {
-    // Write a static PowerShell wrapper next to the input file. The script
-    // body is a hard-coded literal — none of the elevated paths are woven
-    // into it; they arrive as $args[0..2] positional parameters when we
-    // invoke `powershell.exe -File wrapper.ps1 <node> <cli> <inputFile>`.
-    //
-    // execa receives an argv VECTOR (no shell concatenation), and the
-    // wrapper itself never builds a shell line from the args — Start-Process
-    // -ArgumentList takes them as discrete strings. This structurally
-    // breaks the taint flow that CodeQL's
-    // `js/shell-command-injection-from-environment` query tracks: the only
-    // env-derived inputs flow as data through argv, never as code through a
-    // shell command line.
-    const ps1 = join(dirname(inputFile), "spawn.ps1");
-    const script =
-      "$ErrorActionPreference = 'Stop'\r\n" +
-      "Start-Process -FilePath $args[0] -ArgumentList $args[1],'__admin-batch',$args[2] -Verb RunAs -Wait\r\n";
-    await writeFile(ps1, script, { encoding: "utf8", flag: "wx" });
-    const res = await runInherit("powershell.exe", [
-      "-NoProfile",
-      "-NonInteractive",
-      "-ExecutionPolicy",
-      "Bypass",
-      "-File",
-      ps1,
-      node,
-      cli,
-      inputFile,
-    ]);
-    if (res.failed) throw new Error("PowerShell Start-Process élevé a échoué");
-    return;
-  }
+/** The elevated child to start, already checked, and how long to wait for it. */
+interface ElevatedLaunch {
+  readonly node: string;
+  readonly cli: string;
+  readonly inputFile: string;
+  readonly timeout: number;
+}
 
-  // POSIX: argv vector, no shell, no concat — node/cli/inputFile arrive as
-  // discrete sudo arguments. Same property as the Windows path now: only
-  // data flows through env-derived inputs, never code.
-  const res = await runInherit("sudo", [node, cli, "__admin-batch", inputFile]);
+/**
+ * The UAC launcher, a constant: the elevated paths arrive as `$args` when it
+ * runs as `powershell.exe -File spawn.ps1 <node> <cli> <inputFile>`, never as
+ * text woven into it. execa hands PowerShell an argv vector, so the only
+ * env-derived inputs flow as data, never as code — the taint flow CodeQL's
+ * `js/shell-command-injection-from-environment` tracks stays broken.
+ *
+ * Start-Process joins `-ArgumentList` with spaces and quotes nothing: each
+ * path is wrapped in double quotes here. Unquoted, a path with a space (a
+ * profile named "Jane Doe", an npm prefix under Program Files) reached the
+ * elevated node split in two, and node tried to load the truncated path as a
+ * module — as administrator. `-FilePath` is a single value and needs none.
+ */
+const UAC_WRAPPER_SCRIPT =
+  "$ErrorActionPreference = 'Stop'\r\n" +
+  "Start-Process -FilePath $args[0] -Verb RunAs -Wait" +
+  " -ArgumentList ('\"' + $args[1] + '\"'),'__admin-batch',('\"' + $args[2] + '\"')\r\n";
+
+async function spawnWithUac({ node, cli, inputFile, timeout }: ElevatedLaunch): Promise<void> {
+  for (const path of [cli, inputFile]) assertQuotable(path);
+  const ps1 = join(dirname(inputFile), "spawn.ps1");
+  await writeFile(ps1, UAC_WRAPPER_SCRIPT, { encoding: "utf8", flag: "wx" });
+  const powershellArgs = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"];
+  const res = await runInherit("powershell.exe", [...powershellArgs, ps1, node, cli, inputFile], {
+    timeout,
+  });
+  if (res.failed) throw new Error("PowerShell Start-Process élevé a échoué");
+}
+
+/**
+ * POSIX: argv vector, no shell, no concat — node/cli/inputFile arrive as
+ * discrete sudo arguments. Same property as the Windows path: only data
+ * flows through env-derived inputs, never code.
+ */
+async function spawnWithSudo({ node, cli, inputFile, timeout }: ElevatedLaunch): Promise<void> {
+  const res = await runInherit("sudo", [node, cli, ADMIN_BATCH_COMMAND, inputFile], { timeout });
   if (res.failed) throw new Error("sudo a échoué ou a été refusé");
 }
 
@@ -227,5 +343,16 @@ function assertNoControlChars(s: string): void {
         `elevation: refusing to spawn with control char in argv: ${JSON.stringify(s)}`,
       );
     }
+  }
+}
+
+/**
+ * A path the UAC launcher can wrap in double quotes: one holding a quote (no
+ * Windows path does) or ending in a backslash (it would escape the closing
+ * quote) is refused rather than handed, mangled, to an elevated process.
+ */
+function assertQuotable(path: string): void {
+  if (path.includes('"') || path.endsWith("\\")) {
+    throw new Error(`elevation: refusing to quote ${JSON.stringify(path)} for Start-Process`);
   }
 }

@@ -6,11 +6,20 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege: every job only reads the repository. `npm ci` runs
+# third-party install scripts (esbuild, node-pty) with this token in reach;
+# without the block it would get the repository's default, possibly write.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # The job name and the matrix values make up the required checks of the
+  # main ruleset (`test (node 26 / <os>)`): renaming either blocks every pull
+  # request until the ruleset is edited.
   test:
     name: test (node ${{ matrix.node }} / ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -43,23 +52,140 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck
+      # `src` first, then the tests, the tooling and the configs
+      # (tsconfig.tests.json): a test that no longer compiles fails here.
+      - name: Typecheck (src and tests)
         run: npm run typecheck
 
-      # CONTRIBUTING lists lint as part of the PR gate, but no workflow ran it
-      # until now — an eslint bump could add violations that nothing surfaced.
-      # Restricted to one leg: eslint output does not vary by OS or Node line,
-      # so running it six times would only slow the matrix down.
+      # eslint output does not vary by OS: one leg is enough.
       - name: Lint
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '26'
+        if: matrix.os == 'ubuntu-latest'
         run: npm run lint
 
       - name: Lint (security ruleset)
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '26'
+        if: matrix.os == 'ubuntu-latest'
         run: npm run lint:security
 
       - name: Build
         run: npm run build
 
-      - name: Run unit tests
+      # The unit, providers and integration projects. The suites that change
+      # the real system skip here: they run in the `mutate` job below, which
+      # is not a required check.
+      - name: Tests
+        if: matrix.os != 'ubuntu-latest'
         run: npm run test:run
+
+      # The same run, measured once, on Linux: coverage fails only on the
+      # floors of the safety-critical modules (tests/support/coverage-floors.ts).
+      - name: Tests with coverage
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run test:coverage
+
+      # The screenshots in docs/ are rendered from the real TUI on fixture
+      # data (scripts/screenshots): a UI change committed without
+      # `npm run screenshots` fails here instead of leaving the docs lying.
+      # They are the same bytes on every OS by design, so one leg checks them;
+      # the Typecheck step already covers scripts/.
+      - name: Screenshots up to date
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run screenshots:check
+
+      - name: Keep the coverage report
+        if: always() && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # The built CLI on the runner: its non-interactive commands in a
+      # sandbox, and the menu in a real pseudo-terminal (ConPTY on Windows).
+      # No network, no real provider scanned but npm on an empty prefix.
+      # Linux builds node-pty from source; without it the menu suite skips
+      # there, and only there.
+      - name: End-to-end smoke
+        run: npx vitest run --project e2e
+        env:
+          GUP_E2E: "1"
+          GUP_E2E_SCOPE: smoke
+
+  # The integration suites that change the real system (GUP_MUTATE), always
+  # sandboxed: a `gup-it-<random>` scheduled task created then verified
+  # deleted (Windows), an `npm install -g` stopped mid-download in a
+  # throw-away prefix against a local registry. A hosted runner is thrown
+  # away after the job, so they touch nobody's setup. Not a required check —
+  # its name is not `test (…)`: whether Task Scheduler starts a task on a
+  # hosted runner is up to the runner image, and a required check that fails
+  # for the runner's reasons would block every pull request.
+  mutate:
+    name: mutate (node 26 / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node 26
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Integration tests, mutating suites included
+        run: npx vitest run --project integration
+        env:
+          GUP_MUTATE: "1"
+
+  # What users install, installed the way an npm 11 user who refuses install
+  # scripts does (amendment X-4): node-pty must still load from its
+  # prebuilds, and gup itself makes macOS's spawn-helper executable.
+  packed:
+    name: packed install (node 26 / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node 26
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm pack` runs `prepare`, which builds dist/.
+      - name: Pack
+        run: npm pack
+
+      - name: Install the tarball globally, install scripts off
+        run: npm install --global ./*.tgz --ignore-scripts
+
+      # The doctor's "Terminal intégré" line says "disponible" (the regex
+      # spells the accents as escapes: the shell is not UTF-8 everywhere).
+      - name: gup doctor finds the embedded terminal
+        run: |
+          gup --version
+          gup doctor | tee doctor.txt
+          node -e '
+            const text = require("node:fs").readFileSync("doctor.txt", "utf8");
+            if (!/Terminal int\u00e9gr\u00e9\s+disponible/.test(text)) {
+              console.error("embedded terminal unavailable after npm i -g --ignore-scripts");
+              process.exit(1);
+            }'

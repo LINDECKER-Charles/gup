@@ -5,8 +5,8 @@ import {
   runInDistro,
   runInDistroInherit,
 } from "../../core/wsl.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Flatpak inside any WSL distro. Both --user and --system installs are
@@ -18,11 +18,9 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class WslFlatpakProvider implements Provider {
   readonly id = "wsl-flatpak";
   readonly displayName = "WSL · Flatpak";
-  readonly installHint = pickInstallHint({
-    win32: "https://flatpak.org/setup/",
-    fallback:
-      "Provider spécifique à WSL (Windows) — inexistant sur cette plateforme.",
-  });
+  readonly installHint = "https://flatpak.org/setup/";
+  /** Reaches into WSL distros, a Windows feature. */
+  readonly platforms = PLATFORMS.windows;
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

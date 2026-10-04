@@ -1,0 +1,7 @@
+WARN  Scoop out of date. Run 'scoop update' to get the latest changes.
+
+Name   Installed Version Latest Version Missing Dependencies Info
+----   ----------------- -------------- -------------------- ----
+tool-a 1.40.6            1.50.10                                 
+
+

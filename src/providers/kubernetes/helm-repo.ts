@@ -46,6 +46,7 @@ export class HelmRepoProvider implements Provider {
     return [
       {
         id: "all",
+        aggregate: true,
         name: "helm repo update",
         current: "?",
         latest: "refresh",

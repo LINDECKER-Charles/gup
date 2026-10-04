@@ -1,11 +1,11 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type {
   OutdatedPackage,
   Provider,
   UpdateOptions,
   UpdateOutcome,
 } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Winget has no machine-readable output for `upgrade`.
@@ -15,11 +15,9 @@ import type {
 export class WingetProvider implements Provider {
   readonly id = "winget";
   readonly displayName = "Winget";
-  readonly installHint = pickInstallHint({
-    win32: "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget",
-    fallback:
-      "Winget est un composant Windows — il n'existe pas sur cette plateforme.",
-  });
+  readonly installHint = "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget";
+  /** Winget is a Windows component: a `winget` found elsewhere is not it. */
+  readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
     return commandExists("winget");
@@ -71,6 +69,7 @@ export class WingetProvider implements Provider {
       "--accept-package-agreements",
       "--accept-source-agreements",
       "--include-unknown",
+      ...interactivityArgs(options),
     ];
     if (options?.force) args.push("--force");
     if (options?.uninstallPrevious) args.push("--uninstall-previous");
@@ -105,6 +104,7 @@ export class WingetProvider implements Provider {
       "--exact",
       "--silent",
       "--accept-source-agreements",
+      ...interactivityArgs(options),
     ];
     await runInherit("winget", ["uninstall", ...baseArgs]);
 
@@ -166,6 +166,14 @@ interface WingetColumns {
   version: number;
   available: number;
   source: number;
+}
+
+/**
+ * An unattended run (a scheduled update) has nobody to answer a prompt:
+ * winget then refuses to ask instead of waiting until the install timeout.
+ */
+function interactivityArgs(options: UpdateOptions | undefined): string[] {
+  return options?.unattended ? ["--disable-interactivity"] : [];
 }
 
 /**

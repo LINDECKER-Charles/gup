@@ -82,10 +82,11 @@ export default [
     },
   },
   {
-    // JetBrains providers walk %APPDATA%\JetBrains\<IDE>\plugins. Paths are
-    // joined from a hardcoded env var with directory entries filtered by
-    // strict regex (^[A-Za-z]+\d{4}\.\d+$). No external input reaches fs.
-    files: ["src/providers/ide/jetbrains.ts", "src/providers/ide/jetbrains-plugins.ts"],
+    // The JetBrains provider walks the IDE install roots (Toolbox apps,
+    // Program Files, scoop, /Applications) and reads each bundle's
+    // product-info.json. Roots are hardcoded or joined from %LOCALAPPDATA% /
+    // %USERPROFILE% / $HOME with hardcoded subdirs. No external input reaches fs.
+    files: ["src/providers/ide/jetbrains.ts"],
     rules: {
       "security/detect-non-literal-fs-filename": "off",
     },
@@ -118,54 +119,6 @@ export default [
     ],
     rules: {
       "security/detect-non-literal-fs-filename": "off",
-    },
-  },
-  {
-    // Eclipse provider probes well-known install roots (%PROGRAMFILES%,
-    // %LOCALAPPDATA%) joined with hardcoded subdirs ("features", "plugins")
-    // and walks the resulting directories. Entries are then filtered by
-    // strict version regex (anchored, bounded quantifiers {1,3}). No
-    // external input reaches fs.
-    files: ["src/providers/ide/eclipse-marketplace.ts"],
-    rules: {
-      "security/detect-non-literal-fs-filename": "off",
-      "security/detect-unsafe-regex": "off",
-    },
-  },
-  {
-    // Obsidian provider reads %APPDATA%\obsidian\obsidian.json (hardcoded
-    // path from env var) then walks vault paths declared by the user's own
-    // Obsidian config, joined with hardcoded subpaths
-    // (".obsidian/plugins/<id>/manifest.json"). Vault list is authored by
-    // the user via Obsidian itself — same trust boundary as the user's
-    // home directory.
-    files: ["src/providers/ide/obsidian-plugins.ts"],
-    rules: {
-      "security/detect-non-literal-fs-filename": "off",
-    },
-  },
-  {
-    // Notepad++ provider joins %LOCALAPPDATA% / %PROGRAMFILES(X86)?% with
-    // hardcoded "Notepad++/plugins" subpath and probes <entry>/<entry>.dll
-    // inside the resulting dir. No external input reaches fs.
-    files: ["src/providers/ide/notepad-pp.ts"],
-    rules: {
-      "security/detect-non-literal-fs-filename": "off",
-    },
-  },
-  {
-    // Sublime / Unity Hub / Zed providers all join %APPDATA% / %LOCALAPPDATA%
-    // / $HOME / $XDG_*_HOME with hardcoded subpaths to enumerate user
-    // installs. Unity's regex parses `Unity Hub --headless editors` stdout
-    // (version line) — single capture, no nested quantifiers.
-    files: [
-      "src/providers/ide/sublime-pc.ts",
-      "src/providers/ide/unity-hub.ts",
-      "src/providers/ide/zed-ext.ts",
-    ],
-    rules: {
-      "security/detect-non-literal-fs-filename": "off",
-      "security/detect-unsafe-regex": "off",
     },
   },
   {
@@ -218,6 +171,83 @@ export default [
     ],
     rules: {
       "security/detect-unsafe-regex": "off",
+    },
+  },
+  {
+    // Settings and state that gup writes for its own user. Every path is a
+    // per-user root resolved by core/state/app-dirs.ts (%APPDATA%,
+    // %LOCALAPPDATA%, ~/Library/…, $XDG_*_HOME) — or the user's own
+    // GUP_CONFIG_DIR / GUP_*_DIR override, the same trust boundary as their
+    // home directory — joined with constant basenames (`config.json`,
+    // `schedules.json`, `state.json`, `<file>.lock`, a UTC-dated log name).
+    // Writes go through `wx` temp files and atomic renames; nothing here
+    // derives a path from a provider's output or a network response. Globs
+    // naming modules that later branches add are listed up front so each
+    // lands with its justification already reviewed.
+    files: [
+      "src/core/config/**/*.ts",
+      "src/core/state/file-lock.ts",
+      "src/core/update/batch-lock.ts",
+      "src/core/log/**/*.ts",
+      "src/core/history/reader.ts",
+      "src/core/scheduler/persistence/**/*.ts",
+    ],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
+    // User-requested exports and OS trigger artefacts: the output path is the
+    // user's own `--out` argument or a dated name under the reports/state
+    // dir, created with `wx` (never overwriting without `--force`); the
+    // scheduler writes its task XML / launchd plist / crontab block to
+    // fixed, per-user locations or to a private mkdtemp dir; the PTY exit
+    // file lives in a private mkdtemp dir with a random name, opened `wx`.
+    files: [
+      "src/core/export/output-file.ts",
+      "src/commands/journal/diagnostic*.ts",
+      "src/core/scheduler/trigger/windows-task.ts",
+      "src/core/scheduler/trigger/launchd-agent.ts",
+      "src/core/scheduler/trigger/crontab-trigger.ts",
+      "src/core/pty/exit-file.ts",
+    ],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
+    // The scheduler registers the running gup with the OS trigger: it
+    // resolves process.execPath and process.argv[1] (realpath), reads the
+    // package.json beside that entry (accepted only when its name is gup's)
+    // and the OS temp dir. The process's own files — no path comes from a
+    // provider, a schedule or the network.
+    files: ["src/core/scheduler/trigger/task-command.ts"],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+    },
+  },
+  {
+    // Secret redaction for the debug log. Every pattern is literal-prefixed
+    // with single bounded quantifiers (`{1,256}`…) and no nested repetition;
+    // a test feeds 1 MiB of adversarial input and bounds the time. The rule
+    // flags any quantified group, which is exactly what bounded redaction
+    // needs.
+    files: ["src/core/log/redact.ts"],
+    rules: {
+      "security/detect-unsafe-regex": "off",
+    },
+  },
+  {
+    // The embedded terminal's own files, never a path from a provider or the
+    // network: the trampoline is looked up beside the running CLI
+    // (`realpath(process.argv[1])` joined with the constant `pty-exec` and the
+    // CLI's own extension) and only checked for existence; macOS's
+    // `spawn-helper` is node-pty's resolved package directory joined with the
+    // constant `prebuilds/darwin-<process.arch>/spawn-helper`, stat-ed, and
+    // chmod-ed 0755 only when it belongs to the current user.
+    files: ["src/core/pty/trampoline.ts", "src/core/pty/spawn-helper.ts"],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
     },
   },
 ];

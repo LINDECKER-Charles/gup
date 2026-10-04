@@ -3,13 +3,36 @@ title = "gup gitleaks config"
 [extend]
 useDefault = true
 
-[allowlist]
+# [[allowlists]] replaces the deprecated [allowlist] table; gitleaks refuses
+# a config that mixes the two.
+[[allowlists]]
 description = "False positives / fixtures / lockfiles"
 paths = [
   '''node_modules/''',
   '''dist/''',
   '''package-lock\.json''',
   '''tests/fixtures/''',
+]
+
+# The redaction tests. Their job is to prove that gup scrubs credentials out of
+# logs, diagnostic bundles and recorded fixtures, so they must hold strings
+# shaped like credentials. Every one of them is fabricated, and history keeps
+# them even once a test assembles its value at run time, hence exact paths:
+# anything else in tests/ stays scanned.
+[[allowlists]]
+description = "Fabricated credentials fed to the redaction code"
+paths = [
+  # redactSecrets() cases: AWS documentation keys (AKIAIOSFODNN7EXAMPLE,
+  # wJalrXUtnFEMI/K7MDENG...EXAMPLEKEY), a JWT whose payload is only
+  # {"sub":"1234567890"}, a one-line truncated RSA key, xoxb-1234567890-abcdefghij,
+  # a 17-character STS token stub, and concatenated prefixes for the ReDoS cases.
+  '''^tests/core/log/redact\.test\.ts$''',
+  # Diagnostic bundle: a hand-patterned npm token (…-1c2d3e4f5a6b) and the AWS
+  # documentation secret key, planted to check that neither reaches the archive.
+  '''^tests/core/export/diagnostic-bundle\.test\.ts$''',
+  # Fixture recorder's secret scan: AKIAABCDEFGHIJKLMNOP (the alphabet) and
+  # repeated-character tokens, planted to check that the scan finds them.
+  '''^tests/support/self-test/fixtures\.test\.ts$''',
 ]
 
 [[rules]]

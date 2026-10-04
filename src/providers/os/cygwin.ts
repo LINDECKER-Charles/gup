@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { win32 as winPath } from "node:path";
 import { isElevated, runInherit, type RunResult } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { PLATFORMS } from "../../core/platform/platforms.js";
 
 /**
  * Cygwin — the POSIX environment for Windows. Windows-only by construction.
@@ -43,10 +43,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class CygwinProvider implements Provider {
   readonly id = "cygwin";
   readonly displayName = "Cygwin";
-  readonly installHint = pickInstallHint({
-    win32: "https://cygwin.com/setup-x86_64.exe — lancer l'installeur puis relancer gup",
-    fallback: "Cygwin est un environnement Windows — inexistant sur cette plateforme.",
-  });
+  readonly installHint =
+    "https://cygwin.com/setup-x86_64.exe — lancer l'installeur puis relancer gup";
+  /** Cygwin is a Windows environment. */
+  readonly platforms = PLATFORMS.windows;
+  /** Cygwin setup elevates itself through UAC unless the tree was installed with --no-admin. */
+  readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
     return findCygwinRoot(process.env) !== null;
@@ -59,6 +61,7 @@ export class CygwinProvider implements Provider {
     return [
       {
         id: ROW_ID,
+        aggregate: true,
         name: "Cygwin (paquets)",
         current: "?",
         latest: "refresh",

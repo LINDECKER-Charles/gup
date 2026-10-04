@@ -15,8 +15,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class ConsulProvider implements Provider {
   readonly id = "consul";
   readonly displayName = "Consul";
-  // Les outils HashiCorp ont quitté homebrew-core : ils ne vivent plus que
-  // dans le tap hashicorp/tap, d'où le `brew tap` explicite dans le hint.
+  // HashiCorp tools left homebrew-core: they now live only in the
+  // hashicorp/tap tap, hence the explicit `brew tap` in the hint.
   readonly installHint = pickInstallHint({
     win32: "winget install HashiCorp.Consul",
     fallback: "brew tap hashicorp/tap && brew install consul",
@@ -60,8 +60,8 @@ export class ConsulProvider implements Provider {
         scoop: "consul",
         choco: "consul",
         winget: "HashiCorp.Consul",
-        // Formule du tap hashicorp/tap. Le cask homebrew nommé "consul" est
-        // un autre logiciel : surtout pas de `brewCask` ici.
+        // Formula from the hashicorp/tap tap. The Homebrew cask named "consul"
+        // is another program: never a `brewCask` here.
         brew: "consul",
       },
       manualMessage:

@@ -1,0 +1,83 @@
+name: New provider
+description: Ask gup to support another package source.
+title: "[provider] "
+labels: [provider, enhancement, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A provider teaches gup to list the outdated packages of one source and to update them. The more of the commands below you can give, the faster it can be written — by you or by someone else.
+  - type: input
+    id: tool
+    attributes:
+      label: Tool name
+      placeholder: As written on its homepage
+    validations:
+      required: true
+  - type: input
+    id: homepage
+    attributes:
+      label: Homepage
+      placeholder: https://
+    validations:
+      required: true
+  - type: checkboxes
+    id: platforms
+    attributes:
+      label: Platforms
+      description: Where the tool runs.
+      options:
+        - label: Windows
+        - label: macOS
+        - label: Linux
+        - label: WSL
+  - type: textarea
+    id: list-outdated
+    attributes:
+      label: How to list outdated packages
+      description: The command, and a sample of its output. Machine-readable output (JSON) is best.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: update-one
+    attributes:
+      label: How to update one package
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: update-all
+    attributes:
+      label: How to update everything
+      description: Only if the tool has a native "upgrade all" command.
+      render: shell
+  - type: textarea
+    id: install
+    attributes:
+      label: How to install the tool
+      description: One install command per platform; gup shows it as a hint when the tool is missing.
+      render: shell
+  - type: textarea
+    id: caveats
+    attributes:
+      label: Caveats
+      description: Admin rights, updates that need a GUI, network access, rate limits, prompts that cannot be answered non-interactively…
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: The tool is not already listed in [docs/guide/providers-catalog.md](https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.md) — as implemented, candidate or turned down.
+          required: true
+        - label: It fits [docs/guide/scope.md](https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/scope.md) (machine-wide tools, not project dependencies or the OS itself).
+          required: true
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you open the pull request?
+      description: Adding a provider is usually one file; CONTRIBUTING.md walks through it.
+      options:
+        - "Yes"
+        - Maybe, with guidance
+        - "No"

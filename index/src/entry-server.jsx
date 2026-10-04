@@ -1,19 +1,17 @@
 /**
- * Prerender entry, consumed by scripts/prerender.mjs.
+ * Prerender entry, consumed by scripts/prerender.mjs once per locale.
  *
- * WHY PRERENDER: this is a client-rendered Vite app on GitHub Pages, so
- * without this step the shipped HTML is an empty <div id="root">. Google does
- * render JavaScript, but it does so on a second pass with no guaranteed
- * budget, and the AI answer engines this project explicitly courts through
- * llms.txt (ChatGPT, Perplexity, Claude) largely do not render at all. The
- * previous workaround was a hand-written static skeleton inside #root that
- * drifted out of sync with the real page — different H1, stale counts, links
- * the rendered footer no longer had. Rendering the actual component tree
- * removes the class of bug rather than the instance.
+ * The deployed HTML carries the real page — H1, every section, the visible
+ * FAQ, the footer link graph — before any JavaScript runs: Google renders JS
+ * late and on a budget, and most AI answer engines do not render it at all.
  */
 import { renderToString } from "react-dom/server";
 import { Page } from "./Page.jsx";
 
-export function render() {
-  return renderToString(<Page />);
+/**
+ * @param {{ locale: import("./i18n/locales.js").Locale, messages: object }} page
+ *   A PageContext from build/page-context.mjs.
+ */
+export function render(page) {
+  return renderToString(<Page locale={page.locale} messages={page.messages} />);
 }
