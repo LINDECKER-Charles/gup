@@ -70,9 +70,12 @@ export class ProvidersPanel implements Panel {
   render(viewport: Viewport): readonly Line[] {
     if (!this.#report) return placeholder(LABELS.loading);
     const lines = this.allLines(viewport.width);
-    // The list shrinks when the incompatible group is hidden: never scroll past its end.
-    const offset = Math.min(this.#offset, Math.max(0, lines.length - 1));
-    return lines.slice(offset, offset + viewport.height);
+    // The last screenful is as far as the list goes, whatever was scrolled:
+    // past it, PageDown would leave one line on an empty panel. Kept, so the
+    // next PageUp moves at once. The list also shrinks when the incompatible
+    // group is hidden.
+    this.#offset = Math.min(this.#offset, Math.max(0, lines.length - viewport.height));
+    return lines.slice(this.#offset, this.#offset + viewport.height);
   }
 
   press(key: KeyPress): void {
@@ -83,9 +86,7 @@ export class ProvidersPanel implements Panel {
   click(): void {}
 
   scroll(step: number): void {
-    // Bounded at unlimited width: a narrow panel wraps the summary and the
-    // note onto a line or two more, so its last screen merely keeps those
-    // lines in view — the end of the list is always reachable.
+    // Bounded by the list here, by the last screenful at the next render.
     const lastLine = this.allLines(Number.POSITIVE_INFINITY).length - 1;
     this.#offset = Math.max(0, Math.min(this.#offset + step, lastLine));
   }

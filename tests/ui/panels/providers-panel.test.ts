@@ -11,6 +11,7 @@ const VIEW = { width: 100, height: 40 };
 /** The main panel's room inside an 80-column terminal (sidebar and borders taken). */
 const PANEL_AT_80_COLUMNS = 52;
 const lineText = (line: Line) => line.map((s) => s.text).join("");
+const pageKey = (name: string) => ({ name, sequence: "", ctrl: false });
 const text = (lines: readonly Line[]) => lines.map(lineText).join("\n");
 
 const MAC_REPORT: ProviderStatusReport = {
@@ -132,7 +133,24 @@ describe("ProvidersPanel", () => {
     const panel = shown(MAC_REPORT, () => isShown);
     panel.scroll(100);
     isShown = false;
-    expect(panel.render(VIEW)).toHaveLength(1);
+    expect(lineText(panel.render(VIEW)[0] ?? [])).toBe("1 détecté(s) · 1 non installé(s)");
+  });
+
+  it("stops PageDown at the last screenful, and PageUp moves back at once", () => {
+    const missing = Array.from({ length: 40 }, (_, index) => ({
+      id: `tool-${index}`,
+      displayName: `Tool ${index}`,
+    }));
+    const panel = shown({ ...MAC_REPORT, missing });
+    const screen = { width: 100, height: 12 };
+    for (let press = 0; press < 10; press++) panel.press(pageKey("pagedown"));
+    const last = panel.render(screen).map(lineText);
+    expect(last).toHaveLength(screen.height);
+    expect(last.at(-1)).toContain("Winget");
+    panel.press(pageKey("pageup"));
+    const back = panel.render(screen).map(lineText);
+    expect(back).toHaveLength(screen.height);
+    expect(back.at(-1)).not.toContain("Winget");
   });
 
   it("starts loading the first time it is shown, and only then", () => {
