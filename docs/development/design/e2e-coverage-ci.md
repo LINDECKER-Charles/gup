@@ -30,6 +30,7 @@ mutations, listed in the same commit bodies.
 | `ui/select` (a mocked picker) | `ui/prompts/package-picker`: `promptPackageSelection` opens the real picker on the test host |
 | `commands/list` (registry, scan screen and table mocked, options checked on the mocks) | the real command over registered providers whose probe and scan are stubbed: stdout, stderr and the history record it writes |
 | `renderScanTable` only ever mocked (gap F5) | `ui/table.test.ts`: rows, order, error rows, totals |
+| `gup doctor`'s fail-soft detection (F6) tested layer by layer | `commands/doctor-fail-soft.test.ts`: the real command over a throwing and a wedged registered probe |
 | 15 suites with their own `process.platform` switch | `tests/support/platform.ts` everywhere |
 
 **Mock call shapes.** A script (kept out of the repository) flagged every test of `tests/{core,
