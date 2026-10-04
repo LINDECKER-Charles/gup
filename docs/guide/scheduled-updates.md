@@ -204,7 +204,7 @@ have not seen yet (`planif. : 2 exécution(s) · 1 échec`).
 The line under the fields shows the cron expression and the next three runs,
 recomputed at every keystroke, or why the recurrence is refused (`✖ Fréquence
 trop élevée — au plus une exécution par heure`). Each problem shows under its
-field and *Enregistrer* stays muted until there is none. `ctrl+s` saves from
+field and *Enregistrer* stays muted until there is none. `Ctrl+S` saves from
 anywhere, `échap` leaves (asking first when something changed). The note
 under a winget package is the UAC caveat of
 [What a scheduled run never does](#what-a-scheduled-run-never-does).

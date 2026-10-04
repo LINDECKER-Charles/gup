@@ -14,7 +14,7 @@ import {
 } from "../../../src/ui/settings/settings-sources.js";
 import { staticProbe } from "../../../src/ui/theme/runtime/terminal-probe.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
-import { TIMEOUT_DIALOG } from "../../../src/ui/text/menu-labels.js";
+import { DIALOG_HINTS, TIMEOUT_DIALOG } from "../../../src/ui/text/menu-labels.js";
 import { OPTIONS_NOTICES, SORT_VALUES } from "../../../src/ui/text/settings/options-labels.js";
 import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings/settings-labels.js";
 import {
@@ -204,6 +204,13 @@ describe("Options and the settings file", () => {
     await menu.press("enter");
     await menu.waitForText(`[${seconds}s]`);
   }
+
+  it("names a text field's keys under it in the hint bar's words", async () => {
+    const { menu } = await menuOn(new SettingsService(new ConfigStore({ file })));
+    await menu.press("enter", "down", "enter");
+    const dialog = await menu.waitForText(TIMEOUT_DIALOG.title);
+    expect(dialog).toMatch(new RegExp(`║ ${DIALOG_HINTS.field} +║`));
+  });
 
   it("saves what the user changes, and the next start opens with it", async () => {
     const { menu } = await menuOn(new SettingsService(new ConfigStore({ file })));

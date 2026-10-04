@@ -131,7 +131,7 @@ export class DialogLayer {
       const say = (line: Line): void => void (hint.content = toStyledText(this.#screen, [line]));
       box.add(field);
       box.add(hint);
-      say([seg("Entrée valider · Échap annuler", "muted")]);
+      say([seg(DIALOG_HINTS.field, "muted")]);
       draw([]);
       // Focus on the next turn: the key that opened the dialog (Enter, usually)
       // is still being dispatched, and would otherwise land in the field and

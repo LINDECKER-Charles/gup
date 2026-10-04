@@ -332,7 +332,7 @@ describe("the Planification list", () => {
     }
     await menu.press("enter");
     const editor = hintBar(await menu.waitForText("Modifier « Outils dev »"));
-    for (const hint of ["ctrl+s enregistrer", "entrée modifier", "échap annuler", PANEL_HINTS_TAIL]) {
+    for (const hint of ["Ctrl+S enregistrer", "entrée modifier", "échap annuler", PANEL_HINTS_TAIL]) {
       expect(editor).toContain(hint);
     }
   });

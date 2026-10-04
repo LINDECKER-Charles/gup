@@ -28,7 +28,7 @@ export const SCHEDULES_HINTS = {
     `entrée modifier · x exécuter · suppr supprimer · ` +
     `espace ${isEnabled ? "désactiver" : "activer"} · ${REPAIR_KEY} déclencheur · ↑↓ naviguer`,
   editor:
-    "ctrl+s enregistrer · entrée modifier · échap annuler · espace basculer · suppr retirer · " +
+    "Ctrl+S enregistrer · entrée modifier · échap annuler · espace basculer · suppr retirer · " +
     "↑↓ champ",
   typing: "tapez · entrée valider · échap annuler",
 } as const;

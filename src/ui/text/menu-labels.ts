@@ -33,6 +33,8 @@ export const DIALOG_HINTS = {
   confirm: "←→ choisir · o oui · n non · entrée valider · échap annuler",
   choose: "↑↓ choisir · entrée valider · échap annuler",
   ask: "tapez · entrée valider · échap annuler",
+  /** Under a text field, until a refused value puts the reason there. */
+  field: "entrée valider · échap annuler",
 } as const;
 
 /** What Scan and Paquets say when the session has not scanned yet and no scan runs. */
