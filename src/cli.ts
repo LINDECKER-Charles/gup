@@ -9,7 +9,7 @@ program
   .name("gup")
   .description(
     "Gestionnaire unifié de mises à jour. `gup` ouvre un menu interactif ; " +
-      "les sous-commandes (list, update, doctor) court-circuitent le menu.",
+      "les sous-commandes ci-dessous court-circuitent le menu.",
   )
   .version(gupVersion());
 
