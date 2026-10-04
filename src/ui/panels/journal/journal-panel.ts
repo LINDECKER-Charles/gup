@@ -1,4 +1,5 @@
 import { buildInsights } from "../../../core/insights/build-insights.js";
+import { withHomeShortened } from "../../../core/log/redact.js";
 import {
   nextPeriod,
   parsePeriod,
@@ -12,7 +13,14 @@ import { periodLabel } from "../../text/journal/activity-labels.js";
 import { EXPORT_LABELS, JOURNAL_LABELS, TAB_LABELS } from "../../text/journal/journal-labels.js";
 import type { ChoiceSpec } from "../../tui/dialog.js";
 import type { KeyPress } from "../../tui/screen-host.js";
-import { fit, seg, type Line, type Segment } from "../../tui/styled-lines.js";
+import {
+  fit,
+  middleEllipsis,
+  seg,
+  wrapLine,
+  type Line,
+  type Segment,
+} from "../../tui/styled-lines.js";
 import { placeholder, type Panel, type Viewport } from "../panel.js";
 import { ActivityTab } from "./activity-tab.js";
 import { DebugTab } from "./debug-tab.js";
@@ -48,6 +56,11 @@ const TAB_GAP = "  ";
 const PUNCTUATION: ReadonlySet<string> = new Set(["[", "]"]);
 const EXPORT_FORMATS: readonly ExportFormat[] = ["html", "json", "csv", "diagnostic"];
 
+/** What the last line says until the next key: an export running, or how one ended. */
+type ExportStatus =
+  | { readonly kind: "running" }
+  | { readonly kind: "done"; readonly outcome: ExportOutcome };
+
 export class JournalPanel implements Panel {
   readonly #deps: JournalPanelDeps;
   readonly #now: () => Date;
@@ -59,7 +72,7 @@ export class JournalPanel implements Panel {
   /** Loads started: a result whose number is not the latest is stale. */
   #loadCount = 0;
   #isExporting = false;
-  #status: Line | null = null;
+  #status: ExportStatus | null = null;
 
   constructor(deps: JournalPanelDeps) {
     this.#deps = deps;
@@ -89,8 +102,8 @@ export class JournalPanel implements Panel {
   render(viewport: Viewport): readonly Line[] {
     const bar = tabBar(this.#tabIndex, viewport.width);
     if (!this.#data) return [bar, ...placeholder(JOURNAL_LABELS.loading)];
+    const status = this.statusLines(viewport.width);
     const frame = this.frameFor(viewport);
-    const status = this.#status ? [this.#status] : [];
     return [bar, ...this.tab.render(frame).slice(0, frame.height), ...status];
   }
 
@@ -124,7 +137,7 @@ export class JournalPanel implements Panel {
   }
 
   private frameFor(viewport: Viewport): TabFrame {
-    const statusRows = this.#status ? 1 : 0;
+    const statusRows = this.statusLines(viewport.width).length;
     return {
       width: viewport.width,
       height: Math.max(1, viewport.height - TAB_BAR_ROWS - statusRows),
@@ -194,12 +207,23 @@ export class JournalPanel implements Panel {
   private async export(format: ExportFormat): Promise<void> {
     if (this.#isExporting) return;
     this.#isExporting = true;
-    this.#status = [seg(EXPORT_LABELS.running, "muted")];
+    this.#status = { kind: "running" };
     this.#deps.redraw();
     const outcome = await this.safeExport(format);
     this.#isExporting = false;
-    this.#status = outcomeLine(outcome);
+    this.#status = { kind: "done", outcome };
     this.#deps.redraw();
+  }
+
+  /** The status, wrapped to the panel: a narrow terminal never cuts the path off. */
+  private statusLines(width: number): Line[] {
+    const status = this.#status;
+    if (!status) return [];
+    const line =
+      status.kind === "running"
+        ? [seg(EXPORT_LABELS.running, "muted")]
+        : outcomeLine(status.outcome, width);
+    return wrapLine(line, width);
   }
 
   private async safeExport(format: ExportFormat): Promise<ExportOutcome> {
@@ -224,12 +248,17 @@ function tabBar(current: number, width: number): Line {
   return used <= width ? segments : [seg(fit(segments.map((s) => s.text).join(""), width))];
 }
 
-/** Where the export went: written, opened in the browser, written but not opened, or why not. */
-function outcomeLine(outcome: ExportOutcome): Line {
+/**
+ * Where the export went: written, opened in the browser, written but not
+ * opened, or why not. The path reads from `~` and fits one row of `width`,
+ * cut in its middle when it must be, so the file name always shows.
+ */
+function outcomeLine(outcome: ExportOutcome, width: number): Line {
   if (!outcome.ok) return [seg(EXPORT_LABELS.failed(outcome.error), "danger")];
-  if (outcome.opened === true) return [seg(EXPORT_LABELS.opened(outcome.path), "success")];
-  if (outcome.opened === false) return [seg(EXPORT_LABELS.notOpened(outcome.path), "warning")];
-  return [seg(EXPORT_LABELS.written(outcome.path), "success")];
+  const path = middleEllipsis(withHomeShortened(outcome.path), width);
+  if (outcome.opened === true) return [seg(EXPORT_LABELS.opened(path), "success")];
+  if (outcome.opened === false) return [seg(EXPORT_LABELS.notOpened(path), "warning")];
+  return [seg(EXPORT_LABELS.written(path), "success")];
 }
 
 function unreadableData(period: Period, error: string): JournalData {

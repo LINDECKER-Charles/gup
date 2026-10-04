@@ -137,7 +137,12 @@ export function redactSecrets(text: string): string {
 
 /** {@link redactSecrets}, then the home directory shortened to `~`. */
 export function redactText(text: string): string {
-  return shortenHome(redactSecrets(text), homeDirectory(), process.platform);
+  return withHomeShortened(redactSecrets(text));
+}
+
+/** `text` with this process's home directory shortened to `~`: a path as the screen shows it. */
+export function withHomeShortened(text: string): string {
+  return shortenHome(text, homeDirectory(), process.platform);
 }
 
 /**

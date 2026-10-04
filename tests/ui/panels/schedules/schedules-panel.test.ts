@@ -8,6 +8,7 @@ import {
 import type { TriggerSummary } from "../../../../src/ui/panels/schedules/schedules-port.js";
 import {
   EMPTY_SCHEDULES,
+  SCHEDULE_NOTICES,
   SCHEDULES_HINTS,
 } from "../../../../src/ui/text/schedule/schedule-menu-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
@@ -165,6 +166,27 @@ describe("SchedulesPanel, list", () => {
     expect(render()[0]).toBe("✔ enregistrée");
     press(key("down"));
     expect(render()[0]).toMatch(/^Déclencheur/);
+  });
+
+  it.each([
+    ["an 80-column terminal", 52],
+    ["a 120-column terminal", 92],
+  ])("wraps a trigger failure on %s instead of cutting its reason", (_terminal, width) => {
+    const second = storedSchedule({ id: "0badf00d", name: "Python" });
+    const { panel, render, list } = setup([storedSchedule(), second]);
+    panel.setTrigger(active);
+    const reason = "ERREUR : le Planificateur de tâches a refusé l'enregistrement (0x80070005)";
+    const notice = SCHEDULE_NOTICES.triggerFailed(reason);
+    panel.setNotice([[{ text: notice, tone: "warning" }]]);
+    const viewport = { width, height: 24 };
+    const lines = render(viewport);
+    const shown = lines.slice(0, lines.findIndex((line) => line.startsWith("Déclencheur")));
+    expect(shown.length).toBeGreaterThan(1);
+    expect(shown.every((line) => line.length <= width)).toBe(true);
+    expect(shown.join(" ")).toBe(notice);
+    panel.click(lines.findIndex((line) => line.includes("Python")), viewport);
+    panel.press(key("x"));
+    expect(list.runNow).toHaveBeenCalledWith(second);
   });
 
   it("says when the view comes to the front", () => {

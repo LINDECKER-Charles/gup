@@ -1,3 +1,5 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { buildInsights } from "../../../../src/core/insights/build-insights.js";
 import { parsePeriod } from "../../../../src/core/time/period.js";
@@ -150,7 +152,7 @@ describe("JournalPanel", () => {
   });
 
   it.each(["1", "2", "3", "4"])("opens the HTML report of the period with o on tab %s", async (tab) => {
-    const path = "C:\reports\gup-report.html";
+    const path = "C:\\reports\\gup-report.html";
     const source = scriptedSource(journalData(), { ok: true, path, opened: true });
     const { journal } = await shown(source);
 
@@ -162,8 +164,28 @@ describe("JournalPanel", () => {
     expect(text(journal.render(WIDE)).at(-1)).toBe(EXPORT_LABELS.opened(path));
   });
 
+  it.each([
+    ["an 80-column terminal", 52],
+    ["a 120-column terminal", 92],
+  ])("keeps the opened report's path readable on %s", async (_terminal, width) => {
+    const file = "gup-rapport-2026-10-04-1430.html";
+    const path = join(homedir(), "AppData", "Local", "gup", "reports", file);
+    const { journal } = await shown(scriptedSource(journalData(), { ok: true, path, opened: true }));
+
+    journal.press(key("o"));
+    await settle();
+
+    const lines = text(journal.render({ width, height: 24 }));
+    const status = lines.slice(lines.findIndex((line) => line.includes("Rapport ouvert")));
+    expect(status).toHaveLength(2);
+    expect(status.every((line) => line.length <= width)).toBe(true);
+    expect(status[0]).toBe(EXPORT_LABELS.opened("").trimEnd());
+    expect(status[1]?.startsWith("~")).toBe(true);
+    expect(status[1]?.endsWith(file)).toBe(true);
+  });
+
   it("gives the report's path when the browser could not be opened", async () => {
-    const path = "C:\reports\gup-report.html";
+    const path = "C:\\reports\\gup-report.html";
     const { journal } = await shown(scriptedSource(journalData(), { ok: true, path, opened: false }));
 
     journal.press(key("o"));

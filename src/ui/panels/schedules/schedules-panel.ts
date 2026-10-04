@@ -7,7 +7,7 @@ import {
 } from "../../text/schedule/schedule-menu-labels.js";
 import { ListCursor } from "../../tui/list-cursor.js";
 import type { KeyPress } from "../../tui/screen-host.js";
-import { seg, type Line } from "../../tui/styled-lines.js";
+import { seg, wrapLine, type Line } from "../../tui/styled-lines.js";
 import { PAGE_STEP, type Panel, type Viewport } from "../panel.js";
 import { editorLines } from "./schedule-editor-lines.js";
 import {
@@ -118,7 +118,7 @@ export class SchedulesPanel implements Panel {
     this.#handlers.list.shown();
   }
 
-  /** Lines shown above the list or the form until the next key. */
+  /** Lines shown above the list or the form until the next key, wrapped to the panel. */
   setNotice(lines: readonly Line[]): void {
     this.#notice = lines;
   }
@@ -259,6 +259,11 @@ export class SchedulesPanel implements Panel {
     if (!key.ctrl && key.sequence.length === 1 && key.sequence >= " ") editor.type(key.sequence);
   }
 
+  /** The notice on as many rows as the width needs: a trigger failure's reason is never cut. */
+  #noticeLines(width: number): Line[] {
+    return this.#notice.flatMap((line) => wrapLine(line, width));
+  }
+
   #layout(viewport: Viewport): Layout {
     const editor = this.#editor;
     return editor ? this.#editorLayout(editor, viewport) : this.#listLayout(viewport);
@@ -273,8 +278,9 @@ export class SchedulesPanel implements Panel {
       providerName: (id) => this.#book.providerName(id),
       width: viewport.width,
     });
-    const head = this.#notice.length;
-    const lines = [...this.#notice, ...drawn.lines];
+    const notice = this.#noticeLines(viewport.width);
+    const head = notice.length;
+    const lines = [...notice, ...drawn.lines];
     const focus = head + (drawn.itemLines[editor.cursor] ?? 0);
     const start = windowStart({ total: lines.length, focus, height: viewport.height });
     const items = lines.map((_, line) => drawn.itemLines.indexOf(line - head));
@@ -286,7 +292,7 @@ export class SchedulesPanel implements Panel {
 
   #listLayout(viewport: Viewport): Layout {
     const snapshot = this.#book.snapshot();
-    if (snapshot.schedules.length === 0) return this.#emptyLayout();
+    if (snapshot.schedules.length === 0) return this.#emptyLayout(viewport);
     const cursor = this.#cursor();
     const drawn = listLines({
       snapshot,
@@ -296,7 +302,7 @@ export class SchedulesPanel implements Panel {
       providerName: (id) => this.#book.providerName(id),
       width: viewport.width,
     });
-    const head = [...this.#notice, ...drawn.head];
+    const head = [...this.#noticeLines(viewport.width), ...drawn.head];
     const room = viewport.height - head.length - Math.min(DETAILS_ROOM, drawn.details.length);
     const shown = new ListCursor(
       drawn.rows.map(() => true),
@@ -311,9 +317,9 @@ export class SchedulesPanel implements Panel {
     return { lines, targets };
   }
 
-  #emptyLayout(): Layout {
+  #emptyLayout(viewport: Viewport): Layout {
     const lines: Line[] = [
-      ...this.#notice,
+      ...this.#noticeLines(viewport.width),
       [],
       ...EMPTY_SCHEDULES.map((text): Line => [seg(`  ${text}`, "muted")]),
     ];
