@@ -1,59 +1,73 @@
 /**
- * "Interface" tab: the Paquets view of the full-screen TUI with a few
- * packages checked, as gup draws it. The text is French on purpose — it is
- * the real interface, whatever the page language — and the vocabulary
- * (sidebar order, key hints) is the shipped one.
+ * "Interface" tab: Paquets in the full-screen TUI, three packages checked, as
+ * gup draws it in a wide terminal. The text is French on purpose — it is the
+ * real interface, whatever the page language — and every label, key hint and
+ * mark is the shipped one: tests/rules/scenes-truth.test.mjs holds this file
+ * to the CLI's sources (src/ui/**).
  *
- * Package versions and counts are illustrative sample data.
+ * @typedef {import("./sample-machine.js").SampleGroup} SampleGroup
  *
  * @typedef {object} TuiSidebarItem
  * @property {string} label
  * @property {string} [badge]
  * @property {boolean} [isCurrent]
- * @property {boolean} [startsGroup]  Draws the separator above the entry.
+ * @property {boolean} [startsGroup]  Draws the blank row above the entry.
  *
- * @typedef {{ kind: "group", provider: string, count: number }
- *   | { kind: "package", name: string, from: string, to: string,
- *       state: "checked" | "unchecked" | "running" | "done" | "queued" | "failed",
- *       isCursor?: boolean }} TuiRow
- *
- * @typedef {object} TuiScene
- * @property {"tui"} kind
+ * @typedef {object} PackagesScene
+ * @property {"packages"} kind
  * @property {"fr"} lang
- * @property {string} topBar
- * @property {TuiSidebarItem[]} [sidebar]  Absent for full-screen takeovers.
+ * @property {readonly string[]} facts  Title-bar facts after "gup v<version>".
+ * @property {string} sidebarTitle
+ * @property {readonly TuiSidebarItem[]} sidebar
  * @property {string} panelTitle
- * @property {TuiRow[]} rows
- * @property {{ title: string, lines: string[], progress?: number }} [pane]
- * @property {string} hints
+ * @property {{ name: string, current: string, latest: string }} columns
+ * @property {readonly SampleGroup[]} groups
+ * @property {string} cursor  Name of the package under the cursor.
+ * @property {{ count: string, button: string }} selection  The bar under the table.
+ * @property {readonly string[]} hints  Key hints in the TUI's order, global keys last.
  */
-import { facts } from "../facts.js";
+import { SAMPLE_MACHINE } from "./sample-machine.js";
 
-const pkg = (name, [from, to], state) => ({ kind: "package", name, from, to, state });
+const packages = SAMPLE_MACHINE.groups.flatMap((group) => group.packages);
+const updates = packages.length;
+const checked = packages.filter((pkg) => pkg.isChecked).length;
 
-/** @type {TuiScene} */
+/** @type {PackagesScene} */
 export const APP_SCENE = Object.freeze({
-  kind: "tui",
+  kind: "packages",
   lang: "fr",
-  topBar: `gup ${facts.version} · 47 providers · 23 mises à jour`,
+  facts: [
+    `${SAMPLE_MACHINE.detected} provider(s)`,
+    `${updates} mise(s) à jour`,
+    "mode normal · tous les providers",
+  ],
+  sidebarTitle: "Menu",
   sidebar: [
     { label: "Scan" },
-    { label: "Paquets", badge: "23", isCurrent: true },
-    { label: "Planification" },
+    { label: "Paquets", badge: String(updates), isCurrent: true },
+    { label: "Planification", badge: String(SAMPLE_MACHINE.schedules) },
     { label: "Providers", startsGroup: true },
     { label: "Journal" },
     { label: "Options" },
     { label: "Quitter", startsGroup: true },
   ],
   panelTitle: "Paquets",
-  rows: [
-    { kind: "group", provider: "Homebrew", count: 3 },
-    { ...pkg("ripgrep", ["14.1.0", "14.1.1"], "checked"), isCursor: true },
-    pkg("fzf", ["0.54.0", "0.55.0"], "checked"),
-    pkg("bat", ["0.24.0", "0.25.0"], "unchecked"),
-    { kind: "group", provider: "npm-g", count: 2 },
-    pkg("typescript", ["5.5.4", "5.6.2"], "checked"),
-    pkg("pnpm", ["9.6.0", "9.12.1"], "unchecked"),
+  columns: { name: "Paquet", current: "Actuel", latest: "Dernier" },
+  groups: SAMPLE_MACHINE.groups,
+  cursor: "ripgrep",
+  selection: {
+    count: `● ${checked} sur ${updates} coché(s)`,
+    button: `Entrée  Mettre à jour (${checked})`,
+  },
+  hints: [
+    "↑↓ naviguer",
+    "espace cocher",
+    "a tout cocher",
+    "/ filtrer",
+    `entrée mettre à jour (${checked})`,
+    "r rescanner",
+    "p planifier",
+    "tab menu",
+    "q quitter",
   ],
-  hints: "↑↓ naviguer · espace cocher · a tout cocher · entrée mettre à jour (3) · p planifier",
 });

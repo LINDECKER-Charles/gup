@@ -10,8 +10,12 @@ import { useState } from "react";
 import { SCENES } from "../../data/scenes/index.js";
 import { useI18n } from "../../i18n/use-i18n.js";
 import { LineScene } from "./LineScene.jsx";
+import { PackagesScene } from "./PackagesScene.jsx";
+import { RunScene } from "./RunScene.jsx";
 import { TerminalTabs } from "./TerminalTabs.jsx";
-import { TuiScene } from "./TuiScene.jsx";
+
+/** The component that draws each kind of scene. */
+const SCENE_VIEWS = { packages: PackagesScene, run: RunScene, lines: LineScene };
 
 function TerminalHead({ terminal, dir, active, onSelect }) {
   return (
@@ -39,6 +43,7 @@ export function Terminal() {
   const { terminal } = messages.hero;
   const [active, setActive] = useState(SCENES[0].id);
   const { scene } = SCENES.find((entry) => entry.id === active);
+  const SceneView = SCENE_VIEWS[scene.kind];
 
   return (
     <figure className="term" aria-labelledby="term-label">
@@ -57,7 +62,7 @@ export function Terminal() {
         dir="ltr"
         lang={scene.lang}
       >
-        {scene.kind === "tui" ? <TuiScene scene={scene} /> : <LineScene scene={scene} />}
+        <SceneView scene={scene} />
       </div>
       <figcaption className="term-caption" dir={locale.dir}>
         {terminal.caption}
