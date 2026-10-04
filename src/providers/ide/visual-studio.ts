@@ -508,8 +508,8 @@ export function vsInstallerOutcome(id: string, exitCode: number): UpdateOutcome 
  * Lexicographic comparison is unusable here: "17.14.7" > "17.14.37" as strings,
  * which would advertise a downgrade as an update.
  *
- * Local copy rather than an import from another provider — same call as
- * `jetbrains-plugins.ts`: providers stay independent of each other.
+ * Local copy rather than an import from another provider: providers stay
+ * independent of each other.
  */
 function compareVersions(a: string, b: string): number {
   const left = numericParts(a);

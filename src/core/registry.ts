@@ -175,17 +175,11 @@ import { WindsurfExtProvider } from "../providers/ide/windsurf-ext.js";
 import { VsCodiumExtProvider } from "../providers/ide/vscodium-ext.js";
 import { JetBrainsProvider } from "../providers/ide/jetbrains.js";
 import { VisualStudioProvider } from "../providers/ide/visual-studio.js";
-// Manual-only providers — every result they produce is `manual: true`, so
-// scanAll filters them out and registering them would just add scan latency
-// for no UI win. They live as code references in:
-//   - src/providers/ide/jetbrains-plugins.ts
-//   - src/providers/ide/zed-ext.ts
-//   - src/providers/ide/sublime-pc.ts
-//   - src/providers/ide/obsidian-plugins.ts
-//   - src/providers/ide/unity-hub.ts
-//   - src/providers/ide/notepad-pp.ts
-//   - src/providers/ide/eclipse-marketplace.ts
-// Re-register here if/when an automatable update path lands upstream.
+// Sources whose every update needs a GUI action (JetBrains plugins, Zed,
+// Sublime Package Control, Obsidian, Unity Hub, Notepad++, Eclipse p2) have
+// no provider: each row would be `manual: true`, which scanAll drops. They are
+// listed as candidates in docs/guide/providers-catalog.md, for the day an
+// automatable update path exists upstream.
 
 // --- Editor plugin managers (headless-driven) ------------------------------
 import { NvimLazyProvider } from "../providers/editor-plugins/nvim-lazy.js";

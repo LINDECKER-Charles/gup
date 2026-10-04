@@ -7,10 +7,6 @@ describe("registry: ALL_PROVIDERS catalogue", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("does not register the jetbrains-plugins provider (manual-only)", () => {
-    expect(ALL_PROVIDERS.find((p) => p.id === "jetbrains-plugins")).toBeUndefined();
-  });
-
   it("each provider implements the required Provider contract", () => {
     for (const p of ALL_PROVIDERS) {
       expect(typeof p.id).toBe("string");
