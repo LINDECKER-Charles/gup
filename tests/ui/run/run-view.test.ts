@@ -24,7 +24,7 @@ vi.mock("../../../src/core/platform/lookup-provider.js", () => ({
   },
 }));
 vi.mock("../../../src/core/pty/pty-kill.js", () => ({
-  ptyKill: { terminate: hoisted.terminate, force: vi.fn() },
+  ptyKill: { terminate: hoisted.terminate },
 }));
 vi.mock("../../../src/core/pty/exit-file.js", async (importOriginal) => ({
   ...(await importOriginal<object>()),

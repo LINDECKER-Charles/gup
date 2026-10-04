@@ -9,7 +9,7 @@ import { recordingPane, type RecordingPane } from "../../support/pty/recording-p
  * test kills nothing real and leaves no directory behind.
  */
 const { ptyKillMock, slotMock } = vi.hoisted(() => ({
-  ptyKillMock: { terminate: vi.fn(), force: vi.fn() },
+  ptyKillMock: { terminate: vi.fn(async () => {}) },
   slotMock: { path: "C:\\Temp\\gup-pty-test\\0123.exit", release: vi.fn(async () => {}) },
 }));
 vi.mock("../../../src/core/pty/pty-kill.js", () => ({ ptyKill: ptyKillMock }));

@@ -10,7 +10,9 @@ import { restorePlatform, setPlatform } from "../../support/platform.js";
  * an in-memory node-pty. The kill lever is replaced (no taskkill from a unit
  * test).
  */
-const { ptyKillMock } = vi.hoisted(() => ({ ptyKillMock: { terminate: vi.fn(), force: vi.fn() } }));
+const { ptyKillMock } = vi.hoisted(() => ({
+  ptyKillMock: { terminate: vi.fn(async () => {}) },
+}));
 vi.mock("../../../src/core/pty/pty-kill.js", () => ({ ptyKill: ptyKillMock }));
 
 import { PTY_LABELS } from "../../../src/core/pty/pty-labels.js";

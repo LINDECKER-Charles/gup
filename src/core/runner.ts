@@ -192,20 +192,28 @@ export function consumeInterrupt(): InterruptFlags {
   return flags;
 }
 
+/** taskkill's own cap: the exit of a killed install waits for it, so it must end. */
+const TREE_KILL_TIMEOUT_MS = 10_000;
+
 /**
  * Best-effort: kill the whole process tree on Windows. winget/choco spawn
  * installer children (msiexec, setup.exe) that a SIGTERM to the direct child
- * leaves orphaned; `taskkill /T` takes the tree down. Fire-and-forget — we
- * never await it and swallow any error. No-op when there's no pid (e.g. the
- * mocked child in tests) or off Windows, where the caller signals the child
- * (execa's cancelSignal) or its process group itself.
+ * leaves orphaned; `taskkill /T` takes the tree down. Resolves once taskkill
+ * returned, whatever it reported — never rejects. No-op when there's no pid
+ * (e.g. the mocked child in tests) or off Windows, where the caller signals
+ * the child (execa's cancelSignal) or its process group itself.
  */
-export function killProcessTree(pid: number | undefined): void {
+export async function killProcessTree(pid: number | undefined): Promise<void> {
   if (process.platform !== "win32" || !pid || pid <= 0) return;
-  void execa("taskkill", ["/pid", String(pid), "/t", "/f"], {
-    reject: false,
-    windowsHide: true,
-  }).catch(() => {});
+  try {
+    await execa("taskkill", ["/pid", String(pid), "/t", "/f"], {
+      reject: false,
+      windowsHide: true,
+      timeout: TREE_KILL_TIMEOUT_MS,
+    });
+  } catch {
+    // Nothing left to kill, or taskkill itself failed: either way, done.
+  }
 }
 
 /**
@@ -358,10 +366,36 @@ function startInTerminal(request: InheritRequest): InheritProcess {
       cancelSignal: controller.signal,
       ...placementOf(request),
     }) as ResultPromise;
-    return { exited: settled(proc), kill: () => killStarted(controller, proc.pid) };
+    return killableChild(proc, controller, settled(proc));
   } catch {
     return exitedProcess();
   }
+}
+
+/**
+ * A started child as an install process. A kill aborts it and, on Windows,
+ * takes its whole tree down; its exit then also waits for that tree kill. The
+ * direct child dies first — the cmd.exe behind a `.cmd` shim — while the
+ * installer it started is still running: reported before taskkill reached it,
+ * the outcome would let a provider repair what the installer left (npm's
+ * staged copy) while the installer still writes there.
+ */
+function killableChild(
+  proc: ResultPromise,
+  controller: AbortController,
+  exit: Promise<InheritExit>,
+): InheritProcess {
+  let treeKill: Promise<void> = Promise.resolve();
+  return {
+    exited: exit.then(async (result) => {
+      await treeKill;
+      return result;
+    }),
+    kill: () => {
+      controller.abort();
+      treeKill = killProcessTree(proc.pid);
+    },
+  };
 }
 
 /** The exit of an execa child, as a promise that never rejects. */
@@ -469,7 +503,7 @@ function startPiped(request: InheritRequest, options: PipeSinkOptions): InheritP
       for (const flush of flushers) flush();
       return exit;
     });
-    return { exited, kill: () => killStarted(controller, proc.pid) };
+    return killableChild(proc, controller, exited);
   } catch {
     return exitedProcess();
   }
@@ -485,11 +519,6 @@ function pipeLines(
   stream?.setEncoding("utf8");
   stream?.on("data", (chunk: string) => splitter.push(chunk));
   return () => splitter.end();
-}
-
-function killStarted(controller: AbortController, pid: number | undefined): void {
-  controller.abort();
-  killProcessTree(pid);
 }
 
 /**
