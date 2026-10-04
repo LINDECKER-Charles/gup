@@ -137,9 +137,11 @@ the UI. The console side is `ui/update-console.ts` (`consolePorts`, `printReport
 `commands/update.ts#updateOnConsole` runs it with a Ctrl+C skip session.
 
 **Batch lock** (`batch-lock.ts`): one update batch at a time per user, across processes. The
-holder keeps a listening endpoint open — a named pipe on Windows, a unix socket under the
-scheduler state dir on POSIX — that the OS releases however the holder exits; a JSON file beside
-it only carries display information. The default guard is a pass-through; the scheduler module
+holder keeps a listening endpoint open — a named pipe on Windows, a unix socket on POSIX — that
+the OS releases however the holder exits; a JSON file only carries display information. Both
+live in the lock's own state dir, `<state root>/gup/locks` (inside `GUP_SCHEDULER_DIR` when that
+is set, so a sandboxed scheduler keeps its own lock), never in the scheduler's folder: an update
+does not recreate it after `gup schedule uninstall --purge`. The default guard is a pass-through; the scheduler module
 installs `createBatchGuard(location)`.
 
 ### 3.7 CLI modules (`src/commands/cli/`)
@@ -388,6 +390,10 @@ Recorded so the integration agent and the wave-2 branches are not surprised.
   rather than "none of them contains UTF-8".
 - **Glyph map:** covers the symbols of the eight specs that can reach a terminal; website-only
   characters (Arabic, CJK and Bengali punctuation, emoji) are left out.
+- **F-13's "unix socket under the scheduler state dir"** (since `fix/wave-2-polish`): the lock
+  has a state dir of its own, `<state root>/gup/locks`, on every OS; it stays in the scheduler's
+  directory only when `GUP_SCHEDULER_DIR` is set. Every interactive update took the lock, and so
+  recreated an empty scheduler folder after the user purged it.
 - **Earlier parts** (see their commit bodies): the batch lock lives in `core/update/batch-lock.ts`
   (folder full at 10 files); `core/state/file-lock.ts` serves the config store; an unknown or
   foreign provider in a request is reported *skipped*; `OutcomeEntry.key` and

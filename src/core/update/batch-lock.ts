@@ -14,11 +14,11 @@ import type { BatchGuard, BatchHolder, BatchWait } from "./update-extensions.js"
  * 1618 "another installation in progress", brew's lock).
  *
  * The lock is a listening endpoint the holder keeps open for the whole batch
- * — a named pipe on Windows, a unix socket under the scheduler state dir on
- * POSIX. The operating system releases it when the holder exits, however it
- * exits, so a crash can never leave a lock behind and no lock is ever broken
- * by age while its holder lives. A JSON file next to it only carries what a
- * waiting run shows ("planifiée, depuis 10:02").
+ * — a named pipe on Windows, a unix socket in the lock's state dir on POSIX.
+ * The operating system releases it when the holder exits, however it exits,
+ * so a crash can never leave a lock behind and no lock is ever broken by age
+ * while its holder lives. A JSON file in that dir only carries what a
+ * waiting run shows ("planifiée, commencée il y a 4 min").
  */
 
 export interface BatchLockLocation {
@@ -33,6 +33,9 @@ const BATCH_POLL_MS = 2000;
 
 const INFO_FILE = "update-lock.json";
 const SOCKET_FILE = "update.sock";
+/** The lock's own state dir, beside the features' ones: `<state root>/gup/locks`. */
+const LOCK_DIR = "locks";
+const SCHEDULER_DIR_ENV = "GUP_SCHEDULER_DIR";
 const PIPE_PREFIX = "\\\\.\\pipe\\gup-update-";
 const ENDPOINT_ID_CHARS = 16;
 /** sun_path is 104 bytes on macOS (108 on Linux), terminating NUL included. */
@@ -44,13 +47,13 @@ const STATE_DIR_MODE = 0o700;
 const IN_USE_CODES = new Set(["EADDRINUSE", "EACCES"]);
 
 /**
- * Where the lock lives for the scheduler state dir of `context`, or null when
- * the platform gives no state dir. The endpoint is derived from that dir, so
- * a sandboxed GUP_SCHEDULER_DIR (tests, a second install) never contends with
- * the user's real gup.
+ * Where the lock lives for `context`, or null when the platform gives no
+ * state dir. The endpoint is derived from the lock's dir, so a sandboxed
+ * GUP_SCHEDULER_DIR (tests, a second install) never contends with the user's
+ * real gup.
  */
 export function batchLockLocation(context: Partial<DirContext> = {}): BatchLockLocation | null {
-  const dir = stateDir("scheduler", context);
+  const dir = lockDir(context);
   if (dir === null) return null;
   const platform = context.platform ?? process.platform;
   const path = pathFlavour(platform);
@@ -62,6 +65,21 @@ export function batchLockLocation(context: Partial<DirContext> = {}): BatchLockL
   // A deep override: a short, per-user runtime location instead.
   const runtime = context.env?.["XDG_RUNTIME_DIR"] || tmpdir();
   return { endpoint: path.join(runtime, `gup-update-${id}.sock`), infoFile };
+}
+
+/**
+ * `<state root>/gup/locks`: the batch belongs to no feature — interactive
+ * runs take it as much as the scheduler — so an update never recreates the
+ * scheduler's folder once `gup schedule uninstall --purge` removed it. With
+ * GUP_SCHEDULER_DIR set, the lock stays in that directory: the scheduler it
+ * sandboxes keeps a lock of its own.
+ */
+function lockDir(context: Partial<DirContext>): string | null {
+  const schedulerDir = stateDir("scheduler", context);
+  if (schedulerDir === null) return null;
+  if ((context.env ?? process.env)[SCHEDULER_DIR_ENV]) return schedulerDir;
+  const path = pathFlavour(context.platform ?? process.platform);
+  return path.join(path.dirname(schedulerDir), LOCK_DIR);
 }
 
 function endpointId(dir: string): string {

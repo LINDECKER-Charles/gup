@@ -155,7 +155,8 @@ not the run.
 `purgeSchedulerFiles` removes them (their `.lock` files and the copies of a
 corrupt file the store set aside, `schedules.corrupt-<date>.json`, included),
 then the directory only if empty (a `GUP_SCHEDULER_DIR` may point at a shared
-folder).
+folder). The update batch's lock lives in `<state root>/gup/locks`, not here
+(unless `GUP_SCHEDULER_DIR` is set): an update never recreates this folder.
 
 ## 6. OS triggers
 
