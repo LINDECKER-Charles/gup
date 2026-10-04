@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { sandboxTeardown } from "../sandbox-teardown.js";
 import {
+  isDroppedFromShell,
   SANDBOX_DIR_VARS,
   SANDBOX_ROOT_VAR,
   sandboxRoot,
@@ -41,7 +42,24 @@ describe("shared test env", () => {
   });
 });
 
+describe("variables inherited from the developer's shell", () => {
+  const dropped = ["NO_COLOR", "FORCE_COLOR", "GUP_ASCII", "GUP_PTY", "gup_install_timeout"];
+  const kept = ["GUP_HISTORY", "GUP_LOG_DIR", SANDBOX_ROOT_VAR, "GUP_E2E", "GUP_MUTATE", "PATH"];
+
+  it.each(dropped)("drops %s", (name) => {
+    expect(isDroppedFromShell(name)).toBe(true);
+  });
+
+  it.each(kept)("keeps %s", (name) => {
+    expect(isDroppedFromShell(name)).toBe(false);
+  });
+});
+
 describe("worker setup", () => {
+  it("left none of the shell's gup or colour switches in this worker", () => {
+    expect(Object.keys(process.env).filter(isDroppedFromShell)).toEqual([]);
+  });
+
   it("moved this worker's directory overrides into its own sandbox", () => {
     const root = process.env[SANDBOX_ROOT_VAR] ?? "";
     const own = workerSandboxEnv(root, process.env["VITEST_POOL_ID"] ?? "0");

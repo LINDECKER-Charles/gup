@@ -1,5 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,8 +22,10 @@ import { installLogBackend, log, type LogThreshold } from "../../src/core/log/lo
 import { SinkLogBackend } from "../../src/core/log/log-backend.js";
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../src/core/runner.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
+import { useTempDirs } from "../support/temp-dirs.js";
 
-const originalPlatform = process.platform;
+const tempDir = useTempDirs();
 
 const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
@@ -47,7 +48,7 @@ afterEach(() => {
  * "Insecure creation of file in the os temp dir".
  */
 async function mkInputFile(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "gup-admin-batch-test-"));
+  const dir = await tempDir("gup-admin-batch-test-");
   return join(dir, "input.json");
 }
 
@@ -156,12 +157,12 @@ describe("adminBatchCommand", () => {
       updateAll: vi.fn(),
     };
     getProviderMock.mockReturnValue(provider);
-    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    setPlatform("win32");
 
     try {
       await expect(adminBatchCommand(file)).resolves.toBe(1);
     } finally {
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
     const out = JSON.parse(await readFile(`${file}.out`, "utf8"));
     expect(out.outcomes[0]).toEqual({

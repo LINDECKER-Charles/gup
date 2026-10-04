@@ -14,11 +14,11 @@ import {
 } from "../../src/core/runner.js";
 
 /**
- * The only tests in this repo that actually spawn a process.
+ * The runner on real processes.
  *
- * Every other suite mocks `execa` wholesale (`tests/core/runner.test.ts` sets
- * `vi.mock("execa")`), which means the whole test suite can be green while the
- * spawn layer is broken. That blind spot became load-bearing when execa 9 → 10
+ * `tests/core/runner.test.ts` mocks `execa` wholesale (`vi.mock("execa")`),
+ * which means the unit suites can be green while the spawn layer is broken.
+ * That blind spot became load-bearing when execa 9 → 10
  * replaced its Windows implementation: cross-spawn was dropped for execa's own
  * PATH resolver and cmd.exe escaper, so *every* command gup runs on Windows is
  * now constructed differently — and nothing exercised it.
@@ -39,9 +39,9 @@ import {
  * twice: once for execa to locate `where.exe`, once for `where.exe` to scan for
  * its argument.
  *
- * Raised per suite rather than globally: this is the only file that spawns real
- * children, so every other suite keeps failing fast on the 5 s default. A
- * genuine hang still fails the build, 30 s later instead of 5.
+ * Raised per suite rather than globally, so the suites that spawn nothing keep
+ * failing fast on the 5 s default. A genuine hang still fails the build, 30 s
+ * later instead of 5.
  */
 const SPAWN_TIMEOUT_MS = 30_000;
 
@@ -70,34 +70,8 @@ async function argvRoundTrip(args: string[]): Promise<string[]> {
 }
 
 describe("runner: real process spawn", () => {
-  it("passes argv as a vector, with no shell interpretation", async () => {
-    // Metacharacters that a shell would act on. If any of these split the
-    // command or vanish, the argv-vector guarantee the whole security model
-    // rests on is broken.
-    const payload = [
-      "plain",
-      "with space",
-      'double"quote',
-      "single'quote",
-      "semi;colon",
-      "amp&ersand",
-      "pipe|char",
-      "caret^char",
-      "percent%VAR%",
-      "dollar$HOME",
-      "back`tick",
-      "paren(then)",
-      "gt>lt<",
-      "star*glob",
-      "accents éàî",
-    ];
-    await expect(argvRoundTrip(payload)).resolves.toEqual(payload);
-  });
-
-  it("does not expand environment-variable syntax of either shell", async () => {
-    const payload = ["$HOME", "%USERPROFILE%", "${PATH}", "%PATH%"];
-    await expect(argvRoundTrip(payload)).resolves.toEqual(payload);
-  });
+  // Shell metacharacters and variable syntax as literal argv entries, through
+  // the runner and the embedded terminal: tests/security/command-injection.
 
   it("preserves an empty argument", async () => {
     await expect(argvRoundTrip(["", "after"])).resolves.toEqual(["", "after"]);

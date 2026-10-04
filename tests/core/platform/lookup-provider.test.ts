@@ -6,12 +6,7 @@ vi.mock("../../../src/core/registry.js", () => ({ getProvider: getProviderMock }
 
 import { lookupProvider } from "../../../src/core/platform/lookup-provider.js";
 import { PLATFORMS } from "../../../src/core/platform/platforms.js";
-
-const originalPlatform = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
+import { restorePlatform, setPlatform } from "../../support/platform.js";
 
 function fakeProvider(id: string, platforms?: Provider["platforms"]): Provider {
   return {
@@ -34,7 +29,7 @@ beforeEach(() => {
   getProviderMock.mockImplementation((id: string) => PROVIDERS.get(id));
 });
 
-afterEach(() => setPlatform(originalPlatform));
+afterEach(() => restorePlatform());
 
 describe("lookupProvider", () => {
   it("refuses an id no provider is registered under", () => {

@@ -1,15 +1,22 @@
 import chalk from "chalk";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
-import { renderProvidersStatus } from "../../src/ui/table.js";
+import { getProvider } from "../../src/core/registry.js";
+import { renderProvidersStatus, renderScanTable } from "../../src/ui/table.js";
+import { pkg, scan } from "../support/builders.js";
 
 /**
- * The doctor listing's wording is covered through `gup doctor`
- * (tests/commands/doctor.test.ts); this pins its layout details: incompatible
- * rows dimmed end to end, badges in one column.
+ * The two tables of the one-shot commands. `gup list`'s scan table: one row
+ * per update, providers in id order under their display name, a provider's
+ * scan error on its own row, the total underneath. The doctor listing's
+ * wording is covered through `gup doctor` (tests/commands/doctor.test.ts);
+ * this pins its layout details: incompatible rows dimmed end to end, badges
+ * in one column.
  */
 const DIM_ON = "\x1b[2m";
 const DIM_OFF = "\x1b[22m";
+/** cli-table3 colours its borders itself, whatever chalk's level. */
+const ANSI = new RegExp(String.raw`\x1b\[[0-9;]*m`, "g");
 
 let level: typeof chalk.level;
 
@@ -20,6 +27,62 @@ beforeEach(() => {
 
 afterEach(() => {
   chalk.level = level;
+});
+
+describe("renderScanTable", () => {
+  /** The table's rows, cells trimmed, borders and colours left out. */
+  function rowsOf(table: string): string[][] {
+    return table
+      .replace(ANSI, "")
+      .split("\n")
+      .filter((line) => line.includes("│"))
+      .map((line) => line.split("│").slice(1, -1).map((cell) => cell.trim()));
+  }
+
+  beforeEach(() => {
+    chalk.level = 0;
+  });
+
+  it("lists every update, providers in id order under their display name", () => {
+    const out = renderScanTable([
+      scan("winget", [pkg("Git.Git", { name: "Git", current: "2.51.0", latest: "2.52.0" })]),
+      scan("npm-g", [pkg("typescript", { note: "via corepack" }), pkg("pnpm")]),
+    ]);
+    const npm = getProvider("npm-g")!.displayName;
+    const winget = getProvider("winget")!.displayName;
+    expect(rowsOf(out)).toEqual([
+      ["Provider", "Package", "Current", "Latest", "Note"],
+      [npm, "typescript", "1.0.0", "2.0.0", "via corepack"],
+      [npm, "pnpm", "1.0.0", "2.0.0", ""],
+      [winget, "Git", "2.51.0", "2.52.0", ""],
+    ]);
+    expect(out.split("\n").at(-1)?.trim()).toBe("3 mise(s) à jour disponible(s)");
+  });
+
+  it("shows a provider's scan error in its row, and leaves it out of the total", () => {
+    const out = renderScanTable([
+      scan("az", [], { error: "Please run 'az login'" }),
+      scan("pip", [pkg("requests")]),
+    ]);
+    expect(rowsOf(out)).toContainEqual([
+      getProvider("az")!.displayName,
+      "scan error: Please run 'az login'",
+      "",
+      "",
+      "",
+    ]);
+    expect(out).toContain("1 mise(s) à jour disponible(s)");
+  });
+
+  it("names an unregistered provider by its id", () => {
+    expect(rowsOf(renderScanTable([scan("ghost", [pkg("x")])]))[1]?.[0]).toBe("ghost");
+  });
+
+  it("says everything is up to date instead of an empty table", () => {
+    expect(renderScanTable([scan("pip"), scan("az", [], { error: "boom" })])).toBe(
+      "  à jour — aucune mise à jour disponible",
+    );
+  });
 });
 
 describe("renderProvidersStatus", () => {

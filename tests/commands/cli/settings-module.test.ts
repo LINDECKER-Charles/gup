@@ -1,5 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import chalk from "chalk";
 import { Command } from "commander";
@@ -20,7 +19,10 @@ import { SettingsService } from "../../../src/ui/settings/settings-service.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
 import { configureScreens } from "../../../src/ui/tui/screen-host.js";
 import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings/settings-labels.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
 import { createTestHost } from "../../support/tui/test-host.js";
+
+const tempDir = useTempDirs();
 
 // Spied, not replaced: the screens still get what the module installs.
 vi.mock("../../../src/ui/tui/screen-host.js", async (importOriginal) => {
@@ -33,7 +35,7 @@ const INITIAL_CHALK_LEVEL = chalk.level;
 let file: string;
 
 beforeEach(async () => {
-  file = join(await mkdtemp(join(tmpdir(), "gup-settings-module-")), "config.json");
+  file = join(await tempDir("gup-settings-module-"), "config.json");
 });
 
 afterEach(() => {

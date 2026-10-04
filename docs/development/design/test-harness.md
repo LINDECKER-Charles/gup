@@ -12,10 +12,10 @@ same results (2,932 tests, 2 skipped on Windows).
 
 | Project | Files | Setup | Runs |
 |---|---|---|---|
-| `unit` | `tests/{core,commands,ui,security,scripts,cli}/**/*.test.ts` | worker sandbox | always |
-| `providers` | `tests/providers/*/**/*.test.ts`, `tests/platform/**`, `tests/support/self-test/**` | worker sandbox + **fake system** | always |
+| `unit` | `tests/{core,commands,ui,security,scripts,cli}/**/*.test.ts`, but `tests/security/providers/**` | worker sandbox | always |
+| `providers` | `tests/providers/*/**/*.test.ts`, `tests/platform/**`, `tests/security/providers/**`, `tests/support/self-test/**` | worker sandbox + **fake system** | always |
 | `integration` | `tests/integration/**/*.test.ts` (real spawns, 30 s timeout) | worker sandbox | always |
-| `e2e` | `tests/e2e/**/*.e2e.test.ts` (120 s, serial, one retry) | worker sandbox | only when `GUP_E2E=1` |
+| `e2e` | `tests/e2e/**/*.e2e.test.ts`, only `tests/e2e/smoke/**` with `GUP_E2E_SCOPE=smoke` (120 s, serial, one retry) | worker sandbox + its global setup (fresh `dist/`) | only when `GUP_E2E=1` |
 
 - **Every test file belongs to exactly one project.**
   `tests/support/self-test/project-membership.test.ts` enforces it on the real tree, with and
@@ -28,8 +28,8 @@ same results (2,932 tests, 2 skipped on Windows).
   ended, a `providers-legacy` project ran the flat `tests/providers/*.test.ts` files, each mocking
   the runner; `test/provider-contracts` retired it once the last one had moved (amendment X-1, its
   design note §4). A flat file under `tests/providers/` now matches no project, and the
-  membership self-test fails on it. The e2e project's global setup, reporter and npm scripts
-  arrive with the E2E toolkit (wave 3).
+  membership self-test fails on it. The e2e project's global setup, summary reporter and npm
+  scripts came with the E2E toolkit ([`e2e-coverage-ci.md`](e2e-coverage-ci.md) §9).
 
 | Script | Runs |
 |---|---|
@@ -39,6 +39,7 @@ same results (2,932 tests, 2 skipped on Windows).
 | `npm run test:integration` | `integration` |
 | `npm run test:security` | `vitest run tests/security` — unchanged, `security.yml` relies on it |
 | `npm run test:coverage` | `test:run` with coverage |
+| `npm run test:e2e:smoke`, `test:e2e`, `test:e2e:mutate` | build, then `e2e` with `tests/e2e/opt-in*.env` (smoke; every suite; every suite and `GUP_MUTATE=1`) |
 
 ## 2. Shared environment and sandboxes (H-2)
 
@@ -56,7 +57,9 @@ same results (2,932 tests, 2 skipped on Windows).
   (`tests/support/worker-setup.ts`) moves the three directories to `<root>/w<VITEST_POOL_ID>/…`,
   unique per worker. A root teardown removes the whole root at the end of the run.
 - **Rule: a test that writes uses its own `mkdtemp`** and points the matching variable at it. The
-  sandbox is a safety net for stray writers, never a place a test relies on.
+  sandbox is a safety net for stray writers, never a place a test relies on. `useTempDirs()`
+  (`tests/support/temp-dirs.ts`, wave 3) makes those directories and removes each one once its
+  test ends.
 - Every new persistent writer gets a kill switch or a directory override here, off or sandboxed.
 
 ## 3. Node guard and coverage
@@ -64,10 +67,10 @@ same results (2,932 tests, 2 skipped on Windows).
 - `tests/support/node-guard.ts` (root global setup) fails the run below
   `package.json#engines.node` with `gup's tests need Node >=26.9.0 (OpenTUI loads its renderer
   through node:ffi). Current: vX.Y.Z.` instead of letting the UI suites die on `node:ffi`.
-- The global 90 % coverage thresholds stay (`npm run test:coverage`, run by `check.cmd`) until
-  the coverage policy replaces them with floors on the safety-critical modules in wave 3 (testing
-  spec S14): removing the gate before its replacement would leave every wave-2 merge ungated.
-  `coverage.all` was dropped in wave 0; `src/pty-exec.ts` is excluded ahead of its arrival.
+- Coverage: the global 90 % thresholds this branch kept until wave 3 are gone; floors on the
+  safety-critical modules replace them (`tests/support/coverage-floors.ts`, see
+  [`e2e-coverage-ci.md`](e2e-coverage-ci.md) §5). `coverage.all` was dropped in wave 0;
+  `src/pty-exec.ts` runs in a child process and stays excluded.
 
 ## 4. The fake system (`tests/support/system/`)
 

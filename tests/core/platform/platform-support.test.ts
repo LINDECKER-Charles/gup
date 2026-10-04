@@ -2,14 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { isSupportedOn } from "../../../src/core/platform/is-supported-on.js";
 import { platformName, supportLabel } from "../../../src/core/platform/platform-label.js";
 import { PLATFORMS } from "../../../src/core/platform/platforms.js";
+import { restorePlatform, setPlatform } from "../../support/platform.js";
 
-const originalPlatform = process.platform;
-
-function setPlatform(value: NodeJS.Platform): void {
-  Object.defineProperty(process, "platform", { value, configurable: true });
-}
-
-afterEach(() => setPlatform(originalPlatform));
+afterEach(() => restorePlatform());
 
 describe("PLATFORMS", () => {
   it("names the single-OS sets", () => {

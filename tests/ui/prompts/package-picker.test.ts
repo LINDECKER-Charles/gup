@@ -1,4 +1,20 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+/**
+ * The package picker of `gup update` without targets, on OpenTUI's in-memory
+ * renderer. `promptPackageSelection` opens it on the real terminal's host:
+ * the suites that go through it swap that host for the test one.
+ */
+const terminal = vi.hoisted(() => ({ host: null as ScreenHost | null }));
+vi.mock("../../../src/ui/tui/screen-host.js", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../../../src/ui/tui/screen-host.js")>();
+  const screenHost: ScreenHost = {
+    run: (mount) => (terminal.host ?? real.screenHost).run(mount),
+  };
+  return { ...real, screenHost };
+});
+
+import { getProvider } from "../../../src/core/registry.js";
 import type { ProviderScanResult } from "../../../src/core/types.js";
 import {
   LAUNCH_NOTICES,
@@ -7,7 +23,14 @@ import {
   SELECTION_BAR,
 } from "../../../src/ui/text/packages-labels.js";
 import { pickPackages } from "../../../src/ui/prompts/package-picker.js";
+import { promptPackageSelection } from "../../../src/ui/select.js";
+import type { ScreenHost } from "../../../src/ui/tui/screen-host.js";
+import { pkg, scan } from "../../support/builders.js";
 import { createTestHost, frame, press } from "../../support/tui/test-host.js";
+
+afterEach(() => {
+  terminal.host = null;
+});
 
 const SCANS: ProviderScanResult[] = [
   {
@@ -71,5 +94,25 @@ describe("pickPackages", () => {
     expect((await frame(screen)).trimEnd().split("\n").at(-1)).toContain(PICKER_LABELS.cancelHint);
     await press(screen, "q");
     await expect(picked).resolves.toEqual([]);
+  });
+});
+
+describe("promptPackageSelection", () => {
+  it("groups the packages under each provider's display name, or its id when unregistered", async () => {
+    vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    const { host, next } = createTestHost();
+    terminal.host = host;
+    const picked = promptPackageSelection([scan("winget", [pkg("Git.Git")]), scan("ghost", [pkg("x")])]);
+    const screen = await next();
+    const shown = await frame(screen);
+    expect(shown).toContain(getProvider("winget")!.displayName);
+    expect(shown).toContain("ghost");
+    await press(screen, "q");
+    await expect(picked).resolves.toEqual([]);
+  });
+
+  it("opens no screen when nothing is outdated", async () => {
+    // The real terminal's host: under the test runner it refuses to open (no TTY).
+    await expect(promptPackageSelection([scan("pip")])).resolves.toEqual([]);
   });
 });

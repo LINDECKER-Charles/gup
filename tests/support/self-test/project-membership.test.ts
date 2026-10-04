@@ -25,8 +25,10 @@ function toRoute(entry: TestProjectConfiguration): ProjectRoute {
   return { name: typeof name === "string" ? name : name.label, include, exclude };
 }
 
-async function loadRoutes(e2e: "on" | "off"): Promise<readonly ProjectRoute[]> {
-  vi.stubEnv("GUP_E2E", e2e === "on" ? "1" : undefined);
+/** "on": every end-to-end suite (full scope); "smoke": the pull-request subset. */
+async function loadRoutes(e2e: "on" | "smoke" | "off"): Promise<readonly ProjectRoute[]> {
+  vi.stubEnv("GUP_E2E", e2e === "off" ? undefined : "1");
+  vi.stubEnv("GUP_E2E_SCOPE", e2e === "smoke" ? "smoke" : undefined);
   vi.resetModules();
   const { default: config } = await import("../../../vitest.config.js");
   return (config.test?.projects ?? []).map(toRoute);
@@ -82,13 +84,23 @@ describe("vitest project membership", () => {
     expect(misrouted(files, routes)).toEqual({});
   });
 
-  // The paths the wave-2 branches are planned to add: each lands in the
-  // project whose setup it needs.
+  it("keeps the smoke scope to tests/e2e/smoke", async () => {
+    const routes = await loadRoutes("smoke");
+    const e2e = (await listTestFiles()).filter((file) => file.endsWith(".e2e.test.ts"));
+    const inSmoke = e2e.filter((file) => projectsOf(file, routes).includes("e2e"));
+
+    expect(inSmoke.length).toBeGreaterThan(0);
+    expect(inSmoke.filter((file) => !file.startsWith("tests/e2e/smoke/"))).toEqual([]);
+    expect(e2e.length).toBeGreaterThan(inSmoke.length);
+  });
+
+  // Where each kind of test lands: in the project whose setup it needs.
   it.each([
     ["tests/core/config/store.test.ts", "unit"],
     ["tests/commands/schedule/schedule-command.test.ts", "unit"],
     ["tests/ui/views/journal-view.test.ts", "unit"],
     ["tests/security/scheduler-injection.test.ts", "unit"],
+    ["tests/security/providers/package-id-allowlists.test.ts", "providers"],
     ["tests/scripts/screenshots/scenes.test.ts", "unit"],
     ["tests/cli/startup.test.ts", "unit"],
     ["tests/providers/os/winget.test.ts", "providers"],
@@ -96,7 +108,8 @@ describe("vitest project membership", () => {
     ["tests/platform/platform-simulation.test.ts", "providers"],
     ["tests/support/self-test/fake-runner.test.ts", "providers"],
     ["tests/integration/pty-runner.test.ts", "integration"],
-    ["tests/e2e/cli-smoke.e2e.test.ts", "e2e"],
+    ["tests/e2e/smoke/cli-smoke.e2e.test.ts", "e2e"],
+    ["tests/e2e/mutate/sandboxed-update.e2e.test.ts", "e2e"],
   ])("routes %s to the %s project", async (file, expected) => {
     expect(projectsOf(file, await loadRoutes("on"))).toEqual([expected]);
   });

@@ -1,6 +1,4 @@
 import { existsSync, utimesSync, writeFileSync } from "node:fs";
-import { mkdtemp } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,11 +24,14 @@ import {
   withFileLock,
 } from "../../../src/core/state/file-lock.js";
 import { restorePlatform, setPlatform } from "../../support/platform.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 let file: string;
 
 beforeEach(async () => {
-  file = join(await mkdtemp(join(tmpdir(), "gup-lock-")), "state.json");
+  file = join(await tempDir("gup-lock-"), "state.json");
 });
 
 describe("withFileLock", () => {

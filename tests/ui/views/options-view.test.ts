@@ -1,5 +1,4 @@
-import { mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { CapturedFrame } from "@opentui/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -29,11 +28,13 @@ import { optionsView } from "../../../src/ui/views/options-view.js";
 import { packagesView } from "../../../src/ui/views/packages-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
 import * as wcag from "../../support/contrast/wcag.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
 import {
   bootMenu,
   type MenuDriver,
   type MenuDriverOptions,
 } from "../../support/tui/menu-driver.js";
+import { UTF8_TERMINAL_ENV } from "../../support/tui/test-host.js";
 
 /**
  * The Options view in the running menu, painted by the theme engine and
@@ -41,6 +42,7 @@ import {
  * changes there reaches the whole app at once.
  */
 
+const tempDir = useTempDirs();
 const DARK_BACKGROUND = wcag.parseHexColor("#0B0D13");
 const LIGHT_BACKGROUND = wcag.parseHexColor("#F9FAFC");
 
@@ -61,7 +63,7 @@ async function menuOn(settings: SettingsService, options: MenuDriverOptions = {}
         tui,
         probe: staticProbe({ colors: null, themeMode: null, depth: "truecolor", detection: "done" }),
         settings: appearanceSource(settings),
-        env: {},
+        env: UTF8_TERMINAL_ENV,
       }),
     ...options,
   });
@@ -181,7 +183,7 @@ describe("Options and the settings file", () => {
   let file: string;
 
   beforeEach(async () => {
-    file = join(await mkdtemp(join(tmpdir(), "gup-options-file-")), "config.json");
+    file = join(await tempDir("gup-options-file-"), "config.json");
   });
 
   afterEach(() => {

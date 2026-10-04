@@ -37,6 +37,7 @@ describe("inferSourceFromPath", () => {
   it("classifies arbitrary system paths as manual", () => {
     expect(inferSourceFromPath("C:\\Program Files\\Foo\\foo.exe")).toBe("manual");
     expect(inferSourceFromPath("/usr/local/bin/foo")).toBe("manual");
+    expect(inferSourceFromPath("/home/me/.local/bin/kubectl")).toBe("manual");
     expect(inferSourceFromPath("")).toBe("manual");
   });
 

@@ -580,7 +580,7 @@ Two POSIX-only refinements sit on top of the plain path match:
 - **Symlink resolution.** Homebrew only exposes a symlink on PATH (`/opt/homebrew/bin/kubectl` → `../Cellar/kubernetes-cli/1.36.3/bin/kubectl`). `which` reports the link, so without `realpath` every brew install would classify as `manual` — and since providers turn `manual` into `manual: true`, which `scanAll` filters out, every brew-installed tool was **silently invisible** on macOS. This is the single change that makes the macOS scan honest.
 - **Package-database probe.** Distro packages live in shared prefixes (`/usr/bin`) that carry no ownership signal in the path; `dpkg -S` / `rpm -qf` are the only reliable answer. Only consulted for paths under a system prefix, and only on Linux.
 
-Neither runs on Windows. The win32 branch was restructured — the `where` probe moved out of `detectInstallSource` into the shared `resolveBinaryPath()` — but it is semantically identical, and `tests/core/install-source-macos.test.ts` pins the properties that matter: `realpath` is never called, no extra probe is spawned, and the scoop/choco/winget verdicts are unchanged.
+Neither runs on Windows. The win32 branch was restructured — the `where` probe moved out of `detectInstallSource` into the shared `resolveBinaryPath()` — but it is semantically identical, and `tests/core/install-source.test.ts` pins the properties that matter: `realpath` is never called, no extra probe is spawned, and the scoop/choco/winget verdicts are unchanged.
 
 The Homebrew classifier is deliberately conservative: `/opt/homebrew` and `.linuxbrew` are brew-exclusive prefixes, but `/usr/local` is shared with hand-installs, so it only counts when combined with a `Cellar`/`Caskroom` segment. A directory merely *named* `cellar` never routes an upgrade to brew — pinned by `tests/security/install-source.test.ts`.
 
@@ -803,21 +803,25 @@ Significant attack surface (shell-out to ~150 third-party tools). See `SECURITY.
 
 ## 16. Tests
 
-Stack: Vitest + v8 coverage. Cross-platform CI: Windows + macOS + Ubuntu × Node 26. The prompt suites drive the real views through OpenTUI's in-memory test renderer (`@opentui/core/testing`): keys in, frame text out.
+Stack: Vitest (four projects) + v8 coverage, typechecked and linted like `src`. Cross-platform CI: Windows + macOS + Ubuntu × Node 26. The whole strategy — what each layer fakes, how to run it, where a new test goes, CI and the manual checklists — is in [`testing.md`](testing.md); in short:
+
+| Layer | Where | What it proves |
+|---|---|---|
+| Unit | `tests/{core,commands,cli,ui,security}` | pure logic and builders; the terminal UI on OpenTUI's in-memory test renderer (keys in, frame text out), held to WCAG contrast on every view |
+| Providers | `tests/providers/<domain>`, `tests/platform` | every provider on a simulated machine: contract cases (detection, fail-soft under injected faults, argv, `updateAll`), parsers on recorded tool output, every case replayed on each OS it supports |
+| Security | `tests/security` | the pins: `shell: true` allowlist, https-only `fetch`, the single spawn chokepoint, argv hardening through `run()` and the embedded terminal, package-id allowlists, report escaping |
+| Integration | `tests/integration` | real spawns, a real pseudo-terminal (ConPTY on Windows), the Task Scheduler round trip (opt-in) |
+| End-to-end | `tests/e2e` | the built CLI on the real machine, in a sandbox: commands, the menu in a real terminal, a real update in a throw-away npm prefix (opt-in) |
 
 ```bash
-npm run typecheck             # tsc strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes
-npm run test                  # watch
-npm run test:run              # one-shot
-npm run test:coverage         # + coverage report
+npm run typecheck             # tsc on src, then on the tests, tooling and configs
+npm run test                  # watch: unit + providers
+npm run test:run              # unit, providers and integration, once
+npm run test:coverage         # + coverage (fails on the safety-critical floors only)
+npm run test:e2e:smoke        # build, then the end-to-end smoke
 npm run test:security         # security suite only
 npm run lint                  # eslint
 ```
-
-Three kinds of tests:
-1. **Unit**: parsers of each provider (winget table, scoop status, npm outdated JSON, helm search…), helpers (`gh-releases.ts`, `install-source.ts`, `normalizeVersion`).
-2. **Security pins**: `shell-usage.test.ts` (allowlist of `shell: true`), `http-targets.test.ts` (https-only), `install-source.test.ts` (binary ↔ PM mappings).
-3. **Integration**: very limited — the CLI shells out to real tools that may not be installed in CI.
 
 Strict conventions: `tsconfig.json` enables `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. No `as` cast unless necessary, no `any`. Code review: "no comments stating WHAT, only WHY when non-obvious".
 
@@ -837,8 +841,10 @@ Strict conventions: `tsconfig.json` enables `strict`, `noUncheckedIndexedAccess`
 dev              # tsx src/cli.ts (no-build dev loop)
 build            # tsup → dist/
 start            # node dist/cli.js
-typecheck        # tsc --noEmit
-test, test:run, test:security, test:coverage, test:coverage:ci
+typecheck        # tsc --noEmit, on src then on the tests (tsconfig.tests.json)
+test, test:run, test:unit, test:integration, test:security, test:coverage, test:coverage:ci
+test:e2e:smoke, test:e2e, test:e2e:mutate   # build, then the end-to-end suites (testing.md §6)
+fixtures:record  # re-record provider fixtures from the real tools installed here
 lint, lint:security
 audit:deps, audit:deps:ci
 security         # composite: audit + lint security + tests security

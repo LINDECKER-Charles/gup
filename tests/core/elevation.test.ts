@@ -1,5 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
@@ -22,6 +21,10 @@ import {
   writeBatchOutput,
 } from "../../src/core/elevation.js";
 import { installLogBackend } from "../../src/core/log/log.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
+import { useTempDirs } from "../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 describe("flagForElevation", () => {
   const rows = [
@@ -55,7 +58,7 @@ describe("flagForElevation", () => {
  * file in the os temp dir" on these helper test fixtures.
  */
 async function mkSandboxFile(name: string): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "gup-elevation-test-"));
+  const dir = await tempDir("gup-elevation-test-");
   return join(dir, name);
 }
 
@@ -324,14 +327,13 @@ describe("elevated wait", () => {
     ["win32", "powershell.exe"],
     ["linux", "sudo"],
   ] as const)("waits for the %s elevated child as long as its batch needs", async (platform, command) => {
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, "platform", { value: platform, configurable: true });
+    setPlatform(platform);
     runInheritMock.mockReset();
     runInheritMock.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0, failed: false });
     try {
       await runElevatedBatch(["choco:a", "choco:b", "choco:c"]);
     } finally {
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
     const [spawned, , options] = runInheritMock.mock.calls[0]!;
     expect(spawned).toBe(command);

@@ -1,5 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { NODE_FILE_OPS, type FileOps } from "../../../../src/core/config/atomic-write.js";
@@ -28,6 +27,7 @@ import {
 } from "../../../../src/ui/text/settings/settings-labels.js";
 import { COLORS_UNAVAILABLE, CONTRAST_STATUS } from "../../../../src/ui/text/settings/theme-labels.js";
 import { seg } from "../../../../src/ui/tui/styled-lines.js";
+import { useTempDirs } from "../../../support/temp-dirs.js";
 import {
   key,
   optionsFixture,
@@ -36,6 +36,8 @@ import {
   VIEW,
   type FixtureOptions,
 } from "./options-fixture.js";
+
+const tempDir = useTempDirs();
 
 const INITIAL_TIMEOUT_S = getInstallTimeoutSeconds();
 afterEach(() => setInstallTimeoutSeconds(INITIAL_TIMEOUT_S));
@@ -235,7 +237,7 @@ describe("OptionsPanel saving", () => {
         NODE_FILE_OPS.renameSync(...args);
       },
     };
-    const dir = await mkdtemp(join(tmpdir(), "gup-options-"));
+    const dir = await tempDir("gup-options-");
     return new ConfigStore({ file: join(dir, "config.json"), fileOps });
   }
 
@@ -265,7 +267,7 @@ describe("OptionsPanel saving", () => {
   });
 
   it("says on the file row that a setting is invalid, until a save rewrote its section", async () => {
-    const file = join(await mkdtemp(join(tmpdir(), "gup-options-")), "config.json");
+    const file = join(await tempDir("gup-options-"), "config.json");
     await writeFile(file, JSON.stringify({ version: 1, sections: { scan: { v: 1, fast: "oui" } } }));
     const { panel } = setup({ store: new ConfigStore({ file }) });
     press(panel, "end");
