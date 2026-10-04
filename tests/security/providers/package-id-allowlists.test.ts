@@ -118,7 +118,8 @@ describe("Nerd Fonts: the family names a download and a directory", () => {
 
   it("doubles an apostrophe of the user's font path in the PowerShell literal", async () => {
     const local = "C:\\Users\\o'brien\\AppData\\Local";
-    const release = { http: [NERD_FONTS_RELEASE, familyZip("FiraCode", { "FiraCodeNerdFont-Regular.ttf": "ttf" })] };
+    const zip = familyZip("FiraCode", { "FiraCodeNerdFont-Regular.ttf": "ttf" });
+    const release = { http: [NERD_FONTS_RELEASE, zip] };
     await system.load({ ...fontsMachine(release), env: { LOCALAPPDATA: local } });
     await expect(new NerdFontsProvider().update("FiraCode")).resolves.toEqual({
       id: "FiraCode",
