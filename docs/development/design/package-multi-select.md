@@ -124,7 +124,7 @@ of a batch — is a possible follow-up for the in-screen update flow, not part o
   packages": the "with nothing checked, the package (or provider) under the cursor" sentence is
   now wrong; add the selection bar, `a`'s two labels, the scan notice) and
   `docs/development/how-gup-works.md` (the `gup update` picker paragraph says the same). Wave-2
-  branches may not edit them.
+  branches may not edit them. (Done in the 0.5.0 documentation pass.)
 - **Folder budget:** `src/ui/panels` holds 8 files after this branch; with the planned
   `options/`, `journal/` and `schedules/` sub-folders (and `options-panel.ts` deleted) it reaches
   10 entries. `src/ui/text` holds 3.

@@ -3,9 +3,10 @@
 Status: shipped on `feat/shared-foundation`, the first branch of 0.5.0. It builds every extension
 point that two or more 0.5.0 features need, so the feature branches (in-app updates, themes and
 options, journal and HTML report, scheduled updates, OS-incompatible providers, multi-select)
-can work in parallel without editing the same files. This note is the contract those branches
-code against; the wave-3 documentation pass folds it into `architecture.md`, `how-gup-works.md`
-and `SECURITY.md`.
+can work in parallel without editing the same files. This note was the contract those branches
+coded against; the current picture is in [`architecture.md`](../architecture.md),
+[`how-gup-works.md`](../how-gup-works.md) and [`SECURITY.md`](../../../SECURITY.md), which win
+where they differ ([about these records](README.md)).
 
 Read the code for the exact signatures: every contract below lives in one file, named here.
 
@@ -342,7 +343,9 @@ runs it with a notice that it is not covered by an `allowScripts` policy, and wi
   branch). On Linux without a prebuild, in-app updates are then unavailable and gup falls back to
   updating outside the screen.
 
-The installation guide and the release notes repeat this (wave 3, `docs/feature-guides`).
+The installation guide repeats this
+([§ npm 11 and install scripts](../../guide/installation.md#npm-11-and-install-scripts)), with the
+messages npm prints; the 0.5.0 release notes should too.
 
 ---
 
@@ -425,6 +428,6 @@ launcher (`menu-nav.ts` took the one F-10 kept for splitting the session); label
 `ui/text/`; the options host and schedule flows go to their panel folders
 (`ui/panels/options/`, `ui/panels/schedules/`).
 
-Shared documents that still describe the 0.4.0 internals (`architecture.md`, `how-gup-works.md`:
-`ui/retry-failed.ts`, `maybeRetryFailures`, the menu's own update loop) are rewritten by the
-wave-3 consolidation, from this note.
+The shared documents that still described the 0.4.0 internals (`architecture.md`,
+`how-gup-works.md`: `ui/retry-failed.ts`, `maybeRetryFailures`, the menu's own update loop) were
+rewritten from this note in the 0.5.0 documentation pass.

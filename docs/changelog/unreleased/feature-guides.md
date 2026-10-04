@@ -10,6 +10,7 @@ reference pages, the diagrams, and this changelog. Design note:
 - **docs:** The interactive app's screenshots, generated: 23 SVG terminal screenshots under `docs/assets/screens/` — the menu, an update running in the embedded terminal, the retry offer and the results, Planification and its editor, the Journal's four tabs, the theme picker's live preview, the colour editor's contrast check and eight built-in themes — with a gallery page by area, and a picture of the HTML report ([`ca98dfc`](https://github.com/LINDECKER-Charles/gup/commit/ca98dfc))
 - **docs:** The documentation conventions describe what a scene runs on, how to add one, the pinned collation, the machine-path check and the report's picture ([`5e2110c`](https://github.com/LINDECKER-Charles/gup/commit/5e2110c))
 - **docs:** The installation guide explains node-pty's install script and npm 11's review of it — what `--allow-scripts=node-pty`, a plain install, `strict-allow-scripts` and `--ignore-scripts` each do — the embedded terminal per platform, the per-OS provider counts and everything gup leaves on disk (`docs: document npm 11's install-script gate for node-pty`)
+- **docs:** The fourteen design notes of the 0.5.0 cycle stay as indexed design records: an index says what each one covers, which reference page describes the area today and wins over it, how to read the plan identifiers they cite, and how to add one; the hand-offs the documentation pass completed are marked done (`docs: keep the 0.5.0 design notes as indexed design records`)
 
 ## CI
 

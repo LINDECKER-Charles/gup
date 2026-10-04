@@ -22,9 +22,9 @@ are produced. For the code conventions, see
 
 | Path | Content |
 |---|---|
-| `docs/guide/` | User-facing pages: install, CLI reference, scope, provider catalog. |
-| `docs/development/` | Contributor-facing pages: architecture, internals, releasing, these conventions. |
-| `docs/development/design/` | Design notes of the work in flight, one per area; folded into `architecture.md` and `how-gup-works.md` when the release closes. |
+| `docs/guide/` | User-facing pages: install, the interactive app, CLI reference, schedules, journal and reports, configuration, themes, troubleshooting, scope, provider catalog. |
+| `docs/development/` | Contributor-facing pages: architecture, internals, testing, releasing, the website, these conventions. |
+| `docs/development/design/` | Design records, one per area: the decisions and deviations behind a feature, kept as they were written ([index](design/README.md)). The current behaviour goes in `architecture.md`, `how-gup-works.md` and `SECURITY.md`, which win over a record. |
 | `docs/releases/` | Release notes, the text of each GitHub Release. |
 | `docs/changelog/` | Commit-level history; `unreleased/` holds one fragment per branch ([how](../changelog/README.md)). |
 | `docs/assets/` | Images. `demo.svg` (the animated `gup list`) is hand-made; `screens/` is generated, the HTML report's picture included ([Screenshots](#screenshots)). |

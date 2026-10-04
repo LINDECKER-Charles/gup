@@ -278,4 +278,5 @@ The notes of §7 applied, against the integration tip after wave 3a (`int/wave-3
 
 The guides that embed these screenshots (`interactive-app.md`, `scheduled-updates.md`,
 `journal-and-reports.md`, `themes-and-accessibility.md`, `troubleshooting.md`), the README's
-screens, the docs index (§7.7 included) and the consolidation of the design notes.
+screens, the docs index (§7.7 included) and the consolidation of the design notes. (Done in part
+2: the design notes became the indexed [design records](README.md).)

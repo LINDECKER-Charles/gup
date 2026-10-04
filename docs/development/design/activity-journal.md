@@ -251,6 +251,6 @@ format, records, bytes, path.
 - **Wave-3 docs consolidation:** `cli-reference.md` (§ Activity history still says "nothing reads
   it back": it is now read back for display and export only, test-enforced), `gup report` in the
   command list, `architecture.md` (§9 + the read side), `SECURITY.md` (export redaction, CSV
-  injection, read-only guard).
+  injection, read-only guard). (Done in the 0.5.0 documentation pass.)
 - **`test/e2e-coverage-ci`:** the contrast audit can register `journalView(scriptedSource())`
   (`tests/ui/panels/journal/journal-data.ts` builds realistic data).

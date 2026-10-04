@@ -237,7 +237,7 @@ a frequency the argument errors come first: `parseAddArgs` runs before the regis
    legend described the deleted files or the retired 🚧 status; they now say such a source gets no
    provider and is a catalog candidate. CONTRIBUTING §4 also gains the `platforms` convention the
    drift test now enforces (spec step 8, which wave 2 could not edit there).
-   `docs/feature-guides` consolidates these pages later.
+   `docs/feature-guides` consolidated these pages in the 0.5.0 documentation pass.
 5. **`swiftly` hint unchanged**: its fallback ("macOS et Linux uniquement…") is still shown on
    the BSDs, so its test reads it under a simulated `freebsd`, where gup shows it, not under
    Windows, where swiftly is incompatible and no hint is ever shown.
