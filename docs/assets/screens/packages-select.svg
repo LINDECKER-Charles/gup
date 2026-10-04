@@ -237,5 +237,5 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="788.2" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="497.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯</text>
 <text class="c0" x="218.8" y="497.0" textLength="577.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
-<text class="c5" x="16.0" y="514.0" textLength="647.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ naviguer · espace cocher · a tout cocher · / filtrer · … · tab menu · q quitter</text>
+<text class="c5" x="16.0" y="514.0" textLength="756.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> espace cocher · / filtrer · p planifier · a tout cocher · ↑↓ naviguer · … · tab menu · q quitter</text>
 </svg>

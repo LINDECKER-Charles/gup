@@ -80,7 +80,8 @@ describe("Paquets", () => {
     await menu.press("a");
     const checked = await menu.frame();
     expect(checked).toContain(PACKAGES_HINTS.clearAll);
-    expect(checked).toContain(PACKAGES_HINTS.launch(2));
+    // Launching is the selection bar's: the hint bar keeps its room for other keys.
+    expect(checked).toContain(SELECTION_BAR.button(2));
     await clickOn(menu, "Mettre à jour (2)");
     expect(await menu.waitForText(CONFIRM_UPDATE.heading(2))).toContain("7zip.7zip");
     await menu.press("o");

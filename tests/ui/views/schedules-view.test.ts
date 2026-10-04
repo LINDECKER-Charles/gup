@@ -186,6 +186,16 @@ describe("p in Paquets", () => {
     expect(port.calls).toEqual([]);
   });
 
+  it("keeps / filtrer and p planifier on Paquets' 80-column hint bar", async () => {
+    const { menu } = await menuWith({ size: { cols: 80, rows: 24 } });
+    await check(menu, 3);
+    const bar = hintBar(await menu.frame());
+    expect(bar).toBe(
+      `espace cocher · / filtrer · ${SCHEDULE_ACTION.hint} · … · ${PANEL_HINTS_TAIL}`,
+    );
+    expect(await menu.frame()).toContain("Entrée  Mettre à jour (1)");
+  });
+
   it("asks before échap or q drops the new schedule, which nothing has saved yet", async () => {
     const { menu } = await menuWith();
     await check(menu, 3);
