@@ -34,6 +34,7 @@ import {
   type MenuDriver,
   type MenuDriverOptions,
 } from "../../support/tui/menu-driver.js";
+import { UTF8_TERMINAL_ENV } from "../../support/tui/test-host.js";
 
 /**
  * The Options view in the running menu, painted by the theme engine and
@@ -61,7 +62,7 @@ async function menuOn(settings: SettingsService, options: MenuDriverOptions = {}
         tui,
         probe: staticProbe({ colors: null, themeMode: null, depth: "truecolor", detection: "done" }),
         settings: appearanceSource(settings),
-        env: {},
+        env: UTF8_TERMINAL_ENV,
       }),
     ...options,
   });

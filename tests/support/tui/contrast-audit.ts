@@ -13,6 +13,7 @@ import * as wcag from "../contrast/wcag.js";
 import { frameContrastViolations } from "./frame-contrast.js";
 import { bootMenu, type MenuDriver, type MenuDriverOptions } from "./menu-driver.js";
 import { CAMPBELL, TERMINAL_APP_BASIC } from "./reference-palettes.js";
+import { UTF8_TERMINAL_ENV } from "./test-host.js";
 
 /**
  * The contrast audit's machinery, shared by its suites (one per part of the
@@ -164,7 +165,7 @@ function themedFactory(audited: Audited, settings: SettingsService, painted: { g
       tui,
       probe: staticProbe(audited.terminal),
       settings: appearanceSource(settings),
-      env: {},
+      env: UTF8_TERMINAL_ENV,
     });
     const { mode, palette } = appearance.resolved;
     const isGroundUnknown = audited.terminal.colors === null;

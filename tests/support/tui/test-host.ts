@@ -22,6 +22,14 @@ export interface TestHostOptions {
 
 const DEFAULT_SIZE = { cols: 100, rows: 30 };
 
+/**
+ * The environment of the terminal a themed screen is drawn for: a UTF-8
+ * locale, and nothing of the shell running the tests (no `NO_COLOR`, no
+ * `GUP_ASCII`). An empty one reads as a non-UTF-8 locale on macOS and Linux,
+ * where the glyph heuristics then draw ASCII symbols.
+ */
+export const UTF8_TERMINAL_ENV: Readonly<NodeJS.ProcessEnv> = { LANG: "C.UTF-8" };
+
 export function createTestHost(options: TestHostOptions = {}): TestHost {
   const { cols, rows } = options.size ?? DEFAULT_SIZE;
   const pending: TestRendererSetup[] = [];
