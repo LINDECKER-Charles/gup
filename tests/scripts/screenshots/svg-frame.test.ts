@@ -4,8 +4,8 @@ import type { FrameModel, FrameSpan } from "../../../scripts/screenshots/render/
 import { renderSvg, type SvgOptions } from "../../../scripts/screenshots/render/svg-frame.js";
 
 const OPTIONS: SvgOptions = {
-  title: "gup — Paquets",
-  description: "The Paquets view.",
+  title: "gup — Packages",
+  description: "The Packages view.",
   palette: DOCS_PALETTE,
 };
 
@@ -96,7 +96,7 @@ describe("renderSvg", () => {
   it("sizes the document from the grid and labels it for assistive technology", () => {
     const svg = renderSvg(frameOf(Array.from({ length: 28 }, () => []), 100), OPTIONS);
     expect(svg.split("\n")[0]).toContain('width="812.0" height="526.0" role="img" aria-labelledby="t d"');
-    expect(svg).toContain('<title id="t">gup — Paquets</title>');
-    expect(svg).toContain('<desc id="d">The Paquets view.</desc>');
+    expect(svg).toContain('<title id="t">gup — Packages</title>');
+    expect(svg).toContain('<desc id="d">The Packages view.</desc>');
   });
 });

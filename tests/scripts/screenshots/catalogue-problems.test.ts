@@ -7,8 +7,8 @@ import type { Scene } from "../../../scripts/screenshots/scenes/scene.js";
 function scene(overrides: Partial<Scene>): Scene {
   return {
     id: "packages-select",
-    title: "gup — Paquets",
-    alt: "The Paquets view.",
+    title: "gup — Packages",
+    alt: "The Packages view.",
     size: { cols: 100, rows: 28 },
     fixture: () => appFixture(),
     play: async () => {},

@@ -69,11 +69,11 @@ describe("renderGallery", () => {
 
   it("keeps a title or an alt text from breaking out of its markup", () => {
     const scene = sceneOf("tricky", {
-      title: "gup — *Paquets*",
+      title: "gup — *Packages*",
       alt: "Rows [x] checked,\n\nthen ] and <b>",
     });
     const page = renderGallery([{ title: "Menu", scenes: [scene] }]);
-    expect(page).toContain("**gup — \\*Paquets\\*** · 100 × 28");
+    expect(page).toContain("**gup — \\*Packages\\*** · 100 × 28");
     expect(page).toContain("![Rows \\[x\\] checked, then \\] and \\<b\\>](tricky.svg)");
   });
 

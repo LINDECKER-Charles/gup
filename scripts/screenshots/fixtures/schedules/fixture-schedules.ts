@@ -38,7 +38,7 @@ const FIXTURE_PROVIDER_FACTS: ProviderFacts = {
   lookup(providerId) {
     const provider = registeredProvider(providerId);
     if (!isSupportedOn(provider, FIXTURE_PLATFORM)) {
-      return { isFound: false, error: `${providerId} : absent de la machine fixture` };
+      return { isFound: false, error: `${providerId}: not on the fixture machine` };
     }
     const canUpdateUnattended = provider.canUpdateUnattended !== false;
     return { isFound: true, displayName: provider.displayName, canUpdateUnattended };
@@ -46,7 +46,7 @@ const FIXTURE_PROVIDER_FACTS: ProviderFacts = {
 };
 
 /**
- * The menu's Planification port on the fixture machine: the real
+ * The menu's Schedules port on the fixture machine: the real
  * `SchedulesController` over the real stores, in the sandbox's scheduler
  * directory (`GUP_SCHEDULER_DIR`), written afresh with `SCHEDULES_FIXTURE`,
  * their last runs and a healthy Task Scheduler entry. The OS trigger is a

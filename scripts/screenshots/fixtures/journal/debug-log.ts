@@ -9,6 +9,7 @@ import {
 } from "../../../../src/core/log/types.js";
 import { stateDir } from "../../../../src/core/state/app-dirs.js";
 import type { OperationContext } from "../../../../src/core/state/run-context.js";
+import { SCOOP_ERROR } from "../scan.js";
 import { localDayKey } from "./fixture-days.js";
 
 /** One line of the fixture log: local time of day, level, event, then the facts. */
@@ -23,7 +24,6 @@ type LogRow = readonly [
 /** Two runs of the day: the morning scan the history records, and the menu now open. */
 const MORNING = { pid: 18244, suffix: "fixture" } as const;
 const NOW_OPEN = { pid: 21508, suffix: "menu" } as const;
-const SCOOP_ERROR = "scoop status a échoué (code 1)";
 const SCOOP_STDERR = "Scoop is out of date. Run 'scoop update' to get the latest changes.";
 
 const MORNING_ROWS: readonly LogRow[] = [

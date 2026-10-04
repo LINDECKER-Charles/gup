@@ -59,7 +59,7 @@ interface FixturePorts {
  * The menu as `gup` builds it — the production views, the state the menu
  * command starts from, the in-screen update launcher — on the fixture
  * machine: the scan replays `SCAN_FIXTURE`; Providers reads
- * `PROVIDERS_FIXTURE` instead of probing the machine; Planification and the
+ * `PROVIDERS_FIXTURE` instead of probing the machine; Schedules and the
  * Journal's schedule names read the fixture schedules over a fixture OS
  * trigger; the Journal reads the history and debug log the fixture writes in
  * the sandbox; Options and the Journal read the scene's own settings, never

@@ -16,7 +16,9 @@ export const MENU_GROUP: SceneGroup = {
   scenes: [
     {
       id: "scan-progress",
-      title: `gup — ${VIEW_LABELS.scan}`,
+      get title() {
+        return `gup — ${VIEW_LABELS.scan}`;
+      },
       alt:
         "Scan view mid-scan: 9 of 14 providers done, two still running, Scoop failed, " +
         "the others show how many updates they found.",
@@ -26,9 +28,11 @@ export const MENU_GROUP: SceneGroup = {
     },
     {
       id: "packages-select",
-      title: `gup — ${VIEW_LABELS.packages}`,
+      get title() {
+        return `gup — ${VIEW_LABELS.packages}`;
+      },
       alt:
-        "The Paquets view: 12 outdated packages grouped by provider, Winget fully checked, " +
+        "The Packages view: 12 outdated packages grouped by provider, Winget fully checked, " +
         "npm partly checked, scheduled packages marked, a failed Scoop scan shown inline, " +
         "the selection bar and its update button at the bottom.",
       size: SCENE_SIZES.default,
@@ -37,7 +41,9 @@ export const MENU_GROUP: SceneGroup = {
     },
     {
       id: "confirm-update",
-      title: `gup — ${CONFIRM_UPDATE.title}`,
+      get title() {
+        return `gup — ${CONFIRM_UPDATE.title}`;
+      },
       alt:
         "Update confirmation listing the six checked packages with their current and target " +
         "versions, one tagged admin, and the note that a single UAC prompt comes at the end.",
@@ -47,7 +53,9 @@ export const MENU_GROUP: SceneGroup = {
     },
     {
       id: "providers-os",
-      title: `gup — ${VIEW_LABELS.providers}`,
+      get title() {
+        return `gup — ${VIEW_LABELS.providers}`;
+      },
       alt:
         "Providers view on Windows, scrolled down: providers not installed with the command " +
         "that installs each, then the macOS and Linux providers greyed out as incompatible.",

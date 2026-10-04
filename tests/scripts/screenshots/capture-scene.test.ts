@@ -17,6 +17,8 @@ import { activeInheritSink } from "../../../src/core/process/inherit-sink.js";
 import { outsideLauncher } from "../../../src/ui/app/outside-launcher.js";
 import { DEFAULT_UI_PREFERENCES, uiPreferences } from "../../../src/ui/app/ui-preferences.js";
 import { launcherFactory } from "../../../src/ui/app/update-launcher.js";
+import { CONFIRM_UPDATE } from "../../../src/ui/text/menu-labels.js";
+import { OPTION_LABELS } from "../../../src/ui/text/settings/options-labels.js";
 import { providersView } from "../../../src/ui/views/providers-view.js";
 
 // The generator's setup, as scripts/screenshots/setup.ts installs it.
@@ -39,11 +41,11 @@ vi.mock("../../../src/core/scheduler/trigger/trigger-factory.js", async (load) =
   ),
 );
 
-/** What the scan finds that only shows once it is over, on Paquets. */
+/** What the scan finds that only shows once it is over, on Packages. */
 const SCANNED = "Visual Studio Code";
 /** Only the Providers view shows it, once its port answered: a missing provider's install command. */
 const PROVIDERS_LOADED = "npm install -g pnpm";
-/** Only Planification shows it: the name of a fixture schedule. */
+/** Only Schedules shows it: the name of a fixture schedule. */
 const SCHEDULE_NAME = SCHEDULES_FIXTURE[0]?.draft.name ?? "";
 /** What the scripted install prints in the run view's pane. */
 const INSTALL_OUTPUT = "Compiling ripgrep v15.0.0";
@@ -103,8 +105,8 @@ function slowProviders(ms: number): AppFixture {
 const RUN_RIPGREP: Scene["play"] = async (stage) => {
   await stage.waitForText(SCANNED);
   await stage.press("down", "space", "enter");
-  await stage.waitForText("être mis à jour :");
-  await stage.press("o");
+  await stage.waitForText(CONFIRM_UPDATE.heading(1));
+  await stage.press("y");
   await stage.waitForText(INSTALL_OUTPUT);
   await stage.tick();
   await stage.waitForText("00:41");
@@ -131,8 +133,8 @@ describe("captureScene", { timeout: CAPTURE_BUDGET_MS }, () => {
     const play: Scene["play"] = async (stage) => {
       await stage.waitForText(SCANNED);
       await stage.open("options");
-      await stage.waitForText("Mode rapide");
-      // Planification sits above Options in the sidebar: the walk goes back up.
+      await stage.waitForText(OPTION_LABELS.fast);
+      // Schedules sits above Options in the sidebar: the walk goes back up.
       await stage.open("schedules");
       await stage.waitForText(SCHEDULE_NAME);
     };

@@ -25,8 +25,9 @@ export interface UpdateRule {
   readonly baseMs: number;
 }
 
-export const STORE_SKIP_MESSAGE = "installé par le Microsoft Store";
-export const HASH_MISMATCH_MESSAGE = "Le hachage de l'installateur ne correspond pas";
+export const STORE_SKIP_MESSAGE = "installed from the Microsoft Store";
+/** winget's own words for it, as an English Windows prints them. */
+export const HASH_MISMATCH_MESSAGE = "Installer hash does not match";
 export const FORCE_RETRY_LABEL = "retry --force";
 
 type RuleRow = readonly [
@@ -42,7 +43,7 @@ type RuleRow = readonly [
 /**
  * The fixture user's habits over a year (oss-docs §4.3.4): what gets
  * updated, how often, and how it goes. Installed versions are those of the
- * scan fixture, so the Journal and Paquets tell the same story.
+ * scan fixture, so the Journal and Packages tell the same story.
  */
 const RULES: readonly RuleRow[] = [
   ["npm-g:pnpm", 2, 7, "success", "10.17.0", "10.18.1", 4_200],
