@@ -123,7 +123,7 @@ export const EXPORT_LABELS = {
   title: "Exporter le journal",
   period: (label: string) => `Période : ${label}`,
   footer: "Un fichier autonome, lisible hors ligne. Rien n'est envoyé.",
-  html: "Rapport HTML (s'ouvre dans le navigateur)",
+  html: "Rapport HTML (page à lire dans le navigateur)",
   json: "Données JSON (tous les événements)",
   csv: "Tableur CSV (mises à jour)",
   diagnostic: "Archive de diagnostic .zip (pour un rapport de bug)",

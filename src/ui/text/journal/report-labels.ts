@@ -14,6 +14,7 @@ export const REPORT_COMMAND_LABELS = {
   since: "période : 7d, 30d, 12w, 6m, 1y, all ou AAAA-MM-JJ (défaut 12m)",
   until: "date de fin AAAA-MM-JJ (défaut : maintenant)",
   out: "fichier de sortie (- pour la sortie standard)",
+  open: "ouvrir le rapport HTML dans le navigateur (défaut : le réglage d'Options)",
   noOpen: "ne pas ouvrir le rapport HTML dans le navigateur",
   force: "écrase le fichier --out s'il existe",
   delimiter: "séparateur CSV : , ; ou tab (défaut ,)",

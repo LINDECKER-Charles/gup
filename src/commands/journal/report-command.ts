@@ -6,7 +6,8 @@ import type { OpenResult } from "../../core/export/open-external.js";
 import { OutputExistsError } from "../../core/export/output-file.js";
 import { MAX_REPORT_UPDATES } from "../../core/export/report-model.js";
 import { parsePeriod, parseUntil, withUntil, type Period } from "../../core/time/period.js";
-import { resolveGlyphMode } from "../../ui/theme/glyphs.js";
+import { settingsService } from "../../ui/settings/settings-service.js";
+import { resolveGlyphMode, type GlyphPreference } from "../../ui/theme/glyphs.js";
 import { periodLabel } from "../../ui/text/journal/activity-labels.js";
 import { LOG_MESSAGES } from "../../ui/text/journal/log-labels.js";
 import { REPORT_COMMAND_LABELS, REPORT_MESSAGES } from "../../ui/text/journal/report-labels.js";
@@ -26,7 +27,8 @@ import {
  * terminal charts (`text`), a JSON document or a CSV of the update attempts.
  * Data formats go to standard output unless `--out` names a file; data goes
  * to stdout and notices to stderr, so `gup report -f csv > maj.csv` stays
- * clean.
+ * clean. Two settings apply when no option says otherwise: whether the HTML
+ * report opens, and the symbols the text charts draw with.
  */
 
 export interface ReportOptions {
@@ -36,8 +38,22 @@ export interface ReportOptions {
   readonly out?: string;
   readonly force?: boolean;
   readonly delimiter?: string;
-  /** `--no-open` sets it to false. */
+  /** `--open` sets it to true, `--no-open` to false; absent, the setting decides. */
   readonly open?: boolean;
+}
+
+/** What the user's settings decide for `gup report` when no option does. */
+export interface ReportPreferences {
+  /** `interface.glyphs`: the symbols of the `text` format's charts. */
+  readonly glyphs: GlyphPreference;
+  /** `journal.openReport`: open the HTML report written to a file in the browser. */
+  readonly openReport: boolean;
+}
+
+/** When the report is asked for, and what the settings say. */
+export interface ReportContext {
+  readonly now: Date;
+  readonly preferences: ReportPreferences;
 }
 
 const DEFAULT_FORMAT: HistoryFormat = "html";
@@ -60,6 +76,9 @@ export function registerReportCommand(program: Command): void {
     .option("-s, --since <période>", REPORT_COMMAND_LABELS.since)
     .option("--until <date>", REPORT_COMMAND_LABELS.until)
     .option("-o, --out <fichier>", REPORT_COMMAND_LABELS.out)
+    // Both forms: `--open` first keeps the value undefined when neither is
+    // given, so the setting can decide.
+    .option("--open", REPORT_COMMAND_LABELS.open)
     .option("--no-open", REPORT_COMMAND_LABELS.noOpen)
     .option("--force", REPORT_COMMAND_LABELS.force)
     .option("--delimiter <séparateur>", REPORT_COMMAND_LABELS.delimiter)
@@ -70,8 +89,9 @@ export function registerReportCommand(program: Command): void {
 export async function runReport(
   options: ReportOptions,
   deps: Partial<ExportDeps> = {},
+  preferences: ReportPreferences = settingsPreferences(),
 ): Promise<number> {
-  const request = reportRequestOf(options, deps.now?.() ?? new Date());
+  const request = reportRequestOf(options, { now: deps.now?.() ?? new Date(), preferences });
   if (typeof request === "string") return fail(request, USAGE_EXIT_CODE);
   try {
     printOutcome(await exportHistory(request, deps), request);
@@ -82,7 +102,10 @@ export async function runReport(
 }
 
 /** The request the options describe, or the message saying which one is wrong. */
-export function reportRequestOf(options: ReportOptions, now: Date): HistoryExportRequest | string {
+export function reportRequestOf(
+  options: ReportOptions,
+  { now, preferences }: ReportContext,
+): HistoryExportRequest | string {
   const format = (options.format ?? DEFAULT_FORMAT).trim().toLowerCase();
   if (!isHistoryFormat(format)) return REPORT_MESSAGES.badFormat(options.format ?? "");
   const period = periodOf(options, now);
@@ -96,22 +119,34 @@ export function reportRequestOf(options: ReportOptions, now: Date): HistoryExpor
     target,
     delimiter,
     width: Math.max(MIN_TEXT_WIDTH, process.stdout.columns ?? DEFAULT_TEXT_WIDTH),
-    glyphMode: resolveGlyphMode("auto"),
-    open: opensBrowser(options, format, target),
+    glyphMode: resolveGlyphMode(preferences.glyphs),
+    open: opensBrowser(options, { format, target }, preferences),
+  };
+}
+
+/** The process-wide settings, read when `gup report` runs. */
+function settingsPreferences(): ReportPreferences {
+  const settings = settingsService();
+  return {
+    glyphs: settings.get("interface").glyphs,
+    openReport: settings.get("journal").openReport,
   };
 }
 
 /**
- * The HTML report written to a file opens in the browser, unless `--no-open`
- * or nobody is there to see it (no terminal, or CI).
+ * Whether the HTML report written to a file opens in the browser: `--open`
+ * or `--no-open` decide; otherwise the setting does, as long as somebody is
+ * there to see it (a terminal, outside CI).
  */
 function opensBrowser(
   options: ReportOptions,
-  format: HistoryFormat,
-  target: ExportTarget,
+  report: Pick<HistoryExportRequest, "format" | "target">,
+  preferences: ReportPreferences,
 ): boolean {
-  if (format !== "html" || target.kind !== "file" || options.open === false) return false;
-  return process.stdout.isTTY === true && (process.env["CI"] ?? "") === "";
+  if (report.format !== "html" || report.target.kind !== "file") return false;
+  if (options.open !== undefined) return options.open;
+  const isWatched = process.stdout.isTTY === true && (process.env["CI"] ?? "") === "";
+  return preferences.openReport && isWatched;
 }
 
 function isHistoryFormat(value: string): value is HistoryFormat {
