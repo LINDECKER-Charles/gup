@@ -86,5 +86,7 @@ test("the 404 is English, noindex, canonical to the default home, and links ever
 
 test("the 404 gives the whole install command", () => {
   const command = buildNotFound(pages).match(/<code>(.*?)<\/code>/s)?.[1] ?? "";
-  assert.equal(command.replace(/<[^>]+>/g, ""), installCommand);
+  // Tags become spaces, never nothing: the words read as the browser lays them out.
+  const words = command.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  assert.equal(words, installCommand);
 });

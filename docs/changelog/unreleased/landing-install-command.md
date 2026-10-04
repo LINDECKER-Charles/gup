@@ -12,7 +12,8 @@
   v0.4.0) all follow it, and the FAQ explains the flag in the eight languages. A command too long
   for its box now wraps between its words instead of scrolling the flag out of sight, and
   `verify` checks the command is shown whole, inside its card, at 1440, 820 and 390 px in every
-  locale (`fix(landing): show the install command with --allow-scripts=node-pty`)
+  locale (`fix(landing): show the install command with --allow-scripts=node-pty`,
+  `test(landing): read the 404 command without stripping tags to nothing`)
 
 ## CI
 
