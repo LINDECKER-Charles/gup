@@ -205,6 +205,7 @@ describe("the Planification list", () => {
       },
     });
     const { menu, port } = await menuWith({ schedules: [storedSchedule()], launcher, onPlanification: true });
+    menu.setPreferences({ confirmBeforeUpdate: false });
     port.preparation = withGitOutdated;
     await menu.press("x");
     expect(await menu.frame()).toContain("Exécuter « Outils dev » maintenant ?");
@@ -224,7 +225,7 @@ describe("the Planification list", () => {
     const launch = vi.fn<() => Promise<UpdateReport | null>>(async () => null);
     const launcher: LauncherFactory = () => ({ isRunning: false, launch });
     const { menu, port } = await menuWith({ schedules: [storedSchedule()], launcher, onPlanification: true });
-    await menu.press("x", "enter");
+    await menu.press("x");
     expect(await settled(menu)).toContain("Exécution terminée : ✔ à jour");
     expect(launch).not.toHaveBeenCalled();
     expect(port.recorded.map((entry) => entry.report)).toEqual([null]);
@@ -237,6 +238,17 @@ describe("the Planification list", () => {
     await menu.press("x", "enter");
     expect(await menu.exit).toMatchObject({ kind: "outside", returnTo: "schedules" });
     expect(port.recorded).toEqual([]);
+  });
+
+  it("asks once when updates are confirmed: the launcher's list, not a question before it", async () => {
+    const { menu, port } = await menuWith({ schedules: [storedSchedule()], onPlanification: true });
+    port.preparation = withGitOutdated;
+    await menu.press("x");
+    const asked = await eventually(menu, "1 paquet(s) vont être mis à jour");
+    expect(asked).toContain("• Git 1.0.0 → 2.0.0");
+    expect(asked).not.toContain("Exécuter « Outils dev » maintenant ?");
+    await menu.press("o");
+    expect(await menu.exit).toMatchObject({ kind: "outside", returnTo: "schedules" });
   });
 
   it("starts no run while a scan of the menu runs, and says why", async () => {

@@ -23,7 +23,9 @@ import type { ListHandlers } from "./schedules-panel.js";
  * menu's launcher — the run view, or the plain terminal — and records what
  * the launcher reports as the schedule's last run. When the update runs
  * outside the screen the launcher has no report to give: the run tracker
- * the scheduler module installs records it instead.
+ * the scheduler module installs records it instead. It is confirmed once:
+ * by the launcher when the preferences confirm updates, by its own question
+ * otherwise.
  */
 
 /** No update starts while a scan of the menu runs: package managers are busy with it. */
@@ -89,10 +91,14 @@ export class ScheduleFlows implements ListHandlers {
     if (this.#isRunning) return this.#kit.notify([[seg(SCHEDULE_NOTICES.busy, "warning")]]);
     if (this.#kit.view.isScanning()) return this.#kit.notify(SCAN_RUNNING);
     const providers = this.#providerNames(schedule);
-    const isConfirmed = await this.#kit.view.dialogs.confirm({
-      title: RUN_NOW_DIALOG.title(schedule.name),
-      text: [RUN_NOW_DIALOG.text(providers, schedule.targets.length)],
-    });
+    // When the preferences ask to confirm updates, the launcher does, listing
+    // the packages the scan found: one question, the one that says what changes.
+    const isConfirmed =
+      this.#kit.view.preferences().confirmBeforeUpdate ||
+      (await this.#kit.view.dialogs.confirm({
+        title: RUN_NOW_DIALOG.title(schedule.name),
+        text: [RUN_NOW_DIALOG.text(providers, schedule.targets.length)],
+      }));
     if (!isConfirmed) return this.#kit.view.redraw();
     this.#isRunning = true;
     try {
