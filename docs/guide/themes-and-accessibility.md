@@ -15,7 +15,7 @@ your terminal, and what `gup` guarantees.
 - [Terminals with fewer colours, and NO_COLOR](#terminals-with-fewer-colours-and-no_color)
 - [The embedded terminal](#the-embedded-terminal)
 
-Pick the theme in the interactive app, **Options › Thème**, with a live preview
+Pick the theme in the interactive app, **Options › Theme**, with a live preview
 (below), or in the settings file (`theme.id`, see
 [configuration.md](configuration.md#theme)).
 
@@ -41,78 +41,78 @@ is up. `terminal` and `monochrome` leave your terminal's background as it is.
 The cursor row is a soft tint on purpose: the `›` in the gutter carries the
 cursor, the tint only reinforces it.
 
-The same **Paquets** view in eight of them (the default `terminal` theme is the
+The same **Packages** view in eight of them (the default `terminal` theme is the
 one every other screenshot of these docs shows):
 
 | | |
 |---|---|
-| ![The Paquets view in the Sombre (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-dark.svg) | ![The Paquets view in the Clair (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-light.svg) |
-| `dark` — **Sombre (gup)** | `light` — **Clair (gup)** |
-| ![The Paquets view in the Contraste élevé theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-high-contrast.svg) | ![The Paquets view in the Daltonisme (Okabe-Ito) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-colorblind.svg) |
-| `high-contrast` — **Contraste élevé** | `colorblind` — **Daltonisme (Okabe-Ito)** |
-| ![The Paquets view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-dracula.svg) | ![The Paquets view in the Catppuccin Mocha theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-catppuccin-mocha.svg) |
+| ![The Packages view in the Dark (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-dark.svg) | ![The Packages view in the Light (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-light.svg) |
+| `dark` — **Dark (gup)** | `light` — **Light (gup)** |
+| ![The Packages view in the High contrast theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-high-contrast.svg) | ![The Packages view in the Colorblind (Okabe-Ito) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-colorblind.svg) |
+| `high-contrast` — **High contrast** | `colorblind` — **Colorblind (Okabe-Ito)** |
+| ![The Packages view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-dracula.svg) | ![The Packages view in the Catppuccin Mocha theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-catppuccin-mocha.svg) |
 | `dracula` — **Dracula** | `catppuccin-mocha` — **Catppuccin Mocha** |
-| ![The Paquets view in the GitHub (clair) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-github-light.svg) | ![The Paquets view in the Monochrome theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-monochrome.svg) |
-| `github-light` — **GitHub (clair)** | `monochrome` — **Monochrome** |
+| ![The Packages view in the GitHub (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-github-light.svg) | ![The Packages view in the Monochrome theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-monochrome.svg) |
+| `github-light` — **GitHub (light)** | `monochrome` — **Monochrome** |
 
 ## Choosing a theme
 
-In **Options**, the *Thème* row shows the theme in use and, as its hint, how
-readable it is on your terminal: `√ AA · contraste min. 6,1:1`, `‼ 2 couleurs
-ajustées · min. 4,6:1`, or `? palette du terminal inconnue — contraste non
-vérifiable`. The count is of the colours you can set in the colour editor —
+In **Options**, the *Theme* row shows the theme in use and, as its hint, how
+readable it is on your terminal: `√ AA · min. contrast 6.1:1`, `‼ 2 colors
+adjusted · min. 4.6:1`, or `? terminal palette unknown — contrast cannot be
+checked`. The count is of the colours you can set in the colour editor —
 the same number the picker and the editor give; the colours drawn from them
 (the title bar's fill, the text on it, the focus border) follow without being
-counted again. `entrée` opens the theme picker:
+counted again. `enter` opens the theme picker:
 
 ![Options, theme picker: every built-in theme with its lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
 
 | Mark | Meaning |
 |---|---|
-| `√ 6,1` | readable as is; its lowest text contrast is 6.1:1 |
-| `‼ 4,6` | some colours had to be adjusted to reach the level; lowest contrast after adjustment |
+| `√ 6.1` | readable as is; its lowest text contrast is 6.1:1 |
+| `‼ 4.6` | some colours had to be adjusted to reach the level; lowest contrast after adjustment |
 | `? —` | your terminal did not report its palette: contrast cannot be checked |
 | `√ —` | monochrome: your terminal's own text and background |
 | `–` (greyed) | this terminal cannot paint it (16 colours) — it cannot be applied |
 
 - Moving the cursor **paints the whole app** with the theme under it — the
   menu, the borders, the title bar and a sample of every colour on the right —
-  without saving anything. The title bar says `aperçu du thème` while a theme
+  without saving anything. The title bar says `theme preview` while a theme
   is only previewed, even if you go to another view meanwhile.
-- `entrée` saves the theme under the cursor; `échap` (or `←`) goes back to
+- `enter` saves the theme under the cursor; `esc` (or `←`) goes back to
   the saved one.
-- The *Niveau de contraste* row switches between AA (4.5:1) and AAA (7:1) for
+- The *Contrast level* row switches between AA (4.5:1) and AAA (7:1) for
   every theme.
 
 ## Your own colours
 
-*Couleurs perso.* opens the colour editor for the theme in use. Your colours
+*Custom colors* opens the colour editor for the theme in use. Your colours
 belong to that theme: an accent tuned for `dark` does not change `light`.
 
 ![Options, colour editor: each colour role with the chosen and displayed colour, its contrast ratio and a sample; a custom accent too dark to read raised from 1.4:1 to 4.5:1, with a warning.](../assets/screens/options-colors.svg)
 
 | Column | Shows |
 |---|---|
-| Choisie | your colour, or `(thème)` when the role follows the theme |
-| Affichée | the colour actually painted |
-| Contraste | its lowest ratio on the background and the selected row — or `2,1 → 4,6:1 ‼` when your colour was too pale or too dark to read and was moved to the closest readable one |
-| Aperçu | the role painted as it is |
+| Chosen | your colour, or `(theme)` when the role follows the theme |
+| Shown | the colour actually painted |
+| Contrast | its lowest ratio on the background and the selected row — or `2.1 → 4.6:1 ‼` when your colour was too pale or too dark to read and was moved to the closest readable one |
+| Sample | the role painted as it is |
 
 | Key | Effect |
 |---|---|
 | `↑` `↓` | another role |
-| `entrée` | type a colour, `#RRGGBB` or `#RGB` |
+| `enter` | type a colour, `#RRGGBB` or `#RGB` |
 | `←` `→` | hue −/+ 10° (previewed on the whole app) |
 | `+` `-` | lighter / darker (previewed) |
 | `a` | keep the adjusted colours as your own |
-| `suppr` | give the role back to the theme |
-| `échap` | back to the list |
+| `del` | give the role back to the theme |
+| `esc` | back to the list |
 
 A colour you type is saved at once; nudges with the arrows and `+` `-` are
 saved when you move to another role or leave the editor. **However you set
 them, what is painted stays readable**: the setting keeps your choice, the screen
-shows the adjusted colour, and the editor tells you so (`‼ 1 couleur ajustée
-automatiquement pour rester lisible (AA)`).
+shows the adjusted colour, and the editor tells you so (`‼ 1 color adjusted
+automatically to stay readable (AA)`).
 
 The editor is unavailable — and the row says why — when there is nothing to
 tune: `monochrome`, `NO_COLOR`, a 16-colour terminal, or the `terminal` theme
@@ -171,8 +171,8 @@ Checked on every pair `gup` paints:
   background so mid-grey that no text could reach the target is moved away from
   the middle.
 - Ratios are computed on the exact 8-bit colours painted, as WCAG defines them
-  (relative luminance, `(L1 + 0.05) / (L2 + 0.05)`), and shown truncated: a "4,5"
-  is never a rounded-up 4.46.
+  (relative luminance, `(L1 + 0.05) / (L2 + 0.05)`), and shown truncated: a "4.5"
+  is never a rounded-up 4.46 ("4,5" in French).
 - "Disabled" text (a provider foreign to your OS) is the dimmest grey that still
   reaches the target: visibly dimmed, never unreadable.
 - The tests hold this: every built-in theme passes with no adjustment, a

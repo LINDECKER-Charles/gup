@@ -27,12 +27,12 @@ probes, scans or updates the provider, whatever happens to be on the `PATH`
 (a `brew.cmd` shim forwarding into WSL, the unrelated NCAR `ncl` on Linux):
 
 - `gup doctor` and the menu's **Providers** view list it last, greyed, under
-  **Incompatibles avec \<OS\>**, with a `–` mark and a badge saying where it
-  runs (`macOS uniquement`). The mark, the title and the badge carry the
+  **Incompatible with \<OS\>**, with a `–` mark and a badge saying where it
+  runs (`macOS only`). The mark, the title and the badge carry the
   meaning without colour. The menu preference `showIncompatibleProviders`
   (on by default) hides the group from the view.
 - `gup update <id>:<package>` exits 2 with
-  `Provider <id> indisponible sur <OS> (<badge>)`; the elevated batch refuses
+  `Provider <id> unavailable on <OS> (<badge>)`; the elevated batch refuses
   such a target with the same reason.
 - `gup list` / `gup update` with `--provider <id>` print one warning line per
   such id (an unknown id too) and scan the rest.

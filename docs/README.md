@@ -18,14 +18,14 @@ stays light; everything dense lives here.
 
 | Document | Content |
 |---|---|
-| [`guide/installation.md`](guide/installation.md) | Install methods (npm, from source), npm 11 and install scripts, requirements, per-platform support, updating and removing `gup`. |
-| [`guide/interactive-app.md`](guide/interactive-app.md) | The full-screen app, view by view: Scan, Paquets and its multi-select, updating inside the app (run view, typing into an installer, administrator rights, retries, results), Planification, Providers, Journal, Options; every key — **screenshots, mermaid diagrams**. |
-| [`guide/cli-reference.md`](guide/cli-reference.md) | Every command and flag (`list`, `update`, `doctor`, `log`, `report`, `schedule`), targeting syntax, stuck-install timeouts, retry strategies, elevation, JSON output, environment variables, exit codes. |
-| [`guide/scheduled-updates.md`](guide/scheduled-updates.md) | Per-package scheduled updates: how a run works, recurrences, what an unattended run never does, the commands, the Planification view, the OS trigger, troubleshooting — **screenshots, mermaid diagram**. |
+| [`guide/installation.md`](guide/installation.md) | Install methods (npm, from source), choosing the language, npm 11 and install scripts, requirements, per-platform support, updating and removing `gup`. |
+| [`guide/interactive-app.md`](guide/interactive-app.md) | The full-screen app, view by view: Scan, Packages and its multi-select, updating inside the app (run view, typing into an installer, administrator rights, retries, results), Schedules, Providers, Journal, Options; every key — **screenshots, mermaid diagrams**. |
+| [`guide/cli-reference.md`](guide/cli-reference.md) | Every command and flag (`list`, `update`, `doctor`, `log`, `report`, `schedule`, `language`), targeting syntax, stuck-install timeouts, retry strategies, elevation, JSON output, environment variables, exit codes. |
+| [`guide/scheduled-updates.md`](guide/scheduled-updates.md) | Per-package scheduled updates: how a run works, recurrences, what an unattended run never does, the commands, the Schedules view, the OS trigger, troubleshooting — **screenshots, mermaid diagram**. |
 | [`guide/journal-and-reports.md`](guide/journal-and-reports.md) | The activity history, the Journal view, the HTML report, `gup report`, the debug log and `gup log`, privacy — **screenshots, mermaid diagram**. |
-| [`guide/configuration.md`](guide/configuration.md) | The Options view, which value wins, the settings file and its sections, environment variables — **mermaid diagram**. |
+| [`guide/configuration.md`](guide/configuration.md) | The Options view, which value wins, the interface language, the settings file and its sections, environment variables — **mermaid diagram**. |
 | [`guide/themes-and-accessibility.md`](guide/themes-and-accessibility.md) | The ten themes, the theme picker, custom colours, how the default theme follows the terminal, the contrast guarantee, accessibility — **screenshots**. |
-| [`guide/troubleshooting.md`](guide/troubleshooting.md) | Each message, its cause and the fix: install scripts, Node, conhost, the embedded terminal, providers, schedules, the report; where gup keeps its files; collecting a diagnostic. |
+| [`guide/troubleshooting.md`](guide/troubleshooting.md) | Each message, its cause and the fix: install scripts, Node, conhost, the embedded terminal, providers, schedules, the report, the language; where gup keeps its files; collecting a diagnostic. |
 | [`guide/scope.md`](guide/scope.md) | Why `gup` exists, what belongs in it, and what is deliberately excluded — with the reasoning. |
 | [`guide/providers-catalog.md`](guide/providers-catalog.md) | Exhaustive catalog of the 153 providers, implementation status (✅ ⬜ ➡️ ❌), the OSes each runs on, and evaluated candidates. |
 | [`assets/screens/`](assets/screens/README.md) | The screenshot gallery: every view of the app, eight themes, the HTML report. |

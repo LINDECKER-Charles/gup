@@ -1,6 +1,7 @@
 # Installation
 
 - [Via npm (recommended)](#via-npm-recommended)
+- [Choosing the language](#choosing-the-language)
 - [npm 11 and install scripts](#npm-11-and-install-scripts)
 - [From source](#from-source)
 - [Requirements](#requirements)
@@ -18,8 +19,27 @@ Package: [`@charles_lindecker/gup`](https://www.npmjs.com/package/@charles_linde
 
 The package ships the bundled `gup` CLI and nothing that runs on its own: no service, no
 daemon — nothing runs until you run it, or until you create a
-[scheduled update](scheduled-updates.md). `--allow-scripts=node-pty` is explained just below; the
-plain `npm install -g @charles_lindecker/gup` works too.
+[scheduled update](scheduled-updates.md). `--allow-scripts=node-pty` is explained
+[below](#npm-11-and-install-scripts); the plain `npm install -g @charles_lindecker/gup` works too.
+
+## Choosing the language
+
+gup speaks English by default, and French. To have it in French from the start, chain the
+language to the install command:
+
+```bash
+npm install -g @charles_lindecker/gup --allow-scripts=node-pty && gup language fr
+```
+
+`&&` runs `gup language fr` once npm has succeeded, in cmd, bash, zsh, fish and PowerShell 7.
+Windows PowerShell 5.1 has no `&&`: run the two commands one after the other. Never join them with
+`;` — cmd would hand `gup`, `language` and `fr` to npm, as more packages to install.
+
+The choice is saved in gup's [settings file](configuration.md#interface-language), outside the
+package, so it outlives every update of gup. `gup language en` goes back to English, `gup language`
+says which language is in use, and `GUP_LANG=fr` speaks French in one shell only. It cannot be an
+npm option instead: npm 12 refuses options it does not know (`EUNKNOWNCONFIG`) and blocks a
+global package's own install scripts, so nothing in the package would ever read one.
 
 ## npm 11 and install scripts
 
@@ -50,7 +70,7 @@ To trust node-pty for every global install, once:
 Without node-pty — scripts ignored, the optional install skipped, `GUP_PTY=off` — gup works
 exactly as it does elsewhere; only an update started from the interactive app leaves the
 full-screen view and runs in your terminal, as before 0.5.0. `gup doctor` says which, on its
-**Terminal intégré** line (see [Troubleshooting](troubleshooting.md#the-embedded-terminal-is-unavailable)).
+**Embedded terminal** line (see [Troubleshooting](troubleshooting.md#the-embedded-terminal-is-unavailable)).
 
 ## From source
 
@@ -95,7 +115,7 @@ runs.
 
 Providers that cannot exist on a platform (winget on a Mac, MacPorts on Windows) are never probed,
 scanned or updated there: `gup doctor` and the Providers view list them greyed out, in their own
-"Incompatibles avec …" group, with the OS they run on. The full per-OS lists are in the
+"Incompatible with …" group, with the OS they run on. The full per-OS lists are in the
 [providers catalog](providers-catalog.md). Run `gup doctor` to see exactly what was detected on the
 machine in front of you.
 

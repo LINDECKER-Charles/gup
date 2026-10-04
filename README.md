@@ -31,7 +31,7 @@ or your VS Code extensions, `ncu -g` only sees npm, and every cloud CLI ships it
 
 - **153 providers**, scanned in parallel — OS package managers, language toolchains, cloud and
   Kubernetes CLIs, editor extensions — each greyed out on the systems it does not exist on.
-- **Pick exactly what to update**: check packages, press Entrée — only what is checked is
+- **Pick exactly what to update**: check packages, press Enter — only what is checked is
   updated.
 - **Updates run inside the app**, each install live in an embedded terminal — progress bars,
   prompts you can answer — with one UAC or `sudo` prompt for all the admin packages.
@@ -40,11 +40,13 @@ or your VS Code extensions, `ncu -g` only sees npm, and every cloud CLI ships it
 - **An activity journal** in the terminal, and a self-contained **HTML report** in your browser.
 - **Ten themes, contrast guaranteed**: every text reaches WCAG AA, your custom colours included.
 - **Scriptable**: `--json`, documented exit codes, `-y` for CI, a debug log you can export.
+- **English or French**: the app, every command and its help, the HTML report —
+  `gup language fr` switches.
 
 <table>
 <tr>
 <td width="50%"><img src="https://raw.githubusercontent.com/LINDECKER-Charles/gup/main/docs/assets/screens/update-running.svg" alt="An update running inside gup: three packages done, PowerToys downloading with winget's progress bar in the embedded terminal pane, two more queued." width="400"><br><sub><b>Updates inside the app</b> — the installer's real output, live.</sub></td>
-<td width="50%"><img src="https://raw.githubusercontent.com/LINDECKER-Charles/gup/main/docs/assets/screens/schedules.svg" alt="The Planification view: three schedules with their recurrence, next and last run, and the last run's results package by package." width="400"><br><sub><b>Scheduled updates</b> — chosen packages, on your schedule.</sub></td>
+<td width="50%"><img src="https://raw.githubusercontent.com/LINDECKER-Charles/gup/main/docs/assets/screens/schedules.svg" alt="The Schedules view: three schedules with their recurrence, next and last run, and the last run's results package by package." width="400"><br><sub><b>Scheduled updates</b> — chosen packages, on your schedule.</sub></td>
 </tr>
 <tr>
 <td width="50%"><img src="https://raw.githubusercontent.com/LINDECKER-Charles/gup/main/docs/assets/screens/journal-activity.svg" alt="The Journal view: a year of updates as a calendar heatmap, headline figures, the outdated-package trend and the slowest scans." width="400"><br><sub><b>Activity journal</b> — a year of updates at a glance.</sub></td>
@@ -63,6 +65,15 @@ or your VS Code extensions, `ncu -g` only sees npm, and every cloud CLI ships it
 ```bash
 npm install -g @charles_lindecker/gup --allow-scripts=node-pty
 ```
+
+The interface is in English. To have it in French, chain the language to the install:
+
+```bash
+npm install -g @charles_lindecker/gup --allow-scripts=node-pty && gup language fr
+```
+
+Windows PowerShell 5.1 has no `&&`: run the two commands one after the other. `gup language`
+switches at any time. [Details →](docs/guide/installation.md#choosing-the-language)
 
 Node ≥ 26.9 · Windows, macOS, Linux, WSL. [Other install methods →](docs/guide/installation.md)
 
@@ -89,9 +100,10 @@ gup update --all   # update everything
 | `gup update --all` | Everything, after confirmation (`-y` to skip it) |
 | `gup update winget:Spotify.Spotify npm-g:typescript` | Specific targets, no scan |
 | `gup doctor` | Detected, missing and incompatible providers, and gup's own state |
-| `gup schedule add winget:Git.Git --every weekly --on lun` | Update chosen packages automatically |
+| `gup schedule add winget:Git.Git --every weekly --on mon` | Update chosen packages automatically |
 | `gup report` | The activity report, in your browser (`--format text\|json\|csv`) |
 | `gup log` | The debug log; `gup log export` for a bug report |
+| `gup language fr` | The interface in French; `gup language en` brings English back |
 
 Every flag, the retry strategies, the stuck-install timeout, environment variables, exit codes and
 the JSON schema: [**CLI reference →**](docs/guide/cli-reference.md)
@@ -107,12 +119,12 @@ The commands never prompt with `-y`, write JSON with `--json` and say how it wen
 
 | Document | What's in it |
 |---|---|
-| [Installation](docs/guide/installation.md) | Install methods, npm 11 and install scripts, requirements, per-platform support |
+| [Installation](docs/guide/installation.md) | Install methods, choosing the language, npm 11 and install scripts, requirements, per-platform support |
 | [Interactive app](docs/guide/interactive-app.md) | Every view and key: scanning, picking, updating in the app, the run view |
 | [CLI reference](docs/guide/cli-reference.md) | Every command, flag, environment variable, exit code |
 | [Scheduled updates](docs/guide/scheduled-updates.md) | Schedules, recurrences, the OS trigger, what an unattended run never does |
 | [Journal and reports](docs/guide/journal-and-reports.md) | The activity history, the Journal view, the HTML report, the debug log |
-| [Configuration](docs/guide/configuration.md) · [Themes and accessibility](docs/guide/themes-and-accessibility.md) | Settings, the settings file, themes, the contrast guarantee |
+| [Configuration](docs/guide/configuration.md) · [Themes and accessibility](docs/guide/themes-and-accessibility.md) | Settings, the interface language, the settings file, themes, the contrast guarantee |
 | [Troubleshooting](docs/guide/troubleshooting.md) | Messages, causes, fixes; where gup keeps its files; collecting a diagnostic |
 | [Scope](docs/guide/scope.md) · [Providers catalog](docs/guide/providers-catalog.md) | What `gup` covers, and the 153 providers |
 | [Architecture](docs/development/architecture.md) · [How `gup` works](docs/development/how-gup-works.md) | Layers, pipelines, process seams, local state — with diagrams |
