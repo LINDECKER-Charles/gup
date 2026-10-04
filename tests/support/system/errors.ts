@@ -39,6 +39,7 @@ export function fsError(code: string, syscall: string, path: string): NodeJS.Err
   const descriptions: Readonly<Record<string, string>> = {
     ENOENT: "no such file or directory",
     EACCES: "permission denied",
+    EPERM: "operation not permitted",
     EEXIST: "file already exists",
     EISDIR: "illegal operation on a directory",
     ENOTDIR: "not a directory",

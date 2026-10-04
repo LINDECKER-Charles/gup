@@ -253,6 +253,47 @@ async function rm(path: PathArg, options?: RmOptions): Promise<void> {
   machine().fs.remove(text);
 }
 
+/** Only an empty directory, as `rmdir(2)`. */
+async function rmdir(path: PathArg): Promise<void> {
+  const text = toPath(path);
+  checkFault(text, "rmdir");
+  const tree = machine().fs;
+  const node = tree.get(text);
+  if (!node) throw fsError("ENOENT", "rmdir", text);
+  if (node.kind !== "dir") throw fsError("ENOTDIR", "rmdir", text);
+  if (tree.children(node).length > 0) throw fsError("ENOTEMPTY", "rmdir", text);
+  tree.remove(text);
+}
+
+/**
+ * Why `rename` may not replace `existing` with `source`, or null when it
+ * does: a file replaces a file everywhere; on POSIX a directory replaces an
+ * empty one; Windows refuses any directory in the move.
+ */
+function renameConflict(source: StoredNode, existing: StoredNode): string | null {
+  if (source.kind !== "dir" && existing.kind !== "dir") return null;
+  if (machine().platform === "win32") return "EPERM";
+  if (existing.kind !== "dir") return "ENOTDIR";
+  if (source.kind !== "dir") return "EISDIR";
+  return machine().fs.children(existing).length === 0 ? null : "ENOTEMPTY";
+}
+
+/** A node and everything below it moves, symlinks as themselves. */
+async function rename(from: PathArg, to: PathArg): Promise<void> {
+  const [source, target] = [toPath(from), toPath(to)];
+  checkFault(source, "rename");
+  checkFault(target, "rename");
+  const tree = machine().fs;
+  const node = tree.get(source);
+  if (!node) throw fsError("ENOENT", "rename", source);
+  parentDir(target, "rename");
+  const existing = tree.get(target);
+  const conflict = existing ? renameConflict(node, existing) : null;
+  if (conflict) throw fsError(conflict, "rename", target);
+  if (existing) tree.remove(target);
+  tree.move(source, target);
+}
+
 async function mkdir(path: PathArg, options?: DirOptions): Promise<string | undefined> {
   return makeDirectory(toPath(path), options);
 }
@@ -293,6 +334,8 @@ export const fakeFsPromises = {
   mkdtemp,
   writeFile,
   rm,
+  rmdir,
+  rename,
   mkdir,
   copyFile,
 };

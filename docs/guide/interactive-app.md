@@ -155,7 +155,9 @@ The run view takes the whole body of the screen until you leave the results:
 
 A skipped package ends `ignorée par l'utilisateur` and is never offered for a retry. The
 per-install timeout (default 20 min, Options › **Timeout install**) applies exactly as with
-`gup update`.
+`gup update`. An npm global package skipped mid-download keeps its installed version: gup puts
+back the copy npm had moved aside (`— version précédente restaurée`, see
+[Skipping stuck installs](cli-reference.md#skipping-stuck-installs)).
 
 ### Answering an installer
 

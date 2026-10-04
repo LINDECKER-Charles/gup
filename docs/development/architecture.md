@@ -166,6 +166,7 @@ classDiagram
         +skipped?: boolean
         +message?: string
         +retryable?: boolean
+        +recovery?: string
     }
 
     class UpdateOptions {
@@ -204,6 +205,9 @@ classDiagram
 - `skipped: true` on an outcome is not a failure: shown `↷`, counted apart, never retried.
 - `retryable: true` lets the retry pass offer `force` / `uninstallPrevious` / `reinstall`;
   `unattended` is set by scheduled runs (winget then runs with `--disable-interactivity`).
+- `recovery` on an outcome says what the provider undid after an attempt that did not finish
+  (npm-g moving back the copy a killed npm had staged): `finalizeOutcome` appends it to the
+  final message, the skip reason of an interrupted install included.
 - `updateAll` stays in the contract (the contract harness checks its shape), but gup's own
   paths update one package per `update()` call: that is what lets a skip or a timeout drop a
   single wedged install while the batch goes on.

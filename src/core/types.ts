@@ -54,6 +54,13 @@ export interface UpdateOutcome {
    * as an opt-in retry pass so the user explicitly authorizes the bypass.
    */
   retryable?: boolean;
+  /**
+   * What the provider did to undo the damage of an attempt that did not
+   * finish (npm-g moving the copy npm had staged back in place). Unlike
+   * `message`, it survives an interrupt rewriting the outcome as a skip:
+   * `finalizeOutcome` appends it to whatever message the outcome ends with.
+   */
+  recovery?: string;
 }
 
 export interface UpdateOptions {

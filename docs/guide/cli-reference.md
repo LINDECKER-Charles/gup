@@ -272,6 +272,15 @@ An install can hang: a stalled download, the Windows Installer mutex, an install
 Both levers produce a skip (`↷ ignorée par l'utilisateur`), not a failure: the summary counts them
 apart, and they are never offered for retry — you skipped them on purpose.
 
+A skip kills the installer's whole process tree, and gup reports it only once nothing of it is
+left. npm is the one tool that needs more: before it downloads a new version of a global package it
+moves the installed one aside (`node_modules/.<name>-<hash>`, its commands too) and only moves it
+back when the install fails on its own. A killed npm never gets to, so gup moves the copy back
+itself — the outcome then ends `— version précédente restaurée`. When npm had already started
+writing the new version, gup leaves both where they are and the outcome names the old copy's
+folder (`— ancienne version mise de côté par npm dans …`); the next `npm install -g` of that
+package clears it.
+
 Outside an update batch (at a prompt, between packages) Ctrl+C keeps its usual meaning and exits.
 
 ## Retrying failed updates

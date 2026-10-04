@@ -20,13 +20,19 @@ const NODE_DIR = "C:\\Program Files\\nodejs";
 
 const NPM_OUTDATED_ARGV = ["npm", "outdated", "-g", "--json", "--long"];
 
+/** Where `npm root -g` says the global packages are: the default prefix on Windows. */
+export const NPM_GLOBAL_ROOT = "C:\\Users\\user\\AppData\\Roaming\\npm\\node_modules";
+
 /** npm printing `report` for `npm outdated -g --json`. */
 export function npmMachine(report: Text): SystemSpec {
   return {
     platform: "win32",
     bin: { npm: `${NODE_DIR}\\npm.cmd` },
-    // npm exits 1 when something is outdated; the report is on stdout all the same.
-    commands: [{ argv: NPM_OUTDATED_ARGV, stdout: report, exitCode: 1 }],
+    commands: [
+      // npm exits 1 when something is outdated; the report is on stdout all the same.
+      { argv: NPM_OUTDATED_ARGV, stdout: report, exitCode: 1 },
+      { argv: ["npm", "root", "-g"], stdout: `${NPM_GLOBAL_ROOT}\n` },
+    ],
   };
 }
 

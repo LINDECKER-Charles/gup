@@ -1,5 +1,5 @@
 import { log } from "../log/log.js";
-import { MANUAL_SKIP_MESSAGE } from "../update/finalize-outcome.js";
+import { isManualSkip, skippedAs } from "../update/finalize-outcome.js";
 import type { BatchHolder } from "../update/update-extensions.js";
 import type { AbortGate, UpdateRequest } from "../update/update-ports.js";
 import { buildReport, type UpdateReport } from "../update/update-report.js";
@@ -323,11 +323,14 @@ function everyTargetFailed(runs: readonly ScheduleRun[], message: string): TickP
   return { updates: [], resolved, isEnvironmentDown: true };
 }
 
-/** The install a stop interrupted reads "interrompu", not as a user's skip. */
+/**
+ * The install a stop interrupted reads "interrompu", not as a user's skip —
+ * what its provider recovered still said after it.
+ */
 function asStopped(report: UpdateReport): UpdateReport {
   const entries = report.entries.map((entry) =>
-    entry.outcome.message === MANUAL_SKIP_MESSAGE
-      ? { ...entry, outcome: { ...entry.outcome, message: SCHEDULED_RUN_MESSAGES.stopped } }
+    isManualSkip(entry.outcome)
+      ? { ...entry, outcome: skippedAs(entry.outcome, SCHEDULED_RUN_MESSAGES.stopped) }
       : entry,
   );
   return buildReport(entries, report.cancelled);

@@ -137,6 +137,18 @@ export class FsTree {
     }
   }
 
+  /** Move a node and everything below it to `to`, whose parent the caller checked. */
+  move(from: string, to: string): void {
+    const source = this.normalize(from);
+    const target = this.normalize(to);
+    const moved = [...this.nodes.values()].filter((node) => this.isWithin(node.path, source));
+    this.remove(source);
+    for (const node of moved) {
+      const path = `${target}${node.path.slice(source.length)}`;
+      this.nodes.set(this.key(path), { ...node, path });
+    }
+  }
+
   /** Direct children of a directory, sorted by name. */
   children(dir: StoredNode): readonly StoredNode[] {
     const dirKey = this.key(dir.path);

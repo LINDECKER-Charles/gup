@@ -73,7 +73,7 @@ reasoning behind the exclusion: [`scope.md`](../guide/scope.md).
 | **Provider id** | Stable kebab-case identifier, unique across the registry. Used at the CLI: `gup update <provider-id>:<packageId>` (e.g. `winget:Microsoft.PowerShell`). |
 | **Platform set** | The OSes gup supports a provider on (`PLATFORMS.windows`, `macos`, `notWindows`; omitted = everywhere). Elsewhere the provider is never probed, scanned or updated, and listings grey it out. |
 | **OutdatedPackage** | One scan-result entry: `{ id, name?, current, latest, note?, manual?, requiresAdmin?, aggregate? }`. The **currency** between the provider layer and everything above it. |
-| **UpdateOutcome** | Result of an update: `{ id, success, skipped?, message?, retryable? }`. |
+| **UpdateOutcome** | Result of an update: `{ id, success, skipped?, message?, retryable?, recovery? }`. |
 | **ProviderScanResult** | Per-provider aggregate after a scan: `{ providerId, available, packages[], error? }`. |
 | **slow** | Declarative flag on a provider whose scan does HTTP per package or a heavy filesystem walk. Skipped in `--fast` mode. |
 | **manual** | Flag on an `OutdatedPackage`: no command can update it. Filtered out by `scanAll` → never shown, never updated. |
@@ -386,6 +386,7 @@ interface UpdateOutcome {
   skipped?: boolean;    // abandoned on purpose: user skip, timeout, missing rights, GUI-only
   message?: string;     // reason for failure / skip
   retryable?: boolean;  // could pass with a more aggressive strategy
+  recovery?: string;    // what the provider undid after an unfinished attempt (kept past a skip)
 }
 
 interface UpdateOptions {

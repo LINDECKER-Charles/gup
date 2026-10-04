@@ -9,7 +9,9 @@ import {
   readdir,
   readFile,
   realpath,
+  rename,
   rm,
+  rmdir,
   stat,
   writeFile,
 } from "node:fs/promises";
@@ -215,6 +217,50 @@ describe("fake fs: writes land in the tree", () => {
     await rm("/d", { recursive: true });
 
     expect(existsSync("/d/f")).toBe(false);
+  });
+
+  it("renames a directory with all it holds, and removes only an empty one", async () => {
+    await system.load({
+      platform: "win32",
+      fs: {
+        "C:\\n\\.pkg-Ab3dEf9h\\package.json": { kind: "file", content: "{}" },
+        "C:\\n\\pkg": { kind: "dir" },
+      },
+    });
+
+    await expect(rename("C:\\n\\.pkg-Ab3dEf9h", "C:\\n\\pkg")).rejects.toMatchObject({
+      code: "EPERM",
+    });
+    await expect(rmdir("C:\\n\\.pkg-Ab3dEf9h")).rejects.toMatchObject({ code: "ENOTEMPTY" });
+    await rmdir("C:\\n\\pkg");
+    await rename("C:\\n\\.pkg-Ab3dEf9h", "C:\\n\\pkg");
+
+    await expect(readFile("C:\\n\\pkg\\package.json", "utf8")).resolves.toBe("{}");
+    await expect(readdir("C:\\n")).resolves.toEqual(["pkg"]);
+    await expect(rename("C:\\n\\gone", "C:\\n\\x")).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(rename("C:\\n\\pkg", "C:\\m\\pkg")).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(rmdir("C:\\n\\gone")).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("replaces a file, or an empty directory on POSIX, as rename(2) does", async () => {
+    await system.load({
+      platform: "linux",
+      fs: {
+        "/w/a": { kind: "file", content: "a" },
+        "/w/b": { kind: "file", content: "b" },
+        "/w/d/x": { kind: "file" },
+        "/w/e": { kind: "dir" },
+        "/w/f/y": { kind: "file" },
+      },
+    });
+
+    await rename("/w/a", "/w/b");
+    await rename("/w/d", "/w/e");
+
+    await expect(readFile("/w/b", "utf8")).resolves.toBe("a");
+    expect(existsSync("/w/e/x")).toBe(true);
+    await expect(rename("/w/e", "/w/f")).rejects.toMatchObject({ code: "ENOTEMPTY" });
+    await expect(rmdir("/w/b")).rejects.toMatchObject({ code: "ENOTDIR" });
   });
 });
 
