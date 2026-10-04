@@ -57,6 +57,8 @@ const GUTTER = "  ";
 const ROLE_WIDTH = 17;
 const HEX_WIDTH = 9;
 const RATIO_WIDTH = 16;
+/** The widest ratio, 21:1: a shorter one is padded to it, so every ✔ stands in one column. */
+const RATIO_TEXT_WIDTH = formatRatio(21).length;
 const GROUNDS: ReadonlySet<CustomizableToken> = new Set(["background", "highlight"]);
 const SAMPLE_TONE: Readonly<Record<CustomizableToken, Tone>> = {
   accent: "accent",
@@ -131,7 +133,7 @@ function ratioCell({ token, theme }: RoleCell): Segment {
   const { palette } = theme;
   if (!palette) return seg(fit(COLOR_EDITOR.ground, RATIO_WIDTH), "muted");
   const ratio = formatRatio(worstRatio(palette[token], [palette.background, palette.highlight]));
-  if (!correction) return seg(fit(`${ratio}  ✔`, RATIO_WIDTH), "success");
+  if (!correction) return seg(fit(`${ratio.padEnd(RATIO_TEXT_WIDTH)} ✔`, RATIO_WIDTH), "success");
   return seg(fit(`${formatRatioValue(correction.before)} → ${ratio} ⚠`, RATIO_WIDTH), "warning");
 }
 

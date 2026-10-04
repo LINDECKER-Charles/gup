@@ -104,7 +104,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="234.4" y="208.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Texte            </text>
 <text class="c6" x="382.6" y="208.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(thème)  </text>
 <text class="c4" x="452.8" y="208.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">#E6EDF3  </text>
-<text class="c9" x="523.0" y="208.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11,2:1  ✔       </text>
+<text class="c9" x="523.0" y="208.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11,2:1 ✔        </text>
 <text class="c4" x="647.8" y="208.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Git.Git</text>
 <text class="c5" x="788.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>

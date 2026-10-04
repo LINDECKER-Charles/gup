@@ -100,6 +100,16 @@ describe("colour editor", () => {
     expect(text(editor.panel.render(VIEW))).toContain(COLOR_EDITOR.columns.shown);
   });
 
+  it("keeps the ✔ of the Contraste column in one column, a ratio of 10:1 or more included", () => {
+    const { panel } = openEditor();
+    const rows = text(panel.render(VIEW))
+      .split("\n")
+      .filter((line) => /\d,\d:1 +✔/.test(line));
+    expect(rows.some((line) => /\d\d,\d:1/.test(line))).toBe(true);
+    expect(rows.some((line) => /[^\d]\d,\d:1/.test(line))).toBe(true);
+    expect(new Set(rows.map((line) => line.indexOf("✔"))).size).toBe(1);
+  });
+
   it("gives a role back to the theme with Suppr", async () => {
     const editor = openEditor();
     await typeColor(editor, "#FF8800");
