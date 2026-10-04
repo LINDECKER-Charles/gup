@@ -199,7 +199,7 @@ function providerNameHint(typed: string, providerId: string): string[] {
 
 const GENERIC_TARGET_EXAMPLES = [
   `Exemples : gup update winget:Microsoft.VisualStudioCode`,
-  `           gup update npm-global:typescript`,
+  `           gup update npm-g:typescript`,
   `Pour mettre à jour tout un provider sans cibler un paquet :`,
   `           gup update --provider <id> --all`,
 ];
