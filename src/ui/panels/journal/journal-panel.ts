@@ -1,6 +1,5 @@
 import { JOURNAL_SECTION } from "../../../core/config/journal-section.js";
 import { buildInsights } from "../../../core/insights/build-insights.js";
-import { withHomeShortened } from "../../../core/log/redact.js";
 import {
   nextPeriod,
   parsePeriod,
@@ -17,8 +16,8 @@ import type { ChoiceSpec } from "../../tui/dialog.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import {
   fit,
-  middleEllipsis,
   seg,
+  shownPath,
   wrapLine,
   type Line,
   type Segment,
@@ -280,8 +279,7 @@ function tabBar(current: number, width: number): Line {
  */
 export function exportNotice(outcome: ExportOutcome, width?: number): ResultNotice {
   if (!outcome.ok) return { text: EXPORT_LABELS.failed(outcome.error), tone: "danger" };
-  const home = withHomeShortened(outcome.path);
-  const path = width === undefined ? home : middleEllipsis(home, width);
+  const path = shownPath(outcome.path, width);
   if (outcome.opened === true) return { text: EXPORT_LABELS.opened(path), tone: "success" };
   if (outcome.opened === false) return { text: EXPORT_LABELS.notOpened(path), tone: "warning" };
   return { text: EXPORT_LABELS.written(path), tone: "success" };

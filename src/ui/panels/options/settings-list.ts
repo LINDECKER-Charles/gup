@@ -125,8 +125,8 @@ export function detailLines(
 /** The row cut to `width`, with its hint when it has room to say something. */
 function rowLine(row: OptionRow, columns: Columns, at: { width: number; isCursor: boolean }): Line {
   const cells = cellsOf(row, columns, at.isCursor);
-  const hasRoom = at.width - lineWidth(cells) >= MIN_HINT_WIDTH;
-  return clipLine(hasRoom ? [...cells, ...row.hint()] : cells, at.width);
+  const room = at.width - lineWidth(cells);
+  return clipLine(room >= MIN_HINT_WIDTH ? [...cells, ...row.hint(room)] : cells, at.width);
 }
 
 /** Gutter, label and value; an action row (no value) lets its hint start in the value column. */

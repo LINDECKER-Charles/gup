@@ -1,4 +1,5 @@
 import type { StyledText, TextChunk } from "@opentui/core";
+import { withHomeShortened } from "../../core/log/redact.js";
 import type { Screen } from "./screen-host.js";
 
 /**
@@ -131,6 +132,14 @@ export function middleEllipsis(text: string, width: number): string {
   const tail = Math.ceil((width - 1) * ELLIPSIS_TAIL_SHARE);
   const head = width - 1 - tail;
   return `${text.slice(0, head)}…${text.slice(text.length - tail)}`;
+}
+
+/**
+ * A path as the screen shows it: from `~`, and — given a `width` — cut in
+ * its middle to fit it, so the file name always shows.
+ */
+export function shownPath(path: string, width = Number.POSITIVE_INFINITY): string {
+  return middleEllipsis(withHomeShortened(path), width);
 }
 
 const BLANKS = /(\s+)/;

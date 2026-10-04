@@ -23,8 +23,13 @@ export interface OptionRow {
   readonly label: string;
   /** Shown as `[value]`; empty for an action row ("Réinitialiser…"). */
   value(): string;
-  /** After the value: an explanation, a status, or why the row is disabled. */
-  hint(): Line;
+  /**
+   * After the value: an explanation, a status, or why the row is disabled.
+   * Given `room`, the columns left for it on its row, a hint that can say the
+   * same in fewer (a path cut in its middle) fits them; any other is cut at
+   * its end.
+   */
+  hint(room?: number): Line;
   isEnabled(): boolean;
   /** Entrée, Espace or a click: toggle, cycle forward, open a sub-view or a dialog. */
   activate(): void;

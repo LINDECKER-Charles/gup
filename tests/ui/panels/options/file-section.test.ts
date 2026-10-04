@@ -1,3 +1,4 @@
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfigStore } from "../../../../src/core/config/store.js";
@@ -15,6 +16,7 @@ import {
   type ResetScope,
 } from "../../../../src/ui/text/settings/options-labels.js";
 import { CONFIG_STATE_LABELS } from "../../../../src/ui/text/settings/settings-labels.js";
+import { shownPath } from "../../../../src/ui/tui/styled-lines.js";
 import { useTempDirs } from "../../../support/temp-dirs.js";
 import {
   key,
@@ -56,11 +58,30 @@ describe("Options file section", () => {
     const { store, file } = await fileStore();
     const fixture = setup({ store });
     const rendered = text(fixture.panel.render({ width: 240, height: 20 }));
-    expect(rendered).toContain(`${CONFIG_STATE_LABELS.defaults}  ${file}`);
+    expect(rendered).toContain(`${CONFIG_STATE_LABELS.defaults}  ${shownPath(file)}`);
     expect(fixture.panel.hints()).toContain("c copier le chemin");
     fixture.panel.press(key("c"));
     expect(fixture.host.copyToClipboard).toHaveBeenCalledWith(file);
     expect(text(fixture.panel.render(VIEW)).split("\n")[0]).toBe(OPTIONS_NOTICES.copied);
+  });
+
+  it("shows the path from ~, cut in its middle when its row is too short for it", () => {
+    const file = join(homedir(), "AppData", "Roaming", "gup-options-test", "config.json");
+    const fixture = setup({ store: new ConfigStore({ file }) });
+    const shown = join("~", "AppData", "Roaming", "gup-options-test", "config.json");
+    const wide = text(fixture.panel.render({ width: 240, height: 20 }));
+    expect(wide).toContain(`${CONFIG_STATE_LABELS.defaults}  ${shown}`);
+    expect(wide).not.toContain(homedir());
+    fixture.panel.press(key("end"));
+    const width = 90;
+    const row = text(fixture.panel.render({ width, height: 20 }))
+      .split("\n")
+      .find((line) => line.startsWith("› "));
+    const cutInItsMiddle = /^› Fichier +valeurs par défaut \(aucun fichier\) {2}~.+….+config\.json$/;
+    expect(row?.trimEnd()).toMatch(cutInItsMiddle);
+    expect(row?.trimEnd().length).toBe(width);
+    fixture.panel.press(key("c"));
+    expect(fixture.host.copyToClipboard).toHaveBeenCalledWith(file);
   });
 
   it("says when the terminal cannot take the path", async () => {
