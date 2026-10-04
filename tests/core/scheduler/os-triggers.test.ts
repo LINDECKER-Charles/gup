@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CRON_BLOCK_BEGIN } from "../../../src/core/scheduler/artifacts/crontab-block.js";
 import { LAUNCHD_LABEL } from "../../../src/core/scheduler/artifacts/launchd-plist.js";
 import {
@@ -151,12 +151,49 @@ describe("LaunchdTrigger", () => {
     ]);
   });
 
-  it("fails when launchd refuses the agent", async () => {
-    const { run } = fakeRunner({
-      "/bin/launchctl bootstrap": { ...FAILED, stderr: "Bootstrap failed: 5" },
+  const STILL_BOOTING_OUT = {
+    exitCode: 5,
+    failed: true,
+    stderr: "Bootstrap failed: 5: Input/output error",
+  };
+  const bootstraps = (calls: readonly Call[]) => calls.filter((call) => call.args[0] === "bootstrap");
+
+  it("bootstraps again, waiting longer each time, while launchd still boots the agent out", async () => {
+    let attempts = 0;
+    const { run, calls } = fakeRunner({
+      "/bin/launchctl bootstrap": () => (++attempts < 3 ? STILL_BOOTING_OUT : {}),
     });
-    const trigger = new LaunchdTrigger({ ...options, run, files: memoryFiles() });
+    const waits: number[] = [];
+    const sleep = async (ms: number) => void waits.push(ms);
+    await new LaunchdTrigger({ ...options, run, files: memoryFiles(), sleep }).install(registration);
+    expect(bootstraps(calls)).toHaveLength(3);
+    expect(waits).toEqual([250, 500]);
+    expect(calls.at(-1)?.args[0]).toBe("enable");
+  });
+
+  it("gives up after a bounded number of tries, with launchd's reason", async () => {
+    const { run, calls } = fakeRunner({ "/bin/launchctl bootstrap": STILL_BOOTING_OUT });
+    const sleep = async () => undefined;
+    const trigger = new LaunchdTrigger({ ...options, run, files: memoryFiles(), sleep });
+    await expect(trigger.install(registration)).rejects.toThrow(
+      "launchctl bootstrap a échoué (code 5) : Bootstrap failed: 5: Input/output error",
+    );
+    expect(bootstraps(calls)).toHaveLength(4);
+    expect(calls.some((call) => call.args[0] === "enable")).toBe(false);
+  });
+
+  it("fails at once when launchd refuses the agent for another reason", async () => {
+    const { run, calls } = fakeRunner({
+      "/bin/launchctl bootstrap": {
+        ...FAILED,
+        stderr: "Bootstrap failed: 122: Path had bad ownership/permissions",
+      },
+    });
+    const sleep = vi.fn(async () => undefined);
+    const trigger = new LaunchdTrigger({ ...options, run, files: memoryFiles(), sleep });
     await expect(trigger.install(registration)).rejects.toThrow("launchctl bootstrap a échoué");
+    expect(bootstraps(calls)).toHaveLength(1);
+    expect(sleep).not.toHaveBeenCalled();
   });
 
   it("reports an agent switched off in Login Items", async () => {

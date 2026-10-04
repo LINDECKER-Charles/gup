@@ -161,7 +161,7 @@ directory only if empty (a `GUP_SCHEDULER_DIR` may point at a shared folder).
 |---|---|---|---|
 | Adapter | `WindowsTaskTrigger` | `LaunchdTrigger` | `CrontabTrigger` |
 | Artefact | task `gup-scheduler-<SID>`, XML (UTF-16LE+BOM) in a `mkdtemp` dir, `wx`, removed | `~/Library/LaunchAgents/io.github.lindecker-charles.gup.scheduler.plist`, atomic, owner-only | managed block in the user crontab |
-| Install | `schtasks /Create /XML /F` | write, `bootout` (ignored), `bootstrap gui/<uid>`, `enable` | `crontab -l` (LC_ALL=C) → upsert → `crontab -` on stdin |
+| Install | `schtasks /Create /XML /F` | write, `bootout` (ignored), `bootstrap gui/<uid>` (retried after 0.25, 0.5 and 1 s while it answers `Bootstrap failed: 5`: launchd still booting the old agent out), `enable` | `crontab -l` (LC_ALL=C) → upsert → `crontab -` on stdin |
 | Status | `/Query` exit code | `print` exit code + `print-disabled` parse | block present |
 | Binaries | `%SystemRoot%\System32\{schtasks,whoami,conhost}.exe` (SystemRoot validated) | `/bin/launchctl` | `crontab` resolved once, then absolute |
 
