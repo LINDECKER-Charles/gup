@@ -103,6 +103,11 @@ export class MenuSession {
     });
     this.#main = new TextPanel(screen, this.#chrome.body, { id: "gup-main", title: "" });
     this.#dialogs = new DialogLayer(screen);
+    // A dialog a launcher opens once its detection answered comes outside a
+    // key: the hint bar must still trade the screen's keys for the dialog's.
+    this.#dialogs.onChange(() => {
+      if (!screen.renderer.isDestroyed) this.draw();
+    });
     this.#views = new ViewRegistry(deps.views, deps.initialView ?? "scan");
     this.#nav = new MenuNav(this.#views, () => this.#exit({ kind: "quit" }));
     this.#scans = new ScanBus((events) => deps.controller.scan(deps.state, events));
@@ -345,12 +350,15 @@ export class MenuSession {
     this.#sidebar.show(this.#nav.render(density, width));
   }
 
-  /** The focused side's key hints, then the global keys the bar must never cut. */
+  /**
+   * An open dialog's keys; else the focused side's, then the global keys the
+   * bar must never cut — unless the panel takes them too (text being typed).
+   */
   private hints(): [hints: string, pinned: string] {
     const panel = this.#views.panel;
-    if (this.#dialogs.isOpen) return ["", ""];
+    if (this.#dialogs.isOpen) return [this.#dialogs.hints(), ""];
     if (this.#nav.isSidebarFocused || !panel) return [SIDEBAR_HINTS, ""];
-    return [panel.hints(), PANEL_HINTS_TAIL];
+    return [panel.hints(), panel.isCapturingText ? "" : PANEL_HINTS_TAIL];
   }
 }
 

@@ -1,4 +1,5 @@
 import type { BoxRenderable, TextRenderable } from "@opentui/core";
+import { DIALOG_HINTS } from "../text/menu-labels.js";
 import type { KeyPress, Screen } from "./screen-host.js";
 import { fillLine, seg, toStyledText, wrap, type Line } from "./styled-lines.js";
 
@@ -32,19 +33,22 @@ export interface InputSpec extends DialogBase {
 
 const MAX_WIDTH = 76;
 
-/** The keys a dialog reacts to while it is on top. */
+/** The dialog on top: the keys it reacts to, and how the hint bar names them. */
 interface ActiveDialog {
   press(key: KeyPress): void;
+  readonly hints: string;
 }
 
 /**
  * Modal boxes drawn over whatever the screen shows: a confirmation, a choice
  * in a list, a line of text. While one is open its owner routes every key
- * to {@link press}; Escape closes it with "no answer" (`false` for a
- * confirmation, `undefined` otherwise).
+ * to {@link press} and shows {@link hints} in place of its own; Escape
+ * closes it with "no answer" (`false` for a confirmation, `undefined`
+ * otherwise).
  */
 export class DialogLayer {
   readonly #screen: Screen;
+  readonly #listeners = new Set<() => void>();
   #active: ActiveDialog | null = null;
 
   constructor(screen: Screen) {
@@ -53,6 +57,21 @@ export class DialogLayer {
 
   get isOpen(): boolean {
     return this.#active !== null;
+  }
+
+  /** The open dialog's keys for the hint bar; empty when none is open. */
+  hints(): string {
+    return this.#active?.hints ?? "";
+  }
+
+  /**
+   * `listener` runs right after a dialog opens and right after it closes —
+   * also when that happens outside a key (a dialog a promise opened), so the
+   * owner can redraw its hint bar at once. Returns the unsubscribe.
+   */
+  onChange(listener: () => void): () => void {
+    this.#listeners.add(listener);
+    return () => void this.#listeners.delete(listener);
   }
 
   press(key: KeyPress): void {
@@ -67,7 +86,7 @@ export class DialogLayer {
       seg("   "),
       ...button("Non", !isYes),
     ];
-    return this.open(spec, (draw, done) => {
+    return this.open(spec, DIALOG_HINTS.confirm, (draw, done) => {
       draw([buttons()]);
       return (key) => {
         if (key.name === "o" || key.name === "y") done(true);
@@ -86,7 +105,7 @@ export class DialogLayer {
       0,
       spec.choices.findIndex((c) => c.value === spec.default),
     );
-    return this.open<T | undefined>(spec, (draw, done) => {
+    return this.open<T | undefined>(spec, DIALOG_HINTS.choose, (draw, done) => {
       const redraw = (): void => draw(this.choiceLines(spec.choices, index));
       redraw();
       return (key) => {
@@ -101,7 +120,7 @@ export class DialogLayer {
   }
 
   ask(spec: InputSpec): Promise<string | undefined> {
-    return this.open<string | undefined>(spec, (draw, done, box) => {
+    return this.open<string | undefined>(spec, DIALOG_HINTS.ask, (draw, done, box) => {
       const { renderer, tui } = this.#screen;
       const field = new tui.InputRenderable(renderer, {
         id: "gup-dialog-input",
@@ -147,10 +166,12 @@ export class DialogLayer {
 
   /**
    * Draw the box, hand `setup` a way to redraw the controls and to finish,
-   * and remove the box once it finishes. `setup` returns the key handler.
+   * and remove the box once it finishes. `setup` returns the key handler;
+   * `hints` names its keys.
    */
   private open<T>(
     spec: DialogBase,
+    hints: string,
     setup: (
       draw: (controls: readonly Line[]) => void,
       done: (value: T) => void,
@@ -170,13 +191,24 @@ export class DialogLayer {
         this.place(box, text.length + controls.length + box.getChildren().length - 1);
       };
       const done = (value: T): void => {
-        this.#active = null;
-        this.#screen.renderer.root.remove(box);
-        box.destroyRecursively();
+        this.close(box);
         resolve(value);
       };
-      this.#active = { press: setup(draw, done, box) };
+      this.#active = { press: setup(draw, done, box), hints };
+      this.notifyChange();
     });
+  }
+
+  /** Take the dialog off the screen: the layer is free for the next one. */
+  private close(box: BoxRenderable): void {
+    this.#active = null;
+    this.#screen.renderer.root.remove(box);
+    box.destroyRecursively();
+    this.notifyChange();
+  }
+
+  private notifyChange(): void {
+    for (const listener of this.#listeners) listener();
   }
 
   /**

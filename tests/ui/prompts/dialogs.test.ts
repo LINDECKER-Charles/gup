@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { confirm } from "../../../src/ui/prompts/confirm.js";
 import { select } from "../../../src/ui/prompts/select.js";
+import { DIALOG_HINTS } from "../../../src/ui/text/menu-labels.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
 import { createTestHost, frame, press } from "../../support/tui/test-host.js";
 
@@ -18,6 +19,16 @@ describe("confirm", () => {
     await press(await next(), "enter");
     await expect(answer).resolves.toBe(false);
     expect(write).toHaveBeenCalledWith(expect.stringContaining("Continuer ?"));
+  });
+
+  it("names its keys on the hint bar", async () => {
+    quiet();
+    const { host, next } = createTestHost();
+    const answer = confirm({ message: "Continuer ?" }, host);
+    const screen = await next();
+    expect((await frame(screen)).trimEnd().split("\n").at(-1)?.trim()).toBe(DIALOG_HINTS.confirm);
+    await press(screen, "o");
+    await answer;
   });
 
   it("answers at once on o / n, and switches side with the arrows", async () => {

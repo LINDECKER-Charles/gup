@@ -44,7 +44,8 @@ function mountPicker(
   const viewport = () => bodyPanelSize(screen);
   const draw = (): void => {
     view.show(packages.render(viewport()));
-    chrome.setHints(packages.hints(), PICKER_LABELS.cancelHint);
+    // While a filter is typed, q is a letter of it: the bar must not offer it.
+    chrome.setHints(packages.hints(), packages.isCapturingText ? "" : PICKER_LABELS.cancelHint);
   };
   screen.renderer.keyInput.on("keypress", (key: KeyEvent) => {
     if (!packages.isCapturingText && key.name === "q") return resolve([]);

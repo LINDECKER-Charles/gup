@@ -152,8 +152,7 @@ export class RunView implements Takeover {
       isFocused: isTyping,
     });
     this.#surface.setFacts(runFacts(this.model));
-    const context = { elevation: this.#elevation, isEnlarged: this.#isEnlarged };
-    this.#surface.setHints(runHintsFor(this.mode(), context));
+    this.#surface.setHints(this.hints());
   }
 
   /**
@@ -338,6 +337,13 @@ export class RunView implements Takeover {
   private focusIndex(): number {
     if (this.model.phase === "done") return this.#cursor;
     return this.#scrolledTo ?? this.model.activeIndex();
+  }
+
+  /** An open dialog's keys, else the run's for its mode. */
+  private hints(): string {
+    const { dialogs } = this.#surface;
+    if (dialogs.isOpen) return dialogs.hints();
+    return runHintsFor(this.mode(), { elevation: this.#elevation, isEnlarged: this.#isEnlarged });
   }
 
   private paneTitle(): string {

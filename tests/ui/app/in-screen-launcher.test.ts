@@ -8,6 +8,7 @@ import { inScreenLauncher } from "../../../src/ui/app/in-screen-launcher.js";
 import type { UiPreferences } from "../../../src/ui/app/ui-preferences.js";
 import type { ViewContext, ViewDefinition } from "../../../src/ui/app/view-definition.js";
 import type { Panel } from "../../../src/ui/panels/panel.js";
+import { DIALOG_HINTS, PANEL_HINTS_TAIL } from "../../../src/ui/text/menu-labels.js";
 import { LAUNCH_ERROR, RUN_TITLES } from "../../../src/ui/text/run-labels.js";
 import { seg } from "../../../src/ui/tui/styled-lines.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
@@ -80,6 +81,11 @@ async function shown(menu: MenuDriver, text: string): Promise<string> {
   );
 }
 
+/** The key-hint bar: the frame's last line, without its leading blank. */
+function hintBar(frame: string): string {
+  return (frame.trimEnd().split("\n").at(-1) ?? "").trim();
+}
+
 describe("in-screen launcher", () => {
   it("starts detecting the embedded terminal as soon as the menu opens", async () => {
     const { loadSupport } = await menuWith();
@@ -142,6 +148,19 @@ describe("in-screen launcher", () => {
     await menu.press("o");
     await shown(menu, RUN_TITLES.done);
     expect(runUpdates).toHaveBeenCalledOnce();
+  });
+
+  it("puts the confirmation's keys on the hint bar, though it opens after the detection", async () => {
+    let detected = (_support: EmbeddedTerminalSupport): void => {};
+    const pending = new Promise<EmbeddedTerminalSupport>((resolve) => (detected = resolve));
+    const { menu } = await menuWith({ support: () => pending });
+    await menu.press("a", "enter");
+    expect(hintBar(await menu.frame())).toContain(PANEL_HINTS_TAIL);
+    detected(AVAILABLE);
+    const confirmation = await shown(menu, "vont être mis à jour");
+    expect(hintBar(confirmation)).toBe(DIALOG_HINTS.confirm);
+    await menu.press("n");
+    expect(hintBar(await shown(menu, "┏━ Paquets"))).toContain(PANEL_HINTS_TAIL);
   });
 
   it("says the update broke and gives the menu back", async () => {

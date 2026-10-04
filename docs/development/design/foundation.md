@@ -210,6 +210,13 @@ it captures text or claims the key → global (`q`, Tab, ←) → panel or sideb
 keyboard and the sidebar cursor live in `MenuNav` (`menu-nav.ts`). The session's frame clock
 stops when it ends and when its renderer is destroyed under it (Ctrl+C, a signal).
 
+The hint bar follows the same order: an open dialog's keys (`DialogLayer.hints()`, worded in
+`DIALOG_HINTS`) replace those of the screen behind it — in the menu, in the run view and on the
+one-shot dialog screens — and `DialogLayer.onChange` redraws as soon as a dialog opens or closes,
+also when no key caused it (a launcher's confirmation once its detection answered, a question the
+update pipeline asks). While the focused panel captures text it takes `q` and Tab too, so the bar
+drops `tab menu · q quitter` (and the picker its `q annuler`).
+
 `UpdateLauncher.launch(packages, { scheduleId?, returnTo? })` resolves with the report of an
 update run inside the screen, or `null` (declined, or run outside). The foundation's
 `outsideLauncher` confirms (when `confirmBeforeUpdate`), then ends the session with
