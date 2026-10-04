@@ -1,4 +1,6 @@
 import { INSTALL_SECTION, type InstallSettings } from "../../core/config/install-section.js";
+import { JOURNAL_SECTION, type JournalSettings } from "../../core/config/journal-section.js";
+import { LOG_SECTION, type DebugLogSettings } from "../../core/config/log-section.js";
 import { SCAN_SECTION, type ScanSettings } from "../../core/config/scan-section.js";
 import type { ConfigSectionDef } from "../../core/config/section.js";
 import { configStore, type ConfigStatus, type ConfigStore } from "../../core/config/store.js";
@@ -17,6 +19,8 @@ export interface SettingsMap {
   interface: InterfaceSettings;
   scan: ScanSettings;
   install: InstallSettings;
+  log: DebugLogSettings;
+  journal: JournalSettings;
 }
 export type SettingsKey = keyof SettingsMap;
 
@@ -25,6 +29,8 @@ const SECTIONS: { readonly [K in SettingsKey]: ConfigSectionDef<SettingsMap[K]> 
   interface: INTERFACE_SECTION,
   scan: SCAN_SECTION,
   install: INSTALL_SECTION,
+  log: LOG_SECTION,
+  journal: JOURNAL_SECTION,
 };
 const KEYS = Object.keys(SECTIONS) as SettingsKey[];
 
