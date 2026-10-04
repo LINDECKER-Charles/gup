@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { NpmGlobalProvider } from "../../../src/providers/node/npm-global.js";
 import { restoreStagedCopy } from "../../../src/providers/node/npm-staged-copy.js";
 import { system } from "../../support/system/fake-system.js";
+import { installArgvs } from "../../support/system/trace.js";
 import type { FsNode, SystemSpec } from "../../support/system/types.js";
 import { NPM_GLOBAL_ROOT, npmMachine } from "./node.cases.js";
 
@@ -254,5 +255,68 @@ describe("NpmGlobalProvider.update when npm was stopped before its rollback", ()
       await expect(restoreStagedCopy(ROOT, id)).resolves.toEqual({ kind: "none" });
     }
     expect(system.trace.fsReads).toEqual([]);
+  });
+});
+
+/**
+ * gup is a global npm package like any other — except on Windows, where the
+ * running gup keeps its native modules loaded and npm cannot replace them:
+ * the update half happens and can leave gup broken (core/self-update.ts).
+ */
+describe("NpmGlobalProvider and gup itself", () => {
+  const GUP = "@charles_lindecker/gup";
+  const report = JSON.stringify({
+    [GUP]: { current: "0.5.0", wanted: "0.5.0", latest: "0.5.1", location: "" },
+    typescript: { current: "5.4.5", wanted: "5.4.5", latest: "5.6.2", location: "" },
+  });
+
+  it("lists gup on Windows with the command to run once it has exited", async () => {
+    await system.load(npmMachine(report));
+    const [gup, typescript] = await new NpmGlobalProvider().listOutdated();
+    expect(gup).toEqual({
+      id: GUP,
+      name: GUP,
+      current: "0.5.0",
+      latest: "0.5.1",
+      note: "après avoir quitté gup",
+      updateAfterExit: "npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty",
+    });
+    expect(typescript?.updateAfterExit).toBeUndefined();
+  });
+
+  it("never runs npm on gup itself on Windows, and says what to run instead", async () => {
+    await system.load(npmMachine(report));
+    const outcome = await new NpmGlobalProvider().update(GUP);
+    expect(outcome).toMatchObject({ id: GUP, success: false, skipped: true });
+    expect(outcome.message).toContain("quitter gup, puis lancer npm install -g");
+    expect(installArgvs()).toEqual([]);
+  });
+
+  it("updates the rest of a batch without gup, outcomes in order", async () => {
+    await system.load(npmMachine(report));
+    const outcomes = await new NpmGlobalProvider().updateAll([
+      { id: GUP, current: "0.5.0", latest: "0.5.1" },
+      { id: "typescript", current: "5.4.5", latest: "5.6.2" },
+    ]);
+    expect(outcomes.map((o) => [o.id, o.success, o.skipped ?? false])).toEqual([
+      [GUP, false, true],
+      ["typescript", true, false],
+    ]);
+    expect(installArgvs()).toEqual([["npm", "install", "-g", "typescript@latest"]]);
+  });
+
+  it("updates itself like any package where a running file can be replaced", async () => {
+    await system.load({
+      platform: "darwin",
+      bin: { npm: "/opt/homebrew/bin/npm" },
+      commands: [
+        { argv: ["npm", "outdated", "-g", "--json", "--long"], stdout: report, exitCode: 1 },
+        { argv: ["npm", "root", "-g"], stdout: "/opt/homebrew/lib/node_modules\n" },
+      ],
+    });
+    const [gup] = await new NpmGlobalProvider().listOutdated();
+    expect(gup?.updateAfterExit).toBeUndefined();
+    await expect(new NpmGlobalProvider().update(GUP)).resolves.toEqual({ id: GUP, success: true });
+    expect(installArgvs()).toEqual([["npm", "install", "-g", `${GUP}@latest`]]);
   });
 });
