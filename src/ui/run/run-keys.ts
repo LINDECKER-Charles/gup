@@ -80,17 +80,22 @@ export function runCommandFor(key: KeyPress, mode: RunKeyMode): RunCommand {
 export interface RunHintsContext {
   readonly elevation: ElevationKind;
   readonly isEnlarged: boolean;
-  /** The keys other views add to the results, last: "o rapport HTML". */
+  /** The keys other views add to the results: "o rapport HTML". */
   readonly resultHints?: readonly string[];
 }
 
-/** The key-hint bar of each mode. */
+/**
+ * The key-hint bar of each mode. On the results the way back and the keys
+ * other views add come before `v`: a narrow bar drops `v` first.
+ */
 export function runHintsFor(mode: RunKeyMode, context: RunHintsContext): string {
   if (mode === "typing") return RUN_HINTS.typing;
   if (mode === "elevating") return RUN_HINTS.elevating[context.elevation];
   if (mode === "waiting") return RUN_HINTS.waiting;
   if (mode === "done") {
-    return [RUN_HINTS.done(context.isEnlarged), ...(context.resultHints ?? [])].join(HINT_GAP);
+    const { select, back, resize } = RUN_HINTS.done;
+    const results = context.resultHints ?? [];
+    return [select, back, ...results, resize(context.isEnlarged)].join(HINT_GAP);
   }
   return RUN_HINTS.running(context.isEnlarged);
 }
