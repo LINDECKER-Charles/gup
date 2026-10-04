@@ -125,7 +125,7 @@ they are declared Windows-only (`readonly platforms = PLATFORMS.windows;`).
 
 Everything above the OS layer is platform-independent: npm/pnpm/yarn/bun
 globals, pip/pipx/uv/conda, cargo, rustup, gem, composer, dotnet tools, the
-cloud/IaC/Kubernetes CLIs, VS Code and Cursor extensions, JetBrains plugins,
+cloud/IaC/Kubernetes CLIs, VS Code and Cursor extensions, JetBrains IDEs,
 pwsh modules, asdf/mise.
 
 Of the @@PROVIDERS@@ providers, @@PROVIDERS_WINDOWS@@ run on Windows,
@@ -144,7 +144,7 @@ read from those declarations at build time.
 - `src/core/install-source.ts` — resolves who owns a binary (brew Cellar symlink, `dpkg -S`, `rpm -qf`, winget/scoop/choco paths) so the upgrade is delegated to the right manager instead of being reported as manual. Homebrew classification only accepts a `Cellar`/`Caskroom` segment under a known prefix, and `/usr/local` only in combination with such a segment — locked down by `tests/security/install-source.test.ts`.
 - `src/core/wsl.ts` — the WSL bridge; `isWslAvailable()` returns false off win32.
 - `src/providers/<domain>/<id>.ts` — one isolated module per source.
-- `src/ui/**` — the full-screen OpenTUI app. Packages are checked with `space` (`a` for all) and updated with `enter` inside an OpenTUI embedded terminal (Ghostty VT core) fed by a pseudo-terminal, so installer prompts and progress bars work without leaving the interface.
+- `src/ui/**` — the full-screen OpenTUI app. Packages are checked with `space` (`a` for all) and updated with `enter` inside an OpenTUI embedded terminal (Ghostty VT core) fed by a pseudo-terminal, so installer prompts and progress bars work without leaving the interface. Updated packages then leave the list without a rescan. Where no pseudo-terminal is available (`node-pty` missing, `GUP_PTY=off`), the confirmation says why and the update runs in the plain terminal instead.
 
 Lifecycle of a run: `isAvailable()` probes in parallel (`where`/`which`, milliseconds) → flags and filters are applied (`--fast` drops slow providers, `--provider` restricts, `--only` targets) → `listOutdated()` fans out under `pLimit(4)` and `manual` packages are filtered once → selection → `runInherit()` streams stdout/stderr live, and every attempt is appended to the history log.
 
@@ -222,7 +222,7 @@ telling you what is outstanding and from which version to which version, as a
 separate phase, with JSON output, per-package selection, `provider:package`
 targeting that bypasses the scan, and a local history of what it did. gup is
 TypeScript on npm and covers @@PROVIDERS@@ sources including editor extensions
-and JetBrains plugins.
+and JetBrains IDEs.
 
 **Is it safe to let it update everything?** Updating is always explicit. `--all`
 confirms unless `-y` is passed, `gup list` never writes anything, and the

@@ -73,8 +73,9 @@ export default {
       inline: {
         title: "无需离开 gup 即可更新",
         text:
-          "安装程序在界面内嵌的终端面板中运行，进度条、交互提示和颜色都原样保留。运行结束" +
-          "后，列表会就地刷新。",
+          "安装程序在界面内嵌的终端面板中运行，进度条、交互提示和颜色都原样保留。更新完成的" +
+          "软件包随即从列表中移除，无需重新扫描。如果内嵌终端不可用，gup 会说明原因，改在你" +
+          "自己的终端中更新。",
       },
       select: {
         title: "多选，一次启动",
@@ -83,8 +84,9 @@ export default {
       schedule: {
         title: "按软件包定时更新",
         text:
-          "让 `ripgrep` 每周自动更新，`node` 则保持不动。定时任务只针对软件包，从不针对整个 " +
-          "provider，并由操作系统的任务计划程序启动：没有任何常驻进程。",
+          "勾选软件包后按 [[p]]：`ripgrep` 每周自动更新，`node` 保持不动。定时任务只针对软件" +
+          "包，从不针对整个 provider；操作系统的任务计划程序会短暂启动 gup，执行到期的任务，" +
+          "没有任何常驻进程。",
       },
       journal: {
         title: "活动日志",
@@ -95,14 +97,14 @@ export default {
       report: {
         title: "HTML 报告",
         text:
-          "`gup report` 会在浏览器中打开一份清晰、可导航的历史报告——单个离线文件，人人都能" +
-          "看懂，不只是终端用户。",
+          "`gup report`（或在活动日志中按 [[o]]）会在浏览器中打开一份清晰、可导航的历史报告" +
+          "——单个离线文件，人人都能看懂，不只是终端用户。",
       },
       themes: {
         title: "始终清晰可读的主题",
         text:
-          "选择一个主题或自定义颜色：gup 强制满足 WCAG AA 对比度要求，文字永远不会淹没在背景" +
-          "中。",
+          "十个内置主题，或使用你自己的颜色：gup 会按 WCAG AA 检查每一种（文字 4.5:1，边框 " +
+          "3:1，选择 AAA 时为 7:1），并修正不达标的颜色。",
       },
       os: {
         title: "了解你的操作系统",
@@ -251,7 +253,7 @@ export default {
         a:
           "{providers} 个 provider，每个都是独立模块：winget、scoop、chocolatey、Homebrew、" +
           "MacPorts、npm、pnpm、pip、uv、cargo、gem、composer、dotnet 工具、helm、kubectl、" +
-          "terraform、VS Code 和 JetBrains 扩展、WSL 发行版等等。",
+          "terraform、VS Code 扩展、JetBrains IDE、WSL 发行版等等。",
       },
       security: {
         q: "运行它安全吗？",

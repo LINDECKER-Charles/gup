@@ -88,7 +88,9 @@ export default {
         title: "Updates without leaving gup",
         text:
           "Installers run in a terminal pane embedded in the interface — progress bars, " +
-          "prompts and colors intact. When they finish, the list refreshes in place.",
+          "prompts and colors intact. Updated packages then leave the list, no rescan " +
+          "needed. If the embedded terminal is unavailable, gup says why and updates in " +
+          "your own terminal instead.",
       },
       select: {
         title: "Pick several, launch once",
@@ -99,9 +101,9 @@ export default {
       schedule: {
         title: "Scheduled updates, package by package",
         text:
-          "Put `ripgrep` on a weekly schedule and leave `node` alone. Schedules target " +
-          "packages, never a whole provider, and your OS scheduler starts them: nothing " +
-          "stays resident.",
+          "Check packages and press [[p]]: `ripgrep` goes on a weekly schedule, `node` " +
+          "stays put. Schedules name packages, never a whole provider; your OS scheduler " +
+          "starts gup briefly to run what is due, so nothing stays resident.",
       },
       journal: {
         title: "Activity journal",
@@ -112,14 +114,16 @@ export default {
       report: {
         title: "HTML report",
         text:
-          "`gup report` opens a clear, navigable report of your history in the browser — a " +
-          "single offline file, readable by anyone, not just terminal users.",
+          "`gup report`, or [[o]] in the journal, opens a clear, navigable report of your " +
+          "history in the browser — a single offline file, readable by anyone, not just " +
+          "terminal users.",
       },
       themes: {
         title: "Themes that stay readable",
         text:
-          "Pick a theme or your own colors: gup enforces WCAG AA contrast, so text never " +
-          "fades into the background.",
+          "Ten built-in themes or your own colors: gup checks each one against WCAG AA — " +
+          "4.5:1 for text, 3:1 for borders, 7:1 if you pick AAA — and corrects what falls " +
+          "short.",
       },
       os: {
         title: "Aware of your OS",
@@ -278,7 +282,8 @@ export default {
         a:
           "{providers} providers, one isolated module each: winget, scoop, chocolatey, " +
           "Homebrew, MacPorts, npm, pnpm, pip, uv, cargo, gem, composer, dotnet tools, helm, " +
-          "kubectl, terraform, VS Code and JetBrains extensions, WSL distributions and more.",
+          "kubectl, terraform, VS Code extensions, JetBrains IDEs, WSL distributions and " +
+          "more.",
       },
       security: {
         q: "Is it safe to run?",

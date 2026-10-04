@@ -4,7 +4,7 @@
 > developer machine, across @@PROVIDERS@@ sources: winget, scoop, chocolatey,
 > Homebrew (formulae + casks), MacPorts, Mac App Store, npm-g, pnpm-g, yarn-g,
 > bun, pip, pipx, uv, cargo, gem, composer, dotnet tools, helm, kubectl,
-> terraform, VS Code and Cursor extensions, JetBrains plugins, pwsh modules,
+> terraform, VS Code and Cursor extensions, JetBrains IDEs, pwsh modules,
 > WSL distros, and more. Parallel bounded scan, fail-soft, JSON output,
 > `--fast` mode, surgical `provider:package` targeting. A full-screen terminal
 > app runs the updates in an embedded terminal pane, schedules updates package
@@ -66,7 +66,7 @@ gup update --all -y       # CI-safe: everything, no prompt
 - Everything above the OS layer is platform-independent and behaves identically
   on the three systems: npm/pnpm/yarn/bun globals, pip/pipx/uv/conda, cargo,
   rustup, gem, composer, dotnet tools, the cloud/IaC/K8s CLIs, VS Code and
-  Cursor extensions, JetBrains plugins, pwsh modules, asdf/mise.
+  Cursor extensions, JetBrains IDEs, pwsh modules, asdf/mise.
 - Of the @@PROVIDERS@@ providers, @@PROVIDERS_WINDOWS@@ run on Windows,
   @@PROVIDERS_MACOS@@ on macOS and @@PROVIDERS_LINUX@@ on Linux. An OS-specific
   provider declares the systems it supports; elsewhere gup never probes, scans
@@ -92,16 +92,17 @@ gup update --all -y       # CI-safe: everything, no prompt
 - **Node**: npm-g, pnpm-g, yarn-g, bun-g, corepack, deno, fnm, nvm-windows
 - **Python**: pip, pipx, uv, conda, poetry, pdm, rye, pyenv-win
 - **.NET / PHP**: dotnet tools, composer global, composer self, symfony-cli
-- **JVM**: sdkman, jbang, coursier, cabal, hex
+- **JVM**: jbang, coursier
 - **Rust**: cargo, rustup
-- **Toolchains**: asdf, mise, proto, goenv
+- **Other languages**: gem, cabal, stack, hex, mix, opam, luarocks, nimble, julia, R, vcpkg, pub
+- **Toolchains**: asdf, mise, proto, goenv, sdkman
 - **Cloud CLIs**: az, gcloud, aws-cli-v2, doctl, flyctl, hcloud, heroku, glab
 - **IaC**: terraform, pulumi, consul, boundary
 - **Kubernetes**: kubectl, helm, helm plugins, helm repos, krew, kustomize, argocd, flux, k3d, kind, minikube, skaffold
 - **Containers**: docker-desktop, dive
 - **Security**: cosign, gitsign, grype
 - **Dev CLIs**: gh extensions, delta, and more
-- **Editors / IDEs**: VS Code extensions, Cursor extensions, JetBrains IDEs and plugins, Eclipse marketplace, Obsidian plugins, Notepad++
+- **Editors / IDEs**: VS Code, Cursor, VSCodium and Windsurf extensions, JetBrains IDEs, Visual Studio, Neovim and Vim plugin managers
 - **Shell**: pwsh modules, starship, oh-my-posh, nerd-fonts
 - **Embedded / mobile**: arduino-cli, android-sdk, flutter, expo, fastlane
 
@@ -110,7 +111,7 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.
 
 ## Commands
 
-- `gup` — full-screen interactive app (French UI). Sidebar: Scan · Paquets · Planification · Providers · Journal · Options · Quitter. In Paquets, `space` checks a package, `a` checks everything, `enter` updates the checked ones in an embedded terminal pane without leaving the app; `p` schedules them. Providers that cannot run on the current OS are greyed out. Options include themes held to WCAG AA contrast.
+- `gup` — full-screen interactive app (French UI). Sidebar: Scan · Paquets · Planification, then Providers · Journal · Options, then Quitter. In Paquets, `space` checks a package (on a provider row, all of its packages), `a` checks everything, `enter` updates the checked ones in an embedded terminal pane without leaving the app — or in the plain terminal, with the reason shown, when no pseudo-terminal is available — and `p` schedules them. In Journal, `o` opens the HTML report. Providers that cannot run on the current OS are listed greyed out. Options offer ten themes and custom colours, each checked against WCAG AA (4.5:1 for text, 3:1 for borders, 7:1 at AAA) and corrected when it falls short.
 - `gup list` — outdated packages as a table
 - `gup list --fast` — skips the providers marked slow (HTTP per package, filesystem walks)
 - `gup list --json` — machine-readable, pipeable
@@ -165,7 +166,7 @@ The site is available in these languages (the CLI interface itself is French):
 - Auditing what is outdated across every source on a Windows, macOS or Linux dev machine
 - Updating winget, Homebrew, npm globals, pip, cargo and helm with one command
 - Getting a machine-readable inventory of outdated global packages for CI
-- Updating VS Code / Cursor extensions and JetBrains plugins from a terminal
+- Updating VS Code / Cursor extensions and JetBrains IDEs from a terminal
 - An alternative to `topgrade` that answers "what is outdated, and from which
   version to which version" before it changes anything, with JSON output, a
   per-package selection menu and a local history

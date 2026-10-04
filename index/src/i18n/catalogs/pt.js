@@ -82,8 +82,9 @@ export default {
         title: "Atualizações sem sair do gup",
         text:
           "Os instaladores rodam em um painel de terminal embutido na interface — barras de " +
-          "progresso, prompts e cores intactos. Quando terminam, a lista se atualiza ali " +
-          "mesmo.",
+          "progresso, prompts e cores intactos. Em seguida, os pacotes atualizados saem da " +
+          "lista, sem nova varredura. Se o terminal embutido estiver indisponível, o gup diz " +
+          "o motivo e atualiza no seu próprio terminal.",
       },
       select: {
         title: "Marque vários, execute uma vez",
@@ -94,9 +95,10 @@ export default {
       schedule: {
         title: "Atualizações agendadas, pacote por pacote",
         text:
-          "Agende o `ripgrep` toda semana e deixe o `node` como está. Os agendamentos miram " +
-          "pacotes, nunca um provider inteiro, e quem os inicia é o agendador do seu " +
-          "sistema: nada fica residente.",
+          "Marque pacotes e pressione [[p]]: o `ripgrep` passa a ser atualizado toda semana " +
+          "e o `node` fica como está. Os agendamentos miram pacotes, nunca um provider " +
+          "inteiro; o agendador do seu sistema inicia o gup por um instante para executar o " +
+          "que está pendente, então nada fica residente.",
       },
       journal: {
         title: "Registro de atividades",
@@ -108,15 +110,16 @@ export default {
       report: {
         title: "Relatório HTML",
         text:
-          "`gup report` abre no navegador um relatório claro e navegável do seu histórico — " +
-          "um único arquivo offline, legível por qualquer pessoa, não só por quem vive no " +
-          "terminal.",
+          "`gup report`, ou [[o]] no registro de atividades, abre no navegador um relatório " +
+          "claro e navegável do seu histórico — um único arquivo offline, legível por " +
+          "qualquer pessoa, não só por quem vive no terminal.",
       },
       themes: {
         title: "Temas que continuam legíveis",
         text:
-          "Escolha um tema ou suas próprias cores: o gup garante contraste WCAG AA, para que " +
-          "o texto nunca se perca no fundo.",
+          "Dez temas integrados ou suas próprias cores: o gup verifica cada um segundo o " +
+          "WCAG AA — 4,5:1 para texto, 3:1 para bordas, 7:1 se você escolher AAA — e " +
+          "corrige o que ficar abaixo.",
       },
       os: {
         title: "Atento ao seu sistema",
@@ -281,8 +284,8 @@ export default {
         a:
           "{providers} providers, cada um em um módulo isolado: winget, scoop, chocolatey, " +
           "Homebrew, MacPorts, npm, pnpm, pip, uv, cargo, gem, composer, ferramentas dotnet, " +
-          "helm, kubectl, terraform, extensões do VS Code e da JetBrains, distribuições WSL " +
-          "e muito mais.",
+          "helm, kubectl, terraform, extensões do VS Code, IDEs da JetBrains, distribuições " +
+          "WSL e muito mais.",
       },
       security: {
         q: "É seguro usar?",

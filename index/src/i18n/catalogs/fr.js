@@ -82,8 +82,9 @@ export default {
         title: "Des mises à jour sans quitter gup",
         text:
           "Les installeurs tournent dans un terminal intégré à l'interface — barres de " +
-          "progression, invites et couleurs intactes. Quand ils ont fini, la liste se met à " +
-          "jour sur place.",
+          "progression, invites et couleurs intactes. Les paquets mis à jour quittent " +
+          "ensuite la liste, sans nouveau scan. Si le terminal intégré est indisponible, " +
+          "gup te dit pourquoi et met à jour dans ton propre terminal.",
       },
       select: {
         title: "Coche-en plusieurs, lance une fois",
@@ -94,9 +95,11 @@ export default {
       schedule: {
         title: "Mises à jour planifiées, paquet par paquet",
         text:
-          "Mets `ripgrep` à jour chaque semaine et laisse `node` tranquille. Les " +
-          "planifications ciblent des paquets, jamais un provider entier, et c'est le " +
-          `planificateur de ton OS qui les lance${NB}: rien ne reste en mémoire.`,
+          `Coche des paquets et appuie sur [[p]]${NB}: ` +
+          "`ripgrep` passe en mise à jour hebdomadaire, `node` ne bouge pas. Les " +
+          `planifications visent des paquets, jamais un provider entier${NB}; le ` +
+          "planificateur de ton OS lance gup un court instant pour exécuter ce qui est dû, " +
+          "et rien ne reste en mémoire.",
       },
       journal: {
         title: "Journal d'activité",
@@ -108,15 +111,16 @@ export default {
       report: {
         title: "Rapport HTML",
         text:
-          "`gup report` ouvre dans le navigateur un rapport clair et navigable de ton " +
-          "historique — un seul fichier hors ligne, lisible par tout le monde, pas seulement " +
-          "par les habitués du terminal.",
+          "`gup report`, ou [[o]] dans le journal, ouvre dans le navigateur un rapport clair " +
+          "et navigable de ton historique — un seul fichier hors ligne, lisible par tout le " +
+          "monde, pas seulement par les habitués du terminal.",
       },
       themes: {
         title: "Des thèmes qui restent lisibles",
         text:
-          `Choisis un thème ou tes propres couleurs${NB}: gup impose un contraste WCAG AA, ` +
-          "pour que le texte ne se fonde jamais dans le fond.",
+          `Dix thèmes intégrés ou tes propres couleurs${NB}: gup vérifie chacun au regard ` +
+          "du WCAG AA — 4,5:1 pour le texte, 3:1 pour les bordures, 7:1 si tu choisis AAA " +
+          "— et corrige ce qui n'atteint pas le seuil.",
       },
       os: {
         title: "Attentif à ton OS",
@@ -280,8 +284,8 @@ export default {
         a:
           `{providers} providers, un module isolé chacun${NB}: winget, scoop, chocolatey, ` +
           "Homebrew, MacPorts, npm, pnpm, pip, uv, cargo, gem, composer, dotnet tools, helm, " +
-          "kubectl, terraform, les extensions VS Code et JetBrains, les distributions WSL et " +
-          "bien d'autres.",
+          "kubectl, terraform, les extensions VS Code, les IDE JetBrains, les distributions " +
+          "WSL et bien d'autres.",
       },
       security: {
         q: `Est-ce sûr de le lancer${NB}?`,
