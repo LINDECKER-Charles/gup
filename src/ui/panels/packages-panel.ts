@@ -1,7 +1,7 @@
 import type { OutdatedPackage, SelectedPackage } from "../../core/types.js";
 import type { NoteColumn } from "../app/ui-preferences.js";
 import type { PackageAction, PackageMarker } from "../app/view-definition.js";
-import { NO_SCAN_YET, VIEW_LABELS } from "../text/menu-labels.js";
+import { MENU_LABELS, VIEW_LABELS } from "../text/menu-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import {
   LAUNCH_NOTICES,
@@ -52,11 +52,6 @@ const CHECKBOX_WIDTH = 6;
 const MARK_WIDTH = 2;
 /** A version column's widest: longer versions are cut. */
 const VERSION_WIDTH = 14;
-/** A version column's narrowest: its heading ("Dernier") stays whole. */
-const MIN_VERSION_WIDTH = Math.max(
-  PACKAGE_COLUMNS.current.length,
-  PACKAGE_COLUMNS.latest.length,
-);
 const NOTE_WIDTH = 22;
 /** Below this width the note column is dropped. */
 const NOTE_MIN_VIEWPORT = 90;
@@ -103,7 +98,6 @@ interface Composition extends RowWindow {
  * rows.
  */
 export class PackagesPanel implements Panel {
-  readonly title = VIEW_LABELS.packages;
   readonly #handlers: PackagesHandlers;
   readonly #options: PackagesOptions;
   #list: PackageList | null = null;
@@ -113,6 +107,10 @@ export class PackagesPanel implements Panel {
   constructor(handlers: PackagesHandlers, options: PackagesOptions = {}) {
     this.#handlers = handlers;
     this.#options = options;
+  }
+
+  get title(): string {
+    return VIEW_LABELS.packages;
   }
 
   get isCapturingText(): boolean {
@@ -152,7 +150,8 @@ export class PackagesPanel implements Panel {
   render(viewport: Viewport): readonly Line[] {
     const list = this.#list;
     if (!list) {
-      return placeholder(this.isScanPending() ? PACKAGES_PLACEHOLDERS.scanning : NO_SCAN_YET);
+      const wait = this.isScanPending() ? PACKAGES_PLACEHOLDERS.scanning : MENU_LABELS.noScanYet;
+      return placeholder(wait);
     }
     if (list.total === 0 && list.rows.length === 0) {
       return placeholder(PACKAGES_PLACEHOLDERS.upToDate);
@@ -301,7 +300,7 @@ export class PackagesPanel implements Panel {
     const note = isNoteShown ? NOTE_WIDTH : 0;
     const marks = markOf ? MARK_WIDTH : 0;
     const longest = list.longest;
-    const version = Math.min(VERSION_WIDTH, Math.max(MIN_VERSION_WIDTH, longest.version));
+    const version = Math.min(VERSION_WIDTH, Math.max(minVersionWidth(), longest.version));
     const versions = version * 2 + VERSION_SEPARATORS;
     const fixed = CHECKBOX_WIDTH + marks + versions + (note > 0 ? note + 1 : 0);
     // As wide as the longest name, so the versions follow the names on a wide terminal.
@@ -346,6 +345,11 @@ export class PackagesPanel implements Panel {
 
 function blankLines(count: number): Line[] {
   return Array.from({ length: Math.max(0, count) }, () => []);
+}
+
+/** A version column's narrowest: its heading ("Latest", "Dernier") stays whole. */
+function minVersionWidth(): number {
+  return Math.max(PACKAGE_COLUMNS.current.length, PACKAGE_COLUMNS.latest.length);
 }
 
 /**

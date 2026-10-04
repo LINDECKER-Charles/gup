@@ -17,7 +17,7 @@ import type {
  * keys on the run's results.
  */
 export class ViewRegistry {
-  /** Sidebar entries: the views by group then order, then "Quitter". */
+  /** Sidebar entries: the views by group then order, then "Quit". */
   readonly entries: readonly SidebarEntry[];
   readonly #definitions: ReadonlyMap<ViewId, ViewDefinition>;
   readonly #panels = new Map<ViewId, Panel>();

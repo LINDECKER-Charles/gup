@@ -1,3 +1,5 @@
+import { SCREEN_ERRORS } from "../text/menu-labels.js";
+
 /**
  * The user pressed Ctrl+C while a prompt or a live view owned the keyboard.
  *
@@ -9,6 +11,6 @@ export class PromptCancelledError extends Error {
   override readonly name = "PromptCancelledError";
 
   constructor() {
-    super("interrompu par l'utilisateur");
+    super(SCREEN_ERRORS.cancelled);
   }
 }

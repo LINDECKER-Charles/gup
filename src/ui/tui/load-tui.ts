@@ -1,4 +1,5 @@
 import semver from "semver";
+import { SCREEN_ERRORS } from "../text/menu-labels.js";
 
 export type Tui = typeof import("@opentui/core");
 
@@ -23,13 +24,10 @@ export function loadTui(): Promise<Tui> {
 
 function describeLoadFailure(err: unknown): string {
   if (semver.lt(process.versions.node, MIN_NODE)) {
-    return (
-      `l'interface interactive de gup nécessite Node.js >= ${MIN_NODE} ` +
-      `(node:ffi) — version actuelle ${process.version}`
-    );
+    return SCREEN_ERRORS.nodeTooOld(MIN_NODE, process.version);
   }
   const reason = err instanceof Error ? err.message : String(err);
-  return `impossible de charger l'interface interactive (OpenTUI) : ${reason}`;
+  return SCREEN_ERRORS.loadFailed(reason);
 }
 
 /**
