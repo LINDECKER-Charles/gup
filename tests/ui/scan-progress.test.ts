@@ -126,7 +126,7 @@ describe("scanWithProgress (not a terminal)", () => {
     const out = await scanWithProgress({ fast: true });
 
     expect(out).toEqual({ results: RESULTS, detectedCount: 2 });
-    expect(written).toMatch(/scan terminé en [\d.]+s — 1 provider\(s\), 1 mise\(s\) à jour/);
+    expect(written).toMatch(/scan terminé en \d+,\d s — 1 provider\(s\), 1 mise\(s\) à jour/);
     expect(written).not.toContain("\u001b[?");
   });
 

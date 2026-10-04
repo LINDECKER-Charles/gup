@@ -20,9 +20,23 @@ describe("ScanPanel", () => {
     scan.finished("Winget", { updates: 3, ms: 2100 });
     scan.completed(2900);
     const out = text(scan.render(VIEW));
-    expect(out).toContain("Scan terminé en 2.9s — 3 provider(s), 3 mise(s) à jour");
+    expect(out).toContain("Scan terminé en 2,9 s — 3 provider(s), 3 mise(s) à jour");
     expect(out.indexOf("Azure CLI")).toBeLessThan(out.indexOf("Winget"));
-    expect(out).toMatch(/Winget +3 mise\(s\) à jour +2\.1s/);
+    expect(out).toMatch(/Winget +3 mise\(s\) à jour +2,1 s/);
+  });
+
+  it("writes durations the French way, the time column aligned past a minute", () => {
+    const scan = new ScanPanel(vi.fn());
+    scan.detecting();
+    scan.planned(2);
+    scan.finished("Winget", { updates: 1, ms: 600 });
+    scan.finished("Scoop", { updates: 0, ms: 65_000 });
+    scan.completed(65_400);
+    const lines = text(scan.render(VIEW)).split("\n");
+    expect(lines[0]).toContain("Scan terminé en 1 min 05 s");
+    const rows = lines.filter((line) => /Winget|Scoop/.test(line));
+    expect(rows.map((row) => row.trimEnd().split(/ {2,}/).at(-1))).toEqual(["0,6 s", "1 min 05 s"]);
+    expect(new Set(rows.map((row) => row.trimEnd().length)).size).toBe(1);
   });
 
   it("rescans on r, but not while a scan runs", () => {

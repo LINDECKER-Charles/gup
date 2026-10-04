@@ -10,6 +10,7 @@ import {
   type ScanObserver,
 } from "./panels/scan-panel.js";
 import { withScanScreen } from "./prompts/scan-screen.js";
+import { formatDuration } from "./text/fr-format.js";
 import { canPrompt } from "./tui/screen-host.js";
 
 export interface ScanWithProgressResult {
@@ -122,11 +123,11 @@ function reportScanDone({ results, planned, elapsedMs }: ScanRun): void {
     process.stdout.write(chalk.dim("  aucun provider disponible\n"));
     return;
   }
-  const elapsed = (elapsedMs / 1000).toFixed(1);
+  const elapsed = formatDuration(elapsedMs);
   const updates = results.reduce((n, r) => n + r.packages.length, 0);
   process.stdout.write(
     chalk.dim(
-      `  scan terminé en ${elapsed}s — ${planned} provider(s), ${updates} mise(s) à jour\n`,
+      `  scan terminé en ${elapsed} — ${planned} provider(s), ${updates} mise(s) à jour\n`,
     ),
   );
 }
