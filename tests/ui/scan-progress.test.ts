@@ -15,6 +15,7 @@ vi.mock("../../src/core/registry.js", () => ({
 vi.mock("../../src/core/history/store.js", () => ({ recordScan: recordScanMock }));
 
 import { runScan, scanWithProgress } from "../../src/ui/scan-progress.js";
+import { useLocale } from "../support/locale.js";
 
 const provider = (id: string, slow = false): Provider =>
   ({ id, displayName: id.toUpperCase(), slow }) as unknown as Provider;
@@ -139,5 +140,18 @@ describe("scanWithProgress (not a terminal)", () => {
     expect(out).toEqual({ results: [], detectedCount: 0 });
     expect(scanAllMock).not.toHaveBeenCalled();
     expect(written).toContain("aucun provider disponible");
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it("leaves its summary in English, each count agreeing with its noun", async () => {
+      detectMock.mockResolvedValue([provider("winget"), provider("npm-g")]);
+      scanAllMock.mockResolvedValue([...RESULTS, { ...RESULTS[0]!, providerId: "npm-g" }]);
+
+      await scanWithProgress();
+
+      expect(written).toMatch(/ {2}scan done in \d+\.\d s — 2 providers, 2 updates\n/);
+    });
   });
 });

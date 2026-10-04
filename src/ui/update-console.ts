@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import { localized } from "../core/i18n/localized.js";
 import type { BatchHolder } from "../core/update/update-extensions.js";
 import type {
   AbortGate,
@@ -18,10 +19,11 @@ import { confirm } from "./prompts/confirm.js";
 import { select } from "./prompts/select.js";
 import {
   describeRetryables,
-  RETRY_QUESTION,
+  RETRY_LABELS,
   retryChoices,
   type RetryAnswer,
 } from "./retry-choices.js";
+import { counted } from "./text/format.js";
 import {
   ELEVATE_DIALOG,
   elevationKindOf,
@@ -102,7 +104,7 @@ class ConsoleRun implements UpdateObserver, UpdateDecisions {
     this.#retryRequest = request;
     process.stdout.write(chalk.dim(`\n  ${describeRetryables(request.failures)}\n`));
     const answer = await select<RetryAnswer>({
-      message: RETRY_QUESTION,
+      message: RETRY_LABELS.question,
       default: "none",
       choices: retryChoices(request.strategies),
     });
@@ -133,12 +135,26 @@ function elevationQuestion(count: number): string {
   return ELEVATE_DIALOG.text[elevationKindOf(process.platform)](count);
 }
 
+/** The summary's headers, after their tag (OK, SKIP, FAIL), which reads the same everywhere. */
+const SUMMARY_LABELS = localized({
+  en: {
+    succeeded: (count: number) => counted(count, "update applied", "updates applied"),
+    skipped: (count: number) => `${counted(count, "manual action", "manual actions")} required:`,
+    failed: (count: number, total: number) => `${count}/${total} failed:`,
+  },
+  fr: {
+    succeeded: (count) => `${count} mise(s) à jour effectuée(s)`,
+    skipped: (count) => `${count} action(s) manuelle(s) requise(s):`,
+    failed: (count, total) => `${count}/${total} échec(s):`,
+  },
+});
+
 /** The end-of-run summary: successes (with their advisories), skips, failures. */
 export function printReport(report: UpdateReport): void {
   const { succeeded, skipped, failed } = report;
   process.stdout.write("\n");
   if (succeeded.length > 0) {
-    process.stdout.write(chalk.green(`OK   ${succeeded.length} mise(s) à jour effectuée(s)\n`));
+    process.stdout.write(chalk.green(`OK   ${SUMMARY_LABELS.succeeded(succeeded.length)}\n`));
     // An advisory on a success (choco exit 3010: installed, reboot required)
     // is an action the user must take; "OK" alone would hide it.
     for (const outcome of succeeded) {
@@ -147,9 +163,9 @@ export function printReport(report: UpdateReport): void {
       process.stdout.write(`${chalk.green(`     - ${outcome.id}`)}${advisory}\n`);
     }
   }
-  writeGroup(skipped, chalk.yellow, `SKIP ${skipped.length} action(s) manuelle(s) requise(s):\n`);
+  writeGroup(skipped, chalk.yellow, `SKIP ${SUMMARY_LABELS.skipped(skipped.length)}\n`);
   const total = report.entries.length;
-  writeGroup(failed, chalk.red, `FAIL ${failed.length}/${total} échec(s):\n`);
+  writeGroup(failed, chalk.red, `FAIL ${SUMMARY_LABELS.failed(failed.length, total)}\n`);
 }
 
 /** Coloured header, then one `- <id> — <message>` line per entry. */

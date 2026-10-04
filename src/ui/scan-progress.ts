@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import type { Provider, ProviderScanResult } from "../core/types.js";
 import { recordScan } from "../core/history/store.js";
+import { localized } from "../core/i18n/localized.js";
 import { log } from "../core/log/log.js";
 import { detectAvailableProviders, scanAll, type ScanOptions } from "../core/registry.js";
 import {
@@ -10,7 +11,7 @@ import {
   type ScanObserver,
 } from "./panels/scan-panel.js";
 import { withScanScreen } from "./prompts/scan-screen.js";
-import { formatDuration } from "./text/format.js";
+import { counted, formatDuration } from "./text/format.js";
 import { canPrompt } from "./tui/screen-host.js";
 
 export interface ScanWithProgressResult {
@@ -118,18 +119,29 @@ export async function scanWithProgress(
   return { results: run.results, detectedCount: run.detected.length };
 }
 
+const SCAN_DONE_LABELS = localized({
+  en: {
+    noProvider: "no provider available",
+    /** "scan done in 4.2 s — 12 providers, 3 updates". */
+    done: (elapsed: string, planned: number, updates: number) =>
+      `scan done in ${elapsed} — ${counted(planned, "provider", "providers")}, ` +
+      counted(updates, "update", "updates"),
+  },
+  fr: {
+    noProvider: "aucun provider disponible",
+    done: (elapsed, planned, updates) =>
+      `scan terminé en ${elapsed} — ${planned} provider(s), ${updates} mise(s) à jour`,
+  },
+});
+
 function reportScanDone({ results, planned, elapsedMs }: ScanRun): void {
   if (planned === 0) {
-    process.stdout.write(chalk.dim("  aucun provider disponible\n"));
+    process.stdout.write(chalk.dim(`  ${SCAN_DONE_LABELS.noProvider}\n`));
     return;
   }
   const elapsed = formatDuration(elapsedMs);
   const updates = results.reduce((n, r) => n + r.packages.length, 0);
-  process.stdout.write(
-    chalk.dim(
-      `  scan terminé en ${elapsed} — ${planned} provider(s), ${updates} mise(s) à jour\n`,
-    ),
-  );
+  process.stdout.write(chalk.dim(`  ${SCAN_DONE_LABELS.done(elapsed, planned, updates)}\n`));
 }
 
 /** How many detected providers survive the `only` / `fast` filters. */
@@ -144,7 +156,7 @@ function countPlanned(detected: Provider[], options: Pick<ScanOptions, "only" | 
 /**
  * The session's scans, fanned out to the views: one scan at a time, its
  * progress to every observer (the Scan view draws it), then a "results
- * changed" notification once `state.scans` holds them (Paquets rebuilds its
+ * changed" notification once `state.scans` holds them (Packages rebuilds its
  * table).
  */
 export class ScanBus {

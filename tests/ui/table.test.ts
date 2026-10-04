@@ -4,6 +4,7 @@ import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import { getProvider } from "../../src/core/registry.js";
 import { renderProvidersStatus, renderScanTable } from "../../src/ui/table.js";
 import { pkg, scan } from "../support/builders.js";
+import { useLocale } from "../support/locale.js";
 
 /**
  * The two tables of the one-shot commands. `gup list`'s scan table: one row
@@ -96,6 +97,17 @@ describe("renderScanTable", () => {
       "",
     ]);
     expect(out.split("\n").at(-1)?.trim()).toBe("0 mise(s) à jour disponible(s)");
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it("says it is up to date, or counts the updates, in English", () => {
+      expect(renderScanTable([scan("pip")])).toBe("  up to date — no update available");
+      const out = renderScanTable([scan("npm-g", [pkg("typescript")])]);
+      expect(out.split("\n").at(-1)?.trim()).toBe("1 update available");
+      expect(rowsOf(out)[0]).toEqual(["Provider", "Package", "Current", "Latest", "Note"]);
+    });
   });
 });
 

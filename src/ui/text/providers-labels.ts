@@ -1,3 +1,4 @@
+import { localized } from "../../core/i18n/localized.js";
 import { platformName } from "../../core/platform/platform-label.js";
 import type { ProviderStatusReport } from "../../core/platform/types.js";
 
@@ -32,14 +33,29 @@ export function providersSummaryParts(report: ProviderStatusReport): string[] {
   return parts;
 }
 
-export const DOCTOR_PROVIDER_LABELS = {
-  detected: "Providers détectés",
-  missing: "Non installés / hors PATH",
-  incompatible: (platform: NodeJS.Platform) => `Incompatibles avec ${platformName(platform)}`,
-} as const;
+/** `gup doctor`'s provider groups, in the interface's languages. */
+export const DOCTOR_PROVIDER_LABELS = localized({
+  en: {
+    detected: "Detected providers",
+    missing: "Not installed / not on PATH",
+    incompatible: (platform: NodeJS.Platform) => `Incompatible with ${platformName(platform)}`,
+  },
+  fr: {
+    detected: "Providers détectés",
+    missing: "Non installés / hors PATH",
+    incompatible: (platform) => `Incompatibles avec ${platformName(platform)}`,
+  },
+});
 
-export const IGNORED_PROVIDER_LABELS = {
-  prefix: "Attention :",
-  /** `reason` is lookupProvider()'s message: an unknown id, or one foreign to this OS. */
-  text: (reason: string) => `${reason} — ignoré.`,
-} as const;
+/** The `--provider` warning of `gup update` and `gup list`, in the interface's languages. */
+export const IGNORED_PROVIDER_LABELS = localized({
+  en: {
+    prefix: "Warning:",
+    /** `reason` is lookupProvider()'s message: an unknown id, or one foreign to this OS. */
+    text: (reason: string) => `${reason} — ignored.`,
+  },
+  fr: {
+    prefix: "Attention :",
+    text: (reason) => `${reason} — ignoré.`,
+  },
+});
