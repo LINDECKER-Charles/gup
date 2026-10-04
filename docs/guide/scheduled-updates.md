@@ -152,8 +152,10 @@ under Paquets, does everything `gup schedule` does except removing the trigger.
 The first line is the trigger's state, as in
 [Troubleshooting](#troubleshooting), with `i` as the repair. Below the
 table, the schedule under the cursor: its next run, then what its last run
-did package by package — or, if it never ran, the packages it covers. The
-package count and next-run columns appear from a 120-column terminal.
+did package by package — or, if it never ran, the packages it covers. Each
+column is as wide as what it holds. The package count and next-run columns
+appear when the whole table fits — on a 120-column terminal, usually; when
+even the rest does not, the widest column is cut first.
 
 | Key | In the list |
 |---|---|

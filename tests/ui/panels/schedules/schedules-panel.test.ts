@@ -110,6 +110,45 @@ describe("SchedulesPanel, list", () => {
     expect(render(NARROW)[2]).toMatch(/^ {4}Nom +Fréquence +Dernière$/);
   });
 
+  it("sizes Fréquence to its labels on an 80-column terminal, Dernière to its own", () => {
+    const { render, panel } = setup([
+      storedSchedule({ recurrence: { kind: "weekly", weekday: 1, at: { hour: 9, minute: 0 } } }),
+      storedSchedule({
+        id: "0badf00d",
+        name: "Python",
+        recurrence: { kind: "monthly", day: 15, at: { hour: 9, minute: 0 } },
+      }),
+    ]);
+    panel.setTrigger(active);
+    const lines = render({ width: 52, height: 24 });
+    expect(lines[2]).toMatch(/^ {4}Nom +Fréquence +Dernière$/);
+    expect(lines[3]).toBe("› ● Outils dev chaque lundi à 09:00         —");
+    expect(lines[4]).toBe("  ● Python     le 15 de chaque mois à 09:00 —");
+  });
+
+  it("keeps the count and the next run on a 120-column terminal, the longest recurrence whole", () => {
+    const { render, panel } = setup([
+      storedSchedule({ recurrence: { kind: "monthly", day: "last", at: { hour: 9, minute: 0 } } }),
+    ]);
+    panel.setTrigger(active);
+    const lines = render(WIDE);
+    expect(lines[2]).toMatch(/^ {4}Nom +Fréquence +Paquets Prochaine +Dernière$/);
+    expect(lines[3]).toMatch(/^› ● Outils dev le dernier jour du mois à 09:00 +1 \S.* —$/);
+  });
+
+  it("narrows the widest column first when the panel is too narrow for them all", () => {
+    const { render, panel } = setup([
+      storedSchedule({
+        name: "Outils de développement",
+        recurrence: { kind: "monthly", day: "last", at: { hour: 9, minute: 0 } },
+      }),
+    ]);
+    panel.setTrigger(active);
+    const [header, row] = render({ width: 52, height: 24 }).slice(2);
+    expect(header).toMatch(/^ {4}Nom +Fréquence +Dernière$/);
+    expect(row).toBe("› ● Outils de développ… le dernier jour du… —");
+  });
+
   it("details the last run: when, how long, each package's result", () => {
     const { port, render, panel } = setup();
     port.state = {

@@ -60,17 +60,10 @@ const CURSOR = "› ";
 const MARGIN = "  ";
 /** The cursor and the enabled mark before the name. */
 const ROW_LEAD = CURSOR.length + MARGIN.length;
-const NAME_WIDTH = 14;
-const COUNT_WIDTH = 7;
-/** "lun. 12 sept. 09:00", "aujourd'hui 14:00". */
-const NEXT_WIDTH = 19;
-/** "◐ 1/3 — 2 échec(s)". */
-const LAST_WIDTH = 20;
-const RECURRENCE_WIDTH = 22;
-const MIN_RECURRENCE_WIDTH = 12;
-/** From this width on (a 120-column terminal), the table also shows the count and next run. */
-const WIDE_TABLE =
-  ROW_LEAD + NAME_WIDTH + RECURRENCE_WIDTH + COUNT_WIDTH + NEXT_WIDTH + LAST_WIDTH + 4;
+/** Blank after each column but the last. */
+const GAP = 1;
+/** Narrowest the name and the recurrence get on a panel too narrow for them. */
+const MIN_TEXT_WIDTH = 8;
 const PROVIDER_WIDTH = 14;
 const PACKAGE_WIDTH = 20;
 
@@ -79,12 +72,13 @@ interface Columns {
   readonly recurrence: number;
   /** Zero: the column is not shown. */
   readonly count: number;
+  /** Zero: the column is not shown. */
   readonly next: number;
   readonly last: number;
 }
 
 export function listLines(context: ListRenderContext): ListRender {
-  const columns = columnsFor(context.width);
+  const columns = columnsFor(context);
   const { schedules } = context.snapshot;
   const rows = schedules.map((schedule, index) => {
     const line = rowLine(schedule, { context, columns });
@@ -122,19 +116,61 @@ function healthTone(health: TriggerHealth): Tone {
 }
 
 /**
- * Every column on a wide panel; below, the count and the next run go (the
- * details under the table give the next run) and the recurrence shrinks
- * before the last run does.
+ * Each column as wide as what it holds (its title at least). When they do
+ * not all fit, the count and the next run go — the details under the table
+ * give the next run — and then the widest column shrinks first, so a long
+ * recurrence is not cut while the last run keeps room it does not use.
  */
-function columnsFor(width: number): Columns {
-  if (width >= WIDE_TABLE) {
-    const wide = { name: NAME_WIDTH, recurrence: RECURRENCE_WIDTH, count: COUNT_WIDTH };
-    return { ...wide, next: NEXT_WIDTH, last: width - (WIDE_TABLE - LAST_WIDTH) };
+function columnsFor(context: ListRenderContext): Columns {
+  const natural = naturalWidths(context);
+  const full: Columns = { ...natural, count: LIST_HEADERS.targets.length };
+  if (tableWidth(full) <= context.width) return full;
+  const room = context.width - ROW_LEAD - 2 * GAP;
+  const [name = 0, recurrence = 0, last = 0] = shrinkWidest(
+    [natural.name, natural.recurrence, natural.last],
+    [MIN_TEXT_WIDTH, MIN_TEXT_WIDTH, LIST_HEADERS.last.length],
+    room,
+  );
+  return { name, recurrence, count: 0, next: 0, last };
+}
+
+/** The width each text column needs to show every schedule whole. */
+function naturalWidths(context: ListRenderContext): Omit<Columns, "count"> {
+  const { schedules, state } = context.snapshot;
+  const widest = (title: string, cells: readonly string[]): number =>
+    Math.max(title.length, ...cells.map((cell) => cell.length));
+  return {
+    name: widest(LIST_HEADERS.name, schedules.map((schedule) => schedule.name)),
+    recurrence: widest(
+      LIST_HEADERS.recurrence,
+      schedules.map((schedule) => recurrenceLabel(schedule.recurrence)),
+    ),
+    next: widest(LIST_HEADERS.next, schedules.map((schedule) => nextRun(schedule, context.now))),
+    last: widest(
+      LIST_HEADERS.last,
+      schedules.map((schedule) => runStatusLabel(state.schedules[schedule.id]?.lastRun)),
+    ),
+  };
+}
+
+/** A row's width with these columns, the ones not shown left out. */
+function tableWidth(columns: Columns): number {
+  const shown = Object.values(columns).filter((width) => width > 0);
+  return ROW_LEAD + shown.reduce((sum, width) => sum + width, 0) + GAP * (shown.length - 1);
+}
+
+/** `widths` narrowed one column at a time, the widest first, to fit `room` or their floors. */
+function shrinkWidest(widths: readonly number[], floors: readonly number[], room: number): number[] {
+  const shrunk = [...widths];
+  let excess = shrunk.reduce((sum, width) => sum + width, 0) - room;
+  while (excess > 0) {
+    const candidates = shrunk.map((width, index) => (width > (floors[index] ?? 0) ? width : -1));
+    const widest = candidates.indexOf(Math.max(...candidates));
+    if (candidates[widest] === -1) break;
+    shrunk[widest] = (shrunk[widest] ?? 0) - 1;
+    excess -= 1;
   }
-  const room = width - ROW_LEAD - NAME_WIDTH - LAST_WIDTH - 2;
-  const recurrence = Math.min(RECURRENCE_WIDTH, Math.max(MIN_RECURRENCE_WIDTH, room));
-  const last = Math.max(LAST_WIDTH, width - ROW_LEAD - NAME_WIDTH - recurrence - 2);
-  return { name: NAME_WIDTH, recurrence, count: 0, next: 0, last };
+  return shrunk;
 }
 
 function headerLine(columns: Columns): Line {
