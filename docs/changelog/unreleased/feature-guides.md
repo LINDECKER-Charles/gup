@@ -21,6 +21,7 @@ reference pages, the diagrams, and this changelog. Design note:
 - **community:** `SUPPORT.md` sends users to the troubleshooting and interactive app guides first, and asks for the diagnostic archive of `gup log export` (`docs(community): point SUPPORT to troubleshooting and log export`)
 - **docs:** The scheduled-updates guide shows Planification and its editor as screenshots, draws the tick in the order the code runs it (the batch lock before the due check) from the trigger's registration, and says a run now is confirmed once — by the update's own confirmation, or by `Exécuter « … » maintenant ?` when confirmations are off (`docs(guide): illustrate the scheduled-updates guide`)
 - **docs:** The configuration guide says which value wins — flag, environment variable, settings file, default — for each setting that has several sources, with its exceptions; the themes guide shows eight themes side by side, the theme picker and the colour editor, and states the embedded terminal's known issue on light terminals (`docs(guide): add the settings precedence and the theme gallery`)
+- **docs:** The README opens on the app itself (the Paquets screenshot) instead of the `gup list` animation, which moves to a Scripting section; its highlights show the 0.5.0 features with six screenshots, the install line carries `--allow-scripts=node-pty` and says why, and the commands and documentation tables cover the new commands and guides (`docs(readme): lead with the app and show the 0.5.0 features`)
 
 ## CI
 
