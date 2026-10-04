@@ -435,7 +435,7 @@ The scope says where the change lives. It is **required** whenever the changed f
 | `.github/SUPPORT.md`, `.github/GOVERNANCE.md`, `.github/ISSUE_TEMPLATE/**`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/CODEOWNERS` | `docs(community)` | `docs(community): …` |
 | `docs/**`, `README.md`, `.github/CONTRIBUTING.md`, `.github/SECURITY.md`, `CHANGELOG.md`, `CITATION.cff` | `docs`, optionally with the topic as scope | `docs(changelog): …` |
 | `package.json`, `package-lock.json`, `tsconfig.json`, `tsup.config.ts` | `build(deps)`; Dependabot bumps use `chore(deps)` / `chore(deps-dev)` | `build(deps): …` |
-| `eslint.config*.js`, `vitest.config.ts`, `tests/tsconfig.json`, `audit-ci.json`, `.semgrep.yml`, `.gitleaks.toml` | `build(lint)` | `build(lint): …` |
+| `eslint.config.js`, `vitest.config.ts`, `tests/tsconfig.json`, `.gitleaks.toml`, `.github/eslint.config.security.js`, `.github/audit-ci.json`, `.github/semgrep.yml` | `build(lint)` | `build(lint): …` |
 | `scripts/**`, `.gitignore`, `.gitattributes` | `chore`, no scope | `chore: …` |
 | The version bump of a release | `chore(release): x.y.z` | `chore(release): 0.4.0` |
 
@@ -472,9 +472,9 @@ flowchart TD
    | `test (node 26 / macos-latest)` | `ci.yml` | the same on macOS |
    | `test (node 26 / ubuntu-latest)` | `ci.yml` | the same on Linux, plus lint, security lint, the coverage floors and **Screenshots up to date** |
    | `security tests + eslint` | `security.yml` | the `eslint-plugin-security` ruleset and the security test suite |
-   | `npm audit (audit-ci)` | `security.yml` | known advisories in the dependency tree (`audit-ci.json`) |
+   | `npm audit (audit-ci)` | `security.yml` | known advisories in the dependency tree (`.github/audit-ci.json`) |
    | `codeql` | `security.yml` | CodeQL `security-extended` and `security-and-quality` queries |
-   | `semgrep` | `security.yml` | the rules in `.semgrep.yml` plus the `p/typescript` and `p/nodejs` packs |
+   | `semgrep` | `security.yml` | the rules in `.github/semgrep.yml` plus the `p/typescript` and `p/nodejs` packs |
    | `gitleaks` | `security.yml` | secret scan of the whole history (`.gitleaks.toml`) |
 
    The `docs` workflow (`docs.yml`) also checks Markdown links and anchors when documentation changes. It is not required — a path-filtered workflow cannot be — but a red run is fixed before merging. Neither are `packed install` (`ci.yml`: the packed tarball installed without its install scripts on Windows and macOS, then `gup doctor`) and the `e2e` workflow (the full end-to-end suites on real macOS and Windows runners, weekly or with the `e2e-full` label), but a red run there is read before merging too.

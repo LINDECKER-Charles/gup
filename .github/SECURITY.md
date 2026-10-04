@@ -276,7 +276,7 @@ npm run test:security   # vitest security suite
 - **unit-and-lint**: `lint:security` + `test:security`
 - **dependency-audit**: `audit-ci` against the npm advisory db
 - **codeql**: GitHub's `javascript-typescript` extended + quality queries
-- **semgrep**: custom rules in `.semgrep.yml` plus `p/typescript` and
+- **semgrep**: custom rules in `.github/semgrep.yml` plus `p/typescript` and
   `p/nodejs` community packs
 - **gitleaks**: secret scanning with config `.gitleaks.toml`
 

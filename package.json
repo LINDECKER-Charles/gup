@@ -91,12 +91,12 @@
     "test:coverage:watch": "vitest --coverage",
     "test:coverage:ci": "vitest run --coverage --reporter=default --reporter=junit --outputFile=coverage/junit.xml",
     "lint": "eslint --no-error-on-unmatched-pattern src tests scripts",
-    "lint:security": "eslint src --config eslint.config.security.js",
+    "lint:security": "eslint src --config .github/eslint.config.security.js",
     "screenshots": "vitest run --config scripts/screenshots/vitest.config.ts",
     "screenshots:check": "vitest run --config scripts/screenshots/vitest.config.ts --mode check",
     "screenshots:report": "npm run build && tsx scripts/screenshots/report-sample.ts",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
-    "audit:deps:ci": "audit-ci --config audit-ci.json",
+    "audit:deps:ci": "audit-ci --config .github/audit-ci.json",
     "security": "npm run audit:deps:ci && npm run lint:security && npm run test:security"
   },
   "engines": {

@@ -26,3 +26,8 @@
 - **lint:** `tsconfig.tests.json` becomes `tests/tsconfig.json`; `npm run typecheck` checks it with
   `tsc -p tests`, on the same files as before: `src`, `tests`, `scripts` and `vitest.config.ts`
   (`build(lint): move the test tsconfig under tests`)
+- **lint:** the configs only the security gate reads move to `.github/`: `audit-ci.json`,
+  `eslint.config.security.js` and `.semgrep.yml`, renamed `semgrep.yml`. `npm run audit:deps:ci`,
+  `npm run lint:security` and the `semgrep` job name the new paths; the security lint checks the
+  same 482 files with the same rules. `.gitleaks.toml` stays at the root, where gitleaks finds it
+  on its own (`build(lint): move the security gate configs under .github`)

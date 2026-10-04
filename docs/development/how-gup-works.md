@@ -921,10 +921,10 @@ The threat model, its mitigations and the tests that pin them are in
 | Layer | Tool | Config |
 |---|---|---|
 | Static SAST | CodeQL `security-extended` + `security-and-quality` | `.github/workflows/security.yml` |
-| Custom SAST | Semgrep + `p/typescript` + `p/nodejs` | `.semgrep.yml` |
+| Custom SAST | Semgrep + `p/typescript` + `p/nodejs` | `.github/semgrep.yml` |
 | Secrets | gitleaks | `.gitleaks.toml` |
-| Dependency vulnerabilities | `audit-ci` (CI) + weekly Dependabot | `audit-ci.json`, `.github/dependabot.yml` |
-| Lint | `eslint-plugin-security` | `eslint.config.security.js` |
+| Dependency vulnerabilities | `audit-ci` (CI) + weekly Dependabot | `.github/audit-ci.json`, `.github/dependabot.yml` |
+| Lint | `eslint-plugin-security` | `.github/eslint.config.security.js` |
 | Custom pins | Vitest security suite | `tests/security/**` |
 
 `npm run security` chains `audit:deps:ci` + `lint:security` + `test:security`.
