@@ -52,8 +52,16 @@ describe("Paquets", () => {
     const menu = await bootMenu({ scans: [failed], size: SIZE });
     const frame = await menu.waitForText("npm outdated a échoué (E503)");
     const [titleBar = ""] = frame.split("\n");
-    expect(titleBar).toContain("1 scan(s) en échec");
+    expect(titleBar).toContain("1 scan en échec");
     expect(titleBar).not.toContain(updateCountFact(0));
+  });
+
+  // Its neighbour reads `1 détecté`: the counts of one bar agree with their number alike.
+  it("agrees the title bar's update count with its number", async () => {
+    const [titleBar = ""] = (await (await scanned()).frame()).split("\n");
+    expect(titleBar).toContain("1 détecté  │  2 mises à jour  │");
+    expect(updateCountFact(1)).toBe("1 mise à jour");
+    expect(updateCountFact(0, 2)).toBe("2 scans en échec");
   });
 
   it("updates nothing on Entrée with nothing checked, and says how to check", async () => {

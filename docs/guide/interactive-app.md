@@ -44,7 +44,7 @@ By default the app scans when it opens and shows **Scan** (scan) while it runs. 
 
 | Part | What it shows |
 |---|---|
-| Title bar | `gup v<version>`, then facts: how many providers were detected, how many updates are available (`12 mise(s) à jour`), the scan mode and provider filter, and what other views add (`aperçu du thème` while a theme is previewed, unseen scheduled runs) |
+| Title bar | `gup v<version>`, then facts: how many providers were detected, how many updates are available (`12 mises à jour`), the scan mode and provider filter, and what other views add (`aperçu du thème` while a theme is previewed, unseen scheduled runs) |
 | Sidebar (**Menu**) | **Scan**, **Paquets** (packages), **Planification** (schedules) · **Providers**, **Journal**, **Options** · **Quitter** (quit). A badge after an entry counts what waits there: outdated packages, enabled schedules, `!` when a scheduled run failed since you last looked |
 | View | The entry in front. The panel that has the keyboard has a **heavy** border, the other one a rounded border |
 | Hint bar | The keys that apply right now. On a narrow terminal it drops the view's last hints (marked `…`) and keeps `tab menu · q quitter` whole. While a dialog is open it shows the dialog's keys |

@@ -71,7 +71,7 @@ describe("MenuSession", () => {
     const menu = await scanned();
     const text = await menu.frame();
     expect(text).toContain("┏━ Paquets");
-    expect(text).toContain("1 détecté  │  2 mise(s) à jour  │  mode normal");
+    expect(text).toContain("1 détecté  │  2 mises à jour  │  mode normal");
     await menu.press("q");
     await expect(menu.exit).resolves.toEqual({ kind: "quit" });
   });
@@ -138,7 +138,7 @@ describe("MenuSession", () => {
 
   it("keeps a non-scan launch view in front while the launch scan runs", async () => {
     const menu = await bootMenu({ scans: [WINGET], initialView: "options" });
-    await menu.waitForText("2 mise(s) à jour");
+    await menu.waitForText("2 mises à jour");
     const text = await menu.frame();
     expect(text).toContain("┏━ Options");
     expect(text).not.toContain("Scan terminé");
@@ -322,7 +322,7 @@ describe("MenuSession views", () => {
     expect(before).not.toContain("détecté");
     await menu.press("r");
     await menu.waitForText("Git.Git");
-    expect(await menu.frame()).toContain("2 détectés · 1 filtré  │  2 mise(s) à jour  │  mode normal");
+    expect(await menu.frame()).toContain("2 détectés · 1 filtré  │  2 mises à jour  │  mode normal");
   });
 
   it("adds each view's facts and badge to the title bar and the sidebar", async () => {

@@ -119,7 +119,7 @@ const TONES: readonly Tone[] = ["plain", "strong", "muted", "disabled", "accent"
 /** A panel showing every tone, on the background and on the cursor row, plus the chrome. */
 function everyTone(screen: Screen): void {
   const chrome = new Chrome(screen);
-  chrome.setFacts(["12 mise(s) à jour"]);
+  chrome.setFacts(["12 mises à jour"]);
   chrome.setHints("↑↓ naviguer · q quitter");
   const panel = new TextPanel(screen, chrome.body, { id: "p", title: "Paquets" });
   panel.setFocused(true);

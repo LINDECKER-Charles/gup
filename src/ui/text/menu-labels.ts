@@ -53,10 +53,13 @@ export function providerFacts(detected: number, filtered: number): string[] {
   return parts.length > 0 ? [parts.join(" · ")] : [];
 }
 
-/** "à jour" only when every provider scanned: one that failed may hide updates. */
+/**
+ * "12 mises à jour", agreeing with its number like the providers beside it;
+ * "à jour" only when every provider scanned: one that failed may hide updates.
+ */
 export function updateCountFact(count: number, failedScans = 0): string {
-  if (count > 0) return `${count} mise(s) à jour`;
-  return failedScans > 0 ? `${failedScans} scan(s) en échec` : "à jour";
+  if (count > 0) return counted(count, "mise à jour", "mises à jour");
+  return failedScans > 0 ? counted(failedScans, "scan en échec", "scans en échec") : "à jour";
 }
 
 export function scanModeFact(isFast: boolean): string {
