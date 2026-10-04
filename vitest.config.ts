@@ -1,6 +1,7 @@
 import { tmpdir } from "node:os";
 import { configDefaults, defineConfig } from "vitest/config";
 import type { TestProjectInlineConfiguration } from "vitest/config";
+import { COVERAGE_FLOORS } from "./tests/support/coverage-floors.js";
 import { sandboxRoot, sharedTestEnv } from "./tests/support/test-env.js";
 
 type ProjectTest = NonNullable<TestProjectInlineConfiguration["test"]>;
@@ -88,24 +89,13 @@ export default defineConfig({
       reporter: ["text", "text-summary", "html", "lcov", "json-summary"],
       reportsDirectory: "./coverage",
       include: ["src/**/*.ts"],
-      exclude: [
-        "src/cli.ts",
-        "src/pty-exec.ts",
-        "src/**/_template.ts",
-        "src/**/*.d.ts",
-        "src/ui/**",
-        "src/commands/menu.ts",
-      ],
+      // The entry point only wires commander, and the trampoline runs in a
+      // child process the instrumentation never sees (tests/integration
+      // exercises it).
+      exclude: ["src/cli.ts", "src/pty-exec.ts", "src/**/_template.ts", "src/**/*.d.ts"],
       clean: true,
-      // The global gate stays until the coverage policy replaces it with
-      // floors on the safety-critical modules: dropping it first would leave
-      // every branch merged in between ungated.
-      thresholds: {
-        lines: 90,
-        functions: 90,
-        branches: 90,
-        statements: 90,
-      },
+      // No global gate: floors on the safety-critical modules only.
+      thresholds: { ...COVERAGE_FLOORS },
     },
   },
 });
