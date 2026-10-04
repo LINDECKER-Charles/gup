@@ -17,6 +17,7 @@ the seven unregistered manual-only IDE providers are deleted. Design note:
 ## Documentation
 
 - **docs:** The catalog, CONTRIBUTING §5.3, how-gup-works and the architecture tree say a source whose every update needs a GUI gets no provider and is listed as a candidate; the catalog's platform section names the source drift test and drops the "self targets not restricted yet" caveat ([`0ce83c7`](https://github.com/LINDECKER-Charles/gup/commit/0ce83c7), [`f3082d6`](https://github.com/LINDECKER-Charles/gup/commit/f3082d6))
+- **docs:** CONTRIBUTING §4 states the `platforms` convention the source drift test enforces (a `PLATFORMS` set, never `process.platform` in `isAvailable()`, no hint for the other OSes); the docs index, the architecture page and CONTRIBUTING lose their last references to the retired 🚧 status and the deleted providers ([`df8a2e4`](https://github.com/LINDECKER-Charles/gup/commit/df8a2e4))
 
 ## Internal
 
