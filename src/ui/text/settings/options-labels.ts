@@ -119,8 +119,8 @@ export const OPTIONS_HINTS = {
 export const OPTIONS_NOTICES = {
   notSaved: (reason: string) => `⚠ Réglage non enregistré — ${reason}`,
   rescan: "Réglages modifiés — r pour rescanner avec ces réglages.",
-  copied: "chemin copié",
-  copyFailed: "copie impossible (OSC 52 non pris en charge)",
+  copied: "Chemin copié.",
+  copyFailed: "Copie impossible : ce terminal ne prend pas en charge OSC 52.",
 } as const;
 
 /** What can be put back to its defaults, and what each scope covers. */

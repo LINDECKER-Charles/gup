@@ -73,7 +73,7 @@ export const SCHEDULE_ACTION = {
   key: "p",
   hint: "p planifier",
   emptyNotice:
-    "cochez les paquets à planifier — une planification cible des paquets, pas un provider",
+    "Cochez les paquets à planifier : une planification cible des paquets, pas un provider.",
 } as const;
 
 export const SCHEDULE_PACKAGES = {
