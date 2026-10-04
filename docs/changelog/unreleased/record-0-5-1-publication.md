@@ -1,5 +1,11 @@
 # record-0-5-1-publication
 
+## CI
+
+- **pages:** the workflow's header and the website guide name the tag rule the `github-pages`
+  environment needs to deploy a release, `*.*.*`, where they said `v*` — which gup's version
+  tags (`0.5.1`) never match (`ci(pages): name the tag rule the Pages environment needs`)
+
 ## Documentation
 
 - **docs:** 0.5.1 is recorded as published on 2026-10-04 (npm, UTC): its rows in the release

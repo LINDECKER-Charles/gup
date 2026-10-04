@@ -11,8 +11,9 @@ name: pages
 # live before that version does.
 #
 # Release deployments run on the release tag: the `github-pages` environment
-# must allow tags matching `v*` (Settings → Environments → github-pages →
-# Deployment branches and tags), otherwise the deploy job is rejected.
+# must allow the version tags — `*.*.*`, they carry no `v` prefix (Settings →
+# Environments → github-pages → Deployment branches and tags), otherwise the
+# deploy job is rejected.
 #
 # Not a required check on purpose: a path-filtered workflow never reports on
 # pull requests that do not touch the site, which would block them forever.
