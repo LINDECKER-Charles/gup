@@ -91,7 +91,7 @@ metacharacters or option-like text in a package id.
 - Every process starts in `src/core/runner.ts`: `execa` with an argv vector,
   never a shell. `sanitizeCommand` and `sanitizeArgs` refuse option-like or
   shell-like values before anything spawns; a refused package fails on its
-  own (`refusé par la barrière de sécurité : …`) and the batch goes on.
+  own (`refused by the safety barrier: …`) and the batch goes on.
 - The one provider that needs `shell: true` (Scoop's PowerShell shim) is
   pinned by allowlist, behind a strict package-id pattern.
 - A bare command name is looked up on the `PATH` only, never in the working
@@ -162,8 +162,9 @@ one UAC prompt or one `sudo` password.
   (`tests/integration/uac-launcher.test.ts`).
 - It runs only the CLI modules that opt in and **never reads the settings
   file**: a file you can write must not steer a process running as
-  administrator. Its install timeout and log level come from the parent's
-  payload, bounded and validated.
+  administrator. Its install timeout, log level and language come from the
+  parent's payload, bounded and validated: a payload naming a language gup
+  does not speak is refused.
 - It never writes into your log directory (CWE-59): its log lines travel back
   with its outcomes, and the parent re-checks and writes them.
 - Retry strategies that bypass an installer's integrity check (`--force`,

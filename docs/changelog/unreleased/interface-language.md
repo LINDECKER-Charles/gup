@@ -29,3 +29,14 @@
   (`gup log --grep superseded`). The providers catalog gives `self:pnpm` its real command,
   `pnpm self-update` (it said `pnpm add -g pnpm`), and notes the pnpm-g, pip, composer-g,
   `self:gh` and Visual Studio changes (`docs(guide): cover the pip, pnpm and winget update outcomes`)
+- **development:** The contributor docs describe the two interface languages. The documentation
+  conventions give the rule for user-facing strings — both languages, `localized()` catalogs and
+  `localize()`, English as the reference type, text read where it is shown and never while a
+  module loads, the startup guard test — and say the docs quote the English interface; the
+  architecture page gains §15 on `src/core/i18n/` and where each process takes its language
+  (`cli.ts` before the program is built, the elevated child and the PTY trampoline from their
+  payload); the walkthrough covers `gup language`, `format.ts` in place of `fr-format.ts` and the
+  English UI; CONTRIBUTING says how a provider words a hint or a message (`MANUAL_STEPS`,
+  `_template.ts`); SECURITY.md adds the language to the elevated child's validated payload;
+  testing.md says the suites speak French; the Windows checklist adds the language and gup's own
+  update (`docs(development): document the interface language for contributors`)
