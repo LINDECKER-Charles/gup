@@ -23,9 +23,12 @@ import type { SinkLogBackend } from "../../../src/core/log/log-backend.js";
 import type { LogRecord } from "../../../src/core/log/types.js";
 import { traceCommand } from "../../../src/core/process/command-tracer.js";
 import { updateObservers } from "../../../src/core/update/update-extensions.js";
+import { OptionsPanel } from "../../../src/ui/panels/options/options-panel.js";
+import { journalOptions } from "../../../src/ui/settings/journal-options.js";
 import { SettingsService } from "../../../src/ui/settings/settings-service.js";
 import { logLevelSource } from "../../../src/ui/settings/settings-sources.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
+import { key, optionsFixture } from "../../ui/panels/options/options-fixture.js";
 
 let dir: string;
 
@@ -210,6 +213,24 @@ describe("the log.level setting", () => {
     log.warn("scan.provider");
     expect(events()).toEqual(["session.start", "log.threshold"]);
     expect(currentLogLevel()).toEqual({ threshold: "error", source: "setting" });
+  });
+
+  it("starts the next gup at the level saved in Options, unless --log-level says otherwise", async () => {
+    const file = join(dir, "config.json");
+    const options = optionsFixture({ store: new ConfigStore({ file }) });
+    const panel = new OptionsPanel([journalOptions({ logLevel: currentLogLevel })], options.host);
+    panel.press(key("enter"));
+    expect(options.settings.get("log").level).toBe("debug");
+
+    // The next process: its own settings, read from the file the Options view wrote.
+    const nextStart = () =>
+      createJournalModule({
+        logLevelSetting: () => logLevelSource(new SettingsService(new ConfigStore({ file }))),
+      });
+    await runModule(nextStart(), "update");
+    expect(currentLogLevel()).toEqual({ threshold: "debug", source: "setting" });
+    await runModule(nextStart(), "--log-level", "warn", "update");
+    expect(currentLogLevel()).toEqual({ threshold: "warn", source: "flag" });
   });
 
   it("does not move a level the flag set", async () => {
