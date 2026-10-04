@@ -228,6 +228,7 @@ same file. Scan events (`scan.start/provider/end`) arrive with `feat/activity-jo
 - **`feat/html-report`**: `writeOutputFile({ kind: "report", extension: "html", … })` already
   names, protects and prunes report files.
 - **`feat/journal-settings`** (wave 3): add the `setting` source to `LogSource` and read
-  `log.level` between the environment and the default in `resolveLogSettings`.
+  `log.level` between the environment and the default in `resolveLogSettings`. (Done:
+  [`journal-settings.md`](journal-settings.md) §3.)
 - **`feat/scheduled-updates`**: nothing to do — `triggerFor("__schedule-tick")` makes the tick log
   at least `info`; a pipe sink's kept output arrives as `cmd.end.outputTail`.

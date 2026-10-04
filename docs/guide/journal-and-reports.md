@@ -9,7 +9,7 @@ anywhere:
   updates it attempted — to understand a failure or to attach to a bug report.
 
 This page covers both: what the history shows (the **Journal** view of the menu, the HTML
-report and `gup report`), then the debug log.
+report and `gup report`), then the debug log, then the settings of both in the Options view.
 
 - [Activity journal](#activity-journal)
   - [In the menu: the Journal view](#in-the-menu-the-journal-view)
@@ -24,6 +24,7 @@ report and `gup report`), then the debug log.
   - [Sending it with a bug report: `gup log export`](#sending-it-with-a-bug-report-gup-log-export)
   - [Where it lives](#where-it-lives)
   - [Privacy](#privacy)
+- [Settings](#settings)
 
 ## Activity journal
 
@@ -62,14 +63,19 @@ history each time it comes to the front, and has four tabs:
 |---|---|---|
 | **1 Activité** | the headline numbers; a calendar of successful updates (one mark per day, Monday at the top, the current week in the last column; the denser the mark, the busier the day); the number of outdated packages day after day; the providers whose scan is the slowest | — |
 | **2 Récurrence** | one bar per package — how many times it was updated, its typical interval (`~14 j`) and pace (`hebdo.`, `mensuel`, `trim.`, `rare`, `une fois`) | `s` sort: most updated, most failed (the bars then count the failures), most recent · `entrée` details: counts, first and last attempt, the latest versions installed |
-| **3 Événements** | every scan and update attempt, newest first, each with a mark *and* a word (`✔ réussie`, `✖ échec`, `↷ ignorée`, `⟳ scan`) | `f` type: all, updates, failures, skips, scans · `/` filter on provider, package, status or message · `entrée` the full record (versions, duration, message, retry, admin rights, what started the run) |
+| **3 Événements** | every scan and update attempt, newest first, each with a mark *and* a word (`✔ réussie`, `✖ échec`, `↷ ignorée`, `⟳ scan`) | `f` type: all, updates, failures, skips, scans · `/` filter on provider, package, status or message · `entrée` the full record (versions, duration, message, retry, admin rights, what started the run, the [schedule](scheduled-updates.md) it ran for, by its name) |
 | **4 Debug** | the newest lines of the [debug log](#debug-log), under the level this run writes and where that came from | `l` levels shown · `/` filter · `entrée` the record's context and data · `x` write a diagnostic archive |
 
 Everywhere: `1`–`4` or `[` `]` switch tabs, `p` steps the period (30 days → 90 days → 12 months
-→ everything), `r` reloads, `o` opens the [HTML report](#in-the-browser-the-html-report) of the
-period in your browser, `e` exports (HTML report, JSON, CSV or a diagnostic archive — the file is
-written to the reports directory and its path shown at the bottom), `échap` leaves a detail or a
-filter. When no browser can be opened, the bottom line gives the report's path instead.
+→ everything), `r` reloads, `o` writes the [HTML report](#in-the-browser-the-html-report) of the
+period and opens it in your browser, `e` exports (HTML report, JSON, CSV or a diagnostic archive —
+the file is written to the reports directory and its path shown at the bottom), `échap` leaves a
+detail or a filter. When no browser can be opened — or when you turned the opening off in
+[Options](#settings) — the bottom line gives the report's path instead.
+
+The view shows the period chosen in Options › **Période du journal** (12 months unless you changed
+it) each time it comes to the front; once `p` picked another one, that one stays until gup
+closes.
 
 The view fits an 80 × 24 terminal; with `GUP_ASCII=1` (or a terminal without the block symbols)
 the charts switch to ASCII marks (`. : + * #`).
@@ -77,8 +83,12 @@ the charts switch to ASCII marks (`. : + * #`).
 ### In the browser: the HTML report
 
 `gup report` (or `o` in the Journal view) writes the period's activity to one HTML file and opens
-it in your default browser. The file stands alone: open it again later, keep it, send it — it
-needs no network and no gup.
+it in your default browser — unless Options › **Ouvrir le rapport** is `OFF`, in which case gup
+only tells you where the file is. The file stands alone: open it again later, keep it, send it —
+it needs no network and no gup.
+
+After an update run in the menu, `o` on the results writes the same report for the Journal's
+period, which ends with that run: it is the newest entry of the **Sessions** page.
 
 | Page | Shows |
 |---|---|
@@ -110,6 +120,7 @@ gup report                              # HTML report of the last 12 months, ope
 gup report --since 30d                  # … of the last 30 days (also 12w, 6m, 1y, all, 2026-01-01)
 gup report --since 2026-01-01 --until 2026-06-30
 gup report --no-open -o rapport.html    # write it there, do not open it
+gup report --open                       # open it even if Options says not to
 gup report --format text                # the charts in the terminal
 gup report --format json > activite.json
 gup report --format csv --delimiter ";" -o maj.csv   # Excel in a French locale
@@ -117,16 +128,17 @@ gup report --format csv --delimiter ";" -o maj.csv   # Excel in a French locale
 
 | Option | |
 |---|---|
-| `-f, --format` | `html` (default: the [HTML report](#in-the-browser-the-html-report)), `text` (the charts above, then the most updated packages and the recurring failures), `json` (every event of the period plus the computed figures) or `csv` (one row per update attempt) |
+| `-f, --format` | `html` (default: the [HTML report](#in-the-browser-the-html-report)), `text` (the charts above — drawn with the symbols chosen in Options › Symboles —, then the most updated packages and the recurring failures), `json` (every event of the period plus the computed figures) or `csv` (one row per update attempt) |
 | `-s, --since` | the period: `7d`, `30d`, `12w`, `6m`, `1y`, `all` or a date `AAAA-MM-JJ`; default `12m` |
 | `--until` | last day included (`AAAA-MM-JJ`); default: now. The charts then stop on that day, and the title names it |
 | `-o, --out` | write to a file (`-`: the standard output). Without it, the HTML report goes to the reports directory and the other formats to the standard output; `--force` replaces an existing file |
-| `--no-open` | do not open the HTML report in the browser |
+| `--open` / `--no-open` | open the HTML report in the browser, or not, whatever Options › Ouvrir le rapport says |
 | `--delimiter` | CSV separator: `,` (default), `;` or `tab` |
 
-The HTML report opens in the browser when gup runs in a terminal outside CI, unless `--no-open`;
-otherwise, or when no browser can be started, gup prints the file's `file:///` address to open it
-yourself:
+Without `--open` or `--no-open`, the HTML report opens in the browser when Options › **Ouvrir le
+rapport** is `ON` (the default) and gup runs in a terminal outside CI. `--open` opens it anyway —
+from a script or under CI too. Otherwise, or when no browser can be started, gup prints the
+file's `file:///` address to open it yourself:
 
 ```
   rapport écrit : C:\Users\you\AppData\Local\gup\reports\gup-report-20261003-142205.html
@@ -217,7 +229,8 @@ providers at once stay readable.
 | `debug` | + every probe a scan runs, with the error output of the failed ones |
 | `trace` | + the start of every probe and the end of its output |
 
-Choose it for one run with `--log-level`, or for every run with `GUP_LOG_LEVEL`:
+Choose it in Options › **Journal de debug** (kept for every run, scheduled ones included), for
+one run with `--log-level`, or for every run started from a shell with `GUP_LOG_LEVEL`:
 
 ```bash
 gup --log-level debug                 # the menu, with every probe logged
@@ -225,14 +238,17 @@ gup update --all --log-level debug    # the flag also works after the command
 GUP_LOG_LEVEL=off gup list            # no log at all
 ```
 
-`--log-level` wins over `GUP_LOG_LEVEL`, which wins over the default. A scheduled run logs at
-least `info` whatever the level says (unless it is `off`): nobody watches it, the log is all
-that is left of it. `gup doctor` shows the level in effect and where it came from:
+`--log-level` wins over `GUP_LOG_LEVEL`, which wins over the Options setting, which wins over the
+default (`info`). A level changed in Options applies at once to the menu you are in — unless the
+flag or the variable set it, which the row then says (`imposé par GUP_LOG_LEVEL (debug)`). A
+scheduled run logs at least `info` whatever the level says (unless it is `off`): nobody watches
+it, the log is all that is left of it. `gup doctor` and the Journal's Debug tab show the level in
+effect and where it came from (`--log-level`, `GUP_LOG_LEVEL`, `réglage`, `défaut`):
 
 ```
   Système
   ────────────────────────────────────────
-  ● Journal de debug         info (défaut) · ~\AppData\Local\gup\logs
+  ● Journal de debug         debug (réglage) · ~\AppData\Local\gup\logs
 ```
 
 ### Reading it: `gup log`
@@ -311,3 +327,21 @@ UTC. Files older than 14 days are deleted when gup starts writing; `GUP_LOG_RETE
   elevated part hands its lines back, and your own gup process checks and writes them.
 - The log and the archives are private to your user (mode `0600` on macOS and Linux).
 - A secret in a format gup does not know can still slip through: read an archive before sharing.
+
+## Settings
+
+The **JOURNAL** section of the Options view (`gup`, then Options) keeps three settings. Each
+change is saved at once in the [settings file](configuration.md), and `Réinitialiser… › Tout`
+puts them back to their defaults.
+
+| Row | Values | Default | Effect | In `config.json` |
+|---|---|---|---|---|
+| **Journal de debug** | `OFF`, `erreurs`, `avert.`, `info`, `debug`, `trace` | `info` | what the [debug log](#levels) records; applies at once, unless `--log-level` or `GUP_LOG_LEVEL` decide | `log.level`: `off`, `error`, `warn`, `info`, `debug`, `trace` |
+| **Période du journal** | 30 derniers jours, 90 derniers jours, 12 derniers mois, tout l'historique | 12 derniers mois | the period the [Journal view](#in-the-menu-the-journal-view) shows when it comes to the front | `journal.period`: `30d`, `90d`, `12m`, `all` |
+| **Ouvrir le rapport** | `ON`, `OFF` | `ON` | whether an [HTML report](#in-the-browser-the-html-report) written for you opens in the browser: `o` and `e` in the Journal, `o` on the update results, `gup report` (where `--open` / `--no-open` win) | `journal.openReport`: `true`, `false` |
+
+The symbols of `gup report --format text` follow Options › **Symboles** (`interface.glyphs`), as
+the screens do.
+
+The elevated part of an update (the one UAC or `sudo` prompt) never reads these settings: it
+logs at the level its parent gup process hands it.

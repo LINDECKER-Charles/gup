@@ -116,7 +116,11 @@ skipped, failed, cancelled, and how long it took — with the cursor on the firs
 failure. `↑↓` selects a package and shows what its terminal kept: failed and
 skipped packages keep their output (the twelve latest), and so do the three
 latest successes. `Entrée`, `Échap` or `q` brings you back to **Paquets**,
-where the updated packages are gone — without a new scan (`r` rescans).
+where the updated packages are gone — without a new scan (`r` rescans). `o`
+writes the [HTML report](journal-and-reports.md#in-the-browser-the-html-report)
+of the Journal's period, this run included, and opens it in your browser
+(unless Options › Ouvrir le rapport is `OFF`); the line above the list says
+where it went.
 
 If you turned on the end-of-run notification in the options, a run of a
 minute or more ends with a notification from your terminal, where it supports

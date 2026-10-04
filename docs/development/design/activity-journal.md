@@ -246,7 +246,8 @@ format, records, bytes, path.
   `exportHistory` (it already logs `report.export` and writes through `writeOutputFile`).
 - **`feat/journal-settings` (wave 3):** initial period from `journal.period` →
   `JournalPanelDeps.initialPeriod` (in `journal-view.ts`); `interface.glyphs` for the text report
-  → `reportRequestOf` (today `resolveGlyphMode("auto")`); `ui/panels/journal` is full.
+  → `reportRequestOf` (today `resolveGlyphMode("auto")`); `ui/panels/journal` is full. (Done:
+  [`journal-settings.md`](journal-settings.md).)
 - **Wave-3 docs consolidation:** `cli-reference.md` (§ Activity history still says "nothing reads
   it back": it is now read back for display and export only, test-enforced), `gup report` in the
   command list, `architecture.md` (§9 + the read side), `SECURITY.md` (export redaction, CSV

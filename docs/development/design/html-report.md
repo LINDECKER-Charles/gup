@@ -213,7 +213,8 @@ after `beforeprint`, real mouse and key events for the focus paths), not by the 
 - **Weekly columns become monthly** beyond 60 weeks (an "all" period over years).
 - **Calendar detail panel**: the focused or hovered day is described in a live region and links
   to its sessions; it starts on the last active day.
-- **No `o` in the run view** (O-3): wave 3, through a port injected by `menu-views.ts`.
+- **No `o` in the run view** (O-3): wave 3, through a port injected by `menu-views.ts` (done:
+  [`journal-settings.md`](journal-settings.md) §6).
 
 ## 7. Contract changes (additive)
 
@@ -232,9 +233,10 @@ after `beforeprint`, real mouse and key events for the focus paths), not by the 
 ## 9. Hand-off
 
 - **`feat/journal-settings` (wave 3)**: `report.autoOpen` → `reportRequestOf` (`opensBrowser`)
-  and the Journal's `o` (`journal-source.ts` asks to open every HTML export today).
+  and the Journal's `o` (`journal-source.ts` asks to open every HTML export today). (Done, as
+  `journal.openReport`: [`journal-settings.md`](journal-settings.md).)
 - **Run view (O-3)**: a port giving `exportHistory({ format: "html", open: true, … })` for the
-  run's period.
+  run's period. (Done: [`journal-settings.md`](journal-settings.md) §6.)
 - **Wave-3 docs**: `cli-reference.md` (`gup report` html default, `--no-open`, `report.open`),
   `SECURITY.md` (the report's CSP, Trusted Types, JSON embedding, opener), `architecture.md`
   (`src/report/` and the data flow above), README feature list; screenshots of the report for
