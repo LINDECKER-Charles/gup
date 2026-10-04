@@ -77,6 +77,17 @@ export class PackageList {
     return this.#filter;
   }
 
+  /** The longest name, and current or latest version, of every package, filter or not. */
+  get longest(): { readonly name: number; readonly version: number } {
+    let name = 0;
+    let version = 0;
+    for (const pkg of this.#scanned.flatMap((group) => group.packages)) {
+      name = Math.max(name, (pkg.name ?? pkg.id).length);
+      version = Math.max(version, pkg.current.length, pkg.latest.length);
+    }
+    return { name, version };
+  }
+
   /** Every package, filter or not. */
   get total(): number {
     return this.groups().reduce((n, g) => n + g.packages.length, 0);

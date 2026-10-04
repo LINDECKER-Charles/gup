@@ -65,6 +65,21 @@ describe("PackagesPanel", () => {
     expect(out).toContain("pinned");
   });
 
+  it("sizes the version columns to the scan: names get the room short versions leave", () => {
+    const view = new PackagesPanel({ onLaunch: vi.fn(), onRescan: vi.fn() });
+    const powerToys = { id: "Microsoft.PowerToys", current: "0.85.1", latest: "0.86.0" };
+    const redist = { id: "Microsoft.VCRedist", current: "14.40.33810.0", latest: "14.42.34433.0" };
+    const scanOf = (...packages: (typeof powerToys)[]): ProviderScanResult[] => [
+      { providerId: "winget", available: true, packages },
+    ];
+    // The Paquets panel on an 80-column terminal.
+    const narrow = { width: 50, height: 12 };
+    view.setList(new PackageList(scanOf(powerToys), () => "Winget"));
+    expect(text(view.render(narrow))).toMatch(/Microsoft\.PowerToys +0\.85\.1 {2}→ 0\.86\.0/);
+    view.setList(new PackageList(scanOf(powerToys, redist), () => "Winget"));
+    expect(text(view.render(narrow))).toContain("14.40.33810.0 → 14.42.34433.0");
+  });
+
   it("launches the checked packages on Enter", () => {
     const { view, launched } = panel();
     press(view, "down", "space", "down", "space", "return");

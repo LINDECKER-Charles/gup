@@ -49,7 +49,13 @@ const GUTTER = 2;
 const CHECKBOX_WIDTH = 6;
 /** A mark and its space: `◷ `. */
 const MARK_WIDTH = 2;
+/** A version column's widest: longer versions are cut. */
 const VERSION_WIDTH = 14;
+/** A version column's narrowest: its heading ("Dernier") stays whole. */
+const MIN_VERSION_WIDTH = Math.max(
+  PACKAGE_COLUMNS.current.length,
+  PACKAGE_COLUMNS.latest.length,
+);
 const NOTE_WIDTH = 22;
 /** Below this width the note column is dropped. */
 const NOTE_MIN_VIEWPORT = 90;
@@ -62,7 +68,10 @@ const HINT_SEPARATOR = " · ";
 interface Layout {
   /** The whole viewport: the cursor's highlight spans it. */
   readonly width: number;
+  /** As wide as the scan's longest name, within the room the other columns leave. */
   readonly name: number;
+  /** Each version column: as wide as the scan's longest version, within its bounds. */
+  readonly version: number;
   readonly note: number;
   /** The mark of a package, when the mark column shows at all. */
   readonly markOf: ((providerId: string, pkg: OutdatedPackage) => string) | null;
@@ -284,16 +293,20 @@ export class PackagesPanel implements Panel {
     const isNoteShown = this.#options.noteColumn?.() !== "hidden" && rowWidth >= NOTE_MIN_VIEWPORT;
     const note = isNoteShown ? NOTE_WIDTH : 0;
     const marks = markOf ? MARK_WIDTH : 0;
-    const versions = VERSION_WIDTH * 2 + VERSION_SEPARATORS;
+    const longest = list.longest;
+    const version = Math.min(VERSION_WIDTH, Math.max(MIN_VERSION_WIDTH, longest.version));
+    const versions = version * 2 + VERSION_SEPARATORS;
     const fixed = CHECKBOX_WIDTH + marks + versions + (note > 0 ? note + 1 : 0);
-    return { width, name: Math.max(MIN_NAME_WIDTH, rowWidth - fixed), note, markOf };
+    // As wide as the longest name, so the versions follow the names on a wide terminal.
+    const name = Math.max(MIN_NAME_WIDTH, Math.min(rowWidth - fixed, longest.name));
+    return { width, name, version, note, markOf };
   }
 
   /** The filter being typed (or applied), then the column titles. */
   private headLines(list: PackageList, layout: Layout): Line[] {
     const indent = GUTTER + CHECKBOX_WIDTH + (layout.markOf ? MARK_WIDTH : 0);
     const { name, current, latest, note } = PACKAGE_COLUMNS;
-    const versions = `${fit(current, VERSION_WIDTH)}   ${fit(latest, VERSION_WIDTH)}`;
+    const versions = `${fit(current, layout.version)}   ${fit(latest, layout.version)}`;
     const header: Line = [
       seg(`${" ".repeat(indent)}${fit(name, layout.name)} ${versions}`, "muted"),
       seg(` ${layout.note > 0 ? note : ""}`, "muted"),
@@ -358,9 +371,9 @@ function packageLine(
     seg(isChecked ? "  [■] " : "  [ ] ", isChecked ? "success" : "muted"),
     ...(row.mark !== undefined ? [seg(`${row.mark} `, "accent")] : []),
     seg(fit(pkg.name ?? pkg.id, layout.name), isChecked ? "strong" : "plain"),
-    seg(` ${fit(pkg.current, VERSION_WIDTH)}`, "warning"),
+    seg(` ${fit(pkg.current, layout.version)}`, "warning"),
     seg(" → ", "muted"),
-    seg(fit(pkg.latest, VERSION_WIDTH), "success"),
+    seg(fit(pkg.latest, layout.version), "success"),
     seg(layout.note > 0 ? ` ${fit(pkg.note ?? "", layout.note)}` : "", "muted"),
   ];
 }

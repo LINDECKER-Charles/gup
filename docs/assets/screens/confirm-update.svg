@@ -43,7 +43,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="47.2" y="89.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scan              </text>
 <text class="c3" x="211.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="89.0" textLength="546.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">          Paquet                       Actuel           Dernier       </text>
+<text class="c5" x="234.4" y="89.0" textLength="366.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">          Paquet             Actuel    Dernier </text>
 <text class="c0" x="788.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="31.6" y="106.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌ </text>
@@ -62,20 +62,20 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="123.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
 <text class="c0" x="296.8" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
-<text class="c4" x="312.4" y="123.0" textLength="218.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ripgrep                     </text>
-<text class="c6" x="530.8" y="123.0" textLength="117.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 14.1.1        </text>
-<text class="c5" x="647.8" y="123.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
-<text class="c7" x="671.2" y="123.0" textLength="109.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">15.0.0        </text>
+<text class="c4" x="312.4" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ripgrep           </text>
+<text class="c6" x="452.8" y="123.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 14.1.1 </text>
+<text class="c5" x="515.2" y="123.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c7" x="538.6" y="123.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">15.0.0 </text>
 <text class="c0" x="788.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="140.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
 <text class="c0" x="296.8" y="140.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
-<text class="c4" x="312.4" y="140.0" textLength="218.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">bat                         </text>
-<text class="c6" x="530.8" y="140.0" textLength="117.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.25.0        </text>
-<text class="c5" x="647.8" y="140.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
-<text class="c7" x="671.2" y="140.0" textLength="109.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">0.26.0        </text>
+<text class="c4" x="312.4" y="140.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">bat               </text>
+<text class="c6" x="452.8" y="140.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.25.0 </text>
+<text class="c5" x="515.2" y="140.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c7" x="538.6" y="140.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">0.26.0 </text>
 <text class="c0" x="788.2" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="157.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Provider</text>
@@ -88,7 +88,6 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="109.6" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="174.0" textLength="249.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">6 paquets vont être mis à jour :</text>
 <text class="c0" x="694.6" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="174.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.0        </text>
 <text class="c0" x="788.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="191.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options </text>
@@ -99,20 +98,17 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="109.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="208.0" textLength="280.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">• nodejs-lts 24.8.0 → 24.9.0 (admin)</text>
 <text class="c0" x="694.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="208.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3         </text>
 <text class="c0" x="788.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="47.2" y="225.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quitter </text>
 <text class="c0" x="109.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="225.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">• typescript 6.0.2 → 6.0.3</text>
 <text class="c0" x="694.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="225.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">8.1       </text>
 <text class="c0" x="788.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="242.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">• ruff 0.13.0 → 0.13.2</text>
 <text class="c0" x="694.6" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="242.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.1        </text>
 <text class="c0" x="788.2" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
@@ -123,13 +119,11 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="109.6" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="276.0" textLength="210.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">• PowerToys 0.94.1 → 0.95.0</text>
 <text class="c0" x="694.6" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="276.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.2        </text>
 <text class="c0" x="788.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="293.0" textLength="163.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">• 7-Zip 25.00 → 25.01</text>
 <text class="c0" x="694.6" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="293.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">4         </text>
 <text class="c0" x="788.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
@@ -144,23 +138,19 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="109.6" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="344.0" textLength="109.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">en fin de lot.</text>
 <text class="c0" x="694.6" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="344.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.0        </text>
 <text class="c0" x="788.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="694.6" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="361.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.0        </text>
 <text class="c0" x="788.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c2 b" x="148.6" y="378.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Oui </text>
 <text class="c5" x="211.0" y="378.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Non </text>
 <text class="c0" x="694.6" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c7" x="702.4" y="378.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1         </text>
 <text class="c0" x="788.2" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="395.0" textLength="592.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╚══════════════════════════════════════════════════════════════════════════╝</text>
-<text class="c7" x="702.4" y="395.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">5.1       </text>
 <text class="c0" x="788.2" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
