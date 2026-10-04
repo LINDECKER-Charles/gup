@@ -55,6 +55,10 @@ checks, tag, npm publish, GitHub Release) is in
    one section per theme, then **Tests**, **Verification** (the full check
    table, with the Node/npm versions it ran on), **Upgrade** (breaking changes
    or "drop-in"), and **Compare** (`<prev>...<version>` link).
+   Every link is absolute (`https://github.com/LINDECKER-Charles/gup/blob/main/…`):
+   the file becomes the release body, where GitHub resolves a relative link
+   against `/blob/` with no branch — `../changelog/0.5.0.md` became
+   `/blob/changelog/0.5.0.md`, a 404.
 2. Commit it with the `chore(release): <version>` bump, tag, publish.
 3. Paste the file as the GitHub Release body and let GitHub append its
    generated block; do not edit the body by hand afterwards, edit the file.
