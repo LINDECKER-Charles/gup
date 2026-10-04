@@ -46,11 +46,6 @@ function pkginMachine(lesser: CommandAnswer, equal?: CommandAnswer): SystemSpec 
 }
 
 describe("PkginProvider.isAvailable", () => {
-  it("never probes pkgin on Windows", async () => {
-    await system.load({ platform: "win32", bin: { pkgin: "C:\\pkg\\pkgin.exe" } });
-    await expect(new PkginProvider().isAvailable()).resolves.toBe(false);
-  });
-
   it("degrades to false when the probe throws", async () => {
     await system.load(PKGIN_MACHINE);
     replaceForTest(runner, "commandExists", () => Promise.reject(new Error("nope")));

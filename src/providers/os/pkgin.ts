@@ -63,7 +63,6 @@ export class PkginProvider implements Provider {
   readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     try {
       return await commandExists("pkgin");
     } catch {

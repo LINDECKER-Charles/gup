@@ -18,7 +18,6 @@ export class WslProvider implements Provider {
   readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
     if (!(await commandExists("wsl"))) return false;
     const { failed } = await run("wsl", ["--version"]);
     return !failed;

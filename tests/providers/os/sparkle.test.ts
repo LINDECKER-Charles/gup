@@ -45,12 +45,11 @@ function plistOf(app: string): string {
   return `/Applications/${app}.app/Contents/Info.plist`;
 }
 
-describe("SparkleProvider off macOS", () => {
+describe("SparkleProvider.listOutdated off macOS", () => {
   it.each<SimPlatform>(["linux", "win32"])(
-    "never probes plutil nor walks a directory on %s",
+    "runs no plutil and walks no directory on %s",
     async (platform) => {
       await system.load({ platform, bin: { plutil: platform === "win32" ? "C:\\x\\plutil.exe" : PLUTIL_BIN } });
-      await expect(new SparkleProvider().isAvailable()).resolves.toBe(false);
       await expect(new SparkleProvider().listOutdated()).resolves.toEqual([]);
       expect(system.trace.fsReads).toEqual([]);
       expect(system.trace.spawns).toEqual([]);

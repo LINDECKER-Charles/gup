@@ -58,11 +58,6 @@ function profileOnlyMachine(overrides: Partial<SystemSpec> = {}): SystemSpec {
 }
 
 describe("NixProvider.isAvailable", () => {
-  it("never probes the binary on Windows — WSL Nix belongs to wsl-nix", async () => {
-    await system.load({ platform: "win32", bin: { nix: "C:\\tools\\nix.exe" } });
-    await expect(new NixProvider().isAvailable()).resolves.toBe(false);
-  });
-
   it("degrades to false when the probe itself throws", async () => {
     await system.load(NIX_MACHINE);
     replaceForTest(runner, "commandExists", () => Promise.reject(new Error("spawn")));

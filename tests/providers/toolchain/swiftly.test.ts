@@ -24,13 +24,6 @@ import {
 const UNREACHABLE = "swiftly est introuvable ou n'a pas pu être lancé.";
 
 describe("SwiftlyProvider.isAvailable", () => {
-  it("refuses Windows without probing — upstream ships no Windows build", async () => {
-    await system.load({ platform: "win32", bin: { swiftly: "C:\\Tools\\swiftly.exe" } });
-    const probe = replaceForTest(runner, "commandExists", () => Promise.resolve(true));
-    await expect(new SwiftlyProvider().isAvailable()).resolves.toBe(false);
-    expect(probe).not.toHaveBeenCalled();
-  });
-
   it("probes `swiftly` on Linux too", async () => {
     const swiftly = "/home/u/.local/share/swiftly/bin/swiftly";
     await system.load({ platform: "linux", bin: { swiftly } });

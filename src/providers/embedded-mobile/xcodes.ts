@@ -62,7 +62,6 @@ export class XcodesProvider implements Provider {
   readonly platforms = PLATFORMS.macos;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "darwin") return false;
     try {
       return await commandExists("xcodes");
     } catch {

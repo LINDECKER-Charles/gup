@@ -79,7 +79,6 @@ export class NvmProvider implements Provider {
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     try {
       if (resolveNvmDir() === null) return false;
       return await commandExists("bash");

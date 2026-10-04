@@ -7,7 +7,6 @@ import {
 } from "../../../src/providers/embedded-mobile/xcodes.js";
 import { replaceForTest } from "../../support/system/boundary-spy.js";
 import { system } from "../../support/system/fake-system.js";
-import type { SimPlatform } from "../../support/system/types.js";
 import { installArgvs, probeArgvs } from "../../support/system/trace.js";
 import { XCODES_VERSION_ARGV, xcodesMachine } from "./embedded-mobile.cases.js";
 
@@ -18,16 +17,6 @@ import { XCODES_VERSION_ARGV, xcodesMachine } from "./embedded-mobile.cases.js";
  */
 
 describe("XcodesProvider.isAvailable", () => {
-  it.each<SimPlatform>(["win32", "linux"])(
-    "is macOS-only, and does not even probe the binary on %s",
-    async (platform) => {
-      await system.load({ platform, bin: { xcodes: "/usr/local/bin/xcodes" } });
-      const probe = replaceForTest(runner, "commandExists", () => Promise.resolve(true));
-      await expect(new XcodesProvider().isAvailable()).resolves.toBe(false);
-      expect(probe).not.toHaveBeenCalled();
-    },
-  );
-
   it("is unavailable rather than throwing when the probe blows up", async () => {
     await system.load(xcodesMachine("2.0.3"));
     replaceForTest(runner, "commandExists", () => Promise.reject(new Error("PATH exploded")));

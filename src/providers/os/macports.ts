@@ -28,7 +28,6 @@ export class MacPortsProvider implements Provider {
   readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "darwin") return false;
     return commandExists("port");
   }
 

@@ -11,11 +11,11 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 /**
  * Nix as the *native* package manager on macOS and Linux.
  *
- * Gated on `process.platform !== "win32"` on purpose: on Windows, Nix only ever
+ * Not supported on Windows on purpose (`platforms`): there, Nix only ever
  * lives inside a WSL distro, and the `wsl-nix` provider already enumerates
- * those. Without the gate the same install would be reported twice — once
- * through `wsl.exe`, once through whatever `nix` shim leaked onto the Windows
- * PATH.
+ * those. Without the restriction the same install would be reported twice —
+ * once through `wsl.exe`, once through whatever `nix` shim leaked onto the
+ * Windows PATH.
  *
  * Scope is deliberately narrow — two rows, nothing else:
  *
@@ -47,7 +47,6 @@ export class NixProvider implements Provider {
   readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     try {
       return await commandExists("nix");
     } catch {

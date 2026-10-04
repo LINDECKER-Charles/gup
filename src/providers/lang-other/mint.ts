@@ -59,8 +59,6 @@ export class MintProvider implements Provider {
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
-    // Mirrors `platforms` for a caller that probes without the registry gate.
-    if (process.platform === "win32") return false;
     try {
       if (!(await commandExists("mint"))) return false;
       // `mint` is also the binary name of the unrelated mint-lang toolchain,

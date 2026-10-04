@@ -7,7 +7,6 @@ import {
   parsePyenvVersion,
   PyenvProvider,
 } from "../../../src/providers/python/pyenv.js";
-import { PyenvWinProvider } from "../../../src/providers/python/pyenv-win.js";
 import { installedVia } from "../../support/contract/installers.js";
 import { replaceForTest } from "../../support/system/boundary-spy.js";
 import { system } from "../../support/system/fake-system.js";
@@ -33,12 +32,6 @@ import {
  */
 
 const HOME_ROOT = "/home/u/.pyenv";
-
-/** pyenv-win's `pyenv` on Windows. */
-const PYENV_WIN: SystemSpec = {
-  platform: "win32",
-  bin: { pyenv: "C:\\Users\\u\\.pyenv\\pyenv-win\\bin\\pyenv.bat" },
-};
 
 const PULLED = { id: "pyenv", success: true };
 
@@ -67,13 +60,6 @@ function cloneBesides(binary: string, fsExtra: SystemSpec["fs"] = {}): SystemSpe
 }
 
 describe("PyenvProvider.isAvailable", () => {
-  it("refuses win32 without probing — that `pyenv` belongs to pyenv-win", async () => {
-    await system.load(PYENV_WIN);
-    const probe = replaceForTest(runner, "commandExists", () => Promise.resolve(true));
-    await expect(new PyenvProvider().isAvailable()).resolves.toBe(false);
-    expect(probe).not.toHaveBeenCalled();
-  });
-
   it("probes `pyenv` on macOS too", async () => {
     await system.load(PYENV_BREW_MACHINE);
     await expect(new PyenvProvider().isAvailable()).resolves.toBe(true);
@@ -83,18 +69,6 @@ describe("PyenvProvider.isAvailable", () => {
     await system.load(pyenvCloneMachine());
     replaceForTest(runner, "commandExists", () => Promise.reject(new Error("nope")));
     await expect(new PyenvProvider().isAvailable()).resolves.toBe(false);
-  });
-});
-
-describe("pyenv / pyenv-win mutual exclusion", () => {
-  it("shows exactly one provider for `pyenv` per platform", async () => {
-    await system.load(PYENV_WIN);
-    await expect(new PyenvProvider().isAvailable()).resolves.toBe(false);
-    await expect(new PyenvWinProvider().isAvailable()).resolves.toBe(true);
-
-    await system.load(PYENV_BREW_MACHINE);
-    await expect(new PyenvWinProvider().isAvailable()).resolves.toBe(false);
-    await expect(new PyenvProvider().isAvailable()).resolves.toBe(true);
   });
 });
 

@@ -43,9 +43,9 @@ const MANUAL_MESSAGE =
  * pyenv-win (pyenv-win/pyenv-win, covered by `./pyenv-win.ts`) is a *separate
  * upstream project*, not a Windows build of this one: different repository,
  * different version line, different self-update story. Both expose a binary
- * named `pyenv`, so the two providers gate on opposite platforms — that one
- * requires win32, this one refuses it — and a machine never shows two rows for
- * what the user thinks of as "pyenv".
+ * named `pyenv`, so the two providers declare opposite platforms — that one
+ * Windows only, this one everything but Windows — and a machine never shows
+ * two rows for what the user thinks of as "pyenv".
  *
  * Scope is the pyenv binary itself. The Python versions it manages stay out:
  * `pyenv install <x>` adds an interpreter rather than upgrading one, and pyenv
@@ -91,8 +91,6 @@ export class PyenvProvider implements Provider {
   readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    // Mirrors `platforms` for a caller that probes without the registry gate.
-    if (process.platform === "win32") return false;
     try {
       return await commandExists("pyenv");
     } catch {
@@ -328,7 +326,7 @@ function isInside(child: string, parent: string): boolean {
  * caller here resolves it against gup's cwd, which has nothing to do with
  * pyenv. Rejecting it falls through to the next candidate instead.
  *
- * POSIX paths by construction: isAvailable() has already refused win32.
+ * POSIX paths by construction: the registry never runs this provider on win32.
  */
 async function pyenvRoot(): Promise<string | null> {
   const { stdout, failed } = await run("pyenv", ["root"]);

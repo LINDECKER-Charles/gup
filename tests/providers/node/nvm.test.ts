@@ -3,7 +3,6 @@ import * as os from "node:os";
 import { describe, expect, it } from "vitest";
 import * as runner from "../../../src/core/runner.js";
 import { compareReleases, NvmProvider, parseNvmVersion } from "../../../src/providers/node/nvm.js";
-import { NvmWindowsProvider } from "../../../src/providers/node/nvm-windows.js";
 import { replaceForTest } from "../../support/system/boundary-spy.js";
 import { system } from "../../support/system/fake-system.js";
 import { installArgvs, probeArgvs } from "../../support/system/trace.js";
@@ -24,7 +23,6 @@ import {
  */
 
 const INSTALL_DOC = "https://github.com/nvm-sh/nvm#installing-and-updating";
-const GIT_BASH = "C:\\Program Files\\Git\\bin\\bash.exe";
 
 /** The clone, behind the release unless `install` says otherwise. */
 async function loadNvm(install: Partial<NvmInstall> = {}): Promise<void> {
@@ -37,14 +35,6 @@ function nvmShReads(): string[] {
 }
 
 describe("NvmProvider.isAvailable", () => {
-  it("refuses win32 without touching the disk or PATH", async () => {
-    await system.load({ platform: "win32", bin: { bash: GIT_BASH } });
-    const probe = replaceForTest(runner, "commandExists", () => Promise.resolve(true));
-    await expect(new NvmProvider().isAvailable()).resolves.toBe(false);
-    expect(system.trace.fsReads).toEqual([]);
-    expect(probe).not.toHaveBeenCalled();
-  });
-
   it("does not look for bash when nvm.sh is nowhere to be found", async () => {
     await system.load({ platform: "linux", bin: { bash: "/bin/bash" } });
     const probe = replaceForTest(runner, "commandExists", () => Promise.resolve(true));
@@ -96,22 +86,6 @@ describe("NvmProvider.isAvailable", () => {
     });
     await expect(new NvmProvider().isAvailable()).resolves.toBe(false);
     expect(system.trace.fsReads).toEqual([]);
-  });
-});
-
-describe("nvm / nvm-windows mutual exclusion", () => {
-  it("shows exactly one provider for `nvm` per platform", async () => {
-    await system.load({
-      platform: "win32",
-      bin: { nvm: "C:\\Users\\u\\AppData\\Local\\nvm\\nvm.exe", bash: GIT_BASH },
-      commands: [{ argv: ["nvm", "version"], stdout: "1.1.12" }],
-    });
-    await expect(new NvmProvider().isAvailable()).resolves.toBe(false);
-    await expect(new NvmWindowsProvider().isAvailable()).resolves.toBe(true);
-
-    await loadNvm();
-    await expect(new NvmWindowsProvider().isAvailable()).resolves.toBe(false);
-    await expect(new NvmProvider().isAvailable()).resolves.toBe(true);
   });
 });
 

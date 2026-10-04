@@ -21,7 +21,6 @@ export class PyenvWinProvider implements Provider {
   readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
     return commandExists("pyenv");
   }
 

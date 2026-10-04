@@ -80,7 +80,6 @@ export class PkgxProvider implements Provider {
   readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     return commandExists("pkgx");
   }
 

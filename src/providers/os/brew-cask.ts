@@ -33,8 +33,6 @@ export class BrewCaskProvider implements Provider {
   readonly platforms = PLATFORMS.macos;
 
   async isAvailable(): Promise<boolean> {
-    // Mirrors `platforms` for a caller that probes without the registry gate.
-    if (process.platform !== "darwin") return false;
     return commandExists("brew");
   }
 

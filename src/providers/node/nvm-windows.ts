@@ -32,7 +32,6 @@ export class NvmWindowsProvider implements Provider {
   readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
     if (!(await commandExists("nvm"))) return false;
     // Disambiguate from a stray `nvm` shell shim by checking the help banner.
     const { stdout, failed } = await run("nvm", ["version"]);

@@ -68,7 +68,6 @@ export class SparkleProvider implements Provider {
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "darwin") return false;
     try {
       // `plutil` ships with every macOS install; probing it is really a probe
       // of "are we on a usable macOS", and it keeps the provider honest on a

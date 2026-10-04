@@ -64,7 +64,6 @@ export class GitForWindowsProvider implements Provider {
   readonly platforms = PLATFORMS.windows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
     if (!(await commandExists("git").catch(() => false))) return false;
     return (await readInstalledVersion()) !== null;
   }

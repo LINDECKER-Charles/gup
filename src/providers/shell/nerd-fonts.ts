@@ -55,7 +55,6 @@ export class NerdFontsProvider implements Provider {
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "win32") return false;
     if (!userFontsDir() || !gupDataDir()) return false;
     if (existsSync(lockfilePath())) return true;
     return (await detectInstalledFamilies()).length > 0;

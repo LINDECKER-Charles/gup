@@ -53,8 +53,6 @@ export class BrewProvider implements Provider {
   readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    // Mirrors `platforms` for a caller that probes without the registry gate.
-    if (process.platform === "win32") return false;
     return commandExists("brew");
   }
 

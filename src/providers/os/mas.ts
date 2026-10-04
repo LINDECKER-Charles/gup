@@ -24,7 +24,6 @@ export class MasProvider implements Provider {
   readonly platforms = PLATFORMS.macos;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "darwin") return false;
     return commandExists("mas");
   }
 
