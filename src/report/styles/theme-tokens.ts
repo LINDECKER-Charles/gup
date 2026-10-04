@@ -71,8 +71,7 @@ export const THEME_TOKENS = {
   },
 } as const;
 
-export type ThemeName = keyof typeof THEME_TOKENS;
-export type ThemeToken = keyof (typeof THEME_TOKENS)["light"];
+type ThemeName = keyof typeof THEME_TOKENS;
 
 function declarations(theme: ThemeName): string {
   const tokens = Object.entries(THEME_TOKENS[theme]).map(([name, value]) => `--${name}:${value};`);
