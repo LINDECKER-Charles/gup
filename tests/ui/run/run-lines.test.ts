@@ -107,6 +107,16 @@ describe("statusLines", () => {
     expect(lines[4]).toMatch(/^· b /);
   });
 
+  it("cuts a notice too long for its row in the middle, so its end stays", () => {
+    const { model } = run(["a"]);
+    const path = "~/AppData/Local/gup/reports/gup-report-20261004-113309.html";
+    const notice = { text: `✔ Export écrit — ${path}`, tone: "success" } as const;
+    const [, line] = text(statusLines(model, view({ notice, width: 60 })).lines);
+    expect(line).toHaveLength(60);
+    expect(line).toMatch(/^✔ Export écrit — ~.*…/);
+    expect(line).toMatch(/\/gup-report-20261004-113309\.html$/);
+  });
+
   it("keeps the focused package in view when the list does not fit", () => {
     const ids = Array.from({ length: 30 }, (_, index) => `p${index}`);
     const { model } = run(ids);

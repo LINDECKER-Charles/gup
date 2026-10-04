@@ -10,7 +10,15 @@ import {
 } from "../text/run-labels.js";
 import { formatClock } from "../text/fr-format.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
-import { fit, lineWidth, seg, type Line, type Segment, type Tone } from "../tui/styled-lines.js";
+import {
+  fit,
+  lineWidth,
+  middleEllipsis,
+  seg,
+  type Line,
+  type Segment,
+  type Tone,
+} from "../tui/styled-lines.js";
 import {
   retryLabelOf,
   type ItemState,
@@ -122,7 +130,7 @@ export function statusLines(model: RunModel, view: StatusView): StatusLines {
   const rows = rowsOf(model, view);
   const header = headerLine(model, view);
   if (view.isEnlarged) return enlargedLines(rows, header);
-  const top: Line[] = [header, view.notice ? noticeLine(view.notice) : []];
+  const top: Line[] = [header, view.notice ? noticeLine(view.notice, view.width) : []];
   const blocks = model.items.map((item, index) => block(rows, item, index));
   const { start, end } = windowAround(blocks, view.focus ?? 0, view.rows - top.length);
   const lines = [...top];
@@ -152,7 +160,7 @@ function rowsOf(model: RunModel, view: StatusView): Rows {
 
 function enlargedLines(rows: Rows, header: Line): StatusLines {
   const { model, view } = rows;
-  const top = view.notice ? noticeLine(view.notice) : header;
+  const top = view.notice ? noticeLine(view.notice, view.width) : header;
   const focus = view.focus ?? 0;
   const item = model.items[focus];
   if (!item) return { lines: [top], rowItems: [null] };
@@ -212,8 +220,13 @@ function waitingLine(model: RunModel, view: StatusView): Line {
   return [seg(`${spinner(view.frame)} `, "accent"), seg(message)];
 }
 
-function noticeLine(notice: Notice): Line {
-  return [seg(notice.text, notice.tone)];
+/**
+ * The notice in its one row, cut in its middle when it must be: what ends it
+ * matters most — the file name of a report written by `o`, which the user
+ * opens by hand when the browser could not.
+ */
+function noticeLine(notice: Notice, width: number): Line {
+  return [seg(middleEllipsis(notice.text, width), notice.tone)];
 }
 
 /** One package: its row, the message under it, and the prompt hint under the one in flight. */
