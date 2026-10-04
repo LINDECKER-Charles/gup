@@ -8,6 +8,7 @@ are never affected by it except for the install timeout (see
 `gup report` does in a terminal (see [Journal](#journal)).
 
 - [The Options view](#the-options-view)
+- [Which value wins](#which-value-wins)
 - [Where the file lives](#where-the-file-lives)
 - [What it looks like](#what-it-looks-like)
 - [Sections](#sections)
@@ -60,6 +61,41 @@ The settings are grouped in sections, one row per setting: `Label   [value]   hi
   does not fit beside its row is shown whole under the list while the cursor is
   on that row, and the colour editor leaves out its "Affichée" column — the
   contrast column already says when a colour was adjusted.
+
+## Which value wins
+
+A few settings can also come from a command-line flag or an environment
+variable. For those, the most specific source wins:
+
+```mermaid
+flowchart TD
+    Need(["gup needs a setting"]) --> F{"a flag on this<br/>command line?"}
+    F -->|yes| UseF["the flag — this run only"]
+    F -->|no| E{"an environment variable<br/>set to a valid value?"}
+    E -->|yes| UseE["the variable — every run of that shell"]
+    E -->|no| C{"config.json has it?<br/>and GUP_CONFIG is not 0"}
+    C -->|yes| UseC["the file — what Options saved"]
+    C -->|no| D["the built-in default"]
+```
+
+| Setting | Flag | Variable | File | Default |
+|---|---|---|---|---|
+| Install timeout | `--timeout` (`gup update`) | `GUP_INSTALL_TIMEOUT` | `install.timeoutSeconds` | 1200 s |
+| Debug log level | `--log-level` | `GUP_LOG_LEVEL` | `log.level` | `info` |
+| Open the HTML report | `--open`, `--no-open` (`gup report`) | — | `journal.openReport` | open, in a terminal outside CI |
+| Symbols | — | `GUP_ASCII=1` (when the file says `auto`) | `interface.glyphs` | `auto` |
+| Colours | — | `NO_COLOR` (wins over every theme) | `theme.id` | `terminal` |
+
+Three exceptions:
+
+- **Scan settings** (fast mode, provider filter) apply to the interactive
+  app only: `gup list` and `gup update` keep their explicit flags, so a script
+  never changes behaviour because of a setting it cannot see.
+- **Scheduled runs** log at least `info` (nobody watches them; the log is all
+  that is left) and cap each install at 30 minutes.
+- **The elevated helper** — the one UAC or `sudo` prompt of an update — reads
+  no setting at all; it takes its timeout and log level from the gup that
+  started it (see [Security](#security)).
 
 ## Where the file lives
 

@@ -41,12 +41,28 @@ is up. `terminal` and `monochrome` leave your terminal's background as it is.
 The cursor row is a soft tint on purpose: the `›` in the gutter carries the
 cursor, the tint only reinforces it.
 
+The same **Paquets** view in eight of them (the default `terminal` theme is the
+one every other screenshot of these docs shows):
+
+| | |
+|---|---|
+| ![The Paquets view in the Sombre (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-dark.svg) | ![The Paquets view in the Clair (gup) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-light.svg) |
+| `dark` — **Sombre (gup)** | `light` — **Clair (gup)** |
+| ![The Paquets view in the Contraste élevé theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-high-contrast.svg) | ![The Paquets view in the Daltonisme (Okabe-Ito) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-colorblind.svg) |
+| `high-contrast` — **Contraste élevé** | `colorblind` — **Daltonisme (Okabe-Ito)** |
+| ![The Paquets view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-dracula.svg) | ![The Paquets view in the Catppuccin Mocha theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-catppuccin-mocha.svg) |
+| `dracula` — **Dracula** | `catppuccin-mocha` — **Catppuccin Mocha** |
+| ![The Paquets view in the GitHub (clair) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-github-light.svg) | ![The Paquets view in the Monochrome theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-monochrome.svg) |
+| `github-light` — **GitHub (clair)** | `monochrome` — **Monochrome** |
+
 ## Choosing a theme
 
 In **Options**, the *Thème* row shows the theme in use and, as its hint, how
 readable it is on your terminal: `✔ AA · contraste min. 6,1:1`, `⚠ 2 couleur(s)
 ajustée(s) · min. 4,6:1`, or `? palette du terminal inconnue — contraste non
 vérifiable`. `entrée` opens the theme picker:
+
+![Options, theme picker: every built-in theme with its lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
 
 | Mark | Meaning |
 |---|---|
@@ -69,6 +85,8 @@ vérifiable`. `entrée` opens the theme picker:
 
 *Couleurs perso.* opens the colour editor for the theme in use. Your colours
 belong to that theme: an accent tuned for `dark` does not change `light`.
+
+![Options, colour editor: each colour role with the chosen and displayed colour, its contrast ratio and a sample; a custom accent too dark to read raised from 1.4:1 to 4.5:1, with a warning.](../assets/screens/options-colors.svg)
 
 | Column | Shows |
 |---|---|
@@ -178,3 +196,14 @@ theme's: **subprocess output uses the host palette** — your terminal's own
 colours, which `gup` neither changes nor checks. Its readability is your
 terminal theme's; the contrast guarantee covers everything `gup` paints around
 it.
+
+**Known issue — light terminals.** Text an installer prints in the default
+colour, and gup's own notes in the pane (the lines starting with `›`), are
+drawn white rather than in your terminal's text colour: the embedded terminal
+of OpenTUI 0.5.14 offers no default-foreground option. On a light terminal
+(macOS Terminal.app's default *Basic* profile, *One Half Light*…) they are hard
+or impossible to read. Coloured output and everything outside the pane are not
+affected. Until it is fixed, use a dark terminal profile while updating, or
+set `GUP_PTY=off` to run installers in your own terminal instead. The contrast
+audit pins this as a known failure, so it turns red the day the pane follows
+your terminal's foreground.
