@@ -992,9 +992,10 @@ security             # composite: audit + lint security + tests security
 
 ### Distribution choice
 
-- Published on npm so end users get a one-line install. The package ships `dist/`, the licence,
-  the README and SECURITY.md; its only install script is node-pty's (an optional dependency), which
-  npm 11 asks the user to review — see [`installation.md`](../guide/installation.md#npm-11-and-install-scripts).
+- Published on npm so end users get a one-line install. The package ships `dist/`, the licence
+  and the README, whose links lead to the security policy on GitHub; its only install script is
+  node-pty's (an optional dependency), which npm 11 asks the user to review — see
+  [`installation.md`](../guide/installation.md#npm-11-and-install-scripts).
 - Source install via `git clone` + `npm link` remains the easiest way to audit before running, and
   is the workflow for contributors.
 

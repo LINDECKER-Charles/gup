@@ -77,7 +77,7 @@ Then, in the same branch:
      && npm run test:run && npm run build && npm run security \
      && npm run screenshots:check
    node dist/cli.js --version    # prints x.y.z
-   npm pack --dry-run            # package.json, dist/, LICENSE, README.md, SECURITY.md
+   npm pack --dry-run            # package.json, dist/, LICENSE, README.md
    ```
 
    On Windows, `check.cmd` runs the security audit, the tests and the coverage

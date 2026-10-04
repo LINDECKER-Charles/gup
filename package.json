@@ -69,8 +69,7 @@
   "files": [
     "dist",
     "LICENSE",
-    "README.md",
-    "SECURITY.md"
+    "README.md"
   ],
   "scripts": {
     "dev": "tsx src/cli.ts",
