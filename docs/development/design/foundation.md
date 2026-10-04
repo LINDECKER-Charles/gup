@@ -88,7 +88,9 @@ root logic, with `GUP_*_DIR` overrides first (table in `app-dirs.ts`). `run-cont
 the registry and `applyUpdate` set so the log backend knows which provider and package a line
 belongs to. History records gain `trigger`, per-provider scan `durationMs` and `scheduleId`;
 `HISTORY_SCHEMA_VERSION` stays 1. `withFileLock(file, work)` is the short exclusive section of the
-config store (`wx` lock file, 10 s staleness).
+config store (`wx` lock file, 10 s staleness). On Windows, `wx` fails with EPERM for a moment
+while the previous holder deletes its lock file: that is waited for like a held lock, and only an
+EPERM that outlasts every attempt reaches the caller.
 
 ### 3.3 Process seams (`src/core/process/`, `src/core/runner.ts`)
 
