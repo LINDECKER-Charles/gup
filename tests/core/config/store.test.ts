@@ -78,6 +78,13 @@ describe("ConfigStore: writing", () => {
     expect(new ConfigStore({ file }).read(PREFS)).toEqual({ fast: true, mode: "a", count: 3 });
   });
 
+  it("reports the file as there once its first save created it", () => {
+    const store = new ConfigStore({ file });
+    expect(store.status().state).toBe("missing");
+    store.write(PREFS, { fast: true, mode: "a", count: 3 });
+    expect(store.status().state).toBe("loaded");
+  });
+
   it("drops a section once it is back to its defaults", async () => {
     const store = new ConfigStore({ file });
     store.write(PREFS, { fast: true, mode: "b", count: 1 });

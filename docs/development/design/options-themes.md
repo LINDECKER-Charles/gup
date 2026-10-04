@@ -429,7 +429,9 @@ the test, an appearance control resolving for real).
   the menu to). `src/ui/panels/options-panel.ts` is gone (moved and split); nothing else imported
   it.
 - **Foundation:** `ConfigStore.status().lastWriteError` is cleared once a later write persists
-  (`fix/wave-2-polish`), so the Options view shows the store status as it is (D21).
+  (`fix/wave-2-polish`), and a `missing` state turns `loaded` once a save creates the file, so
+  the Options view shows the store status as it is (D21) — no "aucun fichier" after the first
+  save.
 - **In-TUI updates (IT-6):** the embedded terminal panes must sit on `RGBA.defaultBackground()`
   (the terminal's own), never on the theme's background: subprocess output uses the host
   palette, which gup does not check. The contrast audit gains a case asserting it when the panes

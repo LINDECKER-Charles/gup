@@ -256,6 +256,9 @@ describe("OptionsPanel saving", () => {
     const saved = text(panel.render(VIEW));
     expect(saved).toContain("› Fichier");
     expect(saved).not.toContain("non enregistré");
+    // The save created the file: the row no longer says there is none.
+    expect(saved).toContain(CONFIG_STATE_LABELS.saved);
+    expect(saved).not.toContain(CONFIG_STATE_LABELS.defaults);
   });
 });
 
