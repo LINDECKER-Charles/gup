@@ -1,8 +1,4 @@
-import {
-  ELEVATE_DIALOG,
-  RETRY_DIALOG_TITLE,
-  RUN_TITLES,
-} from "../../../../src/ui/text/run-labels.js";
+import { ELEVATE_DIALOG, RETRY_DIALOG, RUN_TITLES } from "../../../../src/ui/text/run-labels.js";
 import { appFixture } from "../../fixtures/app-fixture.js";
 import { RUN_IN_FLIGHT, RUN_TO_THE_END } from "../../fixtures/update/run-scripts.js";
 import type { SceneGroup, Stage } from "../scene.js";
@@ -16,7 +12,7 @@ async function toRetryOffer(stage: Stage): Promise<void> {
   await runSix(stage);
   await stage.waitForText(ELEVATE_DIALOG.title);
   await stage.press("enter");
-  await stage.waitForText(RETRY_DIALOG_TITLE);
+  await stage.waitForText(RETRY_DIALOG.title);
 }
 
 /** An update run inside the app: in flight, the retry offer, the results. */
