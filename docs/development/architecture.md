@@ -169,7 +169,7 @@ classDiagram
 
 **Fine-grained semantics:**
 
-- `manual: true` → the item is filtered by `scanAll` before reaching the UI (never displayed, never included in `update --all`). Used for items that require a GUI action (JetBrains Toolbox, Eclipse Marketplace…).
+- `manual: true` → the item is filtered by `scanAll` before reaching the UI (never displayed, never included in `update --all`). Used for items that require a GUI action (JetBrains Toolbox, Docker Desktop's own updater…).
 - `slow: true` on a provider → excluded under `--fast`. Reserved for scans that do HTTP per package or a filesystem walk.
 - `skipped: true` on an outcome → different from `success: false`. Surfaced as **yellow `SKIP`** vs **red `FAIL`**.
 - `retryable: true` → allows the retry loop to offer `--force` / `--uninstall-previous` / `reinstall` (typical winget hash mismatch).

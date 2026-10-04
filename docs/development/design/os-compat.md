@@ -232,8 +232,11 @@ a frequency the argument errors come first: `parseAddArgs` runs before the regis
 3. **`nix` hint rewritten**, beyond the strict rule: its fallback was its Windows hint ("Nix
    s'installe dans WSL"), still reachable on the BSDs where it was wrong. The three entries
    collapse to `https://nixos.org/download`.
-4. **Shared docs touched**: CONTRIBUTING §5.3, `how-gup-works.md` (§3 tree, §5 note, §13, §14.4)
-   and the `architecture.md` tree described the deleted files; they now say such a source gets no
-   provider and is a catalog candidate. `docs/feature-guides` consolidates these pages later.
+4. **Shared docs touched**: CONTRIBUTING (§4 `manual` row, §5.3), `how-gup-works.md` (§3 tree,
+   §5 note, §13, §14.4), `architecture.md` (tree, `manual` example) and the `docs/README.md` status
+   legend described the deleted files or the retired 🚧 status; they now say such a source gets no
+   provider and is a catalog candidate. CONTRIBUTING §4 also gains the `platforms` convention the
+   drift test now enforces (spec step 8, which wave 2 could not edit there).
+   `docs/feature-guides` consolidates these pages later.
 5. **`swiftly` hint unchanged**: its fallback ("macOS et Linux uniquement…") is still shown on
    the BSDs; its Windows-worded test still exercises that fallback.
