@@ -1,6 +1,7 @@
 import type { HistoryReadStats } from "../history/reader.js";
 import type { Cadence, InsightTotals } from "../insights/types.js";
 import type { RunTrigger } from "../state/run-context.js";
+import type { IntlLocale } from "../i18n/locale.js";
 import type { DayKey } from "../time/calendar.js";
 
 /**
@@ -71,8 +72,8 @@ export type DayRow = readonly [
 /** `[day, outdated]`: the last full scan of the day. */
 export type TrendRow = readonly [day: DayKey, outdated: number];
 
-/** The Intl locales a report is written in: one per interface language. */
-export type ReportIntlLocale = "en-US" | "fr-FR";
+/** The Intl locale a report is written in: its interface language's (`core/i18n/locale.ts`). */
+export type ReportIntlLocale = IntlLocale;
 
 export interface ReportPeriod {
   /** `12m`, `all`, `2026-01-01`. */

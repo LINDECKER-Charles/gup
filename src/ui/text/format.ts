@@ -1,4 +1,4 @@
-import { activeLocale, type Locale } from "../../core/i18n/locale.js";
+import { activeLocale, INTL_LOCALES, type Locale } from "../../core/i18n/locale.js";
 import { localized } from "../../core/i18n/localized.js";
 
 /**
@@ -17,9 +17,6 @@ const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
-
-/** The Intl locale behind each interface language. */
-const INTL_LOCALE: Readonly<Record<Locale, string>> = { en: "en-US", fr: "fr-FR" };
 
 const COUNT = byLocale((tag) => new Intl.NumberFormat(tag, { maximumFractionDigits: 0 }));
 const PERCENT = byLocale(
@@ -56,7 +53,7 @@ const RELATIVE = localized({
 });
 
 function byLocale<T>(create: (tag: string) => T): Readonly<Record<Locale, T>> {
-  return { en: create(INTL_LOCALE.en), fr: create(INTL_LOCALE.fr) };
+  return { en: create(INTL_LOCALES.en), fr: create(INTL_LOCALES.fr) };
 }
 
 function plain(text: string): string {
@@ -82,7 +79,7 @@ export function counted(count: number, one: string, many: string): string {
 
 /** `(6.14, 1)` → "6.1" in English, "6,1" in French: exactly `digits` decimals, rounded. */
 export function formatDecimal(value: number, digits: number): string {
-  const format = new Intl.NumberFormat(INTL_LOCALE[activeLocale()], {
+  const format = new Intl.NumberFormat(INTL_LOCALES[activeLocale()], {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });

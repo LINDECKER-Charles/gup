@@ -28,6 +28,16 @@ export const LOCALE_NAMES: Readonly<Record<Locale, string>> = {
   fr: "Français",
 };
 
+/**
+ * The Intl locale behind each language, for numbers, dates, plurals and
+ * sorting — explicit, never the machine's own.
+ */
+export const INTL_LOCALES = { en: "en-US", fr: "fr-FR" } as const satisfies Readonly<
+  Record<Locale, string>
+>;
+
+export type IntlLocale = (typeof INTL_LOCALES)[Locale];
+
 /** Everything a language tag may carry after its primary subtag: `fr-CA`, `fr_FR.UTF-8`, `fr@euro`. */
 const SUBTAG_SEPARATOR = /[-_.@]/;
 
