@@ -6,10 +6,13 @@ import { TRIGGER_REMOVED, triggerInstalledLine } from "../../text/schedule/sched
 import { foreignInstallation } from "../../text/schedule/schedule-labels.js";
 import {
   CONSENT_DIALOG,
+  LEAVE_DIALOG,
+  LEAVE_NEW_DIALOG,
   REPAIR_KEY,
   SCHEDULE_NOTICES,
 } from "../../text/schedule/schedule-menu-labels.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
+import type { ScheduleEditor } from "./schedule-editor.js";
 import type { SchedulesPanel } from "./schedules-panel.js";
 import type { ChangeOutcome, SchedulesPort } from "./schedules-port.js";
 
@@ -66,6 +69,12 @@ export class FlowContext {
     });
     if (!isGiven) this.notify([[seg(SCHEDULE_NOTICES.consentRefused, "warning")]]);
     return isGiven;
+  }
+
+  /** Whether the user agrees to lose what `editor` holds; the answer defaults to no. */
+  async confirmDiscard(editor: ScheduleEditor): Promise<boolean> {
+    const dialog = editor.isNew ? LEAVE_NEW_DIALOG : LEAVE_DIALOG;
+    return this.view.dialogs.confirm({ title: dialog.title, text: [dialog.text], default: false });
   }
 
   /** Run a change, then say what was saved (`describe`) and what the trigger did. */

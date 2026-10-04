@@ -205,7 +205,9 @@ The line under the fields shows the cron expression and the next three runs,
 recomputed at every keystroke, or why the recurrence is refused (`✖ Fréquence
 trop élevée — au plus une exécution par heure`). Each problem shows under its
 field and *Enregistrer* stays muted until there is none. `Ctrl+S` saves from
-anywhere, `échap` leaves (asking first when something changed). The note
+anywhere, `échap` leaves (asking first when something changed, and always
+for a new schedule not saved yet); *Annuler* drops a new schedule at once,
+asking only once you changed something. The note
 under a winget package is the UAC caveat of
 [What a scheduled run never does](#what-a-scheduled-run-never-does).
 

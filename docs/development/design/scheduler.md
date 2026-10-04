@@ -328,6 +328,7 @@ Part 2 extends no foundation contract: the view uses `ViewDefinition`
 | D21 | No "Notification" field; the catch-up reads `[oui]`/`[non]`; the buttons sit on two lines | S-4; French UI; one cursor stop per line keeps clicks and keys simple |
 | D22 | The table drops the package count and next-run columns below a 120-column terminal; the details under it give the next run | a 100-column terminal leaves 70 columns to the panel |
 | D23 | `q` quits the menu with an editor open; with changes not saved, only once the user confirms (default "Non") — since `fix/wave-2-polish` | `q` is global in the session unless a panel captures text, and a panel cannot claim it; `Panel.hasUnsavedChanges()` lets the session ask instead, for "Quitter" in the sidebar too |
+| D24 | A new schedule never saved counts as unsaved work (`ScheduleEditor.hasUnsavedWork`), changed or not: `q`, "Quitter", `échap` and a second `p` ask before dropping it; *Annuler* drops it at once and asks only after a change — since `fix/release-blockers` | the draft `p` fills in already holds the user's choice of packages, so comparing it with itself (`isDirty`) lost it without a word; *Annuler* is the discard itself, a stray key is not |
 
 ## 12. Menu (part 2)
 
@@ -370,7 +371,8 @@ under each field; *Enregistrer* muted while anything is wrong). The cursor
 follows a schedule by id across reloads. Everything with a side effect is a
 handler: `ScheduleFlows` (list), `EditorFlows` (dialogs, save, leave),
 `PackageScheduling` (`p`), sharing a `FlowContext` (consent, change notices,
-trigger refresh, "is the screen still there" after each await).
+trigger refresh, "is the screen still there" after each await, the discard
+confirmation).
 
 **Consent.** Saving or switching on a schedule, or `i`, while no install
 record exists asks first (per mechanism: Task Scheduler, launchd agent,

@@ -7,7 +7,6 @@ import {
   EDITOR_TEXT,
   FREQUENCY_DIALOG,
   FREQUENCY_LABELS,
-  LEAVE_DIALOG,
   MONTH_DAY_DIALOG,
   SCHEDULE_NOTICES,
   WEEKDAY_DIALOG,
@@ -84,15 +83,24 @@ export class EditorFlows implements EditorHandlers {
     this.#kit.view.redraw();
   }
 
+  /** Échap, like q, may be pressed by mistake: a new schedule always asks first. */
   async leave(editor: ScheduleEditor): Promise<void> {
-    if (editor.isDirty) {
-      const isConfirmed = await this.#kit.view.dialogs.confirm({
-        title: LEAVE_DIALOG.title,
-        text: [LEAVE_DIALOG.text],
-        default: false,
-      });
-      if (!isConfirmed) return this.#kit.view.redraw();
-    }
+    if (editor.hasUnsavedWork) await this.#closeOnceConfirmed(editor);
+    else this.#closeNow(editor);
+  }
+
+  /** "Annuler" is the discard itself: it only asks when the user changed something. */
+  async cancel(editor: ScheduleEditor): Promise<void> {
+    if (editor.isDirty) await this.#closeOnceConfirmed(editor);
+    else this.#closeNow(editor);
+  }
+
+  async #closeOnceConfirmed(editor: ScheduleEditor): Promise<void> {
+    if (await this.#kit.confirmDiscard(editor)) this.#close(editor);
+    this.#kit.view.redraw();
+  }
+
+  #closeNow(editor: ScheduleEditor): void {
     this.#close(editor);
     this.#kit.view.redraw();
   }

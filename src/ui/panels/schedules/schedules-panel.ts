@@ -35,8 +35,10 @@ export interface EditorHandlers {
   chooseDay(editor: ScheduleEditor): void;
   addTarget(editor: ScheduleEditor): void;
   save(editor: ScheduleEditor): void;
-  /** Échap or "Annuler": leave the editor, after a confirmation when something changed. */
+  /** Échap: leave the editor, after a confirmation when it holds unsaved work. */
   leave(editor: ScheduleEditor): void;
+  /** "Annuler": an explicit discard, confirmed only when something changed. */
+  cancel(editor: ScheduleEditor): void;
 }
 
 /**
@@ -122,9 +124,9 @@ export class SchedulesPanel implements Panel {
     this.#handlers.list.shown();
   }
 
-  /** An editor open on changes not saved yet. */
+  /** An editor open on a new schedule or on changes not saved yet. */
   hasUnsavedChanges(): boolean {
-    return this.#editor?.isDirty === true;
+    return this.#editor?.hasUnsavedWork === true;
   }
 
   /** Lines shown above the list or the form until the next key, wrapped to the panel. */
@@ -240,7 +242,7 @@ export class SchedulesPanel implements Panel {
     if (item.kind === "field") return this.#activateField(editor, item.field);
     if (item.kind === "add") return this.#handlers.editor.addTarget(editor);
     if (item.kind === "save") return this.#handlers.editor.save(editor);
-    if (item.kind === "cancel") return this.#handlers.editor.leave(editor);
+    if (item.kind === "cancel") return this.#handlers.editor.cancel(editor);
   }
 
   #activateField(editor: ScheduleEditor, field: EditorField): void {

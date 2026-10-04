@@ -7,11 +7,7 @@ import {
 } from "../../../core/scheduler/model/validate-schedule.js";
 import type { SelectedPackage } from "../../../core/types.js";
 import { recurrenceLabel } from "../../text/schedule/schedule-labels.js";
-import {
-  EDITOR_TEXT,
-  LEAVE_DIALOG,
-  SCHEDULE_PACKAGES,
-} from "../../text/schedule/schedule-menu-labels.js";
+import { EDITOR_TEXT, SCHEDULE_PACKAGES } from "../../text/schedule/schedule-menu-labels.js";
 import type { DialogChoice } from "../../tui/dialog.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
 import type { FlowContext } from "./flow-context.js";
@@ -132,14 +128,11 @@ export class PackageScheduling {
     );
   }
 
-  /** An editor already open with changes is only replaced once the user agrees. */
+  /** An editor already open on unsaved work is only replaced once the user agrees. */
   async #mayReplaceEditor(): Promise<boolean> {
-    if (!this.#kit.panel.editor?.isDirty) return true;
-    return this.#kit.view.dialogs.confirm({
-      title: LEAVE_DIALOG.title,
-      text: [LEAVE_DIALOG.text],
-      default: false,
-    });
+    const { editor } = this.#kit.panel;
+    if (!editor?.hasUnsavedWork) return true;
+    return this.#kit.confirmDiscard(editor);
   }
 
   /** Planification in front, with `notice` above it. */

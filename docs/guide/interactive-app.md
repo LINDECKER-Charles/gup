@@ -305,7 +305,7 @@ Everywhere:
 | `tab`, `←` | Switch between the sidebar and the view (unless the view uses `←`) |
 | `entrée` | Open the entry, confirm, activate |
 | `échap` | Close a dialog, clear a filter, leave a detail |
-| `q`, or **Quitter** | Quit — after a confirmation when the schedule editor holds unsaved changes |
+| `q`, or **Quitter** | Quit — after a confirmation when the schedule editor holds a new schedule or unsaved changes |
 | `Ctrl+C` | Quit at once (exit code 130); in the run view, skip the install in flight |
 
 Per view:

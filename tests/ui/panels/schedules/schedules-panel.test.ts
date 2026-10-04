@@ -44,6 +44,7 @@ function setup(schedules: readonly Schedule[] = [storedSchedule()]) {
     addTarget: vi.fn(),
     save: vi.fn(),
     leave: vi.fn(),
+    cancel: vi.fn(),
   };
   const panel = new SchedulesPanel(port, { list, editor });
   const press = (...keys: readonly KeyPress[]): void => keys.forEach((k) => panel.press(k));
@@ -286,6 +287,9 @@ describe("SchedulesPanel, editor", () => {
     press(key("up"), key("return"));
     expect(editor.addTarget).toHaveBeenCalledOnce();
     press(key("escape"));
+    expect(editor.leave).toHaveBeenCalledOnce();
+    press(key("end"), key("return"));
+    expect(editor.cancel).toHaveBeenCalledWith(panel.editor);
     expect(editor.leave).toHaveBeenCalledOnce();
   });
 

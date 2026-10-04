@@ -6,6 +6,8 @@ import { buildReport, type UpdateReport } from "../../../src/core/update/update-
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
 import { PANEL_HINTS_TAIL, QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
 import {
+  EMPTY_SCHEDULES,
+  LEAVE_NEW_DIALOG,
   SCHEDULE_ACTION,
   SCHEDULE_NOTICES,
 } from "../../../src/ui/text/schedule/schedule-menu-labels.js";
@@ -181,6 +183,52 @@ describe("p in Paquets", () => {
     expect(await menu.frame()).toContain("Aucun de ces paquets ne peut être planifié");
     await menu.press("enter");
     expect(await menu.frame()).toContain("┏━ Paquets");
+    expect(port.calls).toEqual([]);
+  });
+
+  it("asks before échap or q drops the new schedule, which nothing has saved yet", async () => {
+    const { menu } = await menuWith();
+    await check(menu, 3);
+    await menu.press("p");
+    await menu.waitForText("Nouvelle planification");
+    await menu.press("escape");
+    await eventually(menu, LEAVE_NEW_DIALOG.title);
+    await menu.press("n");
+    expect(await settled(menu)).toContain("[Git.Git]");
+    await menu.press("q");
+    expect(await menu.frame()).toContain("Des modifications ne sont pas enregistrées (Planification)");
+    await menu.press("enter");
+    expect(await settled(menu)).toContain("[Git.Git]");
+    await menu.press("q", "o");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+  });
+
+  it("asks before a second p replaces the new schedule", async () => {
+    const { menu } = await menuWith();
+    await check(menu, 3);
+    await menu.press("p");
+    await menu.waitForText("Nouvelle planification");
+    await menu.press("tab", "up", "enter");
+    await menu.waitForText("┏━ Paquets");
+    await check(menu, 4);
+    await menu.press("p");
+    expect(await menu.waitForText(LEAVE_NEW_DIALOG.title)).toContain(LEAVE_NEW_DIALOG.text);
+    await menu.press("enter");
+    await menu.press("tab", "down", "enter");
+    const kept = await settled(menu);
+    expect(kept).toContain("[Git.Git]");
+    expect(kept).toContain("Paquets (1)");
+  });
+
+  it("drops the new schedule at once on Annuler, a discard asked for explicitly", async () => {
+    const { menu, port } = await menuWith();
+    await check(menu, 3);
+    await menu.press("p");
+    await menu.waitForText("Nouvelle planification");
+    await menu.press("END", "enter");
+    const list = await settled(menu);
+    expect(list).toContain(EMPTY_SCHEDULES[0]);
+    expect(list).not.toContain(LEAVE_NEW_DIALOG.title);
     expect(port.calls).toEqual([]);
   });
 
