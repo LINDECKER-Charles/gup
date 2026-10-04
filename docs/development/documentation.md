@@ -278,4 +278,5 @@ be — but a red run is fixed before merging.
   as described in the [changelog README](../changelog/README.md).
 - Release notes live in [`docs/releases/`](../releases/README.md); the release
   procedure is [`releasing.md`](releasing.md). The version shows in the title
-  bar of every screenshot: a release regenerates them.
+  bar of every screenshot: a release regenerates them
+  ([releasing.md § 2](releasing.md#2-prepare-the-release-branch)).
