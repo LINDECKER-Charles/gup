@@ -254,8 +254,7 @@ export default {
         a:
           "Non. gup orchestre les commandes natives de chaque outil (`winget upgrade`, " +
           "`brew outdated`, `npm update -g`, `pip list --outdated`…) derrière une seule " +
-          "interface. Aucun protocole inventé, aucun cache de versions, aucun téléchargement " +
-          "direct.",
+          "interface. Aucun protocole inventé, aucun cache de versions.",
       },
       platforms: {
         q: `Ça marche sur macOS et Linux${NB}?`,

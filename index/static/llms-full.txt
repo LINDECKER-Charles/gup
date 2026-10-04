@@ -188,7 +188,7 @@ single offline HTML file, or exports it as JSON or CSV.
 ## Security model
 
 - Subprocess execution goes through one point, in a strict argv vector. `shell: true` is never used. The executable allowlist is pinned by tests.
-- Network access is HTTPS-only, and only where a provider's own version check needs it. No telemetry, ever.
+- Network access is HTTPS-only: providers' version checks, plus the GitHub release archives the Windows-only `nerd-fonts` provider downloads and installs. No telemetry, ever.
 - CI on every commit: CodeQL `security-extended`, Semgrep (`p/typescript` + `p/nodejs`), gitleaks, `audit-ci`, `eslint-plugin-security`, plus a Vitest suite dedicated to the security invariants. Dependabot runs weekly.
 - Destructive actions are opt-in. `--all` asks before it acts unless `-y` is passed.
 
@@ -198,7 +198,7 @@ https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md
 ## What gup deliberately does NOT do
 
 - It does not replace winget/brew/npm/pip. It orchestrates their native commands.
-- It is not a registry, a cache or a downloader.
+- It is not a registry or a cache, and downloads nothing it installs itself — except Nerd Fonts on Windows, whose `nerd-fonts` provider fetches the font families' release archives.
 - It does not resolve project manifests: no `package.json`, `Cargo.toml`, `pom.xml`, `Gemfile`. Global installs only.
 - It does not update the OS: Windows Update (use `PSWindowsUpdate`) and macOS `softwareupdate` are out of scope.
 - It does not touch Maven / Gradle / sbt / bundler / lockfiles.

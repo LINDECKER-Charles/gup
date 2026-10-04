@@ -28,6 +28,9 @@
   Homebrew is Linux's only OS-level provider and that Nix runs there only through WSL: `nix`
   (like `pkgx` and `pkgin`) is registered for macOS and Linux. The Linux card gains Nix, and
   the text files list every OS-level provider of each system.
+- **landing:** the FAQ no longer promises "no direct download", and `llms.txt` /
+  `llms-full.txt` no longer say gup is not a downloader or only goes online for version checks:
+  the `nerd-fonts` provider (Windows) downloads the font families' release archives itself.
 
 ## Internal
 

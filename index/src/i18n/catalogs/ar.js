@@ -282,7 +282,7 @@ export default {
         a:
           "لا. ينسّق gup الأوامر الأصلية لكل أداة (`winget upgrade` و`brew outdated` " +
           "و`npm update -g` و`pip list --outdated`…) خلف واجهة واحدة. لا بروتوكول مبتكَر، " +
-          "ولا ذاكرة تخزين مؤقت للإصدارات، ولا تنزيل مباشر.",
+          "ولا ذاكرة تخزين مؤقت للإصدارات.",
       },
       platforms: {
         q: "هل يعمل على macOS وLinux؟",

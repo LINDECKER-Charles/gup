@@ -225,8 +225,8 @@ export default {
         q: "gup 会取代 winget、brew 或 npm 吗？",
         a:
           "不会。gup 在同一个界面背后编排各工具的原生命令（`winget upgrade`、" +
-          "`brew outdated`、`npm update -g`、`pip list --outdated`……）。没有自创协议，没有" +
-          "版本缓存，也不直接下载任何东西。",
+          "`brew outdated`、`npm update -g`、`pip list --outdated`……）。没有自创协议，也没有" +
+          "版本缓存。",
       },
       platforms: {
         q: "支持 macOS 和 Linux 吗？",

@@ -42,7 +42,7 @@ gup update --all -y       # CI-safe: everything, no prompt
 - Subprocess strategy: `execa` argv-vector, never `shell: true` (allowlist pinned by tests)
 - Concurrency: `p-limit(4)` across providers, fail-soft per provider
 - Security: CodeQL `security-extended`, Semgrep (`p/typescript` + `p/nodejs`), gitleaks, audit-ci, eslint-plugin-security, Dependabot weekly
-- Telemetry: none. No network call except a provider's own HTTPS version check.
+- Telemetry: none. Network calls are HTTPS-only: providers' version checks, and the release archives the Windows-only `nerd-fonts` provider installs.
 - Background work: no daemon, nothing stays resident. Scheduled updates are opt-in, per package, and started by the OS scheduler (Task Scheduler, launchd or cron) as a short-lived process.
 - Interface language: French. Commands, flags and JSON output are language-neutral.
 
@@ -79,7 +79,7 @@ gup update --all -y       # CI-safe: everything, no prompt
 ## What gup is NOT
 
 - Not a replacement for winget/brew/npm/pip — it orchestrates their native commands.
-- Not a registry, not a cache, not a downloader. Pure shell-out + fan-out + output homogenization.
+- Not a registry, not a cache. Shell-out + fan-out + output homogenization; the one provider that downloads what it installs is `nerd-fonts` (Windows: the font families' GitHub release archives).
 - Not a project-scoped manager: no `package.json`, `Cargo.toml` or `pom.xml` resolution — global installs only.
 - Not an OS updater: Windows Update (use `PSWindowsUpdate`) and macOS `softwareupdate` are out of scope.
 - Not for Maven / Gradle / sbt / bundler / lockfiles (project-scoped).
