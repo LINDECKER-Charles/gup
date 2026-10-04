@@ -9,10 +9,7 @@ import {
 } from "../../../src/ui/text/menu-labels.js";
 import { PACKAGES_PLACEHOLDERS } from "../../../src/ui/text/packages-labels.js";
 import { PROVIDERS_PANEL_LABELS } from "../../../src/ui/text/providers-labels.js";
-import {
-  EMPTY_SCHEDULES,
-  SCHEDULES_LABEL,
-} from "../../../src/ui/text/schedule/schedule-menu-labels.js";
+import { SCHEDULE_MENU_LABELS } from "../../../src/ui/text/schedule/schedule-menu-labels.js";
 import { OPTIONS_SECTIONS } from "../../../src/ui/text/settings/options-labels.js";
 import { saveArtifact } from "../../support/e2e/artifacts.js";
 import { createSandbox, restrictMenuScan, type Sandbox } from "../../support/e2e/sandbox.js";
@@ -40,7 +37,7 @@ const SMALL = { cols: 80, rows: 24 } as const;
 /** Each view in sidebar order, under the cursor: its title, and a line only it draws. */
 const VIEWS: ReadonlyArray<{ readonly title: string; readonly shows: string | RegExp }> = [
   { title: VIEW_LABELS.packages, shows: PACKAGES_PLACEHOLDERS.upToDate },
-  { title: SCHEDULES_LABEL, shows: EMPTY_SCHEDULES[0] },
+  { title: SCHEDULE_MENU_LABELS.schedulesLabel, shows: SCHEDULE_MENU_LABELS.emptySchedules[0] },
   { title: VIEW_LABELS.providers, shows: anyCount(PROVIDERS_PANEL_LABELS.detected) },
   { title: JOURNAL_LABELS.view, shows: TAB_LABELS[0] },
   { title: VIEW_LABELS.options, shows: OPTIONS_SECTIONS.scan },

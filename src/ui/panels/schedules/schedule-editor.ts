@@ -10,15 +10,15 @@ import type {
   Weekday,
 } from "../../../core/scheduler/model/types.js";
 import {
-  INVALID_TIME,
   MAX_CRON_LENGTH,
   MAX_NAME_LENGTH,
+  VALIDATION_MESSAGES,
   type ValidationIssue,
 } from "../../../core/scheduler/model/validate-schedule.js";
 import { timeLabel } from "../../text/schedule/schedule-labels.js";
 
 /**
- * The form behind "Nouvelle planification" and "Modifier": its fields, the
+ * The form behind "New schedule" and "Edit": its fields, the
  * row under the cursor, the text being typed, the packages. Pure state —
  * the panel routes keys here and draws it, the flows open its dialogs and
  * save its draft. What is typed shows at once in the draft, so the
@@ -228,7 +228,7 @@ export class ScheduleEditor {
   /** What the form itself refuses before any validation: a time that is not HH:MM. */
   ownIssues(): readonly ValidationIssue[] {
     if (this.#kind === "cron" || parseTimeOfDay(this.text("time"))) return [];
-    return [{ field: "recurrence", message: INVALID_TIME }];
+    return [{ field: "recurrence", message: VALIDATION_MESSAGES.invalidTime }];
   }
 
   /** Changed since the editor opened. */

@@ -6,7 +6,8 @@ import { ManualRunTracker } from "../../../src/core/scheduler/manual-run-tracker
 import { TICK_COMMAND } from "../../../src/core/scheduler/trigger/task-command.js";
 import { batchGuard, setBatchGuard } from "../../../src/core/update/update-extensions.js";
 import type { UpdateObserver } from "../../../src/core/update/update-ports.js";
-import { TRIGGER_REPAIRED } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
+import { SCHEDULE_CLI_LABELS } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
+import { useLocale } from "../../support/locale.js";
 import { schedulerFixture, type Fixture } from "./scheduler-fixture.js";
 
 let fixture: Fixture;
@@ -36,7 +37,7 @@ async function moduleWith(services?: () => SchedulerServices | { error: string }
   const program = new Command().name("gup").exitOverride();
   cliModule.register?.(program, { modules: [cliModule] });
   const parse = (...args: string[]) => program.parseAsync(["node", "gup", ...args]);
-  return { cliModule, exit, parse, observe };
+  return { cliModule, exit, parse, observe, program };
 }
 
 describe("scheduleModule", () => {
@@ -59,7 +60,7 @@ describe("scheduleModule", () => {
     const { cliModule } = await moduleWith();
     driftedRegistration();
     await cliModule.beforeAction?.({ commandPath: "schedule list", options: {} });
-    expect(fixture.output.errors).toEqual([TRIGGER_REPAIRED]);
+    expect(fixture.output.errors).toEqual([SCHEDULE_CLI_LABELS.triggerRepaired]);
     expect(fixture.trigger.installed?.command.node).toBe("/usr/bin/node");
   });
 
@@ -135,5 +136,21 @@ describe("scheduleModule", () => {
     await parse("schedule", "status");
     expect(exit).toHaveBeenLastCalledWith(1);
     expect(fixture.output.errors).toEqual(["emplacement indisponible"]);
+  });
+});
+
+describe("scheduleModule in English", () => {
+  useLocale("en");
+
+  it("builds its help and its doctor line in the language startup chose", async () => {
+    const { cliModule, program } = await moduleWith();
+    const schedule = program.commands.find((command) => command.name() === "schedule");
+    const add = schedule?.commands.find((command) => command.name() === "add");
+    expect(schedule?.description()).toBe("Updates specific packages automatically, at a set time.");
+    expect(add?.usage()).toBe("[options] <targets...>");
+    expect(add?.helpInformation()).toContain("--on <day>");
+    expect(await cliModule.diagnostics?.()).toEqual([
+      { label: "Schedules", value: "no active schedule", status: "off" },
+    ]);
   });
 });

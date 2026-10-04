@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ScheduleDraft } from "../../../../src/core/scheduler/model/types.js";
-import { INVALID_TIME } from "../../../../src/core/scheduler/model/validate-schedule.js";
+import { VALIDATION_MESSAGES } from "../../../../src/core/scheduler/model/validate-schedule.js";
 import {
   ScheduleEditor,
   seedOf,
@@ -81,7 +81,8 @@ describe("ScheduleEditor", () => {
     editor.erase();
     editor.erase();
     editor.type("75");
-    expect(editor.ownIssues()).toEqual([{ field: "recurrence", message: INVALID_TIME }]);
+    const invalidTime = { field: "recurrence", message: VALIDATION_MESSAGES.invalidTime };
+    expect(editor.ownIssues()).toEqual([invalidTime]);
     expect(editor.draft().recurrence).toMatchObject({ at: { hour: 9, minute: 0 } });
     editor.setKind("cron");
     expect(editor.ownIssues()).toEqual([]);

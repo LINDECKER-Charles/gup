@@ -1,3 +1,4 @@
+import { localized } from "../i18n/localized.js";
 import type { OutdatedPackage, UpdateOutcome } from "../types.js";
 import { updateKeyOf } from "../update/update-plan.js";
 import type { UpdateReport } from "../update/update-report.js";
@@ -34,7 +35,7 @@ export interface RunOutcome {
 }
 
 /** A target no result reached — only if the pipeline dropped one silently. */
-const UNSETTLED_MESSAGE = "non traité";
+const UNSETTLED = localized({ en: { message: "not processed" }, fr: { message: "non traité" } });
 
 export function summarizeRun(
   runs: readonly ScheduleRun[],
@@ -45,7 +46,7 @@ export function summarizeRun(
   for (const { schedule, kind } of runs) {
     const targets = schedule.targets.map((target): TargetResult => {
       const key = targetKey(target);
-      return results.get(key) ?? { target: key, status: "skipped", message: UNSETTLED_MESSAGE };
+      return results.get(key) ?? { target: key, status: "skipped", message: UNSETTLED.message };
     });
     records.set(schedule.id, {
       kind,

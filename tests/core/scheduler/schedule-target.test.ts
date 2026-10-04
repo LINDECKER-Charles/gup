@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  NEVER_A_PROVIDER,
   parseTarget,
+  TARGET_MESSAGES,
   targetKey,
 } from "../../../src/core/scheduler/model/schedule-target.js";
 
@@ -18,7 +18,7 @@ describe("parseTarget", () => {
   });
 
   it("refuses a bare provider: a schedule never names a whole provider", () => {
-    expect(parseTarget("winget")).toEqual({ ok: false, reason: NEVER_A_PROVIDER });
+    expect(parseTarget("winget")).toEqual({ ok: false, reason: TARGET_MESSAGES.neverAProvider });
   });
 
   it.each([

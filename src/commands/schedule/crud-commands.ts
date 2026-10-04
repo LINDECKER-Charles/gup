@@ -18,9 +18,9 @@ import {
   nextRunsLine,
   notSavedLine,
   removedLine,
-  WINGET_UAC_NOTE,
+  SCHEDULE_CLI_LABELS,
 } from "../../ui/text/schedule/schedule-cli-labels.js";
-import { DISABLED_NEXT_RUN } from "../../ui/text/schedule/schedule-labels.js";
+import { SCHEDULE_LABELS } from "../../ui/text/schedule/schedule-labels.js";
 import { parseAddArgs, type AddOptions } from "./schedule-args.js";
 import type { CommandOutput, SchedulerServices } from "./scheduler-services.js";
 import { indented, reconcileTrigger, reportSync } from "./trigger-commands.js";
@@ -53,7 +53,7 @@ export async function addCommand(
   details.out(
     schedule.enabled ? nextRunsLine(upcomingLabels(schedule, now)) : disabledPreview(schedule),
   );
-  if (mayAskForUac(schedule.targets)) details.out(WINGET_UAC_NOTE);
+  if (mayAskForUac(schedule.targets)) details.out(SCHEDULE_CLI_LABELS.wingetUacNote);
   return reportSync(await reconcileTrigger(services), { services, output: details });
 }
 
@@ -91,9 +91,9 @@ export async function disableCommand(
   });
 }
 
-/** The next occurrences in words: "lun. 5 oct. 09:00", "demain 09:00"… */
+/** The next occurrences in words: "Mon, Oct 5 09:00", "tomorrow 09:00"… */
 export function upcomingLabels(schedule: Schedule, now: Date): string[] {
-  if (!schedule.enabled) return [DISABLED_NEXT_RUN];
+  if (!schedule.enabled) return [SCHEDULE_LABELS.disabledNextRun];
   return upcomingRuns(schedule.recurrence, now, PREVIEW_RUNS).map((at) => formatRelative(at, now));
 }
 

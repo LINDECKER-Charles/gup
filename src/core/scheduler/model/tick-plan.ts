@@ -1,3 +1,4 @@
+import { localized } from "../../i18n/localized.js";
 import type { OutdatedPackage, ProviderScanResult } from "../../types.js";
 import { targetKey } from "./schedule-target.js";
 import type {
@@ -30,13 +31,24 @@ export interface TickPlanInput {
   readonly providers: ProviderFacts;
 }
 
-export const SKIP_REASONS = {
-  notDetected: "provider non détecté sur cette machine",
-  aggregate: "cible = provider entier, non planifiable",
-  requiresAdmin: "droits administrateur requis — les exécutions planifiées ne sont jamais élevées",
-  scanFailed: (error: string): string => `scan du provider en échec : ${error}`,
-  adminOnly: (name: string): string => `« ${name} » demande sudo/admin à chaque mise à jour`,
-} as const;
+/** Why a due target was skipped, in the interface's languages: stored with the run. */
+export const SKIP_REASONS = localized({
+  en: {
+    notDetected: "provider not detected on this machine",
+    aggregate: "target = whole provider, cannot be scheduled",
+    requiresAdmin: "administrator rights required — scheduled runs are never elevated",
+    scanFailed: (error: string): string => `provider scan failed: ${error}`,
+    adminOnly: (name: string): string => `"${name}" asks for sudo/admin on every update`,
+  },
+  fr: {
+    notDetected: "provider non détecté sur cette machine",
+    aggregate: "cible = provider entier, non planifiable",
+    requiresAdmin:
+      "droits administrateur requis — les exécutions planifiées ne sont jamais élevées",
+    scanFailed: (error) => `scan du provider en échec : ${error}`,
+    adminOnly: (name) => `« ${name} » demande sudo/admin à chaque mise à jour`,
+  },
+});
 
 type Decision =
   | { readonly kind: "resolved"; readonly result: Omit<TargetResult, "target"> }

@@ -9,6 +9,7 @@ import {
   LAUNCHD_LABEL,
 } from "../artifacts/launchd-plist.js";
 import {
+  commandFailure,
   DEFAULT_TRIGGER_RUNNER,
   firstLineOf,
   type OsTrigger,
@@ -94,9 +95,9 @@ export class LaunchdTrigger implements OsTrigger {
     // Booting out first makes a reinstall pick up a changed command; absent is fine.
     await this.#launchctl(["bootout", `${this.#domain}/${LAUNCHD_LABEL}`]);
     const bootstrap = await this.#bootstrap();
-    if (bootstrap.failed) throw launchctlError("bootstrap", bootstrap);
+    if (bootstrap.failed) throw commandFailure("launchctl bootstrap", bootstrap);
     const enable = await this.#launchctl(["enable", `${this.#domain}/${LAUNCHD_LABEL}`]);
-    if (enable.failed) throw launchctlError("enable", enable);
+    if (enable.failed) throw commandFailure("launchctl enable", enable);
   }
 
   async uninstall(): Promise<void> {
@@ -136,8 +137,4 @@ export class LaunchdTrigger implements OsTrigger {
   #launchctl(args: string[]): Promise<RunResult> {
     return this.#run(LAUNCHCTL, args);
   }
-}
-
-function launchctlError(verb: string, result: RunResult): Error {
-  return new Error(`launchctl ${verb} a échoué (code ${result.exitCode}) : ${firstLineOf(result)}`);
 }

@@ -4,10 +4,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import manifest from "../../../package.json" with { type: "json" };
 import { isSupportedOn } from "../../../src/core/platform/is-supported-on.js";
 import { ALL_PROVIDERS } from "../../../src/core/registry.js";
-import { NEVER_A_PROVIDER } from "../../../src/core/scheduler/model/schedule-target.js";
+import { TARGET_MESSAGES } from "../../../src/core/scheduler/model/schedule-target.js";
 import type { Provider } from "../../../src/core/types.js";
 import { TERMINAL_DIAGNOSTIC } from "../../../src/ui/text/run-labels.js";
-import { NO_SCHEDULE } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
+import { SCHEDULE_CLI_LABELS } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
 import { describeRun, runCli, type CliRun } from "../../support/e2e/cli.js";
 import { parseDoctor } from "../../support/e2e/doctor.js";
 import { createSandbox, historyEvents, type Sandbox } from "../../support/e2e/sandbox.js";
@@ -162,7 +162,7 @@ describe("gup schedule", () => {
   it("says there is nothing scheduled yet", async () => {
     const run = await gup(["schedule", "list"]);
     expectExit(["schedule", "list"], run, 0);
-    expect(run.stdout).toContain(NO_SCHEDULE);
+    expect(run.stdout).toContain(SCHEDULE_CLI_LABELS.noSchedule);
   });
 
   it("reports an empty list and no trigger as JSON", async () => {
@@ -185,7 +185,7 @@ describe("gup schedule", () => {
     const args = ["schedule", "add", "npm-g", "--every", "daily", "--at", "25:99"];
     const run = await gup(args);
     expectExit(args, run, 2);
-    expect(run.stderr).toContain(NEVER_A_PROVIDER);
+    expect(run.stderr).toContain(TARGET_MESSAGES.neverAProvider);
     const list = await gup(["schedule", "list", "--json"]);
     expect(JSON.parse(list.stdout)).toMatchObject({ schedules: [] });
   });

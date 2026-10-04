@@ -17,15 +17,11 @@ import {
 import type { UpdateRequest } from "../../../src/core/update/update-ports.js";
 import { buildReport } from "../../../src/core/update/update-report.js";
 import {
-  NO_SCHEDULE,
-  NOT_A_PACKAGE,
-  NOTHING_TO_INSTALL,
-  PURGED,
-  SCHEDULER_DIR_OVERRIDDEN,
-  TRIGGER_REMOVED,
-  WINGET_UAC_NOTE,
+  notAPackage,
+  SCHEDULE_CLI_LABELS,
 } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
+import { useLocale } from "../../support/locale.js";
 import { restorePlatform, setPlatform } from "../../support/platform.js";
 import { schedulerFixture, type Fixture, type FixtureOptions } from "./scheduler-fixture.js";
 
@@ -72,7 +68,7 @@ describe("gup schedule add", () => {
     expect(output.lines).toEqual([
       expect.stringMatching(/^√ Planification [0-9a-f]{8} « Outils dev » créée — chaque lundi à 09:00$/),
       "  prochaines exécutions : lun. 5 oct. 09:00 · lun. 12 oct. 09:00 · lun. 19 oct. 09:00",
-      `  ${WINGET_UAC_NOTE}`,
+      `  ${SCHEDULE_CLI_LABELS.wingetUacNote}`,
       INSTALLED,
     ]);
     expect(trigger.installed?.launcher).toBe("headless");
@@ -101,7 +97,7 @@ describe("gup schedule add", () => {
   it("refuses a whole provider, with an example (exit 2, nothing saved)", async () => {
     const { services, output } = await setup();
     expect(await addCommand(services, add({ targets: ["winget"] }), output)).toBe(2);
-    expect(output.errors).toEqual([NOT_A_PACKAGE]);
+    expect(output.errors).toEqual([notAPackage()]);
     expect(services.repo.list()).toEqual([]);
   });
 
@@ -146,7 +142,7 @@ describe("gup schedule add", () => {
   it("warns that the OS trigger will not see GUP_SCHEDULER_DIR", async () => {
     const { services, output } = await setup({ isDirOverridden: true });
     await addCommand(services, add(), output);
-    expect(output.errors).toEqual([`  ${SCHEDULER_DIR_OVERRIDDEN}`]);
+    expect(output.errors).toEqual([`  ${SCHEDULE_CLI_LABELS.schedulerDirOverridden}`]);
   });
 });
 
@@ -159,7 +155,7 @@ describe("gup schedule remove / enable / disable", () => {
     expect(await disableCommand(services, [id.slice(0, 4)], output)).toBe(0);
     expect(output.lines).toEqual([
       `Planification désactivée : ${id} « Outils dev »`,
-      `  ${TRIGGER_REMOVED}`,
+      `  ${SCHEDULE_CLI_LABELS.triggerRemoved}`,
     ]);
     expect(trigger.installed).toBeNull();
     output.lines.length = 0;
@@ -187,7 +183,7 @@ describe("gup schedule list", () => {
   it("explains how to start when there is nothing", async () => {
     const { services, output } = await setup();
     expect(await listSchedulesCommand(services, { json: false }, output)).toBe(0);
-    expect(output.lines).toEqual([NO_SCHEDULE]);
+    expect(output.lines).toEqual([SCHEDULE_CLI_LABELS.noSchedule]);
   });
 
   it("shows the trigger, then one aligned row per schedule", async () => {
@@ -263,7 +259,7 @@ describe("gup schedule install / uninstall", () => {
   it("refuses to install without an enabled schedule, and refuses an unknown launcher", async () => {
     const { services, output } = await setup();
     expect(await installCommand(services, {}, output)).toBe(1);
-    expect(output.errors).toEqual([NOTHING_TO_INSTALL]);
+    expect(output.errors).toEqual([SCHEDULE_CLI_LABELS.nothingToInstall]);
     expect(await installCommand(services, { launcher: "hidden" }, output)).toBe(2);
   });
 
@@ -292,7 +288,7 @@ describe("gup schedule install / uninstall", () => {
     const { services, output } = await setup();
     await addCommand(services, add(), output);
     expect(await uninstallCommand(services, { purge: true }, output)).toBe(0);
-    expect(output.lines.at(-1)).toBe(PURGED);
+    expect(output.lines.at(-1)).toBe(SCHEDULE_CLI_LABELS.purged);
     expect(existsSync(services.files.schedules)).toBe(false);
     expect(existsSync(services.files.install)).toBe(false);
   });
@@ -350,5 +346,39 @@ describe("gup schedule run-now", () => {
       buildReport([{ key: "winget:Git.Git", providerId: "winget", outcome: outcome("Git.Git", { success: false, message: "1603" }) }], []);
     expect(await runNowCommand(services, { id, execute: failing }, output)).toBe(1);
     expect(await runNowCommand(services, { id: "cafe" }, output)).toBe(2);
+  });
+});
+
+describe("gup schedule in English", () => {
+  useLocale("en");
+
+  it("says what it saved, when it runs, and what the trigger did", async () => {
+    const { services, output } = await setup();
+    expect(await addCommand(services, add({ on: "mon", name: "Dev tools" }), output)).toBe(0);
+    expect(output.lines).toEqual([
+      expect.stringMatching(/^√ Schedule [0-9a-f]{8} "Dev tools" created — every Monday at 09:00$/),
+      "  next runs: Mon, Oct 5 09:00 · Mon, Oct 12 09:00 · Mon, Oct 19 09:00",
+      "  note: a winget package installed for all users may ask for UAC — it will then be " +
+        "skipped (an unattended run never elevates)",
+      "  OS trigger installed (your user's crontab · checks every 15 min)",
+    ]);
+  });
+
+  it("lists the schedules under English headers", async () => {
+    const { services, output } = await setup();
+    await addCommand(services, add({ name: "Dev tools" }), output);
+    output.lines.length = 0;
+    await listSchedulesCommand(services, { json: false }, output);
+    expect(output.lines).toEqual([
+      "Trigger: active · your user's crontab · no check yet",
+      "ID        STATE  NAME       FREQUENCY              PACKAGES  NEXT              LAST",
+      `${firstId(services)}  ●      Dev tools  every Monday at 09:00         2  Mon, Oct 5 09:00  —`,
+    ]);
+  });
+
+  it("refuses an unknown id in English", async () => {
+    const { services, output } = await setup();
+    expect(await removeCommand(services, ["deadbeef"], output)).toBe(2);
+    expect(output.errors).toEqual(['No schedule "deadbeef"']);
   });
 });

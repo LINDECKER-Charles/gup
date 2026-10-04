@@ -4,7 +4,8 @@ import {
   parseLauncher,
   type AddOptions,
 } from "../../../src/commands/schedule/schedule-args.js";
-import { NOT_A_PACKAGE } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
+import { notAPackage } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
+import { useLocale } from "../../support/locale.js";
 
 function options(overrides: Partial<AddOptions>): AddOptions {
   return { targets: ["winget:Git.Git"], catchUp: true, disabled: false, ...overrides };
@@ -73,7 +74,7 @@ describe("parseAddArgs", () => {
     expect(parseAddArgs(options({ targets: ["winget", "npm-g", "x:*"] }))).toEqual({
       ok: false,
       errors: [
-        NOT_A_PACKAGE,
+        notAPackage(),
         "« x:* » : les jokers (* ?) sont refusés — une planification vise des paquets précis",
         'fréquence requise : --every <daily|weekly|monthly> ou --cron "<m h j mois js>"',
       ],
@@ -85,6 +86,42 @@ describe("parseAddArgs", () => {
     expect(parsed).toMatchObject({
       ok: true,
       draft: { name: "Navigateurs", enabled: false, options: { catchUp: false } },
+    });
+  });
+});
+
+describe("parseAddArgs in English", () => {
+  useLocale("en");
+
+  it("reads days in English and in French alike", () => {
+    const days = [
+      ["mon", 1],
+      ["Monday", 1],
+      ["lun", 1],
+      ["sun", 0],
+      ["dimanche", 0],
+      ["sat", 6],
+    ] as const;
+    for (const [on, weekday] of days) {
+      expect(recurrenceOf({ every: "weekly", on })).toMatchObject({ weekday });
+    }
+    expect(recurrenceOf({ every: "monthly", on: "last" })).toMatchObject({ day: "last" });
+    expect(recurrenceOf({ every: "monthly", on: "dernier" })).toMatchObject({ day: "last" });
+  });
+
+  it("says what is wrong in English", () => {
+    expect(recurrenceOf({ every: "weekly", on: "funday" })).toEqual([
+      "--on: day of the week expected (mon, tue… sun)",
+    ]);
+    expect(recurrenceOf({ every: "monthly", on: "31" })).toEqual([
+      "--on: day of the month expected (1 to 28, or last)",
+    ]);
+    expect(parseAddArgs(options({ targets: ["winget"], every: "daily" }))).toEqual({
+      ok: false,
+      errors: [
+        "A schedule targets specific packages (provider:package), never a whole provider.\n" +
+          "  Example: gup schedule add winget:Git.Git --every daily",
+      ],
     });
   });
 });

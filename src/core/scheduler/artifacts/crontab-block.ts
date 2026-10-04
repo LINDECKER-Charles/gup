@@ -1,5 +1,6 @@
 import { TICK_INTERVAL_MINUTES } from "../scheduler-timing.js";
 import { isUnsafePath, type TaskCommand } from "../trigger/task-command.js";
+import { ARTIFACT_ERRORS } from "./artifact-errors.js";
 
 /**
  * gup's managed block in the user's crontab. Every other line is kept byte
@@ -14,11 +15,13 @@ import { isUnsafePath, type TaskCommand } from "../trigger/task-command.js";
 
 export const CRON_BLOCK_BEGIN = "# >>> gup-scheduler >>>";
 export const CRON_BLOCK_END = "# <<< gup-scheduler <<<";
+/**
+ * English whatever the interface's language: only the markers find the
+ * block, but a note that followed the language would rewrite the crontab at
+ * each repair made in another one.
+ */
 const CRON_BLOCK_NOTE =
-  "# Géré par gup (gup schedule uninstall pour retirer). Ne pas modifier à la main.";
-
-export const BROKEN_BLOCK =
-  "bloc « gup-scheduler » incomplet dans la crontab : corrigez-la à la main (crontab -e)";
+  "# Managed by gup (gup schedule uninstall to remove). Do not edit by hand.";
 
 interface BlockSpan {
   readonly start: number;
@@ -29,7 +32,7 @@ interface BlockSpan {
 /** The cron line that starts a tick every interval, output discarded. */
 export function cronLine(command: TaskCommand): string {
   const argv = [command.node, command.entry].map((path) => {
-    if (isUnsafePath(path, "linux")) throw new Error(`chemin non planifiable : ${path}`);
+    if (isUnsafePath(path, "linux")) throw new Error(ARTIFACT_ERRORS.unsafePath(path));
     return `'${path}'`;
   });
   const commandLine = [...argv, ...command.args].join(" ");
@@ -66,7 +69,7 @@ function findBlock(crontab: string): BlockSpan | null {
   const start = markerLineStart(crontab, CRON_BLOCK_BEGIN, 0);
   const endMarker = markerLineStart(crontab, CRON_BLOCK_END, start ?? 0);
   if (start === null && endMarker === null) return null;
-  if (start === null || endMarker === null) throw new Error(BROKEN_BLOCK);
+  if (start === null || endMarker === null) throw new Error(ARTIFACT_ERRORS.brokenBlock);
   const lineEnd = crontab.indexOf("\n", endMarker);
   return { start, end: lineEnd === -1 ? crontab.length : lineEnd + 1 };
 }

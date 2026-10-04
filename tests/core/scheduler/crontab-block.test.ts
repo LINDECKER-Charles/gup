@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { ARTIFACT_ERRORS } from "../../../src/core/scheduler/artifacts/artifact-errors.js";
 import {
-  BROKEN_BLOCK,
   CRON_BLOCK_BEGIN,
   CRON_BLOCK_END,
   cronLine,
@@ -12,6 +12,7 @@ import {
   TICK_COMMAND,
   type TaskCommand,
 } from "../../../src/core/scheduler/trigger/task-command.js";
+import { useLocale } from "../../support/locale.js";
 
 const command: TaskCommand = {
   node: "/usr/bin/node",
@@ -21,7 +22,7 @@ const command: TaskCommand = {
 const LINE =
   "*/15 * * * * '/usr/bin/node' '/usr/lib/node_modules/@charles_lindecker/gup/dist/cli.js' " +
   "__schedule-tick >/dev/null 2>&1";
-const NOTE = "# Géré par gup (gup schedule uninstall pour retirer). Ne pas modifier à la main.";
+const NOTE = "# Managed by gup (gup schedule uninstall to remove). Do not edit by hand.";
 const BLOCK = `${CRON_BLOCK_BEGIN}\n${NOTE}\n${LINE}\n${CRON_BLOCK_END}\n`;
 
 describe("cronLine", () => {
@@ -78,7 +79,16 @@ describe("upsertGupBlock / removeGupBlock", () => {
   });
 
   it("refuses a block missing one of its markers rather than guessing", () => {
-    expect(() => upsertGupBlock(`${CRON_BLOCK_BEGIN}\n${LINE}\n`, command)).toThrow(BROKEN_BLOCK);
-    expect(() => removeGupBlock(`${LINE}\n${CRON_BLOCK_END}\n`)).toThrow(BROKEN_BLOCK);
+    const broken = ARTIFACT_ERRORS.brokenBlock;
+    expect(() => upsertGupBlock(`${CRON_BLOCK_BEGIN}\n${LINE}\n`, command)).toThrow(broken);
+    expect(() => removeGupBlock(`${LINE}\n${CRON_BLOCK_END}\n`)).toThrow(broken);
+  });
+});
+
+describe("the block written by a gup that speaks English", () => {
+  useLocale("en");
+
+  it("is the same block: a change of language never rewrites the crontab", () => {
+    expect(upsertGupBlock("", command)).toBe(BLOCK);
   });
 });

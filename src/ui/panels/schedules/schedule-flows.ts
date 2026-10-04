@@ -4,7 +4,7 @@ import type { Schedule } from "../../../core/scheduler/model/types.js";
 import type { SelectedPackage } from "../../../core/types.js";
 import type { UpdateReport } from "../../../core/update/update-report.js";
 import { formatRelative } from "../../text/format.js";
-import { NOTHING_TO_INSTALL } from "../../text/schedule/schedule-cli-labels.js";
+import { SCHEDULE_CLI_LABELS } from "../../text/schedule/schedule-cli-labels.js";
 import { NEVER_RAN, runStatusLabel } from "../../text/schedule/schedule-labels.js";
 import {
   REMOVE_DIALOG,
@@ -17,7 +17,7 @@ import { runStatusTone } from "./schedule-list-lines.js";
 import type { ListHandlers } from "./schedules-panel.js";
 
 /**
- * The Planification list's actions: switch a schedule on or off, delete it,
+ * The Schedules list's actions: switch a schedule on or off, delete it,
  * repair the OS trigger, run it now. "Run now" (amendment S-5) scans the
  * providers the schedule needs here, hands the outdated packages to the
  * menu's launcher — the run view, or the plain terminal — and records what
@@ -29,7 +29,9 @@ import type { ListHandlers } from "./schedules-panel.js";
  */
 
 /** No update starts while a scan of the menu runs: package managers are busy with it. */
-const SCAN_RUNNING: readonly Line[] = [[seg(SCHEDULE_NOTICES.scanRunning, "warning")]];
+function scanRunning(): readonly Line[] {
+  return [[seg(SCHEDULE_NOTICES.scanRunning, "warning")]];
+}
 
 export class ScheduleFlows implements ListHandlers {
   readonly #kit: FlowContext;
@@ -79,7 +81,7 @@ export class ScheduleFlows implements ListHandlers {
   async repairTrigger(): Promise<void> {
     const { port } = this.#kit;
     if (!port.snapshot().schedules.some((schedule) => schedule.enabled)) {
-      return this.#kit.notify([[seg(NOTHING_TO_INSTALL, "warning")]]);
+      return this.#kit.notify([[seg(SCHEDULE_CLI_LABELS.nothingToInstall, "warning")]]);
     }
     if (!(await this.#kit.consent())) return this.#kit.view.redraw();
     const sync = await port.repair();
@@ -89,7 +91,7 @@ export class ScheduleFlows implements ListHandlers {
 
   async runNow(schedule: Schedule): Promise<void> {
     if (this.#isRunning) return this.#kit.notify([[seg(SCHEDULE_NOTICES.busy, "warning")]]);
-    if (this.#kit.view.isScanning()) return this.#kit.notify(SCAN_RUNNING);
+    if (this.#kit.view.isScanning()) return this.#kit.notify(scanRunning());
     const providers = this.#providerNames(schedule);
     // When the preferences ask to confirm updates, the launcher does, listing
     // the packages the scan found: one question, the one that says what changes.
@@ -116,7 +118,7 @@ export class ScheduleFlows implements ListHandlers {
     if ("error" in prepared) return kit.notify([[seg(prepared.error, "danger")]]);
     if (prepared.plan.updates.length === 0) return this.#record(prepared, null);
     // A scan of the menu may have started meanwhile: the launcher would refuse the update.
-    if (kit.view.isScanning()) return kit.notify(SCAN_RUNNING);
+    if (kit.view.isScanning()) return kit.notify(scanRunning());
     kit.notify([]);
     const report = await kit.view.updates.launch(packagesOf(prepared), {
       scheduleId: schedule.id,
