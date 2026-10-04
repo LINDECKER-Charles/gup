@@ -50,14 +50,9 @@ const LEVEL_TONE: Readonly<Record<ConfigStatusLine["level"], Tone>> = {
   off: "muted",
 };
 
-/**
- * The file's state, then its path. A save that failed is the notice line's
- * to tell (until the next save succeeds), not this row's: the store keeps
- * its last failure for good.
- */
+/** The file's state — a failed save first, until a later one succeeds — then its path. */
 function fileHint(status: ConfigStatus): Line {
-  const { lastWriteError: _shownAsNotice, ...fileState } = status;
-  const { text, level } = describeConfigStatus(fileState);
+  const { text, level } = describeConfigStatus(status);
   const state = seg(text, LEVEL_TONE[level]);
   return status.file === null ? [state] : [state, seg(`  ${status.file}`, "muted")];
 }

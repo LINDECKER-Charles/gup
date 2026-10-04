@@ -42,6 +42,7 @@ export interface ConfigStatus {
   readonly issues: readonly string[];
   /** Sections written by a newer gup: readable, never overwritten. */
   readonly readOnlySections: readonly string[];
+  /** Why the last save failed; gone once a later save persists. */
   readonly lastWriteError?: string;
 }
 
@@ -209,7 +210,10 @@ export class ConfigStore {
     }
     try {
       mkdirSync(dirname(file), { recursive: true, mode: DIR_MODE });
-      return withFileLock(file, () => this.#rewrite(file, { section, compute }));
+      const stored = withFileLock(file, () => this.#rewrite(file, { section, compute }));
+      // The file holds what this process wrote: an earlier failure no longer stands.
+      this.#lastWriteError = undefined;
+      return stored;
     } catch (err) {
       throw this.#failed(err);
     }

@@ -219,6 +219,22 @@ describe("ConfigStore: damaged and foreign files", () => {
     expect(await onDisk()).toEqual({ version: 1, sections: { prefs: { v: 1, fast: true } } });
     expect(await readdir(join(dir, "nested"))).toEqual(["config.json"]);
   });
+
+  it("forgets a failed save once a later one persists", () => {
+    let isBusy = true;
+    const renameSync: typeof NODE_FILE_OPS.renameSync = (...args) => {
+      if (isBusy) throw Object.assign(new Error("EBUSY"), { code: "EBUSY" });
+      NODE_FILE_OPS.renameSync(...args);
+    };
+    const store = new ConfigStore({ file, fileOps: { ...NODE_FILE_OPS, renameSync } });
+    expect(() => store.write(PREFS, { fast: true, mode: "a", count: 3 })).toThrow();
+    expect(store.status().lastWriteError).toBe("EBUSY");
+
+    isBusy = false;
+    store.update(PREFS, (current) => ({ ...current, count: 4 }));
+
+    expect(store.status()).not.toHaveProperty("lastWriteError");
+  });
 });
 
 describe("ConfigStore: without a file", () => {
