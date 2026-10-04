@@ -7,7 +7,8 @@ commit-level view of the same versions, see [`../changelog/`](../changelog/READM
 
 | Version | Published | Notes | GitHub Release | npm |
 |---|---|---|---|---|
-| `0.4.0` | not yet published | [`0.4.0.md`](0.4.0.md) | — not yet tagged | — |
+| `0.5.0` | 2026-10-04 | [`0.5.0.md`](0.5.0.md) | [0.5.0](https://github.com/LINDECKER-Charles/gup/releases/tag/0.5.0) | [0.5.0](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.5.0) |
+| `0.4.0` | never published | [`0.4.0.md`](0.4.0.md) — shipped in `0.5.0` | — never tagged | — |
 | `0.3.2` | 2026-08-09 | [`0.3.2.md`](0.3.2.md) | [0.3.2](https://github.com/LINDECKER-Charles/gup/releases/tag/0.3.2) | [0.3.2](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.3.2) |
 | `0.3.1` | 2026-08-08 | [`0.3.1.md`](0.3.1.md) | [0.3.1](https://github.com/LINDECKER-Charles/gup/releases/tag/0.3.1) | [0.3.1](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.3.1) |
 | `0.3.0` | 2026-08-08 | [`0.3.0.md`](0.3.0.md) | [0.3.0](https://github.com/LINDECKER-Charles/gup/releases/tag/0.3.0) | [0.3.0](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.3.0) |
@@ -38,6 +39,9 @@ after the bump, the same day).
 - `0.2.2` — published to npm on 2026-07-03 with no tag, no GitHub Release and
   no notes. [`0.2.2.md`](0.2.2.md) is reconstructed from the two commits
   between `0.2.1` and the version bump, and says so.
+- `0.4.0` — written and committed with its version bump, then never tagged nor
+  published: `0.5.0` superseded it before it shipped. [`0.4.0.md`](0.4.0.md)
+  is kept, with a note on top, because [`0.5.0.md`](0.5.0.md) builds on it.
 
 ## Writing the next one
 

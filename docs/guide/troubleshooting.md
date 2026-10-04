@@ -35,10 +35,11 @@ npm warn install-scripts 1 package has install scripts not yet covered by allowS
 npm warn install-scripts   node-pty@1.1.0 (install: node scripts/prebuild.js || node-gyp rebuild; postinstall: node scripts/post-install.js)
 ```
 
-or, with `strict-allow-scripts` set, `npm error code ESTRICTALLOWSCRIPTS`.
+or, with npm 12, `1 package had install scripts blocked because they are not covered by
+allowScripts:`; or, with `strict-allow-scripts` set, `npm error code ESTRICTALLOWSCRIPTS`.
 
 **Why.** node-pty, the optional pseudo-terminal behind updates inside the app, has install scripts,
-and npm 11 asks you to review them.
+and npm 11 and later ask you to review them: npm 11 still runs them, npm 12 skips them.
 
 **Fix.** Allow it: `npm install -g @charles_lindecker/gup --allow-scripts=node-pty`. Skipping it
 with `--ignore-scripts` is harmless on Windows and macOS, but leaves Linux without the embedded
@@ -85,7 +86,7 @@ but it has limits:
 
 - **Secondary text looks like normal text.** conhost does not draw "dim" text; symbols and labels
   carry the difference.
-- **Crashes when leaving the app** (Windows 11 24H2, conhost 10.0.26100) were fixed in gup 0.4.0:
+- **Crashes when leaving the app** (Windows 11 24H2, conhost 10.0.26100) were fixed in gup 0.5.0:
   gup leaves the full-screen view while the keyboard is still in raw mode, the order that console
   needs. If a console window still dies when you quit or when an update starts, update gup and
   report it with your exact Windows build (`winver`).
@@ -128,7 +129,7 @@ one-column ASCII stand-in, and layouts do not move. gup switches by itself on `T
 The update confirmation says
 `Terminal intégré indisponible (<raison>) : la mise à jour s'exécutera dans le terminal, hors de l'interface.`,
 and `gup doctor` shows the same reason on its **Terminal intégré** line. The update still works: it
-runs in your terminal, outside the app, as in gup 0.4.
+runs in your terminal, outside the app, as before 0.5.0.
 
 | Reason | Fix |
 |---|---|

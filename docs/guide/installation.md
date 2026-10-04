@@ -26,17 +26,21 @@ plain `npm install -g @charles_lindecker/gup` works too.
 gup has one optional native dependency, [node-pty](https://github.com/microsoft/node-pty): the
 pseudo-terminal that lets updates started from the interactive app run **inside** it, in a live
 terminal pane. node-pty has install scripts (they check for a prebuilt binary, or compile one),
-and npm 11 asks you to review install scripts it was not told to trust. A plain install prints:
+and npm 11 and later ask you to review install scripts they were not told to trust. A plain
+install with npm 11 prints:
 
 ```text
 npm warn install-scripts 1 package has install scripts not yet covered by allowScripts:
 npm warn install-scripts   node-pty@1.1.0 (install: node scripts/prebuild.js || node-gyp rebuild; postinstall: node scripts/post-install.js)
 ```
 
+npm 12 prints `1 package had install scripts blocked because they are not covered by allowScripts:`
+instead, and does what it says.
+
 | You run | What happens |
 |---|---|
 | `npm i -g @charles_lindecker/gup --allow-scripts=node-pty` | node-pty's scripts run, no warning. Recommended. |
-| `npm i -g @charles_lindecker/gup` | npm runs them anyway, with the warning above. |
+| `npm i -g @charles_lindecker/gup` | npm 11 runs them anyway, with the warning above. npm 12 skips them, with its own warning: the same result as `--ignore-scripts` below. |
 | npm configured with `strict-allow-scripts=true` | the install **fails** (`ESTRICTALLOWSCRIPTS`) until you add `--allow-scripts=node-pty`. |
 | `npm i -g @charles_lindecker/gup --ignore-scripts` | nothing runs. Harmless on Windows and macOS: node-pty ships prebuilt binaries there, and gup restores the macOS helper's exec bit itself. On Linux there is no prebuilt binary, so the embedded terminal is unavailable and updates run outside the app. |
 
@@ -45,7 +49,7 @@ To trust node-pty for every global install, once:
 
 Without node-pty — scripts ignored, the optional install skipped, `GUP_PTY=off` — gup works
 exactly as it does elsewhere; only an update started from the interactive app leaves the
-full-screen view and runs in your terminal, as in gup 0.4. `gup doctor` says which, on its
+full-screen view and runs in your terminal, as before 0.5.0. `gup doctor` says which, on its
 **Terminal intégré** line (see [Troubleshooting](troubleshooting.md#the-embedded-terminal-is-unavailable)).
 
 ## From source
