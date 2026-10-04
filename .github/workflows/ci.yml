@@ -69,24 +69,18 @@ jobs:
       - name: Build
         run: npm run build
 
-      # The unit, providers and integration projects. A hosted runner is
-      # thrown away after the job, so the tests that change the real system —
-      # always sandboxed: a `gup-it-<random>` scheduled task, created then
-      # verified deleted — run here (GUP_MUTATE), where they touch nobody's
-      # setup.
+      # The unit, providers and integration projects. The suites that change
+      # the real system skip here: they run in the `mutate` job below, which
+      # is not a required check.
       - name: Tests
         if: matrix.os != 'ubuntu-latest'
         run: npm run test:run
-        env:
-          GUP_MUTATE: "1"
 
       # The same run, measured once, on Linux: coverage fails only on the
       # floors of the safety-critical modules (tests/support/coverage-floors.ts).
       - name: Tests with coverage
         if: matrix.os == 'ubuntu-latest'
         run: npm run test:coverage
-        env:
-          GUP_MUTATE: "1"
 
       # The screenshots in docs/ are rendered from the real TUI on fixture
       # data (scripts/screenshots): a UI change committed without
@@ -116,6 +110,39 @@ jobs:
         env:
           GUP_E2E: "1"
           GUP_E2E_SCOPE: smoke
+
+  # The integration suites that change the real system (GUP_MUTATE), always
+  # sandboxed: a `gup-it-<random>` scheduled task created then verified
+  # deleted (Windows), an `npm install -g` stopped mid-download in a
+  # throw-away prefix against a local registry. A hosted runner is thrown
+  # away after the job, so they touch nobody's setup. Not a required check —
+  # its name is not `test (…)`: whether Task Scheduler starts a task on a
+  # hosted runner is up to the runner image, and a required check that fails
+  # for the runner's reasons would block every pull request.
+  mutate:
+    name: mutate (node 26 / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node 26
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Integration tests, mutating suites included
+        run: npx vitest run --project integration
+        env:
+          GUP_MUTATE: "1"
 
   # What users install, installed the way an npm 11 user who refuses install
   # scripts does (amendment X-4): node-pty must still load from its

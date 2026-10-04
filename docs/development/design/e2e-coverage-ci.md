@@ -229,10 +229,15 @@ boot grace on a freshly booted CI runner.
 ## 11. CI, the E2E workflow and the local runner
 
 **`ci.yml`.** The `test` job keeps its name and matrix (`test (node 26 / <os>)`, the required
-checks). Per leg: typecheck (src and tests), build, the tests with `GUP_MUTATE=1` — hosted runners
-are thrown away, so the Task Scheduler round trip of `tests/integration/scheduler-windows`
-runs on the Windows leg — then the end-to-end smoke. Lint and the security lint stay on Linux,
-where the tests run once with coverage (`test:coverage`: the floors) and the report is uploaded.
+checks). Per leg: typecheck (src and tests), build, the tests — mutating suites skipped — then
+the end-to-end smoke. Lint and the security lint stay on Linux, where the tests run once with
+coverage (`test:coverage`: the floors) and the report is uploaded. The mutating integration suites
+(`GUP_MUTATE=1`: the Task Scheduler round trip of `tests/integration/scheduler-windows`, the
+killed `npm install -g` of `npm-staged-copy`) run in a separate `mutate (node 26 / <os>)` job on
+the three OSes — hosted runners are thrown away, so they touch nobody's setup — which is not a
+required check: whether a hosted image gives Task Scheduler what it needs to start a task is up
+to the image, and a required check must only fail for the code's reasons. They first ran on the
+required legs; `tests/scripts/ci-required-checks.test.ts` now keeps them off.
 A new `packed install (node 26 / <os>)` job on Windows and macOS (X-4) runs `npm pack`, then
 `npm install --global ./*.tgz --ignore-scripts`, then `gup doctor` must say the embedded terminal
 is available.
@@ -291,7 +296,7 @@ container.
 | D12 | `e2e.yml` on three OSes | macOS and Windows; fixtures recorded on macOS and Linux | The task's scope; Linux runs the smoke on every pull request, and its fixtures are recorded. |
 | D13 | Menu smoke over whatever the machine has | The scan restricted to npm on an empty prefix, through the settings file | Deterministic frames, no network, same on every runner. |
 | D14 | Multi-select in the smoke | In `full/` | Outdated packages need the registry. |
-| D15 | CI: tests on all legs, coverage on ubuntu, a separate mutate step | Coverage *is* the test run on ubuntu; `GUP_MUTATE=1` on the test step | One run per leg; the only mutating integration suite gates itself on Windows. |
+| D15 | CI: tests on all legs, coverage on ubuntu, a separate mutate step | Coverage *is* the test run on ubuntu; `GUP_MUTATE=1` first on the test step, then (release review) in a non-required `mutate (node 26 / <os>)` job | One run per leg; a mutating suite depends on what the hosted image allows (Task Scheduler), which must not fail a required check. |
 
 ## 13. Findings (not fixed here)
 
