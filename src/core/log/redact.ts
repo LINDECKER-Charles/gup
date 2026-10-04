@@ -148,7 +148,7 @@ export function withHomeShortened(text: string): string {
 /**
  * Every occurrence of `home` in `text` replaced by `~`. On Windows the match
  * ignores case and accepts both separators, single or JSON-escaped; it never
- * cuts a longer name (`C:\Users\charlotte` survives a home of `C:\Users\user`).
+ * cuts a longer name (`C:\Users\danae` survives a home of `C:\Users\dana`).
  */
 export function shortenHome(text: string, home: string, platform: NodeJS.Platform): string {
   const pattern = homePattern(home, platform);

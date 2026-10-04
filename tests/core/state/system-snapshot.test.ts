@@ -27,7 +27,7 @@ describe("systemSnapshot", () => {
       GITHUB_TOKEN: "ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       HTTPS_PROXY: "http://bob:pw@proxy:8080",
       PATH: "/usr/bin",
-      USERNAME: "user",
+      USERNAME: "dana",
     };
     expect(systemSnapshot(env).env).toEqual({
       GUP_LOG_LEVEL: "debug",

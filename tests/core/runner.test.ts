@@ -140,7 +140,7 @@ describe("runner.run", () => {
     // %TEMP% on every machine whose username is longer than 8 characters —
     // refusing them made gup unable to spawn ordinary binaries.
     "C:\\PROGRA~1\\nodejs\\npm.cmd",
-    "C:\\Users\\CHARLE~1\\scoop\\shims\\gh.exe",
+    "C:\\Users\\JANEDO~1\\scoop\\shims\\gh.exe",
     "/usr/local/bin/foo",
     "python3.13",
   ])("accepts safe command name %j", async (cmd) => {

@@ -165,7 +165,7 @@ same file. Scan events (`scan.start/provider/end`) arrive with `feat/activity-jo
 
 - Every platform decision is injected or read from `process.platform`: home shortening is
   case-insensitive with both separators (single or JSON-escaped) on Windows, case-sensitive on
-  POSIX, and never cuts a longer name (`C:\Users\charlotte` survives a home of `C:\Users\user`).
+  POSIX, and never cuts a longer name (`C:\Users\danae` survives a home of `C:\Users\dana`).
 - Day files are named by UTC date (one file per day whatever the zone); `gup log` shows local
   times (`03/10 14:22:05.112`).
 - File modes are asserted on POSIX legs only.

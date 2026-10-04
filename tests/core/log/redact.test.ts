@@ -132,21 +132,21 @@ describe("redactSecrets", () => {
 
 describe("shortenHome", () => {
   it("replaces a Windows home whatever its case and separators, JSON-escaped included", () => {
-    const home = "C:\\Users\\User";
-    expect(shortenHome("C:\\Users\\User\\AppData\\x", home, "win32")).toBe("~\\AppData\\x");
-    expect(shortenHome("c:/users/USER/.npmrc", home, "win32")).toBe("~/.npmrc");
-    expect(shortenHome('{"p":"C:\\\\Users\\\\User\\\\x"}', home, "win32")).toBe('{"p":"~\\\\x"}');
-    expect(shortenHome("in C:\\Users\\User", home, "win32")).toBe("in ~");
+    const home = "C:\\Users\\Dana";
+    expect(shortenHome("C:\\Users\\Dana\\AppData\\x", home, "win32")).toBe("~\\AppData\\x");
+    expect(shortenHome("c:/users/DANA/.npmrc", home, "win32")).toBe("~/.npmrc");
+    expect(shortenHome('{"p":"C:\\\\Users\\\\Dana\\\\x"}', home, "win32")).toBe('{"p":"~\\\\x"}');
+    expect(shortenHome("in C:\\Users\\Dana", home, "win32")).toBe("in ~");
   });
 
   it("never cuts a longer name that starts like the home", () => {
-    expect(shortenHome("C:\\Users\\Charlotte\\x", "C:\\Users\\User", "win32")).toBe("C:\\Users\\Charlotte\\x");
-    expect(shortenHome("/home/user-old/x", "/home/user", "linux")).toBe("/home/user-old/x");
+    expect(shortenHome("C:\\Users\\Danae\\x", "C:\\Users\\Dana", "win32")).toBe("C:\\Users\\Danae\\x");
+    expect(shortenHome("/home/dana-old/x", "/home/dana", "linux")).toBe("/home/dana-old/x");
   });
 
   it("matches case-sensitively on POSIX", () => {
-    expect(shortenHome("/Users/user/.zshrc and /users/user", "/Users/user", "darwin")).toBe(
-      "~/.zshrc and /users/user",
+    expect(shortenHome("/Users/dana/.zshrc and /users/dana", "/Users/dana", "darwin")).toBe(
+      "~/.zshrc and /users/dana",
     );
   });
 

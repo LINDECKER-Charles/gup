@@ -52,7 +52,7 @@ export interface RunResult {
 // `~` is load-bearing on Windows, not a convenience: 8.3 short paths are what
 // the OS hands back for any directory whose name exceeds 8 characters or
 // contains a space, so `C:\PROGRA~1\nodejs\npm.cmd` and
-// `C:\Users\CHARLE~1\scoop\shims\gh.exe` are ordinary PATH entries on a large
+// `C:\Users\JANEDO~1\scoop\shims\gh.exe` are ordinary PATH entries on a large
 // share of machines — %TEMP% itself is short-form for any username over 8
 // characters. Without it, gup refuses to spawn a perfectly legitimate binary.
 // It stays inert as far as injection goes: every callsite that derives a
