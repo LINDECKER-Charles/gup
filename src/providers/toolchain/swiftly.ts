@@ -57,7 +57,6 @@ export class SwiftlyProvider implements Provider {
   readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     try {
       return await commandExists("swiftly");
     } catch {

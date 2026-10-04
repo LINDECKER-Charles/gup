@@ -1,5 +1,4 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -39,11 +38,8 @@ export interface BrewOutdatedEntry {
 export class BrewProvider implements Provider {
   readonly id = "brew";
   readonly displayName = "Homebrew";
-  readonly installHint = pickInstallHint({
-    win32: "Homebrew ne cible pas Windows — utiliser winget/scoop, ou WSL (provider wsl-brew).",
-    fallback:
-      'https://brew.sh — /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"',
-  });
+  readonly installHint =
+    'https://brew.sh — /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"';
   /**
    * Homebrew targets macOS and Linux only. The Windows exclusion is not
    * cosmetic: people do put a `brew.cmd` shim on the Windows PATH to forward
@@ -53,8 +49,6 @@ export class BrewProvider implements Provider {
   readonly platforms = PLATFORMS.notWindows;
 
   async isAvailable(): Promise<boolean> {
-    // Mirrors `platforms` for a caller that probes without the registry gate.
-    if (process.platform === "win32") return false;
     return commandExists("brew");
   }
 

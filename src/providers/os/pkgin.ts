@@ -52,7 +52,6 @@ export class PkginProvider implements Provider {
   readonly id = "pkgin";
   readonly displayName = "pkgin (pkgsrc)";
   readonly installHint = pickInstallHint({
-    win32: "pkgin fait partie de pkgsrc (NetBSD, SmartOS, macOS) — pas de portage Windows.",
     darwin:
       "Bootstrapper pkgsrc puis `pkg_add pkgin` — https://pkgsrc.smartos.org/install-on-macos/",
     fallback: "Fourni par pkgsrc — https://pkgin.net/",
@@ -63,7 +62,6 @@ export class PkginProvider implements Provider {
   readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     try {
       return await commandExists("pkgin");
     } catch {

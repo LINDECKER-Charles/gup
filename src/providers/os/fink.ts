@@ -1,6 +1,5 @@
 import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -51,17 +50,13 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class FinkProvider implements Provider {
   readonly id = "fink";
   readonly displayName = "Fink";
-  readonly installHint = pickInstallHint({
-    darwin: "https://www.finkproject.org/download/",
-    fallback: "macOS uniquement — https://www.finkproject.org/",
-  });
+  readonly installHint = "https://www.finkproject.org/download/";
   /** Fink targets macOS only. */
   readonly platforms = PLATFORMS.macos;
   /** `fink update-all` always runs under sudo. */
   readonly canUpdateUnattended = false;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform !== "darwin") return false;
     return commandExists("fink");
   }
 

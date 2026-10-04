@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FinkProvider, parseFinkOutdated } from "../../../src/providers/os/fink.js";
 import { system } from "../../support/system/fake-system.js";
-import type { SimPlatform } from "../../support/system/types.js";
 import { FINK_LIST_ARGV, FINK_OUTDATED_TAB, finkMachine } from "./posix.cases.js";
 
 /**
@@ -11,11 +10,6 @@ import { FINK_LIST_ARGV, FINK_OUTDATED_TAB, finkMachine } from "./posix.cases.js
  */
 
 describe("FinkProvider", () => {
-  it.each<SimPlatform>(["linux", "win32"])("is macOS-only — hidden on %s", async (platform) => {
-    await system.load({ platform, bin: { fink: platform === "win32" ? "C:\\sw\\fink.exe" : "/sw/bin/fink" } });
-    await expect(new FinkProvider().isAvailable()).resolves.toBe(false);
-  });
-
   it("scans under a one-minute wall-clock cap — the runner has none of its own", async () => {
     await system.load(finkMachine(false));
     await new FinkProvider().listOutdated();

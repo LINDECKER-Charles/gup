@@ -228,8 +228,9 @@ flowchart LR
 | **`fetch` with `AbortSignal.timeout(5_000)`** | No scan hanging on a slow upstream. |
 | **HTTPS only** in `fetch` | Pinned by `tests/security/http-targets.test.ts`. |
 | **`slow: true`** if scan does HTTP-per-package or FS walk | Lets `--fast` skip it. |
+| **`readonly platforms = PLATFORMS.windows`** (or `macos`, `notWindows`) when gup supports the source on some OSes only — never test `process.platform` in `isAvailable()`, and no install hint for the other OSes | The registry is the only gate: elsewhere the provider is never probed, scanned or updated, and listings grey it out without a hint. Pinned by `tests/core/platform/platform-gate-source.test.ts`. |
 | **`skipped: true`** when the provider knows no automation is possible | Avoids a false `FAIL`. |
-| **`manual: true`** in `OutdatedPackage` if the entire provider is purely manual | `scanAll` filters it — the item never shows up in lists. |
+| **`manual: true`** in `OutdatedPackage` for an item no command can update | `scanAll` filters it — the item never shows up in lists. A source whose every item is manual gets no provider (§5.3). |
 | **No new npm dependency without discussion** | Footprint is intentionally minimal. |
 
 ---
@@ -246,7 +247,7 @@ Inherit the pattern in `src/providers/wsl/` — the helper `core/wsl.ts` bridges
 
 ### 5.3 "Manual-only" providers
 
-If **every** update requires a GUI action (e.g. JetBrains plugins, Eclipse Marketplace features), the file exists to document the case but is **not** added to `ALL_PROVIDERS`. See the *Manual-only providers* comment among the IDE imports of `src/core/registry.ts`.
+If **every** update requires a GUI action (e.g. JetBrains plugins, Eclipse Marketplace features), do **not** write the provider: every row would be `manual: true`, which `scanAll` drops, so the code would only cost scan time and maintenance. List the source as a candidate (⬜) in [`docs/guide/providers-catalog.md`](docs/guide/providers-catalog.md) instead, saying why — see the comment among the IDE imports of `src/core/registry.ts`.
 
 ### 5.4 Providers sharing a binary with another
 

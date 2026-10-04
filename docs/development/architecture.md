@@ -169,7 +169,7 @@ classDiagram
 
 **Fine-grained semantics:**
 
-- `manual: true` → the item is filtered by `scanAll` before reaching the UI (never displayed, never included in `update --all`). Used for items that require a GUI action (JetBrains Toolbox, Eclipse Marketplace…).
+- `manual: true` → the item is filtered by `scanAll` before reaching the UI (never displayed, never included in `update --all`). Used for items that require a GUI action (JetBrains Toolbox, Docker Desktop's own updater…).
 - `slow: true` on a provider → excluded under `--fast`. Reserved for scans that do HTTP per package or a filesystem walk.
 - `skipped: true` on an outcome → different from `success: false`. Surfaced as **yellow `SKIP`** vs **red `FAIL`**.
 - `retryable: true` → allows the retry loop to offer `--force` / `--uninstall-previous` / `reinstall` (typical winget hash mismatch).
@@ -485,7 +485,7 @@ src/
 │   ├── containers/                 # nerdctl, oras, dive, docker-*, podman-desktop, rancher-desktop
 │   ├── security/                   # trivy, grype, syft, cosign, rekor, gitsign, nuclei, pdtm, semgrep
 │   ├── dev-cli/                    # lazygit, lazydocker, jj, delta, glab, tea, gh-extensions
-│   ├── ide/                        # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains (+ unwired manuals)
+│   ├── ide/                        # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains, visual-studio
 │   ├── editor-plugins/             # nvim-lazy, nvim-packer, nvim-mason, vim-plug
 │   ├── embedded-mobile/            # arduino-cli, platformio, android-sdk, expo, fastlane
 │   ├── shell/                      # oh-my-posh, starship, nerd-fonts, pwsh-modules

@@ -1,5 +1,4 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -21,10 +20,7 @@ import { parseBrewOutdated } from "./brew.js";
 export class BrewCaskProvider implements Provider {
   readonly id = "brew-cask";
   readonly displayName = "Homebrew (casks)";
-  readonly installHint = pickInstallHint({
-    win32: "Les casks Homebrew ne ciblent pas Windows — utiliser winget/scoop.",
-    fallback: "https://brew.sh puis `brew install --cask <app>`",
-  });
+  readonly installHint = "https://brew.sh puis `brew install --cask <app>`";
   /**
    * Casks are macOS-only: `brew` exists on Linuxbrew but rejects every cask
    * command there, so probing the binary alone would surface a provider that
@@ -33,8 +29,6 @@ export class BrewCaskProvider implements Provider {
   readonly platforms = PLATFORMS.macos;
 
   async isAvailable(): Promise<boolean> {
-    // Mirrors `platforms` for a caller that probes without the registry gate.
-    if (process.platform !== "darwin") return false;
     return commandExists("brew");
   }
 

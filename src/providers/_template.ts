@@ -14,7 +14,9 @@
  *    `readonly platforms = PLATFORMS.windows;` (or `macos`, `notWindows`; from
  *    `core/platform/platforms.ts`). The registry then never probes, scans or
  *    updates it elsewhere, and listings grey it out. Never test
- *    `process.platform` in isAvailable() to the same end.
+ *    `process.platform` in isAvailable() to the same end. Its `installHint`
+ *    only covers those OSes: no pickInstallHint() key gup can never show,
+ *    and a plain string when a single hint is left.
  *  - Return `skipped: true` from update() when the action requires user input
  *    outside the provider (manual download, GUI tool, etc.).
  *  - Avoid throwing in listOutdated/update. Return empty list / failed outcome

@@ -34,14 +34,6 @@ const WHERE_GIT = ["where", "git"];
 const withUpdater = () => gitMachine({ version: BEHIND, updater: { stdout: UPDATER_BANNER } });
 
 describe("GitForWindowsProvider.isAvailable", () => {
-  it.each(["darwin", "linux"] as const)("never looks at PATH on %s", async (platform) => {
-    await system.load({ platform, bin: { git: "/usr/bin/git" } });
-    const lookup = replaceForTest(runner, "commandExists", () => Promise.resolve(true));
-    await expect(provider().isAvailable()).resolves.toBe(false);
-    expect(lookup).not.toHaveBeenCalled();
-    expect(probeArgvs()).toEqual([]);
-  });
-
   it.each([
     "git version 2.47.0",
     "git version 2.51.0.vfs.0.1",

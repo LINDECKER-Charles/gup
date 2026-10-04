@@ -24,11 +24,6 @@ async function loadReleases(installed: string, tags: readonly string[]): Promise
 }
 
 describe("PkgxProvider", () => {
-  it("never probes pkgx on Windows", async () => {
-    await system.load({ platform: "win32", bin: { pkgx: "C:\\pkgx\\pkgx.exe" } });
-    await expect(new PkgxProvider().isAvailable()).resolves.toBe(false);
-  });
-
   it("never reads a non-version tag as major 0", async () => {
     await loadReleases("0.9.0", ["nightly", "v0.9.1"]);
     const [row] = await new PkgxProvider().listOutdated();

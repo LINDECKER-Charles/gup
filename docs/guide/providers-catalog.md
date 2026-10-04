@@ -7,7 +7,6 @@ Unified overview — implementation status, sources, and out-of-scope items. Sou
 | Symbol | Meaning |
 |---|---|
 | ✅ | Integrated (registered in `ALL_PROVIDERS`) |
-| 🚧 | Code present in `src/providers/`, not wired (outputs `manual: true`, filtered by `scanAll`) |
 | ⬜ | Candidate — no code yet |
 | ➡️ | Absorbed — covered by an existing provider |
 | ❌ | Out of scope |
@@ -63,14 +62,19 @@ Deliberate choices:
   Windows through Git Bash or a manual install, and their detection decides.
 - `pyenv` / `pyenv-win` and `nvm` / `nvm-windows` share a binary name; the
   sets give each binary to exactly one provider per OS.
-- The `self` meta-provider filters its targets with the same predicate (the
-  `self:brew` target uses `PLATFORMS.notWindows`, like `brew`). Its `winget`,
-  `scoop` and `choco` self-update targets are not restricted yet: on macOS and
-  Linux they still look for those binaries on the `PATH`.
+- The `self` meta-provider filters its targets with the same predicate and
+  the same sets as the matching providers: `self:brew` uses
+  `PLATFORMS.notWindows`; `self:winget`, `self:scoop` and `self:choco` use
+  `PLATFORMS.windows`, so a shim of those names on a macOS/Linux `PATH` is
+  never asked for its version.
 
 The lists are frozen by `tests/core/platform/provider-platforms.test.ts`:
-changing a set means changing that test on purpose. Adding a provider: see
-the header of `src/providers/_template.ts`.
+changing a set means changing that test on purpose. The declaration is the
+only gate: `tests/core/platform/platform-gate-source.test.ts` fails when a
+provider's `isAvailable()` tests `process.platform`, when anything but the
+registry probes a provider, or when a restricted provider declares an install
+hint for an OS where it can never be shown. Adding a provider: see the header
+of `src/providers/_template.ts`.
 
 ---
 
@@ -354,13 +358,19 @@ installed with `Install-PSResource` — the default installer since PowerShell
 | `vscodium-ext` | VSCodium + Open VSX | ✅ |
 | `jetbrains` | JetBrains IDEs (Toolbox + standalone) | ✅ |
 | `visual-studio` | Visual Studio (`vswhere` + release channel manifest) | ✅ |
-| `jetbrains-plugins` | JetBrains plugins | 🚧 |
-| `zed-ext` | Zed extensions | 🚧 |
-| `sublime-pc` | Sublime Package Control | 🚧 |
-| `obsidian-plugins` | Obsidian community plugins | 🚧 |
-| `unity-hub` | Unity Editor versions | 🚧 |
-| `notepad-pp` | Notepad++ plugins | 🚧 |
-| `eclipse-marketplace` | Eclipse / p2 features | 🚧 |
+| `jetbrains-plugins` | JetBrains plugins | ⬜ |
+| `zed-ext` | Zed extensions | ⬜ |
+| `sublime-pc` | Sublime Package Control | ⬜ |
+| `obsidian-plugins` | Obsidian community plugins | ⬜ |
+| `unity-hub` | Unity Editor versions | ⬜ |
+| `notepad-pp` | Notepad++ plugins | ⬜ |
+| `eclipse-marketplace` | Eclipse / p2 features | ⬜ |
+
+The last seven sources can only be updated through their application's own
+GUI: every row a provider could list would be `manual: true`, which `scanAll`
+drops, so a provider would add scan time and show nothing. They stay
+candidates until one of them gains an update path gup can drive without a
+GUI. (Until 0.5.0 they existed as unregistered code in `src/providers/ide/`.)
 
 ## 19. Editor plugins (headless)
 

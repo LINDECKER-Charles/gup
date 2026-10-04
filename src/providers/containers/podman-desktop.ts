@@ -2,7 +2,6 @@ import { existsSync } from "node:fs";
 import { win32 as winPath } from "node:path";
 import { run } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -15,13 +14,7 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class PodmanDesktopProvider implements Provider {
   readonly id = "podman-desktop";
   readonly displayName = "Podman Desktop";
-  // Détection basée sur les chemins Windows + VersionInfo : ailleurs le
-  // provider ne remonte rien, même si l'application existe sur la plateforme.
-  readonly installHint = pickInstallHint({
-    win32: "winget install RedHat.Podman-Desktop",
-    darwin: "brew install --cask podman-desktop (suivi gup : Windows uniquement)",
-    fallback: "Suivi par gup sous Windows uniquement.",
-  });
+  readonly installHint = "winget install RedHat.Podman-Desktop";
   /**
    * Tracked from its Windows install paths and VersionInfo only, though the
    * app exists on macOS too.

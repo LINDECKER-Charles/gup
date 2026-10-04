@@ -41,12 +41,6 @@ afterEach(() => {
 });
 
 describe("NerdFontsProvider.isAvailable", () => {
-  it("is Windows-only, and looks at nothing elsewhere", async () => {
-    await system.load({ platform: "linux", env: { LOCALAPPDATA: "/home/u/.local" } });
-    await expect(provider().isAvailable()).resolves.toBe(false);
-    expect(system.trace.fsReads).toEqual([]);
-  });
-
   it("stays hidden when LOCALAPPDATA is unset", async () => {
     await system.load(fontsMachine({ lock: {} }));
     delete process.env["LOCALAPPDATA"];

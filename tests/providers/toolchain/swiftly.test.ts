@@ -5,6 +5,7 @@ import {
   parseSwiftlyVersion,
   SwiftlyProvider,
 } from "../../../src/providers/toolchain/swiftly.js";
+import { setPlatform } from "../../support/platform.js";
 import { replaceForTest } from "../../support/system/boundary-spy.js";
 import { system } from "../../support/system/fake-system.js";
 import { installArgvs, probeArgvs } from "../../support/system/trace.js";
@@ -24,13 +25,6 @@ import {
 const UNREACHABLE = "swiftly est introuvable ou n'a pas pu être lancé.";
 
 describe("SwiftlyProvider.isAvailable", () => {
-  it("refuses Windows without probing — upstream ships no Windows build", async () => {
-    await system.load({ platform: "win32", bin: { swiftly: "C:\\Tools\\swiftly.exe" } });
-    const probe = replaceForTest(runner, "commandExists", () => Promise.resolve(true));
-    await expect(new SwiftlyProvider().isAvailable()).resolves.toBe(false);
-    expect(probe).not.toHaveBeenCalled();
-  });
-
   it("probes `swiftly` on Linux too", async () => {
     const swiftly = "/home/u/.local/share/swiftly/bin/swiftly";
     await system.load({ platform: "linux", bin: { swiftly } });
@@ -165,14 +159,16 @@ describe("SwiftlyProvider.update", () => {
 });
 
 describe("SwiftlyProvider.installHint", () => {
-  it("points at swift.org per platform and never suggests Windows", async () => {
+  it("points at swift.org per platform, and says where swiftly runs elsewhere", async () => {
     await system.load({ platform: "darwin" });
     expect(new SwiftlyProvider().installHint).toContain("install/macos/swiftly");
     await system.load({ platform: "linux" });
     expect(new SwiftlyProvider().installHint).toContain("install/linux/swiftly");
-    await system.load({ platform: "win32" });
+    // Windows never lists swiftly as missing (it is incompatible there): the
+    // fallback is what the BSDs show.
+    setPlatform("freebsd");
     const hint = new SwiftlyProvider().installHint;
-    expect(hint).toContain("ne cible pas Windows");
+    expect(hint).toContain("macOS et Linux uniquement");
     expect(hint).not.toContain("brew install");
   });
 });

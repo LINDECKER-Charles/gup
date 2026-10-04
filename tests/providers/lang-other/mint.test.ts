@@ -48,12 +48,6 @@ function listing(lines: readonly string[], urls: readonly string[], http: HttpRo
 const NO_SWIFTLINT_RELEASE: HttpRoute = { url: SWIFTLINT_LATEST, status: 404, json: {} };
 
 describe("MintProvider.isAvailable", () => {
-  it("never probes the binary on Windows — mint has no Windows support", async () => {
-    await system.load({ platform: "win32", bin: { mint: "C:\\tools\\mint.exe" } });
-    await expect(new MintProvider().isAvailable()).resolves.toBe(false);
-    expect(system.trace.spawns).toEqual([]);
-  });
-
   it("is false when mint is not on PATH, without running it", async () => {
     await system.load({ platform: "darwin" });
     await expect(new MintProvider().isAvailable()).resolves.toBe(false);

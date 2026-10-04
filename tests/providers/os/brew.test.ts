@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BrewCaskProvider } from "../../../src/providers/os/brew-cask.js";
-import { BrewProvider, parseBrewOutdated } from "../../../src/providers/os/brew.js";
-import { system } from "../../support/system/fake-system.js";
+import { parseBrewOutdated } from "../../../src/providers/os/brew.js";
 import { BREW_FORMULAE_JSON } from "./posix.cases.js";
 
 /**
@@ -37,20 +35,5 @@ describe("parseBrewOutdated", () => {
 
   it("returns [] rather than throwing on a payload that is not JSON", () => {
     expect(parseBrewOutdated("==> Auto-updating Homebrew...", "formulae")).toEqual([]);
-  });
-});
-
-describe("Homebrew availability", () => {
-  it("never runs brew on Windows, even with a brew shim on PATH", async () => {
-    // A `brew.cmd` forwarding into WSL is the wsl-brew provider's business.
-    await system.load({ platform: "win32", bin: { brew: "C:\\tools\\brew.cmd" } });
-    await expect(new BrewProvider().isAvailable()).resolves.toBe(false);
-    await expect(new BrewCaskProvider().isAvailable()).resolves.toBe(false);
-  });
-
-  it("offers casks on macOS only — Linuxbrew rejects every cask command", async () => {
-    await system.load({ platform: "linux", bin: { brew: "/home/linuxbrew/.linuxbrew/bin/brew" } });
-    await expect(new BrewProvider().isAvailable()).resolves.toBe(true);
-    await expect(new BrewCaskProvider().isAvailable()).resolves.toBe(false);
   });
 });

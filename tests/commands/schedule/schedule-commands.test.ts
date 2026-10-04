@@ -9,6 +9,7 @@ import {
 import { listSchedulesCommand, statusCommand } from "../../../src/commands/schedule/report-commands.js";
 import { runNowCommand } from "../../../src/commands/schedule/run-now.js";
 import type { AddOptions } from "../../../src/commands/schedule/schedule-args.js";
+import { REGISTRY_PROVIDER_FACTS } from "../../../src/commands/schedule/scheduler-services.js";
 import {
   installCommand,
   uninstallCommand,
@@ -25,11 +26,13 @@ import {
   WINGET_UAC_NOTE,
 } from "../../../src/ui/text/schedule/schedule-cli-labels.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
+import { restorePlatform, setPlatform } from "../../support/platform.js";
 import { schedulerFixture, type Fixture, type FixtureOptions } from "./scheduler-fixture.js";
 
 let fixture: Fixture;
 
 afterEach(async () => {
+  restorePlatform();
   await fixture?.cleanup();
 });
 
@@ -99,6 +102,17 @@ describe("gup schedule add", () => {
     const { services, output } = await setup();
     expect(await addCommand(services, add({ targets: ["winget"] }), output)).toBe(2);
     expect(output.errors).toEqual([NOT_A_PACKAGE]);
+    expect(services.repo.list()).toEqual([]);
+  });
+
+  it("refuses a provider foreign to this OS with the registry's reason (exit 2, nothing saved)", async () => {
+    const { services, output } = await setup();
+    setPlatform("win32");
+    const registry = { ...services, providers: REGISTRY_PROVIDER_FACTS };
+    expect(await addCommand(registry, add({ targets: ["brew:git"] }), output)).toBe(2);
+    expect(output.errors).toEqual([
+      "✖ brew:git : Provider brew indisponible sur Windows (macOS/Linux uniquement)",
+    ]);
     expect(services.repo.list()).toEqual([]);
   });
 

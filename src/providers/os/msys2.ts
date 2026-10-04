@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import { win32 as winPath } from "node:path";
 import { run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -72,10 +71,8 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class Msys2Provider implements Provider {
   readonly id = "msys2";
   readonly displayName = "MSYS2 (pacman)";
-  readonly installHint = pickInstallHint({
-    win32: "https://www.msys2.org/ — installeur officiel (racine par défaut C:\\msys64)",
-    fallback: "Windows uniquement — https://www.msys2.org/",
-  });
+  readonly installHint =
+    "https://www.msys2.org/ — installeur officiel (racine par défaut C:\\msys64)";
   /** MSYS2 is a Windows distribution of the pacman toolchain. */
   readonly platforms = PLATFORMS.windows;
 

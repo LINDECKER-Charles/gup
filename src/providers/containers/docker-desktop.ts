@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import { win32 as winPath } from "node:path";
 import { run } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -20,14 +19,7 @@ interface GitHubReleaseJson {
 export class DockerDesktopProvider implements Provider {
   readonly id = "docker-desktop";
   readonly displayName = "Docker Desktop";
-  // La détection repose sur les chemins d'installation Windows et sur
-  // VersionInfo (PowerShell) : le provider ne remonte donc rien ailleurs, même
-  // là où Docker Desktop existe bel et bien.
-  readonly installHint = pickInstallHint({
-    win32: "winget install Docker.DockerDesktop",
-    darwin: "brew install --cask docker-desktop (suivi gup : Windows uniquement)",
-    fallback: "Suivi par gup sous Windows uniquement.",
-  });
+  readonly installHint = "winget install Docker.DockerDesktop";
   /**
    * Tracked from its Windows install paths and VersionInfo only, though the
    * app exists on macOS too.

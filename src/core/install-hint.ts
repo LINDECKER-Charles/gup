@@ -14,6 +14,10 @@
  *     win32: "winget install Kubernetes.kubectl",
  *     fallback: "brew install kubernetes-cli",
  *   });
+ *
+ * A provider that declares `platforms` is only ever listed as missing on
+ * those platforms, so it declares no key for the others (a plain string when
+ * one hint is left). tests/core/platform/platform-gate-source.test.ts checks it.
  */
 export interface PlatformInstallHints {
   /** Shown on Windows. */

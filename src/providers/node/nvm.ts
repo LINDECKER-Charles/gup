@@ -6,7 +6,6 @@ import {
   fetchGitHubReleaseLatest,
   normalizeVersion,
 } from "../../core/gh-releases.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
@@ -68,18 +67,13 @@ const MANUAL_MESSAGE = `Installation nvm hors dépôt git — mettre à jour en 
 export class NvmProvider implements Provider {
   readonly id = ID;
   readonly displayName = "nvm (Node version manager)";
-  readonly installHint = pickInstallHint({
-    win32:
-      "Projet POSIX uniquement — sous Windows, utiliser nvm-windows : winget install CoreyButler.NVMforWindows",
-    fallback: INSTALL_DOC,
-  });
+  readonly installHint = INSTALL_DOC;
   /** nvm is POSIX; on Windows the role belongs to the `nvm-windows` provider. */
   readonly platforms = PLATFORMS.notWindows;
   // Sourcing nvm.sh in a child shell plus one GitHub call.
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {
-    if (process.platform === "win32") return false;
     try {
       if (resolveNvmDir() === null) return false;
       return await commandExists("bash");
