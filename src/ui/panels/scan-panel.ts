@@ -2,7 +2,7 @@ import { formatDuration } from "../text/fr-format.js";
 import { NO_SCAN_YET } from "../text/menu-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
-import { fit, seg, type Line } from "../tui/styled-lines.js";
+import { fit, seg, wrapLine, type Line } from "../tui/styled-lines.js";
 import { PAGE_STEP, placeholder, type Panel, type Viewport } from "./panel.js";
 
 /** What a scan reports as it goes — to a screen, or to nobody. */
@@ -119,7 +119,7 @@ export class ScanPanel implements Panel, ScanEvents {
 
   render(viewport: Viewport): readonly Line[] {
     if (this.#phase === "idle") return placeholder(NO_SCAN_YET);
-    const head = [this.headline(), []];
+    const head = [...this.headLines(viewport.width), []];
     const rows = this.sortedRows().slice(
       this.#offset,
       this.#offset + viewport.height - head.length,
@@ -139,6 +139,16 @@ export class ScanPanel implements Panel, ScanEvents {
 
   scroll(step: number): void {
     this.#offset = Math.max(0, Math.min(this.#offset + step, this.#providers.size - 1));
+  }
+
+  /**
+   * The headline on as many rows as `width` needs once the scan is over: at
+   * 80 columns the summary and a failure's reason are never cut. The
+   * progress bar of a running scan stays on its one row.
+   */
+  private headLines(width: number): Line[] {
+    const headline = this.headline();
+    return this.#phase === "done" ? wrapLine(headline, width) : [headline];
   }
 
   private headline(): Line {

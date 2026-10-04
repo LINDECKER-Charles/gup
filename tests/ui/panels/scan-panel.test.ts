@@ -39,6 +39,27 @@ describe("ScanPanel", () => {
     expect(new Set(rows.map((row) => row.trimEnd().length)).size).toBe(1);
   });
 
+  it("wraps the summary and a failure's reason on an 80-column terminal", () => {
+    const narrow = { width: 52, height: 20 };
+    // The headline's rows: everything above the blank line under it.
+    const summaryOf = (scan: ScanPanel) => {
+      const lines = text(scan.render(narrow)).split("\n");
+      return lines.slice(0, lines.indexOf(""));
+    };
+    const scan = new ScanPanel(vi.fn());
+    scan.detecting();
+    scan.planned(12);
+    scan.completed(1200);
+    const summary = summaryOf(scan);
+    expect(summary.length).toBeGreaterThan(1);
+    expect(summary.every((line) => line.length <= narrow.width)).toBe(true);
+    expect(summary.join(" ")).toBe("✔ Scan terminé en 1,2 s — 12 provider(s), 0 mise(s) à jour");
+
+    const reason = "la détection des providers a dépassé son délai (30 s)";
+    scan.failed(reason);
+    expect(summaryOf(scan).join(" ")).toBe(`✖ Scan interrompu : ${reason}`);
+  });
+
   it("rescans on r, but not while a scan runs", () => {
     const onRescan = vi.fn();
     const scan = new ScanPanel(onRescan);

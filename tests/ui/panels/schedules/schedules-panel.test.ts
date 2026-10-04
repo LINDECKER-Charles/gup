@@ -62,6 +62,15 @@ describe("SchedulesPanel, list", () => {
     expect(panel.title).toBe("Planification");
   });
 
+  it("wraps that how-to under its indent on an 80-column terminal, down to its key", () => {
+    const { render } = setup([]);
+    const width = 52;
+    const lines = render({ width, height: 24 }).filter(Boolean);
+    expect(lines.length).toBeGreaterThan(EMPTY_SCHEDULES.length);
+    expect(lines.every((line) => line.length <= width && line.startsWith("  "))).toBe(true);
+    expect(lines.map((line) => line.trim()).join(" ")).toBe(EMPTY_SCHEDULES.join(" "));
+  });
+
   it("lists the schedules under the trigger's state, the one under the cursor detailed", () => {
     const { render, panel } = setup([
       storedSchedule(),

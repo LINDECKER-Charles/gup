@@ -51,6 +51,8 @@ export interface SchedulesHandlers {
 
 /** Rows kept for the details under the table when the schedules do not all fit. */
 const DETAILS_ROOM = 4;
+/** Left margin of the how-to shown while there is no schedule. */
+const EMPTY_INDENT = "  ";
 
 /** Cursor moves of the list, by key. */
 const LIST_MOVES: Readonly<Record<string, number>> = {
@@ -327,10 +329,14 @@ export class SchedulesPanel implements Panel {
   }
 
   #emptyLayout(viewport: Viewport): Layout {
+    // Wrapped under its indent: at 80 columns the how-to ends on its key, p.
+    const room = viewport.width - EMPTY_INDENT.length;
     const lines: Line[] = [
       ...this.#noticeLines(viewport.width),
       [],
-      ...EMPTY_SCHEDULES.map((text): Line => [seg(`  ${text}`, "muted")]),
+      ...EMPTY_SCHEDULES.flatMap((text) =>
+        wrapLine([seg(text, "muted")], room).map((row): Line => [seg(EMPTY_INDENT), ...row]),
+      ),
     ];
     return { lines, targets: lines.map(() => -1) };
   }
