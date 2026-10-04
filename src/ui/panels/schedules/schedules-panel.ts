@@ -118,6 +118,11 @@ export class SchedulesPanel implements Panel {
     this.#handlers.list.shown();
   }
 
+  /** An editor open on changes not saved yet. */
+  hasUnsavedChanges(): boolean {
+    return this.#editor?.isDirty === true;
+  }
+
   /** Lines shown above the list or the form until the next key, wrapped to the panel. */
   setNotice(lines: readonly Line[]): void {
     this.#notice = lines;

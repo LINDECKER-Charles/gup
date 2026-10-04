@@ -20,6 +20,13 @@ export const SIDEBAR_HINTS = "↑↓ naviguer · entrée ouvrir · tab contenu �
 /** Appended to the focused panel's own hints, unless it takes every key (text being typed). */
 export const PANEL_HINTS_TAIL = "tab menu · q quitter";
 
+/** Asked before quitting while a view holds changes not saved yet. */
+export const QUIT_DIALOG = {
+  title: "Quitter sans enregistrer ?",
+  text: (views: readonly string[]) =>
+    `Des modifications ne sont pas enregistrées (${views.join(", ")}) : elles seront perdues.`,
+} as const;
+
 /** The hint bar while a dialog is open: its keys replace those of the screen behind it. */
 export const DIALOG_HINTS = {
   confirm: "←→ choisir · o oui · n non · entrée valider · échap annuler",

@@ -202,8 +202,9 @@ A view reaches the menu through its `ViewContext`: `screen`, `state`, `dialogs`,
 `show(view)`, `rescan()`, `isScanning()`, `onScansChanged(listener)`, `observeScan(observer)`
 and `takeOver(start)`. A takeover (the run view) hides the sidebar and the main panel, gets the
 chrome's body, and receives every key after the dialogs plus a frame tick until it is released.
-`Panel` gains `wantsKey(key)` (claim ←/→ before the global bindings; `q` and Tab stay global)
-and `onShow()` (lazy loads).
+`Panel` gains `wantsKey(key)` (claim ←/→ before the global bindings; `q` and Tab stay global),
+`onShow()` (lazy loads) and `hasUnsavedChanges()`: while a view holds changes not saved (the
+schedule editor), `q` and "Quitter" ask before the session ends (`QUIT_DIALOG`, default "Non").
 
 Key routing in `MenuSession`: Ctrl+C (the screen's) → dialog → takeover → the focused panel when
 it captures text or claims the key → global (`q`, Tab, ←) → panel or sidebar. Which side has the

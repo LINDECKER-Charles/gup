@@ -321,7 +321,7 @@ Part 2 extends no foundation contract: the view uses `ViewDefinition`
 | D20 | Unseen runs count each schedule's *last* run, scheduled ones only (not `manual`, not `missed`); `seenRunsUntil` is written when the view is shown and something is unseen | the state keeps one run per schedule; a run-now happened under the user's eyes; a missed occurrence ran nothing |
 | D21 | No "Notification" field; the catch-up reads `[oui]`/`[non]`; the buttons sit on two lines | S-4; French UI; one cursor stop per line keeps clicks and keys simple |
 | D22 | The table drops the package count and next-run columns below a 120-column terminal; the details under it give the next run | a 100-column terminal leaves 70 columns to the panel |
-| D23 | `q` quits the menu even with an editor open | `q` is global in the foundation's session unless a panel captures text; a panel cannot claim it |
+| D23 | `q` quits the menu with an editor open; with changes not saved, only once the user confirms (default "Non") — since `fix/wave-2-polish` | `q` is global in the session unless a panel captures text, and a panel cannot claim it; `Panel.hasUnsavedChanges()` lets the session ask instead, for "Quitter" in the sidebar too |
 
 ## 12. Menu (part 2)
 

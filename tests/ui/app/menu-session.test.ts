@@ -8,7 +8,11 @@ import type {
   ViewDefinition,
 } from "../../../src/ui/app/view-definition.js";
 import type { Panel } from "../../../src/ui/panels/panel.js";
-import { NO_SCAN_YET, PANEL_HINTS_TAIL } from "../../../src/ui/text/menu-labels.js";
+import {
+  NO_SCAN_YET,
+  PANEL_HINTS_TAIL,
+  QUIT_DIALOG,
+} from "../../../src/ui/text/menu-labels.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
 import { toAscii } from "../../../src/ui/theme/glyphs.js";
@@ -220,6 +224,17 @@ describe("MenuSession views", () => {
     expect(press).toHaveBeenCalledWith(expect.objectContaining({ name: "left" }));
     expect(await menu.frame()).toContain("┏━ Essai");
     await menu.press("q");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+  });
+
+  it("asks before Quitter drops a view's unsaved changes", async () => {
+    const panel = panelOf({ hasUnsavedChanges: () => true });
+    const menu = await bootMenu({ views: [testView(() => panel)], scanOnStart: false });
+    await menu.press("tab", "down", "enter");
+    expect(await menu.frame()).toContain(QUIT_DIALOG.title);
+    await menu.press("n");
+    expect(await menu.frame()).not.toContain(QUIT_DIALOG.title);
+    await menu.press("enter", "o");
     await expect(menu.exit).resolves.toEqual({ kind: "quit" });
   });
 

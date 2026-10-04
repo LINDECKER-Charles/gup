@@ -66,6 +66,14 @@ export class ViewRegistry {
     return { entries, density };
   }
 
+  /** The labels of the views holding changes not saved yet, in sidebar order. */
+  unsavedViews(): string[] {
+    return this.collect((view) => {
+      const hasUnsaved = this.#panels.get(view.id)?.hasUnsavedChanges?.() === true;
+      return hasUnsaved ? [view.label] : [];
+    });
+  }
+
   /** Every view's title-bar facts, in sidebar order. */
   facts(): string[] {
     return this.collect((view) => view.facts?.(this.context()) ?? []);

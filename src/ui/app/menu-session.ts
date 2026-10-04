@@ -8,6 +8,7 @@ import { ScanBus } from "../scan-progress.js";
 import {
   PANEL_HINTS_TAIL,
   providerCountFact,
+  QUIT_DIALOG,
   SIDEBAR_HINTS,
   SIDEBAR_TITLE,
 } from "../text/menu-labels.js";
@@ -109,7 +110,7 @@ export class MenuSession {
       if (!screen.renderer.isDestroyed) this.draw();
     });
     this.#views = new ViewRegistry(deps.views, deps.initialView ?? "scan");
-    this.#nav = new MenuNav(this.#views, () => this.#exit({ kind: "quit" }));
+    this.#nav = new MenuNav(this.#views, () => void this.quit());
     this.#scans = new ScanBus((events) => deps.controller.scan(deps.state, events));
     this.#views.mount(this.createContext());
   }
@@ -245,10 +246,23 @@ export class MenuSession {
 
   private globalKeys(): Record<string, () => void> {
     return {
-      q: () => this.#exit({ kind: "quit" }),
+      q: () => void this.quit(),
       tab: () => this.#nav.toggle(),
       left: () => this.#nav.focusSidebar(),
     };
+  }
+
+  /** `q` or "Quitter": the session ends — once confirmed when a view holds unsaved changes. */
+  private async quit(): Promise<void> {
+    const unsaved = this.#views.unsavedViews();
+    const isConfirmed =
+      unsaved.length === 0 ||
+      (await this.#dialogs.confirm({
+        title: QUIT_DIALOG.title,
+        text: [QUIT_DIALOG.text(unsaved)],
+        default: false,
+      }));
+    if (isConfirmed) this.#exit({ kind: "quit" });
   }
 
   /** A scan the user asked for: the Scan view comes to the front. */

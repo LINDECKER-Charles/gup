@@ -4,6 +4,7 @@ import type { Schedule, SchedulerState } from "../../../src/core/scheduler/model
 import type { SelectedPackage } from "../../../src/core/types.js";
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
+import { QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
 import {
   SCHEDULE_ACTION,
   SCHEDULE_NOTICES,
@@ -366,6 +367,24 @@ describe("the schedule editor", () => {
     await eventually(menu, "Abandonner les modifications ?");
     await menu.press("o");
     expect(await eventually(menu, "┏━ Planification")).not.toContain("Abandonner");
+  });
+
+  it("asks before q quits the menu on changes not saved, the answer defaulting to no", async () => {
+    const { menu } = await editing();
+    await menu.press("enter", "x", "enter", "q");
+    const asked = await menu.frame();
+    expect(asked).toContain(QUIT_DIALOG.title);
+    expect(asked).toContain("Des modifications ne sont pas enregistrées (Planification)");
+    await menu.press("enter");
+    expect(await settled(menu)).toContain("[Outils devx]");
+    await menu.press("q", "o");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+  });
+
+  it("quits at once from an editor with nothing changed", async () => {
+    const { menu } = await editing();
+    await menu.press("q");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
   });
 });
 
