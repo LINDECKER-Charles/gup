@@ -413,7 +413,7 @@ the test, an appearance control resolving for real).
 | D18 | `a` keeps the adjusted value (of the row) | keeps every adjusted role | Matches the warning under the table, which counts every adjusted role. |
 | D19 | Colour editor: "Échap/←" leaves (§2.4), ← → nudge the hue (key table) | ← → nudge the hue, Échap leaves | The key table is the precise one; ← → on a colour read as "turn the hue". |
 | D20 | — | ← also leaves the picker (cancel) and the provider filter | Back, as everywhere else in the menu; neither view uses ← otherwise. |
-| D21 | The FICHIER row shows the store status | the file's state without the store's `lastWriteError`; save failures are the notice line's | `ConfigStore` keeps its last write error for the rest of the process, even after a later save succeeds (foundation behaviour, not changed here); the notice clears on the next save. |
+| D21 | The FICHIER row shows the store status | as specified since `fix/wave-2-polish`: a failed save shows on the row (and on the notice line) until a later save persists | The first version hid `lastWriteError` from the row, because `ConfigStore` kept it for the rest of the process; the store now clears it once a write persists, so the workaround is gone. |
 | D22 | Launch view values: Scan, Paquets, Providers, Options | every `ViewId` (Planification and Journal too) | The view cannot see which views are registered; an unregistered launch view falls back to the first entry (foundation). |
 | D23 | Échap restores the saved theme | a preview left open while browsing other views stays until Entrée or Échap, the title bar saying `aperçu du thème` | `Panel` has no "hidden" event, and adding one edits the frozen session; the preview is then a way to try a theme on every view. |
 | D24 | — | `ThemeAvailability.mode` and `.isCorrected`; `ThemedAppearance.isPreviewing`; availability cached per resolve | The picker's marks and the title-bar fact; the picker redraws on every frame of a running scan. Additive, in this branch's files. |
@@ -428,10 +428,10 @@ the test, an appearance control resolving for real).
   (`settings` defaults to `settingsService()`, the one the settings module wires the screens and
   the menu to). `src/ui/panels/options-panel.ts` is gone (moved and split); nothing else imported
   it.
-- **Foundation:** `ConfigStore.status().lastWriteError` is never cleared after a successful save
-  (D21). The Options view works around it; `gup doctor` runs in its own process, so it is not
-  affected. A one-line fix in `store.ts` (clear it once a write persisted) would let a consumer
-  trust it.
+- **Foundation:** `ConfigStore.status().lastWriteError` is cleared once a later write persists
+  (`fix/wave-2-polish`), and a `missing` state turns `loaded` once a save creates the file, so
+  the Options view shows the store status as it is (D21) — no "aucun fichier" after the first
+  save.
 - **In-TUI updates (IT-6):** the embedded terminal panes must sit on `RGBA.defaultBackground()`
   (the terminal's own), never on the theme's background: subprocess output uses the host
   palette, which gup does not check. The contrast audit gains a case asserting it when the panes

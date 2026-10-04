@@ -27,8 +27,9 @@ export interface UpdateLauncher {
   readonly isRunning: boolean;
   /**
    * Update `packages`. Never rejects. Resolves with the report of an update
-   * that ran inside the screen, or null when the user declined or the update
-   * runs outside it (the session then ends).
+   * that ran inside the screen, or null when the user declined, when a scan
+   * of the session is running (nothing starts then), or when the update runs
+   * outside the screen (the session then ends).
    */
   launch(
     packages: readonly SelectedPackage[],
@@ -43,6 +44,8 @@ export interface LauncherContext {
   readonly state: MenuState;
   readonly controller: MenuController;
   readonly preferences: () => UiPreferences;
+  /** True while a scan of the session runs: package managers are busy, no update starts. */
+  isScanning(): boolean;
   takeOver(start: (surface: TakeoverSurface) => Takeover): () => void;
   /** End the session: quit, or run an update on the plain terminal. */
   exit(exit: SessionExit): void;

@@ -80,7 +80,7 @@ class InScreenLauncher implements UpdateLauncher {
     packages: readonly SelectedPackage[],
     request: LaunchRequest = {},
   ): Promise<UpdateReport | null> {
-    if (packages.length === 0 || this.#isBusy) return null;
+    if (packages.length === 0 || this.#isBusy || this.#context.isScanning()) return null;
     this.#isBusy = true;
     try {
       return await this.launchOnce(packages, request);

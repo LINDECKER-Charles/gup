@@ -22,6 +22,7 @@ import {
   OPTIONS_SECTIONS,
   TIMEOUT_OUT_OF_RANGE,
 } from "../../../../src/ui/text/settings/options-labels.js";
+import { CONFIG_STATE_LABELS } from "../../../../src/ui/text/settings/settings-labels.js";
 import { COLORS_UNAVAILABLE, CONTRAST_STATUS } from "../../../../src/ui/text/settings/theme-labels.js";
 import { seg } from "../../../../src/ui/tui/styled-lines.js";
 import {
@@ -245,6 +246,19 @@ describe("OptionsPanel saving", () => {
     expect(first).toContain("ENOSPC");
     press(panel, "enter");
     expect(text(panel.render(VIEW))).not.toContain("non enregistré");
+  });
+
+  it("says on the file row that a save failed, until a later one succeeds", async () => {
+    const { panel } = setup({ store: await flakyStore() });
+    press(panel, "enter", "end");
+    expect(text(panel.render(VIEW))).toContain(CONFIG_STATE_LABELS.notSaved("ENOSPC: disque plein"));
+    press(panel, "home", "enter", "end");
+    const saved = text(panel.render(VIEW));
+    expect(saved).toContain("› Fichier");
+    expect(saved).not.toContain("non enregistré");
+    // The save created the file: the row no longer says there is none.
+    expect(saved).toContain(CONFIG_STATE_LABELS.saved);
+    expect(saved).not.toContain(CONFIG_STATE_LABELS.defaults);
   });
 });
 

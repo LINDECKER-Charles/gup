@@ -8,6 +8,7 @@ import { ScanBus } from "../scan-progress.js";
 import {
   PANEL_HINTS_TAIL,
   providerCountFact,
+  QUIT_DIALOG,
   SIDEBAR_HINTS,
   SIDEBAR_TITLE,
 } from "../text/menu-labels.js";
@@ -103,8 +104,13 @@ export class MenuSession {
     });
     this.#main = new TextPanel(screen, this.#chrome.body, { id: "gup-main", title: "" });
     this.#dialogs = new DialogLayer(screen);
+    // A dialog a launcher opens once its detection answered comes outside a
+    // key: the hint bar must still trade the screen's keys for the dialog's.
+    this.#dialogs.onChange(() => {
+      if (!screen.renderer.isDestroyed) this.draw();
+    });
     this.#views = new ViewRegistry(deps.views, deps.initialView ?? "scan");
-    this.#nav = new MenuNav(this.#views, () => this.#exit({ kind: "quit" }));
+    this.#nav = new MenuNav(this.#views, () => void this.quit());
     this.#scans = new ScanBus((events) => deps.controller.scan(deps.state, events));
     this.#views.mount(this.createContext());
   }
@@ -175,6 +181,7 @@ export class MenuSession {
       state: this.#deps.state,
       controller: this.#deps.controller,
       preferences,
+      isScanning: () => this.#scans.isRunning,
       takeOver: (start) => this.takeOver(start),
       exit: (exit) => this.#exit(exit),
       afterUpdate: (report, returnTo) => this.afterUpdate(report, returnTo),
@@ -239,10 +246,23 @@ export class MenuSession {
 
   private globalKeys(): Record<string, () => void> {
     return {
-      q: () => this.#exit({ kind: "quit" }),
+      q: () => void this.quit(),
       tab: () => this.#nav.toggle(),
       left: () => this.#nav.focusSidebar(),
     };
+  }
+
+  /** `q` or "Quitter": the session ends — once confirmed when a view holds unsaved changes. */
+  private async quit(): Promise<void> {
+    const unsaved = this.#views.unsavedViews();
+    const isConfirmed =
+      unsaved.length === 0 ||
+      (await this.#dialogs.confirm({
+        title: QUIT_DIALOG.title,
+        text: [QUIT_DIALOG.text(unsaved)],
+        default: false,
+      }));
+    if (isConfirmed) this.#exit({ kind: "quit" });
   }
 
   /** A scan the user asked for: the Scan view comes to the front. */
@@ -345,12 +365,15 @@ export class MenuSession {
     this.#sidebar.show(this.#nav.render(density, width));
   }
 
-  /** The focused side's key hints, then the global keys the bar must never cut. */
+  /**
+   * An open dialog's keys; else the focused side's, then the global keys the
+   * bar must never cut — unless the panel takes them too (text being typed).
+   */
   private hints(): [hints: string, pinned: string] {
     const panel = this.#views.panel;
-    if (this.#dialogs.isOpen) return ["", ""];
+    if (this.#dialogs.isOpen) return [this.#dialogs.hints(), ""];
     if (this.#nav.isSidebarFocused || !panel) return [SIDEBAR_HINTS, ""];
-    return [panel.hints(), PANEL_HINTS_TAIL];
+    return [panel.hints(), panel.isCapturingText ? "" : PANEL_HINTS_TAIL];
   }
 }
 

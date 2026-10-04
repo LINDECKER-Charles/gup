@@ -1,5 +1,6 @@
 import { mkdirSync, rmSync } from "node:fs";
 import { posix } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { writeFileAtomic } from "../../config/atomic-write.js";
 import type { RunResult } from "../../runner.js";
 import {
@@ -37,10 +38,20 @@ export interface LaunchdOptions {
   readonly stderrPath: string;
   readonly run?: TriggerRunner;
   readonly files?: AgentFiles;
+  /** Waits between bootstrap attempts; injected so tests never sleep. */
+  readonly sleep?: (ms: number) => Promise<unknown>;
 }
 
 const LAUNCHCTL = "/bin/launchctl";
 const AGENTS_DIR_MODE = 0o755;
+/**
+ * `bootout` returns before launchd has finished tearing the agent down; a
+ * `bootstrap` right behind it then fails with EIO ("Bootstrap failed: 5:
+ * Input/output error") on some macOS releases. Only that answer is retried.
+ */
+const BOOTSTRAP_BUSY = /Bootstrap failed: 5(?!\d)/;
+/** Waits before each new attempt: 0.25 + 0.5 + 1 s, then the failure stands. */
+const BOOTSTRAP_RETRY_DELAYS_MS: readonly number[] = [250, 500, 1000];
 
 const NODE_AGENT_FILES: AgentFiles = {
   write(path, content) {
@@ -57,11 +68,13 @@ export class LaunchdTrigger implements OsTrigger {
   readonly #options: LaunchdOptions;
   readonly #run: TriggerRunner;
   readonly #files: AgentFiles;
+  readonly #sleep: (ms: number) => Promise<unknown>;
 
   constructor(options: LaunchdOptions) {
     this.#options = options;
     this.#run = options.run ?? DEFAULT_TRIGGER_RUNNER;
     this.#files = options.files ?? NODE_AGENT_FILES;
+    this.#sleep = options.sleep ?? sleep;
   }
 
   get #plistPath(): string {
@@ -80,7 +93,7 @@ export class LaunchdTrigger implements OsTrigger {
     this.#files.write(this.#plistPath, plist);
     // Booting out first makes a reinstall pick up a changed command; absent is fine.
     await this.#launchctl(["bootout", `${this.#domain}/${LAUNCHD_LABEL}`]);
-    const bootstrap = await this.#launchctl(["bootstrap", this.#domain, this.#plistPath]);
+    const bootstrap = await this.#bootstrap();
     if (bootstrap.failed) throw launchctlError("bootstrap", bootstrap);
     const enable = await this.#launchctl(["enable", `${this.#domain}/${LAUNCHD_LABEL}`]);
     if (enable.failed) throw launchctlError("enable", enable);
@@ -106,6 +119,18 @@ export class LaunchdTrigger implements OsTrigger {
 
   async location(): Promise<string> {
     return this.#plistPath;
+  }
+
+  /** `bootstrap`, tried again while launchd is still booting the previous agent out. */
+  async #bootstrap(): Promise<RunResult> {
+    const args = ["bootstrap", this.#domain, this.#plistPath];
+    let result = await this.#launchctl(args);
+    for (const delay of BOOTSTRAP_RETRY_DELAYS_MS) {
+      if (!result.failed || !BOOTSTRAP_BUSY.test(firstLineOf(result))) return result;
+      await this.#sleep(delay);
+      result = await this.#launchctl(args);
+    }
+    return result;
   }
 
   #launchctl(args: string[]): Promise<RunResult> {

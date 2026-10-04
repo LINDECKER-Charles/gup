@@ -13,7 +13,6 @@ same results (2,932 tests, 2 skipped on Windows).
 | Project | Files | Setup | Runs |
 |---|---|---|---|
 | `unit` | `tests/{core,commands,ui,security,scripts,cli}/**/*.test.ts` | worker sandbox | always |
-| `providers-legacy` | `tests/providers/*.test.ts` (flat, each file mocks the runner) | worker sandbox | until the migration ends |
 | `providers` | `tests/providers/*/**/*.test.ts`, `tests/platform/**`, `tests/support/self-test/**` | worker sandbox + **fake system** | always |
 | `integration` | `tests/integration/**/*.test.ts` (real spawns, 30 s timeout) | worker sandbox | always |
 | `e2e` | `tests/e2e/**/*.e2e.test.ts` (120 s, serial, one retry) | worker sandbox | only when `GUP_E2E=1` |
@@ -25,15 +24,18 @@ same results (2,932 tests, 2 skipped on Windows).
 - Project defaults (environment, `clearMocks`, env, `execArgv`, the worker setupFile) are spread
   into each project instead of inherited with `extends: true`: inheritance also re-ran the root
   global setups once per project.
-- `test/provider-contracts` deletes the `providers-legacy` entry when the last flat file has
-  moved (amendment X-1). The e2e project's global setup, reporter and npm scripts arrive with the
-  E2E toolkit (wave 3).
+- Every provider suite lives in a domain folder and runs on the fake system. Until the migration
+  ended, a `providers-legacy` project ran the flat `tests/providers/*.test.ts` files, each mocking
+  the runner; `test/provider-contracts` retired it once the last one had moved (amendment X-1, its
+  design note §4). A flat file under `tests/providers/` now matches no project, and the
+  membership self-test fails on it. The e2e project's global setup, reporter and npm scripts
+  arrive with the E2E toolkit (wave 3).
 
 | Script | Runs |
 |---|---|
-| `npm test` | watch mode, `unit` + `providers*` |
+| `npm test` | watch mode, `unit` + `providers` |
 | `npm run test:run` | every declared project (CI) |
-| `npm run test:unit` | `unit` + `providers*`, no real process |
+| `npm run test:unit` | `unit` + `providers`, no real process |
 | `npm run test:integration` | `integration` |
 | `npm run test:security` | `vitest run tests/security` — unchanged, `security.yml` relies on it |
 | `npm run test:coverage` | `test:run` with coverage |

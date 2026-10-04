@@ -26,12 +26,14 @@ export function panelFrame(density: Density): { readonly cols: number; readonly 
  * nothing on its own: its owner renders lines for the current state and
  * pushes them with {@link show}. Clicks and wheel turns come back as a row
  * index and a step, so owners never deal with screen coordinates. Border,
- * title and padding follow the screen's appearance, focus included.
+ * title and padding follow the screen's appearance, focus included. A panel
+ * that goes before its screen (the run view's) is {@link dispose}d.
  */
 export class TextPanel {
   readonly box: BoxRenderable;
   readonly #text: TextRenderable;
   readonly #screen: Screen;
+  readonly #stopFollowingLook: () => void;
   #title: string;
   #isFocused = false;
 
@@ -54,7 +56,12 @@ export class TextPanel {
     this.box.add(this.#text);
     parent.add(this.box);
     this.applyLook();
-    screen.appearance.onChange(() => this.applyLook());
+    this.#stopFollowingLook = screen.appearance.onChange(() => this.applyLook());
+  }
+
+  /** Stop following the appearance: the panel is going, its screen stays. Idempotent. */
+  dispose(): void {
+    this.#stopFollowingLook();
   }
 
   show(lines: readonly Line[]): void {

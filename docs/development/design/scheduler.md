@@ -104,7 +104,14 @@ pipeline's `PlannedUpdate` / `UpdatePlan`.
 ## 4. Runs
 
 **Tick** (`ScheduledRun.tick`): nothing enabled → idle, no write. Heartbeat
-(`lastTickAt`). Batch: `BatchLock.tryAcquire(location, "scheduled")` — the
+(`lastTickAt`). Every enabled schedule read from disk is checked again
+(`scheduleIssues`: its name and its recurrence, the hourly minimum included):
+one `schedules.json` edited by hand past the editor's rules is never run,
+only logged (`scheduler.schedule-invalid`, warn) at every tick; a target's
+own problems still skip just that target at run time (`planTick`). The
+one-year horizon is the editor's and the CLI's alone (`validateDraft`): seen
+from the tick that runs it, a 29 February schedule's next occurrence is four
+years away. Batch: `BatchLock.tryAcquire(location, "scheduled")` — the
 foundation's OS-released lock (F-13, S-2), never waited for: busy → nothing
 consumed. Missed occurrences recorded. Due ones consumed **before any work**
 (crash safety), then `TargetResolver`: detect and scan only the needed
@@ -148,8 +155,11 @@ not the run.
 | `install.json` | `TriggerSync` | argv, launcher, captured env, date, gup version |
 | `agent-stderr.log` | launchd | macOS only |
 
-`purgeSchedulerFiles` removes them (and their `.lock` files), then the
-directory only if empty (a `GUP_SCHEDULER_DIR` may point at a shared folder).
+`purgeSchedulerFiles` removes them (their `.lock` files and the copies of a
+corrupt file the store set aside, `schedules.corrupt-<date>.json`, included),
+then the directory only if empty (a `GUP_SCHEDULER_DIR` may point at a shared
+folder). The update batch's lock lives in `<state root>/gup/locks`, not here
+(unless `GUP_SCHEDULER_DIR` is set): an update never recreates this folder.
 
 ## 6. OS triggers
 
@@ -157,7 +167,7 @@ directory only if empty (a `GUP_SCHEDULER_DIR` may point at a shared folder).
 |---|---|---|---|
 | Adapter | `WindowsTaskTrigger` | `LaunchdTrigger` | `CrontabTrigger` |
 | Artefact | task `gup-scheduler-<SID>`, XML (UTF-16LE+BOM) in a `mkdtemp` dir, `wx`, removed | `~/Library/LaunchAgents/io.github.lindecker-charles.gup.scheduler.plist`, atomic, owner-only | managed block in the user crontab |
-| Install | `schtasks /Create /XML /F` | write, `bootout` (ignored), `bootstrap gui/<uid>`, `enable` | `crontab -l` (LC_ALL=C) → upsert → `crontab -` on stdin |
+| Install | `schtasks /Create /XML /F` | write, `bootout` (ignored), `bootstrap gui/<uid>` (retried after 0.25, 0.5 and 1 s while it answers `Bootstrap failed: 5`: launchd still booting the old agent out), `enable` | `crontab -l` (LC_ALL=C) → upsert → `crontab -` on stdin |
 | Status | `/Query` exit code | `print` exit code + `print-disabled` parse | block present |
 | Binaries | `%SystemRoot%\System32\{schtasks,whoami,conhost}.exe` (SystemRoot validated) | `/bin/launchctl` | `crontab` resolved once, then absolute |
 
@@ -311,13 +321,13 @@ Part 2 extends no foundation contract: the view uses `ViewDefinition`
 | D14 | The opt-in Linux crontab integration test is not written | it cannot run here; the pure block and the adapter's argv are unit-tested |
 | D15 | Cron nicknames (`@daily`) accepted | croner accepts them in 5-part mode; validation still applies |
 | D16 | A menu run-now that falls back to the plain terminal is recorded by `ManualRunTracker`, an update observer the scheduler module installs for the menu | F-6: `launch` resolves `null` both when declined and when it ran outside, so the view never gets that report; S-5's `recordManualRun(report)` still records the in-screen report |
-| D17 | Run-now asks twice when the launcher confirms updates (`confirmBeforeUpdate`): "Exécuter « X » maintenant ?" before the scan, then the launcher's list of packages | the first gates a scan of the machine, the second says what will actually be updated; the second follows the user's preference |
+| D17 | Run-now is confirmed once (since `fix/wave-2-polish`; it used to ask twice): with `confirmBeforeUpdate` on, no question before the scan, the launcher's list of the packages found is the confirmation; with it off, "Exécuter « X » maintenant ?" before the scan | the launcher's question says what will actually be updated and follows the user's preference; with the preference off, the run-now question still keeps a stray `x` from starting updates. A scan alone changes nothing, and finding nothing to update only records the run |
 | D18 | `p` also leaves out packages of admin-only providers (and any target `validateDraft` refuses), with the reason, not only `aggregate` rows | one rule, the validation's, at the gesture as at saving; the user learns it before the editor opens |
 | D19 | The monthly day is typed (`1`–`28` or `dernier`) instead of chosen in a 29-entry list | the dialog layer does not scroll: 29 entries do not fit on a 24-row terminal |
 | D20 | Unseen runs count each schedule's *last* run, scheduled ones only (not `manual`, not `missed`); `seenRunsUntil` is written when the view is shown and something is unseen | the state keeps one run per schedule; a run-now happened under the user's eyes; a missed occurrence ran nothing |
 | D21 | No "Notification" field; the catch-up reads `[oui]`/`[non]`; the buttons sit on two lines | S-4; French UI; one cursor stop per line keeps clicks and keys simple |
 | D22 | The table drops the package count and next-run columns below a 120-column terminal; the details under it give the next run | a 100-column terminal leaves 70 columns to the panel |
-| D23 | `q` quits the menu even with an editor open | `q` is global in the foundation's session unless a panel captures text; a panel cannot claim it |
+| D23 | `q` quits the menu with an editor open; with changes not saved, only once the user confirms (default "Non") — since `fix/wave-2-polish` | `q` is global in the session unless a panel captures text, and a panel cannot claim it; `Panel.hasUnsavedChanges()` lets the session ask instead, for "Quitter" in the sidebar too |
 
 ## 12. Menu (part 2)
 

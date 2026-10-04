@@ -78,6 +78,13 @@ describe("ConfigStore: writing", () => {
     expect(new ConfigStore({ file }).read(PREFS)).toEqual({ fast: true, mode: "a", count: 3 });
   });
 
+  it("reports the file as there once its first save created it", () => {
+    const store = new ConfigStore({ file });
+    expect(store.status().state).toBe("missing");
+    store.write(PREFS, { fast: true, mode: "a", count: 3 });
+    expect(store.status().state).toBe("loaded");
+  });
+
   it("drops a section once it is back to its defaults", async () => {
     const store = new ConfigStore({ file });
     store.write(PREFS, { fast: true, mode: "b", count: 1 });
@@ -218,6 +225,22 @@ describe("ConfigStore: damaged and foreign files", () => {
     expect(failing.status().lastWriteError).toBe("EBUSY");
     expect(await onDisk()).toEqual({ version: 1, sections: { prefs: { v: 1, fast: true } } });
     expect(await readdir(join(dir, "nested"))).toEqual(["config.json"]);
+  });
+
+  it("forgets a failed save once a later one persists", () => {
+    let isBusy = true;
+    const renameSync: typeof NODE_FILE_OPS.renameSync = (...args) => {
+      if (isBusy) throw Object.assign(new Error("EBUSY"), { code: "EBUSY" });
+      NODE_FILE_OPS.renameSync(...args);
+    };
+    const store = new ConfigStore({ file, fileOps: { ...NODE_FILE_OPS, renameSync } });
+    expect(() => store.write(PREFS, { fast: true, mode: "a", count: 3 })).toThrow();
+    expect(store.status().lastWriteError).toBe("EBUSY");
+
+    isBusy = false;
+    store.update(PREFS, (current) => ({ ...current, count: 4 }));
+
+    expect(store.status()).not.toHaveProperty("lastWriteError");
   });
 });
 

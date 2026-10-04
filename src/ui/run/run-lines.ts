@@ -5,10 +5,10 @@ import {
   RUN_SUMMARY,
   RUN_TAGS,
   RUN_TITLES,
-  RUN_WAITING,
+  waitingMessage,
   type ElevationKind,
 } from "../text/run-labels.js";
-import { formatClock, formatRelative } from "../text/fr-format.js";
+import { formatClock } from "../text/fr-format.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import { fit, lineWidth, seg, type Line, type Segment, type Tone } from "../tui/styled-lines.js";
 import {
@@ -208,10 +208,8 @@ function summary(counts: RunCounts): Line {
 }
 
 function waitingLine(model: RunModel, view: StatusView): Line {
-  const holder = model.holder;
-  const who = holder?.kind === "scheduled" ? RUN_WAITING.scheduled : RUN_WAITING.interactive;
-  const since = holder ? formatRelative(new Date(holder.startedAt), new Date(view.now)) : "";
-  return [seg(`${spinner(view.frame)} `, "accent"), seg(RUN_WAITING.line(who, since))];
+  const message = waitingMessage(model.holder, new Date(view.now));
+  return [seg(`${spinner(view.frame)} `, "accent"), seg(message)];
 }
 
 function noticeLine(notice: Notice): Line {

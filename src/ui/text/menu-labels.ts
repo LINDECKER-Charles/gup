@@ -17,8 +17,22 @@ export const VIEW_LABELS = {
 } as const;
 
 export const SIDEBAR_HINTS = "↑↓ naviguer · entrée ouvrir · tab contenu · q quitter";
-/** Appended to the focused panel's own hints. */
+/** Appended to the focused panel's own hints, unless it takes every key (text being typed). */
 export const PANEL_HINTS_TAIL = "tab menu · q quitter";
+
+/** Asked before quitting while a view holds changes not saved yet. */
+export const QUIT_DIALOG = {
+  title: "Quitter sans enregistrer ?",
+  text: (views: readonly string[]) =>
+    `Des modifications ne sont pas enregistrées (${views.join(", ")}) : elles seront perdues.`,
+} as const;
+
+/** The hint bar while a dialog is open: its keys replace those of the screen behind it. */
+export const DIALOG_HINTS = {
+  confirm: "←→ choisir · o oui · n non · entrée valider · échap annuler",
+  choose: "↑↓ choisir · entrée valider · échap annuler",
+  ask: "tapez · entrée valider · échap annuler",
+} as const;
 
 /** What Scan and Paquets say when the session has not scanned yet and no scan runs. */
 export const NO_SCAN_YET = "Aucun scan pour l'instant — r pour scanner.";

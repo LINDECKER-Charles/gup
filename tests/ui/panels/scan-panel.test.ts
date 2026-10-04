@@ -20,9 +20,44 @@ describe("ScanPanel", () => {
     scan.finished("Winget", { updates: 3, ms: 2100 });
     scan.completed(2900);
     const out = text(scan.render(VIEW));
-    expect(out).toContain("Scan terminé en 2.9s — 3 provider(s), 3 mise(s) à jour");
+    expect(out).toContain("Scan terminé en 2,9 s — 3 provider(s), 3 mise(s) à jour");
     expect(out.indexOf("Azure CLI")).toBeLessThan(out.indexOf("Winget"));
-    expect(out).toMatch(/Winget +3 mise\(s\) à jour +2\.1s/);
+    expect(out).toMatch(/Winget +3 mise\(s\) à jour +2,1 s/);
+  });
+
+  it("writes durations the French way, the time column aligned past a minute", () => {
+    const scan = new ScanPanel(vi.fn());
+    scan.detecting();
+    scan.planned(2);
+    scan.finished("Winget", { updates: 1, ms: 600 });
+    scan.finished("Scoop", { updates: 0, ms: 65_000 });
+    scan.completed(65_400);
+    const lines = text(scan.render(VIEW)).split("\n");
+    expect(lines[0]).toContain("Scan terminé en 1 min 05 s");
+    const rows = lines.filter((line) => /Winget|Scoop/.test(line));
+    expect(rows.map((row) => row.trimEnd().split(/ {2,}/).at(-1))).toEqual(["0,6 s", "1 min 05 s"]);
+    expect(new Set(rows.map((row) => row.trimEnd().length)).size).toBe(1);
+  });
+
+  it("wraps the summary and a failure's reason on an 80-column terminal", () => {
+    const narrow = { width: 52, height: 20 };
+    // The headline's rows: everything above the blank line under it.
+    const summaryOf = (scan: ScanPanel) => {
+      const lines = text(scan.render(narrow)).split("\n");
+      return lines.slice(0, lines.indexOf(""));
+    };
+    const scan = new ScanPanel(vi.fn());
+    scan.detecting();
+    scan.planned(12);
+    scan.completed(1200);
+    const summary = summaryOf(scan);
+    expect(summary.length).toBeGreaterThan(1);
+    expect(summary.every((line) => line.length <= narrow.width)).toBe(true);
+    expect(summary.join(" ")).toBe("✔ Scan terminé en 1,2 s — 12 provider(s), 0 mise(s) à jour");
+
+    const reason = "la détection des providers a dépassé son délai (30 s)";
+    scan.failed(reason);
+    expect(summaryOf(scan).join(" ")).toBe(`✖ Scan interrompu : ${reason}`);
   });
 
   it("rescans on r, but not while a scan runs", () => {

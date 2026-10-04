@@ -56,6 +56,7 @@ import {
   STOP_DIALOG,
 } from "../../../src/ui/text/run-labels.js";
 import { PROMPT_IDLE_MS } from "../../../src/ui/run/prompt-hint.js";
+import { DIALOG_HINTS } from "../../../src/ui/text/menu-labels.js";
 import { NOTIFY_MIN_RUN_MS } from "../../../src/ui/run/run-view.js";
 import { RETAINED_RECENT_PANES } from "../../../src/ui/run/terminal-panes.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
@@ -165,6 +166,11 @@ async function shown(menu: MenuDriver, text: string): Promise<string> {
   );
 }
 
+/** The key-hint bar: the frame's last line, without its leading blank. */
+function hintBar(frame: string): string {
+  return (frame.trimEnd().split("\n").at(-1) ?? "").trim();
+}
+
 async function pressCtrlG(menu: MenuDriver): Promise<void> {
   menu.screen.mockInput.pressKey("g", { ctrl: true });
   await menu.screen.flush();
@@ -219,9 +225,12 @@ describe("run view", () => {
     const { menu, pty } = await launched();
     await installsStarted(pty, 1);
     await menu.press("x");
-    expect(await menu.frame()).toContain("les 2 paquet(s) restant(s)");
+    const asking = await menu.frame();
+    expect(asking).toContain("les 2 paquet(s) restant(s)");
+    expect(hintBar(asking)).toBe(DIALOG_HINTS.confirm);
     await menu.press("n");
     expect(hoisted.terminate).not.toHaveBeenCalled();
+    expect(hintBar(await menu.frame())).toBe(RUN_HINTS.running(false));
 
     await menu.press("x", "o");
     const results = await shown(menu, RUN_TITLES.done);
@@ -323,13 +332,20 @@ describe("run view", () => {
     );
     await installsStarted(pty, 1);
     pty.last().emitExit({ exitCode: 0 });
-    expect(await shown(menu, ELEVATE_DIALOG.title)).toContain("Ouvrir une invite UAC");
+    const question = await shown(menu, ELEVATE_DIALOG.title);
+    expect(question).toContain("Ouvrir une invite UAC");
+    // Asked by the pipeline, not after a key: the bar still trades its keys for the dialog's.
+    expect(hintBar(question)).toBe(DIALOG_HINTS.confirm);
     await menu.press("o");
 
     const waiting = await shown(menu, PANE_LABELS.admin.uac);
     expect(waiting).toContain(PANE_LABELS.approveUac);
     expect(waiting).toContain(RUN_HINTS.elevating.uac);
     expect(waiting).toMatch(/nodejs .* fenêtre admin…/);
+    await menu.press("t");
+    const typing = await menu.frame();
+    expect(typing).toContain(RUN_NOTICES.typeElsewhere);
+    expect(typing).not.toContain(RUN_NOTICES.skipAdmin.uac);
     await menu.press("s");
     expect(await menu.frame()).toContain(RUN_NOTICES.skipAdmin.uac);
     await menu.press("x");
@@ -452,6 +468,28 @@ describe("run view", () => {
     expect(paneSpan?.bg.intent).toBe("default");
     const titleSpan = lines.flatMap((line) => line.spans).find((s) => s.text.includes("alpha"));
     expect(titleSpan?.bg.intent).toBe("rgb");
+  });
+
+  it("stops following the appearance once the run view is gone", async () => {
+    const listeners = new Set<() => void>();
+    const tracked: AppearanceFactory = (renderer, tui) => ({
+      ...legacyAppearance(renderer, tui),
+      onChange: (listener) => {
+        listeners.add(listener);
+        return () => void listeners.delete(listener);
+      },
+    });
+    const { menu, pty } = await launched({ createAppearance: tracked, packages: [pkg("alpha")] });
+    await installsStarted(pty, 1);
+    const whileRunning = listeners.size;
+    pty.last().emitExit({ exitCode: 0 });
+    await shown(menu, RUN_TITLES.done);
+    await menu.press("enter");
+    await shown(menu, "┏━ Paquets");
+    // The run's status panel was the only listener the run view added.
+    expect(listeners.size).toBe(whileRunning - 1);
+    for (const listener of listeners) listener();
+    expect(await menu.frame()).toContain("┏━ Paquets");
   });
 
   it("closes its gate on the signals that end gup, only while the batch runs", async () => {

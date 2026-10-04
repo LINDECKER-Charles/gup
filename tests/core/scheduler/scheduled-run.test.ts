@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { installLogBackend, type LogInput, type LogLevel } from "../../../src/core/log/log.js";
 import type {
   Schedule,
   SchedulerState,
@@ -10,6 +11,7 @@ import {
   type SkippedTarget,
   type TickExecutor,
 } from "../../../src/core/scheduler/scheduled-run.js";
+import { TOO_FREQUENT } from "../../../src/core/scheduler/model/validate-schedule.js";
 import { MAX_DEFERRALS } from "../../../src/core/scheduler/scheduler-timing.js";
 import { TargetResolver, type TargetScan } from "../../../src/core/scheduler/target-resolver.js";
 import type { UpdateOutcome } from "../../../src/core/types.js";
@@ -19,6 +21,8 @@ import type { PlannedUpdate, UpdateRequest } from "../../../src/core/update/upda
 import { buildReport } from "../../../src/core/update/update-report.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { providerFacts, schedule, target } from "./scheduler-fixtures.js";
+
+afterEach(() => installLogBackend(null));
 
 // Daily 09:00 schedules (TZ=UTC); the tick runs Monday 09:05.
 const TICK_AT = new Date("2026-10-05T09:05:00Z");
@@ -131,6 +135,47 @@ describe("ScheduledRun.tick", () => {
     expect(await h.run.tick()).toEqual({ kind: "idle" });
     expect(h.batch.taken).toBe(0);
     expect(h.state.current).toEqual({ v: 1, schedules: {} });
+  });
+
+  it("never runs a schedule edited by hand past the hourly minimum, and logs why", async () => {
+    const records: [LogLevel, string, LogInput | undefined][] = [];
+    installLogBackend({
+      isEnabled: () => true,
+      emit: (level, event, data) => void records.push([level, event, data]),
+    });
+    const everyMinute = schedule({
+      id: "0badf00d",
+      recurrence: { kind: "cron", expression: "* * * * *" },
+      targets: [target("npm-g", "typescript")],
+    });
+    const h = harness({ schedules: [everyMinute, schedule()] });
+
+    expect(await h.run.tick()).toMatchObject({ kind: "ran" });
+
+    expect(h.requests.flat().map((request) => request.packageId)).toEqual(["Git.Git"]);
+    expect(h.state.current.schedules["0badf00d"]).toEqual({ lastAttemptAt: YESTERDAY });
+    expect(records).toContainEqual([
+      "warn",
+      "scheduler.schedule-invalid",
+      { scheduleId: "0badf00d", issues: [`recurrence: ${TOO_FREQUENT}`] },
+    ]);
+  });
+
+  it("takes no batch when every enabled schedule is invalid, the heartbeat still written", async () => {
+    const everyFiveMinutes = schedule({ recurrence: { kind: "cron", expression: "*/5 * * * *" } });
+    const h = harness({ schedules: [everyFiveMinutes] });
+    expect(await h.run.tick()).toEqual({ kind: "idle" });
+    expect(h.batch.taken).toBe(0);
+    expect(h.state.current.lastTickAt).toBe(TICK_AT.toISOString());
+  });
+
+  it("runs a leap-day schedule on its day, though its next occurrence is four years away", async () => {
+    const leapDay = schedule({ recurrence: { kind: "cron", expression: "0 9 29 2 *" } });
+    const h = harness({ schedules: [leapDay] });
+    h.clock.now = new Date("2028-02-29T09:05:00Z");
+
+    expect(await h.run.tick()).toMatchObject({ kind: "ran" });
+    expect(h.requests.flat().map((request) => request.packageId)).toEqual(["Git.Git"]);
   });
 
   it("writes the heartbeat but consumes nothing when another run holds the batch", async () => {

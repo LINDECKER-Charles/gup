@@ -330,3 +330,6 @@ only in a shell is not seen by it (gup warns when that happens).
 | Linux | `crontab -e`, then delete the lines from `# >>> gup-scheduler >>>` to `# <<< gup-scheduler <<<` |
 
 Then delete the scheduler directory listed in [Where things live](#where-things-live).
+The `locks` directory next to it holds the lock every gup update takes (empty
+between runs); it is not the scheduler's, and can go too once gup is
+uninstalled.

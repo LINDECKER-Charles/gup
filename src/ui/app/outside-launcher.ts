@@ -16,7 +16,7 @@ const LISTED_PACKAGES = 8;
 export const outsideLauncher: LauncherFactory = (context) => ({
   isRunning: false,
   async launch(packages, request = {}) {
-    if (packages.length === 0) return null;
+    if (packages.length === 0 || context.isScanning()) return null;
     const mustConfirm = context.preferences().confirmBeforeUpdate;
     if (mustConfirm && !(await confirmUpdate(context.dialogs, packages))) return null;
     context.exit({

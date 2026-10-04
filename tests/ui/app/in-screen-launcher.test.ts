@@ -6,14 +6,18 @@ import type { UpdatePorts, UpdateRequest } from "../../../src/core/update/update
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import { inScreenLauncher } from "../../../src/ui/app/in-screen-launcher.js";
 import type { UiPreferences } from "../../../src/ui/app/ui-preferences.js";
-import type { ViewContext, ViewDefinition } from "../../../src/ui/app/view-definition.js";
-import type { Panel } from "../../../src/ui/panels/panel.js";
+import { DIALOG_HINTS, PANEL_HINTS_TAIL } from "../../../src/ui/text/menu-labels.js";
 import { LAUNCH_ERROR, RUN_TITLES } from "../../../src/ui/text/run-labels.js";
-import { seg } from "../../../src/ui/tui/styled-lines.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
+import { scanView } from "../../../src/ui/views/scan-view.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { fakePty } from "../../support/pty/fake-pty.js";
-import { bootMenu, EMPTY_REPORT, type MenuDriver } from "../../support/tui/menu-driver.js";
+import {
+  bootMenu,
+  contextView,
+  EMPTY_REPORT,
+  type MenuDriver,
+} from "../../support/tui/menu-driver.js";
 
 /**
  * The in-screen launcher's decisions, with the pipeline scripted: what the
@@ -80,6 +84,11 @@ async function shown(menu: MenuDriver, text: string): Promise<string> {
   );
 }
 
+/** The key-hint bar: the frame's last line, without its leading blank. */
+function hintBar(frame: string): string {
+  return (frame.trimEnd().split("\n").at(-1) ?? "").trim();
+}
+
 describe("in-screen launcher", () => {
   it("starts detecting the embedded terminal as soon as the menu opens", async () => {
     const { loadSupport } = await menuWith();
@@ -144,6 +153,19 @@ describe("in-screen launcher", () => {
     expect(runUpdates).toHaveBeenCalledOnce();
   });
 
+  it("puts the confirmation's keys on the hint bar, though it opens after the detection", async () => {
+    let detected = (_support: EmbeddedTerminalSupport): void => {};
+    const pending = new Promise<EmbeddedTerminalSupport>((resolve) => (detected = resolve));
+    const { menu } = await menuWith({ support: () => pending });
+    await menu.press("a", "enter");
+    expect(hintBar(await menu.frame())).toContain(PANEL_HINTS_TAIL);
+    detected(AVAILABLE);
+    const confirmation = await shown(menu, "vont être mis à jour");
+    expect(hintBar(confirmation)).toBe(DIALOG_HINTS.confirm);
+    await menu.press("n");
+    expect(hintBar(await shown(menu, "┏━ Paquets"))).toContain(PANEL_HINTS_TAIL);
+  });
+
   it("says the update broke and gives the menu back", async () => {
     const { menu } = await menuWith({
       pipeline: async () => {
@@ -159,28 +181,10 @@ describe("in-screen launcher", () => {
   });
 
   it("carries a schedule's run-now to the history and goes back where it came from", async () => {
-    let context: ViewContext | null = null;
-    const schedules: ViewDefinition = {
-      id: "schedules",
-      label: "Planification",
-      order: 30,
-      group: 0,
-      create: (viewContext): Panel => {
-        context = viewContext;
-        return {
-          title: "Planification",
-          isCapturingText: false,
-          hints: () => "",
-          render: () => [[seg("planifications")]],
-          press: () => {},
-          click: () => {},
-          scroll: () => {},
-        };
-      },
-    };
+    const schedules = contextView();
     const runUpdates = vi.fn(updatesEverything);
     const menu = await bootMenu({
-      views: [schedules, optionsView()],
+      views: [schedules.view, optionsView()],
       initialView: "schedules",
       scanOnStart: false,
       preferences: { confirmBeforeUpdate: false },
@@ -188,7 +192,10 @@ describe("in-screen launcher", () => {
     });
     await shown(menu, "planifications");
     const selection = [{ providerId: "winget", pkg: pkg("Git.Git") }];
-    const launch = context!.updates.launch(selection, { scheduleId: "s1", returnTo: "options" });
+    const launch = schedules.context().updates.launch(selection, {
+      scheduleId: "s1",
+      returnTo: "options",
+    });
 
     await shown(menu, RUN_TITLES.done);
     expect(runUpdates.mock.calls[0]![0]).toEqual([
@@ -197,5 +204,24 @@ describe("in-screen launcher", () => {
     await menu.press("enter");
     await expect(launch).resolves.toMatchObject({ succeeded: [outcome("Git.Git")] });
     await shown(menu, "┏━ Options");
+  });
+
+  it("starts nothing while a scan of the menu runs", async () => {
+    const schedules = contextView();
+    const runUpdates = vi.fn(updatesEverything);
+    const menu = await bootMenu({
+      views: [schedules.view, scanView()],
+      initialView: "schedules",
+      controller: { scan: () => new Promise<void>(() => {}) },
+      preferences: { confirmBeforeUpdate: false },
+      launcher: inScreenLauncher({ loadSupport: async () => AVAILABLE, runUpdates }),
+    });
+    await shown(menu, "planifications");
+    expect(schedules.context().isScanning()).toBe(true);
+    const selection = [{ providerId: "winget", pkg: pkg("Git.Git") }];
+
+    await expect(schedules.context().updates.launch(selection)).resolves.toBeNull();
+    expect(runUpdates).not.toHaveBeenCalled();
+    expect(await menu.frame()).not.toContain(RUN_TITLES.running);
   });
 });

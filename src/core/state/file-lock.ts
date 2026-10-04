@@ -10,6 +10,11 @@ import { closeSync, openSync, statSync, unlinkSync, writeSync } from "node:fs";
  * A holder that crashed leaves its lock file behind; one older than
  * {@link LOCK_STALE_MS} is removed and taken over. A live holder is waited
  * for with a bounded backoff, then the caller gets a {@link FileLockTimeoutError}.
+ *
+ * On Windows a lock file its holder is deleting cannot be opened, even to
+ * create it anew: `wx` then fails with EPERM, not EEXIST, for a moment. That
+ * is waited for like a held lock; should EPERM last every attempt, it is the
+ * error the caller gets — a real permission problem, not a busy lock.
  */
 
 /** A lock this old belongs to a process that died inside its section. */
@@ -42,13 +47,25 @@ export function withFileLock<T>(file: string, work: () => T): T {
 
 function acquire(lockFile: string): void {
   let backoff = FIRST_BACKOFF_MS;
+  let releasing: unknown = null;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    if (tryCreate(lockFile)) return;
-    if (removeIfStale(lockFile)) continue;
+    try {
+      if (tryCreate(lockFile)) return;
+      releasing = null;
+      if (removeIfStale(lockFile)) continue;
+    } catch (err) {
+      if (!isBeingDeleted(err)) throw err;
+      releasing = err;
+    }
     pause(backoff);
     backoff = Math.min(backoff * 2, MAX_BACKOFF_MS);
   }
-  throw new FileLockTimeoutError(lockFile);
+  throw releasing ?? new FileLockTimeoutError(lockFile);
+}
+
+/** Windows' answer to opening a file another process is deleting. */
+function isBeingDeleted(err: unknown): boolean {
+  return process.platform === "win32" && (err as NodeJS.ErrnoException).code === "EPERM";
 }
 
 /** True once the lock file is ours; false when another process holds it. */

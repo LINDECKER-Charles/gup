@@ -1,9 +1,13 @@
+import type { BatchHolder } from "../../core/update/update-extensions.js";
+import { formatRelative } from "./fr-format.js";
+
 /**
- * The words of updates that run inside the app (French, the language of the
- * interface): the run view, its dialogs, the update confirmation's extra
- * paragraphs and the `gup doctor` line of the embedded terminal. Exported so
- * the tests assert the exact wording. Symbols come from `STATUS_GLYPHS`
- * where the run view draws them, never from here.
+ * The words of updates (French, the language of the interface): the run
+ * view, its dialogs, the update confirmation's extra paragraphs and the
+ * `gup doctor` line of the embedded terminal — and the wait for another gup
+ * run, which the plain terminal of `gup update` words alike. Exported so the
+ * tests assert the exact wording. Symbols come from `STATUS_GLYPHS` where
+ * the run view draws them, never from here.
  */
 
 /** Windows elevates through a UAC window; elsewhere sudo asks in the terminal pane. */
@@ -48,8 +52,20 @@ export const RUN_MESSAGES = {
 export const RUN_WAITING = {
   scheduled: "Une mise à jour planifiée est en cours",
   interactive: "Une autre mise à jour gup est en cours",
-  line: (who: string, since: string): string => `${who} (commencée ${since}) — attente…`,
+  /** The plain terminal's way out of the wait. */
+  abandon: "Ctrl+C pour abandonner",
 } as const;
+
+/**
+ * "Une mise à jour planifiée est en cours (commencée il y a 4 min) — attente…":
+ * who holds the update batch and since when, seen from `now`. The run view
+ * and the plain terminal say it alike.
+ */
+export function waitingMessage(holder: BatchHolder | null, now: Date): string {
+  const who = holder?.kind === "scheduled" ? RUN_WAITING.scheduled : RUN_WAITING.interactive;
+  if (!holder) return `${who} — attente…`;
+  return `${who} (commencée ${formatRelative(new Date(holder.startedAt), now)}) — attente…`;
+}
 
 export const PANE_LABELS = {
   title: (provider: string, packageName: string): string => `${provider} · ${packageName}`,
@@ -97,6 +113,9 @@ export const RUN_NOTICES = {
   stopAfterStep: "Arrêt demandé — gup s'arrêtera après l'étape administrateur.",
   prompt: "⌨ Le programme attend peut-être une réponse — t pour écrire dans le terminal.",
   typeIdle: "Aucun programme en cours.",
+  /** `t` during the UAC step: the elevated installers run in a window of their own. */
+  typeElsewhere:
+    "L'étape administrateur a sa propre fenêtre : répondez-y directement, rien ne se tape ici.",
 } as const;
 
 export const STOP_DIALOG = {

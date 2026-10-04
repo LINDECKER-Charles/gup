@@ -13,8 +13,9 @@ export function withDialog<T>(
   host: ScreenHost = screenHost,
 ): Promise<T> {
   return host.run((screen) => {
-    new Chrome(screen);
+    const chrome = new Chrome(screen);
     const dialogs = new DialogLayer(screen);
+    dialogs.onChange(() => chrome.setHints(dialogs.hints()));
     screen.renderer.keyInput.on("keypress", (key: KeyEvent) => dialogs.press(key));
     return open(dialogs);
   });

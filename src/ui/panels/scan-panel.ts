@@ -1,7 +1,8 @@
+import { formatDuration } from "../text/fr-format.js";
 import { NO_SCAN_YET } from "../text/menu-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
-import { fit, seg, type Line } from "../tui/styled-lines.js";
+import { fit, seg, wrapLine, type Line } from "../tui/styled-lines.js";
 import { PAGE_STEP, placeholder, type Panel, type Viewport } from "./panel.js";
 
 /** What a scan reports as it goes — to a screen, or to nobody. */
@@ -49,6 +50,8 @@ const FAILED = `${STATUS_GLYPHS.failed} `;
 const BAR_WIDTH = 30;
 const NAME_WIDTH = 30;
 const RESULT_WIDTH = 34;
+/** Right-aligned duration column: "2 min 05 s" plus a leading gap. */
+const TIME_WIDTH = 11;
 
 /**
  * Live progress of a scan, then its result per provider: what is running,
@@ -116,7 +119,7 @@ export class ScanPanel implements Panel, ScanEvents {
 
   render(viewport: Viewport): readonly Line[] {
     if (this.#phase === "idle") return placeholder(NO_SCAN_YET);
-    const head = [this.headline(), []];
+    const head = [...this.headLines(viewport.width), []];
     const rows = this.sortedRows().slice(
       this.#offset,
       this.#offset + viewport.height - head.length,
@@ -138,6 +141,16 @@ export class ScanPanel implements Panel, ScanEvents {
     this.#offset = Math.max(0, Math.min(this.#offset + step, this.#providers.size - 1));
   }
 
+  /**
+   * The headline on as many rows as `width` needs once the scan is over: at
+   * 80 columns the summary and a failure's reason are never cut. The
+   * progress bar of a running scan stays on its one row.
+   */
+  private headLines(width: number): Line[] {
+    const headline = this.headline();
+    return this.#phase === "done" ? wrapLine(headline, width) : [headline];
+  }
+
   private headline(): Line {
     if (this.#failure)
       return [seg(FAILED, "danger"), seg(`Scan interrompu : ${this.#failure}`, "danger")];
@@ -150,10 +163,9 @@ export class ScanPanel implements Panel, ScanEvents {
         (n, p) => n + (p.outcome?.updates ?? 0),
         0,
       );
-      const seconds = (this.#elapsedMs / 1000).toFixed(1);
       return [
         seg(DONE, "success"),
-        seg(`Scan terminé en ${seconds}s`, "strong"),
+        seg(`Scan terminé en ${formatDuration(this.#elapsedMs)}`, "strong"),
         seg(` — ${this.#total} provider(s), ${updates} mise(s) à jour`, "muted"),
       ];
     }
@@ -186,7 +198,7 @@ export class ScanPanel implements Panel, ScanEvents {
 function progressLine({ name, outcome }: Progress): Line {
   if (!outcome)
     return [seg("  ⠿ ", "accent"), seg(fit(name, NAME_WIDTH)), seg("en cours…", "muted")];
-  const time = seg(`${(outcome.ms / 1000).toFixed(1)}s`.padStart(7), "muted");
+  const time = seg(formatDuration(outcome.ms).padStart(TIME_WIDTH), "muted");
   if (outcome.error) {
     return [
       seg(`  ${FAILED}`, "danger"),

@@ -1,4 +1,4 @@
-import { mkdirSync, rmdirSync, rmSync, statSync, truncateSync } from "node:fs";
+import { mkdirSync, readdirSync, rmdirSync, rmSync, statSync, truncateSync } from "node:fs";
 import { pathFlavour } from "../../platform/path-flavour.js";
 import { stateDir, type DirContext } from "../../state/app-dirs.js";
 
@@ -31,6 +31,11 @@ const FILE_NAMES = {
 
 /** Lock files the config store and the state store leave next to their files. */
 const LOCK_SUFFIX = ".lock";
+/**
+ * What the config store names the copy of a corrupt file it set aside:
+ * `schedules.corrupt-20261004T101500.json` next to `schedules.json`.
+ */
+const BACKUP_INFIX = ".corrupt-";
 const DIR_MODE = 0o700;
 /** launchd appends the agent's stderr forever; past this, the tick starts it afresh. */
 export const AGENT_STDERR_CAP_BYTES = 1024 * 1024;
@@ -50,18 +55,35 @@ export function schedulerFiles(context: Partial<DirContext> = {}): SchedulerFile
 }
 
 /**
- * Delete every file the scheduler wrote, then the directory if nothing else
- * lives there (a `GUP_SCHEDULER_DIR` may point at a folder the user shares).
+ * Delete every file the scheduler wrote — the copies of corrupt ones the
+ * store set aside included — then the directory if nothing else lives there
+ * (a `GUP_SCHEDULER_DIR` may point at a folder the user shares).
  */
 export function purgeSchedulerFiles(files: SchedulerFiles): void {
-  for (const file of [files.schedules, files.state, files.install, files.agentStderr]) {
+  const written = [files.schedules, files.state, files.install, files.agentStderr];
+  for (const file of written) {
     rmSync(file, { force: true });
     rmSync(`${file}${LOCK_SUFFIX}`, { force: true });
   }
+  for (const backup of backupsOf(files.dir, written)) rmSync(backup, { force: true });
   try {
     rmdirSync(files.dir);
   } catch {
-    // Not empty (the batch lock's display file, the user's own files) or already gone.
+    // Not empty (the user's own files, the batch lock of a GUP_SCHEDULER_DIR) or already gone.
+  }
+}
+
+/** The copies of `written` files the config store set aside in `dir` (none when it is gone). */
+function backupsOf(dir: string, written: readonly string[]): string[] {
+  const { basename, extname, join } = pathFlavour();
+  const prefixes = written.map((file) => `${basename(file, extname(file))}${BACKUP_INFIX}`);
+  try {
+    const names = readdirSync(dir);
+    return names
+      .filter((name) => prefixes.some((prefix) => name.startsWith(prefix)))
+      .map((name) => join(dir, name));
+  } catch {
+    return [];
   }
 }
 

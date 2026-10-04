@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ProviderScanResult } from "../../../src/core/types.js";
-import { LAUNCH_NOTICES, SELECTION_BAR } from "../../../src/ui/text/packages-labels.js";
+import {
+  LAUNCH_NOTICES,
+  PACKAGES_HINTS,
+  PICKER_LABELS,
+  SELECTION_BAR,
+} from "../../../src/ui/text/packages-labels.js";
 import { pickPackages } from "../../../src/ui/prompts/package-picker.js";
 import { createTestHost, frame, press } from "../../support/tui/test-host.js";
 
@@ -52,6 +57,18 @@ describe("pickPackages", () => {
 
   it("returns nothing when left with q", async () => {
     const { picked, screen } = await openPicker();
+    await press(screen, "q");
+    await expect(picked).resolves.toEqual([]);
+  });
+
+  it("offers no q annuler while a filter is typed, q being a letter of it", async () => {
+    const { picked, screen } = await openPicker();
+    await press(screen, "/");
+    const hints = (await frame(screen)).trimEnd().split("\n").at(-1) ?? "";
+    expect(hints).toContain(PACKAGES_HINTS.filtering);
+    expect(hints).not.toContain(PICKER_LABELS.cancelHint);
+    await press(screen, "enter");
+    expect((await frame(screen)).trimEnd().split("\n").at(-1)).toContain(PICKER_LABELS.cancelHint);
     await press(screen, "q");
     await expect(picked).resolves.toEqual([]);
   });

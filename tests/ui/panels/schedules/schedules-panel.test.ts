@@ -8,6 +8,7 @@ import {
 import type { TriggerSummary } from "../../../../src/ui/panels/schedules/schedules-port.js";
 import {
   EMPTY_SCHEDULES,
+  SCHEDULE_NOTICES,
   SCHEDULES_HINTS,
 } from "../../../../src/ui/text/schedule/schedule-menu-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
@@ -59,6 +60,15 @@ describe("SchedulesPanel, list", () => {
     const { render, panel } = setup([]);
     expect(render().filter(Boolean)).toEqual(EMPTY_SCHEDULES.map((line) => `  ${line}`));
     expect(panel.title).toBe("Planification");
+  });
+
+  it("wraps that how-to under its indent on an 80-column terminal, down to its key", () => {
+    const { render } = setup([]);
+    const width = 52;
+    const lines = render({ width, height: 24 }).filter(Boolean);
+    expect(lines.length).toBeGreaterThan(EMPTY_SCHEDULES.length);
+    expect(lines.every((line) => line.length <= width && line.startsWith("  "))).toBe(true);
+    expect(lines.map((line) => line.trim()).join(" ")).toBe(EMPTY_SCHEDULES.join(" "));
   });
 
   it("lists the schedules under the trigger's state, the one under the cursor detailed", () => {
@@ -138,6 +148,15 @@ describe("SchedulesPanel, list", () => {
     expect(list.repairTrigger).toHaveBeenCalledOnce();
   });
 
+  it("says which way espace switches the schedule under the cursor", () => {
+    const off = storedSchedule({ id: "0badf00d", name: "Python", enabled: false });
+    const { panel, press } = setup([storedSchedule(), off]);
+    expect(panel.hints()).toContain("espace désactiver");
+    press(key("down"));
+    expect(panel.hints()).toContain("espace activer");
+    expect(panel.hints()).toBe(SCHEDULES_HINTS.list(false));
+  });
+
   it("keeps the cursor on its schedule when the list changes", () => {
     const { port, panel, press, list } = setup([
       storedSchedule(),
@@ -165,6 +184,27 @@ describe("SchedulesPanel, list", () => {
     expect(render()[0]).toBe("✔ enregistrée");
     press(key("down"));
     expect(render()[0]).toMatch(/^Déclencheur/);
+  });
+
+  it.each([
+    ["an 80-column terminal", 52],
+    ["a 120-column terminal", 92],
+  ])("wraps a trigger failure on %s instead of cutting its reason", (_terminal, width) => {
+    const second = storedSchedule({ id: "0badf00d", name: "Python" });
+    const { panel, render, list } = setup([storedSchedule(), second]);
+    panel.setTrigger(active);
+    const reason = "ERREUR : le Planificateur de tâches a refusé l'enregistrement (0x80070005)";
+    const notice = SCHEDULE_NOTICES.triggerFailed(reason);
+    panel.setNotice([[{ text: notice, tone: "warning" }]]);
+    const viewport = { width, height: 24 };
+    const lines = render(viewport);
+    const shown = lines.slice(0, lines.findIndex((line) => line.startsWith("Déclencheur")));
+    expect(shown.length).toBeGreaterThan(1);
+    expect(shown.every((line) => line.length <= width)).toBe(true);
+    expect(shown.join(" ")).toBe(notice);
+    panel.click(lines.findIndex((line) => line.includes("Python")), viewport);
+    panel.press(key("x"));
+    expect(list.runNow).toHaveBeenCalledWith(second);
   });
 
   it("says when the view comes to the front", () => {

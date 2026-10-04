@@ -4,7 +4,11 @@ import type { Schedule, SchedulerState } from "../../../src/core/scheduler/model
 import type { SelectedPackage } from "../../../src/core/types.js";
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
-import { SCHEDULE_ACTION } from "../../../src/ui/text/schedule/schedule-menu-labels.js";
+import { QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
+import {
+  SCHEDULE_ACTION,
+  SCHEDULE_NOTICES,
+} from "../../../src/ui/text/schedule/schedule-menu-labels.js";
 import { schedulesView } from "../../../src/ui/views/schedules-view.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { bootMenu, defaultViews, type MenuDriver } from "../../support/tui/menu-driver.js";
@@ -201,6 +205,7 @@ describe("the Planification list", () => {
       },
     });
     const { menu, port } = await menuWith({ schedules: [storedSchedule()], launcher, onPlanification: true });
+    menu.setPreferences({ confirmBeforeUpdate: false });
     port.preparation = withGitOutdated;
     await menu.press("x");
     expect(await menu.frame()).toContain("Exécuter « Outils dev » maintenant ?");
@@ -220,7 +225,7 @@ describe("the Planification list", () => {
     const launch = vi.fn<() => Promise<UpdateReport | null>>(async () => null);
     const launcher: LauncherFactory = () => ({ isRunning: false, launch });
     const { menu, port } = await menuWith({ schedules: [storedSchedule()], launcher, onPlanification: true });
-    await menu.press("x", "enter");
+    await menu.press("x");
     expect(await settled(menu)).toContain("Exécution terminée : ✔ à jour");
     expect(launch).not.toHaveBeenCalled();
     expect(port.recorded.map((entry) => entry.report)).toEqual([null]);
@@ -232,6 +237,38 @@ describe("the Planification list", () => {
     port.preparation = withGitOutdated;
     await menu.press("x", "enter");
     expect(await menu.exit).toMatchObject({ kind: "outside", returnTo: "schedules" });
+    expect(port.recorded).toEqual([]);
+  });
+
+  it("asks once when updates are confirmed: the launcher's list, not a question before it", async () => {
+    const { menu, port } = await menuWith({ schedules: [storedSchedule()], onPlanification: true });
+    port.preparation = withGitOutdated;
+    await menu.press("x");
+    const asked = await eventually(menu, "1 paquet(s) vont être mis à jour");
+    expect(asked).toContain("• Git 1.0.0 → 2.0.0");
+    expect(asked).not.toContain("Exécuter « Outils dev » maintenant ?");
+    await menu.press("o");
+    expect(await menu.exit).toMatchObject({ kind: "outside", returnTo: "schedules" });
+  });
+
+  it("starts no run while a scan of the menu runs, and says why", async () => {
+    const port = new FakeSchedulesPort();
+    port.schedules = [storedSchedule()];
+    port.preparation = withGitOutdated;
+    const launch = vi.fn<() => Promise<UpdateReport | null>>(async () => null);
+    const menu = await bootMenu({
+      views: [...defaultViews(), schedulesView(port)],
+      size: { cols: 120, rows: 32 },
+      initialView: "schedules",
+      controller: { scan: () => new Promise<void>(() => {}) },
+      launcher: () => ({ isRunning: false, launch }),
+    });
+    await menu.waitForText("Outils dev");
+    await menu.press("x");
+    const frame = await settled(menu);
+    expect(frame).toContain(SCHEDULE_NOTICES.scanRunning);
+    expect(frame).not.toContain("Exécuter « Outils dev » maintenant ?");
+    expect(launch).not.toHaveBeenCalled();
     expect(port.recorded).toEqual([]);
   });
 
@@ -342,6 +379,24 @@ describe("the schedule editor", () => {
     await eventually(menu, "Abandonner les modifications ?");
     await menu.press("o");
     expect(await eventually(menu, "┏━ Planification")).not.toContain("Abandonner");
+  });
+
+  it("asks before q quits the menu on changes not saved, the answer defaulting to no", async () => {
+    const { menu } = await editing();
+    await menu.press("enter", "x", "enter", "q");
+    const asked = await menu.frame();
+    expect(asked).toContain(QUIT_DIALOG.title);
+    expect(asked).toContain("Des modifications ne sont pas enregistrées (Planification)");
+    await menu.press("enter");
+    expect(await settled(menu)).toContain("[Outils devx]");
+    await menu.press("q", "o");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+  });
+
+  it("quits at once from an editor with nothing changed", async () => {
+    const { menu } = await editing();
+    await menu.press("q");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
   });
 });
 

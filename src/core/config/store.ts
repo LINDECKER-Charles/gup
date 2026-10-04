@@ -35,6 +35,7 @@ export type ConfigState = "disabled" | "unavailable" | "missing" | "loaded" | "r
 
 export interface ConfigStatus {
   readonly file: string | null;
+  /** As loaded, except "missing", which turns "loaded" once a save creates the file. */
   readonly state: ConfigState;
   /** Where a corrupt file was moved, when state is "recovered". */
   readonly backup?: string;
@@ -42,6 +43,7 @@ export interface ConfigStatus {
   readonly issues: readonly string[];
   /** Sections written by a newer gup: readable, never overwritten. */
   readonly readOnlySections: readonly string[];
+  /** Why the last save failed; gone once a later save persists. */
   readonly lastWriteError?: string;
 }
 
@@ -209,10 +211,22 @@ export class ConfigStore {
     }
     try {
       mkdirSync(dirname(file), { recursive: true, mode: DIR_MODE });
-      return withFileLock(file, () => this.#rewrite(file, { section, compute }));
+      const stored = withFileLock(file, () => this.#rewrite(file, { section, compute }));
+      this.#persisted();
+      return stored;
     } catch (err) {
       throw this.#failed(err);
     }
+  }
+
+  /**
+   * The file holds what this process wrote: an earlier failure no longer
+   * stands, and a file that was missing at load exists now.
+   */
+  #persisted(): void {
+    this.#lastWriteError = undefined;
+    const loaded = this.#file();
+    if (loaded.state === "missing") this.#loaded = { ...loaded, state: "loaded" };
   }
 
   #rewrite<T extends object>(file: string, change: SectionChange<T>): T {

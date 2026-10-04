@@ -88,7 +88,9 @@ root logic, with `GUP_*_DIR` overrides first (table in `app-dirs.ts`). `run-cont
 the registry and `applyUpdate` set so the log backend knows which provider and package a line
 belongs to. History records gain `trigger`, per-provider scan `durationMs` and `scheduleId`;
 `HISTORY_SCHEMA_VERSION` stays 1. `withFileLock(file, work)` is the short exclusive section of the
-config store (`wx` lock file, 10 s staleness).
+config store (`wx` lock file, 10 s staleness). On Windows, `wx` fails with EPERM for a moment
+while the previous holder deletes its lock file: that is waited for like a held lock, and only an
+EPERM that outlasts every attempt reaches the caller.
 
 ### 3.3 Process seams (`src/core/process/`, `src/core/runner.ts`)
 
@@ -137,9 +139,11 @@ the UI. The console side is `ui/update-console.ts` (`consolePorts`, `printReport
 `commands/update.ts#updateOnConsole` runs it with a Ctrl+C skip session.
 
 **Batch lock** (`batch-lock.ts`): one update batch at a time per user, across processes. The
-holder keeps a listening endpoint open — a named pipe on Windows, a unix socket under the
-scheduler state dir on POSIX — that the OS releases however the holder exits; a JSON file beside
-it only carries display information. The default guard is a pass-through; the scheduler module
+holder keeps a listening endpoint open — a named pipe on Windows, a unix socket on POSIX — that
+the OS releases however the holder exits; a JSON file only carries display information. Both
+live in the lock's own state dir, `<state root>/gup/locks` (inside `GUP_SCHEDULER_DIR` when that
+is set, so a sandboxed scheduler keeps its own lock), never in the scheduler's folder: an update
+does not recreate it after `gup schedule uninstall --purge`. The default guard is a pass-through; the scheduler module
 installs `createBatchGuard(location)`.
 
 ### 3.7 CLI modules (`src/commands/cli/`)
@@ -202,22 +206,33 @@ A view reaches the menu through its `ViewContext`: `screen`, `state`, `dialogs`,
 `show(view)`, `rescan()`, `isScanning()`, `onScansChanged(listener)`, `observeScan(observer)`
 and `takeOver(start)`. A takeover (the run view) hides the sidebar and the main panel, gets the
 chrome's body, and receives every key after the dialogs plus a frame tick until it is released.
-`Panel` gains `wantsKey(key)` (claim ←/→ before the global bindings; `q` and Tab stay global)
-and `onShow()` (lazy loads).
+`Panel` gains `wantsKey(key)` (claim ←/→ before the global bindings; `q` and Tab stay global),
+`onShow()` (lazy loads) and `hasUnsavedChanges()`: while a view holds changes not saved (the
+schedule editor), `q` and "Quitter" ask before the session ends (`QUIT_DIALOG`, default "Non").
 
 Key routing in `MenuSession`: Ctrl+C (the screen's) → dialog → takeover → the focused panel when
 it captures text or claims the key → global (`q`, Tab, ←) → panel or sidebar. Which side has the
 keyboard and the sidebar cursor live in `MenuNav` (`menu-nav.ts`). The session's frame clock
 stops when it ends and when its renderer is destroyed under it (Ctrl+C, a signal).
 
+The hint bar follows the same order: an open dialog's keys (`DialogLayer.hints()`, worded in
+`DIALOG_HINTS`) replace those of the screen behind it — in the menu, in the run view and on the
+one-shot dialog screens — and `DialogLayer.onChange` redraws as soon as a dialog opens or closes,
+also when no key caused it (a launcher's confirmation once its detection answered, a question the
+update pipeline asks). While the focused panel captures text it takes `q` and Tab too, so the bar
+drops `tab menu · q quitter` (and the picker its `q annuler`).
+
 `UpdateLauncher.launch(packages, { scheduleId?, returnTo? })` resolves with the report of an
-update run inside the screen, or `null` (declined, or run outside). The foundation's
+update run inside the screen, or `null` (declined, refused while a scan of the session runs, or
+run outside). The foundation's
 `outsideLauncher` confirms (when `confirmBeforeUpdate`), then ends the session with
 `{ kind: "outside", run, returnTo }`; `MenuApp` runs it on the plain terminal, waits for Entrée,
 then either drops the updated packages (`withoutUpdated`) and reopens on `returnTo` (default
 Paquets), or rescans (`rescanAfterUpdate`). An in-screen launcher gets a `LauncherContext`
-(`takeOver`, `exit`, `afterUpdate(report, returnTo)`, …) and falls back by delegating to
-`outsideLauncher`.
+(`takeOver`, `exit`, `afterUpdate(report, returnTo)`, `isScanning()`, …) and falls back by
+delegating to `outsideLauncher`. Both launchers start nothing while `isScanning()` (package
+managers are busy with the scan); their callers say why first — Paquets' notice, Planification's
+run-now.
 
 `UiPreferences` (`launchView`, `scanOnLaunch`, `confirmBeforeUpdate`, `rescanAfterUpdate`,
 `packageSort`, `noteColumn`, `animations`, `notifyOnDone`, `showIncompatibleProviders`, `scan`)
@@ -377,6 +392,10 @@ Recorded so the integration agent and the wave-2 branches are not surprised.
   rather than "none of them contains UTF-8".
 - **Glyph map:** covers the symbols of the eight specs that can reach a terminal; website-only
   characters (Arabic, CJK and Bengali punctuation, emoji) are left out.
+- **F-13's "unix socket under the scheduler state dir"** (since `fix/wave-2-polish`): the lock
+  has a state dir of its own, `<state root>/gup/locks`, on every OS; it stays in the scheduler's
+  directory only when `GUP_SCHEDULER_DIR` is set. Every interactive update took the lock, and so
+  recreated an empty scheduler folder after the user purged it.
 - **Earlier parts** (see their commit bodies): the batch lock lives in `core/update/batch-lock.ts`
   (folder full at 10 files); `core/state/file-lock.ts` serves the config store; an unknown or
   foreign provider in a request is reported *skipped*; `OutcomeEntry.key` and

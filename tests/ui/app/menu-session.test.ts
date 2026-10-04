@@ -8,7 +8,11 @@ import type {
   ViewDefinition,
 } from "../../../src/ui/app/view-definition.js";
 import type { Panel } from "../../../src/ui/panels/panel.js";
-import { NO_SCAN_YET } from "../../../src/ui/text/menu-labels.js";
+import {
+  NO_SCAN_YET,
+  PANEL_HINTS_TAIL,
+  QUIT_DIALOG,
+} from "../../../src/ui/text/menu-labels.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
 import { toAscii } from "../../../src/ui/theme/glyphs.js";
@@ -50,6 +54,11 @@ function panelOf(overrides: Partial<Panel> = {}): Panel {
     scroll: vi.fn(),
     ...overrides,
   };
+}
+
+/** The key-hint bar: the frame's last line, without its leading blank. */
+function hintBar(frame: string): string {
+  return (frame.trimEnd().split("\n").at(-1) ?? "").trim();
 }
 
 /** A group-1 view (sidebar label "Journal") built from `create`. */
@@ -192,6 +201,21 @@ describe("MenuSession views", () => {
     expect(await menu.frame()).toContain("contenu d'essai");
   });
 
+  it("offers neither tab nor q on the hint bar while the panel takes them as text", async () => {
+    let isTyping = false;
+    const panel: Panel = {
+      ...panelOf({ hints: () => (isTyping ? "tapez pour filtrer" : "essai") }),
+      get isCapturingText() {
+        return isTyping;
+      },
+    };
+    const menu = await bootMenu({ views: [testView(() => panel)], scanOnStart: false });
+    expect(hintBar(await menu.frame())).toBe(`essai · ${PANEL_HINTS_TAIL}`);
+    isTyping = true;
+    await menu.press("x");
+    expect(hintBar(await menu.frame())).toBe("tapez pour filtrer");
+  });
+
   it("lets the focused panel claim a key before the global bindings, never q", async () => {
     const press = vi.fn();
     const panel = panelOf({ press, wantsKey: (key) => key.name === "left" || key.name === "q" });
@@ -200,6 +224,17 @@ describe("MenuSession views", () => {
     expect(press).toHaveBeenCalledWith(expect.objectContaining({ name: "left" }));
     expect(await menu.frame()).toContain("┏━ Essai");
     await menu.press("q");
+    await expect(menu.exit).resolves.toEqual({ kind: "quit" });
+  });
+
+  it("asks before Quitter drops a view's unsaved changes", async () => {
+    const panel = panelOf({ hasUnsavedChanges: () => true });
+    const menu = await bootMenu({ views: [testView(() => panel)], scanOnStart: false });
+    await menu.press("tab", "down", "enter");
+    expect(await menu.frame()).toContain(QUIT_DIALOG.title);
+    await menu.press("n");
+    expect(await menu.frame()).not.toContain(QUIT_DIALOG.title);
+    await menu.press("enter", "o");
     await expect(menu.exit).resolves.toEqual({ kind: "quit" });
   });
 

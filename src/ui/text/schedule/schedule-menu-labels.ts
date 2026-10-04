@@ -17,9 +17,10 @@ export const SCHEDULES_LABEL = "Planification";
 export const REPAIR_KEY = "i";
 
 export const SCHEDULES_HINTS = {
-  list:
-    "↑↓ naviguer · entrée modifier · espace activer · x exécuter · suppr supprimer · " +
-    `${REPAIR_KEY} déclencheur`,
+  /** Espace switches the schedule under the cursor: the hint says which way. */
+  list: (isEnabled: boolean) =>
+    `↑↓ naviguer · entrée modifier · espace ${isEnabled ? "désactiver" : "activer"} · ` +
+    `x exécuter · suppr supprimer · ${REPAIR_KEY} déclencheur`,
   editor:
     "↑↓ champ · entrée modifier · espace basculer · suppr retirer · ctrl+s enregistrer · " +
     "échap annuler",
@@ -194,6 +195,7 @@ export const SCHEDULE_NOTICES = {
   scanning: (providers: readonly string[]) => `Scan de ${providers.join(", ")}…`,
   ran: (status: string) => `Exécution terminée : ${status}`,
   busy: "Une exécution de planification est déjà en cours.",
+  scanRunning: "Scan en cours — l'exécution sera possible à la fin du scan.",
   notSaved: (message: string) =>
     `${STATUS_GLYPHS.failed} Planifications non enregistrées : ${message}`,
   vanished: "Cette planification n'existe plus (supprimée depuis un autre terminal).",

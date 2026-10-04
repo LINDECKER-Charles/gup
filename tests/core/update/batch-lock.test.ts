@@ -1,9 +1,10 @@
 import { spawn } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { stateDir } from "../../../src/core/state/app-dirs.js";
 import {
   BatchLock,
   batchLockLocation,
@@ -42,11 +43,30 @@ describe("batchLockLocation", () => {
     expect(at("D:\\sandbox\\scheduler")!.endpoint).not.toBe(a.endpoint);
   });
 
-  it("puts the socket under the scheduler state dir on POSIX", () => {
-    expect(batchLockLocation({ platform: "darwin", env: {}, home: "/Users/a" })).toEqual({
-      endpoint: "/Users/a/Library/Application Support/gup/scheduler/update.sock",
-      infoFile: "/Users/a/Library/Application Support/gup/scheduler/update-lock.json",
+  it("lives in a state dir of its own, beside the scheduler's", () => {
+    const windows = batchLockLocation({
+      platform: "win32",
+      env: { LOCALAPPDATA: "C:\\Users\\user\\AppData\\Local" },
+      home: "C:\\Users\\user",
     });
+    expect(windows?.infoFile).toBe("C:\\Users\\user\\AppData\\Local\\gup\\locks\\update-lock.json");
+    expect(batchLockLocation({ platform: "darwin", env: {}, home: "/Users/user" })).toEqual({
+      endpoint: "/Users/user/Library/Application Support/gup/locks/update.sock",
+      infoFile: "/Users/user/Library/Application Support/gup/locks/update-lock.json",
+    });
+  });
+
+  it("never creates the scheduler's folder when a run takes the batch", async () => {
+    const root = await mkdtemp(join(tmpdir(), "gup-batch-root-"));
+    try {
+      const context = { env: { LOCALAPPDATA: root, XDG_STATE_HOME: root }, home: root };
+      const lock = await BatchLock.tryAcquire(batchLockLocation(context)!, "interactive");
+      if (!(lock instanceof BatchLock)) throw new Error("expected to take the batch");
+      await lock.release();
+      expect(existsSync(stateDir("scheduler", context)!)).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("moves a socket path too long for sun_path to the runtime dir", () => {

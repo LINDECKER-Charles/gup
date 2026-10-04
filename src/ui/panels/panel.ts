@@ -31,6 +31,11 @@ export interface Panel {
   wantsKey?(key: KeyPress): boolean;
   /** The panel came to the front: load what it shows lazily. */
   onShow?(): void;
+  /**
+   * Quitting now would lose changes the user made here and did not save (an
+   * editor left open): the menu asks before it quits.
+   */
+  hasUnsavedChanges?(): boolean;
 }
 
 /** `pageup`/`pagedown` step: fixed, so a key does the same thing on any terminal. */
