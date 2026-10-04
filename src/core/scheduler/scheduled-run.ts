@@ -4,6 +4,7 @@ import type { BatchHolder } from "../update/update-extensions.js";
 import type { AbortGate, UpdateRequest } from "../update/update-ports.js";
 import { buildReport, type UpdateReport } from "../update/update-report.js";
 import { evaluateDue } from "./model/due.js";
+import { scheduleIssues, type ValidationIssue } from "./model/validate-schedule.js";
 import { targetKey } from "./model/schedule-target.js";
 import type {
   Schedule,
@@ -89,13 +90,16 @@ export class ScheduledRun {
     if (enabled.length === 0) return IDLE;
     const now = this.#deps.clock();
     this.#deps.state.update((state) => ({ ...state, lastTickAt: now.toISOString() }));
+    const { runnable, invalid } = checkStored(enabled, now);
+    for (const refused of invalid) logInvalid(refused);
+    if (runnable.length === 0) return IDLE;
     const batch = await this.#deps.batch.tryAcquire();
     if ("busy" in batch) {
       log.info("scheduler.tick-busy", { holder: batch.busy?.kind, pid: batch.busy?.pid });
       return { kind: "busy", holder: batch.busy };
     }
     try {
-      return await this.#runDue(enabled, now);
+      return await this.#runDue(runnable, now);
     } finally {
       await batch.release();
     }
@@ -203,6 +207,40 @@ export class ScheduledRun {
   #persist(mutate: (state: SchedulerState) => SchedulerState): void {
     this.#deps.state.update(mutate);
   }
+}
+
+/** An enabled schedule the tick refuses to run, and why. */
+interface InvalidSchedule {
+  readonly schedule: Schedule;
+  readonly issues: readonly ValidationIssue[];
+}
+
+/**
+ * The schedules read from disk, checked again: one the editor and
+ * `gup schedule` would refuse — `schedules.json` edited by hand to run every
+ * minute — is never run. The heartbeat is written all the same, so the
+ * trigger does not read as stopped.
+ */
+function checkStored(
+  enabled: readonly Schedule[],
+  now: Date,
+): { readonly runnable: Schedule[]; readonly invalid: InvalidSchedule[] } {
+  const runnable: Schedule[] = [];
+  const invalid: InvalidSchedule[] = [];
+  for (const schedule of enabled) {
+    const issues = scheduleIssues(schedule, now);
+    if (issues.length === 0) runnable.push(schedule);
+    else invalid.push({ schedule, issues });
+  }
+  return { runnable, invalid };
+}
+
+/** Logged at every tick until the schedule is fixed or removed. */
+function logInvalid({ schedule, issues }: InvalidSchedule): void {
+  log.warn("scheduler.schedule-invalid", {
+    scheduleId: schedule.id,
+    issues: issues.map((issue) => `${issue.field}: ${issue.message}`),
+  });
 }
 
 function pick(target: ScheduleTarget): Pick<ScheduleTarget, "providerId" | "packageId"> {

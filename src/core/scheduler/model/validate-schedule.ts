@@ -60,15 +60,30 @@ export function validateDraft(
   draft: ScheduleDraft,
   context: ValidationContext,
 ): readonly ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const name = nameProblem(draft.name);
-  if (name) issues.push({ field: "name", message: name });
-  const recurrence = recurrenceProblem(draft.recurrence, context.now);
-  if (recurrence) issues.push({ field: "recurrence", message: recurrence });
+  const issues = [...scheduleIssues(draft, context.now)];
   issues.push(...targetIssues(draft.targets, context.providers));
   if (context.existingCount >= MAX_SCHEDULES) {
     issues.push({ field: "schedules", message: `${MAX_SCHEDULES} planifications au plus` });
   }
+  return issues;
+}
+
+/**
+ * What makes a schedule unrunnable as a whole, seen from `now`: its name and
+ * its recurrence, the hourly minimum included. The tick asks it again of
+ * every schedule it reads, since a hand-edited `schedules.json` gets past
+ * the editor and the CLI; a target's own problem (a provider unknown here,
+ * one that needs an administrator) only skips that target at run time.
+ */
+export function scheduleIssues(
+  schedule: Pick<ScheduleDraft, "name" | "recurrence">,
+  now: Date,
+): readonly ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const name = nameProblem(schedule.name);
+  if (name) issues.push({ field: "name", message: name });
+  const recurrence = recurrenceProblem(schedule.recurrence, now);
+  if (recurrence) issues.push({ field: "recurrence", message: recurrence });
   return issues;
 }
 

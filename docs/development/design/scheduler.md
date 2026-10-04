@@ -104,7 +104,11 @@ pipeline's `PlannedUpdate` / `UpdatePlan`.
 ## 4. Runs
 
 **Tick** (`ScheduledRun.tick`): nothing enabled → idle, no write. Heartbeat
-(`lastTickAt`). Batch: `BatchLock.tryAcquire(location, "scheduled")` — the
+(`lastTickAt`). Every enabled schedule read from disk is checked again
+(`scheduleIssues`: its name and its recurrence, the hourly minimum included):
+one `schedules.json` edited by hand past the editor's rules is never run,
+only logged (`scheduler.schedule-invalid`, warn) at every tick; a target's
+own problems still skip just that target at run time (`planTick`). Batch: `BatchLock.tryAcquire(location, "scheduled")` — the
 foundation's OS-released lock (F-13, S-2), never waited for: busy → nothing
 consumed. Missed occurrences recorded. Due ones consumed **before any work**
 (crash safety), then `TargetResolver`: detect and scan only the needed
