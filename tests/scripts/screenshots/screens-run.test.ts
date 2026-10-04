@@ -12,10 +12,24 @@ import type { Scene } from "../../../scripts/screenshots/scenes/scene.js";
 import { SCENE_SIZES } from "../../../scripts/screenshots/scenes/sizes.js";
 
 // The generator's setup, as scripts/screenshots/setup.ts installs it.
-vi.mock("../../../src/core/runner.js", async (importOriginal) => {
-  const { spawnGuard: guard } = await import("../../../scripts/screenshots/sandbox/no-spawn.js");
-  return guard.guard(await importOriginal<typeof import("../../../src/core/runner.js")>());
-});
+vi.mock("../../../src/core/runner.js", async (load) =>
+  (await import("../../../scripts/screenshots/sandbox/no-spawn.js")).guardedModule(load, "runner"),
+);
+vi.mock("../../../src/core/pty/pty-loader.js", async (load) =>
+  (await import("../../../scripts/screenshots/sandbox/no-spawn.js")).guardedModule(
+    load,
+    "ptyLoader",
+  ),
+);
+vi.mock("../../../src/core/export/open-external.js", async (load) =>
+  (await import("../../../scripts/screenshots/sandbox/no-spawn.js")).guardedModule(load, "opener"),
+);
+vi.mock("../../../src/core/scheduler/trigger/trigger-factory.js", async (load) =>
+  (await import("../../../scripts/screenshots/sandbox/no-spawn.js")).guardedModule(
+    load,
+    "osTrigger",
+  ),
+);
 
 /**
  * Two scenes on the real app and fixtures, waiting for fixture data only (a
@@ -69,7 +83,7 @@ async function generate(mode: SyncMode): Promise<string[]> {
   const run = new ScreensRun(dir, mode);
   const statuses: string[] = [];
   for (const scene of SCENES) statuses.push((await run.scene(scene)).status);
-  statuses.push((await run.gallery(SCENES)).status);
+  statuses.push((await run.gallery([{ title: "Menu", scenes: SCENES }])).status);
   await run.orphans(SCENES);
   return statuses;
 }

@@ -14,3 +14,13 @@ export function freezeClock(now: Date): () => void {
   vi.setSystemTime(now);
   return () => void vi.useRealTimers();
 }
+
+/**
+ * Let the frozen frame clock tick once: the menu's next frame runs (its only
+ * interval), so animations take exactly one step and what redraws on the
+ * clock — a running update's durations — catches up. `Date` moves by that
+ * one frame, never more.
+ */
+export function stepFrameClock(): void {
+  vi.advanceTimersToNextTimer();
+}

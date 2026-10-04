@@ -2,13 +2,11 @@ import { isSupportedOn } from "../../../src/core/platform/is-supported-on.js";
 import type { ProviderStatusReport, ProviderSummary } from "../../../src/core/platform/types.js";
 import { ALL_PROVIDERS } from "../../../src/core/registry.js";
 import type { Provider } from "../../../src/core/types.js";
+import { FIXTURE_PLATFORM } from "./machine.js";
 import { registeredProvider } from "./registered-provider.js";
 import { SCAN_FIXTURE } from "./scan.js";
 
 type Group = "detected" | "missing" | "incompatible";
-
-/** The OS the fixture machine runs, whatever OS renders the screenshots. */
-const FIXTURE_PLATFORM: NodeJS.Platform = "win32";
 
 /**
  * Providers the fixture machine lacks, with the Windows install command the

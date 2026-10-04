@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { findOrphans } from "../../../scripts/screenshots/output/find-orphans.js";
 import { renderGallery } from "../../../scripts/screenshots/output/render-gallery.js";
+import { REPORT_IMAGE } from "../../../scripts/screenshots/output/report-image.js";
 import { syncFile } from "../../../scripts/screenshots/output/sync-file.js";
 import type { Scene } from "../../../scripts/screenshots/scenes/scene.js";
 
@@ -54,19 +55,46 @@ describe("findOrphans", () => {
 });
 
 describe("renderGallery", () => {
-  it("keeps a title or an alt text from breaking out of its markup", () => {
-    const scene: Scene = {
-      id: "tricky",
-      title: "gup — *Paquets*",
-      alt: "Rows [x] checked,\n\nthen ] and <b>",
+  function sceneOf(id: string, text: { title: string; alt: string }): Scene {
+    return {
+      id,
+      ...text,
       size: { cols: 100, rows: 28 },
       fixture: () => {
         throw new Error("the gallery never mounts a scene");
       },
       play: async () => {},
     };
-    const page = renderGallery([scene]);
+  }
+
+  it("keeps a title or an alt text from breaking out of its markup", () => {
+    const scene = sceneOf("tricky", {
+      title: "gup — *Paquets*",
+      alt: "Rows [x] checked,\n\nthen ] and <b>",
+    });
+    const page = renderGallery([{ title: "Menu", scenes: [scene] }]);
     expect(page).toContain("**gup — \\*Paquets\\*** · 100 × 28");
     expect(page).toContain("![Rows \\[x\\] checked, then \\] and \\<b\\>](tricky.svg)");
+  });
+
+  it("lists every group, then the HTML report, each linked to its section", () => {
+    const scene = (id: string): Scene => sceneOf(id, { title: "gup", alt: "A screen." });
+    const page = renderGallery([
+      { title: "Menu", scenes: [scene("scan-progress")] },
+      { title: "Scheduled updates", scenes: [scene("schedules")] },
+    ]);
+    const lines = page.split("\n");
+    expect(lines).toEqual(
+      expect.arrayContaining([
+        "- [Menu](#menu)",
+        "- [Scheduled updates](#scheduled-updates)",
+        "- [HTML report](#html-report)",
+      ]),
+    );
+    const headings = ["## Menu", "### scan-progress", "## Scheduled updates", "### schedules"];
+    const at = headings.map((heading) => lines.indexOf(heading));
+    expect(at.every((index, rank) => index > (at[rank - 1] ?? -1))).toBe(true);
+    expect(lines.indexOf("## HTML report")).toBeGreaterThan(lines.indexOf("### schedules"));
+    expect(page).toContain(`](${REPORT_IMAGE})`);
   });
 });

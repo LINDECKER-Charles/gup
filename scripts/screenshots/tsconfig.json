@@ -4,5 +4,10 @@
     "rootDir": "../..",
     "noEmit": true
   },
-  "include": ["./**/*.ts", "../../src/**/*.ts", "../../tests/support/tui/*.ts"]
+  "include": [
+    "./**/*.ts",
+    "../../src/**/*.ts",
+    "../../tests/support/tui/*.ts",
+    "../../tests/support/pty/fake-pty.ts"
+  ]
 }

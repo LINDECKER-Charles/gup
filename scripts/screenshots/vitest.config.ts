@@ -10,24 +10,29 @@ const ROOT = fileURLToPath(new URL("../..", import.meta.url));
  * works in every shell: `vitest run --config … --mode check`. It is not part
  * of gup's test suite (the root config never matches `*.screens.ts`).
  */
-export default defineConfig(({ mode }) => ({
-  root: ROOT,
-  test: {
-    include: ["scripts/screenshots/capture.screens.ts"],
-    // One line per scene: which one failed, or that each was rendered.
-    reporters: ["verbose"],
-    setupFiles: ["scripts/screenshots/setup.ts"],
-    environment: "node",
-    pool: "forks",
-    fileParallelism: false,
-    // A scene mounts the whole app; a loaded machine needs the margin.
-    testTimeout: 30_000,
-    // OpenTUI loads its renderer through node:ffi, still flagged experimental.
-    execArgv: ["--disable-warning=ExperimentalWarning"],
-    env: {
-      SCREENSHOTS_MODE: mode === "check" ? "check" : "write",
-      // Assigned inside the worker, where Node honours it on every OS.
-      TZ: FIXTURE_CLOCK.timeZone,
+export default defineConfig(({ mode }) => {
+  // Before any worker is forked, so each one starts in it: ICU reads the
+  // locale once, possibly before `test.env` is applied (see FIXTURE_CLOCK).
+  process.env["LC_ALL"] = FIXTURE_CLOCK.locale;
+  return {
+    root: ROOT,
+    test: {
+      include: ["scripts/screenshots/capture.screens.ts"],
+      // One line per scene: which one failed, or that each was rendered.
+      reporters: ["verbose"],
+      setupFiles: ["scripts/screenshots/setup.ts"],
+      environment: "node",
+      pool: "forks",
+      fileParallelism: false,
+      // A scene mounts the whole app; a loaded machine needs the margin.
+      testTimeout: 30_000,
+      // OpenTUI loads its renderer through node:ffi, still flagged experimental.
+      execArgv: ["--disable-warning=ExperimentalWarning"],
+      env: {
+        SCREENSHOTS_MODE: mode === "check" ? "check" : "write",
+        // Assigned inside the worker, where Node honours it on every OS.
+        TZ: FIXTURE_CLOCK.timeZone,
+      },
     },
-  },
-}));
+  };
+});

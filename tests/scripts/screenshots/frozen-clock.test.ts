@@ -1,5 +1,5 @@
 import { describe, expect, it, onTestFinished } from "vitest";
-import { freezeClock } from "../../../scripts/screenshots/sandbox/frozen-clock.js";
+import { freezeClock, stepFrameClock } from "../../../scripts/screenshots/sandbox/frozen-clock.js";
 
 const NOW = new Date("2026-09-15T09:30:00.000Z");
 /** Long enough, in real time, for a 1 ms interval to have fired many times. */
@@ -20,6 +20,17 @@ describe("freezeClock", () => {
     expect(ticks).toBe(0);
     expect(Date.now()).toBe(NOW.getTime());
     expect(new Date().toISOString()).toBe(NOW.toISOString());
+  });
+
+  it("steps the frame clock by exactly one frame on demand", () => {
+    onTestFinished(freezeClock(NOW));
+    const frameMs = 100;
+    let ticks = 0;
+    const frameClock = setInterval(() => ticks++, frameMs);
+    onTestFinished(() => clearInterval(frameClock));
+    stepFrameClock();
+    expect(ticks).toBe(1);
+    expect(Date.now()).toBe(NOW.getTime() + frameMs);
   });
 
   it("gives the real clock back when thawed", async () => {
