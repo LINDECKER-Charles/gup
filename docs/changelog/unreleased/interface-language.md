@@ -40,3 +40,11 @@
   `_template.ts`); SECURITY.md adds the language to the elevated child's validated payload;
   testing.md says the suites speak French; the Windows checklist adds the language and gup's own
   update (`docs(development): document the interface language for contributors`)
+- **website:** The website page follows the landing's 0.5.1 demo: the TUI mocks are no longer
+  "French on purpose" — the French page shows the French interface and the seven others the
+  English one, chosen by `interfaceLanguageOf()` — the scenes-truth examples are the English ones,
+  each variant is checked against its own language's `localized()` blocks, a view's label may be
+  a getter, and the test fails when the scenes do not cover exactly the CLI's languages; the
+  quality gates add `verify`'s check of each prerendered demo's `lang`, and the translation record
+  drops the Chinese caption's "目前" (for now), which the copy no longer has
+  (`docs(website): show the terminal demo in the page's language`)
