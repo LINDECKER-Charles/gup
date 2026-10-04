@@ -14,6 +14,9 @@ import {
 const GITHUB_TOKEN = `ghp_${"a1B2".repeat(9)}`;
 const NPM_TOKEN = `npm_${"x".repeat(36)}`;
 const UUID = "4f8a1c2e-9b3d-4e5f-8a7b-1c2d3e4f5a6b";
+// AWS's documentation example key with the temporary-credential prefix, assembled at run time
+// so that secret scanners do not mistake the fixture for a real key.
+const AWS_SESSION_KEY_ID = ["ASIA", "IOSFODNN7EXAMPLE"].join("");
 const JWT = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
 
 describe("redactSecrets", () => {
@@ -45,7 +48,7 @@ describe("redactSecrets", () => {
     ["a gho_ GitHub token", `gho_${"B1".repeat(18)}`, "***"],
     ["an AWS secret key", "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", "AWS_SECRET_ACCESS_KEY=***"],
     ["an AWS credentials file line", "aws_secret_access_key = wJalrXUtnFEMI/K7MDENG", "aws_secret_access_key = ***"],
-    ["an AWS session key and token", "ASIAIOSFODNN7EXAMPLE aws_session_token=FwoGZXIvYXdz+cd==", "*** aws_session_token=***"],
+    ["an AWS session key and token", `${AWS_SESSION_KEY_ID} aws_session_token=FwoGZXIvYXdz+cd==`, "*** aws_session_token=***"],
     ["any Authorization scheme, whatever its case", "authorization: token 0123456789abcdef", "authorization: token ***"],
     ["a proxy Authorization header", "Proxy-Authorization: bearer lowercaseonly", "Proxy-Authorization: bearer ***"],
     ["an Authorization header in JSON", '{"Authorization":"Bearer abcDEF0123456789"}', '{"Authorization":"Bearer ***"}'],
