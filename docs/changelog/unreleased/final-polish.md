@@ -5,7 +5,7 @@ with its regression test where there is a behaviour to hold.
 
 ## Changed
 
-- **ui:** The run results' key-hint bar reads `↑↓ choisir un paquet · entrée retour · o rapport HTML · v agrandir la sortie`: the keys other views add come before `v`, the first to go on a short bar, and "retour" no longer says "aux paquets" — a run started from Planification goes back there. The whole bar fits an 80-column terminal ([`69338b6`](https://github.com/LINDECKER-Charles/gup/commit/69338b6))
+- **ui:** The run results' key-hint bar reads `↑↓ choisir un paquet · entrée retour · o rapport HTML · v agrandir la sortie`: the keys other views add come before `v`, the first to go on a short bar, and "retour" no longer says "aux paquets" — a run started from Planification goes back there. The whole bar fits an 80-column terminal ([`69338b6`](https://github.com/LINDECKER-Charles/gup/commit/69338b6)). For the same reason, the dialog of an update that broke offers `Retour` instead of `Retour aux paquets` ([`2ddde36`](https://github.com/LINDECKER-Charles/gup/commit/2ddde36))
 - **ui:** Planification's hint bar lists its keys most needed first — `entrée modifier · x exécuter · suppr supprimer`, then `espace`, `i déclencheur` and the arrows; the editor's starts with `ctrl+s enregistrer · entrée modifier · échap annuler`. At 80 columns, running, deleting and saving were cut off the bar ([`821476e`](https://github.com/LINDECKER-Charles/gup/commit/821476e))
 
 ## Fixed
@@ -17,6 +17,6 @@ with its regression test where there is a behaviour to hold.
 
 ## Internal
 
-- **ui:** `src/ui/app/menu-session.ts` (307 lines) and `src/ui/run/run-view.ts` (332) are back under the 300-line alert: the session, its navigation and view registry move to `src/ui/app/session/` with the key routing and hint bar split into `menu-keys.ts`; the embedded terminal's modules move to `src/ui/run/terminal/`, and the run view's pipeline events and levers (`s`, `x`, Ctrl+C, `t`) to `run-events.ts` and `run-levers.ts`. No behaviour change ([`6ea3890`](https://github.com/LINDECKER-Charles/gup/commit/6ea3890), [`f0d1a1f`](https://github.com/LINDECKER-Charles/gup/commit/f0d1a1f))
+- **ui:** `src/ui/app/menu-session.ts` (307 lines) and `src/ui/run/run-view.ts` (332) are back under the 300-line alert: the session, its navigation and view registry move to `src/ui/app/session/` with the key routing and hint bar split into `menu-keys.ts`; the embedded terminal's modules move to `src/ui/run/terminal/`, and the run view's pipeline events and levers (`s`, `x`, Ctrl+C, `t`) to `run-events.ts` and `run-levers.ts`. No behaviour change; the design notes name the new paths ([`6ea3890`](https://github.com/LINDECKER-Charles/gup/commit/6ea3890), [`f0d1a1f`](https://github.com/LINDECKER-Charles/gup/commit/f0d1a1f), [`ef8f12b`](https://github.com/LINDECKER-Charles/gup/commit/ef8f12b))
 - **ui:** The diagnostic README's `system.json` line is wrapped under 100 columns in the source; the text is unchanged ([`80b8795`](https://github.com/LINDECKER-Charles/gup/commit/80b8795))
 - **lint:** The registry's `max-lines` exception in `eslint.config.js` is justified in English, like every other comment ([`71efa1b`](https://github.com/LINDECKER-Charles/gup/commit/71efa1b))
