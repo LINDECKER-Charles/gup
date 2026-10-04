@@ -12,8 +12,8 @@ same results (2,932 tests, 2 skipped on Windows).
 
 | Project | Files | Setup | Runs |
 |---|---|---|---|
-| `unit` | `tests/{core,commands,ui,security,scripts,cli}/**/*.test.ts` | worker sandbox | always |
-| `providers` | `tests/providers/*/**/*.test.ts`, `tests/platform/**`, `tests/support/self-test/**` | worker sandbox + **fake system** | always |
+| `unit` | `tests/{core,commands,ui,security,scripts,cli}/**/*.test.ts`, but `tests/security/providers/**` | worker sandbox | always |
+| `providers` | `tests/providers/*/**/*.test.ts`, `tests/platform/**`, `tests/security/providers/**`, `tests/support/self-test/**` | worker sandbox + **fake system** | always |
 | `integration` | `tests/integration/**/*.test.ts` (real spawns, 30 s timeout) | worker sandbox | always |
 | `e2e` | `tests/e2e/**/*.e2e.test.ts` (120 s, serial, one retry) | worker sandbox | only when `GUP_E2E=1` |
 
@@ -64,10 +64,10 @@ same results (2,932 tests, 2 skipped on Windows).
 - `tests/support/node-guard.ts` (root global setup) fails the run below
   `package.json#engines.node` with `gup's tests need Node >=26.9.0 (OpenTUI loads its renderer
   through node:ffi). Current: vX.Y.Z.` instead of letting the UI suites die on `node:ffi`.
-- The global 90 % coverage thresholds stay (`npm run test:coverage`, run by `check.cmd`) until
-  the coverage policy replaces them with floors on the safety-critical modules in wave 3 (testing
-  spec S14): removing the gate before its replacement would leave every wave-2 merge ungated.
-  `coverage.all` was dropped in wave 0; `src/pty-exec.ts` is excluded ahead of its arrival.
+- Coverage: the global 90 % thresholds this branch kept until wave 3 are gone; floors on the
+  safety-critical modules replace them (`tests/support/coverage-floors.ts`, see
+  [`e2e-coverage-ci.md`](e2e-coverage-ci.md) §5). `coverage.all` was dropped in wave 0;
+  `src/pty-exec.ts` runs in a child process and stays excluded.
 
 ## 4. The fake system (`tests/support/system/`)
 
