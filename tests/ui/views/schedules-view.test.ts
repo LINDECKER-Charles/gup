@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PreparedRun } from "../../../src/core/scheduler/manual-run.js";
-import type { Schedule, SchedulerState } from "../../../src/core/scheduler/model/types.js";
+import type { Schedule } from "../../../src/core/scheduler/model/types.js";
 import type { SelectedPackage } from "../../../src/core/types.js";
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
@@ -13,6 +13,7 @@ import { schedulesView } from "../../../src/ui/views/schedules-view.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { bootMenu, defaultViews, type MenuDriver } from "../../support/tui/menu-driver.js";
 import {
+  failedRun,
   FakeSchedulesPort,
   NOW,
   storedSchedule,
@@ -399,19 +400,6 @@ describe("the schedule editor", () => {
     await expect(menu.exit).resolves.toEqual({ kind: "quit" });
   });
 });
-
-/** A last run that failed, finished before NOW and never seen. */
-function failedRun(id: string): SchedulerState {
-  const finishedAt = new Date(NOW.getTime() - 3_600_000).toISOString();
-  const record = {
-    kind: "on-time" as const,
-    status: "failed" as const,
-    startedAt: finishedAt,
-    finishedAt,
-    targets: [{ target: "winget:Git.Git", status: "failed" as const, message: "1603" }],
-  };
-  return { v: 1, schedules: { [id]: { lastRun: record } } };
-}
 
 /** The targeted scan found Git.Git outdated. */
 function withGitOutdated(schedule: Schedule): PreparedRun {

@@ -186,3 +186,16 @@ export function storedSchedule(overrides: Partial<Schedule> = {}): Schedule {
     ...overrides,
   };
 }
+
+/** The state of schedule `id` whose last run failed an hour before NOW, never seen. */
+export function failedRun(id: string): SchedulerState {
+  const finishedAt = new Date(NOW.getTime() - 3_600_000).toISOString();
+  const record = {
+    kind: "on-time" as const,
+    status: "failed" as const,
+    startedAt: finishedAt,
+    finishedAt,
+    targets: [{ target: "winget:Git.Git", status: "failed" as const, message: "1603" }],
+  };
+  return { v: 1, schedules: { [id]: { lastRun: record } } };
+}
