@@ -66,9 +66,11 @@ flowchart LR
 - **Following it.** The session subscribes to the setting for the life of the process. On a
   change it decides again with the same flag, environment and trigger: an unchanged decision
   (the flag or the variable still win) does nothing; an installed backend takes the new
-  threshold and records `log.threshold` (`threshold`, `source`); a log that was off starts now —
-  backend, tracer, observer and its own `session.start`. Turning it off keeps the file open and
-  records nothing more.
+  threshold and records `log.threshold` (`threshold`, `source`) under the louder of the old and
+  the new threshold — before the switch when the level goes down, so a log turned down to
+  `error` or `off` still says why it went quiet; a log that was off starts now — backend,
+  tracer, observer and its own `session.start`. Turned off, it keeps the file open and records
+  nothing after that last `log.threshold`.
 - **`currentLogLevel()`** (threshold and source, the backend's threshold before any startup)
   feeds the Debug tab's header and the Options row's hint.
 
@@ -121,8 +123,10 @@ flowchart LR
 ## 7. `gup report`
 
 `runReport(options, deps, preferences = settingsPreferences())`; `reportRequestOf(options,
-{ now, preferences })`. `--open` is declared before `--no-open`, which keeps commander's value
-`undefined` when neither is given. `opensBrowser`: a file target of the `html` format only;
+{ now, preferences })`. Both `--open` and `--no-open` are declared: a lone `--no-open` would make
+commander default the value to `true`; with both, it stays `undefined` when neither is given (the
+declaration order does not matter in commander 15). `opensBrowser`: a file target of the `html`
+format only;
 `--open`/`--no-open` decide; otherwise `openReport` and somebody watching (stdout is a TTY, `CI`
 empty). `glyphMode` is `resolveGlyphMode(preferences.glyphs)`.
 
@@ -132,18 +136,18 @@ empty). `glyphMode` is `resolveGlyphMode(preferences.glyphs)`.
 |---|---|
 | `tests/core/config/{log,journal}-section.test.ts` | defaults, every value read, a wrong field falls back with its issue (the neighbour kept), sparse writes |
 | `tests/commands/journal/log-settings.test.ts` | flag > env > setting > default, setting = default reads `default`, `GUP_LOG_LEVEL=off` over a `trace` setting, a garbage variable falls through to the setting, a scheduled run raises a `error` setting |
-| `tests/commands/journal/journal-module.test.ts` | the setting at startup and `gup doctor`'s `(réglage)`; flag and variable win; the elevated child never asks; live: a raised level records at once (`log.threshold`), off → on starts the log, on → off records nothing, a flagged level never moves |
+| `tests/commands/journal/journal-module.test.ts` | the setting at startup and `gup doctor`'s `(réglage)`; flag and variable win; the elevated child never asks; live: a raised level records at once (`log.threshold`), a lowered one records the change before going quiet, off → on starts the log, on → off records nothing after the change, a flagged level never moves; round trip: the level the Options row saves to a real file is the next start's, `--log-level` still winning |
 | `tests/commands/journal/journal-source.test.ts` | the HTML export written without `open` when the setting says not to |
-| `tests/commands/journal/report-command.test.ts` | the setting keeps the report closed in a terminal, `--open` opens it without one (also through the real command line); text charts in ASCII or Unicode as set, an explicit `unicode` winning over `GUP_ASCII` |
+| `tests/commands/journal/report-command.test.ts` | the setting keeps the report closed in a terminal, `--open` opens it without one (also through the real command line, where neither flag leaves the choice to the setting); text charts in ASCII or Unicode as set, an explicit `unicode` winning over `GUP_ASCII` |
 | `tests/ui/settings/journal-options.test.ts` | the section and its values, each row saved to its section, the level's full cycle, the override hint (variable and flag), `Tout` resets both sections |
-| `tests/ui/panels/journal/{journal-panel,tabs}.test.ts` | the period follows the setting until `p`; schedule name or id in the detail; the off hint by source |
+| `tests/ui/panels/journal/{journal-panel,tabs}.test.ts` | the period follows the setting until `p`; schedule name or id in the detail; the off hint by source, wrapped in the 50 columns an 80-column terminal leaves the panel |
 | `tests/ui/views/journal-view.test.ts` | the menu's Journal opens on the period set in the settings |
 | `tests/ui/run/{run-view,run-keys}.test.ts` | in the real menu with the journal view: `o` ignored while running, offered on the results, the export's notice shown; the results' hint bar ends with the actions |
-| `tests/commands/schedule/schedules-controller.test.ts` | a schedule named by its id, nothing for an unknown id |
+| `tests/commands/schedule/schedules-controller.test.ts` | a schedule named by its id, nothing once it is deleted (the detail then shows the id) |
 
 The suites run with `GUP_LOG_LEVEL=off` and `GUP_CONFIG=0` (W2-3): tests of the setting clear the
-variable and inject their own in-memory `SettingsService`; nothing writes through the
-process-wide one.
+variable and inject their own `SettingsService` (in memory, or over a file in the test's own
+temporary directory for the round trip); nothing writes through the process-wide one.
 
 ## 9. Decisions and deviations
 
