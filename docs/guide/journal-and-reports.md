@@ -62,6 +62,9 @@ self-describing JSON object per line, never rewritten:
 - `kind` is `scan` or `update`; `status` is `success`, `failed` or `skipped` — the three are kept
   apart, which is the whole point of recording them. `trigger` says what started the run (`menu`,
   `cli`, `schedule`); a scheduled update carries its `scheduleId`.
+- `from` and `to` come from the scan that listed the package. `gup update provider:package`
+  updates without a scan, so its records have neither; the Journal and the reports then show the
+  attempt without versions.
 - The schema version (`v`) stays `1`: newer versions of gup only add fields, and a reader skips
   what it does not know.
 - Records carry no credential (known secret shapes in messages are masked when written) and no

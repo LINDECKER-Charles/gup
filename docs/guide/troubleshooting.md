@@ -223,11 +223,13 @@ machine boots.
 ```text
   rapport écrit : C:\Users\you\AppData\Local\gup\reports\gup-report-20261003-142205.html
   impossible d'ouvrir le navigateur — ouvrez le fichier ci-dessus
+  file:///C:/Users/you/AppData/Local/gup/reports/gup-report-20261003-142205.html
 ```
 
 (in the Journal: `Rapport écrit, ouverture automatique impossible — ouvrez : <chemin>`)
 
-The report is written either way; only opening it failed or was not attempted:
+The report is written either way; only opening it failed or was not attempted (then the second
+line is left out):
 
 | Why | Fix |
 |---|---|
@@ -257,7 +259,7 @@ settings at all, run once with `GUP_CONFIG=0` (defaults, file neither read nor w
 | Debug log | `%LOCALAPPDATA%\gup\logs` | `~/Library/Logs/gup` | `$XDG_STATE_HOME/gup/logs` | `GUP_LOG_DIR` |
 | Reports, diagnostic archives | `%LOCALAPPDATA%\gup\reports` | `~/Library/Application Support/gup/reports` | `$XDG_STATE_HOME/gup/reports` | `GUP_REPORT_DIR` |
 | Schedules and their state | `%LOCALAPPDATA%\gup\scheduler` | `~/Library/Application Support/gup/scheduler` | `$XDG_STATE_HOME/gup/scheduler` | `GUP_SCHEDULER_DIR` |
-| Update lock (empty between runs) | `%LOCALAPPDATA%\gup\locks` | `~/Library/Application Support/gup/locks` | `$XDG_STATE_HOME/gup/locks` | — |
+| Update lock (empty between runs) | `%LOCALAPPDATA%\gup\locks` | `~/Library/Application Support/gup/locks` | `$XDG_STATE_HOME/gup/locks` | `GUP_SCHEDULER_DIR` (the lock moves into it) |
 
 Settings roam with your Windows profile; everything else is machine-local. `gup log path` prints
 the log directory; the Options view's **Fichier** row shows the settings file (`c` copies its path).

@@ -242,6 +242,7 @@ gup update winget
 # Pour ce provider, essaie :
 #   gup list --provider winget
 #   gup update --provider winget --all
+#   gup                            # menu interactif
 ```
 
 A provider gup does not know, or one of another OS, exits `2` too:
