@@ -12,6 +12,7 @@ import {
   SELECTION_BAR,
 } from "../../../src/ui/text/packages-labels.js";
 import type { KeyPress } from "../../../src/ui/tui/screen-host.js";
+import { useLocale } from "../../support/locale.js";
 
 const key = (name: string, sequence = name): KeyPress => ({ name, sequence, ctrl: false });
 const lines = (rendered: readonly (readonly { text: string }[])[]) =>
@@ -212,5 +213,71 @@ describe("PackagesPanel", () => {
 
   it("hides the Note column when the preference says so", () => {
     expect(text(panel({ noteColumn: () => "hidden" }).view.render(VIEW))).not.toContain("pinned");
+  });
+});
+
+/** gup itself on Windows: listed, never checked (core/self-update.ts). */
+describe("PackagesPanel and a package gup only updates once it has exited", () => {
+  const COMMAND = "npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty";
+  const GUP = {
+    id: "@charles_lindecker/gup",
+    current: "0.5.0",
+    latest: "0.5.1",
+    note: "après avoir quitté gup",
+    updateAfterExit: COMMAND,
+  };
+  const SELF_SCANS: ProviderScanResult[] = [
+    {
+      providerId: "npm-g",
+      available: true,
+      packages: [GUP, { id: "typescript", current: "5.4.5", latest: "5.6.2" }],
+    },
+  ];
+
+  function selfPanel() {
+    const onLaunch = vi.fn();
+    const view = new PackagesPanel({ onLaunch, onRescan: vi.fn() });
+    view.setList(new PackageList(SELF_SCANS, () => "npm (global)"));
+    return { view, onLaunch };
+  }
+
+  it("draws it without a checkbox, its note saying when it updates", () => {
+    const out = lines(selfPanel().view.render(VIEW));
+    const row = out.find((line) => line.includes("@charles_lindecker/gup")) ?? "";
+    expect(row).not.toContain("[ ]");
+    expect(row).toContain("après avoir quitté gup");
+    expect(out.find((line) => line.includes("typescript"))).toContain("[ ]");
+  });
+
+  it("refuses to check it, and says what to run once gup has exited", () => {
+    const { view } = selfPanel();
+    press(view, "down", "space");
+    const out = text(view.render(VIEW));
+    expect(out).toContain("quittez-le (q), puis lancez");
+    expect(out.replace(/\s+/g, " ")).toContain(COMMAND);
+    press(view, "enter");
+    expect(text(view.render(VIEW))).toContain(LAUNCH_NOTICES.empty);
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it("says it cannot update itself while it runs, and what to run", () => {
+      const { view } = selfPanel();
+      press(view, "down", "space");
+      const out = text(view.render(VIEW)).replace(/\s+/g, " ");
+      expect(out).toContain(
+        `gup cannot update itself while it runs: quit it (q), then run ${COMMAND}`,
+      );
+    });
+  });
+
+  it("leaves it out when everything is checked, and out of the update", () => {
+    const { view, onLaunch } = selfPanel();
+    press(view, "a", "enter");
+    expect(onLaunch).toHaveBeenCalledTimes(1);
+    const launched = onLaunch.mock.calls[0]?.[0] as { pkg: { id: string } }[];
+    expect(launched.map((s) => s.pkg.id)).toEqual(["typescript"]);
+    expect(text(view.render(VIEW))).toMatch(/\[■\] npm \(global\) {2}1\/1/);
   });
 });

@@ -87,10 +87,16 @@ export const LAUNCH_NOTICES = localized({
   en: {
     empty: "Check at least one package (space), or check all with a.",
     scanning: "Scan in progress — you can update once it is over.",
+    /** Space on gup itself, on Windows: it cannot replace itself while it runs. */
+    afterExit: (command: string) =>
+      `gup cannot update itself while it runs: quit it (q), then run ${command}`,
   },
   fr: {
     empty: "Cochez au moins un paquet (espace), ou tout cocher avec a.",
     scanning: "Scan en cours — la mise à jour sera possible à la fin du scan.",
+    afterExit: (command) =>
+      "gup ne peut pas se mettre à jour pendant qu'il tourne : " +
+      `quittez-le (q), puis lancez ${command}`,
   },
 });
 

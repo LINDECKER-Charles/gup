@@ -1,3 +1,4 @@
+import { isUpdatableNow } from "../../core/self-update.js";
 import type { OutdatedPackage, SelectedPackage } from "../../core/types.js";
 import type { NoteColumn } from "../app/ui-preferences.js";
 import type { PackageAction, PackageMarker } from "../app/view-definition.js";
@@ -11,7 +12,7 @@ import {
 } from "../text/packages-labels.js";
 import { ListCursor } from "../tui/list-cursor.js";
 import type { KeyPress } from "../tui/screen-host.js";
-import { fillLine, fit, seg, type Line } from "../tui/styled-lines.js";
+import { fillLine, fit, seg, type Line, type Tone } from "../tui/styled-lines.js";
 import type { PackageList, PackageRow } from "./package-list.js";
 import { PAGE_STEP, placeholder, type Panel, type Viewport } from "./panel.js";
 import { selectionBar, type SelectionBarState } from "./selection-bar.js";
@@ -185,7 +186,7 @@ export class PackagesPanel implements Panel {
     const index = start + row - firstRow;
     if (row < firstRow || index >= end) return;
     list.moveTo(index);
-    list.toggleCurrent();
+    this.toggle(list);
   }
 
   scroll(step: number): void {
@@ -202,7 +203,7 @@ export class PackagesPanel implements Panel {
       pagedown: () => list.move(PAGE_STEP),
       home: () => list.moveTo(0),
       end: () => list.moveTo(list.rows.length - 1),
-      space: () => list.toggleCurrent(),
+      space: () => this.toggle(list),
       a: () => list.toggleAllVisible(),
       "/": () => (this.#isFiltering = true),
       escape: () => list.setFilter(""),
@@ -210,6 +211,19 @@ export class PackagesPanel implements Panel {
       enter: () => this.launch(list),
       r: () => this.#handlers.onRescan?.(),
     };
+  }
+
+  /**
+   * Check the row under the cursor; a package gup only updates once it has
+   * exited cannot be, and the notice says what to run then.
+   */
+  private toggle(list: PackageList): void {
+    const row = list.rows[list.cursor];
+    if (row?.kind === "package" && !isUpdatableNow(row.pkg)) {
+      this.#notice = LAUNCH_NOTICES.afterExit(row.pkg.updateAfterExit ?? "");
+      return;
+    }
+    list.toggleCurrent();
   }
 
   /** The checked packages, filtered-out ones included — or why not. */
@@ -330,7 +344,7 @@ export class PackagesPanel implements Panel {
     }
     if (row.kind === "group") {
       const { checked, total } = list.groupState(row.providerId);
-      const box = checked === 0 ? "[ ]" : checked === total ? "[■]" : "[–]";
+      const box = groupBox(checked, total);
       return [
         seg(`${box} `, checked > 0 ? "success" : "muted"),
         seg(row.title, "strong"),
@@ -341,6 +355,13 @@ export class PackagesPanel implements Panel {
     const mark = layout.markOf?.(row.providerId, row.pkg);
     return packageLine({ pkg: row.pkg, isChecked, ...(mark !== undefined && { mark }) }, layout);
   }
+}
+
+/** A provider row's box: nothing to check, none, all, or some of its packages checked. */
+function groupBox(checked: number, total: number): string {
+  if (total === 0) return "   ";
+  if (checked === 0) return "[ ]";
+  return checked === total ? "[■]" : "[–]";
 }
 
 function blankLines(count: number): Line[] {
@@ -379,15 +400,27 @@ function packageLine(
   layout: Layout,
 ): Line {
   const { pkg, isChecked } = row;
+  const isCheckable = isUpdatableNow(pkg);
   return [
-    seg(isChecked ? "  [■] " : "  [ ] ", isChecked ? "success" : "muted"),
+    seg(packageBox(isCheckable, isChecked), isChecked ? "success" : "muted"),
     ...(row.mark !== undefined ? [seg(`${row.mark} `, "accent")] : []),
-    seg(fit(pkg.name ?? pkg.id, layout.name), isChecked ? "strong" : "plain"),
+    seg(fit(pkg.name ?? pkg.id, layout.name), nameTone(isCheckable, isChecked)),
     seg(` ${fit(pkg.current, layout.version)}`, "warning"),
     seg(" → ", "muted"),
     seg(fit(pkg.latest, layout.version), "success"),
     seg(layout.note > 0 ? ` ${fit(pkg.note ?? "", layout.note)}` : "", "muted"),
   ];
+}
+
+/** A package's box — none for one gup only updates once it has exited. */
+function packageBox(isCheckable: boolean, isChecked: boolean): string {
+  if (!isCheckable) return " ".repeat(CHECKBOX_WIDTH);
+  return isChecked ? "  [■] " : "  [ ] ";
+}
+
+function nameTone(isCheckable: boolean, isChecked: boolean): Tone {
+  if (!isCheckable) return "muted";
+  return isChecked ? "strong" : "plain";
 }
 
 /** Rows of the list to draw so that the cursor stays in view. */

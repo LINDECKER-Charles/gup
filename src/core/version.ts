@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 
-const PACKAGE_NAME = "@charles_lindecker/gup";
+/** The npm package gup is published as. */
+export const PACKAGE_NAME = "@charles_lindecker/gup";
 
 /**
  * Candidate locations of package.json relative to the importing module.

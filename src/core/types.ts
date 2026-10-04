@@ -34,6 +34,13 @@ export interface OutdatedPackage {
    * scheduling target — a schedule names packages, never a provider.
    */
   aggregate?: boolean;
+  /**
+   * Set when gup can only update this package once it has exited — gup
+   * itself on Windows, whose running process keeps its native modules
+   * loaded (`core/self-update.ts`): the command to run then. Such a row is
+   * listed, never checked, batched nor updated by gup.
+   */
+  updateAfterExit?: string;
 }
 
 export interface UpdateOutcome {

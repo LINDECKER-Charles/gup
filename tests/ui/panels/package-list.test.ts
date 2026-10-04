@@ -118,3 +118,26 @@ describe("PackageList order", () => {
     expect(list.selection.map((s) => s.pkg.id)).toEqual(["b-patch"]);
   });
 });
+
+describe("PackageList and a package gup only updates once it has exited", () => {
+  const gup = { ...pkg("@charles_lindecker/gup"), updateAfterExit: "npm install -g …" };
+  const scans: ProviderScanResult[] = [
+    { providerId: "npm-g", available: true, packages: [gup, pkg("typescript")] },
+  ];
+  const list = () => new PackageList(scans, () => "npm (global)");
+
+  it("never checks it: not from its row, its provider's row nor check-all", () => {
+    const fromRow = list();
+    fromRow.moveTo(1);
+    fromRow.toggleCurrent();
+    expect(ids(fromRow)).toEqual([]);
+    const fromGroup = list();
+    fromGroup.toggleCurrent();
+    expect(ids(fromGroup)).toEqual(["typescript"]);
+    expect(fromGroup.groupState("npm-g")).toEqual({ checked: 1, total: 1 });
+    const fromAll = list();
+    fromAll.toggleAllVisible();
+    expect(ids(fromAll)).toEqual(["typescript"]);
+    expect(fromAll.isAllVisibleChecked()).toBe(true);
+  });
+});

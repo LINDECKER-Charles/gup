@@ -26,6 +26,7 @@ const PACKAGE_FIELDS: Readonly<Record<keyof OutdatedPackage, Field>> = {
   manual: "boolean",
   requiresAdmin: "boolean",
   aggregate: "boolean",
+  updateAfterExit: "string",
 };
 const PACKAGE_REQUIRED = ["id", "current", "latest"];
 

@@ -4,6 +4,7 @@ import { recordScan } from "../core/history/store.js";
 import { localized } from "../core/i18n/localized.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { renderScanTable } from "../ui/table.js";
+import { afterExitNotice } from "../ui/after-exit-notice.js";
 import { warnIgnoredProviders } from "./warn-ignored-providers.js";
 
 const LIST_LABELS = localized({
@@ -47,7 +48,7 @@ export async function listCommand(options: ListOptions): Promise<number> {
     ...(options.only && { only: options.only }),
     ...(options.fast !== undefined && { fast: options.fast }),
   });
-  process.stdout.write(`${renderScanTable(results)}\n`);
+  process.stdout.write(`${renderScanTable(results)}\n${afterExitNotice(results)}`);
   return 0;
 }
 
