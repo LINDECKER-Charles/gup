@@ -272,7 +272,8 @@ no foundation contract changed, and `menu-session.ts` is untouched.
 `ui/run` holds 10 files (the folder budget), `ui/app` reaches 10 with the launcher. Since
 `fix/final-polish` the embedded terminal's three modules live in `ui/run/terminal/`, which made
 room to take the pipeline events and the levers out of `run-view.ts` (back under the 300-line
-alert); `ui/run` holds 9 files.
+alert); `ui/run` holds 9 files. The menu session moved to `ui/app/session/` in the same branch,
+and `ui/app` holds 7.
 
 ## 14. The in-screen launcher
 

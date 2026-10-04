@@ -115,7 +115,8 @@ flowchart LR
 - **Run view.** Only on the results (`phase === "done"`), never with Ctrl, one at a time:
   `pending` as the notice, then the action's notice; a rejected promise becomes
   `Action impossible : <raison>`; a notice arriving after the user left draws nothing. Their hints
-  end the results' key bar.
+  come right after `entrée retour` on the results' key bar, before `v`, which a narrow bar drops
+  first: at 80 columns the whole bar fits (`fix/final-polish`).
 - **The journal's action** writes the report of `presetPeriod(journal.period, now)` through the
   same `JournalSource.export("html", …)` as the Journal's `o` — so it obeys `openReport` — and
   words the outcome with `exportNotice`, shared with the panel's status line: the path reads
@@ -144,7 +145,7 @@ empty). `glyphMode` is `resolveGlyphMode(preferences.glyphs)`.
 | `tests/ui/settings/journal-options.test.ts` | the section and its values, each row saved to its section, the level's full cycle, the override hint (variable and flag), `Tout` resets both sections |
 | `tests/ui/panels/journal/{journal-panel,tabs}.test.ts` | the period follows the setting until `p`; schedule name or id in the detail; the off hint by source, wrapped in the 50 columns an 80-column terminal leaves the panel |
 | `tests/ui/views/journal-view.test.ts` | the menu's Journal opens on the period set in the settings |
-| `tests/ui/run/{run-view,run-keys}.test.ts` | in the real menu with the journal view: `o` ignored while running, offered on the results, the export's notice shown; the results' hint bar ends with the actions |
+| `tests/ui/run/{run-view,run-keys}.test.ts` | in the real menu with the journal view: `o` ignored while running, offered on the results, the export's notice shown; the actions' hints on the results' bar before `v`, whole at 80 columns |
 | `tests/commands/schedule/schedules-controller.test.ts` | a schedule named by its id, nothing once it is deleted (the detail then shows the id) |
 
 The suites run with `GUP_LOG_LEVEL=off` and `GUP_CONFIG=0` (W2-3): tests of the setting clear the
@@ -173,7 +174,7 @@ temporary directory for the round trip); nothing writes through the process-wide
 | Contract | Change |
 |---|---|
 | `ui/app/view-definition.ts` | `ResultNotice`, `ResultAction`, `ViewDefinition.resultActions?` |
-| `ui/app/view-registry.ts` | `resultActions()` |
+| `ui/app/session/view-registry.ts` | `resultActions()` |
 | `ui/app/update-launcher.ts` | `LauncherContext.resultActions` (filled by the session) |
 | `ui/run/run-view.ts`, `run-keys.ts` | `RunViewDeps.actions?`; `RunHintsContext.resultHints?` |
 | `ui/settings/settings-service.ts` | `SettingsMap.log`, `SettingsMap.journal` |

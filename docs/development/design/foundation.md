@@ -322,7 +322,7 @@ The area specs were written before the foundation. Import these; never redeclare
 | `PlannedUpdate` / `RunPlan` (scheduler) | `ScheduledTarget` / `TickPlan` (scheduler-owned names) | — |
 | `PackagesPanel(onSubmit)`, `{ onSubmit, onSchedule }` | `PackagesPanel({ onLaunch, onRescan? }, options)` + `PackageAction` | `src/ui/panels/packages-panel.ts` |
 | `class UpdateLauncher` (update-flow) | `UpdateLauncher` interface + `LauncherFactory` slot | `src/ui/app/update-launcher.ts` |
-| `MenuController.providersStatus/updatePackages/updateTargets/validateTargets` | the Providers view's status port; `updateOutside(packages, request?)` | `src/ui/views/providers-view.ts`, `src/ui/app/menu-session.ts` |
+| `MenuController.providersStatus/updatePackages/updateTargets/validateTargets` | the Providers view's status port; `updateOutside(packages, request?)` | `src/ui/views/providers-view.ts`, `src/ui/app/session/menu-session.ts` |
 | `PANEL_FRAME` | `panelFrame(density)` | `src/ui/tui/text-panel.ts` |
 | `tests/ui/tui-test-host.ts`, `createTestHost(width, height)` | `tests/support/tui/test-host.ts`, `createTestHost({ size, createAppearance })` | — |
 
