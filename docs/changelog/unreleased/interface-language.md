@@ -11,12 +11,21 @@
   precedence over the `interface.language` setting, the Options › Language row, what follows the
   language — the help, dates and numbers, the HTML report — and what does not, JSON and CSV
   fields; troubleshooting gains an entry for a language that does not apply, and the CLI reference
-  no longer says the output is French (`docs(guide): describe the English interface and gup language`)
+  no longer says the output is French
+  (`docs(guide): describe the English interface and gup language`)
 - **guide:** Updating gup itself says what changes on Windows: a running gup keeps OpenTUI's
   renderer and node-pty's ConPTY loaded, and Windows does not replace a loaded DLL, so gup leaves
   its own update for after it exits — its row in Packages cannot be checked,
   `gup update npm-g:@charles_lindecker/gup` ends as a skip, and the app prints
   `npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty` as it quits; the
   interactive app guide, the CLI reference and troubleshooting say so where a user meets it, and
-  macOS and Linux keep updating gup like any package (`docs(guide): say how gup updates itself on
-  Windows`)
+  macOS and Linux keep updating gup like any package
+  (`docs(guide): say how gup updates itself on Windows`)
+- **guide:** Troubleshooting explains the update outcomes 0.5.1 changes, quoting what gup prints:
+  a pip upgrade undone because `pip check` says it breaks a dependent (and the `pip install`
+  that puts the old version back when gup could not), a `pnpm self-update` the `PATH` did not pick
+  up (`$PNPM_HOME/bin`), the two winget failures that end as a skip with no retry offered
+  (`0x8A150114`, `0x8A150042`), and software two providers list kept with one of them
+  (`gup log --grep superseded`). The providers catalog gives `self:pnpm` its real command,
+  `pnpm self-update` (it said `pnpm add -g pnpm`), and notes the pnpm-g, pip, composer-g,
+  `self:gh` and Visual Studio changes (`docs(guide): cover the pip, pnpm and winget update outcomes`)

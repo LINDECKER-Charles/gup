@@ -19,6 +19,9 @@ here? [Collect a diagnostic](#collecting-a-diagnostic-for-a-bug-report) and open
   - [Administrator packages were skipped](#administrator-packages-were-skipped)
   - [An install hangs](#an-install-hangs)
   - [gup does not update itself (Windows)](#gup-does-not-update-itself-windows)
+  - [A pip upgrade was undone](#a-pip-upgrade-was-undone)
+  - [pnpm updated itself, but the old version still runs](#pnpm-updated-itself-but-the-old-version-still-runs)
+  - [winget says it cannot upgrade a package](#winget-says-it-cannot-upgrade-a-package)
 - [Providers and packages](#providers-and-packages)
   - [A provider is "not installed", or greyed out](#a-provider-is-not-installed-or-greyed-out)
   - [A package I expected is missing](#a-package-i-expected-is-missing)
@@ -196,6 +199,57 @@ npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty
 If an update started from inside an older gup stopped half way and the `gup` command is gone,
 the same command reinstalls it. More: [installation.md § Updating gup itself](installation.md#updating-gup-itself).
 
+### A pip upgrade was undone
+
+```text
+SKIP 1 manual action required:
+     - click — click 8.5.0 would break semgrep 1.178.0 (click~=8.4.2): back to 8.4.2
+```
+
+**Why.** `pip install --upgrade` upgrades a package without checking the installed packages that
+depend on it: it warns, exits 0, and leaves `semgrep` with a `click` it does not accept (or
+`pydantic` with another `pydantic-core` than the one it pins). gup runs `pip check` before and after each
+upgrade; when the upgrade broke a requirement that held before, it reinstalls the previous version
+and ends the update as a skip that names the dependent and its requirement.
+
+**Fix.** Nothing is left broken: the package stays at the version its dependents accept, and is
+offered again at each scan until they accept the new one — usually with their own next release.
+When gup could not put the previous version back, the update fails instead
+(`click 8.5.0 breaks semgrep 1.178.0 (click~=8.4.2), and putting 8.4.2 back failed`): reinstall it
+yourself, `pip install --user click==8.4.2`.
+
+### pnpm updated itself, but the old version still runs
+
+Updating pnpm itself (`self:pnpm`) fails with
+`pnpm self-update succeeded, but the pnpm on PATH still reports <version>: add %PNPM_HOME%\bin to PATH, where pnpm 11+ puts its new version, then open a new terminal`
+(`$PNPM_HOME/bin` on macOS and Linux).
+
+**Why.** pnpm 11 and later install their new version under `$PNPM_HOME/bin`, a folder a `PATH` set
+up by an older pnpm does not hold: `pnpm self-update` succeeds, and the `pnpm` your terminal finds
+is still the old one. gup compares the version before and after rather than report a success that
+changed nothing.
+
+**Fix.** Add that folder to your `PATH` (Windows: your user's environment variables; macOS and
+Linux: your shell profile), open a new terminal, and check with `pnpm --version`.
+
+### winget says it cannot upgrade a package
+
+```text
+SKIP 1 manual action required:
+     - <id> — winget cannot upgrade this package: use its publisher's own updater
+```
+
+or `winget needs an answer gup cannot give: run winget upgrade --id <id> in a terminal`.
+
+**Why.** winget said itself that no strategy can work, so gup offers no retry (`--force`,
+`--uninstall-previous`, a reinstall) and ends the update as a skip: the package's manifest forbids
+upgrades through winget (`0x8A150114`: Parsec, Android Studio), or winget asked a question no flag
+answers and could not read a reply (`0x8A150042`: Battle.net's install location).
+
+**Fix.** For the first, update the application with its publisher's own updater, often from the
+application itself. For the second, run `winget upgrade --id <id>` in a terminal and answer
+winget's question there.
+
 ## Providers and packages
 
 ### A provider is "not installed", or greyed out
@@ -222,6 +276,10 @@ the same command reinstalls it. More: [installation.md § Updating gup itself](i
   (nvm-windows owning `node`, pyenv owning `python`), gup does not offer the OS package manager's
   copy, which would shadow it. Run `gup --log-level debug` once, then `gup log --grep ownership` to
   see what was left out and why.
+- **Another provider updates it.** Software two providers list stays with one, so it is never
+  updated twice: winget's Visual Studio editions give way to the `visual-studio` provider once it
+  scanned, and the `self` provider's `gh` to winget when winget lists `GitHub.cli`. At
+  `--log-level debug`, `gup log --grep superseded` shows what was left out.
 - **The provider's scan failed.** Its row in **Scan** or **Packages** shows the error;
   `gup log -l warn` has the detail.
 
