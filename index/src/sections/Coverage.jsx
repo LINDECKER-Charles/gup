@@ -1,10 +1,11 @@
 /**
- * 02 · Coverage — the provider count, one card per OS, the managers that
- * behave the same everywhere, and the full registry inventory by domain in a
- * collapsed <details>: real, crawlable long-tail content that costs no
- * vertical space until asked for.
+ * 02 · Coverage — the provider count, one card per OS (with how many of the
+ * registered providers gup supports there), the managers that behave the same
+ * everywhere, and the full registry inventory by domain in a collapsed
+ * <details>: real, crawlable long-tail content that costs no vertical space
+ * until asked for.
  */
-import { providersByDomain } from "../data/facts.js";
+import { facts, providersByDomain, providersBySystem } from "../data/facts.js";
 import { LINKS } from "../data/links.js";
 import { PLATFORMS } from "../data/platforms.js";
 import { useI18n } from "../i18n/use-i18n.js";
@@ -21,6 +22,13 @@ function SystemCard({ system, coverage }) {
         <span className="badge">{copy.badge}</span>
       </p>
       <h3 className="os-name">{system.name}</h3>
+      <dl className="os-count">
+        <dt>{coverage.supported}</dt>
+        <dd dir="ltr">
+          <span className="os-count-value">{providersBySystem[system.id]}</span>
+          {` / ${facts.providerCount}`}
+        </dd>
+      </dl>
       <ul className="os-managers">
         {system.managers.map((manager) => (
           <li key={manager.name}>

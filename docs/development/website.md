@@ -22,7 +22,7 @@ npm run og          # re-render the social cards (committed PNGs)
 
 ```mermaid
 flowchart LR
-  F["root package.json<br/>src/core/registry.ts"] -->|scripts/sync-facts.mjs| FA["src/data/facts.js"]
+  F["root package.json<br/>src/core/registry.ts<br/>registered providers"] -->|scripts/sync-facts.mjs| FA["src/data/facts.js"]
   C["src/i18n/catalogs/&lt;id&gt;.js"] --> R["build/i18n/resolve-messages.mjs"]
   FA --> P["build/page-context.mjs<br/>one PageContext per locale"]
   R --> P
@@ -35,9 +35,13 @@ flowchart LR
   X --> D2["dist/sitemap.xml, dist/404.html"]
 ```
 
-- **Facts are derived, never typed.** The version, the Node floor, the provider count and the
-  per-domain inventory come from the repository (`scripts/sync-facts.mjs`), so the site cannot
-  advertise a stale number.
+- **Facts are derived, never typed.** The version, the Node floor, the provider count, the
+  per-domain inventory and how many providers each system supports come from the repository
+  (`scripts/sync-facts.mjs` over `build/facts/read-registry.mjs`), so the site cannot advertise
+  a stale number. The reader walks `ALL_PROVIDERS`, never the filesystem (unregistered provider
+  files do not count), takes each provider's one-line `readonly platforms = PLATFORMS.<set>;`
+  declaration (none: every system), and fails the build on a set or a declaration form it
+  cannot read rather than counting the provider everywhere.
 - **Messages are resolved at build time.** Placeholders, plural forms (`Intl.PluralRules`) and
   markup validation run in Node. Each page embeds its resolved messages in a
   `<script id="gup-boot" type="application/json">` block and the client hydrates from exactly
@@ -64,9 +68,37 @@ flowchart LR
 |---|---|
 | `src/data/structure.js` | Language-neutral structure: section ids and legacy anchors, feature cards, FAQ order, example commands, footer link graph. |
 | `src/data/links.js` | Every absolute URL. Change the deploy target here. |
-| `src/data/platforms.js`, `src/data/scenes/` | Product truth: OS cards, the terminal demo (the TUI mock is French on purpose — it is the real interface). |
+| `src/data/platforms.js` | Product truth: the OS cards (their per-system counts come from `facts.js`). |
+| `src/data/scenes/` | Product truth: the terminal demo (below). |
 | `src/i18n/catalogs/<id>.js` | Words only, keyed by the same ids. English (`en.js`) is the source. |
 | `src/i18n/locales.js` | The locale registry, in speaker-ranking order. |
+
+### The terminal demo
+
+The hero's three tabs show one sample machine (`scenes/sample-machine.js`): **Interface** is
+Paquets with three packages checked (`app-scene.js`), **Update** is the run view updating exactly
+those three (`update-scene.js`), **JSON** is `gup list --json --fast` (`json-scene.js`). The TUI
+mocks are French on purpose — they are the real interface — and are drawn as structured HTML
+(`src/ui/terminal/`), never as box-drawing art.
+
+`tests/rules/scenes-truth.test.mjs` holds them to the CLI's sources, read as text (a small
+literal reader in `tests/helpers/ts-literals.mjs`; the site's tests never depend on the CLI's
+TypeScript toolchain). It fails when a mock shows:
+
+- a title-bar fact, panel title, column heading, selection-bar text or key hint that no string
+  or template literal under `src/ui/` writes (a template's interpolations may only take numbers
+  or texts the TUI writes elsewhere, so `entrée mettre à jour (3)` passes and `entrée lancer (3)`
+  does not);
+- a sidebar other than the one the views registered in `src/commands/menu-views.ts` build (labels
+  resolved from their constants, ordered by group and order, separators between groups,
+  `Quitter` last);
+- a mark other than the TUI's (`STATUS_GLYPHS`, the checkboxes, the cursor);
+- a provider the registry does not register (display names in the mocks, ids in the JSON tab).
+
+Numbers (versions, counts, clocks), layout, colours and the order of the key hints are outside
+its reach. When the interface renames a label or a key, the site's tests fail until the scene
+follows. Where the wording in the plan and the shipped code disagree, the scenes follow the code
+(the run view says `s passer ce paquet` and `v agrandir le terminal`).
 
 Catalog strings may use:
 
@@ -178,21 +210,39 @@ looked at and what it changed. A native speaker has not reviewed these yet: one
 | bn | Same symlink issue; "enforces" weakened to "maintains"; Latin words need hyphenated case endings. | Two fixes: "সিমলিংক … শনাক্ত হয়" read "symlinks are detected" — now "অনুসরণ করা হয়" (followed); "WCAG AA কনট্রাস্ট বজায় রাখে" read "maintains" — now "নিশ্চিত করে" (ensures). Hero "সবসময়" (always) accepted as in Hindi. |
 | pt | "built accordingly" is easy to turn into "built for that"; *registry* is often left in English in Brazil. | One fix: "E foi construído para isso" read as "built to run privileged commands" — now "com isso em mente". "Sem registry" became "Sem registro de pacotes" (clearer, distinct from *registro de atividades*). "keeps the providers moving" reads "keeps the providers up to date": accepted. |
 
+The 0.5.0 alignment with the shipped interface rewrote four feature cards (in-app updates and
+their fallback, schedules with `p`, the report with `o`, the exact contrast policy), the FAQ's
+coverage answer (JetBrains IDEs, not extensions: the plugin providers are not registered) and
+added the OS cards' "supported providers" label. The same back-translation pass found the eight
+versions equivalent; points worth keeping: the schedule card says the OS scheduler starts *gup*
+briefly (it wakes every 15 minutes and runs what is due), not that it starts each schedule; the
+French, Spanish and Portuguese ratios use a decimal comma (`4,5:1`, as the TUI writes it); the
+FAQ's "JetBrains IDEs" is "بيئات التطوير من JetBrains" in Arabic and keeps "IDE" in Latin in
+the other languages; the OS cards show "label: value", so no language agrees a noun with the
+per-system count.
+
+The review of that branch reworded what still read as translated: French "exécuter ce qui est
+dû" is now "faire ce qui arrive à échéance", Spanish "corrige lo que no llega" is "lo que se queda
+corto", Portuguese "o que ficar abaixo" gained "do limite", and the Hindi schedule card's "वे अपडेट
+चल जाएँ" (let those updates run) is "वे पूरे हो जाएँ" (get done). It also corrected two FAQ answers
+in every language: Linux's OS level is Homebrew/Linuxbrew *and Nix*, and "no direct download" is
+gone (the `nerd-fonts` provider downloads release archives).
+
 ## Quality gates
 
 | Gate | What it pins |
 |---|---|
 | `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda, Arabic punctuation), Arabic count agreement. |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
-| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, and every non-Latin script rendering its sans, display and mono faces from its own fonts. |
+| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, every non-Latin script rendering its sans, display and mono faces from its own fonts, the terminal demo held to the CLI's sources (see "The terminal demo"), and every `gup` command and flag the page, its examples and the two llms texts cite registered by the CLI's commander declarations (flags of the tools gup drives, such as Homebrew's `--greedy`, are named in the test). |
+| `tests/facts/*` | The registry reader: registered providers only, per-system counts from the `platforms` declarations, refusal of an unknown set, an unreadable declaration or a count mismatch. |
 | `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no letter-spacing on Arabic, Indic or Han text, no-JS and reduced-motion rendering, overflow at 1440/820/390 px. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, language menu names on the right, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu (each name tagged with its own language, all starting on one edge). |
 | `npm run lhci` | Lighthouse mobile ≥ 0.95 on performance (best of 3), accessibility, best practices and SEO (median of 3). |
 
 Budgets: HTML ≤ 30 KB gzipped per locale, JavaScript ≤ 62 KB, CSS ≤ 12 KB, preloaded fonts
 ≤ 3 files / 75 KB on Latin pages and a single Geist Mono file elsewhere.
 
-`tests/rules/` is not named `tests/design/` because the repository's `.gitignore` ignores every
-`design` directory.
+`tests/rules/` holds the tests the website spec files under `tests/design/`.
 
 Code limits follow the repository rules (functions ≤ 30 lines, ≤ 3 parameters, lines ≤ 100
 characters, files ≤ 300 lines). Catalogs are the one exception to the file length: they are flat

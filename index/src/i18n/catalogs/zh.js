@@ -73,8 +73,9 @@ export default {
       inline: {
         title: "无需离开 gup 即可更新",
         text:
-          "安装程序在界面内嵌的终端面板中运行，进度条、交互提示和颜色都原样保留。运行结束" +
-          "后，列表会就地刷新。",
+          "安装程序在界面内嵌的终端面板中运行，进度条、交互提示和颜色都原样保留。更新完成的" +
+          "软件包随即从列表中移除，无需重新扫描。如果内嵌终端不可用，gup 会说明原因，改在你" +
+          "自己的终端中更新。",
       },
       select: {
         title: "多选，一次启动",
@@ -83,8 +84,9 @@ export default {
       schedule: {
         title: "按软件包定时更新",
         text:
-          "让 `ripgrep` 每周自动更新，`node` 则保持不动。定时任务只针对软件包，从不针对整个 " +
-          "provider，并由操作系统的任务计划程序启动：没有任何常驻进程。",
+          "勾选软件包后按 [[p]]：`ripgrep` 每周自动更新，`node` 保持不动。定时任务只针对软件" +
+          "包，从不针对整个 provider；操作系统的任务计划程序会短暂启动 gup，执行到期的任务，" +
+          "没有任何常驻进程。",
       },
       journal: {
         title: "活动日志",
@@ -95,14 +97,14 @@ export default {
       report: {
         title: "HTML 报告",
         text:
-          "`gup report` 会在浏览器中打开一份清晰、可导航的历史报告——单个离线文件，人人都能" +
-          "看懂，不只是终端用户。",
+          "`gup report`（或在活动日志中按 [[o]]）会在浏览器中打开一份清晰、可导航的历史报告" +
+          "——单个离线文件，人人都能看懂，不只是终端用户。",
       },
       themes: {
         title: "始终清晰可读的主题",
         text:
-          "选择一个主题或自定义颜色：gup 强制满足 WCAG AA 对比度要求，文字永远不会淹没在背景" +
-          "中。",
+          "十个内置主题，或使用你自己的颜色：gup 会按 WCAG AA 检查每一种（文字 4.5:1，边框 " +
+          "3:1，选择 AAA 时为 7:1），并修正不达标的颜色。",
       },
       os: {
         title: "了解你的操作系统",
@@ -125,6 +127,7 @@ export default {
       "Windows、macOS 和 Linux 上运行的是同一个可执行文件——相同的 provider 契约，相同的 " +
       "JSON。变化的只是 gup 能驱动的操作系统层。",
     delegated: "委托",
+    supported: "支持的 provider",
     everywhere: "各平台一致",
     allProviders: "全部 {providers} 个 provider，按领域分类",
     catalogLink: "浏览完整的 provider 目录",
@@ -222,15 +225,15 @@ export default {
         q: "gup 会取代 winget、brew 或 npm 吗？",
         a:
           "不会。gup 在同一个界面背后编排各工具的原生命令（`winget upgrade`、" +
-          "`brew outdated`、`npm update -g`、`pip list --outdated`……）。没有自创协议，没有" +
-          "版本缓存，也不直接下载任何东西。",
+          "`brew outdated`、`npm update -g`、`pip list --outdated`……）。没有自创协议，也没有" +
+          "版本缓存。",
       },
       platforms: {
         q: "支持 macOS 和 Linux 吗？",
         a:
           "支持。在 macOS 上原生运行：Homebrew 的 formula 与 cask、MacPorts 以及 Mac App " +
-          "Store，Apple Silicon 和 Intel 均支持。在 Linux 上，Homebrew/Linuxbrew 是系统层的 " +
-          "provider，发行版安装的二进制文件会交还给 `apt` 或 `dnf` 处理。系统层之上的一切——" +
+          "Store，Apple Silicon 和 Intel 均支持。在 Linux 上，系统层由 Homebrew/Linuxbrew 和 " +
+          "Nix 负责，发行版安装的二进制文件会交还给 `apt` 或 `dnf` 处理。系统层之上的一切——" +
           "npm、pip、cargo、helm、VS Code……——在三个系统上的表现完全一致。",
       },
       install: {
@@ -250,7 +253,7 @@ export default {
         a:
           "{providers} 个 provider，每个都是独立模块：winget、scoop、chocolatey、Homebrew、" +
           "MacPorts、npm、pnpm、pip、uv、cargo、gem、composer、dotnet 工具、helm、kubectl、" +
-          "terraform、VS Code 和 JetBrains 扩展、WSL 发行版等等。",
+          "terraform、VS Code 扩展、JetBrains IDE、WSL 发行版等等。",
       },
       security: {
         q: "运行它安全吗？",

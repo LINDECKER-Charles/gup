@@ -82,8 +82,9 @@ export default {
         title: "Atualizações sem sair do gup",
         text:
           "Os instaladores rodam em um painel de terminal embutido na interface — barras de " +
-          "progresso, prompts e cores intactos. Quando terminam, a lista se atualiza ali " +
-          "mesmo.",
+          "progresso, prompts e cores intactos. Em seguida, os pacotes atualizados saem da " +
+          "lista, sem nova varredura. Se o terminal embutido estiver indisponível, o gup diz " +
+          "o motivo e atualiza no seu próprio terminal.",
       },
       select: {
         title: "Marque vários, execute uma vez",
@@ -94,9 +95,10 @@ export default {
       schedule: {
         title: "Atualizações agendadas, pacote por pacote",
         text:
-          "Agende o `ripgrep` toda semana e deixe o `node` como está. Os agendamentos miram " +
-          "pacotes, nunca um provider inteiro, e quem os inicia é o agendador do seu " +
-          "sistema: nada fica residente.",
+          "Marque pacotes e pressione [[p]]: o `ripgrep` passa a ser atualizado toda semana " +
+          "e o `node` fica como está. Os agendamentos miram pacotes, nunca um provider " +
+          "inteiro; o agendador do seu sistema inicia o gup por um instante para executar o " +
+          "que está pendente, então nada fica residente.",
       },
       journal: {
         title: "Registro de atividades",
@@ -108,15 +110,16 @@ export default {
       report: {
         title: "Relatório HTML",
         text:
-          "`gup report` abre no navegador um relatório claro e navegável do seu histórico — " +
-          "um único arquivo offline, legível por qualquer pessoa, não só por quem vive no " +
-          "terminal.",
+          "`gup report`, ou [[o]] no registro de atividades, abre no navegador um relatório " +
+          "claro e navegável do seu histórico — um único arquivo offline, legível por " +
+          "qualquer pessoa, não só por quem vive no terminal.",
       },
       themes: {
         title: "Temas que continuam legíveis",
         text:
-          "Escolha um tema ou suas próprias cores: o gup garante contraste WCAG AA, para que " +
-          "o texto nunca se perca no fundo.",
+          "Dez temas integrados ou suas próprias cores: o gup verifica cada um segundo o " +
+          "WCAG AA — 4,5:1 para texto, 3:1 para bordas, 7:1 se você escolher AAA — e " +
+          "corrige o que ficar abaixo do limite.",
       },
       os: {
         title: "Atento ao seu sistema",
@@ -139,6 +142,7 @@ export default {
       "O mesmo executável no Windows, macOS e Linux — mesmo contrato de provider, mesmo " +
       "JSON. O que muda é a camada do sistema que o gup consegue controlar.",
     delegated: "delegação",
+    supported: "Providers compatíveis",
     everywhere: "Igual em todo lugar",
     allProviders: "Todos os {providers} providers, por domínio",
     catalogLink: "Ver o catálogo completo de providers",
@@ -250,17 +254,16 @@ export default {
         a:
           "Não. O gup orquestra os comandos nativos de cada ferramenta (`winget upgrade`, " +
           "`brew outdated`, `npm update -g`, `pip list --outdated`…) por trás de uma única " +
-          "interface. Nenhum protocolo inventado, nenhum cache de versões, nenhum download " +
-          "direto.",
+          "interface. Nenhum protocolo inventado, nenhum cache de versões.",
       },
       platforms: {
         q: "Funciona no macOS e no Linux?",
         a:
           "Sim. No macOS, de forma nativa: fórmulas e casks do Homebrew, MacPorts e a Mac " +
-          "App Store, em Apple Silicon e Intel. No Linux, o Homebrew/Linuxbrew é o provider " +
-          "do sistema, e um binário instalado pela distribuição é devolvido ao `apt` ou ao " +
-          "`dnf`. Tudo o que fica acima da camada do sistema — npm, pip, cargo, helm, " +
-          "VS Code… — se comporta da mesma forma nos três sistemas.",
+          "App Store, em Apple Silicon e Intel. No Linux, o Homebrew/Linuxbrew e o Nix cobrem " +
+          "a camada do sistema, e um binário instalado pela distribuição é devolvido ao " +
+          "`apt` ou ao `dnf`. Tudo o que fica acima da camada do sistema — npm, pip, cargo, " +
+          "helm, VS Code… — se comporta da mesma forma nos três sistemas.",
       },
       install: {
         q: "Como instalo o gup?",
@@ -280,8 +283,8 @@ export default {
         a:
           "{providers} providers, cada um em um módulo isolado: winget, scoop, chocolatey, " +
           "Homebrew, MacPorts, npm, pnpm, pip, uv, cargo, gem, composer, ferramentas dotnet, " +
-          "helm, kubectl, terraform, extensões do VS Code e da JetBrains, distribuições WSL " +
-          "e muito mais.",
+          "helm, kubectl, terraform, extensões do VS Code, IDEs da JetBrains, distribuições " +
+          "WSL e muito mais.",
       },
       security: {
         q: "É seguro usar?",
