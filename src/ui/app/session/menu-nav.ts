@@ -1,7 +1,7 @@
-import type { Density } from "../theme/appearance.js";
-import type { KeyPress } from "../tui/screen-host.js";
-import type { Line } from "../tui/styled-lines.js";
-import { entryAtRow, QUIT, renderSidebar } from "./sidebar.js";
+import type { Density } from "../../theme/appearance.js";
+import type { KeyPress } from "../../tui/screen-host.js";
+import type { Line } from "../../tui/styled-lines.js";
+import { entryAtRow, QUIT, renderSidebar } from "../sidebar.js";
 import type { ViewRegistry } from "./view-registry.js";
 
 /** Keys that open the entry under the sidebar's cursor. */

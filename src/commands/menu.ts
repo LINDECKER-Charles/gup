@@ -2,7 +2,7 @@ import { getProvider } from "../core/registry.js";
 import { requestsFrom } from "../core/update/update-plan.js";
 import { MenuApp } from "../ui/app/menu-app.js";
 import { uiPreferences } from "../ui/app/ui-preferences.js";
-import type { MenuController } from "../ui/app/menu-session.js";
+import type { MenuController } from "../ui/app/session/menu-session.js";
 import { runScan } from "../ui/scan-progress.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 import type { MenuState } from "./menu-state.js";

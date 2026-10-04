@@ -3,7 +3,7 @@ import type { SelectedPackage } from "../../core/types.js";
 import type { UpdateReport } from "../../core/update/update-report.js";
 import type { DialogLayer } from "../tui/dialog.js";
 import type { Screen } from "../tui/screen-host.js";
-import type { MenuController, SessionExit } from "./menu-session.js";
+import type { MenuController, SessionExit } from "./session/menu-session.js";
 import { outsideLauncher } from "./outside-launcher.js";
 import type { UiPreferences } from "./ui-preferences.js";
 import type { ResultAction, Takeover, TakeoverSurface, ViewId } from "./view-definition.js";

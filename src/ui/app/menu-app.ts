@@ -3,7 +3,7 @@ import chalk from "chalk";
 import { withoutUpdated, type MenuState } from "../../commands/menu-state.js";
 import type { UpdateReport } from "../../core/update/update-report.js";
 import { screenHost, type ScreenHost } from "../tui/screen-host.js";
-import { MenuSession, type MenuController } from "./menu-session.js";
+import { MenuSession, type MenuController } from "./session/menu-session.js";
 import { uiPreferences } from "./ui-preferences.js";
 import type { ViewDefinition, ViewId } from "./view-definition.js";
 
