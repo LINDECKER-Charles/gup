@@ -49,6 +49,15 @@ describe("purgeSchedulerFiles", () => {
     expect(existsSync(dir)).toBe(false);
   });
 
+  it("deletes the copy of a corrupt schedules file too, so the directory goes", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "gup-purge-"));
+    const files = schedulerFiles({ env: { GUP_SCHEDULER_DIR: dir } })!;
+    await writeFile(files.schedules, "{}");
+    await writeFile(join(dir, "schedules.corrupt-20261004T101500.json"), "{ pas du json");
+    purgeSchedulerFiles(files);
+    expect(existsSync(dir)).toBe(false);
+  });
+
   it("leaves a directory that holds other files", async () => {
     const dir = await mkdtemp(join(tmpdir(), "gup-purge-"));
     try {

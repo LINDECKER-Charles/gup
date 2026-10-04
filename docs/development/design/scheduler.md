@@ -152,8 +152,10 @@ not the run.
 | `install.json` | `TriggerSync` | argv, launcher, captured env, date, gup version |
 | `agent-stderr.log` | launchd | macOS only |
 
-`purgeSchedulerFiles` removes them (and their `.lock` files), then the
-directory only if empty (a `GUP_SCHEDULER_DIR` may point at a shared folder).
+`purgeSchedulerFiles` removes them (their `.lock` files and the copies of a
+corrupt file the store set aside, `schedules.corrupt-<date>.json`, included),
+then the directory only if empty (a `GUP_SCHEDULER_DIR` may point at a shared
+folder).
 
 ## 6. OS triggers
 
