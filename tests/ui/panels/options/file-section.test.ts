@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfigStore } from "../../../../src/core/config/store.js";
 import {
@@ -82,6 +82,19 @@ describe("Options file section", () => {
     expect(row?.trimEnd().length).toBe(width);
     fixture.panel.press(key("c"));
     expect(fixture.host.copyToClipboard).toHaveBeenCalledWith(file);
+  });
+
+  it("never cuts the file's name on an 80-column terminal, beside the row or under the list", () => {
+    const dirs = ["AppData", "Local", "Temp", "a-long-session-directory-name", "gup"];
+    const file = join(homedir(), ...dirs, "config.json");
+    const fixture = setup({ store: new ConfigStore({ file }) });
+    fixture.panel.press(key("end"));
+    // The Options panel's width on an 80-column terminal.
+    const lines = text(fixture.panel.render({ width: 50, height: 20 })).split("\n");
+    const pathLines = lines.filter((line) => line.includes("~") || line.includes(sep));
+    expect(pathLines.length).toBeGreaterThan(0);
+    for (const line of pathLines) expect(line.trimEnd()).toMatch(/config\.json$/);
+    expect(lines.every((line) => line.length <= 50)).toBe(true);
   });
 
   it("says when the terminal cannot take the path", async () => {

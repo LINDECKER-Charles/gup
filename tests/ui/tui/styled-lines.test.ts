@@ -1,8 +1,11 @@
+import { homedir } from "node:os";
+import { join, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   lineWidth,
   middleEllipsis,
   seg,
+  shownPath,
   wrapLine,
   type Line,
 } from "../../../src/ui/tui/styled-lines.js";
@@ -39,5 +42,18 @@ describe("middleEllipsis", () => {
 
   it("leaves a text that fits alone", () => {
     expect(middleEllipsis("~/rapport.html", 40)).toBe("~/rapport.html");
+  });
+});
+
+describe("shownPath", () => {
+  const file = join(homedir(), "AppData", "Local", "a-long-session-directory", "gup", "config.json");
+
+  it("keeps the file name whole when the width leaves room for it", () => {
+    expect(shownPath(file, 14)).toBe(`~…${sep}config.json`);
+    expect(shownPath(file, 12)).toBe("…config.json");
+  });
+
+  it("cuts the file name only when nothing else can go", () => {
+    expect(shownPath(file, 8)).toHaveLength(8);
   });
 });

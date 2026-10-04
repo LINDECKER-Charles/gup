@@ -124,22 +124,31 @@ const ELLIPSIS_TAIL_SHARE = 2 / 3;
 /**
  * `text` in `width` columns at most, its middle replaced by "…" when it is
  * longer — "C:\Users\…\gup-rapport.html": both ends of a path stay readable,
- * the file name first.
+ * the file name first. The end keeps at least `minTail` characters when the
+ * width allows.
  */
-export function middleEllipsis(text: string, width: number): string {
+export function middleEllipsis(text: string, width: number, minTail = 0): string {
   if (text.length <= width) return text;
   if (width <= 1) return "…".slice(0, Math.max(0, width));
-  const tail = Math.ceil((width - 1) * ELLIPSIS_TAIL_SHARE);
+  const share = Math.ceil((width - 1) * ELLIPSIS_TAIL_SHARE);
+  const tail = Math.min(width - 1, Math.max(share, minTail));
   const head = width - 1 - tail;
   return `${text.slice(0, head)}…${text.slice(text.length - tail)}`;
 }
 
 /**
  * A path as the screen shows it: from `~`, and — given a `width` — cut in
- * its middle to fit it, so the file name always shows.
+ * its middle to fit it, its file name kept whole when the width has room
+ * for it and the "…" before it.
  */
 export function shownPath(path: string, width = Number.POSITIVE_INFINITY): string {
-  return middleEllipsis(withHomeShortened(path), width);
+  const shown = withHomeShortened(path);
+  return middleEllipsis(shown, width, fileNameOf(shown).length + 1);
+}
+
+/** The last segment of a path, whichever separator it uses (`\` or `/`). */
+export function fileNameOf(path: string): string {
+  return path.slice(Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1);
 }
 
 const BLANKS = /(\s+)/;

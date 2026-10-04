@@ -25,9 +25,10 @@ export interface OptionRow {
   value(): string;
   /**
    * After the value: an explanation, a status, or why the row is disabled.
-   * Given `room`, the columns left for it on its row, a hint that can say the
-   * same in fewer (a path cut in its middle) fits them; any other is cut at
-   * its end.
+   * Given `room` — the columns left for it on its row, or the width of the
+   * line under the list — a hint that can say the same in fewer (a path cut
+   * in its middle) fits them; any other is cut at its end on its row and
+   * wrapped under the list.
    */
   hint(room?: number): Line;
   isEnabled(): boolean;

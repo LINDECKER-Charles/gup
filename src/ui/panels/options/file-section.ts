@@ -9,7 +9,7 @@ import {
   RESET_DIALOG,
   type ResetScope,
 } from "../../text/settings/options-labels.js";
-import { seg, shownPath, type Line, type Tone } from "../../tui/styled-lines.js";
+import { fileNameOf, seg, shownPath, type Line, type Tone } from "../../tui/styled-lines.js";
 import type { OptionRow, OptionsControls, OptionsHost, SectionFactory } from "./option-row.js";
 import { resetSettings, touchesScan } from "./reset-settings.js";
 
@@ -57,14 +57,20 @@ const MIN_PATH_WIDTH = 12;
 
 /**
  * The file's state — a failed save first, until a later one succeeds — then
- * its path from `~`, cut in its middle to the `room` of its row.
+ * its path from `~`, cut in its middle to the `room` it is given: its row, or
+ * the line under the list. Without room for the file's name and the "…"
+ * before it, the path is left out: a cut name says nothing.
  */
 function fileHint(status: ConfigStatus, room = Number.POSITIVE_INFINITY): Line {
   const { text, level } = describeConfigStatus(status);
   const state = seg(text, LEVEL_TONE[level]);
   const pathRoom = room - text.length - PATH_GAP.length;
-  if (status.file === null || pathRoom < MIN_PATH_WIDTH) return [state];
+  if (status.file === null || pathRoom < minPathWidth(status.file)) return [state];
   return [state, seg(`${PATH_GAP}${shownPath(status.file, pathRoom)}`, "muted")];
+}
+
+function minPathWidth(file: string): number {
+  return Math.max(MIN_PATH_WIDTH, fileNameOf(file).length + 1);
 }
 
 function copyFilePath(controls: OptionsControls, host: OptionsHost): void {
