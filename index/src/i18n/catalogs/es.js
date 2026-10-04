@@ -119,7 +119,7 @@ export default {
         text:
           "Diez temas integrados o tus propios colores: gup comprueba cada uno según WCAG AA " +
           "(4,5:1 para el texto, 3:1 para los bordes, 7:1 si eliges AAA) y corrige lo que " +
-          "no llega.",
+          "se queda corto.",
       },
       os: {
         title: "Atento a tu sistema",

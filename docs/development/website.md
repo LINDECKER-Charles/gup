@@ -221,6 +221,13 @@ FAQ's "JetBrains IDEs" is "بيئات التطوير من JetBrains" in Arabic a
 the other languages; the OS cards show "label: value", so no language agrees a noun with the
 per-system count.
 
+The review of that branch reworded what still read as translated: French "exécuter ce qui est
+dû" is now "faire ce qui arrive à échéance", Spanish "corrige lo que no llega" is "lo que se queda
+corto", Portuguese "o que ficar abaixo" gained "do limite", and the Hindi schedule card's "वे अपडेट
+चल जाएँ" (let those updates run) is "वे पूरे हो जाएँ" (get done). It also corrected two FAQ answers
+in every language: Linux's OS level is Homebrew/Linuxbrew *and Nix*, and "no direct download" is
+gone (the `nerd-fonts` provider downloads release archives).
+
 ## Quality gates
 
 | Gate | What it pins |

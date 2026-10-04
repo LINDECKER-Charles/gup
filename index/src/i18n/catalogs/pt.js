@@ -119,7 +119,7 @@ export default {
         text:
           "Dez temas integrados ou suas próprias cores: o gup verifica cada um segundo o " +
           "WCAG AA — 4,5:1 para texto, 3:1 para bordas, 7:1 se você escolher AAA — e " +
-          "corrige o que ficar abaixo.",
+          "corrige o que ficar abaixo do limite.",
       },
       os: {
         title: "Atento ao seu sistema",
@@ -261,9 +261,9 @@ export default {
         a:
           "Sim. No macOS, de forma nativa: fórmulas e casks do Homebrew, MacPorts e a Mac " +
           "App Store, em Apple Silicon e Intel. No Linux, o Homebrew/Linuxbrew e o Nix cobrem " +
-          "a camada do sistema, e um binário instalado pela distribuição é devolvido ao `apt` ou ao " +
-          "`dnf`. Tudo o que fica acima da camada do sistema — npm, pip, cargo, helm, " +
-          "VS Code… — se comporta da mesma forma nos três sistemas.",
+          "a camada do sistema, e um binário instalado pela distribuição é devolvido ao " +
+          "`apt` ou ao `dnf`. Tudo o que fica acima da camada do sistema — npm, pip, cargo, " +
+          "helm, VS Code… — se comporta da mesma forma nos três sistemas.",
       },
       install: {
         q: "Como instalo o gup?",

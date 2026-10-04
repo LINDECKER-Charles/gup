@@ -98,7 +98,7 @@ export default {
           `Coche des paquets et appuie sur [[p]]${NB}: ` +
           "`ripgrep` passe en mise à jour hebdomadaire, `node` ne bouge pas. Les " +
           `planifications visent des paquets, jamais un provider entier${NB}; le ` +
-          "planificateur de ton OS lance gup un court instant pour exécuter ce qui est dû, " +
+          "planificateur de ton OS lance brièvement gup pour faire ce qui arrive à échéance, " +
           "et rien ne reste en mémoire.",
       },
       journal: {
