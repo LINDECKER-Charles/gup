@@ -5,6 +5,7 @@ import {
   writeBatchOutput,
   type AdminBatchInput,
 } from "../core/elevation.js";
+import { DEFAULT_LOCALE, setActiveLocale } from "../core/i18n/locale.js";
 import { elevatedLogBuffer } from "../core/log/elevated-bridge.js";
 import { applyLogThreshold } from "../core/log/log.js";
 import { resolveUpdateTarget } from "../core/platform/update-target.js";
@@ -55,11 +56,15 @@ export async function adminBatchCommand(inputFile: string): Promise<number> {
   return outcomes.every((o) => o.success || o.skipped) ? 0 : 1;
 }
 
-/** Same install timeout and log threshold as the parent — absent fields keep the defaults. */
+/**
+ * Same install timeout, log threshold and language as the parent — absent
+ * fields keep the defaults (a parent older than 0.5.1 sends no language).
+ */
 function applyParentSettings(input: AdminBatchInput): void {
-  const { installTimeoutSeconds, logThreshold } = input;
+  const { installTimeoutSeconds, logThreshold, locale } = input;
   if (installTimeoutSeconds !== undefined) setInstallTimeoutSeconds(installTimeoutSeconds);
   if (logThreshold !== undefined) applyLogThreshold(logThreshold);
+  setActiveLocale(locale ?? DEFAULT_LOCALE);
 }
 
 async function runOneTarget(target: string): Promise<UpdateOutcome> {

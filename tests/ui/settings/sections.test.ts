@@ -62,9 +62,23 @@ describe("THEME_SECTION", () => {
 describe("INTERFACE_SECTION", () => {
   it("takes its menu defaults from the menu's own preferences", () => {
     const { scan: _scan, ...menuDefaults } = DEFAULT_UI_PREFERENCES;
-    const { density: _density, glyphs: _glyphs, mouse: _mouse, ...menuFields } =
-      INTERFACE_SECTION.defaults;
+    const {
+      density: _density,
+      glyphs: _glyphs,
+      mouse: _mouse,
+      language: _language,
+      ...menuFields
+    } = INTERFACE_SECTION.defaults;
     expect(menuFields).toEqual(menuDefaults);
+  });
+
+  it("speaks English unless the user picked another language", async () => {
+    expect(INTERFACE_SECTION.defaults.language).toBe("en");
+    const french = await storeWith({ interface: { v: 1, language: "fr" } });
+    expect(french.read(INTERFACE_SECTION).language).toBe("fr");
+    const unknown = await storeWith({ interface: { v: 1, language: "de" } });
+    expect(unknown.read(INTERFACE_SECTION).language).toBe("en");
+    expect(unknown.status().issues.join("\n")).toMatch(/interface\.language/);
   });
 
   it("defaults the screens to the comfortable density, automatic symbols and the mouse", () => {

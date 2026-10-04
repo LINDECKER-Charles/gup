@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { activeLocale } from "../../../../src/core/i18n/locale.js";
 import { NODE_FILE_OPS, type FileOps } from "../../../../src/core/config/atomic-write.js";
 import { ConfigStore } from "../../../../src/core/config/store.js";
 import {
@@ -142,6 +143,23 @@ describe("OptionsPanel list", () => {
     press(panel, "up", "up", "up", "up", "right");
     expect(cursorRow(panel)).toContain("[Nom]");
     expect(settings.get("interface").packageSort).toBe("name");
+  });
+
+  it("saves the interface language for the next start, without switching the running one", () => {
+    const { panel, settings } = setup();
+    for (let step = 0; step < 30 && !cursorRow(panel).includes("Langue"); step++) {
+      press(panel, "down");
+    }
+    expect(cursorRow(panel)).toContain("[English]");
+    expect(cursorRow(panel)).toContain("s'applique au prochain lancement de gup");
+    expect(settings.get("interface").language).toBe("en");
+    press(panel, "enter");
+    expect(settings.get("interface").language).toBe("fr");
+    expect(cursorRow(panel)).toContain("[Français]");
+    expect(activeLocale()).toBe("fr");
+    press(panel, "enter");
+    expect(settings.get("interface").language).toBe("en");
+    expect(activeLocale()).toBe("fr");
   });
 
   it("places the sections other features add between the comfort and file sections", () => {

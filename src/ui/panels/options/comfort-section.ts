@@ -7,6 +7,8 @@ import {
   OPTIONS_SECTIONS,
   SORT_VALUES,
 } from "../../text/settings/options-labels.js";
+import { LOCALE_NAMES } from "../../../core/i18n/locale.js";
+import { LANGUAGE_LABELS } from "../../text/language-labels.js";
 import type { SectionFactory } from "./option-row.js";
 import { choicesOf, interfaceRow, switchChoices, type RowBuilder } from "./option-rows.js";
 
@@ -14,8 +16,8 @@ import { choicesOf, interfaceRow, switchChoices, type RowBuilder } from "./optio
  * CONFORT: how the menu behaves. Each row writes one field of the
  * `interface` settings, which the menu reads live through its preferences
  * (sort, Note column, animations, confirmation…) or at its next launch
- * (launch view, scan at launch). The mouse also switches on this screen at
- * once.
+ * (language, launch view, scan at launch). The mouse also switches on this
+ * screen at once.
  */
 
 const COMFORT_ROWS: readonly RowBuilder[] = [
@@ -102,7 +104,21 @@ const COMFORT_ROWS: readonly RowBuilder[] = [
   }),
 ];
 
+/**
+ * The interface language, first. A builder rather than a row of the table
+ * above: its labels are read when the panel opens, in the active language.
+ */
+const languageRow: RowBuilder = (controls, host) =>
+  interfaceRow({
+    id: "language",
+    label: LANGUAGE_LABELS.optionLabel,
+    choices: choicesOf(LOCALE_NAMES),
+    hint: LANGUAGE_LABELS.optionHint,
+    read: (settings) => settings.language,
+    patch: (language) => ({ language }),
+  })(controls, host);
+
 export const comfortSection: SectionFactory = (controls, host) => {
-  const rows = COMFORT_ROWS.map((build) => build(controls, host));
+  const rows = [languageRow, ...COMFORT_ROWS].map((build) => build(controls, host));
   return { id: "comfort", title: OPTIONS_SECTIONS.comfort, rows: () => rows };
 };

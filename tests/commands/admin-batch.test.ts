@@ -17,11 +17,13 @@ vi.mock("../../src/core/config/store.js", async (importOriginal) => ({
 }));
 
 import { adminBatchCommand } from "../../src/commands/admin-batch.js";
+import { activeLocale, setActiveLocale } from "../../src/core/i18n/locale.js";
 import { elevatedLogBuffer } from "../../src/core/log/elevated-bridge.js";
 import { installLogBackend, log, type LogThreshold } from "../../src/core/log/log.js";
 import { SinkLogBackend } from "../../src/core/log/log-backend.js";
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../src/core/runner.js";
+import { SUITE_LOCALE } from "../support/locale.js";
 import { restorePlatform, setPlatform } from "../support/platform.js";
 import { useTempDirs } from "../support/temp-dirs.js";
 
@@ -204,6 +206,32 @@ describe("adminBatchCommand", () => {
     const code = await adminBatchCommand("/this/path/definitely/does/not/exist.json");
     expect(code).toBe(2);
     expect(stderrSpy).toHaveBeenCalled();
+  });
+
+  it("speaks the parent's language, or English for a parent that sends none", async () => {
+    const localesDuringUpdate: string[] = [];
+    getProviderMock.mockReturnValue({
+      id: "choco",
+      displayName: "Chocolatey",
+      isAvailable: vi.fn(),
+      listOutdated: vi.fn(),
+      update: vi.fn(async (id: string) => {
+        localesDuringUpdate.push(activeLocale());
+        return { id, success: true };
+      }),
+      updateAll: vi.fn(),
+    });
+    try {
+      for (const payload of [{ locale: "fr" }, {}]) {
+        const file = await mkInputFile();
+        const input = { version: 1, targets: ["choco:caddy"], ...payload };
+        await writeFile(file, JSON.stringify(input), { encoding: "utf8", flag: "wx" });
+        await expect(adminBatchCommand(file)).resolves.toBe(0);
+      }
+    } finally {
+      setActiveLocale(SUITE_LOCALE);
+    }
+    expect(localesDuringUpdate).toEqual(["fr", "en"]);
   });
 
   it("runs with the parent's timeout and log threshold, never its own settings", async () => {

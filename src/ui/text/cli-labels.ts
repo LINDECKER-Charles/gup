@@ -1,3 +1,5 @@
+import { localized } from "../../core/i18n/localized.js";
+
 /**
  * The command line's own words (French, the language of the interface) where
  * commander would print English: the help's headings, its built-in option and
@@ -7,7 +9,10 @@
  */
 
 /** What starts every error line gup or commander prints on stderr. */
-export const ERROR_PREFIX = "Erreur :";
+export const ERROR_LABELS = localized({
+  en: { prefix: "Error:" },
+  fr: { prefix: "Erreur :" },
+});
 
 export const HELP_LABELS = {
   /** Commander's headings, by the English heading it passes to `styleTitle`. */
@@ -36,7 +41,7 @@ export interface ExcessArguments {
   readonly operands: string;
 }
 
-/** Commander's usage errors, worded in French ({@link ERROR_PREFIX} goes in front). */
+/** Commander's usage errors, worded in French ({@link ERROR_LABELS} goes in front). */
 export const USAGE_ERROR_LABELS = {
   unknownOption: (flag: string) => `option inconnue ${flag}`,
   unknownCommand: (name: string) => `commande inconnue ${name}`,

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 
+import { activeLocale, LOCALES, type Locale } from "./i18n/locale.js";
 import { ingestElevatedLines } from "./log/elevated-bridge.js";
 import { effectiveLogThreshold, LOG_THRESHOLDS, type LogThreshold } from "./log/log.js";
 import { getInstallTimeoutSeconds, isElevated, runInherit } from "./runner.js";
@@ -26,6 +27,8 @@ export interface AdminBatchInput {
   installTimeoutSeconds?: number;
   /** The parent's log threshold, so the child's log lines match it. */
   logThreshold?: LogThreshold;
+  /** The parent's language, so the outcomes the child writes read like the parent's. */
+  locale?: Locale;
 }
 
 /**
@@ -121,7 +124,7 @@ export async function readBatchInput(file: string): Promise<AdminBatchInput> {
 
 /** The optional settings, when present, must be exactly what the parent writes. */
 function assertSettings(input: AdminBatchInput): void {
-  const { installTimeoutSeconds, logThreshold } = input;
+  const { installTimeoutSeconds, logThreshold, locale } = input;
   const isTimeoutValid =
     installTimeoutSeconds === undefined ||
     (Number.isInteger(installTimeoutSeconds) &&
@@ -134,6 +137,9 @@ function assertSettings(input: AdminBatchInput): void {
   }
   if (logThreshold !== undefined && !LOG_THRESHOLDS.includes(logThreshold)) {
     throw new Error("admin-batch: logThreshold must be a log level or off");
+  }
+  if (locale !== undefined && !LOCALES.includes(locale)) {
+    throw new Error(`admin-batch: locale must be one of ${LOCALES.join(", ")}`);
   }
 }
 
@@ -185,6 +191,7 @@ async function writeBatchInput(
     targets,
     installTimeoutSeconds: Math.min(getInstallTimeoutSeconds(), MAX_INSTALL_TIMEOUT_S),
     logThreshold: effectiveLogThreshold(),
+    locale: activeLocale(),
   };
   await writeFile(inputFile, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
   return {

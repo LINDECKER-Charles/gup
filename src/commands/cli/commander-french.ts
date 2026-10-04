@@ -1,6 +1,6 @@
 import { Help, type Command, type HelpConfiguration } from "commander";
 import {
-  ERROR_PREFIX,
+  ERROR_LABELS,
   HELP_LABELS,
   USAGE_ERROR_LABELS as ERRORS,
 } from "../../ui/text/cli-labels.js";
@@ -74,7 +74,7 @@ function frenchLine(line: string): string {
   }
   for (const [pattern, reword] of REWRITES) {
     const match = pattern.exec(line);
-    if (match) return `${ERROR_PREFIX} ${reword(match)}`;
+    if (match) return `${ERROR_LABELS.prefix} ${reword(match)}`;
   }
-  return line.replace(ENGLISH_PREFIX, `${ERROR_PREFIX} `);
+  return line.replace(ENGLISH_PREFIX, `${ERROR_LABELS.prefix} `);
 }

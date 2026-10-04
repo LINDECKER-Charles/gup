@@ -7,6 +7,7 @@ import { scheduleModule } from "../schedule/schedule-module.js";
 import { updateModule } from "../update.js";
 import type { CliModule } from "./cli-module.js";
 import { embeddedTerminalModule } from "./embedded-terminal-module.js";
+import { languageModule } from "./language-module.js";
 import { settingsModule } from "./settings-module.js";
 
 /**
@@ -19,6 +20,7 @@ export const CLI_MODULES: readonly CliModule[] = [
   doctorModule,
   embeddedTerminalModule,
   journalModule,
+  languageModule,
   listModule,
   menuModule,
   scheduleModule,

@@ -13,7 +13,7 @@ import { confirm } from "../ui/prompts/confirm.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection } from "../ui/select.js";
 import { renderScanTable } from "../ui/table.js";
-import { ERROR_PREFIX } from "../ui/text/cli-labels.js";
+import { ERROR_LABELS } from "../ui/text/cli-labels.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { consolePorts, printReport } from "../ui/update-console.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
@@ -248,7 +248,7 @@ function applyTimeoutFlag(raw: string | undefined): void {
   const seconds = Number(raw);
   if (!Number.isFinite(seconds) || seconds < 0) {
     const reason = "--timeout attend un nombre de secondes >= 0";
-    process.stderr.write(`${chalk.red(ERROR_PREFIX)} ${reason}\n`);
+    process.stderr.write(`${chalk.red(ERROR_LABELS.prefix)} ${reason}\n`);
     process.exit(2);
   }
   setInstallTimeoutSeconds(seconds);

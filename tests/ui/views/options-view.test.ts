@@ -152,7 +152,7 @@ describe("Options view in the menu", () => {
     ];
     const { menu, settings } = await themedMenu({ scans, scanOnStart: true });
     setUiPreferencesSource(menuPreferencesSource(settings, () => true));
-    await menu.press(...Array.from({ length: 12 }, () => "down"), "enter");
+    await menu.press(...Array.from({ length: 13 }, () => "down"), "enter");
     expect(settings.get("interface").packageSort).toBe("name");
     await menu.press("tab", "up");
     const frame = await menu.waitForText("Alpha.App");
@@ -219,7 +219,7 @@ describe("Options and the settings file", () => {
     await menu.press("down", "down", "enter", "down", "down", "enter");
     await menu.waitForText(`[${THEME_LABELS.dark}]`);
     await menu.press("down", "down", "down", "down", "enter");
-    await menu.press("down", "down", "down", "down", "down", "enter");
+    await menu.press("down", "down", "down", "down", "down", "down", "enter");
     await menu.waitForText(`[${SORT_VALUES.name}]`);
 
     const next = new SettingsService(new ConfigStore({ file }));
