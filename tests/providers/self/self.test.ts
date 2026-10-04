@@ -121,6 +121,15 @@ describe("SelfProvider.update", () => {
     await expect(new SelfProvider().update("pnpm")).resolves.toEqual({ id: "pnpm", success: true });
   });
 
+  it("does not call a self-update that left the pnpm on PATH where it was a success", async () => {
+    // pnpm 11+ puts its new version in $PNPM_HOME/bin, which an older PATH lacks.
+    await system.load({ ...PNPM_MACHINE, commands: [versionProbe("pnpm", "12.4.1")] });
+    const outcome = await new SelfProvider().update("pnpm");
+    expect(outcome).toMatchObject({ id: "pnpm", success: false });
+    expect(outcome.message).toContain("indique toujours 12.4.1");
+    expect(outcome.message).toContain(String.raw`ajouter %PNPM_HOME%\bin au PATH`);
+  });
+
   it("activates the stable Yarn through Corepack when Corepack is installed", async () => {
     const bin = { ...YARN_MACHINE.bin, corepack: "/usr/lib/node/corepack" };
     await system.load({ ...YARN_MACHINE, bin });

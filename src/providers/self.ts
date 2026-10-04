@@ -6,6 +6,7 @@ import {
   fetchGitHubReleaseLatest,
   normalizeVersion,
 } from "../core/gh-releases.js";
+import { localize } from "../core/i18n/localized.js";
 import { delegateUpdate } from "../core/install-source.js";
 import type { OutdatedPackage, PlatformSet, Provider, UpdateOutcome } from "../core/types.js";
 import { isSupportedOn } from "../core/platform/is-supported-on.js";
@@ -227,6 +228,20 @@ async function resolvePythonForPip(): Promise<string | null> {
   return null;
 }
 
+/** Why `pnpm self-update` exited 0 and the pnpm on PATH still reports `version`. */
+function pnpmStillOnPath(version: string): string {
+  const folder = process.platform === "win32" ? "%PNPM_HOME%\\bin" : "$PNPM_HOME/bin";
+  return localize({
+    en:
+      `pnpm self-update succeeded, but the pnpm on PATH still reports ${version}: ` +
+      `add ${folder} to PATH, where pnpm 11+ puts its new version, then open a new terminal`,
+    fr:
+      `pnpm self-update a réussi, mais le pnpm du PATH indique toujours ${version} : ` +
+      `ajouter ${folder} au PATH, où pnpm 11+ installe sa nouvelle version, puis ouvrir un ` +
+      "nouveau terminal",
+  });
+}
+
 /** Fallback Python launcher when `pip` isn't on PATH (pipx-only setups, …). */
 async function resolvePython(): Promise<string | null> {
   if (await commandExists("py")) return "py";
@@ -356,6 +371,11 @@ const TARGETS: SelfTarget[] = [
   // ("Le chemin d'accès spécifié est introuvable"). We compare the resolved
   // version before/after rather than trusting the exit code so this benign
   // cleanup race doesn't surface as a false failure.
+  //
+  // The reverse happens too: pnpm 11+ installs the new version under
+  // `$PNPM_HOME/bin`, which a PATH set up by an older pnpm does not hold, and
+  // exits 0 while the pnpm on PATH stays where it was. Same version after
+  // than before is an update that did not take effect, not a success.
   {
     id: "pnpm",
     displayName: "pnpm",
@@ -368,6 +388,9 @@ const TARGETS: SelfTarget[] = [
       const after = parseFirstSemver(await runStdout("pnpm", ["--version"]));
       if (before && after && before !== after) {
         return { id: "pnpm", success: true };
+      }
+      if (!res.failed && before && after) {
+        return { id: "pnpm", success: false, message: pnpmStillOnPath(before) };
       }
       return { id: "pnpm", success: !res.failed };
     },

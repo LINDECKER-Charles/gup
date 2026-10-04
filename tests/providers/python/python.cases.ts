@@ -114,6 +114,26 @@ export const PIP_LIST_ARGS = [
 ];
 export const PIP_INSTALL_ARGS = ["install", "--user", "--upgrade", "--disable-pip-version-check"];
 
+/**
+ * What pip answers around an upgrade on a healthy machine: the installed
+ * version of each package, and a `pip check` with nothing broken.
+ */
+export function pipProbes(
+  binary: string,
+  versions: Readonly<Record<string, string>>,
+): CommandScript[] {
+  return [
+    ...Object.entries(versions).map(([name, version]) => ({
+      argv: [binary, "show", "--disable-pip-version-check", name],
+      stdout: `Name: ${name}\nVersion: ${version}\n`,
+    })),
+    {
+      argv: [binary, "check", "--disable-pip-version-check"],
+      stdout: "No broken requirements found.\n",
+    },
+  ];
+}
+
 const PIP_REPORT = JSON.stringify([
   { name: "requests", version: "2.30.0", latest_version: "2.32.3", latest_filetype: "wheel" },
   { name: "rich", version: "13.0.0", latest_version: "13.7.1", latest_filetype: "wheel" },
@@ -144,14 +164,20 @@ function pipCase(
 const PIP = pipCase("pip", "pip", {
   platform: "win32",
   bin: { pip: "C:\\Users\\u\\AppData\\Local\\Programs\\Python\\Python312\\Scripts\\pip.exe" },
-  commands: [{ argv: ["pip", ...PIP_LIST_ARGS], stdout: PIP_REPORT }],
+  commands: [
+    { argv: ["pip", ...PIP_LIST_ARGS], stdout: PIP_REPORT },
+    ...pipProbes("pip", { requests: "2.30.0" }),
+  ],
 });
 
 /** A Linux or Homebrew Python often ships only `pip3`. */
 const PIP3_ONLY = pipCase("pip3 only", "pip3", {
   platform: "linux",
   bin: { pip3: "/usr/bin/pip3" },
-  commands: [{ argv: ["pip3", ...PIP_LIST_ARGS], stdout: PIP_REPORT }],
+  commands: [
+    { argv: ["pip3", ...PIP_LIST_ARGS], stdout: PIP_REPORT },
+    ...pipProbes("pip3", { requests: "2.30.0" }),
+  ],
 });
 
 // --- pipx -----------------------------------------------------------------------

@@ -192,7 +192,13 @@ export const PNPM_MACHINE: SystemSpec = {
 const PNPM = selfCase("pnpm", {
   system: PNPM_MACHINE,
   row: [{ id: "pnpm", name: "pnpm", current: "9.0.0", latest: "9.5.0" }],
-  update: { packageId: "pnpm", installs: [["pnpm", "self-update"]] },
+  update: {
+    packageId: "pnpm",
+    installs: [["pnpm", "self-update"]],
+    // This machine's pnpm never changes version: an exit 0 that left the PATH
+    // on 9.0.0 did not take effect (self.test.ts covers the version that moves).
+    outcome: { success: false },
+  },
 });
 
 /** Yarn classic outside Corepack, on a machine without Corepack: npm reinstalls it. */

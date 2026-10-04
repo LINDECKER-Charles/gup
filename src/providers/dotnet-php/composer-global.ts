@@ -50,8 +50,20 @@ export class ComposerGlobalProvider implements Provider {
       }));
   }
 
+  /**
+   * `--with-dependencies`: a new version that needs a newer dependency than
+   * the locked one (laravel/installer 5.32 and laravel/prompts ^0.3.21) is
+   * otherwise refused, and composer reports "Nothing to install, update or
+   * remove" with exit 0 — an update that silently did nothing. Dependencies
+   * the global composer.json requires itself stay where they are.
+   */
   async update(packageId: string): Promise<UpdateOutcome> {
-    const res = await runInherit("composer", ["global", "update", packageId]);
+    const res = await runInherit("composer", [
+      "global",
+      "update",
+      packageId,
+      "--with-dependencies",
+    ]);
     return { id: packageId, success: !res.failed };
   }
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { setActiveLocale } from "../../../src/core/i18n/locale.js";
 import { parseWingetTable, WingetProvider } from "../../../src/providers/os/winget.js";
+import { SUITE_LOCALE } from "../../support/locale.js";
 import { system } from "../../support/system/fake-system.js";
 import { installArgvs, probeArgvs } from "../../support/system/trace.js";
 import {
@@ -245,6 +247,34 @@ describe("WingetProvider.update", () => {
     system.answerInstall({ exitCode: 0 }, { exitCode: 1 });
     const outcome = await new WingetProvider().update(ID, { reinstall: true });
     expect(outcome).toEqual({ id: ID, success: false });
+  });
+
+  it.each([
+    // The manifest forbids upgrades (Parsec, Android Studio).
+    [0x8a150114, "winget ne peut pas mettre à jour ce paquet"],
+    // winget asked for an install location it could not read (Battle.net).
+    [0x8a150042, `lancer winget upgrade --id ${ID} dans un terminal`],
+  ])("skips, with what to do, a failure winget says no retry can fix (%s)", async (code, text) => {
+    await system.load(WINGET_MACHINE);
+    system.answerInstall({ exitCode: code | 0 });
+    const outcome = await new WingetProvider().update(ID);
+    expect(outcome).toMatchObject({ id: ID, success: false, skipped: true });
+    expect(outcome.retryable).toBeUndefined();
+    expect(outcome.message).toContain(text);
+  });
+
+  it("speaks English when the interface does", async () => {
+    await system.load(WINGET_MACHINE);
+    system.answerInstall({ exitCode: 0x8a150114 | 0 });
+    setActiveLocale("en");
+    try {
+      const outcome = await new WingetProvider().update(ID);
+      expect(outcome.message).toBe(
+        "winget cannot upgrade this package: use its publisher's own updater",
+      );
+    } finally {
+      setActiveLocale(SUITE_LOCALE);
+    }
   });
 
   it("keeps each package's own outcome in a batch", async () => {
