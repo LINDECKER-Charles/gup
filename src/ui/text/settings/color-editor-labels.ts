@@ -41,7 +41,7 @@ export const COLOR_EDITOR = localized({
       danger: `${STATUS_GLYPHS.failed} failed`,
       text: "Git.Git",
       muted: "note",
-      background: "reference background",
+      background: "screen background",
       highlight: "› selected row",
     } satisfies Readonly<Record<CustomizableToken, string>>,
   },
