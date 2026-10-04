@@ -116,7 +116,9 @@ describe("Récurrence", () => {
     const { screen } = await journalOn("2");
 
     const lines = screen();
-    expect(lines[1]).toMatch(new RegExp(`^${RECURRENCE_LABELS.title} +${RECURRENCE_LABELS.sort("fréquence").replace(/[()]/g, "\\$&")}$`));
+    // The title, then the sort mode pushed right: only spaces between the two.
+    const header = `${RECURRENCE_LABELS.title} ${RECURRENCE_LABELS.sort("fréquence")}`;
+    expect(lines[1]?.replace(/ +/g, " ")).toBe(header);
     expect(lines[3]).toMatch(/^› Google\.Chrome +winget +█+ +2 +~7 j hebdo\.$/);
     expect(lines.join("\n")).toMatch(/nodejs +choco +0 +— —/);
   });
