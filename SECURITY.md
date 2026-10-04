@@ -94,6 +94,12 @@ metacharacters or option-like text in a package id.
   own (`refusé par la barrière de sécurité : …`) and the batch goes on.
 - The one provider that needs `shell: true` (Scoop's PowerShell shim) is
   pinned by allowlist, behind a strict package-id pattern.
+- A bare command name is looked up on the `PATH` only, never in the working
+  directory: on Windows the runner sets `NoDefaultCurrentDirectoryInExePath`
+  before any spawn, so `gup` started from a folder holding a planted
+  `npm.cmd` or `net.exe` still runs the real tool — and so does the cmd.exe
+  behind a `.cmd` shim, which inherits the switch
+  (`tests/integration/runner-cwd-lookup.test.ts`).
 - An install in the embedded terminal is started by the same runner: node-pty
   only ever starts gup's trampoline (`dist/pty-exec.js`) with a constant
   command line and one base64url payload, which the trampoline validates and

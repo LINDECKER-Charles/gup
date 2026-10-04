@@ -14,6 +14,18 @@ import { LineSplitter } from "./process/line-splitter.js";
 // here, next to the spawn functions it serves.
 export { commandExists, whichFirst } from "./process/which.js";
 
+/**
+ * Windows looks for a bare command name in the working directory before
+ * PATH — execa's resolver as much as cmd.exe — so gup started from a folder
+ * holding a planted `npm.cmd` or `net.exe` would run that file instead of the
+ * tool `whichFirst` found on PATH. Windows' own switch turns that lookup off.
+ * Set once, before this module can spawn anything, on the process
+ * environment every child inherits: the cmd.exe behind a `.cmd` shim does not
+ * search there either.
+ */
+const NO_CWD_LOOKUP_ENV = "NoDefaultCurrentDirectoryInExePath";
+if (process.platform === "win32") process.env[NO_CWD_LOOKUP_ENV] ??= "1";
+
 export interface RunResult {
   stdout: string;
   stderr: string;
