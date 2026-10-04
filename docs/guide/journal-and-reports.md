@@ -3,14 +3,28 @@
 gup keeps two local records of what it does, both on your machine only — nothing is ever sent
 anywhere:
 
-- the **activity history**: every scan and every update attempt, one line each (see
-  [Activity history](cli-reference.md#activity-history));
+- the **activity history**: every scan and every update attempt, one line each;
 - the **debug log**: what gup did step by step — the commands it ran, their exit codes, the
   updates it attempted — to understand a failure or to attach to a bug report.
 
-This page covers both: what the history shows (the **Journal** view of the menu, the HTML
+This page covers both: the history and what it shows (the **Journal** view of the app, the HTML
 report and `gup report`), then the debug log, then the settings of both in the Options view.
 
+Where the data comes from, and where it goes:
+
+```mermaid
+flowchart LR
+    Scans["scans and updates<br/>menu · gup update · schedules"] --> Hist[("activity history")]
+    Steps["every command gup runs<br/>every update step"] --> Log[("debug log")]
+    Hist --> Journal["Journal view<br/>Activité · Récurrence · Événements"]
+    Hist --> Report["gup report<br/>HTML · text · JSON · CSV"]
+    Log --> Debug["Journal › Debug<br/>gup log"]
+    Hist & Log --> Zip["gup log export<br/>diagnostic archive"]
+```
+
+Both are only ever read to be shown or exported: nothing in them decides what gup updates.
+
+- [Activity history](#activity-history)
 - [Activity journal](#activity-journal)
   - [In the menu: the Journal view](#in-the-menu-the-journal-view)
   - [In the browser: the HTML report](#in-the-browser-the-html-report)
@@ -26,6 +40,40 @@ report and `gup report`), then the debug log, then the settings of both in the O
   - [Privacy](#privacy)
 - [Settings](#settings)
 
+## Activity history
+
+Every scan and every update attempt is appended to a local history: what was scanned and how long
+each provider took, what was updated, from which version to which, and how it ended — with what
+started the run (the app, a command, a schedule).
+
+| Platform | Location |
+|---|---|
+| Windows | `%LOCALAPPDATA%\gup\history\` |
+| macOS | `~/Library/Application Support/gup/history/` |
+| Linux / other | `$XDG_STATE_HOME/gup/history/`, else `~/.local/state/gup/history/` |
+
+`GUP_HISTORY_DIR` puts it somewhere else. One file per UTC month (`2026-08.jsonl`), one
+self-describing JSON object per line, never rewritten:
+
+```json
+{"v":1,"ts":"2026-08-08T15:10:22.417Z","runId":"…","gup":"0.5.0","platform":"win32","kind":"update","trigger":"menu","providerId":"winget","packageId":"Spotify.Spotify","status":"success","from":"1.2.93.667.g7b5cc0ce","to":"1.2.95.453.g0eeebbed","durationMs":18420}
+```
+
+- `kind` is `scan` or `update`; `status` is `success`, `failed` or `skipped` — the three are kept
+  apart, which is the whole point of recording them. `trigger` says what started the run (`menu`,
+  `cli`, `schedule`); a scheduled update carries its `scheduleId`.
+- The schema version (`v`) stays `1`: newer versions of gup only add fields, and a reader skips
+  what it does not know.
+- Records carry no credential (known secret shapes in messages are masked when written) and no
+  path outside the history directory.
+- Turn it off with `GUP_HISTORY=0` (or `false`, `off`, `no`). If it cannot be written (read-only
+  profile, full disk), gup prints one dimmed warning on stderr and carries on: an update never
+  fails because of its own bookkeeping.
+
+The history is **read back only to be shown and exported** — the Journal, the reports — and a test
+holds every part of gup that decides an update away from it: a damaged or edited history can
+mislead a chart, never an upgrade.
+
 ## Activity journal
 
 Every scan and every update attempt gup makes lands in the activity history. The journal turns
@@ -35,29 +83,9 @@ pace, what failed and why — for the last 30 days, 90 days, 12 months or since 
 ### In the menu: the Journal view
 
 Open `gup`, then **Journal** in the sidebar (between Providers and Options). The view reads the
-history each time it comes to the front, and has four tabs:
+history each time it comes to the front, and has four tabs.
 
-```
-┏━ Journal · 12 derniers mois ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ ▌1 Activité  2 Récurrence  3 Événements  4 Debug                                      ┃
-┃ 142 mises à jour · 97 % réussies · 38 paquets · 4 échecs · 9 ignorées · 211 scans    ┃
-┃ dernière mise à jour hier 18:02 · dernier scan il y a 3 h · 7 paquets en retard      ┃
-┃                                                                                       ┃
-┃ Mises à jour réussies par jour                                                        ┃
-┃     oct.     déc.    févr.    avr.     juin    août sept.                             ┃
-┃ lun ·░·····▒···░·····▓··░···░·········░▒··░····█·░···                                 ┃
-┃     ··░··········░·······░·········░·······░·······░··                                ┃
-┃ mer ·····░····▒········░····░·····▒·····░······░·▒···                                 ┃
-┃     ··········░······················░········░·······                                ┃
-┃ ven ··░·····▓·····░·······░······▒·······░·····░····░                                 ┃
-┃     ·································░··················                              ┃
-┃ dim ···········░··········░··················░········                                ┃
-┃                                      moins · ░ ▒ ▓ █ plus                             ┃
-┃                                                                                       ┃
-┃ Paquets en retard (scans complets)  ▂▃▅▇▆▄▂▁▁▂▃▂▁▁▂▄▃▂▁▂  max 23 · actuel 7           ┃
-┃ Scans les plus lents  winget 12,4 s · pwsh-modules 9,1 s · choco 4,2 s               ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-```
+![Journal, Activité tab: a year of updates as a calendar heatmap, the headline figures (updates, success rate, failures, scans), the outdated-package trend and the slowest provider scans.](../assets/screens/journal-activity.svg)
 
 | Tab | Shows | Keys |
 |---|---|---|
@@ -77,6 +105,13 @@ The view shows the period chosen in Options › **Période du journal** (12 mont
 it) each time it comes to the front; once `p` picked another one, that one stays until gup
 closes.
 
+| | |
+|---|---|
+| ![Journal, Récurrence tab: the packages updated most often, a bar for each with its update count, typical interval and cadence.](../assets/screens/journal-recurrence.svg) | ![Journal, Événements tab: every scan and update attempt, newest first, with its outcome, provider, package, versions and duration; scheduled runs among them.](../assets/screens/journal-events.svg) |
+| **2 Récurrence** — how often each package comes back | **3 Événements** — every scan and attempt |
+
+![Journal, Debug tab: the latest debug-log records with their time, level and event, a provider's failed scan as a warning, and the key that builds a diagnostic archive.](../assets/screens/journal-debug.svg)
+
 The view fits an 80 × 24 terminal; with `GUP_ASCII=1` (or a terminal without the block symbols)
 the charts switch to ASCII marks (`. : + * #`).
 
@@ -89,6 +124,8 @@ it needs no network and no gup.
 
 After an update run in the menu, `o` on the results writes the same report for the Journal's
 period, which ends with that run: it is the newest entry of the **Sessions** page.
+
+![The HTML report's overview: a sentence summing up the period, key figures, the latest weeks' calendar and the attempts per week.](../assets/screens/html-report.png)
 
 | Page | Shows |
 |---|---|
