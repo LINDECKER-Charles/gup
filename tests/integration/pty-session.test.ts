@@ -31,6 +31,11 @@ import { bundleTrampoline, sourceTrampoline } from "../support/pty/trampoline-bu
 const IS_WINDOWS = process.platform === "win32";
 const IS_REQUIRED = IS_WINDOWS || process.platform === "darwin";
 const FAST_EXIT_ATTEMPTS = 3;
+/**
+ * Half of node-pty's one-second ConPTY flush: the exit file must save most of
+ * it, not merely win the race. Measured 920–990 ms, the whole suite running.
+ */
+const FAST_EXIT_MIN_LEAD_MS = 500;
 const SEQUENTIAL_SESSIONS = 20;
 const SLOW_TEST_MS = 120_000;
 /** How long a released pseudo-console and its drain worker may take to go away. */
@@ -248,7 +253,7 @@ describe.skipIf(!backend || !IS_WINDOWS)("embedded terminal on ConPTY", () => {
   // the clock: a busy machine (the whole suite in parallel) delays the spawn
   // and node's start-up, and both paths alike, but never turns one into the
   // other. Without the fast path the result can only follow that event.
-  it("reports a success before node-pty's own exit event (ConPTY's flush)", async () => {
+  it("reports a success well before node-pty's own exit event (ConPTY's flush)", async () => {
     const leads: number[] = [];
     for (let attempt = 0; attempt < FAST_EXIT_ATTEMPTS; attempt++) {
       const watch = watchingExitEvent(backend!.pty);
@@ -259,7 +264,7 @@ describe.skipIf(!backend || !IS_WINDOWS)("embedded terminal on ConPTY", () => {
     }
     // The best of a few runs: one poll may still be late on a saturated machine.
     const leadsReport = `lead over node-pty's event: ${leads.join(", ")} ms`;
-    expect(Math.max(...leads), leadsReport).toBeGreaterThan(0);
+    expect(Math.max(...leads), leadsReport).toBeGreaterThan(FAST_EXIT_MIN_LEAD_MS);
   });
 
   it("leaves no exit file behind once the install settled", async () => {
