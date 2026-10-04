@@ -9,6 +9,7 @@ import {
 } from "../core/platform/update-target.js";
 import { ALL_PROVIDERS } from "../core/registry.js";
 import type { Provider, ProviderScanResult, SelectedPackage } from "../core/types.js";
+import { isUpdatableNow } from "../core/self-update.js";
 import { setInstallTimeoutSeconds } from "../core/runner.js";
 import { requestsFrom } from "../core/update/update-plan.js";
 import { runUpdates } from "../core/update/update-pipeline.js";
@@ -18,6 +19,7 @@ import { confirm } from "../ui/prompts/confirm.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection } from "../ui/select.js";
 import { renderScanTable } from "../ui/table.js";
+import { afterExitNotice } from "../ui/after-exit-notice.js";
 import { ERROR_LABELS } from "../ui/text/cli-labels.js";
 import { counted } from "../ui/text/format.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
@@ -90,20 +92,23 @@ export async function updateCommand(options: UpdateOptions): Promise<number> {
     ...(options.fast !== undefined && { fast: options.fast }),
   });
 
+  // gup itself on Windows is listed but left for after it exits (core/self-update.ts).
   const allPackages: SelectedPackage[] = scans.flatMap((scan) =>
-    scan.packages.map((pkg) => ({ providerId: scan.providerId, pkg })),
+    scan.packages.filter(isUpdatableNow).map((pkg) => ({ providerId: scan.providerId, pkg })),
   );
 
   if (allPackages.length === 0) {
-    // "à jour" — or the errors of the providers that could not scan.
-    process.stdout.write(`${renderScanTable(scans)}\n`);
+    // Up to date — or the errors of the providers that could not scan.
+    process.stdout.write(`${renderScanTable(scans)}\n${afterExitNotice(scans)}`);
     return 0;
   }
 
   const chosen = await chooseSelection(allPackages, scans, options);
   if (chosen.kind === "declined") return 1;
   if (chosen.kind === "empty") return 0;
-  return runSelection(chosen.packages, yesFlag(options));
+  const code = await runSelection(chosen.packages, yesFlag(options));
+  process.stdout.write(afterExitNotice(scans));
+  return code;
 }
 
 type SelectionResult =
