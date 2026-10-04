@@ -1,5 +1,5 @@
 /**
- * Client "Vue d'ensemble" page: the headline sentence and figure, the key
+ * Client "Overview" page: the headline sentence and figure, the key
  * numbers (each a way into the page that details it), the calendar of the
  * latest weeks, attempts per week or month, the outdated-packages line, the
  * failures to watch, the most updated packages and the providers.
