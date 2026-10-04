@@ -59,12 +59,16 @@ describe("SchedulesController reads", () => {
     expect(controller.providerName("nope")).toBe("nope");
   });
 
-  it("names a schedule by its id for the Journal, and nothing for an id it does not know", async () => {
+  it("names a schedule by its id for the Journal, and nothing once it is deleted", async () => {
     const { controller } = await controllerWith();
     const outcome = await controller.create(draft);
     if (!outcome.isSaved) throw new Error("not saved");
-    expect(controller.scheduleName(outcome.schedule.id)).toBe("Outils dev");
-    expect(controller.scheduleName("0badc0de")).toBeUndefined();
+    const { id } = outcome.schedule;
+    expect(controller.scheduleName(id)).toBe("Outils dev");
+
+    await controller.remove(id);
+
+    expect(controller.scheduleName(id)).toBeUndefined();
   });
 
   it("validates an edit without counting the schedule it replaces", async () => {
