@@ -2,6 +2,8 @@ import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { restoreStagedCopy, type StagedCopyFate } from "./npm-staged-copy.js";
+import { localized } from "../../core/i18n/localized.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 
 interface NpmOutdatedEntry {
   current?: string;
@@ -17,13 +19,22 @@ interface NpmErrorReport {
   latest?: unknown;
 }
 
-/** The outcome's recovery note once npm's staged copy is back in place. */
-const RESTORED_NOTE = "version précédente restaurée";
-
-/** …and when npm had begun writing the new version: the old copy is left where npm put it. */
-function keptNote(path: string): string {
-  return `ancienne version mise de côté par npm dans ${path}`;
-}
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    /** The outcome's recovery note once npm's staged copy is back in place. */
+    restoredNote: "previous version restored",
+    /** …and when npm had begun writing the new version: the old copy is left where npm put it. */
+    keptNote: (path: string) => `old version set aside by npm in ${path}`,
+    /** `code` is empty or " (<npm error code>)". */
+    outdatedFailed: (code: string, summary: string) => `npm outdated failed${code}: ${summary}`,
+  },
+  fr: {
+    restoredNote: "version précédente restaurée",
+    keptNote: (path) => `ancienne version mise de côté par npm dans ${path}`,
+    outdatedFailed: (code, summary) => `npm outdated a échoué${code} : ${summary}`,
+  },
+});
 
 /**
  * Uses `npm outdated -g --json` (built-in, no `npm-check-updates` dependency).
@@ -36,10 +47,12 @@ function keptNote(path: string): string {
 export class NpmGlobalProvider implements Provider {
   readonly id = "npm-g";
   readonly displayName = "npm (global)";
-  readonly installHint = pickInstallHint({
-    win32: "Installer Node.js: https://nodejs.org",
-    fallback: "brew install node",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: MANUAL_STEPS.install("Node.js", "https://nodejs.org"),
+      fallback: "brew install node",
+    });
+  }
   private globalRoot: string | null = null;
 
   async isAvailable(): Promise<boolean> {
@@ -127,11 +140,11 @@ function npmFailure(report: Record<string, NpmOutdatedEntry>): string | null {
   if (typeof error?.summary !== "string" || error.latest !== undefined) return null;
   const summary = error.summary.replace(/\s+/g, " ").trim();
   const code = typeof error.code === "string" ? ` (${error.code})` : "";
-  return `npm outdated a échoué${code} : ${summary}`;
+  return TEXT.outdatedFailed(code, summary);
 }
 
 function recoveryOf(fate: StagedCopyFate | null): Pick<UpdateOutcome, "recovery"> {
-  if (fate?.kind === "restored") return { recovery: RESTORED_NOTE };
-  if (fate?.kind === "kept") return { recovery: keptNote(fate.path) };
+  if (fate?.kind === "restored") return { recovery: TEXT.restoredNote };
+  if (fate?.kind === "kept") return { recovery: TEXT.keptNote(fate.path) };
   return {};
 }

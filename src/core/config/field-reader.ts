@@ -1,12 +1,21 @@
+import { localized } from "../i18n/localized.js";
+
 /**
  * Lenient, typed access to one object of the settings file. A field that is
  * absent takes its fallback silently; a field that is present but wrong takes
- * its fallback and records an issue (French: the issues are shown to the
- * user), so one hand-edited mistake never drops a whole section.
+ * its fallback and records an issue (shown to the user), so one hand-edited
+ * mistake never drops a whole section.
  *
  * Only own keys are read and the prototype-polluting names are never
  * returned, whatever the file contains.
  */
+
+/**
+ * A problem found in the settings file, worded when it is read out, in the
+ * language active then: problems are found while startup reads the language
+ * setting itself, before that language is chosen.
+ */
+export type ConfigIssue = () => string;
 
 export interface IntegerBounds {
   readonly min: number;
@@ -55,6 +64,46 @@ const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
 const SHORT_HEX = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i;
 const LONG_HEX = /^#[0-9a-f]{6}$/i;
 
+/** What a reader says about a field it could not take; the field's path is never translated. */
+const PROBLEMS = localized({
+  en: {
+    /** "interface.mouse: expected a boolean". */
+    issue: (path: string, problem: string) => `${path}: ${problem}`,
+    boolean: "expected a boolean",
+    oneOf: (allowed: string) => `expected one of ${allowed}`,
+    integer: (min: number, max: number) => `expected an integer from ${min} to ${max}`,
+    hexColor: "expected a #RRGGBB color",
+    list: "expected a list",
+    invalidIds: "invalid ids ignored",
+    text: (maxLength: number) => `expected text of at most ${maxLength} characters`,
+    object: "expected an object",
+    invalidEntries: "invalid entries ignored",
+    tooManyEntries: (max: number) => `at most ${max} entries`,
+  },
+  fr: {
+    issue: (path, problem) => `${path} : ${problem}`,
+    boolean: "booléen attendu",
+    oneOf: (allowed) => `une valeur parmi ${allowed} attendue`,
+    integer: (min, max) => `entier entre ${min} et ${max} attendu`,
+    hexColor: "couleur #RRGGBB attendue",
+    list: "liste attendue",
+    invalidIds: "identifiants invalides ignorés",
+    text: (maxLength) => `texte de ${maxLength} caractères au plus attendu`,
+    object: "objet attendu",
+    invalidEntries: "entrées invalides ignorées",
+    tooManyEntries: (max) => `${max} entrées au plus`,
+  },
+});
+
+function fieldIssue(path: string, problem: () => string): ConfigIssue {
+  return () => PROBLEMS.issue(path, problem());
+}
+
+/** `path` holds a value that is not an object: "theme: expected an object". */
+export function objectExpected(path: string): ConfigIssue {
+  return fieldIssue(path, () => PROBLEMS.object);
+}
+
 /** True for a plain JSON object (not null, not an array). */
 export function isJsonObject(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -66,16 +115,16 @@ export function isSafeKey(key: string): boolean {
 }
 
 /** Read `raw` (any JSON value) as the object at `path`, recording problems in `issues`. */
-export function createFieldReader(raw: unknown, path: string, issues: string[]): FieldReader {
+export function createFieldReader(raw: unknown, path: string, issues: ConfigIssue[]): FieldReader {
   return new LenientFieldReader(isJsonObject(raw) ? raw : {}, path, issues);
 }
 
 class LenientFieldReader implements FieldReader {
   readonly #source: Readonly<Record<string, unknown>>;
   readonly #path: string;
-  readonly #issues: string[];
+  readonly #issues: ConfigIssue[];
 
-  constructor(source: Readonly<Record<string, unknown>>, path: string, issues: string[]) {
+  constructor(source: Readonly<Record<string, unknown>>, path: string, issues: ConfigIssue[]) {
     this.#source = source;
     this.#path = path;
     this.#issues = issues;
@@ -84,7 +133,7 @@ class LenientFieldReader implements FieldReader {
   boolean(key: string, fallback: boolean): boolean {
     const value = this.#value(key);
     if (value === undefined || typeof value === "boolean") return value ?? fallback;
-    return this.#invalid(key, "booléen attendu", fallback);
+    return this.#invalid(key, () => PROBLEMS.boolean, fallback);
   }
 
   oneOf<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
@@ -92,7 +141,7 @@ class LenientFieldReader implements FieldReader {
     if (value === undefined) return fallback;
     const match = allowed.find((candidate) => candidate === value);
     if (match !== undefined) return match;
-    return this.#invalid(key, `une valeur parmi ${allowed.join(", ")} attendue`, fallback);
+    return this.#invalid(key, () => PROBLEMS.oneOf(allowed.join(", ")), fallback);
   }
 
   integer(key: string, bounds: IntegerBounds, fallback: number): number {
@@ -101,7 +150,7 @@ class LenientFieldReader implements FieldReader {
     const isInRange =
       Number.isInteger(value) && (value as number) >= bounds.min && (value as number) <= bounds.max;
     if (isInRange) return value as number;
-    return this.#invalid(key, `entier entre ${bounds.min} et ${bounds.max} attendu`, fallback);
+    return this.#invalid(key, () => PROBLEMS.integer(bounds.min, bounds.max), fallback);
   }
 
   hexColor(key: string): HexColor | undefined {
@@ -109,17 +158,17 @@ class LenientFieldReader implements FieldReader {
     if (value === undefined) return undefined;
     const normalized = typeof value === "string" ? normalizeHex(value) : undefined;
     if (normalized) return normalized;
-    return this.#invalid(key, "couleur #RRGGBB attendue", undefined);
+    return this.#invalid(key, () => PROBLEMS.hexColor, undefined);
   }
 
   ids(key: string, bounds: IdListBounds): readonly string[] {
     const value = this.#value(key);
     if (value === undefined) return [];
-    if (!Array.isArray(value)) return this.#invalid(key, "liste attendue", []);
+    if (!Array.isArray(value)) return this.#invalid(key, () => PROBLEMS.list, []);
     const valid = value.filter(
       (item): item is string => typeof item === "string" && bounds.pattern.test(item),
     );
-    if (valid.length !== value.length) this.#report(key, "identifiants invalides ignorés");
+    if (valid.length !== value.length) this.#report(key, () => PROBLEMS.invalidIds);
     return [...new Set(valid)].slice(0, bounds.max);
   }
 
@@ -127,26 +176,25 @@ class LenientFieldReader implements FieldReader {
     const value = this.#value(key);
     if (value === undefined) return undefined;
     if (typeof value === "string" && isWithin(value, bounds)) return value;
-    const expected = `texte de ${bounds.maxLength} caractères au plus attendu`;
-    return this.#invalid(key, expected, undefined);
+    return this.#invalid(key, () => PROBLEMS.text(bounds.maxLength), undefined);
   }
 
   object(key: string): FieldReader {
     const value = this.#value(key);
-    if (value !== undefined && !isJsonObject(value)) this.#report(key, "objet attendu");
+    if (value !== undefined && !isJsonObject(value)) this.#report(key, () => PROBLEMS.object);
     return createFieldReader(value, `${this.#path}.${key}`, this.#issues);
   }
 
   objects(key: string, max: number): readonly FieldReader[] {
     const value = this.#value(key);
     if (value === undefined) return [];
-    if (!Array.isArray(value)) return this.#invalid(key, "liste attendue", []);
+    if (!Array.isArray(value)) return this.#invalid(key, () => PROBLEMS.list, []);
     const readers = value.flatMap((item: unknown, index) => {
       if (!isJsonObject(item)) return [];
       return [createFieldReader(item, `${this.#path}.${key}[${index}]`, this.#issues)];
     });
-    if (readers.length !== value.length) this.#report(key, "entrées invalides ignorées");
-    if (readers.length > max) this.#report(key, `${max} entrées au plus`);
+    if (readers.length !== value.length) this.#report(key, () => PROBLEMS.invalidEntries);
+    if (readers.length > max) this.#report(key, () => PROBLEMS.tooManyEntries(max));
     return readers.slice(0, max);
   }
 
@@ -167,13 +215,13 @@ class LenientFieldReader implements FieldReader {
     return this.#source[key];
   }
 
-  #invalid<T>(key: string, expected: string, fallback: T): T {
+  #invalid<T>(key: string, expected: () => string, fallback: T): T {
     this.#report(key, expected);
     return fallback;
   }
 
-  #report(key: string, problem: string): void {
-    this.#issues.push(`${this.#path}.${key} : ${problem}`);
+  #report(key: string, problem: () => string): void {
+    this.#issues.push(fieldIssue(`${this.#path}.${key}`, problem));
   }
 }
 

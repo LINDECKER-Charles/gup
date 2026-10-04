@@ -318,7 +318,7 @@ function heatLegend() {
   ]);
 }
 
-/** "4 réussies, 1 échec, 2 scans" for a day, or that nothing happened. */
+/** "4 successes, 1 failure, 2 scans" for a day, or that nothing happened. */
 function daySummary(index) {
   const row = DAY_ROWS.get(dayKey(index));
   if (!row) return t("calendar.nothing");

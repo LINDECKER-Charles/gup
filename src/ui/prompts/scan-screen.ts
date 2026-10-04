@@ -1,5 +1,6 @@
 import { uiPreferences } from "../app/ui-preferences.js";
 import { ScanPanel, type ScanEvents } from "../panels/scan-panel.js";
+import { SCAN_LABELS } from "../text/scan-labels.js";
 import { bodyPanelSize, Chrome } from "../tui/chrome.js";
 import { screenHost, type ScreenHost } from "../tui/screen-host.js";
 import { TextPanel } from "../tui/text-panel.js";
@@ -17,10 +18,10 @@ export function withScanScreen<T>(
 ): Promise<T> {
   return host.run(async (screen) => {
     const chrome = new Chrome(screen);
-    const panel = new TextPanel(screen, chrome.body, { id: "gup-scan", title: "Scan" });
     const scan = new ScanPanel(() => {});
+    const panel = new TextPanel(screen, chrome.body, { id: "gup-scan", title: scan.title });
     const draw = (): void => panel.show(scan.render(bodyPanelSize(screen)));
-    chrome.setHints("Ctrl+C interrompre");
+    chrome.setHints(SCAN_LABELS.screenHints);
     const timer = setInterval(() => {
       // Animations off: the spinner stands still, the progress still redraws.
       if (uiPreferences().current().animations) scan.tick();

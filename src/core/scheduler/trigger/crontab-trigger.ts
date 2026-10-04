@@ -1,8 +1,9 @@
-import { whichFirst, type RunResult } from "../../runner.js";
+import { localized } from "../../i18n/localized.js";
+import { whichFirst } from "../../runner.js";
 import { hasGupBlock, removeGupBlock, upsertGupBlock } from "../artifacts/crontab-block.js";
 import {
+  commandFailure,
   DEFAULT_TRIGGER_RUNNER,
-  firstLineOf,
   type OsTrigger,
   type TriggerRegistration,
   type TriggerRunner,
@@ -18,8 +19,12 @@ import {
  * recognised.
  */
 
-export const CRONTAB_MISSING =
-  "crontab introuvable — installez cron (ou cronie) pour planifier des mises à jour";
+export const CRONTAB_ERRORS = localized({
+  en: { missing: "crontab not found — install cron (or cronie) to schedule updates" },
+  fr: {
+    missing: "crontab introuvable — installez cron (ou cronie) pour planifier des mises à jour",
+  },
+});
 
 export interface CrontabOptions {
   readonly run?: TriggerRunner;
@@ -69,23 +74,19 @@ export class CrontabTrigger implements OsTrigger {
     const result = await this.#run(await this.#crontab(), ["-l"], { env: C_LOCALE });
     if (!result.failed) return result.stdout;
     if (NO_CRONTAB.test(result.stderr)) return "";
-    throw crontabError("-l", result);
+    throw commandFailure("crontab -l", result);
   }
 
   /** cron ignores a last line without a line break: always end with one. */
   async #write(text: string): Promise<void> {
     const input = text === "" || text.endsWith("\n") ? text : `${text}\n`;
     const result = await this.#run(await this.#crontab(), ["-"], { input, env: C_LOCALE });
-    if (result.failed) throw crontabError("-", result);
+    if (result.failed) throw commandFailure("crontab -", result);
   }
 
   async #crontab(): Promise<string> {
     this.#binary ??= await this.#locate();
-    if (this.#binary === null) throw new Error(CRONTAB_MISSING);
+    if (this.#binary === null) throw new Error(CRONTAB_ERRORS.missing);
     return this.#binary;
   }
-}
-
-function crontabError(flag: string, result: RunResult): Error {
-  return new Error(`crontab ${flag} a échoué (code ${result.exitCode}) : ${firstLineOf(result)}`);
 }

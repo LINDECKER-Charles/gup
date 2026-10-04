@@ -1,4 +1,5 @@
 import { appendFileSync, mkdirSync } from "node:fs";
+import { localize } from "../i18n/localized.js";
 import { log } from "../log/log.js";
 import { redactSecrets } from "../log/redact.js";
 import { installConsole } from "../process/output-router.js";
@@ -210,5 +211,6 @@ function warnOnce(err: unknown): void {
   warned = true;
   const reason = err instanceof Error ? err.message : String(err);
   log.warn("history.write-failed", { reason });
-  installConsole.warn(`  historique non écrit — ${reason}`);
+  const notice = localize({ en: "history not written", fr: "historique non écrit" });
+  installConsole.warn(`  ${notice} — ${reason}`);
 }

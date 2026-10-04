@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -58,8 +59,10 @@ export class LazygitProvider implements Provider {
         winget: "JesseDuffield.lazygit",
         brew: "lazygit",
       },
-      manualMessage:
-        "Télécharger https://github.com/jesseduffield/lazygit/releases et remplacer lazygit.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/jesseduffield/lazygit/releases",
+        "lazygit.exe",
+      ),
     });
   }
 

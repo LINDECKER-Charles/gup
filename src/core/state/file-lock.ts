@@ -1,4 +1,5 @@
 import { closeSync, openSync, statSync, unlinkSync, writeSync } from "node:fs";
+import { localize } from "../i18n/localized.js";
 
 /**
  * A short exclusive section on a file shared by several gup processes (two
@@ -29,7 +30,7 @@ const LOCK_FILE_MODE = 0o600;
 
 export class FileLockTimeoutError extends Error {
   constructor(lockFile: string) {
-    super(`verrou occupé : ${lockFile}`);
+    super(localize({ en: `lock busy: ${lockFile}`, fr: `verrou occupé : ${lockFile}` }));
     this.name = "FileLockTimeoutError";
   }
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SystemSnapshot } from "../../../../src/core/state/system-snapshot.js";
 import { diagnosticReadme } from "../../../../src/ui/text/journal/log-labels.js";
+import { useLocale } from "../../../support/locale.js";
 
 const SYSTEM: SystemSnapshot = {
   gup: "0.5.0",
@@ -28,5 +29,23 @@ describe("the diagnostic archive's README", () => {
 
   it("says nothing of left-out lines when there are none", () => {
     expect(readme({ logs: [], dropped: 0 })).not.toContain("omise");
+  });
+});
+
+describe("the diagnostic archive's README in English", () => {
+  useLocale("en");
+
+  it("lays its contents out under the same entries", () => {
+    const text = readme({ logs: ["gup-2026-10-03.jsonl"], dropped: 2 });
+
+    expect(text).toMatch(/^gup diagnostic archive\n\nGenerated on 2026-10-03T12:00:00\.000Z by gup 0\.5\.0\n/);
+    expect(text).toContain(
+      "Contents:\n" +
+        "  system.json   versions, platform and gup's own environment variables\n" +
+        "                (an allowlist: the rest of the environment is never copied)\n" +
+        "  logs/         debug log, 1 file\n" +
+        "                  gup-2026-10-03.jsonl\n",
+    );
+    expect(text).toMatch(/\n\n2 unreadable log lines were left out\.\n$/);
   });
 });

@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, setActiveLocale } from "./core/i18n/locale.js";
 import { writeExitFile } from "./core/pty/exit-file.js";
 import { PTY_LABELS } from "./core/pty/pty-labels.js";
 import { decodePayload, type TrampolinePayload } from "./core/pty/trampoline-payload.js";
@@ -11,6 +12,10 @@ import { runInherit, type RunResult } from "./core/runner.js";
  * process, so the installer's terminal is the pseudo-terminal itself, and
  * execa resolves PATHEXT and escapes `.cmd` targets as always. The runner
  * sanitises the command and argv again here.
+ *
+ * It speaks the language the request carries: `cli.ts` never runs in this
+ * process, so nothing else chooses one. A request it cannot decode names
+ * none, and is refused in the default language.
  */
 
 /** Exit status of a request the trampoline refuses. */
@@ -27,6 +32,7 @@ async function runRequest(encoded: string): Promise<number> {
   let result: RunResult;
   try {
     payload = decodePayload(encoded);
+    setActiveLocale(payload.locale ?? DEFAULT_LOCALE);
     result = await runInherit(payload.command, [...payload.args], {
       ...(payload.cwd !== undefined && { cwd: payload.cwd }),
       ...(payload.shell !== undefined && { shell: payload.shell }),

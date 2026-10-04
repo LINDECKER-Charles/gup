@@ -1,5 +1,6 @@
 import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PnpmOutdatedEntry {
@@ -105,5 +106,8 @@ function pnpmFailure(output: string): string | null {
   const code = PNPM_ERROR_CODE.exec(codeLine)?.[0] ?? "";
   const sameLine = codeLine.slice(codeLine.indexOf(code) + code.length).trim();
   const message = [sameLine, ...lines.slice(index + 1)].filter((part) => part !== "").join(" ");
-  return `pnpm outdated a échoué (${code}) : ${message}`;
+  return localize({
+    en: `pnpm outdated failed (${code}): ${message}`,
+    fr: `pnpm outdated a échoué (${code}) : ${message}`,
+  });
 }

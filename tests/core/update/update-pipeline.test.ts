@@ -32,6 +32,7 @@ import type {
   UpdatePorts,
   UpdateRequest,
 } from "../../../src/core/update/update-ports.js";
+import { useLocale } from "../../support/locale.js";
 import { restorePlatform, setPlatform } from "../../support/platform.js";
 
 function provider(id: string, outcomes: Record<string, Partial<UpdateOutcome>> = {}) {
@@ -225,6 +226,22 @@ describe("runUpdates: elevated batch", () => {
     expect(report.skipped[0]!.message).toBe(
       "Droits administrateur requis : non disponible sans surveillance",
     );
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    // The decisions are built when the module loads, before startup chose
+    // the language: their message is read when a run declines.
+    it("says why in the language of the run, not of the module's loading", async () => {
+      const unattended = await runUpdates([admin("nodejs")], ports({ decisions: HEADLESS_DECISIONS }));
+      const declined = ports({ decisions: decisions({ confirmElevation: vi.fn(async () => false) }) });
+      const byUser = await runUpdates([admin("python")], declined);
+      expect(unattended.skipped[0]!.message).toBe(
+        "Administrator rights required: not available unattended",
+      );
+      expect(byUser.skipped[0]!.message).toBe("Elevation declined by the user");
+    });
   });
 });
 

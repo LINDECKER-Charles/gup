@@ -33,10 +33,10 @@ import {
 import { reconcileTrigger } from "./trigger-commands.js";
 
 /**
- * The menu's Planification view wired to this machine: the schedules file,
+ * The menu's Schedules view wired to this machine: the schedules file,
  * the run state, the OS trigger, the targeted scan. Every change is saved
  * first, then the trigger is brought in line — as `gup schedule` does.
- * Reads are cached until `reload()`, because the sidebar and Paquets read
+ * Reads are cached until `reload()`, because the sidebar and Packages read
  * them at every frame.
  */
 

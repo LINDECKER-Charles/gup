@@ -1,3 +1,4 @@
+import { DIALOG_LABELS } from "../text/menu-labels.js";
 import type { DialogChoice } from "../tui/dialog.js";
 import type { ScreenHost } from "../tui/screen-host.js";
 import { printAnswer, withDialog } from "./dialog-screen.js";
@@ -13,7 +14,7 @@ export interface SelectOptions<T> {
 export async function select<T>(options: SelectOptions<T>, host?: ScreenHost): Promise<T> {
   const { message, choices } = options;
   const fallback = options.default ?? choices[0]?.value;
-  if (fallback === undefined) throw new Error(`select: aucun choix pour « ${message} »`);
+  if (fallback === undefined) throw new Error(DIALOG_LABELS.noChoices(message));
   const picked = await withDialog(
     (dialogs) => dialogs.choose({ title: message, choices, default: fallback }),
     host,

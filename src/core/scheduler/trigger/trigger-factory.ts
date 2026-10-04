@@ -1,3 +1,4 @@
+import { localize } from "../../i18n/localized.js";
 import { platformName } from "../../platform/platform-label.js";
 import { CrontabTrigger } from "./crontab-trigger.js";
 import { LaunchdTrigger } from "./launchd-agent.js";
@@ -55,5 +56,11 @@ export function systemRootOf(env: NodeJS.ProcessEnv): string {
 }
 
 function unsupported(platform: NodeJS.Platform): { readonly unsupported: string } {
-  return { unsupported: `planification non prise en charge sous ${platformName(platform)}` };
+  const name = platformName(platform);
+  return {
+    unsupported: localize({
+      en: `scheduling is not supported on ${name}`,
+      fr: `planification non prise en charge sous ${name}`,
+    }),
+  };
 }

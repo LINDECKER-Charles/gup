@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { ConfigStatus } from "../../../src/core/config/store.js";
 import { describeConfigStatus } from "../../../src/ui/settings/config-status.js";
-import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings/settings-labels.js";
+import {
+  CONFIG_STATE_LABELS,
+  startupIssueLine,
+} from "../../../src/ui/text/settings/settings-labels.js";
+import { useLocale } from "../../support/locale.js";
 
 const status = (overrides: Partial<ConfigStatus>): ConfigStatus => ({
   file: "C:\\Users\\u\\AppData\\Roaming\\gup\\config.json",
@@ -42,5 +46,21 @@ describe("describeConfigStatus", () => {
     expect(warned[1]?.text).toContain("config.corrupt-20261003T101500.json");
     expect(warned[3]?.text).toBe(CONFIG_STATE_LABELS.notSaved("EPERM: operation not permitted"));
     expect(warned[4]?.text).toContain("1 réglage(s) invalide(s) ignoré(s)");
+  });
+});
+
+describe("describeConfigStatus in English", () => {
+  useLocale("en");
+
+  it("counts the invalid settings and lists them, each naming its field", () => {
+    const issues = ["interface.mouse: expected a boolean", "scan.fast: expected a boolean"];
+    expect(describeConfigStatus(status({ issues })).text).toBe(
+      "‼ 2 invalid settings ignored: interface.mouse: expected a boolean; " +
+        "scan.fast: expected a boolean",
+    );
+    expect(describeConfigStatus(status({ state: "missing" })).text).toBe("defaults (no file)");
+    expect(startupIssueLine(issues[0] ?? "")).toBe(
+      "gup: configuration — interface.mouse: expected a boolean",
+    );
   });
 });

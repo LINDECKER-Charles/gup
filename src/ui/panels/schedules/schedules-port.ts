@@ -12,11 +12,11 @@ import type { SyncResult } from "../../../core/scheduler/trigger/trigger-sync.js
 import type { UpdateReport } from "../../../core/update/update-report.js";
 
 /**
- * What the Planification view needs from the scheduler. Implemented by
+ * What the Schedules view needs from the scheduler. Implemented by
  * `commands/schedule/schedules-controller.ts` over this machine's files and
  * OS trigger; tests hand in a fake. Type-only module.
  *
- * Reads are cached and cheap — the sidebar badge and Paquets' marks read
+ * Reads are cached and cheap — the sidebar badge and Packages' marks read
  * them at every frame — until `reload()`. Changes are async: each one
  * brings the OS trigger in line, as `gup schedule` does.
  */

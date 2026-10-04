@@ -5,7 +5,7 @@ import type { UpdateReport } from "../../../core/update/update-report.js";
 import type { Viewport } from "../../panels/panel.js";
 import type { ScanEvents } from "../../panels/scan-panel.js";
 import { ScanBus } from "../../scan-progress.js";
-import { providerFacts, QUIT_DIALOG, SIDEBAR_TITLE } from "../../text/menu-labels.js";
+import { MENU_LABELS, providerFacts, QUIT_DIALOG } from "../../text/menu-labels.js";
 import { Chrome, CHROME_ROWS } from "../../tui/chrome.js";
 import { DialogLayer } from "../../tui/dialog.js";
 import { repaintNextTurn } from "../../tui/repaint-next-turn.js";
@@ -93,7 +93,7 @@ export class MenuSession {
     this.#chrome = new Chrome(screen);
     this.#sidebar = new TextPanel(screen, this.#chrome.body, {
       id: "gup-nav",
-      title: SIDEBAR_TITLE,
+      title: MENU_LABELS.sidebarTitle,
       width: SIDEBAR_WIDTH,
     });
     this.#main = new TextPanel(screen, this.#chrome.body, { id: "gup-main", title: "" });
@@ -228,7 +228,7 @@ export class MenuSession {
     this.draw();
   }
 
-  /** `q` or "Quitter": the session ends — once confirmed when a view holds unsaved changes. */
+  /** `q` or "Quit": the session ends — once confirmed when a view holds unsaved changes. */
   private async quit(): Promise<void> {
     const unsaved = this.#views.unsavedViews();
     const isConfirmed =

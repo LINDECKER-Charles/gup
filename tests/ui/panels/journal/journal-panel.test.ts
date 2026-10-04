@@ -11,11 +11,12 @@ import {
 } from "../../../../src/ui/panels/journal/journal-panel.js";
 import type { JournalData, JournalSource } from "../../../../src/ui/panels/journal/journal-source.js";
 import type { Viewport } from "../../../../src/ui/panels/panel.js";
-import { EMPTY_ACTIVITY } from "../../../../src/ui/text/journal/activity-labels.js";
+import { ACTIVITY_LABELS } from "../../../../src/ui/text/journal/activity-labels.js";
 import { EXPORT_LABELS, JOURNAL_LABELS } from "../../../../src/ui/text/journal/journal-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import { lineWidth, type Line } from "../../../../src/ui/tui/styled-lines.js";
 import { updateEvent } from "../../../support/history-fixtures.js";
+import { useLocale } from "../../../support/locale.js";
 import { JOURNAL_NOW, journalData, scriptedSource } from "./journal-data.js";
 
 const WIDE: Viewport = { width: 90, height: 26 };
@@ -143,7 +144,7 @@ describe("JournalPanel", () => {
     resolveFirst(journalData());
     await settle();
 
-    expect(text(journal.render(WIDE)).join("\n")).toContain(EMPTY_ACTIVITY);
+    expect(text(journal.render(WIDE)).join("\n")).toContain(ACTIVITY_LABELS.empty);
   });
 
   it("exports the chosen format for the period and tells where the file is", async () => {
@@ -270,7 +271,7 @@ describe("JournalPanel", () => {
     const { journal } = await shown(scriptedSource(journalData([], { history: { insights } })));
 
     const screen = text(journal.render(WIDE)).join("\n");
-    expect(screen).toContain(EMPTY_ACTIVITY);
+    expect(screen).toContain(ACTIVITY_LABELS.empty);
     expect(screen).not.toContain(JOURNAL_LABELS.widenHint);
   });
 
@@ -289,5 +290,33 @@ describe("JournalPanel", () => {
     }
     journal.press(key("1"));
     expect(text(journal.render(viewport)).join("\n")).toContain(legend);
+  });
+});
+
+describe("JournalPanel in English", () => {
+  useLocale("en");
+
+  it("names its tabs, its period and the activity at a glance", async () => {
+    const { journal } = await shown();
+
+    const screen = text(journal.render(WIDE));
+    expect(journal.title).toBe("Journal · past 12 months");
+    expect(screen[0]).toBe("▌1 Activity  2 Recurrence  3 Events  4 Debug");
+    expect(screen.join("\n")).toContain("3 updates · 75% successful · 2 packages · 1 failure");
+    expect(screen.join("\n")).toContain("less · ░ ▒ ▓ █ more");
+    expect(journal.hints()).toBe("1-4 tabs · p period · o HTML report · e export · r reload");
+  });
+
+  it("keeps the event rows within the panel, English dates being a column wider", async () => {
+    const { journal } = await shown();
+    journal.press(key("3"));
+
+    for (const viewport of [WIDE, NARROW]) {
+      for (const line of journal.render(viewport)) expect(lineWidth(line)).toBeLessThanOrEqual(viewport.width);
+    }
+    const rows = text(journal.render(WIDE)).map((line) => line.trimEnd());
+    expect(rows[1]).toBe("type: all (f) · 7 events");
+    expect(rows[2]).toMatch(/^› Oct 03 00:00 {2}◌ scan {4}1 provider · 7 outdated +1\.0 s$/);
+    expect(rows.join("\n")).toMatch(/× failed +choco +nodejs/);
   });
 });

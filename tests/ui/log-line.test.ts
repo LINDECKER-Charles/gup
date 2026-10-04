@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { LogRecord } from "../../src/core/log/types.js";
 import { levelLabel, logRecordLine, logRecordText } from "../../src/ui/log-line.js";
 import { lineWidth } from "../../src/ui/tui/styled-lines.js";
+import { useLocale } from "../support/locale.js";
 
 function record(over: Partial<LogRecord>): LogRecord {
   return {
@@ -108,5 +109,14 @@ describe("logRecordText and levelLabel", () => {
       "DEBUG",
       "TRACE",
     ]);
+  });
+});
+
+describe("a log line in English", () => {
+  useLocale("en");
+
+  it("dates the record month first, by name, and writes durations the English way", () => {
+    expect(logRecordLine(record({}))[0]?.text).toBe("Oct 03 14:22:05.112  ");
+    expect(summary({ event: "session.end", data: { code: 0, ms: 2500 } })).toBe("code 0 · 2.5 s");
   });
 });

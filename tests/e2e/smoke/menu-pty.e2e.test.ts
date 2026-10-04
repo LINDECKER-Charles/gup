@@ -1,18 +1,10 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import manifest from "../../../package.json" with { type: "json" };
-import { JOURNAL_LABELS, TAB_LABELS } from "../../../src/ui/text/journal/journal-labels.js";
-import {
-  PANEL_HINTS_TAIL,
-  QUIT_LABEL,
-  updateCountFact,
-  VIEW_LABELS,
-} from "../../../src/ui/text/menu-labels.js";
+import { JOURNAL_LABELS } from "../../../src/ui/text/journal/journal-labels.js";
+import { MENU_LABELS, updateCountFact, VIEW_LABELS } from "../../../src/ui/text/menu-labels.js";
 import { PACKAGES_PLACEHOLDERS } from "../../../src/ui/text/packages-labels.js";
 import { PROVIDERS_PANEL_LABELS } from "../../../src/ui/text/providers-labels.js";
-import {
-  EMPTY_SCHEDULES,
-  SCHEDULES_LABEL,
-} from "../../../src/ui/text/schedule/schedule-menu-labels.js";
+import { SCHEDULE_MENU_LABELS } from "../../../src/ui/text/schedule/schedule-menu-labels.js";
 import { OPTIONS_SECTIONS } from "../../../src/ui/text/settings/options-labels.js";
 import { saveArtifact } from "../../support/e2e/artifacts.js";
 import { createSandbox, restrictMenuScan, type Sandbox } from "../../support/e2e/sandbox.js";
@@ -40,9 +32,9 @@ const SMALL = { cols: 80, rows: 24 } as const;
 /** Each view in sidebar order, under the cursor: its title, and a line only it draws. */
 const VIEWS: ReadonlyArray<{ readonly title: string; readonly shows: string | RegExp }> = [
   { title: VIEW_LABELS.packages, shows: PACKAGES_PLACEHOLDERS.upToDate },
-  { title: SCHEDULES_LABEL, shows: EMPTY_SCHEDULES[0] },
+  { title: SCHEDULE_MENU_LABELS.schedulesLabel, shows: SCHEDULE_MENU_LABELS.emptySchedules[0] },
   { title: VIEW_LABELS.providers, shows: anyCount(PROVIDERS_PANEL_LABELS.detected) },
-  { title: JOURNAL_LABELS.view, shows: TAB_LABELS[0] },
+  { title: JOURNAL_LABELS.view, shows: JOURNAL_LABELS.tabs[0] },
   { title: VIEW_LABELS.options, shows: OPTIONS_SECTIONS.scan },
 ];
 
@@ -109,7 +101,7 @@ describe.skipIf(!terminal.isAvailable)("the menu in a real terminal", () => {
       expect(screen.text).toContain(`▌ ${view.title}`);
     }
     await menu.press("down");
-    await menu.waitForText(`› ${QUIT_LABEL}`);
+    await menu.waitForText(`› ${MENU_LABELS.quit}`);
     await menu.press("enter");
     expect(await menu.exited()).toBe(0);
     expect((await menu.screen()).buffer).toBe("normal");
@@ -136,7 +128,7 @@ describe.skipIf(!terminal.isAvailable)("the menu in a real terminal", () => {
     menu.resize(SMALL.cols, SMALL.rows);
     const screen = await waitForFrame(menu, SMALL);
     // The key hints moved to the new last row.
-    expect(screen.lines[SMALL.rows - 1]).toContain(PANEL_HINTS_TAIL);
+    expect(screen.lines[SMALL.rows - 1]).toContain(MENU_LABELS.panelHintsTail);
   });
 
   // Runs last: every session above has ended (afterEach). On Windows a

@@ -1,14 +1,12 @@
-import {
-  EDITOR_TITLES,
-  SCHEDULES_LABEL,
-} from "../../../../src/ui/text/schedule/schedule-menu-labels.js";
+import { EDITOR_TITLES } from "../../../../src/ui/text/schedule/schedule-editor-labels.js";
+import { SCHEDULE_MENU_LABELS } from "../../../../src/ui/text/schedule/schedule-menu-labels.js";
 import { appFixture } from "../../fixtures/app-fixture.js";
 import { SCHEDULES_FIXTURE } from "../../fixtures/schedules/schedule-data.js";
 import type { SceneGroup, Stage } from "../scene.js";
 import { SCENE_SIZES } from "../sizes.js";
 import { SCAN_DONE } from "./package-plays.js";
 
-const TITLE = `gup — ${SCHEDULES_LABEL}`;
+const TITLE = `gup — ${SCHEDULE_MENU_LABELS.schedulesLabel}`;
 /** The schedule the editor scene opens: the first of the list. */
 const EDITED = SCHEDULES_FIXTURE[0]?.draft.name ?? "";
 

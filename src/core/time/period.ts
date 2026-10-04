@@ -6,7 +6,8 @@
  * (31 March − 1m = 28/29 February).
  *
  * A period is plain data with its own description (`scope`): the interface
- * words it ("12 derniers mois") without parsing the key again.
+ * words it ("past 12 months") without parsing the key again. The keys a user
+ * types (`30d`, `12w`, `all`, `2026-01-01`) are the same in every language.
  */
 
 export type PeriodUnit = "d" | "w" | "m" | "y";

@@ -1,6 +1,6 @@
 import type { FailureGroup, Insights } from "../../core/insights/types.js";
 import {
-  EMPTY_ACTIVITY,
+  ACTIVITY_LABELS,
   periodLabel,
   TEXT_REPORT_LABELS,
 } from "../text/journal/activity-labels.js";
@@ -28,7 +28,7 @@ const INDENT = "  ";
 export function renderTextReport(insights: Insights, ctx: ChartContext): Line[] {
   const title: Line = [seg(TEXT_REPORT_LABELS.title(periodLabel(insights.period)), "strong")];
   const { attempts, scans } = insights.totals;
-  if (attempts === 0 && scans === 0) return [title, [], [seg(EMPTY_ACTIVITY, "muted")]];
+  if (attempts === 0 && scans === 0) return [title, [], [seg(ACTIVITY_LABELS.empty, "muted")]];
   return [
     title,
     [],

@@ -1,6 +1,7 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -55,7 +56,7 @@ export class FlyctlProvider implements Provider {
         id: "flyctl",
         success: false,
         skipped: true,
-        message: "fly/flyctl introuvable",
+        message: localize({ en: "fly/flyctl not found", fr: "fly/flyctl introuvable" }),
       };
     }
     const res = await runInherit(bin, ["version", "upgrade"]);

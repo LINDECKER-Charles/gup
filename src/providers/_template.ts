@@ -22,15 +22,31 @@
  *  - Avoid throwing in listOutdated/update. Return empty list / failed outcome
  *    instead so other providers keep working. Throw only when the tool itself
  *    reports its scan failed (an error object, an error code): the registry
- *    then shows that message as the provider's scan error, not as "à jour".
+ *    then shows that message as the provider's scan error, not as "up to date".
+ *  - Words shown to the user exist in every language of the interface
+ *    (English, French) and are read when they are shown, never when the
+ *    module loads: the registry instantiates every provider at import, before
+ *    startup picks the language. A message is built where it is returned, with
+ *    `localize({ en, fr })` (or a module-level `localized({ en: {…}, fr: {…} })`
+ *    catalog, read inside the method); an `installHint` with words around its
+ *    command is a getter. A bare command or URL stays a plain field and is
+ *    never translated. Steps many providers suggest (download and replace a
+ *    binary, rerun as administrator…) are worded once in `manual-steps.ts`.
  */
 import { commandExists, run, runInherit } from "../core/runner.js";
+import { localize } from "../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";
 
 export class TemplateProvider implements Provider {
   readonly id = "template";
   readonly displayName = "Template";
-  readonly installHint = "URL or one-liner to install the upstream tool";
+  // A hint that is only a command can stay a field: `readonly installHint = "brew install x";`
+  get installHint(): string {
+    return localize({
+      en: "Install the upstream tool: URL or one-liner",
+      fr: "Installer l'outil amont : URL ou commande",
+    });
+  }
   // readonly slow = true; // uncomment if scan is HTTP/IO heavy
 
   async isAvailable(): Promise<boolean> {
@@ -55,7 +71,15 @@ export class TemplateProvider implements Provider {
 
   async update(packageId: string): Promise<UpdateOutcome> {
     const res = await runInherit("template-bin", ["upgrade", packageId]);
-    return { id: packageId, success: !res.failed };
+    if (!res.failed) return { id: packageId, success: true };
+    return {
+      id: packageId,
+      success: false,
+      message: localize({
+        en: `template-bin could not upgrade ${packageId}`,
+        fr: `template-bin n'a pas pu mettre à jour ${packageId}`,
+      }),
+    };
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {

@@ -1,6 +1,7 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -49,8 +50,10 @@ export class GoenvProvider implements Provider {
         id: "goenv",
         success: false,
         skipped: true,
-        message:
-          "`goenv update` indisponible — mettre à jour via `git -C $(goenv root) pull`",
+        message: localize({
+          en: "`goenv update` unavailable — update through `git -C $(goenv root) pull`",
+          fr: "`goenv update` indisponible — mettre à jour via `git -C $(goenv root) pull`",
+        }),
       };
     }
     return { id: "goenv", success: true };

@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { commandExists, runInherit } from "../../core/runner.js";
 import { nvimDataDir } from "../../core/nvim-paths.js";
 import { pathFlavour } from "../../core/platform/path-flavour.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -38,7 +39,10 @@ export class NvimPackerProvider implements Provider {
         name: "packer.nvim sync",
         current: "?",
         latest: "refresh",
-        note: "Synchronise tous les plugins (:PackerSync)",
+        note: localize({
+          en: "Syncs all plugins (:PackerSync)",
+          fr: "Synchronise tous les plugins (:PackerSync)",
+        }),
       },
     ];
   }

@@ -109,7 +109,11 @@ test("the vocabulary tells the TUI's words from words it never writes", () => {
   assert.ok(!vocabulary.has("47 trouvés"));
 });
 
-/** A view definition's label, `CONST` or `CONST.key`, resolved in src/ui/text/. */
+/**
+ * A view definition's label, `CONST` or `CONST.key`, resolved in src/ui/text/
+ * in French, the mocks' language: a localized catalog (`localized({ en, fr })`)
+ * is read from its `fr` block.
+ */
 function resolveLabel(expression) {
   const [name, key] = expression.split(".");
   for (const file of typescriptUnder("src/ui/text")) {
@@ -118,8 +122,9 @@ function resolveLabel(expression) {
     if (start === -1) continue;
     const end = key ? source.indexOf("\n}", start) : source.length;
     const declaration = source.slice(start, end);
+    const french = declaration.slice(Math.max(0, declaration.search(/\bfr:\s*\{/)));
     const value = key ? `\\b${key}:\\s*"([^"]*)"` : `^export const ${name}\\s*=\\s*"([^"]*)"`;
-    const found = declaration.match(new RegExp(value));
+    const found = french.match(new RegExp(value));
     if (found) return found[1];
   }
   throw new Error(`no string constant ${expression} under src/ui/text/`);
@@ -144,7 +149,7 @@ function tuiSidebar() {
     .map(([, file]) => sidebarEntryOf(file))
     .sort((a, b) => a.group - b.group || a.order - b.order);
   const quitGroup = Number(read("src/ui/app/sidebar.ts").match(/const QUIT_GROUP = (\d+);/)[1]);
-  const entries = [...views, { label: resolveLabel("QUIT_LABEL"), group: quitGroup }];
+  const entries = [...views, { label: resolveLabel("MENU_LABELS.quit"), group: quitGroup }];
   return entries.map(({ label, group }, index) => ({
     label,
     startsGroup: index > 0 && group !== entries[index - 1].group,

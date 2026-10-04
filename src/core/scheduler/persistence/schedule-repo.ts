@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { ConfigStore } from "../../config/store.js";
+import { localized } from "../../i18n/localized.js";
 import { storedRecurrence, toCron } from "../model/recurrence.js";
 import type { Schedule, ScheduleDraft } from "../model/types.js";
 import { SCHEDULES_SECTION, type SchedulesSection } from "./schedules-section.js";
@@ -23,6 +24,20 @@ const ID_BYTES = 4;
  * ids and labels come to about 1.5 MiB; anything far beyond is not ours.
  */
 const SCHEDULES_FILE_MAX_BYTES = 4 * 1024 * 1024;
+
+/** Why an id typed on the command line names no single schedule. */
+const LOOKUP_ERRORS = localized({
+  en: {
+    tooShort: (id: string, min: number) => `"${id}": an id has at least ${min} characters`,
+    unknown: (id: string) => `No schedule "${id}"`,
+    ambiguous: (id: string, ids: string) => `"${id}" matches several schedules: ${ids}`,
+  },
+  fr: {
+    tooShort: (id, min) => `« ${id} » : identifiant de ${min} caractères au moins`,
+    unknown: (id) => `Aucune planification « ${id} »`,
+    ambiguous: (id, ids) => `« ${id} » désigne plusieurs planifications : ${ids}`,
+  },
+});
 
 function randomScheduleId(): string {
   return randomBytes(ID_BYTES).toString("hex");
@@ -62,14 +77,14 @@ export class ScheduleRepo {
   find(idOrPrefix: string): ScheduleLookup {
     const wanted = idOrPrefix.trim().toLowerCase();
     if (wanted.length < MIN_ID_PREFIX) {
-      return { error: `« ${idOrPrefix} » : identifiant de ${MIN_ID_PREFIX} caractères au moins` };
+      return { error: LOOKUP_ERRORS.tooShort(idOrPrefix, MIN_ID_PREFIX) };
     }
     const matches = this.list().filter((schedule) => schedule.id.startsWith(wanted));
     const [only] = matches;
     if (matches.length === 1 && only) return only;
-    if (matches.length === 0) return { error: `Aucune planification « ${idOrPrefix} »` };
+    if (matches.length === 0) return { error: LOOKUP_ERRORS.unknown(idOrPrefix) };
     const ids = matches.map((schedule) => schedule.id).join(", ");
-    return { error: `« ${idOrPrefix} » désigne plusieurs planifications : ${ids}` };
+    return { error: LOOKUP_ERRORS.ambiguous(idOrPrefix, ids) };
   }
 
   /** Store a new schedule, armed now: no occurrence before its creation ever runs. */

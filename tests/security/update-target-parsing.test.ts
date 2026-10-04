@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { formatBadTargetMessage } from "../../src/commands/update.js";
 import { resolveUpdateTarget } from "../../src/core/platform/update-target.js";
 import { getProvider } from "../../src/core/registry.js";
+import { useLocale } from "../support/locale.js";
 import { restorePlatform, setPlatform } from "../support/platform.js";
 
 /**
@@ -119,5 +120,33 @@ describe("formatBadTargetMessage", () => {
     // triggers a destructive `update --all` on the user's behalf.
     const msg = formatBadTargetMessage("choco", FAKE_PROVIDERS);
     expect(msg).toMatch(/^Format invalide/);
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it("words the hints in English, the commands unchanged and aligned under their label", () => {
+      expect(formatBadTargetMessage("Chocolatey", FAKE_PROVIDERS)).toBe(
+        [
+          'Invalid format: "Chocolatey". Expected provider:packageId',
+          '"Chocolatey" is a provider name, not a package id.',
+          "For this provider, try:",
+          "  gup list --provider choco",
+          "  gup update --provider choco --all",
+          "  gup                            # interactive menu",
+          "",
+        ].join("\n"),
+      );
+      expect(formatBadTargetMessage("totally-unknown", FAKE_PROVIDERS)).toBe(
+        [
+          'Invalid format: "totally-unknown". Expected provider:packageId',
+          "Examples: gup update winget:Microsoft.VisualStudioCode",
+          "          gup update npm-g:typescript",
+          "To update a whole provider without targeting a package:",
+          "          gup update --provider <id> --all",
+          "",
+        ].join("\n"),
+      );
+    });
   });
 });

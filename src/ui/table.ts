@@ -1,11 +1,28 @@
 import Table from "cli-table3";
 import chalk from "chalk";
+import { localized } from "../core/i18n/localized.js";
 import { supportLabel } from "../core/platform/platform-label.js";
 import type { ProviderStatusReport, ProviderSummary } from "../core/platform/types.js";
 import { ALL_PROVIDERS } from "../core/registry.js";
 import type { ProviderScanResult } from "../core/types.js";
+import { counted } from "./text/format.js";
 import { DOCTOR_PROVIDER_LABELS } from "./text/providers-labels.js";
 import { STATUS_GLYPHS } from "./theme/glyphs.js";
+
+/**
+ * The scan table's own words. Its column headings and its scan error read
+ * the same in every language, as they always have.
+ */
+const SCAN_TABLE_LABELS = localized({
+  en: {
+    upToDate: "up to date — no update available",
+    available: (count: number) => counted(count, "update available", "updates available"),
+  },
+  fr: {
+    upToDate: "à jour — aucune mise à jour disponible",
+    available: (count) => `${count} mise(s) à jour disponible(s)`,
+  },
+});
 
 function providerName(id: string): string {
   return ALL_PROVIDERS.find((p) => p.id === id)?.displayName ?? id;
@@ -55,9 +72,9 @@ export function renderScanTable(results: ProviderScanResult[]): string {
   // A provider that could not scan is not up to date: its error row shows.
   const hasErrors = sorted.some((result) => result.error);
   if (total === 0 && !hasErrors) {
-    return chalk.green("  à jour — aucune mise à jour disponible");
+    return chalk.green(`  ${SCAN_TABLE_LABELS.upToDate}`);
   }
-  const footer = chalk.bold(`${total} mise(s) à jour disponible(s)`);
+  const footer = chalk.bold(SCAN_TABLE_LABELS.available(total));
   return `${table.toString()}\n  ${footer}`;
 }
 
@@ -70,7 +87,7 @@ const HINT_INDENT = "      ";
 /**
  * `gup doctor`'s provider listing: detected, missing (with how to install
  * them), then the providers foreign to this OS, dimmed. The glyph, the section
- * title and the "X uniquement" badge carry the meaning without colour
+ * title and the "X only" badge carry the meaning without colour
  * (`NO_COLOR`, a piped stdout). Empty sections are left out, except the
  * detected one.
  */

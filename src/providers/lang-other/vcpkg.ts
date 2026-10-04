@@ -1,6 +1,30 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localized } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+
+const REPOSITORY = "https://github.com/microsoft/vcpkg";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    windowsHint: `git clone ${REPOSITORY} then .\\bootstrap-vcpkg.bat`,
+    brewHint: `brew install vcpkg — or git clone ${REPOSITORY} then ./bootstrap-vcpkg.sh`,
+    /**
+     * An upgrade is not a download: vcpkg removes the port and reinstalls it,
+     * which recompiles it (and its dependents) from source. Worth saying up
+     * front — a single row can mean an hour of CPU.
+     */
+    rebuildNote: "rebuilt from source — can take a while",
+    spawnFailed: "could not start vcpkg upgrade",
+  },
+  fr: {
+    windowsHint: `git clone ${REPOSITORY} puis .\\bootstrap-vcpkg.bat`,
+    brewHint: `brew install vcpkg — ou git clone ${REPOSITORY} puis ./bootstrap-vcpkg.sh`,
+    rebuildNote: "reconstruction depuis les sources — peut être long",
+    spawnFailed: "impossible de lancer vcpkg upgrade",
+  },
+});
 
 /**
  * vcpkg — Microsoft's C/C++ package manager.
@@ -38,12 +62,9 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class VcpkgProvider implements Provider {
   readonly id = "vcpkg";
   readonly displayName = "vcpkg (C/C++)";
-  readonly installHint = pickInstallHint({
-    win32:
-      "git clone https://github.com/microsoft/vcpkg puis .\\bootstrap-vcpkg.bat",
-    fallback:
-      "brew install vcpkg — ou git clone https://github.com/microsoft/vcpkg puis ./bootstrap-vcpkg.sh",
-  });
+  get installHint(): string {
+    return pickInstallHint({ win32: TEXT.windowsHint, fallback: TEXT.brewHint });
+  }
 
   async isAvailable(): Promise<boolean> {
     // detectAvailableProviders() runs every isAvailable() inside a bare
@@ -89,14 +110,6 @@ export class VcpkgProvider implements Provider {
   }
 }
 
-/**
- * An upgrade is not a download: vcpkg removes the port and reinstalls it,
- * which recompiles it (and its dependents) from source. Worth saying up front
- * — a single row can mean an hour of CPU.
- */
-const REBUILD_NOTE = "reconstruction depuis les sources — peut être long";
-
-const SPAWN_FAILURE_MESSAGE = "impossible de lancer vcpkg upgrade";
 
 /**
  * Fixed flags for every upgrade invocation.
@@ -141,7 +154,7 @@ async function runVcpkgUpgrade(specs: readonly string[]): Promise<UpgradeResult>
     // The runner rejects argv carrying control characters, and a package id
     // can reach us straight from `gup update <provider>:<id>` or from a
     // replayed history entry — never let that surface as a scan-killing throw.
-    return { success: false, message: SPAWN_FAILURE_MESSAGE };
+    return { success: false, message: TEXT.spawnFailed };
   }
 }
 
@@ -209,5 +222,5 @@ function parseUpdateRow(rawLine: string): OutdatedPackage | null {
   // otherwise is noise, not an update.
   if (current === latest) return null;
 
-  return { id, name: id, current, latest, note: REBUILD_NOTE };
+  return { id, name: id, current, latest, note: TEXT.rebuildNote };
 }

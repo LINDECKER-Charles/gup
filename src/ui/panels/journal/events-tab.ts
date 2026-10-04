@@ -21,9 +21,9 @@ import {
 } from "./journal-tab.js";
 
 /**
- * Tab 3, Événements: every scan and update attempt of the period, newest
+ * Tab 3, Events: every scan and update attempt of the period, newest
  * first; `f` cycles the type shown, `/` filters on provider, package,
- * status or message, Entrée opens the full record.
+ * status or message, Enter opens the full record.
  */
 
 type EventType = keyof typeof EVENT_LABELS.types;

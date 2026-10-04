@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -59,8 +60,10 @@ export class OrasProvider implements Provider {
         winget: "oras-project.oras",
         brew: "oras",
       },
-      manualMessage:
-        "Télécharger https://github.com/oras-project/oras/releases et remplacer oras.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/oras-project/oras/releases",
+        "oras.exe",
+      ),
     });
   }
 

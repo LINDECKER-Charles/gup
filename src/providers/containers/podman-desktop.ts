@@ -4,6 +4,7 @@ import { run } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 /**
  * Podman Desktop ships its own auto-updater (Electron `autoUpdater` against
@@ -53,8 +54,10 @@ export class PodmanDesktopProvider implements Provider {
       id: "podman-desktop",
       success: false,
       skipped: true,
-      message:
-        "Lancer Podman Desktop → menu → Check for Updates pour appliquer.",
+      message: localize({
+        en: "Start Podman Desktop → menu → Check for Updates to apply it.",
+        fr: "Lancer Podman Desktop → menu → Check for Updates pour appliquer.",
+      }),
     };
   }
 

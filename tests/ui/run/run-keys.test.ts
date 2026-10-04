@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runCommandFor, runHintsFor, type RunKeyMode } from "../../../src/ui/run/run-keys.js";
-import { RUN_HINTS } from "../../../src/ui/text/run-labels.js";
+import { RUN_HINTS } from "../../../src/ui/text/run-key-labels.js";
 import { fitHints } from "../../../src/ui/tui/chrome.js";
 
 const key = (name: string, ctrl = false) => ({ name, ctrl, sequence: name });

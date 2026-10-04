@@ -11,6 +11,7 @@ import { stopLogSession } from "../../../src/commands/journal/log-session.js";
 import { utcDay } from "../../../src/core/log/file-sink.js";
 import type { LogRecord } from "../../../src/core/log/types.js";
 import { updateEvent, writeHistoryShards } from "../../support/history-fixtures.js";
+import { useLocale } from "../../support/locale.js";
 
 let dir: string;
 let logs: string;
@@ -115,6 +116,22 @@ describe("gup log", () => {
 
   it("prints the log directory", async () => {
     await expect(gup("log", "path")).resolves.toEqual({ code: 0, out: `${logs}\n`, err: "" });
+  });
+});
+
+describe("gup log in English", () => {
+  useLocale("en");
+
+  it("prints its lines, its notices and its errors in English", async () => {
+    seedLog([[20, { level: "warn", event: "cmd.end", ctx: { op: "scan", providerId: "az" }, data: { cmd: "az", args: [], exitCode: 1, ms: 400, timedOut: true } }]]);
+
+    const { out } = await gup("log", "-n", "1");
+    expect(out).toMatch(/^[A-Z][a-z]{2} \d{2} \d{2}:\d{2}:\d{2}\.\d{3} {2}WARN {3}cmd\.end +\[az\] az · exit 1 · 0\.4 s · timed out\n$/);
+    await expect(gup("log", "--grep", "nothing like this")).resolves.toMatchObject({ out: "log empty for this period\n" });
+    await expect(gup("log", "-l", "verbose")).resolves.toMatchObject({
+      code: 2,
+      err: "Error: unknown level: verbose (error, warn, info, debug, trace)\n",
+    });
   });
 });
 

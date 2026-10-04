@@ -1,16 +1,16 @@
 import { parseMonthDay } from "../../../core/scheduler/model/recurrence.js";
 import { parseTarget } from "../../../core/scheduler/model/schedule-target.js";
 import type { Recurrence, Weekday } from "../../../core/scheduler/model/types.js";
-import { recurrenceLabel, WEEKDAY_NAMES } from "../../text/schedule/schedule-labels.js";
 import {
   ADD_TARGET_DIALOG,
   EDITOR_TEXT,
   FREQUENCY_DIALOG,
   FREQUENCY_LABELS,
   MONTH_DAY_DIALOG,
-  SCHEDULE_NOTICES,
   WEEKDAY_DIALOG,
-} from "../../text/schedule/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-editor-labels.js";
+import { recurrenceLabel, WEEKDAY_NAMES } from "../../text/schedule/schedule-labels.js";
+import { SCHEDULE_NOTICES } from "../../text/schedule/schedule-menu-labels.js";
 import { seg } from "../../tui/styled-lines.js";
 import type { FlowContext } from "./flow-context.js";
 import type { ScheduleEditor } from "./schedule-editor.js";
@@ -24,7 +24,7 @@ import type { EditorHandlers } from "./schedules-panel.js";
  */
 
 const FREQUENCIES: readonly Recurrence["kind"][] = ["daily", "weekly", "monthly", "cron"];
-/** Weekdays in a French week, Monday first. */
+/** The days as the weekday chooser lists them, Monday first (ISO 8601), in every language. */
 const WEEK: readonly Weekday[] = [1, 2, 3, 4, 5, 6, 0];
 
 export class EditorFlows implements EditorHandlers {
@@ -83,13 +83,13 @@ export class EditorFlows implements EditorHandlers {
     this.#kit.view.redraw();
   }
 
-  /** Échap, like q, may be pressed by mistake: a new schedule always asks first. */
+  /** Esc, like q, may be pressed by mistake: a new schedule always asks first. */
   async leave(editor: ScheduleEditor): Promise<void> {
     if (editor.hasUnsavedWork) await this.#closeOnceConfirmed(editor);
     else this.#closeNow(editor);
   }
 
-  /** "Annuler" is the discard itself: it only asks when the user changed something. */
+  /** Cancel is the discard itself: it only asks when the user changed something. */
   async cancel(editor: ScheduleEditor): Promise<void> {
     if (editor.isDirty) await this.#closeOnceConfirmed(editor);
     else this.#closeNow(editor);

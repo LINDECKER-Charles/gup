@@ -5,6 +5,7 @@ import {
   type RunResult,
 } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localized } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -47,12 +48,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class PsResourceProvider implements Provider {
   readonly id = "psresource";
   readonly displayName = "PowerShell PSResourceGet";
-  readonly installHint = pickInstallHint({
-    win32:
-      "Fourni avec PowerShell 7.4+ : `winget install Microsoft.PowerShell` — sinon `Install-Module Microsoft.PowerShell.PSResourceGet`",
-    fallback:
-      "Fourni avec PowerShell 7.4+ : `brew install powershell` — sinon `Install-Module Microsoft.PowerShell.PSResourceGet`",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: TEXT.bundledWith("winget install Microsoft.PowerShell"),
+      fallback: TEXT.bundledWith("brew install powershell"),
+    });
+  }
   // One `Find-PSResource` round-trip to the gallery per installed resource,
   // exactly like pwsh-modules.
   readonly slow = true;
@@ -82,11 +83,7 @@ export class PsResourceProvider implements Provider {
   async update(packageId: string): Promise<UpdateOutcome> {
     const shell = await pickShell();
     if (!shell) {
-      return {
-        id: packageId,
-        success: false,
-        message: "Aucun hôte PowerShell trouvé sur le PATH.",
-      };
+      return { id: packageId, success: false, message: TEXT.noHost };
     }
     try {
       const res = await runInherit(shell, [...HOST_ARGS, updateScript(packageId)]);
@@ -107,6 +104,25 @@ export class PsResourceProvider implements Provider {
 }
 
 const HOST_ARGS = ["-NoProfile", "-NonInteractive", "-Command"];
+
+/** The fallback where PowerShell does not bundle PSResourceGet (before 7.4). */
+const INSTALL_MODULE = "Install-Module Microsoft.PowerShell.PSResourceGet";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    bundledWith: (installPowerShell: string) =>
+      `Bundled with PowerShell 7.4+: \`${installPowerShell}\` — otherwise \`${INSTALL_MODULE}\``,
+    noHost: "No PowerShell host found on PATH.",
+    updateFailed: (detail: string) => `PSResourceGet update failed: ${detail}`,
+  },
+  fr: {
+    bundledWith: (installPowerShell) =>
+      `Fourni avec PowerShell 7.4+ : \`${installPowerShell}\` — sinon \`${INSTALL_MODULE}\``,
+    noHost: "Aucun hôte PowerShell trouvé sur le PATH.",
+    updateFailed: (detail) => `Échec de la mise à jour PSResourceGet : ${detail}`,
+  },
+});
 
 // A cold PowerShell start plus module discovery, generously bounded.
 const PROBE_TIMEOUT_MS = 20_000;
@@ -152,7 +168,7 @@ async function tryRun(
 
 function describeError(err: unknown): string {
   const detail = err instanceof Error ? err.message : String(err);
-  return `Échec de la mise à jour PSResourceGet : ${detail}`;
+  return TEXT.updateFailed(detail);
 }
 
 /**

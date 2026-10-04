@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { activeLocale } from "../../../../src/core/i18n/locale.js";
 import { NODE_FILE_OPS, type FileOps } from "../../../../src/core/config/atomic-write.js";
 import { ConfigStore } from "../../../../src/core/config/store.js";
 import {
@@ -19,7 +20,7 @@ import {
   OPTION_HINTS,
   OPTIONS_NOTICES,
   OPTIONS_SECTIONS,
-  TIMEOUT_OUT_OF_RANGE,
+  TIMEOUT_LABELS,
 } from "../../../../src/ui/text/settings/options-labels.js";
 import {
   CONFIG_STATE_LABELS,
@@ -27,6 +28,7 @@ import {
 } from "../../../../src/ui/text/settings/settings-labels.js";
 import { COLORS_UNAVAILABLE, CONTRAST_STATUS } from "../../../../src/ui/text/settings/theme-labels.js";
 import { seg } from "../../../../src/ui/tui/styled-lines.js";
+import { useLocale } from "../../../support/locale.js";
 import { useTempDirs } from "../../../support/temp-dirs.js";
 import {
   key,
@@ -144,6 +146,23 @@ describe("OptionsPanel list", () => {
     expect(settings.get("interface").packageSort).toBe("name");
   });
 
+  it("saves the interface language for the next start, without switching the running one", () => {
+    const { panel, settings } = setup();
+    for (let step = 0; step < 30 && !cursorRow(panel).includes("Langue"); step++) {
+      press(panel, "down");
+    }
+    expect(cursorRow(panel)).toContain("[English]");
+    expect(cursorRow(panel)).toContain("s'applique au prochain lancement de gup");
+    expect(settings.get("interface").language).toBe("en");
+    press(panel, "enter");
+    expect(settings.get("interface").language).toBe("fr");
+    expect(cursorRow(panel)).toContain("[Français]");
+    expect(activeLocale()).toBe("fr");
+    press(panel, "enter");
+    expect(settings.get("interface").language).toBe("en");
+    expect(activeLocale()).toBe("fr");
+  });
+
   it("places the sections other features add between the comfort and file sections", () => {
     const extra: SectionFactory = () => ({ id: "journal", title: "JOURNAL", rows: () => [] });
     const { panel } = setup({}, [scanSection, appearanceSection, comfortSection, extra, fileSection]);
@@ -174,6 +193,43 @@ describe("OptionsPanel list", () => {
     expect(state.fast).toBe(true);
     panel.scroll(1);
     expect(cursorRow(panel)).toContain("Timeout install");
+  });
+});
+
+describe("OptionsPanel in English", () => {
+  useLocale("en");
+
+  /** Every row and hint, none of them cut: wide and tall enough for the whole list. */
+  const linesOf = (panel: OptionsPanel) =>
+    text(panel.render({ width: 120, height: 60 }))
+      .split("\n")
+      .map((line) => line.trimEnd());
+
+  // The rows are declared in module-level tables, imported while the suite
+  // spoke French: English here means they read their words when built.
+  it("titles its sections, rows and hints in English, the language first in Behavior", () => {
+    const lines = linesOf(setup().panel);
+    expect(lines.filter((line) => /^[A-Z &]+$/.test(line))).toEqual([
+      "SCAN & INSTALL",
+      "APPEARANCE",
+      "BEHAVIOR",
+      "FILE",
+    ]);
+    expect(lines).toContainEqual(expect.stringMatching(/^› Fast mode +\[OFF\] +skips the slow/));
+    expect(lines[lines.indexOf("BEHAVIOR") + 1]).toMatch(
+      /^ {2}Language +\[English\] +takes effect the next time gup starts$/,
+    );
+    expect(lines).toContainEqual(
+      expect.stringMatching(/^ {2}Package sort +\[Provider order\] +within each provider$/),
+    );
+    expect(lines).toContainEqual(expect.stringMatching(/^ {2}File +disabled \(GUP_CONFIG=0\)$/));
+  });
+
+  it("names its keys in English", () => {
+    const { panel } = setup();
+    press(panel, "enter");
+    expect(panel.hints()).toBe("↑↓ navigate · enter change · ←→ value · r rescan · c copy path");
+    expect(linesOf(panel)[0]).toBe("Settings changed — r to rescan with these settings.");
   });
 });
 
@@ -311,8 +367,8 @@ describe("OptionsPanel scan settings", () => {
     const { validate } = dialogs.ask.mock.calls[0]?.[0] as { validate(v: string): unknown };
     expect(validate("abc")).toBe(TIMEOUT_DIALOG.invalid);
     expect(validate("-1")).toBe(TIMEOUT_DIALOG.invalid);
-    expect(validate("1.5")).toBe(TIMEOUT_OUT_OF_RANGE);
-    expect(validate("86401")).toBe(TIMEOUT_OUT_OF_RANGE);
+    expect(validate("1.5")).toBe(TIMEOUT_LABELS.outOfRange);
+    expect(validate("86401")).toBe(TIMEOUT_LABELS.outOfRange);
     expect(validate("0")).toBe(true);
   });
 

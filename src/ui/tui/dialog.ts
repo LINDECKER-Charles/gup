@@ -1,5 +1,5 @@
 import type { BoxRenderable, TextRenderable } from "@opentui/core";
-import { DIALOG_HINTS } from "../text/menu-labels.js";
+import { DIALOG_HINTS, DIALOG_LABELS } from "../text/menu-labels.js";
 import type { KeyPress, Screen } from "./screen-host.js";
 import { fillLine, seg, toStyledText, wrap, type Line } from "./styled-lines.js";
 
@@ -82,13 +82,14 @@ export class DialogLayer {
     let isYes = spec.default ?? true;
     const buttons = (): Line => [
       seg("   "),
-      ...button("Oui", isYes),
+      ...button(DIALOG_LABELS.yes, isYes),
       seg("   "),
-      ...button("Non", !isYes),
+      ...button(DIALOG_LABELS.no, !isYes),
     ];
     return this.open(spec, DIALOG_HINTS.confirm, (draw, done) => {
       draw([buttons()]);
       return (key) => {
+        // The same keys in every language: `y` (yes) or `o` (oui), `n` (no, non).
         if (key.name === "o" || key.name === "y") done(true);
         else if (key.name === "n" || key.name === "escape") done(false);
         else if (key.name === "return" || key.name === "enter") done(isYes);

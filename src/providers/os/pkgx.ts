@@ -10,8 +10,12 @@ import {
 } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 const REPO = "pkgxdev/pkgx";
+
+/** The official installer, which doubles as pkgx's upgrade path. */
+const INSTALL_COMMAND = "curl -LSsf https://pkgx.sh | sh";
 
 /**
  * pkgx (pkgxdev/pkgx) — since v2 a package *runner*, not a package manager:
@@ -70,7 +74,12 @@ const REPO = "pkgxdev/pkgx";
 export class PkgxProvider implements Provider {
   readonly id = "pkgx";
   readonly displayName = "pkgx";
-  readonly installHint = "brew install pkgx (ou l'installeur officiel https://pkgx.sh)";
+  get installHint(): string {
+    return localize({
+      en: "brew install pkgx (or the official installer https://pkgx.sh)",
+      fr: "brew install pkgx (ou l'installeur officiel https://pkgx.sh)",
+    });
+  }
   /** pkgx's Windows support is experimental: on Windows, go through WSL2. */
   readonly platforms = PLATFORMS.notWindows;
 
@@ -113,8 +122,10 @@ export class PkgxProvider implements Provider {
       id: "pkgx",
       binary: "pkgx",
       packageIds: { brew: "pkgx" },
-      manualMessage:
-        "Relancer l'installeur officiel, qui met aussi pkgx à jour : curl -LSsf https://pkgx.sh | sh",
+      manualMessage: localize({
+        en: `Rerun the official installer, which updates pkgx too: ${INSTALL_COMMAND}`,
+        fr: `Relancer l'installeur officiel, qui met aussi pkgx à jour : ${INSTALL_COMMAND}`,
+      }),
     });
   }
 

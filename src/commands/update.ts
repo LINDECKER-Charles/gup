@@ -1,7 +1,12 @@
 import chalk from "chalk";
 import type { Command } from "commander";
+import { localized } from "../core/i18n/localized.js";
 import { isSupportedOn } from "../core/platform/is-supported-on.js";
-import { resolveUpdateTarget, type InvalidUpdateTarget } from "../core/platform/update-target.js";
+import {
+  resolveUpdateTarget,
+  UPDATE_TARGET_LABELS,
+  type InvalidUpdateTarget,
+} from "../core/platform/update-target.js";
 import { ALL_PROVIDERS } from "../core/registry.js";
 import type { Provider, ProviderScanResult, SelectedPackage } from "../core/types.js";
 import { setInstallTimeoutSeconds } from "../core/runner.js";
@@ -13,11 +18,53 @@ import { confirm } from "../ui/prompts/confirm.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection } from "../ui/select.js";
 import { renderScanTable } from "../ui/table.js";
-import { ERROR_PREFIX } from "../ui/text/cli-labels.js";
+import { ERROR_LABELS } from "../ui/text/cli-labels.js";
+import { counted } from "../ui/text/format.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { consolePorts, printReport } from "../ui/update-console.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
 import { warnIgnoredProviders } from "./warn-ignored-providers.js";
+
+/** The command's own words: its help, its question and its messages. */
+const UPDATE_LABELS = localized({
+  en: {
+    /** The usage's operands, after the command's name. */
+    targets: "[targets...]",
+    description: "Direct update (no menu). Targets in provider:packageId format.",
+    all: "Update everything",
+    yes: "Skip the confirmation in --all mode",
+    provider: "Limit to some providers",
+    fast: "Skip the slow scans",
+    seconds: "<seconds>",
+    timeout: "Timeout per install, in seconds — a stuck install is skipped (0 = off)",
+    badTimeout: "--timeout expects a number of seconds >= 0",
+    noSelection: "Nothing selected.",
+    confirmAll: (count: number) => `${counted(count, "package", "packages")} to update. Continue?`,
+    providerName: (typed: string) => `"${typed}" is a provider name, not a package id.`,
+    tryProvider: "For this provider, try:",
+    interactiveMenu: "interactive menu",
+    examples: "Examples:",
+    wholeProvider: "To update a whole provider without targeting a package:",
+  },
+  fr: {
+    targets: "[cibles...]",
+    description: "Mise à jour directe (sans menu). Cibles au format provider:packageId.",
+    all: "Tout mettre à jour",
+    yes: "Skip la confirmation en mode --all",
+    provider: "Restreint à certains providers",
+    fast: "Skip les scans lents",
+    seconds: "<secondes>",
+    timeout: "Timeout par install en secondes — l'install bloquée est skippée (0 = désactivé)",
+    badTimeout: "--timeout attend un nombre de secondes >= 0",
+    noSelection: "Aucune sélection.",
+    confirmAll: (count) => `${count} paquets à mettre à jour. Continuer ?`,
+    providerName: (typed) => `"${typed}" est un nom de provider, pas un identifiant de paquet.`,
+    tryProvider: "Pour ce provider, essaie :",
+    interactiveMenu: "menu interactif",
+    examples: "Exemples :",
+    wholeProvider: "Pour mettre à jour tout un provider sans cibler un paquet :",
+  },
+});
 
 export interface UpdateOptions {
   only?: string[];
@@ -77,7 +124,7 @@ async function chooseSelection(
   if (!options.all) {
     const packages = await promptPackageSelection(scans);
     if (packages.length === 0) {
-      process.stdout.write("Aucune sélection.\n");
+      process.stdout.write(`${UPDATE_LABELS.noSelection}\n`);
       return { kind: "empty" };
     }
     return { kind: "selection", packages };
@@ -85,7 +132,7 @@ async function chooseSelection(
 
   if (!options.yes) {
     const ok = await confirm({
-      message: `${allPackages.length} paquets à mettre à jour. Continuer ?`,
+      message: UPDATE_LABELS.confirmAll(allPackages.length),
       default: true,
     });
     if (!ok) return { kind: "declined" };
@@ -163,18 +210,18 @@ export async function updateOnConsole(
  * argument to `gup update` without the `provider:packageId` separator.
  *
  * Pure / testable: the provider list is injected so the function can be
- * exercised without spinning the registry up. Preserves the historical
- * "Format invalide: ..." prefix to avoid breaking existing assertions and
- * downstream tooling that greps for it.
+ * exercised without spinning the registry up. Starts with the target check's
+ * own format error — in French the historical "Format invalide: ..." prefix,
+ * which existing assertions and downstream tooling grep for.
  */
 export function formatBadTargetMessage(
   target: string,
   providers: readonly Pick<Provider, "id" | "displayName">[],
 ): string {
-  // Preserve the historical prefix verbatim ("Attendu provider:packageId"
-  // with no trailing period) so downstream greps / external tools that
+  // The historical prefix, verbatim ("Attendu provider:packageId" with no
+  // trailing period), so downstream greps / external tools that
   // pattern-match this line keep working.
-  const head = `Format invalide: "${target}". Attendu provider:packageId`;
+  const head = UPDATE_TARGET_LABELS.invalidFormat(target);
   const trimmed = target.trim();
   const key = trimmed.toLowerCase();
   // Case-insensitive on both id AND displayName: id resolution should not
@@ -183,27 +230,32 @@ export function formatBadTargetMessage(
     providers.find((p) => p.id.toLowerCase() === key) ??
     providers.find((p) => p.displayName.toLowerCase() === key);
 
-  const body = hint ? providerNameHint(trimmed, hint.id) : GENERIC_TARGET_EXAMPLES;
+  const body = hint ? providerNameHint(trimmed, hint.id) : genericTargetExamples();
   return [head, ...body].join("\n") + "\n";
 }
 
 /** The user typed a provider name: show them the commands that do work. */
 function providerNameHint(typed: string, providerId: string): string[] {
   return [
-    `"${typed}" est un nom de provider, pas un identifiant de paquet.`,
-    `Pour ce provider, essaie :`,
+    UPDATE_LABELS.providerName(typed),
+    UPDATE_LABELS.tryProvider,
     `  gup list --provider ${providerId}`,
     `  gup update --provider ${providerId} --all`,
-    `  gup                            # menu interactif`,
+    `  gup                            # ${UPDATE_LABELS.interactiveMenu}`,
   ];
 }
 
-const GENERIC_TARGET_EXAMPLES = [
-  `Exemples : gup update winget:Microsoft.VisualStudioCode`,
-  `           gup update npm-g:typescript`,
-  `Pour mettre à jour tout un provider sans cibler un paquet :`,
-  `           gup update --provider <id> --all`,
-];
+/** The commands aligned under the end of the "Examples:" label, whatever its length. */
+function genericTargetExamples(): string[] {
+  const label = `${UPDATE_LABELS.examples} `;
+  const indent = " ".repeat(label.length);
+  return [
+    `${label}gup update winget:Microsoft.VisualStudioCode`,
+    `${indent}gup update npm-g:typescript`,
+    UPDATE_LABELS.wholeProvider,
+    `${indent}gup update --provider <id> --all`,
+  ];
+}
 
 interface UpdateFlags {
   all?: boolean;
@@ -217,17 +269,18 @@ export const updateModule: CliModule = {
   id: "update",
   order: MODULE_ORDER.commands,
   register(program: Command) {
+    // Names and flags stay literals ahead of their localized placeholders:
+    // the landing reads gup's commands and flags from these declarations
+    // (index/tests/rules/cli-citations.test.mjs).
     program
-      .command("update [cibles...]")
-      .description("Mise à jour directe (sans menu). Cibles au format provider:packageId.")
-      .option("-a, --all", "Tout mettre à jour")
-      .option("-y, --yes", "Skip la confirmation en mode --all")
-      .option("-p, --provider <ids...>", "Restreint à certains providers")
-      .option("--fast", "Skip les scans lents")
-      .option(
-        "--timeout <secondes>",
-        "Timeout par install en secondes — l'install bloquée est skippée (0 = désactivé)",
-      )
+      .command("update")
+      .argument(UPDATE_LABELS.targets)
+      .description(UPDATE_LABELS.description)
+      .option("-a, --all", UPDATE_LABELS.all)
+      .option("-y, --yes", UPDATE_LABELS.yes)
+      .option("-p, --provider <ids...>", UPDATE_LABELS.provider)
+      .option("--fast", UPDATE_LABELS.fast)
+      .option("--timeout " + UPDATE_LABELS.seconds, UPDATE_LABELS.timeout)
       .action(async (targets: string[], opts: UpdateFlags) => {
         applyTimeoutFlag(opts.timeout);
         const code = await updateCommand({
@@ -242,13 +295,12 @@ export const updateModule: CliModule = {
   },
 };
 
-/** `--timeout <secondes>` wins over GUP_INSTALL_TIMEOUT; a bad value exits 2. */
+/** `--timeout <seconds>` wins over GUP_INSTALL_TIMEOUT; a bad value exits 2. */
 function applyTimeoutFlag(raw: string | undefined): void {
   if (raw === undefined) return;
   const seconds = Number(raw);
   if (!Number.isFinite(seconds) || seconds < 0) {
-    const reason = "--timeout attend un nombre de secondes >= 0";
-    process.stderr.write(`${chalk.red(ERROR_PREFIX)} ${reason}\n`);
+    process.stderr.write(`${chalk.red(ERROR_LABELS.prefix)} ${UPDATE_LABELS.badTimeout}\n`);
     process.exit(2);
   }
   setInstallTimeoutSeconds(seconds);

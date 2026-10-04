@@ -5,6 +5,7 @@ import {
   type WindowsTaskSpec,
 } from "../../../src/core/scheduler/artifacts/windows-task-xml.js";
 import { TICK_COMMAND } from "../../../src/core/scheduler/trigger/task-command.js";
+import { useLocale } from "../../support/locale.js";
 
 const SID = "S-1-5-21-2795933949-5486597-2117879500-1001";
 
@@ -29,8 +30,8 @@ const EXPECTED_HEADLESS = [
   '<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">',
   "  <RegistrationInfo>",
   "    <Author>gup</Author>",
-  "    <Description>gup : mises à jour planifiées. Vérifie toutes les 15 min si une " +
-    "planification est due. Gérer : gup schedule.</Description>",
+  "    <Description>gup: scheduled updates. Checks every 15 min whether a schedule is due. " +
+    "Manage: gup schedule.</Description>",
   "  </RegistrationInfo>",
   "  <Triggers>",
   "    <TimeTrigger>",
@@ -113,5 +114,22 @@ describe("buildWindowsTaskXml", () => {
 
   it("refuses anything but a SID as the principal", () => {
     expect(() => buildWindowsTaskXml({ ...spec(), userSid: "Everyone" })).toThrow("SID");
+  });
+});
+
+describe("buildWindowsTaskXml, from a gup that speaks English", () => {
+  useLocale("en");
+
+  it("renders the same definition: the task never depends on the interface's language", () => {
+    expect(buildWindowsTaskXml(spec())).toBe(EXPECTED_HEADLESS);
+  });
+
+  it("refuses a hostile path in English", () => {
+    const entry = "C:\\Users\\%USERNAME%\\cli.js";
+    const hostile = {
+      ...spec(),
+      registration: { ...spec().registration, command: { ...spec().registration.command, entry } },
+    };
+    expect(() => buildWindowsTaskXml(hostile)).toThrow(`unschedulable path: ${entry}`);
   });
 });

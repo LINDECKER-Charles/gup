@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchHashicorpLatest } from "../../core/hashicorp-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -67,8 +68,10 @@ export class BoundaryProvider implements Provider {
         // is enough for `brew upgrade`.
         brew: "boundary",
       },
-      manualMessage:
-        "Télécharger https://releases.hashicorp.com/boundary/ et remplacer boundary.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://releases.hashicorp.com/boundary/",
+        "boundary.exe",
+      ),
     });
   }
 

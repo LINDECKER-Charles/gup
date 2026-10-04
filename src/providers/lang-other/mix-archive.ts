@@ -1,6 +1,8 @@
 import pLimit from "p-limit";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -14,10 +16,15 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class MixArchiveProvider implements Provider {
   readonly id = "mix-archive";
   readonly displayName = "Mix archives";
-  readonly installHint = pickInstallHint({
-    win32: "Installer Elixir + `mix archive.install hex ...`",
-    fallback: "brew install elixir, puis `mix archive.install hex ...`",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: localize({
+        en: "Install Elixir + `mix archive.install hex ...`",
+        fr: "Installer Elixir + `mix archive.install hex ...`",
+      }),
+      fallback: MANUAL_STEPS.andThen("brew install elixir", "`mix archive.install hex ...`"),
+    });
+  }
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

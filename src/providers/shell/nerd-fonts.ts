@@ -16,6 +16,7 @@ import { installConsole } from "../../core/process/output-router.js";
 import { runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * Nerd Fonts (https://github.com/ryanoasis/nerd-fonts).
@@ -37,7 +38,9 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class NerdFontsProvider implements Provider {
   readonly id = "nerd-fonts";
   readonly displayName = "Nerd Fonts";
-  readonly installHint = "gup update nerd-fonts:<Famille>  (FiraCode, JetBrainsMono, Meslo, …)";
+  get installHint(): string {
+    return TEXT.installHint;
+  }
   /** gup installs the fonts per user under %LOCALAPPDATA% and registers them in HKCU. */
   readonly platforms = PLATFORMS.windows;
   readonly slow = true;
@@ -72,7 +75,7 @@ export class NerdFontsProvider implements Provider {
         name: `Nerd Font — ${family}`,
         current: current ?? "?",
         latest,
-        ...(current ? {} : { note: "non suivi par gup — réinstaller pour pinner" }),
+        ...(current ? {} : { note: TEXT.untrackedNote }),
       });
     }
     return out;
@@ -82,14 +85,14 @@ export class NerdFontsProvider implements Provider {
     const userDir = resolveUserFontsDir();
     if (!userDir) return failed(packageId, "Provider Windows-only (per-user fonts).");
     if (!isSafeFamilyName(packageId)) {
-      return failed(packageId, `Nom de famille invalide: "${packageId}"`);
+      return failed(packageId, TEXT.invalidFamily(packageId));
     }
 
     const latest = await fetchGitHubReleaseLatest("ryanoasis/nerd-fonts", {
       stripVPrefix: false,
     });
     if (!latest) {
-      return failed(packageId, "Impossible de récupérer la dernière release Nerd Fonts.");
+      return failed(packageId, TEXT.latestUnknown);
     }
 
     const download = await downloadFamilyZip(packageId, latest);
@@ -104,6 +107,36 @@ export class NerdFontsProvider implements Provider {
     return outcomes;
   }
 }
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    installHint: "gup update nerd-fonts:<Family>  (FiraCode, JetBrainsMono, Meslo, …)",
+    untrackedNote: "not tracked by gup — reinstall to pin it",
+    invalidFamily: (name: string) => `Invalid family name: "${name}"`,
+    latestUnknown: "Could not fetch the latest Nerd Fonts release.",
+    assetMissing: (status: number, tagPage: string) =>
+      `Asset not found (HTTP ${status}). Check the name: ${tagPage}`,
+    downloadFailed: (reason: string) => `Download failed: ${reason}`,
+    noFontInZip: (zipName: string) => `No *NerdFont*.(ttf|otf) file found in ${zipName}`,
+    registrationFailed:
+      "Files copied but the HKCU registration failed — restart a shell, or run it again.",
+    installed: (count: number, dir: string) => `${count} file(s) installed in ${dir}`,
+  },
+  fr: {
+    installHint: "gup update nerd-fonts:<Famille>  (FiraCode, JetBrainsMono, Meslo, …)",
+    untrackedNote: "non suivi par gup — réinstaller pour pinner",
+    invalidFamily: (name) => `Nom de famille invalide: "${name}"`,
+    latestUnknown: "Impossible de récupérer la dernière release Nerd Fonts.",
+    assetMissing: (status, tagPage) =>
+      `Asset introuvable (HTTP ${status}). Vérifie le nom : ${tagPage}`,
+    downloadFailed: (reason) => `Échec téléchargement : ${reason}`,
+    noFontInZip: (zipName) => `Aucun fichier *NerdFont*.(ttf|otf) trouvé dans ${zipName}`,
+    registrationFailed:
+      "Copie OK mais enregistrement HKCU échoué — relancer un shell, ou re-exécuter.",
+    installed: (count, dir) => `${count} fichier(s) installé(s) dans ${dir}`,
+  },
+});
 
 // ---------------------------------------------------------------------------
 // update — steps
@@ -141,16 +174,12 @@ async function downloadFamilyZip(
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(120_000) });
     if (!res.ok) {
-      return {
-        message:
-          `Asset introuvable (HTTP ${res.status}). ` +
-          `Vérifie le nom : ${releases}/tag/${latest}`,
-      };
+      return { message: TEXT.assetMissing(res.status, `${releases}/tag/${latest}`) };
     }
     return { zip: await res.arrayBuffer() };
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    return { message: `Échec téléchargement : ${reason}` };
+    return { message: TEXT.downloadFailed(reason) };
   }
 }
 
@@ -161,9 +190,6 @@ interface InstallRequest {
   userDir: string;
 }
 
-const NO_FONT_IN_ZIP = "Aucun fichier *NerdFont*.(ttf|otf) trouvé dans";
-const HKCU_REGISTRATION_FAILED =
-  "Copie OK mais enregistrement HKCU échoué — relancer un shell, ou re-exécuter.";
 
 async function installFamily(req: InstallRequest): Promise<UpdateOutcome> {
   const { packageId, latest, zip, userDir } = req;
@@ -171,15 +197,14 @@ async function installFamily(req: InstallRequest): Promise<UpdateOutcome> {
   try {
     const entries = fontEntriesOf(zip);
     if (entries.length === 0) {
-      return failed(packageId, `${NO_FONT_IN_ZIP} ${packageId}.zip`);
+      return failed(packageId, TEXT.noFontInZip(`${packageId}.zip`));
     }
     const installed = await copyFontsToUserDir(entries, tmpRoot, userDir);
     if (!(await registerFontsInHKCU(installed))) {
-      return failed(packageId, HKCU_REGISTRATION_FAILED);
+      return failed(packageId, TEXT.registrationFailed);
     }
     await pinFamilyVersion(packageId, latest);
-    const count = installed.length;
-    installConsole.log(`  √ ${count} fichier(s) installé(s) dans ${userDir}`);
+    installConsole.log(`  √ ${TEXT.installed(installed.length, userDir)}`);
     return { id: packageId, success: true };
   } catch (err) {
     return failed(packageId, err instanceof Error ? err.message : String(err));

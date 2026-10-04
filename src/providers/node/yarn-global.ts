@@ -1,6 +1,7 @@
 import pLimit from "p-limit";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -16,10 +17,15 @@ export class YarnGlobalProvider implements Provider {
   readonly displayName = "yarn (global)";
   // The Homebrew `yarn` formula is still Yarn classic (1.x), exactly this
   // provider's scope.
-  readonly installHint = pickInstallHint({
-    win32: "npm install -g yarn  (or corepack enable)",
-    fallback: "brew install yarn  (ou corepack enable)",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: "npm install -g yarn  (or corepack enable)",
+      fallback: localize({
+        en: "brew install yarn  (or corepack enable)",
+        fr: "brew install yarn  (ou corepack enable)",
+      }),
+    });
+  }
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

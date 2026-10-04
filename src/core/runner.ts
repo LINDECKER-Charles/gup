@@ -465,7 +465,7 @@ function inheritResult(exit: InheritExit, flags: InterruptFlags): RunResult {
 export interface PipeSinkOptions {
   /** One whole line of a child's output (or a note from gup, on "stdout"). */
   readonly onLine: (line: string, stream: "stdout" | "stderr") => void;
-  /** Bytes of lines kept per install and per stream; then one "sortie tronquée" line. */
+  /** Bytes of lines kept per install and per stream; then one "output truncated" line. */
   readonly capBytes: number;
 }
 

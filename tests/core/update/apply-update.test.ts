@@ -25,8 +25,7 @@ import type { Provider } from "../../../src/core/types.js";
 import {
   applyOptionsOf,
   applyUpdate,
-  BARRIER_REFUSAL_MESSAGE,
-  UNEXPECTED_FAILURE_MESSAGE,
+  REJECTION_MESSAGES,
 } from "../../../src/core/update/apply-update.js";
 
 function mkProvider(update = vi.fn().mockResolvedValue({ id: "x", success: true })) {
@@ -111,7 +110,7 @@ describe("applyUpdate when the provider rejects", () => {
     expect(outcome).toEqual({
       id: "evil",
       success: false,
-      message: `${BARRIER_REFUSAL_MESSAGE} : argv[2] contains a forbidden control character`,
+      message: REJECTION_MESSAGES.barrierRefusal("argv[2] contains a forbidden control character"),
     });
     expect(finalizeOutcomeMock).toHaveBeenCalledWith(outcome);
     expect(recordUpdateMock.mock.calls[0]![0]).toMatchObject({ providerId: "npm-global", outcome });
@@ -122,7 +121,7 @@ describe("applyUpdate when the provider rejects", () => {
     await expect(applyUpdate(provider, "typescript")).resolves.toEqual({
       id: "typescript",
       success: false,
-      message: `${UNEXPECTED_FAILURE_MESSAGE} : boom`,
+      message: REJECTION_MESSAGES.unexpectedFailure("boom"),
     });
     expect(recordUpdateMock).toHaveBeenCalledTimes(1);
   });

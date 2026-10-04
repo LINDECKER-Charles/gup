@@ -1,5 +1,6 @@
-import { formatDuration } from "../text/fr-format.js";
-import { NO_SCAN_YET } from "../text/menu-labels.js";
+import { formatDuration } from "../text/format.js";
+import { MENU_LABELS, VIEW_LABELS } from "../text/menu-labels.js";
+import { SCAN_LABELS } from "../text/scan-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
 import { fit, seg, wrapLine, type Line } from "../tui/styled-lines.js";
@@ -70,7 +71,6 @@ interface Columns {
  * what came back with updates, what failed and how long each one took.
  */
 export class ScanPanel implements Panel, ScanEvents {
-  readonly title = "Scan";
   readonly isCapturingText = false;
   #phase: Phase = "idle";
   #total = 0;
@@ -83,6 +83,10 @@ export class ScanPanel implements Panel, ScanEvents {
 
   constructor(onRescan: () => void) {
     this.#onRescan = onRescan;
+  }
+
+  get title(): string {
+    return VIEW_LABELS.scan;
   }
 
   get isRunning(): boolean {
@@ -126,11 +130,11 @@ export class ScanPanel implements Panel, ScanEvents {
   }
 
   hints(): string {
-    return this.isRunning ? "scan en cours…" : "r rescanner · ↑↓ défiler";
+    return this.isRunning ? SCAN_LABELS.runningHints : SCAN_LABELS.idleHints;
   }
 
   render(viewport: Viewport): readonly Line[] {
-    if (this.#phase === "idle") return placeholder(NO_SCAN_YET);
+    if (this.#phase === "idle") return placeholder(MENU_LABELS.noScanYet);
     const head = [...this.headLines(viewport.width), []];
     const rows = this.sortedRows().slice(
       this.#offset,
@@ -167,9 +171,9 @@ export class ScanPanel implements Panel, ScanEvents {
 
   private headline(): Line {
     if (this.#failure)
-      return [seg(FAILED, "danger"), seg(`Scan interrompu : ${this.#failure}`, "danger")];
+      return [seg(FAILED, "danger"), seg(SCAN_LABELS.interrupted(this.#failure), "danger")];
     if (this.#phase === "detecting") {
-      return [seg(this.spinner(), "accent"), seg("  détection des providers…")];
+      return [seg(this.spinner(), "accent"), seg(`  ${SCAN_LABELS.detecting}`)];
     }
     const done = [...this.#providers.values()].filter((p) => p.outcome).length;
     if (this.#phase === "done") {
@@ -179,8 +183,8 @@ export class ScanPanel implements Panel, ScanEvents {
       );
       return [
         seg(DONE, "success"),
-        seg(`Scan terminé en ${formatDuration(this.#elapsedMs)}`, "strong"),
-        seg(` — ${this.#total} provider(s), ${updates} mise(s) à jour`, "muted"),
+        seg(SCAN_LABELS.finished(formatDuration(this.#elapsedMs)), "strong"),
+        seg(` — ${SCAN_LABELS.totals(this.#total, updates)}`, "muted"),
       ];
     }
     const filled = this.#total > 0 ? Math.round((done / this.#total) * BAR_WIDTH) : 0;
@@ -223,7 +227,9 @@ function columnsFor(width: number): Columns {
 /** A provider's row: the spinner while it runs, then its outcome and time. */
 function progressLine({ name, outcome }: Progress, columns: Columns, spinner: string): Line {
   const nameCell = seg(cell(name, columns.name));
-  if (!outcome) return [seg(`  ${spinner} `, "accent"), nameCell, seg("en cours…", "muted")];
+  if (!outcome) {
+    return [seg(`  ${spinner} `, "accent"), nameCell, seg(SCAN_LABELS.running, "muted")];
+  }
   const time = seg(formatDuration(outcome.ms).padStart(TIME_WIDTH), "muted");
   if (outcome.error) {
     return [
@@ -233,7 +239,8 @@ function progressLine({ name, outcome }: Progress, columns: Columns, spinner: st
       time,
     ];
   }
-  const result = outcome.updates > 0 ? `${outcome.updates} mise(s) à jour` : "à jour";
+  const result =
+    outcome.updates > 0 ? SCAN_LABELS.updates(outcome.updates) : SCAN_LABELS.upToDate;
   return [
     seg(`  ${DONE}`, "success"),
     nameCell,

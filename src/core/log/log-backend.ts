@@ -1,3 +1,4 @@
+import { localize } from "../i18n/localized.js";
 import { deferUntilExit } from "../process/output-router.js";
 import { currentOperation, RUN_ID } from "../state/run-context.js";
 import type { LogBackend, LogInput, LogLevel, LogThreshold } from "./log.js";
@@ -26,7 +27,6 @@ import {
 const BAD_EVENT = "log.bad-event";
 /** How much of a bad event name the record keeps. */
 const MAX_BAD_EVENT_LENGTH = 256;
-const FAILURE_NOTICE = "journal de debug non écrit";
 
 export interface SinkLogBackendOptions {
   readonly threshold: LogThreshold;
@@ -94,7 +94,8 @@ export class SinkLogBackend implements LogBackend {
     } catch (error) {
       this.#failure = error instanceof Error ? error.message : String(error);
       this.close();
-      deferUntilExit(`${FAILURE_NOTICE} — ${this.#failure}`);
+      const notice = localize({ en: "debug log not written", fr: "journal de debug non écrit" });
+      deferUntilExit(`${notice} — ${this.#failure}`);
     }
   }
 }

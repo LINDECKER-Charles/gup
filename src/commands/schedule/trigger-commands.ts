@@ -1,11 +1,8 @@
 import { purgeSchedulerFiles } from "../../core/scheduler/persistence/scheduler-files.js";
 import type { SyncResult } from "../../core/scheduler/trigger/trigger-sync.js";
 import {
-  NOTHING_TO_INSTALL,
-  PURGED,
   REPAIR_COMMAND,
-  SCHEDULER_DIR_OVERRIDDEN,
-  TRIGGER_REMOVED,
+  SCHEDULE_CLI_LABELS,
   triggerFailedLines,
   triggerInstalledLine,
   UNINSTALL_COMMAND,
@@ -48,7 +45,7 @@ export async function installCommand(
     return 2;
   }
   if (enabledCount(services) === 0) {
-    output.err(NOTHING_TO_INSTALL);
+    output.err(SCHEDULE_CLI_LABELS.nothingToInstall);
     return 1;
   }
   const result = services.sync
@@ -69,7 +66,7 @@ export async function uninstallCommand(
   }
   if (options.purge) {
     purgeSchedulerFiles(services.files);
-    output.out(PURGED);
+    output.out(SCHEDULE_CLI_LABELS.purged);
     return 0;
   }
   const ids = services.repo.list().map((schedule) => schedule.id);
@@ -91,10 +88,10 @@ export function reportSync(result: SyncResult, report: SyncReport): number {
       if ("mechanism" in services.trigger) {
         output.out(triggerInstalledLine(services.trigger.mechanism));
       }
-      if (services.isDirOverridden) output.err(SCHEDULER_DIR_OVERRIDDEN);
+      if (services.isDirOverridden) output.err(SCHEDULE_CLI_LABELS.schedulerDirOverridden);
       return 0;
     case "removed":
-      output.out(TRIGGER_REMOVED);
+      output.out(SCHEDULE_CLI_LABELS.triggerRemoved);
       return 0;
     case "foreign":
       output.out(foreignInstallation(result.entry, REPAIR_COMMAND));

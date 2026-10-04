@@ -3,8 +3,24 @@ import { KustomizeProvider } from "../../../src/providers/kubernetes/kustomize.j
 import { installedVia } from "../../support/contract/installers.js";
 import { system } from "../../support/system/fake-system.js";
 import { kustomizeReleases } from "./kubernetes.cases.js";
+import { useLocale } from "../../support/locale.js";
 
 /** kubernetes-sigs/kustomize tags every module's releases: only `kustomize/vX` is the CLI. */
+
+describe("KustomizeProvider.update in English", () => {
+  useLocale("en");
+
+  it("points a hand-installed kustomize at its releases", async () => {
+    await system.load(installedVia("manual", "kustomize"));
+    await expect(new KustomizeProvider().update("kustomize")).resolves.toEqual({
+      id: "kustomize",
+      success: false,
+      skipped: true,
+      message:
+        "Download https://github.com/kubernetes-sigs/kustomize/releases and replace kustomize.exe",
+    });
+  });
+});
 
 describe("KustomizeProvider.listOutdated", () => {
   it("lists nothing when no recent release belongs to the kustomize module", async () => {

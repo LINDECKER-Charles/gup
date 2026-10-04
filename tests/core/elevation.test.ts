@@ -92,6 +92,15 @@ describe("readBatchInput / writeBatchOutput", () => {
     expect(parsed.targets).toEqual(["choco:nodejs", "choco:python"]);
   });
 
+  it("carries the parent's language, and refuses one gup does not speak", async () => {
+    const ok = await mkSandboxFile("locale.json");
+    await writeFile(ok, JSON.stringify({ version: 1, targets: [], locale: "fr" }), "utf8");
+    expect((await readBatchInput(ok)).locale).toBe("fr");
+    const bad = await mkSandboxFile("bad-locale.json");
+    await writeFile(bad, JSON.stringify({ version: 1, targets: [], locale: "de" }), "utf8");
+    await expect(readBatchInput(bad)).rejects.toThrow(/locale must be one of en, fr/);
+  });
+
   it("writeBatchOutput emits a version: 1 envelope around the outcomes array", async () => {
     const tmp = await mkSandboxFile("out.json");
     await writeBatchOutput(tmp, [{ id: "nodejs", success: true }]);
@@ -128,6 +137,8 @@ describe("runElevatedBatch", () => {
       targets: ["choco:nodejs", "choco:python"],
       installTimeoutSeconds: 1200,
       logThreshold: "off",
+      // The suites speak French (tests/support/locale.ts): the child will too.
+      locale: "fr",
     });
     expect(outcomes).toEqual([
       { id: "nodejs", success: true },

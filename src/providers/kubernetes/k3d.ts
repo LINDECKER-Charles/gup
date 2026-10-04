@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -58,8 +59,10 @@ export class K3dProvider implements Provider {
         winget: "k3d-io.k3d",
         brew: "k3d",
       },
-      manualMessage:
-        "Télécharger https://github.com/k3d-io/k3d/releases et remplacer k3d.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/k3d-io/k3d/releases",
+        "k3d.exe",
+      ),
     });
   }
 

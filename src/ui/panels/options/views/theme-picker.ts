@@ -8,7 +8,6 @@ import {
   THEME_DESCRIPTIONS,
   THEME_LABELS,
   THEME_PICKER,
-  THEME_UNAVAILABLE_16,
 } from "../../../text/settings/theme-labels.js";
 import type { KeyPress } from "../../../tui/screen-host.js";
 import {
@@ -145,7 +144,7 @@ export class ThemePicker implements OptionsView {
   private preview(availability: readonly ThemeAvailability[], width: number): Preview {
     const heading: Line = [seg(THEME_PICKER.previewHeading, "strong")];
     if (availability[this.#cursor]?.isAvailable === false) {
-      const intro = [heading, [seg(THEME_UNAVAILABLE_16, "disabled")]];
+      const intro = [heading, [seg(THEME_PICKER.unavailable, "disabled")]];
       return { intro, sample: [], report: [], note: [] };
     }
     const theme = this.#deps.host.appearance.resolved();

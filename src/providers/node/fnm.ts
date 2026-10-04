@@ -6,6 +6,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -64,8 +65,10 @@ export class FnmProvider implements Provider {
         winget: "Schniz.fnm",
         brew: "fnm",
       },
-      manualMessage:
-        "Télécharger https://github.com/Schniz/fnm/releases et remplacer fnm.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/Schniz/fnm/releases",
+        "fnm.exe",
+      ),
     });
   }
 

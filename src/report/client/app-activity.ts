@@ -1,5 +1,5 @@
 /**
- * Client "Échecs" and "Sessions" pages. Échecs groups failed attempts by
+ * Client "Failures" and "Sessions" pages. Failures groups failed attempts by
  * package and message, most frequent first. Sessions lists every gup run by
  * day, newest first, each a native `<details>` whose attempts are built when
  * it opens; chips filter by outcome, a select by provider, and a day chosen

@@ -12,7 +12,7 @@ vi.mock("execa", () => ({ execa: execaMock }));
 
 import { setCommandTracer } from "../../src/core/process/command-tracer.js";
 import { routeInheritTo, type InheritSink } from "../../src/core/process/inherit-sink.js";
-import { TRUNCATED_OUTPUT_LINE } from "../../src/core/process/line-splitter.js";
+import { OUTPUT_LABELS } from "../../src/core/process/line-splitter.js";
 import { createPipeSink, launchDetached, run, runInherit } from "../../src/core/runner.js";
 import { restorePlatform, setPlatform } from "../support/platform.js";
 
@@ -160,7 +160,7 @@ describe("createPipeSink", () => {
     await started.exited;
     expect(lines).toEqual([
       ["0123456789", "stdout"],
-      [TRUNCATED_OUTPUT_LINE, "stdout"],
+      [OUTPUT_LABELS.truncated, "stdout"],
     ]);
   });
 

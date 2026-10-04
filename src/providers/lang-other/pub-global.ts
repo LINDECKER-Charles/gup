@@ -1,6 +1,7 @@
 import pLimit from "p-limit";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PubApiVersion {
@@ -14,10 +15,15 @@ interface PubApiVersion {
 export class PubGlobalProvider implements Provider {
   readonly id = "pub-global";
   readonly displayName = "Dart pub global";
-  readonly installHint = pickInstallHint({
-    win32: "Installer Dart/Flutter SDK",
-    fallback: "brew install dart-sdk (ou brew install --cask flutter)",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: localize({ en: "Install the Dart/Flutter SDK", fr: "Installer Dart/Flutter SDK" }),
+      fallback: localize({
+        en: "brew install dart-sdk (or brew install --cask flutter)",
+        fr: "brew install dart-sdk (ou brew install --cask flutter)",
+      }),
+    });
+  }
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

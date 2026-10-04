@@ -6,7 +6,7 @@ import {
   mayAskForUac,
   MAX_SCHEDULES,
   MAX_TARGETS_PER_SCHEDULE,
-  TOO_FREQUENT,
+  VALIDATION_MESSAGES,
   validateDraft,
   type ValidationContext,
 } from "../../../src/core/scheduler/model/validate-schedule.js";
@@ -85,8 +85,9 @@ describe("validateDraft", () => {
   it("refuses expressions firing more than hourly, or not within a year", () => {
     const cron = (expression: string): ScheduleDraft =>
       draft({ recurrence: { kind: "cron", expression } });
-    expect(messages(cron("*/20 * * * *"))).toEqual([`recurrence: ${TOO_FREQUENT}`]);
-    expect(messages(cron("0,30 9 * * 1"))).toEqual([`recurrence: ${TOO_FREQUENT}`]);
+    const tooFrequent = `recurrence: ${VALIDATION_MESSAGES.tooFrequent}`;
+    expect(messages(cron("*/20 * * * *"))).toEqual([tooFrequent]);
+    expect(messages(cron("0,30 9 * * 1"))).toEqual([tooFrequent]);
     expect(messages(cron("0 * * * *"))).toEqual([]);
     expect(messages(cron("0 9 31 2 *"))).toEqual([
       "recurrence: cette expression ne se déclenche pas dans l'année à venir",

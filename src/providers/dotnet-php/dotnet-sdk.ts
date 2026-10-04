@@ -6,10 +6,31 @@ import {
   detectInstallSource,
   upgradeNeedsRoot,
 } from "../../core/install-source.js";
+import { localized } from "../../core/i18n/localized.js";
 import type { PackageIds } from "../../core/install-source.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 const DOWNLOAD_PAGE = "https://dotnet.microsoft.com/download";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    wingetHint: `winget install Microsoft.DotNet.SDK.<major> — available channels: ${DOWNLOAD_PAGE}`,
+    aptHint: `sudo apt-get install -y dotnet-sdk-<channel> — or ${DOWNLOAD_PAGE}`,
+    unknownChannel: (packageId: string) => `Unrecognized .NET channel: ${packageId}`,
+    manualStep: (channel: string) =>
+      `System installer: get the ${channel} SDK from ${DOWNLOAD_PAGE}` +
+      " (Homebrew Cask: brew upgrade --cask dotnet-sdk)",
+  },
+  fr: {
+    wingetHint: `winget install Microsoft.DotNet.SDK.<majeur> — canaux disponibles : ${DOWNLOAD_PAGE}`,
+    aptHint: `sudo apt-get install -y dotnet-sdk-<canal> — ou ${DOWNLOAD_PAGE}`,
+    unknownChannel: (packageId) => `Canal .NET non reconnu : ${packageId}`,
+    manualStep: (channel) =>
+      `Installateur système : récupérer le SDK ${channel} sur ${DOWNLOAD_PAGE}` +
+      " (Homebrew Cask : brew upgrade --cask dotnet-sdk)",
+  },
+});
 
 /**
  * Machine-readable index of every .NET channel, published by Microsoft.
@@ -61,7 +82,7 @@ interface ReleasesIndex {
  * Two things this provider deliberately does NOT do:
  *  - **no install-source note.** The SDK lands in a system prefix that carries
  *    no ownership signal (`C:\Program Files\dotnet`, `/usr/local/share/dotnet`),
- *    so path-based detection labels a winget install "manuel". Saying nothing
+ *    so path-based detection labels a winget install "manual". Saying nothing
  *    beats saying something false.
  *  - **never `manual: true`.** For the same reason, marking the row manual
  *    would hide a real pending upgrade on most machines. The row stays visible
@@ -76,12 +97,14 @@ interface ReleasesIndex {
 export class DotnetSdkProvider implements Provider {
   readonly id = "dotnet-sdk";
   readonly displayName = ".NET SDK";
-  readonly installHint = pickInstallHint({
-    win32: `winget install Microsoft.DotNet.SDK.<majeur> — canaux disponibles : ${DOWNLOAD_PAGE}`,
-    darwin: "brew install --cask dotnet-sdk",
-    linux: `sudo apt-get install -y dotnet-sdk-<canal> — ou ${DOWNLOAD_PAGE}`,
-    fallback: DOWNLOAD_PAGE,
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: TEXT.wingetHint,
+      darwin: "brew install --cask dotnet-sdk",
+      linux: TEXT.aptHint,
+      fallback: DOWNLOAD_PAGE,
+    });
+  }
 
   async isAvailable(): Promise<boolean> {
     return commandExists("dotnet");
@@ -116,7 +139,7 @@ export class DotnetSdkProvider implements Provider {
       return {
         id: packageId,
         success: false,
-        message: `Canal .NET non reconnu : ${packageId}`,
+        message: TEXT.unknownChannel(packageId),
       };
     }
     // Both the id lookup (one HTTPS GET) and the delegation (two spawns) can
@@ -128,14 +151,14 @@ export class DotnetSdkProvider implements Provider {
         id: channel,
         binary: "dotnet",
         packageIds: await dotnetPackageIds(channel),
-        manualMessage: manualMessage(channel),
+        manualMessage: TEXT.manualStep(channel),
       });
     } catch {
       return {
         id: channel,
         success: false,
         skipped: true,
-        message: manualMessage(channel),
+        message: TEXT.manualStep(channel),
       };
     }
   }
@@ -147,12 +170,6 @@ export class DotnetSdkProvider implements Provider {
   }
 }
 
-function manualMessage(channel: string): string {
-  return (
-    `Installateur système : récupérer le SDK ${channel} sur ${DOWNLOAD_PAGE}` +
-    " (Homebrew Cask : brew upgrade --cask dotnet-sdk)"
-  );
-}
 
 /**
  * Installed SDK versions, or an empty list when the CLI is gone or broken.
@@ -286,21 +303,37 @@ function normalizeChannel(packageId: string): string | null {
   return /^\d+\.\d+$/.test(trimmed) ? trimmed : null;
 }
 
-// Lookup tables as Maps, not object literals: the keys come straight out of a
-// network document, and `LABELS["toString"]` on a plain object resolves up the
-// prototype chain and would splice a function into the note.
+// The keys of both lookups come straight out of a network document, and
+// `LABELS["toString"]` on a plain object resolves up the prototype chain and
+// would splice a function into the note: a Map, and an own-key check on the
+// localized catalog.
 const RELEASE_TYPE_LABELS = new Map<string, string>([
   ["lts", "LTS"],
   ["sts", "STS"],
 ]);
 
-const SUPPORT_PHASE_LABELS = new Map<string, string>([
-  ["preview", "préversion"],
-  ["go-live", "go-live"],
-  ["active", "support actif"],
-  ["maintenance", "maintenance"],
-  ["eol", "fin de support"],
-]);
+const SUPPORT_PHASE_LABELS = localized({
+  en: {
+    preview: "preview",
+    "go-live": "go-live",
+    active: "active support",
+    maintenance: "maintenance",
+    eol: "end of support",
+  },
+  fr: {
+    preview: "préversion",
+    "go-live": "go-live",
+    active: "support actif",
+    maintenance: "maintenance",
+    eol: "fin de support",
+  },
+});
+
+function supportPhaseLabel(phase: string): string | undefined {
+  return Object.hasOwn(SUPPORT_PHASE_LABELS, phase)
+    ? SUPPORT_PHASE_LABELS[phase as keyof typeof SUPPORT_PHASE_LABELS]
+    : undefined;
+}
 
 /**
  * Support status of the channel, which is the one piece of context that changes
@@ -310,7 +343,7 @@ const SUPPORT_PHASE_LABELS = new Map<string, string>([
 function describeChannel(entry: ReleaseChannel): string {
   return [
     RELEASE_TYPE_LABELS.get(entry["release-type"] ?? ""),
-    SUPPORT_PHASE_LABELS.get(entry["support-phase"] ?? ""),
+    supportPhaseLabel(entry["support-phase"] ?? ""),
   ]
     .filter((label): label is string => label !== undefined)
     .join(" · ");

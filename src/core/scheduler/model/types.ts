@@ -68,7 +68,7 @@ export interface TargetResult {
   readonly status: TargetStatus;
   readonly from?: string;
   readonly to?: string;
-  /** French, user-facing. */
+  /** User-facing, in the language of the gup that made the run. */
   readonly message?: string;
 }
 

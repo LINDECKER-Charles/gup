@@ -6,6 +6,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -59,8 +60,10 @@ export class StarshipProvider implements Provider {
         winget: "Starship.Starship",
         brew: "starship",
       },
-      manualMessage:
-        "Télécharger https://github.com/starship/starship/releases ou `cargo install starship --locked`",
+      manualMessage: MANUAL_STEPS.downloadOr(
+        "https://github.com/starship/starship/releases",
+        "cargo install starship --locked",
+      ),
     });
   }
 

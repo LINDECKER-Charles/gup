@@ -1,4 +1,5 @@
 import { Cron } from "croner";
+import { localized } from "../../i18n/localized.js";
 
 /**
  * A 5-field cron expression, evaluated in the machine's local time zone. The
@@ -16,14 +17,36 @@ import { Cron } from "croner";
 const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
 
-const FIELD_NAMES: Readonly<Record<string, string>> = {
-  second: "les secondes",
-  minute: "les minutes",
-  hour: "les heures",
-  day: "le jour du mois",
-  month: "le mois",
-  dayOfWeek: "le jour de la semaine",
-};
+/** croner's refusals told to the user, in the interface's languages. */
+const CRON_ERRORS = localized({
+  en: {
+    /** croner's field names, as a reason names them. */
+    fields: {
+      second: "the seconds",
+      minute: "the minutes",
+      hour: "the hours",
+      day: "the day of the month",
+      month: "the month",
+      dayOfWeek: "the day of the week",
+    } as Readonly<Record<string, string>>,
+    invalidValue: (field: string, value: string) => `invalid value for ${field}: ${value}`,
+    fieldCount: "5 fields expected: minute hour day-of-month month day-of-week",
+    invalid: "invalid cron expression",
+  },
+  fr: {
+    fields: {
+      second: "les secondes",
+      minute: "les minutes",
+      hour: "les heures",
+      day: "le jour du mois",
+      month: "le mois",
+      dayOfWeek: "le jour de la semaine",
+    },
+    invalidValue: (field, value) => `valeur invalide pour ${field} : ${value}`,
+    fieldCount: "5 champs attendus : minute heure jour-du-mois mois jour-de-la-semaine",
+    invalid: "expression cron invalide",
+  },
+});
 
 const INVALID_VALUE = /Invalid value for (\w+): (.+)$/;
 const WRONG_FIELD_COUNT = /exactly|requires/;
@@ -39,12 +62,12 @@ export class CronExpression {
     this.#cron = cron;
   }
 
-  /** Parse a 5-field expression; the reason is French, for the user. */
+  /** Parse a 5-field expression; the reason is for the user, in the active language. */
   static tryParse(expression: string): CronParse {
     try {
       return { ok: true, cron: new CronExpression(new Cron(expression, { mode: "5-part" })) };
     } catch (err) {
-      return { ok: false, reason: frenchReason(err) };
+      return { ok: false, reason: reasonOf(err) };
     }
   }
 
@@ -88,15 +111,14 @@ function guarded<T>(work: () => T, fallback: T): T {
   }
 }
 
-function frenchReason(err: unknown): string {
+function reasonOf(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
   const invalid = INVALID_VALUE.exec(message);
   if (invalid) {
-    const field = FIELD_NAMES[invalid[1] ?? ""] ?? invalid[1];
-    return `valeur invalide pour ${field} : ${invalid[2]}`;
+    // Both groups are mandatory: they are set whenever the pattern matched.
+    const [, name = "", value = ""] = invalid;
+    return CRON_ERRORS.invalidValue(CRON_ERRORS.fields[name] ?? name, value);
   }
-  if (WRONG_FIELD_COUNT.test(message)) {
-    return "5 champs attendus : minute heure jour-du-mois mois jour-de-la-semaine";
-  }
-  return "expression cron invalide";
+  if (WRONG_FIELD_COUNT.test(message)) return CRON_ERRORS.fieldCount;
+  return CRON_ERRORS.invalid;
 }
