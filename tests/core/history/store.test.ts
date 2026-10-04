@@ -3,8 +3,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { HistoryEvent, ScanEvent, UpdateEvent } from "../../src/core/history/types.js";
-import type { ProviderScanResult, UpdateOutcome } from "../../src/core/types.js";
+import type { HistoryEvent, ScanEvent, UpdateEvent } from "../../../src/core/history/types.js";
+import type { ProviderScanResult, UpdateOutcome } from "../../../src/core/types.js";
 
 /**
  * The store keeps two pieces of module state — the per-process run id and the
@@ -12,7 +12,7 @@ import type { ProviderScanResult, UpdateOutcome } from "../../src/core/types.js"
  * throwaway directory pointed at by GUP_HISTORY_DIR; nothing here touches the
  * real user profile.
  */
-type Store = typeof import("../../src/core/history/store.js");
+type Store = typeof import("../../../src/core/history/store.js");
 
 let store: Store;
 let dir: string;
@@ -47,7 +47,7 @@ beforeEach(async () => {
   process.env["GUP_HISTORY"] = "1";
   stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
   vi.resetModules();
-  store = await import("../../src/core/history/store.js");
+  store = await import("../../../src/core/history/store.js");
 });
 
 afterEach(() => {
@@ -139,7 +139,7 @@ describe("recordUpdate", () => {
 describe("run trigger", () => {
   it("stamps every record with what started the process, once known", async () => {
     store.recordUpdate({ providerId: "p", outcome: outcome({ id: "before" }) });
-    const run = await import("../../src/core/state/run-context.js");
+    const run = await import("../../../src/core/state/run-context.js");
     run.setRunTrigger("schedule");
     store.recordUpdate({ providerId: "p", outcome: outcome({ id: "after" }) });
     store.recordScan({ durationMs: 1, results: [] });
@@ -151,7 +151,7 @@ describe("run trigger", () => {
   });
 
   it("shares its run id with the run context", async () => {
-    const run = await import("../../src/core/state/run-context.js");
+    const run = await import("../../../src/core/state/run-context.js");
     store.recordUpdate({ providerId: "p", outcome: outcome() });
     expect(readEvents()[0]!.runId).toBe(run.RUN_ID);
   });
@@ -228,7 +228,7 @@ describe("opt-out and failure handling", () => {
   });
 
   it("tells the debug log why the history was not written", async () => {
-    const facade = await import("../../src/core/log/log.js");
+    const facade = await import("../../../src/core/log/log.js");
     const emit = vi.fn();
     facade.installLogBackend({ isEnabled: () => true, emit });
     const blocker = join(dir, "blocker");
