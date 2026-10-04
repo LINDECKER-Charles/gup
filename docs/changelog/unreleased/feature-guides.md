@@ -1,13 +1,15 @@
 # Fragment — `docs/feature-guides`
 
 The wave-3 documentation pass. Part 1: the screenshots of every 0.5.0 view, generated and
-checked by CI. Design note:
+checked by CI. Part 2: the guides that show them, the consolidation of the design notes into the
+reference pages, the diagrams, and this changelog. Design note:
 [`docs/development/design/screenshot-pipeline.md`](../../development/design/screenshot-pipeline.md) §9.
 
 ## Documentation
 
 - **docs:** The interactive app's screenshots, generated: 23 SVG terminal screenshots under `docs/assets/screens/` — the menu, an update running in the embedded terminal, the retry offer and the results, Planification and its editor, the Journal's four tabs, the theme picker's live preview, the colour editor's contrast check and eight built-in themes — with a gallery page by area, and a picture of the HTML report ([`ca98dfc`](https://github.com/LINDECKER-Charles/gup/commit/ca98dfc))
 - **docs:** The documentation conventions describe what a scene runs on, how to add one, the pinned collation, the machine-path check and the report's picture ([`5e2110c`](https://github.com/LINDECKER-Charles/gup/commit/5e2110c))
+- **docs:** The installation guide explains node-pty's install script and npm 11's review of it — what `--allow-scripts=node-pty`, a plain install, `strict-allow-scripts` and `--ignore-scripts` each do — the embedded terminal per platform, the per-OS provider counts and everything gup leaves on disk (`docs: document npm 11's install-script gate for node-pty`)
 
 ## CI
 
