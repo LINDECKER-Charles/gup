@@ -250,16 +250,35 @@ measures a real terminal, which must not compete with the jobs above. The tests 
 **The ConPTY fast-exit test.** `integration/pty-session` asserted that a successful install is
 reported in under 500 ms, end to end — node's start-up included, which a busy machine (the whole
 suite in parallel) easily pushes past it. It now measures what the exit file is for: the success
-is reported before node-pty's own exit event, which comes after ConPTY's fixed one-second flush.
-Load delays both paths alike. Disabling the fast path makes every attempt lose to the event
-(−2, −1, −1 ms) and the test fail.
+is reported more than 500 ms (half the flush) before node-pty's own exit event, which comes
+after ConPTY's fixed one-second flush. Load delays both paths alike: the measured leads are
+920–990 ms alone and with the whole suite running. Disabling the fast path makes every attempt
+lose to the event (−2, −1, −1 ms) and the test fail.
 
 **The developer's shell.** The runner sets `NO_COLOR=1` for its jobs, and three theme suites
 (`themed-appearance`, `options-view`, `settings-module`) went red: they inherited the colour
 switch. The worker setup now drops the inherited `NO_COLOR`, `FORCE_COLOR` and every `GUP_*`
 variable but the shared test env's and the run's opt-ins (`GUP_E2E`, `GUP_E2E_SCOPE`,
 `GUP_MUTATE`, `GUP_E2E_ARTIFACTS`) before any test (`isDroppedFromShell` in `test-env.ts`). The
-whole suite is green with `NO_COLOR=1 FORCE_COLOR=1 GUP_ASCII=1` exported.
+whole suite is green with `NO_COLOR=1 FORCE_COLOR=1 GUP_ASCII=1` exported. The E2E harness
+detects the embedded terminal in the environment a sandboxed gup inherits (`inheritedEnv()`),
+so a `GUP_PTY` in the shell no longer makes its global setup report a terminal the suites then
+use anyway.
+
+**macOS and Linux, from Windows.** The suites run in a `node:26` Linux container (`npm ci`, the
+coverage run with `GUP_MUTATE=1`, the e2e smoke, as the `ubuntu-latest` leg does) showed what
+the Windows box could not: the contrast audits and the Options view suite gave the theme engine
+an empty environment, which on POSIX reads as a non-UTF-8 locale, and drew ASCII frames — 46
+failures that the macOS and Linux legs would have hit. They now draw for `UTF8_TERMINAL_ENV`
+(`support/tui/test-host.ts`). With it: 7,825 tests green, the coverage floors held (92.46 %
+branches, 97.62 % lines), the e2e smoke 20 passed and 1 skipped (the embedded terminal check
+of Windows and macOS), node-pty built from source. The suites still take the locale from the
+shell for the legacy look: they need a UTF-8 one on POSIX, which the hosted runners have.
+
+**Temp directories.** The unit suites made their writable directories with `mkdtemp` and never
+removed them — about 900 per run. `useTempDirs()` (`tests/support/temp-dirs.ts`) makes them and
+removes each one once its test ends; a full run now leaves none, on Windows and in the Linux
+container.
 
 ## 12. Deviations from the testing spec (part 2)
 
@@ -283,14 +302,11 @@ whole suite is green with `NO_COLOR=1 FORCE_COLOR=1 GUP_ASCII=1` exported.
 - **The confirmation dialog collapses double spaces.** `CONFIRM_UPDATE.item` reads
   `• ms  2.0.0 → 2.1.3`; the dialog shows `• ms 2.0.0 → 2.1.3` (word wrapping). Cosmetic;
   `full/menu-select` compares single-spaced.
-- **Unit suites leave temp directories behind.** This machine's temp folder holds thousands of
-  `gup-config-*`, `gup-elevation-test-*`, `gup-batch-*`, `gup-admin-batch-test-*`, `gup-nerd-*`,
-  `gup-atomic-*`, `gup-lock-*` directories from the waves' runs: suites that `mkdtemp` without
-  removing. Harmless, but each run adds to it.
 - **Unverified until the branch runs on GitHub:** the new CI steps and jobs (validated against
-  the workflow schema, and the packed-install check rehearsed on Windows in a throw-away prefix),
-  the Task Scheduler round trip on a hosted Windows runner (its interactive session), the menu
-  suites on macOS and Linux runners, and the coverage floors measured on Linux.
+  the workflow schema and by actionlint 1.7.12, and the packed-install check rehearsed on Windows
+  in a throw-away prefix), the Task Scheduler round trip on a hosted Windows runner (its
+  interactive session), and everything on a real macOS runner. The Linux leg's tests, coverage
+  floors and e2e smoke ran in a Linux container (§11).
 
 ## 14. Local campaign (Windows 11, Node 26.10, consent U-3)
 
@@ -301,3 +317,4 @@ whole suite is green with `NO_COLOR=1 FORCE_COLOR=1 GUP_ASCII=1` exported.
 | `npm run test:e2e:mutate` | 7 files, 57 tests passed: `is-number` 6.0.0 → 7.0.0 through `gup update`, the menu's run view, `schedule run-now` and a Task Scheduler tick (`gup-it-<random>`, deleted) |
 | afterwards | `Get-ScheduledTask gup-*` empty; no `gup-e2e-*` directory left; the machine's npm prefixes and gup's own state directories untouched |
 | `check.cmd` | every check green in 68 s: 354 files, 7828 tests, coverage 92.4 % branches / 97.5 % lines (floors held), the e2e smoke 21/21 |
+| review re-run | smoke 21/21, read-only 52 passed and 5 skipped, mutate 57/57 (`gup-it-<random>` queried afterwards: gone); no `gup-*` task, sandbox, temp directory or package left; the Linux container run of §11 |

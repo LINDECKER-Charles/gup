@@ -31,6 +31,10 @@ Test suite and tooling only: no change to what gup does. Design note:
 - **core/pty:** Time the ConPTY fast exit against node-pty's own exit event instead of a 500 ms budget a busy machine overran ([`0ca6a75`](https://github.com/LINDECKER-Charles/gup/commit/0ca6a75))
 - **lint:** Drop the developer's `NO_COLOR`, `FORCE_COLOR` and `GUP_*` variables in every test worker: a `NO_COLOR=1` shell turned three theme suites red ([`3e2c810`](https://github.com/LINDECKER-Charles/gup/commit/3e2c810))
 - **chore:** Run every gate, then the end-to-end smoke alone, in `check.cmd` ([`cfc5754`](https://github.com/LINDECKER-Charles/gup/commit/cfc5754))
+- **cli:** Detect the end-to-end harness's embedded terminal in the environment a sandboxed gup inherits, so a `GUP_PTY` in the shell no longer misreports it ([`e4a81af`](https://github.com/LINDECKER-Charles/gup/commit/e4a81af))
+- **ui:** Draw the themed test menus for a UTF-8 terminal: with an empty environment the contrast audits and the Options view suite drew ASCII frames on macOS and Linux, 46 failures the required legs would have hit ([`2f14af1`](https://github.com/LINDECKER-Charles/gup/commit/2f14af1))
+- **core, cli, ui:** Remove the temp directories the suites create, about 900 per run until now (`useTempDirs()`) ([`6f9ed0c`](https://github.com/LINDECKER-Charles/gup/commit/6f9ed0c), [`44a9baf`](https://github.com/LINDECKER-Charles/gup/commit/44a9baf), [`9452cde`](https://github.com/LINDECKER-Charles/gup/commit/9452cde))
+- **core/pty:** Require the ConPTY fast exit to lead node-pty's exit event by more than half the one-second flush ([`82acc57`](https://github.com/LINDECKER-Charles/gup/commit/82acc57))
 
 ## Known issues found
 
@@ -40,5 +44,3 @@ Test suite and tooling only: no change to what gup does. Design note:
   pane follows the terminal's foreground.
 - `gup update provider:package` updates without a scan, so its history record carries no `from`
   and `to` (the menu's does); the end-to-end suite asserts what ships.
-- Unit suites leave `mkdtemp` directories behind in the temp folder (`gup-config-*`,
-  `gup-elevation-test-*`, `gup-batch-*`…), thousands after the 0.5.0 waves' runs.

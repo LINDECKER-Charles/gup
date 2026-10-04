@@ -143,11 +143,15 @@ A file matching no project never runs, and one matching two runs twice:
 
 - **Nothing real is written.** Every test process starts with history, settings and the debug
   log off and every state directory in a per-run sandbox (`tests/support/test-env.ts`). A test
-  that writes creates its own `mkdtemp` directory and points the matching variable at it
-  (`GUP_HISTORY_DIR`, `GUP_CONFIG_DIR`, `GUP_LOG_DIR`, `GUP_REPORT_DIR`, `GUP_SCHEDULER_DIR`).
+  that writes makes its own directory with `useTempDirs()` (`tests/support/temp-dirs.ts`), which
+  removes it once the test ends, and points the matching variable at it (`GUP_HISTORY_DIR`,
+  `GUP_CONFIG_DIR`, `GUP_LOG_DIR`, `GUP_REPORT_DIR`, `GUP_SCHEDULER_DIR`).
 - **Nothing from your shell.** Each worker drops the inherited `NO_COLOR`, `FORCE_COLOR` and
   `GUP_*` variables (but the run's opt-ins below) before any test: a test that needs one sets it
-  itself with `vi.stubEnv`.
+  itself with `vi.stubEnv`. A screen drawn by the theme engine gets `UTF8_TERMINAL_ENV`
+  (`tests/support/tui/test-host.ts`), never an empty environment, which macOS and Linux read as a
+  non-UTF-8 locale. The locale itself still comes from the shell: on macOS and Linux the suites
+  expect a UTF-8 one, as every desktop and the hosted runners have.
 - **Nothing real is updated, opened or scheduled** outside the mutating suites, and those only
   ever touch a throw-away npm prefix and a uniquely named `gup-it-<random>` task. A unit test
   never spawns a browser, a scheduled task or `taskkill`: `launchDetached` and `killProcessTree`
@@ -273,6 +277,7 @@ release, on the checklists: [Windows](testing-windows-checklist.md) and
 | `gup's tests need Node >=26.9.0` | an older Node first on `PATH`: see [§3](#3-running-the-tests) |
 | `dist/ is older than src/…: run npm run build first` | the end-to-end suites test the build; the `test:e2e*` scripts build first |
 | the menu suites skip on Linux | node-pty did not build (no compiler toolchain); the CLI suites still run the fallback |
-| `embedded terminal unavailable (désactivé par GUP_PTY)` | `GUP_PTY=0` (or `off`) in the shell: unset it |
-| a test fails only when the whole suite runs | a shared directory or a timing: use your own `mkdtemp`, and wait on a condition, never a fixed delay |
+| `gup e2e: embedded terminal unavailable (…)` on Windows or macOS, then "loads here" fails | node-pty is not installed (run `npm ci`, never with `--omit=optional`), or macOS's `spawn-helper` is not executable and gup cannot fix it (`chmod +x` the path the reason names). A `GUP_PTY` set in the shell plays no part: the sandbox and the test workers drop it |
+| a test fails only when the whole suite runs | a shared directory or a timing: use your own directory (`useTempDirs()`), and wait on a condition, never a fixed delay |
+| frames drawn with `+`, `-` and `\|` on macOS or Linux, the TUI suites red | the shell's locale is not UTF-8 (`LC_ALL=C`…) or `TERM` is `dumb` or `linux`: `export LANG=C.UTF-8` (`en_US.UTF-8` on macOS) and unset `LC_ALL` |
 | `gup-e2e-*` directories left in the temp dir | a run killed before its `afterAll` (Ctrl+C, a closed pipe): delete them |

@@ -57,7 +57,9 @@ same results (2,932 tests, 2 skipped on Windows).
   (`tests/support/worker-setup.ts`) moves the three directories to `<root>/w<VITEST_POOL_ID>/…`,
   unique per worker. A root teardown removes the whole root at the end of the run.
 - **Rule: a test that writes uses its own `mkdtemp`** and points the matching variable at it. The
-  sandbox is a safety net for stray writers, never a place a test relies on.
+  sandbox is a safety net for stray writers, never a place a test relies on. `useTempDirs()`
+  (`tests/support/temp-dirs.ts`, wave 3) makes those directories and removes each one once its
+  test ends.
 - Every new persistent writer gets a kill switch or a directory override here, off or sandboxed.
 
 ## 3. Node guard and coverage
