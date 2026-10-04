@@ -150,7 +150,10 @@ async function violationsOf(audited: Audited, isLegacy = false): Promise<string[
   });
   await walkTheViews(audit);
   await walkTheOptions(audit);
-  if (audited.theme !== "monochrome" && !isLegacy) await walkTheColours(audit);
+  // No colour editor where there is nothing to tune: monochrome, the terminal's unknown palette.
+  const isPaletteUnknown = audited.theme === "terminal" && audited.terminal.colors === null;
+  const hasColourEditor = audited.theme !== "monochrome" && !isPaletteUnknown;
+  if (hasColourEditor && !isLegacy) await walkTheColours(audit);
   return audit.violations();
 }
 

@@ -25,6 +25,11 @@ export interface FrameContrastOptions {
    * modes paint the default without knowing it). Default: the captured value.
    */
   readonly ink?: wcag.Rgb;
+  /**
+   * What the terminal shows for each ANSI slot, when it did not report its
+   * palette (a cell painted with a slot then captures OpenTUI's xterm guess).
+   */
+  readonly slots?: readonly wcag.Rgb[];
   /** Text minimum; default AA (4.5). */
   readonly textMinimum?: number;
 }
@@ -32,7 +37,9 @@ export interface FrameContrastOptions {
 /** U+2500–U+257F (box drawing), plus the ASCII stand-ins of the ASCII mode borders. */
 const BORDER_ONLY = /^[─-╿+\-|*=]+$/u;
 
-function rgbOf(color: CapturedSpan["fg"]): wcag.Rgb {
+function rgbOf(color: CapturedSpan["fg"], slots?: readonly wcag.Rgb[]): wcag.Rgb {
+  const slotColor = color.intent === "indexed" ? slots?.[color.slot] : undefined;
+  if (slotColor) return slotColor;
   const [r, g, b] = color.toInts();
   return [r, g, b];
 }
@@ -44,9 +51,10 @@ function rgbOf(color: CapturedSpan["fg"]): wcag.Rgb {
  * Likewise its text shows `ink`, when given, in the default foreground.
  */
 function inkAndGround(span: CapturedSpan, options: FrameContrastOptions): [wcag.Rgb, wcag.Rgb] {
-  const ink = span.fg.intent === "default" && options.ink ? options.ink : rgbOf(span.fg);
+  const ink =
+    span.fg.intent === "default" && options.ink ? options.ink : rgbOf(span.fg, options.slots);
   const isGround = span.bg.a === 0 || span.bg.intent === "default";
-  const behind = isGround ? options.ground : rgbOf(span.bg);
+  const behind = isGround ? options.ground : rgbOf(span.bg, options.slots);
   const isInverse = (span.attributes & TextAttributes.INVERSE) !== 0;
   return isInverse ? [behind, ink] : [ink, behind];
 }

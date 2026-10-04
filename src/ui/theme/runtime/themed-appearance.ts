@@ -56,6 +56,8 @@ export interface ThemedAppearanceDeps {
   readonly settings: AppearanceSource;
   /** Default: `process.env` (`NO_COLOR`, the glyph heuristics). */
   readonly env?: NodeJS.ProcessEnv;
+  /** Default: `process.platform` (the colours of a terminal that reports none). */
+  readonly platform?: NodeJS.Platform;
 }
 
 /** How long the end of a screen waits for palette replies still in flight. */
@@ -169,7 +171,12 @@ export class ThemedAppearance implements Appearance {
   }
 
   #input(theme: ThemeSettings): ResolveInput {
-    return { settings: theme, terminal: this.#deps.probe.facts(), isNoColor: isNoColor(this.#env) };
+    return {
+      settings: theme,
+      terminal: this.#deps.probe.facts(),
+      isNoColor: isNoColor(this.#env),
+      ...(this.#deps.platform !== undefined && { platform: this.#deps.platform }),
+    };
   }
 
   #theme(): ThemeSettings {

@@ -197,11 +197,22 @@ leave short moves too (notice `depth-256`, §4.3).
 |---|---|---|---|
 | rgb | palette RGB (slots on 256 colours), no DIM | highlight / accent fill as RGB | painted |
 | detected | unchanged colours keep the terminal's slot or default (with the detected RGB as snapshot); corrected ones RGB | idem | the terminal's own |
-| trusted | terminal foreground, ANSI slots 6/2/3/1, DIM for muted/disabled | inverse video, no background colour | the terminal's own |
+| trusted | terminal foreground, DIM for muted/disabled; accent/success/warning/danger and the borders on the ANSI slot (or the foreground) `color/unreported-palette.ts` picks | inverse video, no background colour | the terminal's own |
 | monochrome | terminal foreground only, no DIM | inverse video (+ bold on the accent fill) | the terminal's own |
 
 A terminal "default" colour means its foreground in the foreground role and its background in the
 background role, so the detected background's colour reaches `onAccent` (a foreground) as RGB.
+
+**Trusted colours** (`color/unreported-palette.ts`). The palette is unknown, so nothing can be
+measured; each coloured role takes the first of its candidates — the slot of a reported palette
+(6/2/3/1, borders 8 and 6), its bright twin (14/10/11/9), the terminal's foreground — that reaches
+the level (text, or 3:1 for borders) on every default palette the terminal most likely has: by the
+lightness it reported (dark: iTerm2, GNOME Tango; light: Terminal.app Basic, xterm), else on
+Windows, whose console never answers, Campbell and the pre-1709 console colours; with nothing
+known elsewhere, the reported-palette slots unchanged. On conhost at AA: danger 9, success 10,
+accent 14, warning 3, borders 8/6. `resolveTheme` puts the choice in `sources`;
+`ResolveInput.platform` (default `process.platform`) and `ThemedAppearanceDeps.platform` let
+tests pin the platform.
 
 ### 4.5 Runtime (`runtime/`)
 
@@ -355,7 +366,8 @@ the renderer reads it when it is created.
 | `tests/ui/theme/enforce-contrast.test.ts` | built-ins with zero corrections (AA; high-contrast AAA); 1,000 seeded palettes × AA/AAA; correction report; seeking tokens unreported; mid-grey background moved |
 | `tests/ui/theme/terminal-palette.test.ts` | OSC answers converted or refused; sources; Campbell, Terminal.app Basic, Solarized Dark, One Half Light meet every rule at AA and AAA |
 | `tests/ui/theme/resolve-theme.test.ts` | the precedence matrix, customs per theme, 256-colour slots still AA, availability, `NO_COLOR`; seeded property test on the paint: random custom colours and terminal palettes, truecolor and 256 colours, AA and AAA |
-| `tests/ui/theme/style-table.test.ts` | accent fill, no DIM in palette modes, detected defaults, trusted inverse fills, monochrome without colour |
+| `tests/ui/theme/style-table.test.ts` | accent fill, no DIM in palette modes, detected defaults, trusted inverse fills, trusted colours readable on the Windows console's Campbell (AA, AAA), monochrome without colour |
+| `tests/ui/theme/unreported-palette.test.ts` | the trusted colours against the real defaults of terminals that report no palette (Campbell, pre-1709 console, Terminal.app Basic, iTerm2, GNOME Tango, xterm) with the WCAG oracle, never worse than the usual slots on a light default, unchanged when nothing is known |
 | `tests/ui/theme/terminal-probe.test.ts` | lazy and bounded queries, process cache, unsupported/suspended terminals, events, bounded settle, dispose |
 | `tests/ui/theme/themed-appearance.test.ts` | finding 1 (plain text and input in the terminal's colour), on-screen AA for RGB and detected themes, preview, live settings, detection policy, dispose |
 | `tests/ui/app/contrast-audit.test.ts` | every registered view walked — Paquets (cursor, checked rows, filter, confirmation), Scan with a failure, Providers, Options (list, timeout dialog, theme picker and a preview, reset choice and confirmation, colour editor, hex dialog, an accent typed unreadable on purpose) — under every built-in theme: the seven RGB ones, `auto` on a light terminal, `terminal` on Campbell and Terminal.app Basic (also as a 256-colour terminal), `dark` at AAA on a 256-colour terminal, `monochrome` on both with the terminal's own text colour. Every span ≥ 4.5:1 (7:1 at AAA), borders ≥ 3:1; the legacy look on a light terminal is caught |

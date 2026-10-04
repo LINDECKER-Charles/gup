@@ -10,6 +10,7 @@ import {
 } from "../../../src/ui/theme/style-table.js";
 import { detectedColorsFrom } from "../../../src/ui/theme/terminal-palette.js";
 import type { Tone } from "../../../src/ui/tui/styled-lines.js";
+import * as wcag from "../../support/contrast/wcag.js";
 import { CAMPBELL } from "../../support/tui/reference-palettes.js";
 
 const TRUECOLOR: TerminalFacts = {
@@ -22,12 +23,14 @@ const TRUECOLOR: TerminalFacts = {
 function paintOf(
   settings: Partial<ThemeSettings>,
   terminal: Partial<TerminalFacts> = {},
+  platform: NodeJS.Platform = "linux",
 ): ThemePaint {
   return buildThemePaint(
     resolveTheme({
       settings: { id: "terminal", contrast: "AA", custom: {}, ...settings },
       terminal: { ...TRUECOLOR, ...terminal },
       isNoColor: false,
+      platform,
     }),
   );
 }
@@ -103,6 +106,28 @@ describe("buildThemePaint: trusted mode (palette unknown)", () => {
     expect(paint.background).toBeNull();
     expect(paint.input.isInverse).toBe(true);
   });
+
+  // The Windows console never reports its palette: what gup paints there is
+  // what its default Campbell shows. Its red (slot 1) was 3.2:1.
+  it.each(["AA", "AAA"] as const)(
+    "reaches %s on the Windows console's default palette with every coloured text",
+    (contrast) => {
+      const onConsole = paintOf({ contrast }, {}, "win32");
+      const background = wcag.parseHexColor(CAMPBELL.defaultBackground!);
+      const shown = (ref: ColorRef): wcag.Rgb =>
+        wcag.parseHexColor(
+          (ref.kind === "slot" ? CAMPBELL.palette[ref.slot] : CAMPBELL.defaultForeground) ?? "",
+        );
+      const minimum = contrast === "AA" ? 4.5 : 7;
+      for (const tone of ["accent", "success", "warning", "danger"] as const) {
+        const ratio = wcag.contrastRatio(shown(onConsole.text[tone].none.fg), background);
+        expect(ratio, tone).toBeGreaterThanOrEqual(minimum);
+      }
+      for (const border of [onConsole.border.idle, onConsole.border.focus]) {
+        expect(wcag.contrastRatio(shown(border), background)).toBeGreaterThanOrEqual(3);
+      }
+    },
+  );
 });
 
 describe("buildThemePaint: monochrome", () => {

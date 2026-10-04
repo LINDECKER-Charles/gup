@@ -35,6 +35,10 @@ export interface Audited {
   readonly ink?: wcag.Rgb;
   /** The saved contrast level; default AA. */
   readonly level?: ContrastLevel;
+  /** Where gup runs; default linux, where nothing is assumed of a terminal reporting no palette. */
+  readonly platform?: NodeJS.Platform;
+  /** The palette the terminal really has, when it does not report it: what each slot shows. */
+  readonly slots?: readonly wcag.Rgb[];
 }
 
 const UNKNOWN: TerminalFacts = {
@@ -73,6 +77,28 @@ function withDepth(audited: Audited, depth: TerminalFacts["depth"]): Audited {
 const CAMPBELL_DARK = { palette: CAMPBELL, mode: "dark" } as const;
 const BASIC_LIGHT = { palette: TERMINAL_APP_BASIC, mode: "light" } as const;
 
+/**
+ * The `terminal` theme on a terminal that keeps `reported` to itself — the
+ * Windows console never answers; a terminal may tell its lightness alone.
+ * Every slot gup paints is measured as the terminal really shows it.
+ */
+function silent(
+  label: string,
+  reported: ReportedColors,
+  known: Pick<Audited, "platform"> & Pick<TerminalFacts, "themeMode">,
+): Audited {
+  const parse = (hex: string | null): wcag.Rgb => wcag.parseHexColor(hex ?? "");
+  return {
+    label,
+    theme: "terminal",
+    terminal: { ...UNKNOWN, themeMode: known.themeMode },
+    ...(known.platform && { platform: known.platform }),
+    ground: parse(reported.defaultBackground),
+    ink: parse(reported.defaultForeground),
+    slots: reported.palette.map(parse),
+  };
+}
+
 /** Every theme the audit holds the menu to, on the terminals it is held on. */
 const AUDITED: readonly Audited[] = [
   ...RGB_THEME_IDS.map(
@@ -94,6 +120,14 @@ const AUDITED: readonly Audited[] = [
   },
   onTerminal("monochrome on Campbell", "monochrome", CAMPBELL_DARK),
   onTerminal("monochrome on Terminal.app Basic", "monochrome", BASIC_LIGHT),
+  silent("terminal on the Windows console (Campbell, unreported)", CAMPBELL, {
+    platform: "win32",
+    themeMode: null,
+  }),
+  silent("terminal on Terminal.app Basic, lightness only", TERMINAL_APP_BASIC, {
+    platform: "darwin",
+    themeMode: "light",
+  }),
 ];
 
 /** The legacy look on a white terminal: what the audit must catch, the theme not painting. */
@@ -166,6 +200,7 @@ function themedFactory(audited: Audited, settings: SettingsService, painted: { g
       probe: staticProbe(audited.terminal),
       settings: appearanceSource(settings),
       env: UTF8_TERMINAL_ENV,
+      platform: audited.platform ?? "linux",
     });
     const { mode, palette } = appearance.resolved;
     const isGroundUnknown = audited.terminal.colors === null;
@@ -223,6 +258,7 @@ export async function auditMenu(audited: Audited, options: AuditOptions): Promis
         ground: painted.ground,
         textMinimum,
         ...(audited.ink && { ink: audited.ink }),
+        ...(audited.slots && { slots: audited.slots }),
       }).map((v) => `"${v.text.trim()}" ${v.ratio.toFixed(2)} < ${v.needed}`),
       ...paintedPaneText(pane),
       ...unreadablePaneText(pane, audited, textMinimum),

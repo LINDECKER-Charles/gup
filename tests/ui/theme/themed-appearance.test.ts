@@ -63,6 +63,8 @@ function factory(options: {
   settings?: AppearanceSource;
   probe?: TerminalProbe;
   env?: NodeJS.ProcessEnv;
+  /** Default linux: where gup assumes nothing about a terminal that reports no palette. */
+  platform?: NodeJS.Platform;
   created?: (appearance: ThemedAppearance) => void;
 }): AppearanceFactory {
   return (_renderer, tui) => {
@@ -71,6 +73,7 @@ function factory(options: {
       probe: options.probe ?? staticProbe(UNKNOWN_PALETTE),
       settings: options.settings ?? settingsSource(),
       env: options.env ?? {},
+      platform: options.platform ?? "linux",
     });
     options.created?.(appearance);
     return appearance;
@@ -132,6 +135,16 @@ describe("ThemedAppearance: the white-on-white fix", () => {
     await onScreen(factory({}), everyTone, async (setup) => {
       expect(spanOf(setup, "plain").fg.intent).toBe("default");
       expect(spanOf(setup, "accent").fg).toMatchObject({ intent: "indexed", slot: 6 });
+    });
+  });
+
+  // conhost never reports its palette; its default red (slot 1) is 3.2:1 on
+  // its background. Its bright twin reads.
+  it("takes the slots that read on the Windows console's defaults there", async () => {
+    await onScreen(factory({ platform: "win32" }), everyTone, async (setup) => {
+      expect(spanOf(setup, "plain").fg.intent).toBe("default");
+      expect(spanOf(setup, "danger").fg).toMatchObject({ intent: "indexed", slot: 9 });
+      expect(spanOf(setup, "warning").fg).toMatchObject({ intent: "indexed", slot: 3 });
     });
   });
 

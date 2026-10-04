@@ -12,9 +12,10 @@ import { ANSI_SLOTS, type PaintSource } from "./terminal-palette.js";
  *
  * - rgb / detected: the palette, no DIM (the colours carry the hierarchy);
  *   on the accent fill every tone is the fill's own text colour.
- * - trusted (terminal palette unknown): the terminal's own foreground and
- *   ANSI slots; fills are inverse video, so a selected row keeps exactly the
- *   terminal's text contrast whatever its theme.
+ * - trusted (terminal palette unknown): the terminal's own foreground, and
+ *   for each coloured tone the ANSI slot (or the foreground) the resolve
+ *   chose as most likely to read there; fills are inverse video, so a
+ *   selected row keeps exactly the terminal's text contrast whatever its theme.
  * - monochrome: the terminal's foreground only, fills in inverse video.
  */
 
@@ -58,16 +59,24 @@ const FILL_KEYS: readonly FillKey[] = ["none", "highlight", "accent"];
 const BOLD_TONES: ReadonlySet<Tone> = new Set(["strong", "onAccent"]);
 const DIM_TONES: ReadonlySet<Tone> = new Set(["muted", "disabled"]);
 const TERMINAL_FG: ColorRef = { kind: "terminal-fg" };
-/** The ANSI slot of each coloured tone in trusted mode (the others: the terminal's foreground). */
-const TRUSTED_SLOT: Partial<Record<Tone, number>> = {
+/**
+ * The roles trusted mode colours, with the slot each takes on a reported
+ * palette — the default when the resolve chose none. Other tones: the
+ * terminal's foreground.
+ */
+const TRUSTED_SLOTS: Readonly<Partial<Record<ColorToken, number>>> = {
   accent: ANSI_SLOTS.accent,
   success: ANSI_SLOTS.success,
   warning: ANSI_SLOTS.warning,
   danger: ANSI_SLOTS.danger,
+  borderIdle: ANSI_SLOTS.border,
+  borderFocus: ANSI_SLOTS.accent,
 };
 
 export function buildThemePaint(theme: ResolvedTheme): ThemePaint {
-  if (theme.palette === null) return theme.mode === "trusted" ? trustedPaint() : monochromePaint();
+  if (theme.palette === null) {
+    return theme.mode === "trusted" ? trustedPaint(theme.sources) : monochromePaint();
+  }
   return palettePaint(theme.palette, theme.sources);
 }
 
@@ -126,19 +135,24 @@ function refOf(token: { rgb: Rgb; source: PaintSource | undefined; role: Role })
   return { kind: "rgb", rgb };
 }
 
-function trustedPaint(): ThemePaint {
+function trustedPaint(sources: Readonly<Partial<Record<ColorToken, PaintSource>>>): ThemePaint {
+  const colorOf = (token: ColorToken, slot: number): ColorRef => {
+    const source = sources[token];
+    if (source?.kind === "terminal-fg") return TERMINAL_FG;
+    return { kind: "slot", slot: source?.kind === "slot" ? source.slot : slot };
+  };
   const text = tableOf((tone, fill) => {
     const isBold = BOLD_TONES.has(tone);
     if (fill !== "none") return style(TERMINAL_FG, { isBold, isInverse: true });
-    const slot = TRUSTED_SLOT[tone];
-    if (slot !== undefined) return style({ kind: "slot", slot });
+    const slot = TRUSTED_SLOTS[TONE_TOKEN[tone]];
+    if (slot !== undefined) return style(colorOf(TONE_TOKEN[tone], slot));
     return style(TERMINAL_FG, { isBold, isDim: DIM_TONES.has(tone) });
   });
   return {
     text,
     border: {
-      idle: { kind: "slot", slot: ANSI_SLOTS.border },
-      focus: { kind: "slot", slot: ANSI_SLOTS.accent },
+      idle: colorOf("borderIdle", ANSI_SLOTS.border),
+      focus: colorOf("borderFocus", ANSI_SLOTS.accent),
     },
     ...terminalChrome(),
   };
