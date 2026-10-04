@@ -175,7 +175,7 @@ describe("SchedulesPanel, list", () => {
       "Dernière exécution · Outils dev · il y a 1 h · 2 min 14 s · rattrapage",
       "  ✔ Winget         Git.Git              2.46.0 → 2.47.0",
       "  = npm (global)   pnpm                 aucune mise à jour",
-      "  ↷ Chocolatey     vlc                  ignoré — droits administrateur requis",
+      "  ↷ Chocolatey     vlc                  ignorée — droits administrateur requis",
     ]);
   });
 

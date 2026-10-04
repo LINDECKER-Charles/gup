@@ -217,7 +217,7 @@ describe("run view", () => {
     pty.last().emitExit({ exitCode: 0 });
 
     const results = await shown(menu, RUN_TITLES.done);
-    expect(results).toMatch(/✔ 2 mis à jour {3}↷ 0 ignoré\(s\) {3}✖ 1 échec\(s\)/);
+    expect(results).toMatch(/✔ 2 mis à jour {3}↷ 0 ignorée {3}✖ 1 échec/);
     expect(results).toMatch(/› ✖ beta /);
     expect(results).toContain(PANE_LABELS.output("essai · beta"));
     await menu.press("enter");
@@ -281,7 +281,7 @@ describe("run view", () => {
     const results = await shown(menu, RUN_TITLES.done);
     expect(hoisted.terminate).toHaveBeenCalledOnce();
     expect(pty.spawned).toHaveLength(1);
-    expect(results).toMatch(/⊘ 2 annulé\(s\)/);
+    expect(results).toMatch(/⊘ 2 annulées/);
   });
 
   it("Ctrl+C skips the install in flight without leaving gup", async () => {
@@ -301,7 +301,7 @@ describe("run view", () => {
     await menu.press("ctrl+c");
     const results = await shown(menu, RUN_TITLES.done);
     expect(pty.spawned).toHaveLength(2);
-    expect(results).toMatch(/↷ 2 ignoré\(s\) {3}✖ 0 échec\(s\) {3}⊘ 1 annulé\(s\)/);
+    expect(results).toMatch(/↷ 2 ignorées {3}✖ 0 échec {3}⊘ 1 annulée/);
   });
 
   it("leaves the results on Ctrl+C, the notices of the run gone", async () => {
@@ -454,7 +454,7 @@ describe("run view", () => {
     expect(waiting).toContain(RUN_HINTS.waiting);
     expect(statusListRows(waiting, RUN_TITLES.running)).toBe(LIST_TOP_ROWS + PACKAGES.length);
     await menu.press("x", "o");
-    expect(await shown(menu, RUN_TITLES.done)).toMatch(/⊘ 3 annulé\(s\)/);
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/⊘ 3 annulées/);
     expect(pty.spawned).toHaveLength(0);
   });
 

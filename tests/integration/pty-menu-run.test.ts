@@ -92,7 +92,7 @@ describe.skipIf(!support.isAvailable)("an update run inside the menu, on a real 
       await menu.press("t", "o", "enter");
 
       const results = await shown(menu, RUN_TITLES.done);
-      expect(results).toMatch(/✔ 2 mis à jour {3}↷ 0 ignoré\(s\) {3}✖ 1 échec\(s\)/);
+      expect(results).toMatch(/✔ 2 mis à jour {3}↷ 0 ignorée {3}✖ 1 échec/);
       expect(results).toContain("gup-e2e: gamma echoue");
       expect(results).toContain(PANE_LABELS.output("essai · gamma"));
       await menu.press("up");

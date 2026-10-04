@@ -139,7 +139,7 @@ describe("statusLines", () => {
     model.finished({ item: direct[1]!, outcome: outcome("b", { success: false }) });
     model.markDone();
     const lines = text(statusLines(model, view({ cursor: 1, focus: 1 })).lines);
-    expect(lines[0]).toMatch(/^✔ 1 mis à jour {3}↷ 0 ignoré\(s\) {3}✖ 1 échec\(s\) +en 00:00$/);
+    expect(lines[0]).toMatch(/^✔ 1 mis à jour {3}↷ 0 ignorée {3}✖ 1 échec +en 00:00$/);
     expect(lines[2]).toMatch(/^ {2}✔ a /);
     expect(lines[3]).toMatch(/^› ✖ b /);
   });
@@ -159,7 +159,7 @@ describe("statusLines", () => {
     const [summary] = statusLines(model, view()).lines;
     expect(tones(summary)).toMatchObject({
       "✔ 0 mis à jour": "muted",
-      "✖ 1 échec(s)": "danger",
+      "✖ 1 échec": "danger",
     });
   });
 

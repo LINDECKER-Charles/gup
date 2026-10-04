@@ -13,12 +13,12 @@ import { TuiBox } from "./TuiBox.jsx";
 import { TuiFrame } from "./TuiFrame.jsx";
 import { TuiMark } from "./TuiMark.jsx";
 
-/** What each status mark says to a screen reader (French, like the interface). */
+/** What each status mark says to a screen reader (French, like the interface's RUN_SUMMARY). */
 const STATUS_WORDS = {
   success: "mis à jour",
   failed: "échec",
-  skipped: "ignoré",
-  cancelled: "annulé",
+  skipped: "ignorée",
+  cancelled: "annulée",
   pending: "en attente",
   running: "en cours",
 };
