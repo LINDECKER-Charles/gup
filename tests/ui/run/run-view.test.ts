@@ -55,10 +55,10 @@ import {
   RUN_TITLES,
   STOP_DIALOG,
 } from "../../../src/ui/text/run-labels.js";
-import { PROMPT_IDLE_MS } from "../../../src/ui/run/prompt-hint.js";
+import { PROMPT_IDLE_MS } from "../../../src/ui/run/terminal/prompt-hint.js";
 import { DIALOG_HINTS } from "../../../src/ui/text/menu-labels.js";
 import { NOTIFY_MIN_RUN_MS } from "../../../src/ui/run/run-view.js";
-import { RETAINED_RECENT_PANES } from "../../../src/ui/run/terminal-panes.js";
+import { RETAINED_RECENT_PANES } from "../../../src/ui/run/terminal/terminal-panes.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
 import type { ViewDefinition } from "../../../src/ui/app/view-definition.js";

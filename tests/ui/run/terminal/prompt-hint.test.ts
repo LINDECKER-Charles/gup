@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isLikelyAwaitingInput, PROMPT_IDLE_MS } from "../../../src/ui/run/prompt-hint.js";
+import { isLikelyAwaitingInput, PROMPT_IDLE_MS } from "../../../../src/ui/run/terminal/prompt-hint.js";
 
 const silent = (lastLine: string) => ({ lastLine, idleMs: PROMPT_IDLE_MS });
 

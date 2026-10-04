@@ -2,7 +2,7 @@ import type { BoxRenderable } from "@opentui/core";
 import { CHROME_ROWS } from "../tui/chrome.js";
 import type { Screen } from "../tui/screen-host.js";
 import { panelFrame, TextPanel } from "../tui/text-panel.js";
-import type { PaneSize } from "./terminal-panes.js";
+import type { PaneSize } from "./terminal/terminal-panes.js";
 
 /**
  * Status list balanced against the terminal pane: the list takes the rows it

@@ -255,19 +255,24 @@ no foundation contract changed, and `menu-session.ts` is untouched.
 |---|---|
 | `ui/app/in-screen-launcher.ts` | `inScreenLauncher(deps?)`: the `LauncherFactory` the CLI module installs |
 | `ui/run/run-view.ts` | `RunView`, the takeover: layout, ports, keys, Ctrl+C, frame, results |
+| `ui/run/run-events.ts` | `runObserver(target)`: the pipeline's events moved into the model and the panes, then a redraw; never throws |
+| `ui/run/run-levers.ts` | `RunLevers`: `s`, `x`, Ctrl+C and `t` on the run in flight, and the notice each one leaves |
 | `ui/run/run-model.ts` | `RunModel implements UpdateObserver`: items, phase, counts, timing |
 | `ui/run/run-lines.ts` | pure renderers: progress header, aligned rows, summary, facts, titles |
 | `ui/run/run-keys.ts` | pure `keyModeOf`, `runCommandFor`, `runHintsFor` |
 | `ui/run/run-control.ts` | `RunControl implements AbortGate` (skip, stop, stop after the step, Ctrl+C ×2); `closeOnExitSignals` (W2-6) |
 | `ui/run/run-dialogs.ts` | `RunDialogs implements UpdateDecisions`, plus the stop confirmation; one dialog at a time |
 | `ui/run/run-layout.ts` | the boxes: status `TextPanel`, terminal frame, pane host on the terminal background |
-| `ui/run/terminal-panes.ts` | `TerminalPanes implements PtyPanes`: one pane per package, retention, lock |
-| `ui/run/terminal-pane.ts` | `TerminalPane implements PtyPane` over OpenTUI's `EmbeddedTerminalRenderable` |
-| `ui/run/prompt-hint.ts` | pure `isLikelyAwaitingInput` |
+| `ui/run/terminal/terminal-panes.ts` | `TerminalPanes implements PtyPanes`: one pane per package, retention, lock |
+| `ui/run/terminal/terminal-pane.ts` | `TerminalPane implements PtyPane` over OpenTUI's `EmbeddedTerminalRenderable` |
+| `ui/run/terminal/prompt-hint.ts` | pure `isLikelyAwaitingInput` |
 | `ui/text/run-labels.ts` | every French string of the above, the confirmation extras and the doctor line |
 | `commands/cli/embedded-terminal-module.ts` | installs the launcher for the menu; the doctor line (W2-7) |
 
-`ui/run` holds 10 files (the folder budget), `ui/app` reaches 10 with the launcher.
+`ui/run` holds 10 files (the folder budget), `ui/app` reaches 10 with the launcher. Since
+`fix/final-polish` the embedded terminal's three modules live in `ui/run/terminal/`, which made
+room to take the pipeline events and the levers out of `run-view.ts` (back under the 300-line
+alert); `ui/run` holds 9 files.
 
 ## 14. The in-screen launcher
 
@@ -392,8 +397,8 @@ l'interface`; status `off` when the user turned it off with `GUP_PTY`, `warn` ot
 
 | Suite | What it holds |
 |---|---|
-| `tests/ui/run/{run-model,run-lines,run-keys,run-control,prompt-hint}.test.ts` | pure state, rendering, key tables, the gate and Ctrl+C double press, W2-6 signals on an injected emitter |
-| `tests/ui/run/terminal-panes.test.ts` | real `EmbeddedTerminalRenderable`s on the in-memory renderer: one pane at a time, retention, notes, keyboard only with a child, the lock (a click and Enter write nothing, terminal responses still pass), resize |
+| `tests/ui/run/{run-model,run-lines,run-keys,run-control,terminal/prompt-hint}.test.ts` | pure state, rendering, key tables, the gate and Ctrl+C double press, W2-6 signals on an injected emitter |
+| `tests/ui/run/terminal/terminal-panes.test.ts` | real `EmbeddedTerminalRenderable`s on the in-memory renderer: one pane at a time, retention, notes, keyboard only with a child, the lock (a click and Enter write nothing, terminal responses still pass), resize |
 | `tests/ui/run/run-view.test.ts` | the real menu, launcher, pipeline, runner and PTY sink on a fake node-pty: nominal run and pruned return, `s`, `x` (Non / Oui), Ctrl+C ×1 and ×2, `q` refused, typing (Ctrl+C forwarded, Ctrl+G never sent), a dialog + a click + Enter write nothing, the UAC wait, the sudo password in the pane, the retry dialog, the waiting holder, the prompt hint, the notification (≥ 60 s, short run), IT-6, the signal gate's lifetime |
 | `tests/ui/app/in-screen-launcher.test.ts` | warm-up, confirmation text, outside fallback with the reason and no second confirmation, decline, no-confirmation preference, double Entrée, pipeline error, run-now `scheduleId` + `returnTo` |
 | `tests/commands/cli/embedded-terminal-module.test.ts` | the launcher installed for the menu only; the doctor line ok / off / warn |

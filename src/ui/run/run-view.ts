@@ -1,11 +1,5 @@
 import { log } from "../../core/log/log.js";
-import type {
-  Attempt,
-  AttemptResult,
-  PlannedUpdate,
-  UpdateObserver,
-  UpdatePorts,
-} from "../../core/update/update-ports.js";
+import type { UpdateObserver, UpdatePorts } from "../../core/update/update-ports.js";
 import type { UiPreferences } from "../app/ui-preferences.js";
 import type {
   ResultAction,
@@ -18,12 +12,11 @@ import {
   PANE_LABELS,
   RUN_NOTICES,
   RUN_NOTIFICATION,
-  RUN_TAGS,
   type ElevationKind,
 } from "../text/run-labels.js";
-import { isLikelyAwaitingInput } from "./prompt-hint.js";
 import { RunControl } from "./run-control.js";
 import { RunDialogs } from "./run-dialogs.js";
+import { runObserver } from "./run-events.js";
 import {
   keyModeOf,
   runCommandFor,
@@ -32,6 +25,7 @@ import {
   type RunKeyMode,
 } from "./run-keys.js";
 import { RunLayout } from "./run-layout.js";
+import { RunLevers } from "./run-levers.js";
 import {
   outputTitle,
   runFacts,
@@ -41,8 +35,9 @@ import {
   type Notice,
   type StatusView,
 } from "./run-lines.js";
-import { labelOf, retryLabelOf, RunModel } from "./run-model.js";
-import { ELEVATED_PANE_KEY, TerminalPanes } from "./terminal-panes.js";
+import { RunModel } from "./run-model.js";
+import { isLikelyAwaitingInput } from "./terminal/prompt-hint.js";
+import { ELEVATED_PANE_KEY, TerminalPanes } from "./terminal/terminal-panes.js";
 
 /** How often the pane is checked for a silent program waiting on a prompt. */
 const PROMPT_SAMPLE_MS = 500;
@@ -80,7 +75,7 @@ export class RunView implements Takeover {
   readonly #clock: () => number;
   readonly #elevation: ElevationKind;
   readonly #layout: RunLayout;
-  readonly #dialogs: RunDialogs;
+  readonly #levers: RunLevers;
   readonly #actions: readonly ResultAction[];
   /** A result action is running: another one waits for it. */
   #isActing = false;
@@ -109,12 +104,13 @@ export class RunView implements Takeover {
     });
     this.model = new RunModel(this.#clock);
     this.control = new RunControl();
-    this.#dialogs = new RunDialogs(deps.surface.dialogs, {
+    const dialogs = new RunDialogs(deps.surface.dialogs, {
       panes: this.panes,
       gate: this.control,
       elevation: this.#elevation,
     });
-    this.ports = { observer: this.observer(), decisions: this.#dialogs, gate: this.control };
+    this.#levers = this.levers(dialogs);
+    this.ports = { observer: this.observer(), decisions: dialogs, gate: this.control };
     this.#layout.status.onRowClick((row) => this.click(row));
   }
 
@@ -135,9 +131,7 @@ export class RunView implements Takeover {
     if (mode === "typing") return; // the focused pane sends ^C to the installer
     if (mode === "done") return this.#leave?.();
     this.#notice = null;
-    if (this.control.pressCtrlC() === "stop") this.stopNow(RUN_NOTICES.ctrlCDouble);
-    else if (mode === "elevating") this.say(RUN_NOTICES.skipAdmin[this.#elevation], "warning");
-    else this.skip(RUN_NOTICES.ctrlCFirst);
+    this.#levers.ctrlC();
   }
 
   tick(): void {
@@ -191,49 +185,28 @@ export class RunView implements Takeover {
     this.#layout.destroy();
   }
 
-  // -- Pipeline events --------------------------------------------------------
+  // -- Wiring -----------------------------------------------------------------
+
+  private levers(dialogs: RunDialogs): RunLevers {
+    return new RunLevers({
+      model: this.model,
+      control: this.control,
+      panes: this.panes,
+      dialogs,
+      elevation: this.#elevation,
+      say: (text, tone) => this.say(text, tone),
+      redraw: () => this.draw(),
+    });
+  }
 
   private observer(): UpdateObserver {
-    return {
-      planned: (plan) => this.observe(() => this.model.planned(plan)),
-      started: (attempt) => this.observe(() => this.started(attempt)),
-      finished: (result) => this.observe(() => this.finished(result)),
-      elevationStarted: (items) => this.observe(() => this.elevationStarted(items)),
-      cancelled: (items) => this.observe(() => this.model.cancelled(items)),
-      waiting: (holder) => this.observe(() => this.model.waiting(holder)),
-    };
-  }
-
-  /** An observer must not throw: a drawing problem never stops the updates. */
-  private observe(event: () => void): void {
-    try {
-      event();
-      this.draw();
-    } catch (error) {
-      log.warn("ui.run-view-failed", { error: messageOf(error) });
-    }
-  }
-
-  private started({ item, retry }: Attempt): void {
-    this.model.started({ item, ...(retry !== undefined && { retry }) });
-    this.#scrolledTo = null;
-    this.panes.open(item.key, PANE_LABELS.title(item.providerName, labelOf(item)));
-    if (retry !== undefined) this.panes.current().note(RUN_TAGS.retry(retryLabelOf(retry)));
-  }
-
-  private finished(result: AttemptResult): void {
-    this.model.finished(result);
-    this.panes.settle(result.item.key, result.outcome);
-    this.panes.blur();
-  }
-
-  private elevationStarted(items: readonly PlannedUpdate[]): void {
-    this.model.elevationStarted(items);
-    this.panes.open(ELEVATED_PANE_KEY, PANE_LABELS.admin[this.#elevation]);
-    if (this.#elevation !== "uac") return;
-    const pane = this.panes.current();
-    pane.note(PANE_LABELS.approveUac);
-    pane.note(PANE_LABELS.adminElsewhere(items.length));
+    return runObserver({
+      model: this.model,
+      panes: this.panes,
+      elevation: this.#elevation,
+      onStarted: () => (this.#scrolledTo = null),
+      redraw: () => this.draw(),
+    });
   }
 
   // -- Keys -------------------------------------------------------------------
@@ -244,9 +217,9 @@ export class RunView implements Takeover {
 
   private run(command: RunCommand): void {
     const actions: Partial<Record<RunCommand, () => void>> = {
-      skip: () => this.skipKey(),
-      stop: () => void this.stop(),
-      focus: () => this.focusPane(),
+      skip: () => this.#levers.skip(),
+      stop: () => void this.#levers.stop(),
+      focus: () => this.#levers.focus(),
       release: () => this.panes.blur(),
       "toggle-size": () => (this.#isEnlarged = !this.#isEnlarged),
       up: () => this.move(-1),
@@ -274,44 +247,6 @@ export class RunView implements Takeover {
     if (this.#leave === null) return;
     this.#notice = notice;
     this.draw();
-  }
-
-  private skipKey(): void {
-    if (this.model.phase === "elevating") {
-      return this.say(RUN_NOTICES.skipAdmin[this.#elevation], "warning");
-    }
-    this.skip(RUN_NOTICES.skipped);
-  }
-
-  private skip(notice: string): void {
-    if (this.control.skip()) this.say(notice, "warning");
-    else this.say(RUN_NOTICES.skipIdle, "muted");
-  }
-
-  /** `x`: after a confirmation — or at once during the elevated step, which only ends early. */
-  private async stop(): Promise<void> {
-    if (this.model.isStopping) return;
-    if (this.model.phase === "elevating") return this.stopNow(RUN_NOTICES.stopAfterStep);
-    if (!(await this.#dialogs.confirmStop(this.model.remaining()))) return;
-    if (this.model.phase !== "done") this.stopNow(RUN_NOTICES.ctrlCDouble);
-    this.draw();
-  }
-
-  private stopNow(notice: string): void {
-    if (this.model.phase === "elevating") {
-      this.control.stopAfterStep();
-      this.say(RUN_NOTICES.stopAfterStep, "danger");
-    } else {
-      this.control.stop();
-      this.say(notice, "danger");
-    }
-    this.model.markStopping();
-  }
-
-  private focusPane(): void {
-    const isUacStep = this.model.phase === "elevating" && this.#elevation === "uac";
-    if (isUacStep) return this.say(RUN_NOTICES.typeElsewhere, "warning");
-    if (!this.panes.focus()) this.say(RUN_NOTICES.typeIdle, "muted");
   }
 
   private move(delta: number): void {
