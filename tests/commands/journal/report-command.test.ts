@@ -116,6 +116,22 @@ describe("gup report (HTML)", () => {
     expect(output(stdout)).toContain(pathToFileURL(out).href);
   });
 
+  it("writes but never opens a report named like a program (--out rapport.hta --open)", async () => {
+    const { openExternal: realOpen } = await vi.importActual<
+      typeof import("../../../src/core/export/open-external.js")
+    >("../../../src/core/export/open-external.js");
+    const launch = vi.fn(async () => true);
+    const out = join(dir, "rapport.hta");
+
+    const code = await runReport({ out, open: true }, { openExternal: (file) => realOpen(file, { launch }) });
+
+    expect(code).toBe(0);
+    expect(readFileSync(out, "utf8")).toMatch(/^<!doctype html>/);
+    expect(launch).not.toHaveBeenCalled();
+    expect(output(stderr)).toContain(REPORT_MESSAGES.notHtml.trim());
+    expect(output(stdout)).toContain(REPORT_MESSAGES.reportWritten(out));
+  });
+
   it("leaves the report closed when the setting says so, unless --open asks for it", async () => {
     interactive();
     const openExternal = opener(true);

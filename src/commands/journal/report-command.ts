@@ -203,8 +203,13 @@ function printReportLocation(path: string, opened: OpenResult | null): void {
     process.stdout.write(`${REPORT_MESSAGES.opened}\n`);
     return;
   }
-  if (opened !== null) process.stderr.write(`${REPORT_MESSAGES.openFailed}\n`);
+  if (opened !== null) process.stderr.write(`${openFailure(opened)}\n`);
   process.stdout.write(`${chalk.dim(`  ${pathToFileURL(path).href}`)}\n`);
+}
+
+/** A name refused before any launcher (`--out rapport.hta`), or a browser that did not start. */
+function openFailure(opened: OpenResult): string {
+  return opened.isNotHtml === true ? REPORT_MESSAGES.notHtml : REPORT_MESSAGES.openFailed;
 }
 
 function failureMessage(error: unknown): string {

@@ -13,6 +13,12 @@ import { launchDetached, whichFirst } from "../runner.js";
  * - Linux and others: `xdg-open`; under WSL `wslview` first, which opens the
  *   Windows browser where a bare `xdg-open` may fall back to a text browser.
  *
+ * Only an HTML page is ever handed over: the default application of any
+ * other name may run it (`.hta` through mshta, `.command` on macOS, `.desktop`
+ * on Linux), and `gup report --out` lets the user pick the name of an HTML
+ * report. On Windows, a path naming an alternate data stream (`x.hta:y.html`)
+ * is refused too.
+ *
  * Never a shell, `cmd /c start`, nor `rundll32 url.dll` (a LOLBin EDRs flag).
  * The launcher's exit code means nothing (explorer often exits 1): a started
  * process is an opened file.
@@ -24,6 +30,8 @@ export interface OpenResult {
   readonly launcher: string | null;
   /** Why the file was not opened (English, for the log). */
   readonly reason?: string;
+  /** Not opened because it is not an HTML page: no launcher was even looked for. */
+  readonly isNotHtml?: boolean;
 }
 
 export type Launch = (command: string, args: readonly string[]) => Promise<boolean>;
@@ -48,6 +56,8 @@ export interface OpenDeps {
 }
 
 const DEFAULT_WINDOWS_ROOT = "C:\\Windows";
+/** What the default application may open: gup's HTML report, nothing that could run. */
+const HTML_EXTENSIONS: ReadonlySet<string> = new Set([".html", ".htm"]);
 /** Characters explorer.exe reads as argument separators. */
 const EXPLORER_SEPARATORS = /[,"]/;
 const MAC_OPEN = "/usr/bin/open";
@@ -65,6 +75,9 @@ export async function openExternal(
     env: process.env,
     ...overrides,
   };
+  if (!isHtmlFile(file, deps.platform)) {
+    return { opened: false, launcher: null, reason: "not an HTML file", isNotHtml: true };
+  }
   const opener = openerFor(file, await factsOf(deps));
   if ("reason" in opener) return { opened: false, launcher: null, reason: opener.reason };
   if (await isStarted(deps.launch, opener)) return { opened: true, launcher: opener.command };
@@ -82,9 +95,16 @@ export function openerFor(file: string, facts: OpenerFacts): Opener {
   return { command: launcher, args: [file] };
 }
 
+/** `.html` or `.htm`, whatever the case, read with the platform's own separators. */
+function isHtmlFile(file: string, platform: NodeJS.Platform): boolean {
+  const path = platform === "win32" ? win32 : posix;
+  return HTML_EXTENSIONS.has(path.extname(file).toLowerCase());
+}
+
 function windowsOpener(file: string, env: NodeJS.ProcessEnv): Opener {
   if (!win32.isAbsolute(file)) return { reason: "not an absolute path" };
   if (EXPLORER_SEPARATORS.test(file)) return { reason: "explorer cannot open a path with , or \"" };
+  if (namesStream(file)) return { reason: "the path names an alternate data stream" };
   const root = env["SystemRoot"];
   const windowsDir = root !== undefined && win32.isAbsolute(root) ? root : DEFAULT_WINDOWS_ROOT;
   return { command: win32.join(windowsDir, "explorer.exe"), args: [file] };
@@ -100,6 +120,11 @@ async function isStarted(
   } catch {
     return false;
   }
+}
+
+/** A `:` past the root (`C:\`, `\\?\C:\`): NTFS reads `x.hta:y.html` as a stream of `x.hta`. */
+function namesStream(file: string): boolean {
+  return file.slice(win32.parse(file).root.length).includes(":");
 }
 
 function isWsl(env: NodeJS.ProcessEnv): boolean {

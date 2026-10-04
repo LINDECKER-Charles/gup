@@ -30,6 +30,9 @@ export const REPORT_MESSAGES = {
   reportWritten: (path: string) => `  rapport écrit : ${path}`,
   opened: "  ouvert dans le navigateur par défaut",
   openFailed: "  impossible d'ouvrir le navigateur — ouvrez le fichier ci-dessus",
+  notHtml:
+    "  ouverture refusée : gup n'ouvre qu'un fichier .html ou .htm " +
+    "(un autre nom peut lancer un programme)",
   truncated: (kept: number) =>
     `rapport tronqué : seules les ${formatCount(kept)} tentatives les plus récentes y sont ` +
     "détaillées (--since pour réduire la période)",

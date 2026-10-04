@@ -184,7 +184,8 @@ pages, the text charts, how the numbers are counted, privacy:
 
 Without `--open` or `--no-open`, the HTML report opens when the setting is on (the default) and
 gup runs in a terminal outside CI. Data goes to stdout, notices to stderr. An unopenable browser
-leaves the command successful, with the file's address printed.
+leaves the command successful, with the file's address printed. Only a `.html` or `.htm` file is
+opened: `--out rapport.hta` writes the report and refuses to open it.
 
 ## `gup schedule`
 

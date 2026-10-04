@@ -177,7 +177,9 @@ gup report --format csv --delimiter ";" -o maj.csv   # Excel in a French locale
 
 Without `--open` or `--no-open`, the HTML report opens in the browser when Options › **Ouvrir le
 rapport** is `ON` (the default) and gup runs in a terminal outside CI. `--open` opens it anyway —
-from a script or under CI too. Otherwise, or when no browser can be started, gup prints the
+from a script or under CI too. Only a file named `.html` or `.htm` is ever opened: with
+`--out rapport.hta` (a name Windows would hand to mshta, which runs it) the report is written but
+not opened, and gup says why. Otherwise, or when no browser can be started, gup prints the
 file's `file:///` address to open it yourself:
 
 ```
