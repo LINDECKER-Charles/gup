@@ -312,7 +312,11 @@ results — right in that window after a key's frame. While the run view is up t
 100 ms tick redraws anyway; an idle menu does not, and showed those changes only at the next key
 press (seen driving the built CLI in ConPTY). The launcher therefore requests a frame on the
 next event-loop turn (`setImmediate`) after each of those changes. The in-memory test renderer
-forces its frames, so only the real-terminal smoke shows it (§18).
+forces its frames, so only the real-terminal smoke shows it (§18). Every view resumes in that
+window too after an answered dialog (Options' timeout and colour fields left the old value on
+screen until the next key), so the menu session's `ViewContext.redraw()` and `show()` draw at
+once and request the same next-turn frame; both go through `repaintNextTurn`
+(`src/ui/tui/repaint-next-turn.ts`). A session test drops the first request to hold it.
 
 ## 15. The run view
 

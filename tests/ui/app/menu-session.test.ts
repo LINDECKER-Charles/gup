@@ -238,6 +238,32 @@ describe("MenuSession views", () => {
     await expect(menu.exit).resolves.toEqual({ kind: "quit" });
   });
 
+  it("paints a view's redraw even when the renderer drops its frame request", async () => {
+    let answer = "aucune";
+    let viewContext: ViewContext | undefined;
+    const view = testView((context) => {
+      viewContext = context;
+      return panelOf({ render: () => [[{ text: `réponse : ${answer}`, tone: "plain" }]] });
+    });
+    const menu = await bootMenu({ views: [view], scanOnStart: false });
+    await menu.waitForText("réponse : aucune");
+    // OpenTUI 0.5.14 drops a frame request made while the frame a key asked
+    // for is finishing — where a view's code resumes after an answered dialog.
+    const { renderer } = menu.screen;
+    const requestRender = renderer.requestRender.bind(renderer);
+    let isDropping = true;
+    renderer.requestRender = () => {
+      if (!isDropping) requestRender();
+    };
+    answer = "ok";
+    viewContext?.redraw();
+    isDropping = false;
+    await new Promise((resolve) => setImmediate(resolve));
+    await expect(
+      menu.screen.waitForFrame((current) => current.includes("réponse : ok")),
+    ).resolves.toContain("réponse : ok");
+  });
+
   it("hands the whole body to a takeover until it is released", async () => {
     const takeover: Takeover = { press: vi.fn(), tick: vi.fn(), draw: vi.fn() };
     const start = vi.fn((surface: TakeoverSurface) => {

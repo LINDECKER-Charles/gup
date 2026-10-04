@@ -11,6 +11,7 @@ import { closeOnExitSignals } from "../run/run-control.js";
 import { RunView } from "../run/run-view.js";
 import { CONFIRM_UPDATE } from "../text/menu-labels.js";
 import { CONFIRM_EXTRA, elevationKindOf, LAUNCH_ERROR } from "../text/run-labels.js";
+import { repaintNextTurn } from "../tui/repaint-next-turn.js";
 import { outsideLauncher } from "./outside-launcher.js";
 import type {
   LauncherContext,
@@ -194,18 +195,11 @@ class InScreenLauncher implements UpdateLauncher {
   }
 
   /**
-   * Ask for a frame on the next turn of the event loop. The launcher changes
-   * the menu from promise continuations (a dialog once the detection
-   * answered, the browse layout back after the results), which can run right
-   * after a frame was drawn but before OpenTUI 0.5.14 marked it finished: the
-   * frame request they make is then dropped, and an idle menu — no scan, no
-   * run view ticking — would show the change only at the next key press.
+   * The launcher changes the menu from promise continuations (a dialog once
+   * the detection answered, the browse layout back after the results).
    */
   private repaint(): void {
-    const { renderer } = this.#context.screen;
-    setImmediate(() => {
-      if (!renderer.isDestroyed) renderer.requestRender();
-    });
+    repaintNextTurn(this.#context.screen.renderer);
   }
 }
 

@@ -8,6 +8,7 @@ import { ScanBus } from "../../scan-progress.js";
 import { providerCountFact, QUIT_DIALOG, SIDEBAR_TITLE } from "../../text/menu-labels.js";
 import { Chrome, CHROME_ROWS } from "../../tui/chrome.js";
 import { DialogLayer } from "../../tui/dialog.js";
+import { repaintNextTurn } from "../../tui/repaint-next-turn.js";
 import type { Screen } from "../../tui/screen-host.js";
 import { panelFrame, TextPanel } from "../../tui/text-panel.js";
 import { SIDEBAR_WIDTH } from "../sidebar.js";
@@ -161,10 +162,10 @@ export class MenuSession {
       packageActions: () => this.#views.packageActions(),
       packageMarkers: () => this.#views.packageMarkers(),
       displayName: (providerId) => controller.displayName(providerId),
-      redraw: () => this.draw(),
+      redraw: () => this.redrawForView(),
       show: (view) => {
         this.#views.show(view);
-        this.draw();
+        this.redrawForView();
       },
       rescan: () => this.rescan(),
       isScanning: () => this.#scans.isRunning,
@@ -172,6 +173,15 @@ export class MenuSession {
       observeScan: (observer) => this.#scans.observe(observer),
       takeOver: (start) => this.takeOver(start),
     };
+  }
+
+  /**
+   * A redraw a view asks for, often from a promise continuation (a dialog
+   * answered, a file read): drawn now, and painted for sure on the next turn.
+   */
+  private redrawForView(): void {
+    this.draw();
+    repaintNextTurn(this.#screen.renderer);
   }
 
   private launcherContext(): LauncherContext {
