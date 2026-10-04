@@ -98,17 +98,17 @@ gup update --all -y       # CI-safe: everything, no prompt
 - **.NET / PHP**: dotnet tools, composer global, composer self, symfony-cli
 - **JVM**: jbang, coursier
 - **Rust**: cargo, rustup
-- **Other languages**: gem, cabal, stack, hex, mix, opam, luarocks, nimble, julia, R, vcpkg, pub
+- **Other languages**: gem, cabal, stack, hex, mix, opam, luarocks, nimble, julia, R, vcpkg, pub, flutter
 - **Toolchains**: asdf, mise, proto, goenv, sdkman
-- **Cloud CLIs**: az, gcloud, aws-cli-v2, doctl, flyctl, hcloud, heroku, glab
+- **Cloud CLIs**: az, gcloud, aws-cli-v2, doctl, flyctl, hcloud, heroku
 - **IaC**: terraform, pulumi, consul, boundary
 - **Kubernetes**: kubectl, helm, helm plugins, helm repos, krew, kustomize, argocd, flux, k3d, kind, minikube, skaffold
 - **Containers**: docker-desktop, dive
 - **Security**: cosign, gitsign, grype
-- **Dev CLIs**: gh extensions, delta, and more
+- **Dev CLIs**: gh extensions, glab, delta, and more
 - **Editors / IDEs**: VS Code, Cursor, VSCodium and Windsurf extensions, JetBrains IDEs, Visual Studio, Neovim and Vim plugin managers
 - **Shell**: pwsh modules, starship, oh-my-posh, nerd-fonts
-- **Embedded / mobile**: arduino-cli, android-sdk, flutter, expo, fastlane
+- **Embedded / mobile**: arduino-cli, android-sdk, expo, fastlane
 
 Full catalogue with per-provider status:
 https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.md
