@@ -193,7 +193,7 @@ listCommand({ only?, fast?, json? })
 No prompt, no install. The scan is recorded in the history. Always exits 0: a provider that fails
 to scan is reported in its row, not as a process failure.
 
-### 4.3 `gup update [targets...]`
+### 4.3 `gup update [cibles...]`
 
 ```
 updateCommand({ all, yes, only, fast, targets })
@@ -671,8 +671,12 @@ providers; the install hint matching the running platform, so `gup doctor` never
 
 ### 9.1 `cli.ts` and the CLI modules
 
-`cli.ts` registers every module of `CLI_MODULES` (one line each, sorted by id) and installs the
-startup hook. A module adds its commands and global options (`register`), answers which trigger
+`cli.ts` parses the program `createProgram` (`commands/cli/program.ts`) assembles: commander put
+in French first (`commander-french.ts`: the help's headings and `[commande]`, `-h` and `help`,
+`--version`, and its usage errors reworded line by line — the words live in
+`ui/text/cli-labels.ts`), then every module of `CLI_MODULES` (one line each, sorted by id)
+registered, then the startup hook. The French settings come first because commander copies the
+help and output configuration into each command when it is created. A module adds its commands and global options (`register`), answers which trigger
 a command path is (`triggerFor`: the tick is a `schedule` run), installs process-wide slots
 before the action (`beforeAction`), contributes its `gup doctor` line (`diagnostics`) and hears
 crashes (`onCrash`). The elevated `__admin-batch` child runs only the modules that opt in
@@ -680,7 +684,7 @@ crashes (`onCrash`). The elevated `__admin-batch` child runs only the modules th
 
 Global error handling (`startup.ts`): a `PromptCancelledError` (Ctrl+C while a prompt or a screen
 holds the keyboard — raw mode turns it into a key, not SIGINT) exits 130 silently; any other
-error prints `Error: <message>` on stderr and exits 1. A signal while a screen is up exits
+error prints `Erreur : <message>` on stderr and exits 1. A signal while a screen is up exits
 128 + the signal number once the terminal is restored.
 
 ### 9.2 `list.ts`, `update.ts`, `doctor.ts`
@@ -1086,7 +1090,7 @@ Conventions:
 | `gup __admin-batch <file>` (hidden) | `adminBatchModule` | the elevated executor |
 | `--log-level <niveau>` | `journalModule` (global option) | `resolveLogSettings()` |
 | Ctrl+C inside a prompt | `handleFatal` | `PromptCancelledError` → exit 130 |
-| Fatal error | `handleFatal` | `Error: <message>` on stderr, exit 1 |
+| Fatal error | `handleFatal` | `Erreur : <message>` on stderr, exit 1 |
 
 ---
 

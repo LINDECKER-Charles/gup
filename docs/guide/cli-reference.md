@@ -7,7 +7,7 @@ and `report` read what gup recorded, `schedule` manages scheduled updates.
 - [Commands](#commands)
 - [Global options](#global-options)
 - [`gup list`](#gup-list)
-- [`gup update`](#gup-update-targets)
+- [`gup update`](#gup-update-cibles)
 - [`gup doctor`](#gup-doctor)
 - [`gup log`](#gup-log)
 - [`gup report`](#gup-report)
@@ -55,7 +55,7 @@ gup --version                                        # print the version
 |---|---|
 | `--log-level <niveau>` | The debug log's level for this run: `off`, `error`, `warn`, `info`, `debug` or `trace`. Wins over `GUP_LOG_LEVEL` and the Options setting ([levels](journal-and-reports.md#levels)). Accepted before or after the command; anything else exits `2` before the command runs. |
 | `-V, --version` | Print the version. |
-| `-h, --help` | Help for gup, or for a command (`gup report --help`). |
+| `-h, --help` | Help for gup, or for a command (`gup report --help`), in French like the rest of the interface (`Utilisation :`, `Options :`, `Commandes :`); `gup log help show` and `gup schedule help add` work too. |
 
 ## `gup list`
 
@@ -73,7 +73,7 @@ listing, so what you see is what `gup update` can act on. A `--provider` id gup 
 (`Attention : Provider brew-cask indisponible sur Windows (macOS uniquement) — ignoré.`) instead of
 scanning nothing in silence; stdout stays clean for `--json`.
 
-## `gup update [targets...]`
+## `gup update [cibles...]`
 
 With no target and no `--all`, it scans and opens the package picker.
 
@@ -83,7 +83,7 @@ With no target and no `--all`, it scans and opens the package picker.
 | `-y, --yes` | Skip that confirmation — **and** the retry offer (see below) |
 | `-p, --provider <ids...>` | Restrict the scan to these provider ids |
 | `--fast` | Skip providers marked `slow` |
-| `--timeout <seconds>` | Per-install wall-clock cap; `0` disables it |
+| `--timeout <secondes>` | Per-install wall-clock cap; `0` disables it |
 
 Passing explicit targets skips the scan entirely: `gup` goes straight to the provider and asks it
 to update that package.
@@ -271,7 +271,7 @@ An install can hang: a stalled download, the Windows Installer mutex, an install
 - **Ctrl+C** during a batch skips the install in flight and moves on (`s` in the app's run view).
 - **Ctrl+C twice** within 1.5 s stops the whole batch after the current package.
 - A per-install **wall-clock timeout** kills a wedged install automatically. Default
-  **1200 s (20 min)**. Change it with `--timeout <seconds>`, the `GUP_INSTALL_TIMEOUT` environment
+  **1200 s (20 min)**. Change it with `--timeout <secondes>`, the `GUP_INSTALL_TIMEOUT` environment
   variable, or Options › **Timeout install** — in that order of precedence. `0` disables it.
 
 Both levers produce a skip (`↷ ignorée par l'utilisateur`), not a failure: the summary counts them
@@ -387,7 +387,7 @@ fast). Used by gup's own test suites only: `GUP_E2E`, `GUP_E2E_SCOPE`, `GUP_MUTA
 | Code | Meaning |
 |---|---|
 | `0` | Success, or nothing to do |
-| `1` | At least one update failed, the `--all` confirmation was declined, a file could not be read or written, a schedule's trigger could not be changed, or an unhandled error occurred (`Error: …` on stderr) |
+| `1` | At least one update failed, the `--all` confirmation was declined, a file could not be read or written, a schedule's trigger could not be changed, or an unhandled error occurred (`Erreur : …` on stderr) |
 | `2` | Bad invocation: malformed target, unknown or foreign provider, invalid `--timeout`, `--log-level`, `--since`, `--format` or schedule arguments — nothing was changed |
 | `130` | Ctrl+C at a prompt or on a full screen |
 | `128 + n` | Signal `n` while a full screen was up (the console window closed, Ctrl+Break, a kill): the terminal is restored first |

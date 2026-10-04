@@ -8,6 +8,7 @@ import { MAX_REPORT_UPDATES } from "../../core/export/report-model.js";
 import { parsePeriod, parseUntil, withUntil, type Period } from "../../core/time/period.js";
 import { settingsService } from "../../ui/settings/settings-service.js";
 import { resolveGlyphMode, type GlyphPreference } from "../../ui/theme/glyphs.js";
+import { ERROR_PREFIX } from "../../ui/text/cli-labels.js";
 import { periodLabel } from "../../ui/text/journal/activity-labels.js";
 import { LOG_MESSAGES } from "../../ui/text/journal/log-labels.js";
 import { REPORT_COMMAND_LABELS, REPORT_MESSAGES } from "../../ui/text/journal/report-labels.js";
@@ -218,6 +219,6 @@ function failureMessage(error: unknown): string {
 }
 
 function fail(message: string, code: number): number {
-  process.stderr.write(`${chalk.red("Error:")} ${message}\n`);
+  process.stderr.write(`${chalk.red(ERROR_PREFIX)} ${message}\n`);
   return code;
 }

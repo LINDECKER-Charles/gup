@@ -3,6 +3,7 @@ import type { Command } from "commander";
 import { ADMIN_BATCH_COMMAND } from "../../core/elevation.js";
 import { setRunTrigger, type RunTrigger } from "../../core/state/run-context.js";
 import { PromptCancelledError } from "../../ui/tui/prompt-cancelled.js";
+import { ERROR_PREFIX } from "../../ui/text/cli-labels.js";
 import type { CliModule } from "./cli-module.js";
 
 /** Exit code of a run the user cancelled with Ctrl+C (128 + SIGINT). */
@@ -46,7 +47,7 @@ export function handleFatal(error: unknown, modules: readonly CliModule[]): neve
     process.exit(CANCELLED_EXIT_CODE);
   }
   const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`${chalk.red("Error:")} ${message}\n`);
+  process.stderr.write(`${chalk.red(ERROR_PREFIX)} ${message}\n`);
   process.exit(FAILURE_EXIT_CODE);
 }
 

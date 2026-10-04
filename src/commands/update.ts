@@ -13,6 +13,7 @@ import { confirm } from "../ui/prompts/confirm.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection } from "../ui/select.js";
 import { renderScanTable } from "../ui/table.js";
+import { ERROR_PREFIX } from "../ui/text/cli-labels.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { consolePorts, printReport } from "../ui/update-console.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
@@ -217,14 +218,14 @@ export const updateModule: CliModule = {
   order: MODULE_ORDER.commands,
   register(program: Command) {
     program
-      .command("update [targets...]")
+      .command("update [cibles...]")
       .description("Mise à jour directe (sans menu). Cibles au format provider:packageId.")
       .option("-a, --all", "Tout mettre à jour")
       .option("-y, --yes", "Skip la confirmation en mode --all")
       .option("-p, --provider <ids...>", "Restreint à certains providers")
       .option("--fast", "Skip les scans lents")
       .option(
-        "--timeout <seconds>",
+        "--timeout <secondes>",
         "Timeout par install en secondes — l'install bloquée est skippée (0 = désactivé)",
       )
       .action(async (targets: string[], opts: UpdateFlags) => {
@@ -241,12 +242,13 @@ export const updateModule: CliModule = {
   },
 };
 
-/** `--timeout <seconds>` wins over GUP_INSTALL_TIMEOUT; a bad value exits 2. */
+/** `--timeout <secondes>` wins over GUP_INSTALL_TIMEOUT; a bad value exits 2. */
 function applyTimeoutFlag(raw: string | undefined): void {
   if (raw === undefined) return;
   const seconds = Number(raw);
   if (!Number.isFinite(seconds) || seconds < 0) {
-    process.stderr.write(`${chalk.red("Error:")} --timeout attend un nombre de secondes >= 0\n`);
+    const reason = "--timeout attend un nombre de secondes >= 0";
+    process.stderr.write(`${chalk.red(ERROR_PREFIX)} ${reason}\n`);
     process.exit(2);
   }
   setInstallTimeoutSeconds(seconds);
