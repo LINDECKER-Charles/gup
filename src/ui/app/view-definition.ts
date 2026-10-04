@@ -47,6 +47,28 @@ export interface PackageMarker {
   glyphFor(providerId: string, pkg: OutdatedPackage): string | null;
 }
 
+/** A line the run's results show: what an action did. */
+export interface ResultNotice {
+  readonly text: string;
+  readonly tone: Tone;
+}
+
+/**
+ * A key another view adds to the run's results, once the batch is over (the
+ * journal's `o rapport HTML`). One runs at a time; the results show `pending`
+ * meanwhile, then the notice it resolves with.
+ */
+export interface ResultAction {
+  /** `KeyPress.name`; never a key the results already use (↑↓ j k, v, entrée, échap, q). */
+  readonly key: string;
+  /** Shown in the results' key-hint bar: "o rapport HTML". */
+  readonly hint: string;
+  /** Shown while it runs: "export en cours…". */
+  readonly pending: string;
+  /** Never rejects: a failure comes back as a notice. */
+  run(): Promise<ResultNotice>;
+}
+
 /** A key handed to a takeover: it may stop the terminal's default handling. */
 export type TakeoverKey = KeyPress & { preventDefault(): void };
 
@@ -121,4 +143,6 @@ export interface ViewDefinition {
   packageActions?(context: ViewContext): readonly PackageAction[];
   /** Marks this view adds to Paquets' rows. */
   packageMarkers?(context: ViewContext): readonly PackageMarker[];
+  /** Keys this view adds to the run's results. */
+  resultActions?(context: ViewContext): readonly ResultAction[];
 }

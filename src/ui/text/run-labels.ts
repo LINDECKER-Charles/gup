@@ -97,6 +97,7 @@ export const RUN_NOTICES = {
   stopAfterStep: "Arrêt demandé — gup s'arrêtera après l'étape administrateur.",
   prompt: "⌨ Le programme attend peut-être une réponse — t pour écrire dans le terminal.",
   typeIdle: "Aucun programme en cours.",
+  actionFailed: (reason: string): string => `Action impossible : ${reason}`,
 } as const;
 
 export const STOP_DIALOG = {

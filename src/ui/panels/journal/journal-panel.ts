@@ -7,6 +7,7 @@ import {
   type Period,
   type PeriodPreset,
 } from "../../../core/time/period.js";
+import type { ResultNotice } from "../../app/view-definition.js";
 import { chartGlyphs } from "../../charts/chart-glyphs.js";
 import type { GlyphMode } from "../../theme/glyphs.js";
 import { periodLabel } from "../../text/journal/activity-labels.js";
@@ -215,9 +216,9 @@ export class JournalPanel implements Panel {
     this.#isExporting = true;
     this.#status = [seg(EXPORT_LABELS.running, "muted")];
     this.#deps.redraw();
-    const outcome = await this.safeExport(format);
+    const { text, tone } = exportNotice(await this.safeExport(format));
     this.#isExporting = false;
-    this.#status = outcomeLine(outcome);
+    this.#status = [seg(text, tone)];
     this.#deps.redraw();
   }
 
@@ -243,12 +244,18 @@ function tabBar(current: number, width: number): Line {
   return used <= width ? segments : [seg(fit(segments.map((s) => s.text).join(""), width))];
 }
 
-/** Where the export went: written, opened in the browser, written but not opened, or why not. */
-function outcomeLine(outcome: ExportOutcome): Line {
-  if (!outcome.ok) return [seg(EXPORT_LABELS.failed(outcome.error), "danger")];
-  if (outcome.opened === true) return [seg(EXPORT_LABELS.opened(outcome.path), "success")];
-  if (outcome.opened === false) return [seg(EXPORT_LABELS.notOpened(outcome.path), "warning")];
-  return [seg(EXPORT_LABELS.written(outcome.path), "success")];
+/**
+ * Where an export went — written, opened in the browser, written but not
+ * opened, or why not — as the line that says it. Also what the run's results
+ * say after their `o rapport HTML`.
+ */
+export function exportNotice(outcome: ExportOutcome): ResultNotice {
+  if (!outcome.ok) return { text: EXPORT_LABELS.failed(outcome.error), tone: "danger" };
+  if (outcome.opened === true) return { text: EXPORT_LABELS.opened(outcome.path), tone: "success" };
+  if (outcome.opened === false) {
+    return { text: EXPORT_LABELS.notOpened(outcome.path), tone: "warning" };
+  }
+  return { text: EXPORT_LABELS.written(outcome.path), tone: "success" };
 }
 
 function unreadableData(period: Period, error: string): JournalData {

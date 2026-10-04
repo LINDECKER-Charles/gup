@@ -30,6 +30,8 @@ export const JOURNAL_HINTS = {
   debug: "↑↓ naviguer · l niveau · / filtrer · entrée détails · x diagnostic",
   detail: "↑↓ défiler · échap retour",
   typing: "tapez pour filtrer · entrée valider · échap effacer",
+  /** On the results of an update run in the screen. */
+  report: "o rapport HTML",
 } as const;
 
 export const RECURRENCE_LABELS = {

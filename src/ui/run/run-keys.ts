@@ -53,6 +53,9 @@ const ON_RESULTS: Readonly<Record<string, RunCommand>> = {
   q: "leave",
 };
 
+/** Between two hints of the bar. */
+const HINT_GAP = " · ";
+
 /** Who has the keyboard, from where the run stands and whether the pane is focused. */
 export function keyModeOf(phase: RunPhase, isPaneFocused: boolean): RunKeyMode {
   if (phase === "done") return "done";
@@ -74,15 +77,21 @@ export function runCommandFor(key: KeyPress, mode: RunKeyMode): RunCommand {
   return table[key.name] ?? "none";
 }
 
+export interface RunHintsContext {
+  readonly elevation: ElevationKind;
+  readonly isEnlarged: boolean;
+  /** The keys other views add to the results, last: "o rapport HTML". */
+  readonly resultHints?: readonly string[];
+}
+
 /** The key-hint bar of each mode. */
-export function runHintsFor(
-  mode: RunKeyMode,
-  context: { readonly elevation: ElevationKind; readonly isEnlarged: boolean },
-): string {
+export function runHintsFor(mode: RunKeyMode, context: RunHintsContext): string {
   if (mode === "typing") return RUN_HINTS.typing;
   if (mode === "elevating") return RUN_HINTS.elevating[context.elevation];
   if (mode === "waiting") return RUN_HINTS.waiting;
-  if (mode === "done") return RUN_HINTS.done(context.isEnlarged);
+  if (mode === "done") {
+    return [RUN_HINTS.done(context.isEnlarged), ...(context.resultHints ?? [])].join(HINT_GAP);
+  }
   return RUN_HINTS.running(context.isEnlarged);
 }
 

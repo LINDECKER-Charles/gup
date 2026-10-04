@@ -175,6 +175,7 @@ export class MenuSession {
       state: this.#deps.state,
       controller: this.#deps.controller,
       preferences,
+      resultActions: () => this.#views.resultActions(),
       takeOver: (start) => this.takeOver(start),
       exit: (exit) => this.#exit(exit),
       afterUpdate: (report, returnTo) => this.afterUpdate(report, returnTo),

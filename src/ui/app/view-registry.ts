@@ -4,6 +4,7 @@ import { QUIT, sidebarEntries, type SidebarEntry, type SidebarLayout } from "./s
 import type {
   PackageAction,
   PackageMarker,
+  ResultAction,
   ViewContext,
   ViewDefinition,
   ViewId,
@@ -12,7 +13,8 @@ import type {
 /**
  * The views of one menu session: their definitions, the panel each one built,
  * which one is in front, and what they contribute to the rest of the menu:
- * sidebar entries and badges, title-bar facts, actions and marks in Paquets.
+ * sidebar entries and badges, title-bar facts, actions and marks in Paquets,
+ * keys on the run's results.
  */
 export class ViewRegistry {
   /** Sidebar entries: the views by group then order, then "Quitter". */
@@ -79,6 +81,11 @@ export class ViewRegistry {
   /** Every view's package marks, in sidebar order. */
   packageMarkers(): PackageMarker[] {
     return this.collect((view) => view.packageMarkers?.(this.context()) ?? []);
+  }
+
+  /** Every view's keys on the run's results, in sidebar order. */
+  resultActions(): ResultAction[] {
+    return this.collect((view) => view.resultActions?.(this.context()) ?? []);
   }
 
   private collect<T>(contribution: (view: ViewDefinition) => readonly T[]): T[] {
