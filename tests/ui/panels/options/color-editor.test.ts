@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { appearanceSection } from "../../../../src/ui/panels/options/appearance-section.js";
 import { OptionsPanel } from "../../../../src/ui/panels/options/options-panel.js";
-import {
-  COLOR_EDITOR,
-  HEX_DIALOG,
-  THEME_PICKER,
-} from "../../../../src/ui/text/settings/theme-labels.js";
+import { COLOR_EDITOR, HEX_DIALOG } from "../../../../src/ui/text/settings/color-editor-labels.js";
+import { THEME_PICKER } from "../../../../src/ui/text/settings/theme-labels.js";
 import * as wcag from "../../../support/contrast/wcag.js";
+import { useLocale } from "../../../support/locale.js";
 import { key, lineWith, optionsFixture, settle, text, VIEW } from "./options-fixture.js";
 
 /** The dark theme's background: unreadable as text on itself. */
@@ -147,5 +145,23 @@ describe("colour editor", () => {
     const editor = openEditor();
     editor.panel.click(4, VIEW);
     expect(text([lineWith(editor.panel.render(VIEW), "Succès")])).toMatch(/^› Succès/);
+  });
+});
+
+describe("colour editor in English", () => {
+  useLocale("en");
+
+  // The table's columns are declared while modules load (in the suite's
+  // French here): their headings must still be read when the table is drawn.
+  it("heads its table, names the roles and warns in English", async () => {
+    const editor = openEditor();
+    await typeColor(editor, DARK_BACKGROUND);
+    const lines = editor.panel.render(VIEW);
+    expect(text(lines)).toContain("Base theme: Dark (gup) — unchanged roles follow the theme.");
+    expect(text([lineWith(lines, "Role")])).toMatch(/^ {2}Role +Chosen +Shown +Contrast +Sample/);
+    expect(text([lineWith(lines, "Success")])).toMatch(/^ {2}Success +\(theme\) +#\w{6} +\d+\.\d:1 +√/);
+    expect(text(lines)).toContain(
+      "‼ 1 color adjusted automatically to stay readable (AA). a: keep the adjusted value.",
+    );
   });
 });

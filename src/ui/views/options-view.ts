@@ -8,7 +8,7 @@ import { OptionsPanel } from "../panels/options/options-panel.js";
 import { scanSection } from "../panels/options/scan-section.js";
 import { settingsService, type SettingsService } from "../settings/settings-service.js";
 import { scanModeFact, VIEW_LABELS } from "../text/menu-labels.js";
-import { PREVIEW_FACT } from "../text/settings/theme-labels.js";
+import { THEME_PICKER } from "../text/settings/theme-labels.js";
 
 export interface OptionsViewPorts {
   /** The settings shown and edited; default: the process-wide service. */
@@ -44,7 +44,7 @@ export function optionsView(ports: OptionsViewPorts = {}): ViewDefinition {
     },
     // An unsaved preview first: a narrow title bar cuts its end.
     facts: ({ state, screen }) => [
-      ...(isPreviewShown(screen.appearance) ? [PREVIEW_FACT] : []),
+      ...(isPreviewShown(screen.appearance) ? [THEME_PICKER.previewFact] : []),
       scanModeFact(state.fast),
     ],
   };

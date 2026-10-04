@@ -5,8 +5,8 @@ import {
   CONTRAST_STATUS,
   THEME_LABELS,
   THEME_PICKER,
-  THEME_UNAVAILABLE_16,
 } from "../../../../src/ui/text/settings/theme-labels.js";
+import { useLocale } from "../../../support/locale.js";
 import {
   key,
   lineWith,
@@ -93,7 +93,7 @@ describe("theme picker", () => {
     expect(previewed()).toBeNull();
     const lines = panel.render(VIEW);
     expect(text([lineWith(lines, THEME_LABELS.dark)])).toMatch(/Sombre \(gup\)\s+–/);
-    expect(text(lines)).toContain(THEME_UNAVAILABLE_16);
+    expect(text(lines)).toContain(THEME_PICKER.unavailable);
     panel.press(key("enter"));
     expect(settings.get("theme").id).toBe("terminal");
     expect(panel.title).toContain(THEME_PICKER.title);
@@ -119,5 +119,22 @@ describe("theme picker", () => {
     const { panel } = openPicker();
     const lines = text(panel.render({ width: 50, height: 20 })).split("\n");
     expect(lines).toContain(THEME_PICKER.report(6.14, "AA"));
+  });
+});
+
+describe("theme picker in English", () => {
+  useLocale("en");
+
+  it("names the themes, their contrast and the verdict in English, ids unchanged", () => {
+    const { panel, previewed } = openPicker();
+    expect(panel.title).toBe("Options › Theme");
+    expect(panel.hints()).toBe("↑↓ try · enter apply · esc cancel");
+    const lines = panel.render(VIEW);
+    expect(text([lineWith(lines, "Dark (gup)")])).toMatch(/^› Dark \(gup\)\s+√ 6\.1/);
+    expect(text(lines)).toContain("gup's brand palette");
+    expect(text(lines)).toContain("Minimum contrast 6.1:1 — AA √");
+    panel.press(key("down"));
+    expect(previewed()).toMatchObject({ id: "light" });
+    expect(text(panel.render(VIEW))).toContain("› Light (gup)");
   });
 });

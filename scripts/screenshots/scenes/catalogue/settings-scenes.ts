@@ -1,10 +1,7 @@
 import { VIEW_LABELS } from "../../../../src/ui/text/menu-labels.js";
 import { JOURNAL_OPTION_HINTS } from "../../../../src/ui/text/settings/journal-options-labels.js";
-import {
-  COLOR_EDITOR,
-  PREVIEW_FACT,
-  THEME_LABELS,
-} from "../../../../src/ui/text/settings/theme-labels.js";
+import { COLOR_EDITOR } from "../../../../src/ui/text/settings/color-editor-labels.js";
+import { THEME_LABELS, THEME_PICKER } from "../../../../src/ui/text/settings/theme-labels.js";
 import { THEME_IDS, type ThemeId } from "../../../../src/ui/theme/palette.js";
 import { appFixture } from "../../fixtures/app-fixture.js";
 import type { SceneGroup, Stage } from "../scene.js";
@@ -57,7 +54,7 @@ export const SETTINGS_GROUP: SceneGroup = {
         await stage.waitForText(THEME_LABELS[PREVIEWED]);
         const fromSaved = THEME_IDS.indexOf(PREVIEWED) - THEME_IDS.indexOf("terminal");
         await stage.press(...Array.from({ length: fromSaved }, () => "down"));
-        await stage.waitForText(PREVIEW_FACT);
+        await stage.waitForText(THEME_PICKER.previewFact);
       },
     },
     {

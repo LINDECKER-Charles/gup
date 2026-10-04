@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ThemeSettings } from "../../../../src/ui/settings/theme-section.js";
 import { resolveTheme, type TerminalFacts } from "../../../../src/ui/theme/resolve-theme.js";
+import { COLOR_EDITOR } from "../../../../src/ui/text/settings/color-editor-labels.js";
 import {
-  COLOR_EDITOR,
   CONTRAST_STATUS,
   contrastStatus,
   formatRatio,
