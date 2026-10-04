@@ -1,16 +1,34 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Runs the typecheck, security audit, tests, and coverage in parallel and prints a compact summary.
+    Runs every gate of a pull request locally and prints a compact summary.
 
 .DESCRIPTION
-    Spawns four background jobs (npm run typecheck | security | test:run | test:coverage),
-    streams progress while they execute, then renders a synthetic report:
-    status (OK/KO), per-job duration, parsed metrics (vulns / passed-failed / coverage %),
-    and tails the output of any failed job. Exit code is non-zero if any check failed.
-    Coverage fails only on the floors of the safety-critical modules
-    (tests/support/coverage-floors.ts); the overall percentages are informative.
+    First, in parallel background jobs: npm run typecheck | lint | security |
+    test:coverage (the unit, providers and integration projects, measured;
+    coverage fails only on the floors of the safety-critical modules,
+    tests/support/coverage-floors.ts). Then, alone, the end-to-end run: it
+    builds the CLI and drives it in a real terminal, whose timings must not
+    compete with the jobs above for the CPU.
+
+    Renders status (OK/KO), per-job duration and parsed metrics, and tails the
+    output of any failed job. Exit code is non-zero if any check failed.
+
+.PARAMETER E2E
+    smoke (default): the suites every pull request runs, no network.
+    full: also the real providers of this machine (read-only) and the network.
+    mutate: full, plus the sandboxed npm update and the gup-it-<random>
+    scheduled task (GUP_MUTATE=1).
+    none: skip the end-to-end run.
+
+.EXAMPLE
+    check.cmd
+    check.cmd -E2E full
 #>
+param(
+    [ValidateSet('smoke', 'full', 'mutate', 'none')]
+    [string]$E2E = 'smoke'
+)
 
 $ErrorActionPreference = 'Continue'
 
@@ -25,68 +43,88 @@ function Strip-Ansi([string]$text) {
     return ($text -replace '\x1b\[[0-9;?]*[a-zA-Z]', '')
 }
 
-$tasks = @(
-    [pscustomobject]@{ Name = 'Typecheck'; Script = 'typecheck'     }
-    [pscustomobject]@{ Name = 'Security';  Script = 'security'      }
-    [pscustomobject]@{ Name = 'Tests';     Script = 'test:run'      }
-    [pscustomobject]@{ Name = 'Coverage';  Script = 'test:coverage' }
-)
+$e2eScripts = @{ smoke = 'test:e2e:smoke'; full = 'test:e2e'; mutate = 'test:e2e:mutate' }
 
-Write-Host ''
-Write-Host '>>> Running in parallel: typecheck | security | tests | coverage' -ForegroundColor Magenta
-Write-Host ''
+$parallelTasks = @(
+    [pscustomobject]@{ Name = 'Typecheck'; Script = 'typecheck'     }
+    [pscustomobject]@{ Name = 'Lint';      Script = 'lint'          }
+    [pscustomobject]@{ Name = 'Security';  Script = 'security'      }
+    [pscustomobject]@{ Name = 'Tests';     Script = 'test:coverage' }
+)
+$serialTasks = @()
+if ($E2E -ne 'none') {
+    $serialTasks = @([pscustomobject]@{ Name = 'E2E'; Script = $e2eScripts[$E2E] })
+}
+
+# Starts one background job per task, shows progress, returns the results by name.
+function Invoke-Checks($tasks, $stopwatch) {
+    $jobs = foreach ($t in $tasks) {
+        Start-Job -Name $t.Name -ScriptBlock {
+            param($root, $script)
+            Set-Location -LiteralPath $root
+            $env:NO_COLOR    = '1'
+            $env:FORCE_COLOR = '0'
+            $env:CI          = '1'
+            $sw = [Diagnostics.Stopwatch]::StartNew()
+            $out = & npm run $script 2>&1 | Out-String
+            $code = $LASTEXITCODE
+            $sw.Stop()
+            [pscustomobject]@{
+                ExitCode = $code
+                Duration = $sw.Elapsed
+                Output   = $out
+            }
+        } -ArgumentList $root, $t.Script
+    }
+
+    while ($jobs | Where-Object { $_.State -eq 'Running' }) {
+        Start-Sleep -Milliseconds 750
+        $running = ($jobs | Where-Object { $_.State -eq 'Running' } | ForEach-Object { $_.Name }) -join ', '
+        $done    = ($jobs | Where-Object { $_.State -ne 'Running' } | ForEach-Object { $_.Name }) -join ', '
+        $line    = "  [{0,5:N1}s]  running: {1,-40}  done: {2}" -f $stopwatch.Elapsed.TotalSeconds, $running, $done
+        Write-Host -NoNewline ("`r" + $line.PadRight(110))
+    }
+    Write-Host -NoNewline ("`r" + (' ' * 110) + "`r")
+
+    Wait-Job -Job $jobs | Out-Null
+    $collected = [ordered]@{}
+    foreach ($j in $jobs) {
+        $collected[$j.Name] = Receive-Job -Job $j
+        Remove-Job -Job $j -Force
+    }
+    return $collected
+}
 
 $globalSw = [Diagnostics.Stopwatch]::StartNew()
 
-$jobs = foreach ($t in $tasks) {
-    Start-Job -Name $t.Name -ScriptBlock {
-        param($root, $script)
-        Set-Location -LiteralPath $root
-        $env:NO_COLOR    = '1'
-        $env:FORCE_COLOR = '0'
-        $env:CI          = '1'
-        $sw = [Diagnostics.Stopwatch]::StartNew()
-        $out = & npm run $script 2>&1 | Out-String
-        $code = $LASTEXITCODE
-        $sw.Stop()
-        [pscustomobject]@{
-            ExitCode = $code
-            Duration = $sw.Elapsed
-            Output   = $out
-        }
-    } -ArgumentList $root, $t.Script
-}
+Write-Host ''
+Write-Host '>>> Running in parallel: typecheck | lint | security | tests + coverage' -ForegroundColor Magenta
+Write-Host ''
+$results = Invoke-Checks $parallelTasks $globalSw
 
-while ($jobs | Where-Object { $_.State -eq 'Running' }) {
-    Start-Sleep -Milliseconds 750
-    $running = ($jobs | Where-Object { $_.State -eq 'Running' } | ForEach-Object { $_.Name }) -join ', '
-    $done    = ($jobs | Where-Object { $_.State -ne 'Running' } | ForEach-Object { $_.Name }) -join ', '
-    $line    = "  [{0,5:N1}s]  running: {1,-40}  done: {2}" -f $globalSw.Elapsed.TotalSeconds, $running, $done
-    Write-Host -NoNewline ("`r" + $line.PadRight(110))
+if ($serialTasks.Count -gt 0) {
+    Write-Host ''
+    Write-Host ">>> Then alone: end-to-end ($E2E) - build, then the built CLI in a real terminal" -ForegroundColor Magenta
+    Write-Host ''
+    $e2eResults = Invoke-Checks $serialTasks $globalSw
+    foreach ($name in $e2eResults.Keys) { $results[$name] = $e2eResults[$name] }
 }
-Write-Host -NoNewline ("`r" + (' ' * 110) + "`r")
-
-Wait-Job -Job $jobs | Out-Null
 $globalSw.Stop()
-
-$results = [ordered]@{}
-foreach ($j in $jobs) {
-    $results[$j.Name] = Receive-Job -Job $j
-    Remove-Job -Job $j -Force
-}
+$tasks = @($parallelTasks) + @($serialTasks)
 
 function Parse-Vitest($text) {
     $c = Strip-Ansi $text
-    $passed = 0; $failed = 0; $skipped = 0; $files = 0
-    if ($c -match '(?m)^\s*Tests\s+(?:(\d+)\s+failed[^|]*\|\s*)?(?:(\d+)\s+skipped[^|]*\|\s*)?(\d+)\s+passed') {
-        if ($matches[1]) { $failed  = [int]$matches[1] }
-        if ($matches[2]) { $skipped = [int]$matches[2] }
-        $passed = [int]$matches[3]
+    $counts = [ordered]@{ Passed = 0; Failed = 0; Skipped = 0; Files = 0 }
+    $testsLine = ($c -split "`r?`n") | Where-Object { $_ -match '^\s*Tests\s+\d' } | Select-Object -Last 1
+    if ($testsLine) {
+        if ($testsLine -match '(\d+)\s+passed')  { $counts.Passed  = [int]$matches[1] }
+        if ($testsLine -match '(\d+)\s+failed')  { $counts.Failed  = [int]$matches[1] }
+        if ($testsLine -match '(\d+)\s+skipped') { $counts.Skipped = [int]$matches[1] }
     }
-    if ($c -match '(?m)^\s*Test Files\s+(?:\d+\s+failed[^|]*\|\s*)?(\d+)\s+passed\s*\((\d+)\)') {
-        $files = [int]$matches[2]
+    if ($c -match '(?m)^\s*Test Files\s+.*\((\d+)\)') {
+        $counts.Files = [int]$matches[1]
     }
-    return [pscustomobject]@{ Passed = $passed; Failed = $failed; Skipped = $skipped; Files = $files }
+    return [pscustomobject]$counts
 }
 
 function Parse-Coverage($text) {
@@ -112,6 +150,32 @@ function Parse-Audit($text) {
     return $null
 }
 
+function Write-TestCounts($output) {
+    $v = Parse-Vitest $output
+    $skip = if ($v.Skipped -gt 0) { ", $($v.Skipped) skipped" } else { '' }
+    $failColor = if ($v.Failed -eq 0) { 'Green' } else { 'Red' }
+    Write-Host ("{0} passed" -f $v.Passed) -ForegroundColor Green -NoNewline
+    Write-Host (", {0} failed{1}" -f $v.Failed, $skip) -ForegroundColor $failColor -NoNewline
+    Write-Host ("  across {0} files" -f $v.Files) -ForegroundColor DarkCyan
+}
+
+function Write-Coverage($output) {
+    $c = Parse-Coverage $output
+    if (-not $c) {
+        Write-Host '(coverage report not parsed)' -ForegroundColor DarkYellow
+        return
+    }
+    $covColor = if ($c.Lines -ge 80) { 'Green' } elseif ($c.Lines -ge 50) { 'Yellow' } else { 'DarkYellow' }
+    Write-Host ("stmts {0,5:N1}%" -f $c.Statements) -ForegroundColor $covColor -NoNewline
+    Write-Host ' | ' -ForegroundColor DarkGray -NoNewline
+    Write-Host ("branch {0,5:N1}%" -f $c.Branches) -ForegroundColor $covColor -NoNewline
+    Write-Host ' | ' -ForegroundColor DarkGray -NoNewline
+    Write-Host ("funcs {0,5:N1}%" -f $c.Functions) -ForegroundColor $covColor -NoNewline
+    Write-Host ' | ' -ForegroundColor DarkGray -NoNewline
+    Write-Host ("lines {0,5:N1}%" -f $c.Lines) -ForegroundColor $covColor -NoNewline
+    Write-Host '  (fails on the floors only)' -ForegroundColor DarkCyan
+}
+
 $bar = ('=' * 72)
 Write-Host ''
 Write-Host $bar -ForegroundColor DarkGray
@@ -135,6 +199,9 @@ foreach ($t in $tasks) {
         'Typecheck' {
             Write-Host 'tsc: src, then tests + scripts' -ForegroundColor DarkCyan
         }
+        'Lint' {
+            Write-Host 'eslint: src, tests, scripts' -ForegroundColor DarkCyan
+        }
         'Security' {
             $vuln = Parse-Audit $r.Output
             if ($null -ne $vuln) {
@@ -146,27 +213,13 @@ foreach ($t in $tasks) {
             }
         }
         'Tests' {
-            $v = Parse-Vitest $r.Output
-            $skip = if ($v.Skipped -gt 0) { ", $($v.Skipped) skipped" } else { '' }
-            $failColor = if ($v.Failed -eq 0) { 'Green' } else { 'Red' }
-            Write-Host ("{0} passed" -f $v.Passed) -ForegroundColor Green -NoNewline
-            Write-Host (", {0} failed{1}" -f $v.Failed, $skip) -ForegroundColor $failColor -NoNewline
-            Write-Host ("  across {0} files" -f $v.Files) -ForegroundColor DarkCyan
+            Write-TestCounts $r.Output
+            Write-Host (' ' * 27) -NoNewline
+            Write-Coverage $r.Output
         }
-        'Coverage' {
-            $c = Parse-Coverage $r.Output
-            if ($c) {
-                $covColor = if ($c.Lines -ge 80) { 'Green' } elseif ($c.Lines -ge 50) { 'Yellow' } else { 'DarkYellow' }
-                Write-Host ("stmts {0,5:N1}%" -f $c.Statements) -ForegroundColor $covColor -NoNewline
-                Write-Host ' | ' -ForegroundColor DarkGray -NoNewline
-                Write-Host ("branch {0,5:N1}%" -f $c.Branches) -ForegroundColor $covColor -NoNewline
-                Write-Host ' | ' -ForegroundColor DarkGray -NoNewline
-                Write-Host ("funcs {0,5:N1}%" -f $c.Functions) -ForegroundColor $covColor -NoNewline
-                Write-Host ' | ' -ForegroundColor DarkGray -NoNewline
-                Write-Host ("lines {0,5:N1}%" -f $c.Lines) -ForegroundColor $covColor
-            } else {
-                Write-Host '(coverage report not parsed)' -ForegroundColor DarkYellow
-            }
+        'E2E' {
+            Write-Host ("[{0}] " -f $E2E) -ForegroundColor DarkCyan -NoNewline
+            Write-TestCounts $r.Output
         }
     }
 }
@@ -175,7 +228,7 @@ $serialTotal = ($results.Values | ForEach-Object { $_.Duration.TotalSeconds } | 
 $saved       = [Math]::Max(0, $serialTotal - $globalSw.Elapsed.TotalSeconds)
 
 Write-Host ''
-Write-Host ('  wall clock (parallel) : {0,6:N1}s' -f $globalSw.Elapsed.TotalSeconds) -ForegroundColor DarkGray
+Write-Host ('  wall clock            : {0,6:N1}s' -f $globalSw.Elapsed.TotalSeconds) -ForegroundColor DarkGray
 Write-Host ('  cumulative CPU        : {0,6:N1}s   (saved {1,5:N1}s vs serial)' -f $serialTotal, $saved) -ForegroundColor DarkGray
 Write-Host $bar -ForegroundColor DarkGray
 
