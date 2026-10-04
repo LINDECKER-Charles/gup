@@ -1,7 +1,5 @@
 import { spawn } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stateDir } from "../../../src/core/state/app-dirs.js";
@@ -11,13 +9,17 @@ import {
   createBatchGuard,
   type BatchLockLocation,
 } from "../../../src/core/update/batch-lock.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+// Registered first, so it runs after the release of every lock below.
+const tempDir = useTempDirs();
 
 let schedulerDir: string;
 let location: BatchLockLocation;
 const held: BatchLock[] = [];
 
 beforeEach(async () => {
-  schedulerDir = await mkdtemp(join(tmpdir(), "gup-batch-"));
+  schedulerDir = await tempDir("gup-batch-");
   location = batchLockLocation({ env: { GUP_SCHEDULER_DIR: schedulerDir } })!;
 });
 
@@ -57,16 +59,12 @@ describe("batchLockLocation", () => {
   });
 
   it("never creates the scheduler's folder when a run takes the batch", async () => {
-    const root = await mkdtemp(join(tmpdir(), "gup-batch-root-"));
-    try {
-      const context = { env: { LOCALAPPDATA: root, XDG_STATE_HOME: root }, home: root };
-      const lock = await BatchLock.tryAcquire(batchLockLocation(context)!, "interactive");
-      if (!(lock instanceof BatchLock)) throw new Error("expected to take the batch");
-      await lock.release();
-      expect(existsSync(stateDir("scheduler", context)!)).toBe(false);
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    const root = await tempDir("gup-batch-root-");
+    const context = { env: { LOCALAPPDATA: root, XDG_STATE_HOME: root }, home: root };
+    const lock = await BatchLock.tryAcquire(batchLockLocation(context)!, "interactive");
+    if (!(lock instanceof BatchLock)) throw new Error("expected to take the batch");
+    await lock.release();
+    expect(existsSync(stateDir("scheduler", context)!)).toBe(false);
   });
 
   it("moves a socket path too long for sun_path to the runtime dir", () => {

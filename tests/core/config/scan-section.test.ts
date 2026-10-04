@@ -1,15 +1,17 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { PROVIDER_ID_PATTERN, SCAN_SECTION } from "../../../src/core/config/scan-section.js";
 import { ConfigStore } from "../../../src/core/config/store.js";
 import { DEFAULT_UI_PREFERENCES } from "../../../src/ui/app/ui-preferences.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 let file: string;
 
 beforeEach(async () => {
-  file = join(await mkdtemp(join(tmpdir(), "gup-scan-section-")), "config.json");
+  file = join(await tempDir("gup-scan-section-"), "config.json");
 });
 
 async function storeWith(scan: unknown): Promise<ConfigStore> {

@@ -1,11 +1,13 @@
-import { mkdtemp, readFile, readdir, stat, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NODE_FILE_OPS } from "../../../src/core/config/atomic-write.js";
 import { MAX_CONFIG_BYTES } from "../../../src/core/config/config-file.js";
 import { defineSection, type JsonObject } from "../../../src/core/config/section.js";
 import { ConfigStore, ConfigWriteError } from "../../../src/core/config/store.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 interface Prefs {
   readonly fast: boolean;
@@ -28,7 +30,7 @@ let dir: string;
 let file: string;
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "gup-config-"));
+  dir = await tempDir("gup-config-");
   file = join(dir, "nested", "config.json");
 });
 

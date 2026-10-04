@@ -1,15 +1,17 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { JOURNAL_SECTION } from "../../../src/core/config/journal-section.js";
 import { ConfigStore } from "../../../src/core/config/store.js";
 import { PERIOD_CYCLE } from "../../../src/core/time/period.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 let file: string;
 
 beforeEach(async () => {
-  file = join(await mkdtemp(join(tmpdir(), "gup-journal-section-")), "config.json");
+  file = join(await tempDir("gup-journal-section-"), "config.json");
 });
 
 async function storeWith(journal: unknown): Promise<ConfigStore> {

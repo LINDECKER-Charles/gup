@@ -1,5 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -12,12 +11,15 @@ import {
   getInstallTimeoutSeconds,
   setInstallTimeoutSeconds,
 } from "../../../src/core/runner.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 let file: string;
 const initialTimeout = getInstallTimeoutSeconds();
 
 beforeEach(async () => {
-  file = join(await mkdtemp(join(tmpdir(), "gup-install-section-")), "config.json");
+  file = join(await tempDir("gup-install-section-"), "config.json");
 });
 
 afterEach(() => {

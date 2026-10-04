@@ -1,14 +1,16 @@
-import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NODE_FILE_OPS, writeFileAtomic, type FileOps } from "../../../src/core/config/atomic-write.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 let dir: string;
 let target: string;
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "gup-atomic-"));
+  dir = await tempDir("gup-atomic-");
   target = join(dir, "config.json");
   await writeFile(target, "old\n", "utf8");
 });
