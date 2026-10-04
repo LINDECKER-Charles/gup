@@ -3,6 +3,7 @@ import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * pkgin — the binary package manager for pkgsrc: NetBSD and SmartOS/illumos
@@ -51,11 +52,9 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class PkginProvider implements Provider {
   readonly id = "pkgin";
   readonly displayName = "pkgin (pkgsrc)";
-  readonly installHint = pickInstallHint({
-    darwin:
-      "Bootstrapper pkgsrc puis `pkg_add pkgin` — https://pkgsrc.smartos.org/install-on-macos/",
-    fallback: "Fourni par pkgsrc — https://pkgin.net/",
-  });
+  get installHint(): string {
+    return pickInstallHint({ darwin: TEXT.macosHint, fallback: TEXT.pkgsrcHint });
+  }
   /** pkgsrc covers NetBSD, SmartOS, macOS and Linux, never Windows. */
   readonly platforms = PLATFORMS.notWindows;
   /** pkgin writes the pkgsrc prefix through sudo unless gup runs as root. */
@@ -143,6 +142,27 @@ const REFRESH_ROW_ID = "pkgin:refresh";
  * (execa with `reject: false`), never as a throw.
  */
 const SCAN_TIMEOUT_MS = 60_000;
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    macosHint:
+      "Bootstrap pkgsrc, then `pkg_add pkgin` — https://pkgsrc.smartos.org/install-on-macos/",
+    pkgsrcHint: "Ships with pkgsrc — https://pkgin.net/",
+    candidatesNote: (count: number) =>
+      `${count} candidates — preferred.conf may enforce another one`,
+    refreshName: "pkgin (remote catalog)",
+    refreshNote: "remote catalog empty — sudo pkgin -y upgrade rebuilds it",
+  },
+  fr: {
+    macosHint:
+      "Bootstrapper pkgsrc puis `pkg_add pkgin` — https://pkgsrc.smartos.org/install-on-macos/",
+    pkgsrcHint: "Fourni par pkgsrc — https://pkgin.net/",
+    candidatesNote: (count) => `${count} candidates — preferred.conf peut en imposer une autre`,
+    refreshName: "pkgin (catalogue distant)",
+    refreshNote: "catalogue distant vide — sudo pkgin -y upgrade le reconstruit",
+  },
+});
 
 interface PkginEntry {
   name: string;
@@ -239,7 +259,7 @@ function buildRows(
       current,
       latest: candidate.version,
       ...(candidate.count > 1 && {
-        note: `${candidate.count} candidates — preferred.conf peut en imposer une autre`,
+        note: TEXT.candidatesNote(candidate.count),
       }),
     });
   }
@@ -257,10 +277,10 @@ function refreshRow(): OutdatedPackage {
   return {
     id: REFRESH_ROW_ID,
     aggregate: true,
-    name: "pkgin (catalogue distant)",
+    name: TEXT.refreshName,
     current: "?",
     latest: "refresh",
-    note: "catalogue distant vide — sudo pkgin -y upgrade le reconstruit",
+    note: TEXT.refreshNote,
   };
 }
 

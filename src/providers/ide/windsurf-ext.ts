@@ -5,6 +5,7 @@ import {
   scanVsCodeLikeExtensions,
   updateVsCodeLikeExtension,
 } from "./vscode-like.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -16,12 +17,16 @@ export class WindsurfExtProvider implements Provider {
   readonly displayName = "Windsurf extensions";
   // No known Homebrew cask for Windsurf: keep the upstream URL and point to
   // the palette, the only thing that puts the `windsurf` binary on the PATH.
-  readonly installHint = pickInstallHint({
-    win32: "https://codeium.com/windsurf",
-    darwin:
-      "https://codeium.com/windsurf, puis Windsurf → Command Palette → Shell Command: Install 'windsurf' command",
-    fallback: "https://codeium.com/windsurf",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: "https://codeium.com/windsurf",
+      darwin: MANUAL_STEPS.andThen(
+        "https://codeium.com/windsurf",
+        "Windsurf → Command Palette → Shell Command: Install 'windsurf' command",
+      ),
+      fallback: "https://codeium.com/windsurf",
+    });
+  }
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

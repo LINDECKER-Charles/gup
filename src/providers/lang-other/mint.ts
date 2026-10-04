@@ -9,6 +9,7 @@ import {
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * Mint (yonaskolb/Mint) — builds Swift Package Manager executables and
@@ -88,7 +89,7 @@ export class MintProvider implements Provider {
         id: packageId,
         success: false,
         skipped: true,
-        message: `dernière version introuvable sur GitHub (réseau ou quota d'API) — réessayer plus tard, ou lancer « mint install ${packageId}@<tag> » à la main`,
+        message: TEXT.latestUnknown(packageId),
       };
     }
     return installPackage(packageId, tag);
@@ -121,8 +122,25 @@ const MINT_LIST_BANNER = /mint packages/i;
 /** One GitHub release lookup per linked package; cap the fan-out. */
 const HTTP_CONCURRENCY = 5;
 
-const NOTE_UNVERSIONED =
-  "réf. git non versionnée (branche ou SHA) : la mise à jour épinglera un tag";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    latestUnknown: (repo: string) =>
+      "latest version not found on GitHub (network or API quota) — retry later, " +
+      `or run "mint install ${repo}@<tag>" by hand`,
+    unversionedNote: "unversioned git ref (branch or SHA): the update will pin a tag",
+    installFailed: (spec: string) => `"mint install ${spec}" failed`,
+    spawnFailed: "could not start mint",
+  },
+  fr: {
+    latestUnknown: (repo) =>
+      "dernière version introuvable sur GitHub (réseau ou quota d'API) — réessayer plus tard, " +
+      `ou lancer « mint install ${repo}@<tag> » à la main`,
+    unversionedNote: "réf. git non versionnée (branche ou SHA) : la mise à jour épinglera un tag",
+    installFailed: (spec) => `échec de « mint install ${spec} »`,
+    spawnFailed: "impossible de lancer mint",
+  },
+});
 
 export interface MintListEntry {
   /** Package name as `mint list` renders it: the repo basename, no owner. */
@@ -299,7 +317,7 @@ function buildRow(target: MintTarget, latest: string): OutdatedPackage | null {
     name: target.repo,
     current: target.current,
     latest,
-    ...(verdict === "unversioned" && { note: NOTE_UNVERSIONED }),
+    ...(verdict === "unversioned" && { note: TEXT.unversionedNote }),
   };
 }
 
@@ -385,15 +403,11 @@ async function installPackage(repo: string, tag: string): Promise<UpdateOutcome>
   try {
     const res = await runInherit("mint", ["install", `${repo}@${tag}`]);
     if (res.failed) {
-      return {
-        id: repo,
-        success: false,
-        message: `échec de « mint install ${repo}@${tag} »`,
-      };
+      return { id: repo, success: false, message: TEXT.installFailed(`${repo}@${tag}`) };
     }
     return { id: repo, success: true };
   } catch {
-    return { id: repo, success: false, message: "impossible de lancer mint" };
+    return { id: repo, success: false, message: TEXT.spawnFailed };
   }
 }
 

@@ -5,7 +5,10 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+
+const INSTALL_PAGE = "https://www.pulumi.com/docs/install/";
 
 /**
  * Pulumi has no `self-update`. The CLI's own `pulumi update` operates on
@@ -57,8 +60,10 @@ export class PulumiProvider implements Provider {
         winget: "Pulumi.Pulumi",
         brew: "pulumi",
       },
-      manualMessage:
-        "Réinstaller via https://www.pulumi.com/docs/install/ (le script télécharge la dernière version).",
+      manualMessage: localize({
+        en: `Reinstall through ${INSTALL_PAGE} (the script downloads the latest version).`,
+        fr: `Réinstaller via ${INSTALL_PAGE} (le script télécharge la dernière version).`,
+      }),
     });
   }
 

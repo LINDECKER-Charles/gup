@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { posix as posixPath, win32 as winPath } from "node:path";
 import { commandExists, run, runInherit, whichFirst } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PypiJson {
@@ -53,8 +54,14 @@ export class SemgrepProvider implements Provider {
         id: "semgrep",
         success: false,
         skipped: true,
-        message:
-          "Python hôte de semgrep introuvable. Mise à jour manuelle: `python -m pip install --upgrade semgrep` depuis l'install correspondante.",
+        message: localize({
+          en:
+            "semgrep's host Python not found. Manual update: " +
+            "`python -m pip install --upgrade semgrep` from the matching install.",
+          fr:
+            "Python hôte de semgrep introuvable. Mise à jour manuelle: " +
+            "`python -m pip install --upgrade semgrep` depuis l'install correspondante.",
+        }),
       };
     }
     const res = await runInherit(python, [

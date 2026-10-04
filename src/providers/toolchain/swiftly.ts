@@ -9,6 +9,7 @@ import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releas
 import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * swiftly (swiftlang/swiftly) — the official Swift toolchain installer and
@@ -44,15 +45,16 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class SwiftlyProvider implements Provider {
   readonly id = "swiftly";
   readonly displayName = "swiftly (Swift)";
-  readonly installHint = pickInstallHint({
-    // The official channel first: it is the only one that lets `swiftly
-    // self-update` work. The Homebrew formula exists but stores swiftly
-    // outside its own directory, hence the update delegated to brew.
-    darwin: "https://www.swift.org/install/macos/swiftly/ (ou brew install swiftly)",
-    linux: "https://www.swift.org/install/linux/swiftly/",
-    fallback:
-      "macOS et Linux uniquement — swiftly ne cible pas Windows : https://www.swift.org/install/",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      // The official channel first: it is the only one that lets `swiftly
+      // self-update` work. The Homebrew formula exists but stores swiftly
+      // outside its own directory, hence the update delegated to brew.
+      darwin: TEXT.macosHint,
+      linux: "https://www.swift.org/install/linux/swiftly/",
+      fallback: TEXT.otherHint,
+    });
+  }
   /** swiftly ships no Windows build. */
   readonly platforms = PLATFORMS.notWindows;
 
@@ -94,15 +96,11 @@ export class SwiftlyProvider implements Provider {
     try {
       const source = await detectInstallSource("swiftly");
       if (source !== "manual") {
-        return await runPmUpdate(PACKAGE_ID, source, PACKAGE_IDS, EXTERNAL_MESSAGE);
+        return await runPmUpdate(PACKAGE_ID, source, PACKAGE_IDS, TEXT.externalInstall);
       }
       return await runSelfUpdate();
     } catch {
-      return {
-        id: PACKAGE_ID,
-        success: false,
-        message: "swiftly est introuvable ou n'a pas pu être lancé.",
-      };
+      return { id: PACKAGE_ID, success: false, message: TEXT.unreachable };
     }
   }
 
@@ -120,13 +118,31 @@ const PACKAGE_ID = "swiftly";
  * out on purpose: no distro packages swiftly, and there is no Windows build at
  * all — an invented id would point `apt-get install --only-upgrade` at a
  * package that does not exist. Without a matching id, runPmUpdate falls back to
- * the message below instead of running anything.
+ * the external-install message instead of running anything.
  */
 const PACKAGE_IDS = { brew: "swiftly" };
 
-const EXTERNAL_MESSAGE =
-  "swiftly a été installé par un autre canal : le mettre à jour depuis cette source " +
-  "(`swiftly self-update` refuse de s'exécuter sur une installation externe).";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    macosHint: "https://www.swift.org/install/macos/swiftly/ (or brew install swiftly)",
+    otherHint:
+      "macOS and Linux only — swiftly does not target Windows: https://www.swift.org/install/",
+    unreachable: "swiftly not found, or it could not be started.",
+    externalInstall:
+      "swiftly was installed through another channel: update it from that source " +
+      "(`swiftly self-update` refuses to run on an external install).",
+  },
+  fr: {
+    macosHint: "https://www.swift.org/install/macos/swiftly/ (ou brew install swiftly)",
+    otherHint:
+      "macOS et Linux uniquement — swiftly ne cible pas Windows : https://www.swift.org/install/",
+    unreachable: "swiftly est introuvable ou n'a pas pu être lancé.",
+    externalInstall:
+      "swiftly a été installé par un autre canal : le mettre à jour depuis cette source " +
+      "(`swiftly self-update` refuse de s'exécuter sur une installation externe).",
+  },
+});
 
 /** Announce, in the scan row, which of the two paths update() will take. */
 function updateNote(source: InstallSource): string {
@@ -145,7 +161,7 @@ function updateNote(source: InstallSource): string {
 async function runSelfUpdate(): Promise<UpdateOutcome> {
   const res = await runInherit("swiftly", ["self-update", "--assume-yes"]);
   if (!res.failed) return { id: PACKAGE_ID, success: true };
-  return { id: PACKAGE_ID, success: false, message: EXTERNAL_MESSAGE };
+  return { id: PACKAGE_ID, success: false, message: TEXT.externalInstall };
 }
 
 /**

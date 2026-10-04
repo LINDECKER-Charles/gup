@@ -1,6 +1,7 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -51,7 +52,12 @@ export class AsdfProvider implements Provider {
         name: "asdf",
         current,
         latest,
-        note: isLegacy ? "asdf update" : "binaire — réinstaller via le PM source",
+        note: isLegacy
+          ? "asdf update"
+          : localize({
+              en: "binary — reinstall through its package manager",
+              fr: "binaire — réinstaller via le PM source",
+            }),
         ...(!isLegacy && { manual: true }),
       },
     ];
@@ -64,8 +70,10 @@ export class AsdfProvider implements Provider {
         id: "asdf",
         success: false,
         skipped: true,
-        message:
-          "asdf 0.16+ est distribué en binaire — réinstaller via apt/brew/scoop/manuel",
+        message: localize({
+          en: "asdf 0.16+ ships as a binary — reinstall through apt/brew/scoop or by hand",
+          fr: "asdf 0.16+ est distribué en binaire — réinstaller via apt/brew/scoop/manuel",
+        }),
       };
     }
     const res = await runInherit("asdf", ["update"]);

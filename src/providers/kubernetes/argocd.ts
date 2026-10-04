@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -57,8 +58,10 @@ export class ArgoCdProvider implements Provider {
         winget: "Argo.ArgoCD",
         brew: "argocd",
       },
-      manualMessage:
-        "Télécharger https://github.com/argoproj/argo-cd/releases et remplacer argocd.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/argoproj/argo-cd/releases",
+        "argocd.exe",
+      ),
     });
   }
 

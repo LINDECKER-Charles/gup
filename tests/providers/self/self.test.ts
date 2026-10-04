@@ -10,8 +10,10 @@ import {
   PNPM_MACHINE,
   SCOOP_SHIM,
   versionProbe,
+  WINGET_MACHINE,
   YARN_MACHINE,
 } from "./self.cases.js";
+import { useLocale } from "../../support/locale.js";
 
 /**
  * The package managers' own updates: which targets a machine offers (Corepack
@@ -132,6 +134,42 @@ describe("SelfProvider.update", () => {
     await system.load({ platform: "win32", bin: { gh: "C:\\Users\\u\\scoop\\shims\\gh.exe" } });
     await new SelfProvider().update("gh");
     expect(installs()).toMatchObject([{ argv: ["scoop", "update", "gh"], shell: true }]);
+  });
+});
+
+describe("SelfProvider in English", () => {
+  useLocale("en");
+
+  it("notes the manual winget row, and skips its update with the same advice", async () => {
+    await system.load(WINGET_MACHINE);
+    const provider = new SelfProvider();
+    await expect(provider.listOutdated()).resolves.toMatchObject([
+      {
+        id: "winget",
+        manual: true,
+        note:
+          "Update through the Microsoft Store (App Installer) or " +
+          "https://github.com/microsoft/winget-cli/releases",
+      },
+    ]);
+    await expect(provider.update("winget")).resolves.toEqual({
+      id: "winget",
+      success: false,
+      skipped: true,
+      message: "Update through the Microsoft Store (App Installer) or a manual download.",
+    });
+  });
+
+  it("skips Chocolatey with the elevation advice when gup is not elevated", async () => {
+    await system.load({ ...CHOCO_MACHINE, elevated: false });
+    await expect(new SelfProvider().update("choco")).resolves.toEqual({
+      id: "choco",
+      success: false,
+      skipped: true,
+      message:
+        "Chocolatey needs an administrator terminal. " +
+        'Restart gup from a terminal opened with "Run as administrator".',
+    });
   });
 });
 

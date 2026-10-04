@@ -1,6 +1,7 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 /**
  * Scoop ships no JSON output for `status`. We invoke its PS module directly
@@ -28,7 +29,10 @@ export class ScoopProvider implements Provider {
       return {
         id: packageId,
         success: false,
-        message: `Identifiant de paquet Scoop invalide : ${packageId}`,
+        message: localize({
+          en: `Invalid Scoop package id: ${packageId}`,
+          fr: `Identifiant de paquet Scoop invalide : ${packageId}`,
+        }),
       };
     }
     // shell:true is required to invoke the scoop.cmd / scoop.ps1 shim on Windows;

@@ -1,5 +1,6 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -50,7 +51,10 @@ export class HelmRepoProvider implements Provider {
         name: "helm repo update",
         current: "?",
         latest: "refresh",
-        note: `${repos.length} repo(s) configurés`,
+        note: localize({
+          en: `${repos.length} repo(s) configured`,
+          fr: `${repos.length} repo(s) configurés`,
+        }),
       },
     ];
   }

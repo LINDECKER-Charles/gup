@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -58,8 +59,10 @@ export class DeltaProvider implements Provider {
         winget: "dandavison.delta",
         brew: "git-delta",
       },
-      manualMessage:
-        "Télécharger https://github.com/dandavison/delta/releases ou `cargo install git-delta`",
+      manualMessage: MANUAL_STEPS.downloadOr(
+        "https://github.com/dandavison/delta/releases",
+        "cargo install git-delta",
+      ),
     });
   }
 

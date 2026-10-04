@@ -15,6 +15,18 @@
  *     fallback: "brew install kubernetes-cli",
  *   });
  *
+ * A hint with words around its command ("Install Node.js: https://nodejs.org")
+ * is in the interface's language, which startup chooses after the registry
+ * has loaded: such a provider declares a getter instead, so the words are
+ * picked when the hint is shown.
+ *
+ *   get installHint(): string {
+ *     return pickInstallHint({
+ *       win32: MANUAL_STEPS.install("Node.js", "https://nodejs.org"),
+ *       fallback: "brew install node",
+ *     });
+ *   }
+ *
  * A provider that declares `platforms` is only ever listed as missing on
  * those platforms, so it declares no key for the others (a plain string when
  * one hint is left). tests/core/platform/platform-gate-source.test.ts checks it.

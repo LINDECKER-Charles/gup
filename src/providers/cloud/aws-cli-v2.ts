@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -62,8 +63,10 @@ export class AwsCliV2Provider implements Provider {
         winget: "Amazon.AWSCLI",
         brew: "awscli",
       },
-      manualMessage:
-        "Télécharger https://awscli.amazonaws.com/AWSCLIV2.msi et relancer l'installeur",
+      manualMessage: localize({
+        en: "Download https://awscli.amazonaws.com/AWSCLIV2.msi and rerun the installer",
+        fr: "Télécharger https://awscli.amazonaws.com/AWSCLIV2.msi et relancer l'installeur",
+      }),
     });
   }
 

@@ -5,6 +5,7 @@ import {
   scanVsCodeLikeExtensions,
   updateVsCodeLikeExtension,
 } from "./vscode-like.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -19,12 +20,16 @@ export class VsCodeExtProvider implements Provider {
   readonly displayName = "VS Code extensions";
   // The macOS cask does not put `code` on the PATH: the command palette
   // installs the shim, hence the explicit reminder.
-  readonly installHint = pickInstallHint({
-    win32: "VS Code: https://code.visualstudio.com",
-    darwin:
-      "brew install --cask visual-studio-code, puis Command Palette → Shell Command: Install 'code' command in PATH",
-    fallback: "VS Code: https://code.visualstudio.com",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: "VS Code: https://code.visualstudio.com",
+      darwin: MANUAL_STEPS.andThen(
+        "brew install --cask visual-studio-code",
+        "Command Palette → Shell Command: Install 'code' command in PATH",
+      ),
+      fallback: "VS Code: https://code.visualstudio.com",
+    });
+  }
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

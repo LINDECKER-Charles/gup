@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -57,8 +58,10 @@ export class SkaffoldProvider implements Provider {
         winget: "Google.Skaffold",
         brew: "skaffold",
       },
-      manualMessage:
-        "Télécharger https://github.com/GoogleContainerTools/skaffold/releases et remplacer skaffold.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/GoogleContainerTools/skaffold/releases",
+        "skaffold.exe",
+      ),
     });
   }
 

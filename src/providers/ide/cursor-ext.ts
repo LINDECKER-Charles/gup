@@ -5,6 +5,7 @@ import {
   scanVsCodeLikeExtensions,
   updateVsCodeLikeExtension,
 } from "./vscode-like.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -16,12 +17,16 @@ export class CursorExtProvider implements Provider {
   readonly displayName = "Cursor extensions";
   // On macOS the cask installs the app but not always the `cursor` binary
   // on the PATH: the command palette is the only reliable way.
-  readonly installHint = pickInstallHint({
-    win32: "https://www.cursor.com/",
-    darwin:
-      "brew install --cask cursor, puis Cursor → Command Palette → Shell Command: Install 'cursor' command",
-    fallback: "https://www.cursor.com/",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: "https://www.cursor.com/",
+      darwin: MANUAL_STEPS.andThen(
+        "brew install --cask cursor",
+        "Cursor → Command Palette → Shell Command: Install 'cursor' command",
+      ),
+      fallback: "https://www.cursor.com/",
+    });
+  }
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface KubectlVersion {
@@ -65,8 +66,10 @@ export class KubectlProvider implements Provider {
         // The Homebrew formula is called kubernetes-cli, not kubectl.
         brew: "kubernetes-cli",
       },
-      manualMessage:
-        "Télécharger kubectl depuis https://kubernetes.io/releases/download/",
+      manualMessage: localize({
+        en: "Download kubectl from https://kubernetes.io/releases/download/",
+        fr: "Télécharger kubectl depuis https://kubernetes.io/releases/download/",
+      }),
     });
   }
 

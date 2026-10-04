@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchHashicorpLatest } from "../../core/hashicorp-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -64,8 +65,10 @@ export class VaultProvider implements Provider {
         // is enough for `brew upgrade`.
         brew: "vault",
       },
-      manualMessage:
-        "Télécharger https://releases.hashicorp.com/vault/ et remplacer vault.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://releases.hashicorp.com/vault/",
+        "vault.exe",
+      ),
     });
   }
 

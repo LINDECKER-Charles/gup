@@ -1,6 +1,7 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -11,10 +12,12 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class NucleiTemplatesProvider implements Provider {
   readonly id = "nuclei-templates";
   readonly displayName = "Nuclei templates";
-  readonly installHint = pickInstallHint({
-    win32: "Installer Nuclei: https://docs.projectdiscovery.io/tools/nuclei/install",
-    fallback: "Installer Nuclei: brew install nuclei",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: MANUAL_STEPS.install("Nuclei", "https://docs.projectdiscovery.io/tools/nuclei/install"),
+      fallback: MANUAL_STEPS.install("Nuclei", "brew install nuclei"),
+    });
+  }
 
   async isAvailable(): Promise<boolean> {
     return commandExists("nuclei");

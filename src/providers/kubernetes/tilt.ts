@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -55,8 +56,10 @@ export class TiltProvider implements Provider {
         scoop: "tilt",
         brew: "tilt",
       },
-      manualMessage:
-        "Télécharger https://github.com/tilt-dev/tilt/releases et remplacer tilt.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/tilt-dev/tilt/releases",
+        "tilt.exe",
+      ),
     });
   }
 

@@ -3,6 +3,7 @@ import { win32 as winPath } from "node:path";
 import { isElevated, runInherit, type RunResult } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * Cygwin — the POSIX environment for Windows. Windows-only by construction.
@@ -43,8 +44,9 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class CygwinProvider implements Provider {
   readonly id = "cygwin";
   readonly displayName = "Cygwin";
-  readonly installHint =
-    "https://cygwin.com/setup-x86_64.exe — lancer l'installeur puis relancer gup";
+  get installHint(): string {
+    return TEXT.installHint;
+  }
   /** Cygwin is a Windows environment. */
   readonly platforms = PLATFORMS.windows;
   /** Cygwin setup elevates itself through UAC unless the tree was installed with --no-admin. */
@@ -62,23 +64,21 @@ export class CygwinProvider implements Provider {
       {
         id: ROW_ID,
         aggregate: true,
-        name: "Cygwin (paquets)",
+        name: TEXT.rowName,
         current: "?",
         latest: "refresh",
         // Short flag spellings of the argv built by buildUpgradeArgs — the long
         // ones would not fit the note column.
-        note: setup
-          ? "setup-x86_64.exe -q -g"
-          : "setup-x86_64.exe introuvable — à télécharger",
+        note: setup ? "setup-x86_64.exe -q -g" : TEXT.setupMissingNote,
       },
     ];
   }
 
   async update(_packageId: string): Promise<UpdateOutcome> {
     const root = findCygwinRoot(process.env);
-    if (!root) return deferred(NO_ROOT_MESSAGE);
+    if (!root) return deferred(TEXT.noRoot);
     const setup = findSetupExe(root, process.env);
-    if (!setup) return deferred(MISSING_SETUP_MESSAGE);
+    if (!setup) return deferred(TEXT.setupMissing);
     return runSetup(setup, root);
   }
 
@@ -109,21 +109,42 @@ const CYGCHECK_RELATIVE_PATH = ["bin", "cygcheck.exe"] as const;
  */
 const REBOOT_REQUIRED_EXIT = 118;
 
-const NO_ROOT_MESSAGE =
-  "Racine Cygwin introuvable — définir CYGWIN_ROOT sur le dossier d'installation.";
-
-const MISSING_SETUP_MESSAGE =
-  `${SETUP_EXE} introuvable : Cygwin ne l'installe pas dans son arborescence. ` +
-  `Le télécharger sur ${SETUP_URL} puis le placer dans la racine Cygwin ou dans ` +
-  `le dossier Downloads du profil utilisateur.`;
-
-const REBOOT_MESSAGE =
-  "Mise à jour appliquée ; des fichiers en cours d'utilisation seront remplacés au prochain redémarrage.";
-
-const UNVERIFIABLE_MESSAGE =
-  "setup s'est élevé via UAC : son processus parent sort toujours en 0, le " +
-  "résultat réel est dans sa fenêtre et dans setup.log. Relancer gup en " +
-  "administrateur pour obtenir un statut fiable.";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    installHint: `${SETUP_URL} — run the installer, then restart gup`,
+    rowName: "Cygwin (packages)",
+    setupMissingNote: `${SETUP_EXE} not found — download it`,
+    noRoot: "Cygwin root not found — set CYGWIN_ROOT to the installation folder.",
+    setupMissing:
+      `${SETUP_EXE} not found: Cygwin does not install it into its tree. ` +
+      `Download it from ${SETUP_URL}, then put it in the Cygwin root or in ` +
+      "the Downloads folder of the user profile.",
+    rebootRequired: "Update applied; files in use will be replaced at the next reboot.",
+    unverifiable:
+      "setup elevated itself through UAC: its parent process always exits with 0, the " +
+      "actual result is in its window and in setup.log. Restart gup as an " +
+      "administrator to get a reliable status.",
+    spawnFailed: (reason: string) => `Could not start ${SETUP_EXE}: ${reason}`,
+  },
+  fr: {
+    installHint: `${SETUP_URL} — lancer l'installeur puis relancer gup`,
+    rowName: "Cygwin (paquets)",
+    setupMissingNote: `${SETUP_EXE} introuvable — à télécharger`,
+    noRoot: "Racine Cygwin introuvable — définir CYGWIN_ROOT sur le dossier d'installation.",
+    setupMissing:
+      `${SETUP_EXE} introuvable : Cygwin ne l'installe pas dans son arborescence. ` +
+      `Le télécharger sur ${SETUP_URL} puis le placer dans la racine Cygwin ou dans ` +
+      `le dossier Downloads du profil utilisateur.`,
+    rebootRequired:
+      "Mise à jour appliquée ; des fichiers en cours d'utilisation seront remplacés au prochain redémarrage.",
+    unverifiable:
+      "setup s'est élevé via UAC : son processus parent sort toujours en 0, le " +
+      "résultat réel est dans sa fenêtre et dans setup.log. Relancer gup en " +
+      "administrateur pour obtenir un statut fiable.",
+    spawnFailed: (reason) => `Lancement de ${SETUP_EXE} impossible : ${reason}`,
+  },
+});
 
 type Env = Record<string, string | undefined>;
 
@@ -235,10 +256,10 @@ export function interpretSetupExit(res: RunResult, elevated: boolean): UpdateOut
   // and it must never be laundered into the "we cannot tell" case below.
   if (res.aborted || res.timedOut) return { id: ROW_ID, success: false };
   if (res.exitCode === REBOOT_REQUIRED_EXIT) {
-    return { id: ROW_ID, success: true, message: REBOOT_MESSAGE };
+    return { id: ROW_ID, success: true, message: TEXT.rebootRequired };
   }
   if (res.failed) return { id: ROW_ID, success: false };
-  if (!elevated) return { id: ROW_ID, success: true, message: UNVERIFIABLE_MESSAGE };
+  if (!elevated) return { id: ROW_ID, success: true, message: TEXT.unverifiable };
   return { id: ROW_ID, success: true };
 }
 
@@ -260,11 +281,7 @@ async function runSetup(setup: string, root: string): Promise<UpdateOutcome> {
     // The runner refuses command names outside its path allowlist; a profile
     // directory with an accented character is the realistic trigger. Swallow
     // it into a failed outcome so one odd machine cannot break the batch.
-    return {
-      id: ROW_ID,
-      success: false,
-      message: `Lancement de ${SETUP_EXE} impossible : ${describeError(err)}`,
-    };
+    return { id: ROW_ID, success: false, message: TEXT.spawnFailed(describeError(err)) };
   }
 }
 

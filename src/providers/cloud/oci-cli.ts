@@ -1,6 +1,7 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { detectInstallSource, runPmUpdate } from "../../core/install-source.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PypiJson {
@@ -56,7 +57,7 @@ export class OciCliProvider implements Provider {
         id: "oci-cli",
         success: false,
         skipped: true,
-        message: "pip/python introuvable",
+        message: localize({ en: "pip/python not found", fr: "pip/python introuvable" }),
       };
     }
     const res = await runInherit(bin.cmd, [

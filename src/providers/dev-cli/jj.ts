@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -56,8 +57,10 @@ export class JujutsuProvider implements Provider {
         winget: "martinvonz.jj",
         brew: "jj",
       },
-      manualMessage:
-        "Télécharger https://github.com/jj-vcs/jj/releases ou `cargo install --locked jj-cli`",
+      manualMessage: MANUAL_STEPS.downloadOr(
+        "https://github.com/jj-vcs/jj/releases",
+        "cargo install --locked jj-cli",
+      ),
     });
   }
 

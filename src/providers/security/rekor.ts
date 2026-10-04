@@ -6,6 +6,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -57,8 +58,10 @@ export class RekorProvider implements Provider {
         scoop: "rekor-cli",
         brew: "rekor-cli",
       },
-      manualMessage:
-        "Télécharger https://github.com/sigstore/rekor/releases et remplacer rekor-cli.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/sigstore/rekor/releases",
+        "rekor-cli.exe",
+      ),
     });
   }
 
