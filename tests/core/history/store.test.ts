@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -203,6 +203,16 @@ describe("recordScan", () => {
     expect(event.fast).toBe(false);
     expect(event.filter).toEqual([]);
     expect(event.outdated).toBe(0);
+  });
+});
+
+describe("file permissions", () => {
+  it.skipIf(process.platform === "win32")("keeps the history private to its user", () => {
+    const history = join(dir, "history");
+    process.env["GUP_HISTORY_DIR"] = history;
+    store.recordUpdate({ providerId: "p", outcome: outcome() });
+    expect(statSync(history).mode & 0o777).toBe(0o700);
+    expect(statSync(join(history, SHARD)).mode & 0o777).toBe(0o600);
   });
 });
 

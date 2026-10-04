@@ -44,6 +44,14 @@ import type {
 const ENABLED_ENV = "GUP_HISTORY";
 const DISABLED_VALUES = new Set(["0", "false", "off", "no"]);
 
+/**
+ * The history names this machine's packages and the paths tools printed:
+ * owner-only on POSIX, like the debug log and the reports. A mode only
+ * applies to what gets created; Windows keeps the profile's own ACL.
+ */
+const DIR_MODE = 0o700;
+const FILE_MODE = 0o600;
+
 let warned = false;
 
 export interface ScanRecord {
@@ -173,12 +181,13 @@ function append(event: HistoryEvent): void {
   const location = historyLocation(new Date());
   if (!location) return;
   try {
-    mkdirSync(location.dir, { recursive: true });
+    mkdirSync(location.dir, { recursive: true, mode: DIR_MODE });
     // One `appendFileSync` per record, on a file opened in append mode: for
     // payloads this small the write lands whole at the end of the file, so the
     // elevated child and its parent can log side by side without a lock, and a
     // process killed mid-write costs at most its own last line.
-    appendFileSync(location.file, `${JSON.stringify(event)}\n`, "utf8");
+    const line = `${JSON.stringify(event)}\n`;
+    appendFileSync(location.file, line, { encoding: "utf8", mode: FILE_MODE });
   } catch (err) {
     warnOnce(err);
   }

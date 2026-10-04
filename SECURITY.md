@@ -217,9 +217,9 @@ you send it.
 
 - **Files.** History, debug log, reports, settings and schedules live in your
   own state and config directories, under the per-user `%LOCALAPPDATA%` /
-  `%APPDATA%` permissions on Windows. On macOS and Linux the debug log,
-  reports, settings and schedules are created owner-only (`0700` directories,
-  `0600` files); the history follows your umask. Settings and schedules are
+  `%APPDATA%` permissions on Windows. On macOS and Linux the history, debug
+  log, reports, settings and schedules are created owner-only (`0700`
+  directories, `0600` files). Settings and schedules are
   written atomically (temporary file, then rename); exports are created with
   `wx` and replace a file only with `--force`; retention only deletes files
   whose names match gup's own patterns, never through a link.
