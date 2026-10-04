@@ -259,8 +259,8 @@ export default {
         q: "Does it work on macOS and Linux?",
         a:
           "Yes. On macOS natively: Homebrew formulae and casks, MacPorts and the Mac App " +
-          "Store, on Apple Silicon and Intel. On Linux, Homebrew/Linuxbrew is the OS-level " +
-          "provider, and a binary installed by the distribution is handed back to `apt` or " +
+          "Store, on Apple Silicon and Intel. On Linux, Homebrew/Linuxbrew and Nix cover the " +
+          "OS level, and a binary installed by the distribution is handed back to `apt` or " +
           "`dnf`. Everything above the OS layer — npm, pip, cargo, helm, VS Code… — behaves " +
           "the same on all three systems.",
       },

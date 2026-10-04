@@ -3,21 +3,22 @@
  * badges and footnotes are copy, they live in the catalogs under
  * `coverage.platforms.<id>`.
  *
- * ACCURACY NOTE — checked against the registry, only one OS-level provider
- * runs natively on Linux:
+ * ACCURACY NOTE — checked against the registry (src/providers/os/):
  *
- *   - `brew` (src/providers/os/brew.ts) declares `PLATFORMS.notWindows`, so
- *     it covers Linuxbrew; it only excludes win32.
+ *   - `brew` and `nix` declare `PLATFORMS.notWindows`: Linuxbrew and native
+ *     Nix (Nix itself and the user profile) run on Linux as on macOS. So do
+ *     `pkgx` and `pkgin`, left off the cards as niche.
  *   - `apt` and `dnf` are `InstallSource` delegation targets
  *     (src/core/install-source.ts), not providers: they upgrade one detected
  *     binary whose owner `dpkg -S` / `rpm -qf` resolved. gup never runs a
  *     distro-wide upgrade on a native Linux host — hence `isDelegated`.
- *   - pacman, Flatpak and Nix exist only as `wsl-*` providers, declared
+ *   - pacman and Flatpak exist only as `wsl-*` providers, declared
  *     `PLATFORMS.windows`: they belong to the Windows card's WSL bridge, never
  *     to the Linux card.
  *
- * How many providers each system supports is not here: it is derived from
- * those declarations (`providersBySystem` in facts.js).
+ * The cards name each system's main managers, not all of them. How many
+ * providers each system supports is derived from the declarations
+ * (`providersBySystem` in facts.js).
  */
 
 const manager = (name) => Object.freeze({ name, isDelegated: false });
@@ -43,7 +44,12 @@ export const PLATFORMS = Object.freeze({
     {
       id: "linux",
       name: "Linux",
-      managers: [manager("Homebrew / Linuxbrew"), delegated("apt"), delegated("dnf")],
+      managers: [
+        manager("Homebrew / Linuxbrew"),
+        manager("Nix"),
+        delegated("apt"),
+        delegated("dnf"),
+      ],
     },
   ]),
   /** Everything above the OS layer: identical on the three systems. */

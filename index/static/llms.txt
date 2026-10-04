@@ -49,20 +49,23 @@ gup update --all -y       # CI-safe: everything, no prompt
 ## Platform support (precise)
 
 - **Windows** — primary and historical target. OS-level providers: winget,
-  scoop, chocolatey. Plus the WSL bridge, driven from the Windows host:
-  `wsl-apt`, `wsl-dnf`, `wsl-pacman`, `wsl-brew`, `wsl-flatpak`, `wsl-nix`, and
-  the WSL kernel itself (`wsl --update`). UAC elevation batch for choco.
+  scoop, chocolatey, plus `msys2`, `cygwin` and `npackd`. Plus the WSL bridge,
+  driven from the Windows host: `wsl-apt`, `wsl-dnf`, `wsl-pacman`, `wsl-brew`,
+  `wsl-flatpak`, `wsl-nix`, and the WSL kernel itself (`wsl --update`). UAC
+  elevation batch for choco.
 - **macOS** — native since 0.3.0. OS-level providers: `brew` (formulae),
-  `brew-cask`, `macports`, `mas` (Mac App Store). A brew-installed binary is
-  recognised through its Cellar/Caskroom symlink, so its upgrade is delegated
-  back to brew instead of being reported as `manual` and dropped from the scan.
-  Apple Silicon and Intel.
-- **Linux** — `brew` is the OS-level provider (it is deliberately not
-  darwin-gated, so Linuxbrew goes through it). For a binary installed by the
-  distribution, ownership is resolved with `dpkg -S` / `rpm -qf` and the upgrade
-  is delegated to `apt` or `dnf` for that one package. There is no distro-wide
-  provider on a native Linux host: `apt`, `dnf`, `pacman`, `flatpak` and `nix`
-  as full providers exist only through the WSL bridge, from a Windows host.
+  `brew-cask`, `macports`, `mas` (Mac App Store), plus `fink`, `sparkle` (apps
+  that update through Sparkle) and the cross-Unix `nix`, `pkgx` and `pkgin`. A
+  brew-installed binary is recognised through its Cellar/Caskroom symlink, so
+  its upgrade is delegated back to brew instead of being reported as `manual`
+  and dropped from the scan. Apple Silicon and Intel.
+- **Linux** — `brew` and `nix` are the OS-level providers (both declared
+  `PLATFORMS.notWindows`, so Linuxbrew and native Nix go through them), plus
+  `pkgx` and `pkgin`. For a binary installed by the distribution, ownership is
+  resolved with `dpkg -S` / `rpm -qf` and the upgrade is delegated to `apt` or
+  `dnf` for that one package. There is no distro-wide `apt`, `dnf`, `pacman`
+  or `flatpak` provider on a native Linux host: those exist only through the
+  WSL bridge, from a Windows host.
 - Everything above the OS layer is platform-independent and behaves identically
   on the three systems: npm/pnpm/yarn/bun globals, pip/pipx/uv/conda, cargo,
   rustup, gem, composer, dotnet tools, the cloud/IaC/K8s CLIs, VS Code and
@@ -85,9 +88,10 @@ gup update --all -y       # CI-safe: everything, no prompt
 
 ## Supported providers (categories)
 
-- **Windows package managers**: winget, scoop, chocolatey
-- **macOS package managers**: brew (formulae), brew-cask, macports, mas
+- **Windows package managers**: winget, scoop, chocolatey, msys2, cygwin, npackd
+- **macOS package managers**: brew (formulae), brew-cask, macports, mas, fink, sparkle
 - **Linux**: brew/Linuxbrew natively; apt and dnf as per-package delegation targets
+- **macOS and Linux**: nix, pkgx, pkgin
 - **WSL**: the kernel, plus apt, dnf, pacman, brew, flatpak, nix inside your distros
 - **Node**: npm-g, pnpm-g, yarn-g, bun-g, corepack, deno, fnm, nvm-windows
 - **Python**: pip, pipx, uv, conda, poetry, pdm, rye, pyenv-win

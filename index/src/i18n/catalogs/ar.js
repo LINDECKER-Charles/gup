@@ -288,8 +288,8 @@ export default {
         q: "هل يعمل على macOS وLinux؟",
         a:
           "نعم. على macOS بشكل أصلي: حزم Homebrew من نوعَي formula وcask، وMacPorts، وMac App " +
-          "Store، على Apple Silicon وIntel. وعلى Linux، يكون Homebrew/Linuxbrew هو provider " +
-          "مستوى النظام، ويُعاد الملف التنفيذي الذي ثبّتته التوزيعة إلى `apt` أو `dnf`. وكل ما " +
+          "Store، على Apple Silicon وIntel. وعلى Linux، يتولى Homebrew/Linuxbrew وNix مستوى " +
+          "النظام، ويُعاد الملف التنفيذي الذي ثبّتته التوزيعة إلى `apt` أو `dnf`. وكل ما " +
           "يعلو طبقة النظام — npm وpip وcargo وhelm وVS Code… — يعمل بالطريقة نفسها على الأنظمة " +
           "الثلاثة.",
       },

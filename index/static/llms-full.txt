@@ -100,12 +100,15 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.
 ## Platform support, precisely
 
 **Windows** — the primary and historical target. OS-level: `winget`, `scoop`,
-`choco`. Plus the WSL bridge driven from the Windows host (`wsl-apt`, `wsl-dnf`,
-`wsl-pacman`, `wsl-brew`, `wsl-flatpak`, `wsl-nix`) and the WSL kernel itself
-(`wsl --update`). Chocolatey upgrades go through a UAC elevation batch.
+`choco`, plus `msys2`, `cygwin` and `npackd`. Plus the WSL bridge driven from
+the Windows host (`wsl-apt`, `wsl-dnf`, `wsl-pacman`, `wsl-brew`,
+`wsl-flatpak`, `wsl-nix`) and the WSL kernel itself (`wsl --update`).
+Chocolatey upgrades go through a UAC elevation batch.
 
 **macOS** — native since 0.3.0. OS-level: `brew` (formulae), `brew-cask`,
-`macports`, `mas` (Mac App Store). Homebrew installs a private prefix and only
+`macports`, `mas` (Mac App Store), plus `fink`, `sparkle` (apps that update
+through Sparkle: reported, then left to the app's own updater) and the
+cross-Unix `nix`, `pkgx` and `pkgin`. Homebrew installs a private prefix and only
 exposes a PATH symlink, so `gup` resolves the link to its Cellar/Caskroom target
 before classifying a binary — without that, every brew install was classified
 `manual` and dropped from the scan. `--greedy` is deliberately omitted on casks:
@@ -114,14 +117,17 @@ cask upgrade re-downloads a whole bundle to reach a version the app would have
 fetched anyway. `HOMEBREW_NO_AUTO_UPDATE` is inherited, never forced. Apple
 Silicon and Intel.
 
-**Linux** — `brew` is the OS-level provider; it is deliberately not
-darwin-gated, so Linuxbrew (`/home/linuxbrew/.linuxbrew`, `~/.linuxbrew`) goes
-through the same code path. For a binary installed by the distribution, package
-databases are the only reliable ownership signal, so `gup` probes `dpkg -S` /
-`rpm -qf` and delegates that one package's upgrade to `apt` or `dnf`. There is
-no distro-wide provider on a native Linux host: `apt`, `dnf`, `pacman`,
-`flatpak` and `nix` as full providers exist only through the WSL bridge, and
-they are declared Windows-only (`readonly platforms = PLATFORMS.windows;`).
+**Linux** — `brew` and `nix` are the OS-level providers. Both are declared
+`PLATFORMS.notWindows`, so Linuxbrew (`/home/linuxbrew/.linuxbrew`,
+`~/.linuxbrew`) goes through the same code path as Homebrew on a Mac, and
+native Nix gets the same two rows as on macOS (Nix itself and the user
+profile; NixOS generations are out of scope). `pkgx` and `pkgin` run here too.
+For a binary installed by the distribution, package databases are the only
+reliable ownership signal, so `gup` probes `dpkg -S` / `rpm -qf` and delegates
+that one package's upgrade to `apt` or `dnf`. There is no distro-wide `apt`,
+`dnf`, `pacman` or `flatpak` provider on a native Linux host: those exist only
+through the WSL bridge, declared Windows-only
+(`readonly platforms = PLATFORMS.windows;`).
 
 Everything above the OS layer is platform-independent: npm/pnpm/yarn/bun
 globals, pip/pipx/uv/conda, cargo, rustup, gem, composer, dotnet tools, the
@@ -209,9 +215,9 @@ homogenises the output.
 **Does it work on macOS?** Yes, natively since 0.3.0 — Homebrew formulae and
 casks, MacPorts, and the Mac App Store through `mas`.
 
-**Does it work on Linux?** Yes. Homebrew/Linuxbrew is the OS-level provider, and
-distro-owned binaries are upgraded through `apt`/`dnf` after ownership is
-resolved with `dpkg -S` / `rpm -qf`. Full `apt`/`dnf`/`pacman`/`flatpak`/`nix`
+**Does it work on Linux?** Yes. Homebrew/Linuxbrew and Nix cover the OS level,
+and distro-owned binaries are upgraded through `apt`/`dnf` after ownership is
+resolved with `dpkg -S` / `rpm -qf`. Full `apt`/`dnf`/`pacman`/`flatpak`
 providers exist only via the WSL bridge from a Windows host.
 
 **Can I use it in CI?** Yes. `gup list --json --fast` is machine-readable,

@@ -254,8 +254,8 @@ export default {
         q: "क्या यह macOS और Linux पर चलता है?",
         a:
           "हाँ। macOS पर नेटिव रूप से: Homebrew के फ़ॉर्मूले और कास्क, MacPorts और Mac App " +
-          "Store, Apple Silicon और Intel दोनों पर। Linux पर Homebrew/Linuxbrew OS-स्तर का " +
-          "provider है, और डिस्ट्रीब्यूशन से इंस्टॉल हुई बाइनरी `apt` या `dnf` को वापस सौंप दी " +
+          "Store, Apple Silicon और Intel दोनों पर। Linux पर OS-स्तर Homebrew/Linuxbrew और Nix " +
+          "संभालते हैं, और डिस्ट्रीब्यूशन से इंस्टॉल हुई बाइनरी `apt` या `dnf` को वापस सौंप दी " +
           "जाती है। OS परत के ऊपर की हर चीज़ — npm, pip, cargo, helm, VS Code… — तीनों सिस्टम " +
           "पर एक जैसा व्यवहार करती है।",
       },

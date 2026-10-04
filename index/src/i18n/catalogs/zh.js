@@ -232,8 +232,8 @@ export default {
         q: "支持 macOS 和 Linux 吗？",
         a:
           "支持。在 macOS 上原生运行：Homebrew 的 formula 与 cask、MacPorts 以及 Mac App " +
-          "Store，Apple Silicon 和 Intel 均支持。在 Linux 上，Homebrew/Linuxbrew 是系统层的 " +
-          "provider，发行版安装的二进制文件会交还给 `apt` 或 `dnf` 处理。系统层之上的一切——" +
+          "Store，Apple Silicon 和 Intel 均支持。在 Linux 上，系统层由 Homebrew/Linuxbrew 和 " +
+          "Nix 负责，发行版安装的二进制文件会交还给 `apt` 或 `dnf` 处理。系统层之上的一切——" +
           "npm、pip、cargo、helm、VS Code……——在三个系统上的表现完全一致。",
       },
       install: {

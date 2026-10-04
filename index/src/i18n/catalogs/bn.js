@@ -254,7 +254,7 @@ export default {
         q: "এটি কি macOS আর Linux-এ চলে?",
         a:
           "হ্যাঁ। macOS-এ নেটিভভাবে: Homebrew-এর ফর্মুলা ও কাস্ক, MacPorts আর Mac App Store, " +
-          "Apple Silicon ও Intel দুটোতেই। Linux-এ Homebrew/Linuxbrew হলো OS-স্তরের provider, আর " +
+          "Apple Silicon ও Intel দুটোতেই। Linux-এ OS-স্তর সামলায় Homebrew/Linuxbrew ও Nix, আর " +
           "ডিস্ট্রিবিউশনের ইনস্টল করা বাইনারি `apt` বা `dnf`-এর কাছে ফেরত দেওয়া হয়। OS স্তরের " +
           "ওপরের সবকিছু — npm, pip, cargo, helm, VS Code… — তিনটি সিস্টেমেই একইভাবে আচরণ করে।",
       },

@@ -24,6 +24,10 @@
   exactly (WCAG AA: 4.5:1 text, 3:1 borders, 7:1 at AAA, colours corrected).
 - **landing:** the FAQ and `llms.txt` no longer claim JetBrains plugins, Eclipse Marketplace,
   Obsidian or Notepad++ support — those providers are not registered; JetBrains IDEs are.
+- **landing:** the FAQ, the Linux card and `llms.txt` / `llms-full.txt` no longer say that
+  Homebrew is Linux's only OS-level provider and that Nix runs there only through WSL: `nix`
+  (like `pkgx` and `pkgin`) is registered for macOS and Linux. The Linux card gains Nix, and
+  the text files list every OS-level provider of each system.
 
 ## Internal
 

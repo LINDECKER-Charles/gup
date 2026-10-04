@@ -261,8 +261,8 @@ export default {
         q: "Funciona no macOS e no Linux?",
         a:
           "Sim. No macOS, de forma nativa: fórmulas e casks do Homebrew, MacPorts e a Mac " +
-          "App Store, em Apple Silicon e Intel. No Linux, o Homebrew/Linuxbrew é o provider " +
-          "do sistema, e um binário instalado pela distribuição é devolvido ao `apt` ou ao " +
+          "App Store, em Apple Silicon e Intel. No Linux, o Homebrew/Linuxbrew e o Nix cobrem " +
+          "a camada do sistema, e um binário instalado pela distribuição é devolvido ao `apt` ou ao " +
           "`dnf`. Tudo o que fica acima da camada do sistema — npm, pip, cargo, helm, " +
           "VS Code… — se comporta da mesma forma nos três sistemas.",
       },
