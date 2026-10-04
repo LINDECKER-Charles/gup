@@ -35,10 +35,11 @@ npm warn install-scripts 1 package has install scripts not yet covered by allowS
 npm warn install-scripts   node-pty@1.1.0 (install: node scripts/prebuild.js || node-gyp rebuild; postinstall: node scripts/post-install.js)
 ```
 
-or, with `strict-allow-scripts` set, `npm error code ESTRICTALLOWSCRIPTS`.
+or, with npm 12, `1 package had install scripts blocked because they are not covered by
+allowScripts:`; or, with `strict-allow-scripts` set, `npm error code ESTRICTALLOWSCRIPTS`.
 
 **Why.** node-pty, the optional pseudo-terminal behind updates inside the app, has install scripts,
-and npm 11 asks you to review them.
+and npm 11 and later ask you to review them: npm 11 still runs them, npm 12 skips them.
 
 **Fix.** Allow it: `npm install -g @charles_lindecker/gup --allow-scripts=node-pty`. Skipping it
 with `--ignore-scripts` is harmless on Windows and macOS, but leaves Linux without the embedded
