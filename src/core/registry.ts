@@ -2,6 +2,7 @@ import pLimit from "p-limit";
 
 import { log } from "./log/log.js";
 import { filterByOwnership } from "./ownership.js";
+import { dropSuperseded } from "./superseded.js";
 import { isSupportedOn } from "./platform/is-supported-on.js";
 import { withOperation } from "./state/run-context.js";
 
@@ -534,7 +535,12 @@ export async function scanAll(options: ScanOptions = {}): Promise<ProviderScanRe
   for (const { providerId, packageId, binary, actualOwner } of exclusions) {
     log.debug("scan.ownership-excluded", { providerId, packageId, binary, owner: actualOwner });
   }
-  return results;
+  // The same software listed by two providers stays with one (superseded.ts).
+  const deduplicated = dropSuperseded(results);
+  for (const { providerId, packageId, keeper } of deduplicated.dropped) {
+    log.debug("scan.superseded", { providerId, packageId, keeper });
+  }
+  return deduplicated.results;
 }
 
 /** One provider's scan, fail-soft: a provider that throws becomes an error row. */
