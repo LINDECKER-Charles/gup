@@ -86,6 +86,19 @@ describe("OptionsPanel list", () => {
     expect(cursorRow(panel)).toContain("Filtre providers");
   });
 
+  it("wraps the rescan offer on the panel of an 80-column terminal, never cutting it", () => {
+    const { panel } = setup();
+    press(panel, "enter");
+    const width = 50;
+    const lines = text(panel.render({ width, height: 30 })).split("\n");
+    const offer = lines.slice(0, lines.indexOf(""));
+    expect(offer.length).toBeGreaterThan(1);
+    expect(offer.every((line) => line.length <= width)).toBe(true);
+    expect(offer.join(" ")).toBe(OPTIONS_NOTICES.rescan);
+    panel.click(offer.length + 3, { width, height: 30 });
+    expect(cursorRow(panel)).toContain("Timeout install");
+  });
+
   it("toggles a switch with Entrée, saves it, and offers a rescan for scan settings", () => {
     const { panel, state, settings, host } = setup();
     press(panel, "enter");

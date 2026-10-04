@@ -2,7 +2,7 @@ import { ConfigWriteError } from "../../../core/config/store.js";
 import { VIEW_LABELS } from "../../text/menu-labels.js";
 import { OPTIONS_HINTS, OPTIONS_NOTICES } from "../../text/settings/options-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
-import { seg, type Line } from "../../tui/styled-lines.js";
+import { seg, wrapLine, type Line } from "../../tui/styled-lines.js";
 import { PAGE_STEP, type Panel, type Viewport } from "../panel.js";
 import type {
   OptionRow,
@@ -152,7 +152,7 @@ export class OptionsPanel implements Panel {
   private layout(viewport: Viewport): ListLayout {
     const items = this.items();
     const cursor = this.cursorIn(items);
-    const pinned = this.pinnedLines();
+    const pinned = this.pinnedLines(viewport.width);
     const detail = detailLines(items, cursor, viewport.width);
     const height = viewport.height - pinned.length - detail.length;
     return { items, cursor, pinned, detail, height };
@@ -168,12 +168,15 @@ export class OptionsPanel implements Panel {
     return this.#sections.flatMap((section) => section.shortcuts?.() ?? []);
   }
 
-  /** Lines that stay above the list whatever its scroll: the notice, the rescan offer. */
-  private pinnedLines(): Line[] {
+  /**
+   * Lines that stay above the list whatever its scroll — the notice, the
+   * rescan offer — wrapped to the panel: at 80 columns neither is cut.
+   */
+  private pinnedLines(width: number): Line[] {
     const lines: Line[] = [
       ...(this.#notice ? [this.#notice] : []),
       ...(this.#isScanDirty ? [[seg(OPTIONS_NOTICES.rescan, "warning")]] : []),
-    ];
+    ].flatMap((line) => wrapLine(line, width));
     return lines.length > 0 ? [...lines, []] : [];
   }
 
