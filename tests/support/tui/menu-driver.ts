@@ -8,7 +8,7 @@ import {
   MenuSession,
   type MenuController,
   type SessionExit,
-} from "../../../src/ui/app/menu-session.js";
+} from "../../../src/ui/app/session/menu-session.js";
 import {
   DEFAULT_UI_PREFERENCES,
   setUiPreferencesSource,

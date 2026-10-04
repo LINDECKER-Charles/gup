@@ -15,7 +15,7 @@ export default {
     ogDescription:
       "Um único binário verifica winget, scoop, Homebrew, MacPorts, npm, pip, cargo, helm, " +
       "kubectl, VS Code e JetBrains — {providers} fontes em paralelo — e atualiza o que " +
-      "você escolher sem sair da interface.",
+      "você escolher em um terminal embutido na interface.",
     ogImageAlt:
       "gup — um comando, {providers} fontes atualizadas. CLI de código aberto para winget, " +
       "Homebrew, npm, pip, cargo e helm.",
@@ -54,7 +54,7 @@ export default {
     lead:
       "Chega de correr atrás de **winget**, **brew** e **npm**, pip, cargo e helm. O gup " +
       "verifica todos em paralelo, mostra o que está desatualizado e atualiza o que você " +
-      "escolher — sem nunca sair da interface.",
+      "escolher — ao vivo, em um terminal embutido na interface.",
     secondaryCta: "Ver no GitHub",
     trust: [
       "MIT · código aberto",

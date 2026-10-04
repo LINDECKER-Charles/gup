@@ -228,13 +228,23 @@ corto", Portuguese "o que ficar abaixo" gained "do limite", and the Hindi schedu
 in every language: Linux's OS level is Homebrew/Linuxbrew *and Nix*, and "no direct download" is
 gone (the `nerd-fonts` provider downloads release archives).
 
+The hero lead and the social description no longer say that gup updates "without ever leaving its
+interface": the Windows administrator batch installs in its own UAC window, and without an
+embedded terminal gup updates in the user's own terminal. They now say where updates run — "in a
+terminal embedded in its interface", the lead adding "live" — in every language, with the
+card's wording for the embedded terminal (French *terminal intégré*, Spanish *terminal
+integrada*, Portuguese *terminal embutido*, Arabic *طرفية مدمجة*, Bengali *বসানো টার্মিনাল*,
+Hindi *एम्बेड किया गया टर्मिनल*, Chinese *内嵌的终端*). Back-translated, the eight read alike;
+"live" is *en direct*, *en directo*, *ao vivo*, *مباشرةً* (directly), *সরাসরি* (directly),
+*लाइव* and *实时* (in real time). A rule test holds the English source to it.
+
 ## Quality gates
 
 | Gate | What it pins |
 |---|---|
 | `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda, Arabic punctuation), Arabic count agreement. |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
-| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, every non-Latin script rendering its sans, display and mono faces from its own fonts, the terminal demo held to the CLI's sources (see "The terminal demo"), and every `gup` command and flag the page, its examples and the two llms texts cite registered by the CLI's commander declarations (flags of the tools gup drives, such as Homebrew's `--greedy`, are named in the test). |
+| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, every non-Latin script rendering its sans, display and mono faces from its own fonts, the terminal demo held to the CLI's sources (see "The terminal demo"), every `gup` command and flag the page, its examples and the two llms texts cite registered by the CLI's commander declarations (flags of the tools gup drives, such as Homebrew's `--greedy`, are named in the test), every provider id llms.txt lists under a category named after a domain (`Cloud CLIs`, `Dev CLIs`…) belonging to that domain, and the English hero lead and social description saying updates run in the embedded terminal, never "without ever leaving" the interface (the UAC window and the no-PTY fallback are exceptions). |
 | `tests/facts/*` | The registry reader: registered providers only, per-system counts from the `platforms` declarations, refusal of an unknown set, an unreadable declaration or a count mismatch. |
 | `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no letter-spacing on Arabic, Indic or Han text, no-JS and reduced-motion rendering, overflow at 1440/820/390 px. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, language menu names on the right, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu (each name tagged with its own language, all starting on one edge). |
 | `npm run lhci` | Lighthouse mobile ≥ 0.95 on performance (best of 3), accessibility, best practices and SEO (median of 3). |

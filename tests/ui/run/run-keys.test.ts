@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runCommandFor, runHintsFor, type RunKeyMode } from "../../../src/ui/run/run-keys.js";
 import { RUN_HINTS } from "../../../src/ui/text/run-labels.js";
+import { fitHints } from "../../../src/ui/tui/chrome.js";
 
 const key = (name: string, ctrl = false) => ({ name, ctrl, sequence: name });
 
@@ -44,10 +45,22 @@ describe("runCommandFor", () => {
 });
 
 describe("runHintsFor", () => {
-  it("ends the results' bar with the keys other views add to them, and only there", () => {
+  it("adds the keys other views give the results, and only there, before v", () => {
+    const { select, back, resize } = RUN_HINTS.done;
     const context = { elevation: "uac", isEnlarged: false, resultHints: ["o rapport HTML"] } as const;
-    expect(runHintsFor("done", context)).toBe(`${RUN_HINTS.done(false)} · o rapport HTML`);
+    expect(runHintsFor("done", context)).toBe(
+      [select, back, "o rapport HTML", resize(false)].join(" · "),
+    );
     expect(runHintsFor("running", context)).toBe(RUN_HINTS.running(false));
-    expect(runHintsFor("done", { elevation: "uac", isEnlarged: true })).toBe(RUN_HINTS.done(true));
+    expect(runHintsFor("done", { elevation: "uac", isEnlarged: true })).toBe(
+      [select, back, resize(true)].join(" · "),
+    );
+  });
+
+  it("lets a short bar drop v before the way back and the keys other views add", () => {
+    const context = { elevation: "uac", isEnlarged: false, resultHints: ["o rapport HTML"] } as const;
+    expect(fitHints(runHintsFor("done", context), "", 60)).toBe(
+      [RUN_HINTS.done.select, RUN_HINTS.done.back, "o rapport HTML", "…"].join(" · "),
+    );
   });
 });

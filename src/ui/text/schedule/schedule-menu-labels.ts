@@ -16,14 +16,20 @@ export const SCHEDULES_LABEL = "Planification";
 /** The key that repairs or installs the OS trigger, in the view's lines. */
 export const REPAIR_KEY = "i";
 
+/**
+ * Most needed first: the bar cuts from the end, and at 80 columns only the
+ * first three fit beside `tab menu · q quitter`. The trigger line names `i`
+ * whenever the trigger needs a repair, and the arrows move alike in every
+ * view: both come last.
+ */
 export const SCHEDULES_HINTS = {
   /** Espace switches the schedule under the cursor: the hint says which way. */
   list: (isEnabled: boolean) =>
-    `↑↓ naviguer · entrée modifier · espace ${isEnabled ? "désactiver" : "activer"} · ` +
-    `x exécuter · suppr supprimer · ${REPAIR_KEY} déclencheur`,
+    `entrée modifier · x exécuter · suppr supprimer · ` +
+    `espace ${isEnabled ? "désactiver" : "activer"} · ${REPAIR_KEY} déclencheur · ↑↓ naviguer`,
   editor:
-    "↑↓ champ · entrée modifier · espace basculer · suppr retirer · ctrl+s enregistrer · " +
-    "échap annuler",
+    "ctrl+s enregistrer · entrée modifier · échap annuler · espace basculer · suppr retirer · " +
+    "↑↓ champ",
   typing: "tapez · entrée valider · échap annuler",
 } as const;
 

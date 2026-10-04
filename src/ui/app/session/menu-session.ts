@@ -1,32 +1,27 @@
 import type { KeyEvent } from "@opentui/core";
-import { countPackages, withoutUpdated, type MenuState } from "../../commands/menu-state.js";
-import type { SelectedPackage } from "../../core/types.js";
-import type { UpdateReport } from "../../core/update/update-report.js";
-import type { Viewport } from "../panels/panel.js";
-import type { ScanEvents } from "../panels/scan-panel.js";
-import { ScanBus } from "../scan-progress.js";
-import {
-  PANEL_HINTS_TAIL,
-  providerCountFact,
-  QUIT_DIALOG,
-  SIDEBAR_HINTS,
-  SIDEBAR_TITLE,
-} from "../text/menu-labels.js";
-import { Chrome, CHROME_ROWS } from "../tui/chrome.js";
-import { DialogLayer } from "../tui/dialog.js";
-import type { KeyPress, Screen } from "../tui/screen-host.js";
-import { panelFrame, TextPanel } from "../tui/text-panel.js";
-import { MenuNav } from "./menu-nav.js";
-import { SIDEBAR_WIDTH } from "./sidebar.js";
-import { uiPreferences, type UiPreferences } from "./ui-preferences.js";
-import { launcherFactory, type LaunchRequest, type LauncherContext } from "./update-launcher.js";
+import { countPackages, withoutUpdated, type MenuState } from "../../../commands/menu-state.js";
+import type { SelectedPackage } from "../../../core/types.js";
+import type { UpdateReport } from "../../../core/update/update-report.js";
+import type { Viewport } from "../../panels/panel.js";
+import type { ScanEvents } from "../../panels/scan-panel.js";
+import { ScanBus } from "../../scan-progress.js";
+import { providerCountFact, QUIT_DIALOG, SIDEBAR_TITLE } from "../../text/menu-labels.js";
+import { Chrome, CHROME_ROWS } from "../../tui/chrome.js";
+import { DialogLayer } from "../../tui/dialog.js";
+import type { Screen } from "../../tui/screen-host.js";
+import { panelFrame, TextPanel } from "../../tui/text-panel.js";
+import { SIDEBAR_WIDTH } from "../sidebar.js";
+import { uiPreferences, type UiPreferences } from "../ui-preferences.js";
+import { launcherFactory, type LaunchRequest, type LauncherContext } from "../update-launcher.js";
 import type {
   Takeover,
   TakeoverSurface,
   ViewContext,
   ViewDefinition,
   ViewId,
-} from "./view-definition.js";
+} from "../view-definition.js";
+import { MenuKeys } from "./menu-keys.js";
+import { MenuNav } from "./menu-nav.js";
 import { ViewRegistry } from "./view-registry.js";
 
 /** What the menu needs from the rest of gup. Implemented by the menu command. */
@@ -74,11 +69,8 @@ const FRAME_MS = 100;
  * each view is built from its definition and reaches the menu through a
  * ViewContext. The session ends when the user quits, or when an update must
  * run with the terminal to itself — the app then tears the screen down, runs
- * it, and mounts a new session.
- *
- * Keys go, in order, to: an open dialog, a takeover, the focused panel when
- * it captures text or claims the key, the global bindings (q, Tab, ←), then
- * the focused panel or the sidebar.
+ * it, and mounts a new session. Who hears a key, and what the hint bar
+ * says, is {@link MenuKeys}'s.
  */
 export class MenuSession {
   readonly #deps: SessionDeps;
@@ -89,6 +81,7 @@ export class MenuSession {
   readonly #dialogs: DialogLayer;
   readonly #views: ViewRegistry;
   readonly #nav: MenuNav;
+  readonly #keys: MenuKeys;
   readonly #scans: ScanBus;
   #takeover: Takeover | null = null;
   #exit: (exit: SessionExit) => void = () => {};
@@ -111,6 +104,13 @@ export class MenuSession {
     });
     this.#views = new ViewRegistry(deps.views, deps.initialView ?? "scan");
     this.#nav = new MenuNav(this.#views, () => void this.quit());
+    this.#keys = new MenuKeys({
+      dialogs: this.#dialogs,
+      views: this.#views,
+      nav: this.#nav,
+      takeover: () => this.#takeover,
+      quit: () => void this.quit(),
+    });
     this.#scans = new ScanBus((events) => deps.controller.scan(deps.state, events));
     this.#views.mount(this.createContext());
   }
@@ -192,7 +192,7 @@ export class MenuSession {
   private wireInput(): void {
     const { renderer } = this.#screen;
     renderer.keyInput.on("keypress", (key: KeyEvent) => {
-      this.onKey(key);
+      this.#keys.press(key);
       this.draw();
     });
     renderer.on("resize", () => this.draw());
@@ -216,41 +216,6 @@ export class MenuSession {
     if (this.#dialogs.isOpen || this.#takeover) return;
     action();
     this.draw();
-  }
-
-  private onKey(key: KeyEvent): void {
-    const overlay = this.overlayFor(key);
-    if (overlay) return overlay(key);
-    if (this.isClaimedByPanel(key)) return this.#views.panel?.press(key);
-    const global = this.globalKeys()[key.name];
-    if (global) return global();
-    if (this.#nav.isSidebarFocused) return this.#nav.press(key);
-    this.#views.panel?.press(key);
-  }
-
-  /** Who hears `key` before the menu: the screen (Ctrl+C), an open dialog, a takeover. */
-  private overlayFor(key: KeyPress): ((key: KeyEvent) => void) | null {
-    if (key.ctrl && key.name === "c") return () => {};
-    if (this.#dialogs.isOpen) return (pressed) => this.#dialogs.press(pressed);
-    const takeover = this.#takeover;
-    return takeover ? (pressed) => takeover.press(pressed) : null;
-  }
-
-  /** The focused panel takes the key before the global bindings: text input, or a claim. */
-  private isClaimedByPanel(key: KeyPress): boolean {
-    const panel = this.#views.panel;
-    if (this.#nav.isSidebarFocused || !panel) return false;
-    if (panel.isCapturingText) return true;
-    const isReserved = key.name === "q" || key.name === "tab";
-    return !isReserved && panel.wantsKey?.(key) === true;
-  }
-
-  private globalKeys(): Record<string, () => void> {
-    return {
-      q: () => void this.quit(),
-      tab: () => this.#nav.toggle(),
-      left: () => this.#nav.focusSidebar(),
-    };
   }
 
   /** `q` or "Quitter": the session ends — once confirmed when a view holds unsaved changes. */
@@ -357,24 +322,13 @@ export class MenuSession {
     this.drawSidebar();
     const { detectedCount } = this.#deps.state;
     this.#chrome.setFacts([providerCountFact(detectedCount), ...this.#views.facts()]);
-    this.#chrome.setHints(...this.hints());
+    this.#chrome.setHints(...this.#keys.hints());
   }
 
   private drawSidebar(): void {
     const { density } = this.#screen.appearance;
     const width = SIDEBAR_WIDTH - panelFrame(density).cols;
     this.#sidebar.show(this.#nav.render(density, width));
-  }
-
-  /**
-   * An open dialog's keys; else the focused side's, then the global keys the
-   * bar must never cut — unless the panel takes them too (text being typed).
-   */
-  private hints(): [hints: string, pinned: string] {
-    const panel = this.#views.panel;
-    if (this.#dialogs.isOpen) return [this.#dialogs.hints(), ""];
-    if (this.#nav.isSidebarFocused || !panel) return [SIDEBAR_HINTS, ""];
-    return [panel.hints(), panel.isCapturingText ? "" : PANEL_HINTS_TAIL];
   }
 }
 

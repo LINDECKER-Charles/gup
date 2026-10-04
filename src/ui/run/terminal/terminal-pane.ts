@@ -1,6 +1,6 @@
 import type { BoxRenderable, EmbeddedTerminalRenderable } from "@opentui/core";
-import type { PtyInput, PtyPane } from "../../core/pty/pty-sink.js";
-import type { Screen } from "../tui/screen-host.js";
+import type { PtyInput, PtyPane } from "../../../core/pty/pty-sink.js";
+import type { Screen } from "../../tui/screen-host.js";
 import type { PromptSample } from "./prompt-hint.js";
 
 /**

@@ -85,6 +85,17 @@ describe("ConfigStore: writing", () => {
     expect(store.status().state).toBe("loaded");
   });
 
+  it("forgets what was wrong with a section once a save rewrote it, not the others'", async () => {
+    const other = defineSection({ ...PREFS, key: "other" });
+    await seed({ version: 1, sections: { prefs: { v: 1, mode: "z" }, other: { v: 1, count: 99 } } });
+    const store = new ConfigStore({ file });
+    store.read(PREFS);
+    store.read(other);
+    expect(store.status().issues).toHaveLength(2);
+    store.write(PREFS, { fast: true, mode: "a", count: 3 });
+    expect(store.status().issues).toEqual(["other.count : entier entre 0 et 10 attendu"]);
+  });
+
   it("drops a section once it is back to its defaults", async () => {
     const store = new ConfigStore({ file });
     store.write(PREFS, { fast: true, mode: "b", count: 1 });
@@ -172,6 +183,9 @@ describe("ConfigStore: damaged and foreign files", () => {
     const backup = join(dir, "nested", "config.corrupt-20261003T142205.json");
     expect(store.status()).toMatchObject({ state: "recovered", backup });
     expect(await readFile(backup, "utf8")).toBe("{ not json");
+    // A save rewrites one section, not the past: where the old file went stays said.
+    store.write(PREFS, { fast: true, mode: "a", count: 3 });
+    expect(store.status().issues).toEqual([expect.stringContaining(backup)]);
   });
 
   it("treats an oversized file as corrupt", async () => {

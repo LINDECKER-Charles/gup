@@ -4,7 +4,7 @@ import type { Schedule, SchedulerState } from "../../../src/core/scheduler/model
 import type { SelectedPackage } from "../../../src/core/types.js";
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
-import { QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
+import { PANEL_HINTS_TAIL, QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
 import {
   SCHEDULE_ACTION,
   SCHEDULE_NOTICES,
@@ -28,6 +28,7 @@ interface Options {
   readonly isRegistered?: boolean;
   readonly launcher?: LauncherFactory;
   readonly onPlanification?: boolean;
+  readonly size?: { readonly cols: number; readonly rows: number };
 }
 
 async function menuWith(options: Options = {}) {
@@ -37,7 +38,7 @@ async function menuWith(options: Options = {}) {
   const menu = await bootMenu({
     scans: SCANS,
     views: [...defaultViews(), schedulesView(port)],
-    size: { cols: 120, rows: 32 },
+    size: options.size ?? { cols: 120, rows: 32 },
     ...(options.launcher && { launcher: options.launcher }),
     ...(options.onPlanification && { scanOnStart: false, initialView: "schedules" as const }),
   });
@@ -65,6 +66,11 @@ async function eventually(menu: MenuDriver, text: string): Promise<string> {
     expect(current).toContain(text);
   });
   return current;
+}
+
+/** The key-hint bar: the frame's last line, without its leading blank. */
+function hintBar(frame: string): string {
+  return (frame.trimEnd().split("\n").at(-1) ?? "").trim();
 }
 
 /** Let a flow's awaited port calls settle, then read the frame. */
@@ -310,6 +316,24 @@ describe("the Planification list", () => {
     await menu.press("i", "enter");
     expect(await settled(menu)).toContain("déclencheur système installé");
     expect(port.calls).toContain("repair");
+  });
+
+  it("keeps its main keys on an 80-column hint bar, in the list and in the editor", async () => {
+    const { menu } = await menuWith({
+      schedules: [storedSchedule()],
+      isRegistered: true,
+      onPlanification: true,
+      size: { cols: 80, rows: 24 },
+    });
+    const list = hintBar(await settled(menu));
+    for (const hint of ["entrée modifier", "x exécuter", "suppr supprimer", PANEL_HINTS_TAIL]) {
+      expect(list).toContain(hint);
+    }
+    await menu.press("enter");
+    const editor = hintBar(await menu.waitForText("Modifier « Outils dev »"));
+    for (const hint of ["ctrl+s enregistrer", "entrée modifier", "échap annuler", PANEL_HINTS_TAIL]) {
+      expect(editor).toContain(hint);
+    }
   });
 });
 

@@ -92,10 +92,17 @@ export const RUN_HINTS = {
     sudo: "Étape administrateur (sudo) — t écrire dans le terminal · x arrêter après cette étape",
   } satisfies Record<ElevationKind, string>,
   waiting: "En attente de l'autre mise à jour — x tout arrêter",
-  done: (isEnlarged: boolean): string =>
-    "↑↓ choisir un paquet · " +
-    (isEnlarged ? "v réduire la sortie" : "v agrandir la sortie") +
-    " · entrée retour aux paquets",
+  /**
+   * The results' keys, most needed first: the bar cuts from the end, and the
+   * keys other views add (`o rapport HTML`) go between `back` and `resize`.
+   * "retour" alone: a run started from Planification goes back there.
+   */
+  done: {
+    select: "↑↓ choisir un paquet",
+    back: "entrée retour",
+    resize: (isEnlarged: boolean): string =>
+      isEnlarged ? "v réduire la sortie" : "v agrandir la sortie",
+  },
 } as const;
 
 export const RUN_NOTICES = {
@@ -158,7 +165,8 @@ export const CONFIRM_EXTRA = {
 export const LAUNCH_ERROR = {
   title: "Mise à jour",
   text: (message: string): string => `La mise à jour s'est interrompue : ${message}`,
-  back: "Retour aux paquets",
+  /** "Retour" alone, as on the results: a run-now goes back to Planification. */
+  back: "Retour",
 } as const;
 
 /** The terminal notification at the end of a long run. */

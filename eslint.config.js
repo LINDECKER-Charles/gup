@@ -89,11 +89,11 @@ export default [
     rules: SHARED_RULES,
   },
   {
-    // Exception nommée (voir CLAUDE.md § Exceptions nommées) : catalogue plat
-    // des 134 providers, une ligne d'import et une ligne d'instanciation
-    // chacun. Le découper produit N fichiers de sous-listes plus un fichier
-    // d'agrégation — plus de code pour la même chose, alors que la limite vise
-    // la charge cognitive, ici nulle.
+    // Named exception (CLAUDE.md § Exceptions nommées): the flat catalogue of
+    // every provider, one import line and one instantiation line each.
+    // Splitting it yields N files of sub-lists plus an aggregating file —
+    // more code for the same thing, while the limit targets cognitive load,
+    // which is nil here.
     files: ["src/core/registry.ts"],
     rules: { "max-lines": "off" },
   },

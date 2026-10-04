@@ -1,14 +1,14 @@
 import { createTestRenderer, type TestRendererSetup } from "@opentui/core/testing";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
-import type { PtyInput } from "../../../src/core/pty/pty-sink.js";
+import type { PtyInput } from "../../../../src/core/pty/pty-sink.js";
 import {
   RETAINED_RECENT_PANES,
   TerminalPanes,
-} from "../../../src/ui/run/terminal-panes.js";
-import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
-import { loadTui } from "../../../src/ui/tui/load-tui.js";
-import type { Screen } from "../../../src/ui/tui/screen-host.js";
-import { outcome } from "../../support/builders.js";
+} from "../../../../src/ui/run/terminal/terminal-panes.js";
+import { legacyAppearance } from "../../../../src/ui/theme/legacy-appearance.js";
+import { loadTui } from "../../../../src/ui/tui/load-tui.js";
+import type { Screen } from "../../../../src/ui/tui/screen-host.js";
+import { outcome } from "../../../support/builders.js";
 
 const COLS = 60;
 const ROWS = 12;

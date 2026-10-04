@@ -1,6 +1,6 @@
-import type { Density } from "../theme/appearance.js";
-import type { Panel } from "../panels/panel.js";
-import { QUIT, sidebarEntries, type SidebarEntry, type SidebarLayout } from "./sidebar.js";
+import type { Density } from "../../theme/appearance.js";
+import type { Panel } from "../../panels/panel.js";
+import { QUIT, sidebarEntries, type SidebarEntry, type SidebarLayout } from "../sidebar.js";
 import type {
   PackageAction,
   PackageMarker,
@@ -8,7 +8,7 @@ import type {
   ViewContext,
   ViewDefinition,
   ViewId,
-} from "./view-definition.js";
+} from "../view-definition.js";
 
 /**
  * The views of one menu session: their definitions, the panel each one built,

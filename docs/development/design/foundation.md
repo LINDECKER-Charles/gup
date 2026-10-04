@@ -210,10 +210,12 @@ chrome's body, and receives every key after the dialogs plus a frame tick until 
 `onShow()` (lazy loads) and `hasUnsavedChanges()`: while a view holds changes not saved (the
 schedule editor), `q` and "Quitter" ask before the session ends (`QUIT_DIALOG`, default "Non").
 
-Key routing in `MenuSession`: Ctrl+C (the screen's) → dialog → takeover → the focused panel when
-it captures text or claims the key → global (`q`, Tab, ←) → panel or sidebar. Which side has the
-keyboard and the sidebar cursor live in `MenuNav` (`menu-nav.ts`). The session's frame clock
-stops when it ends and when its renderer is destroyed under it (Ctrl+C, a signal).
+Key routing in the menu: Ctrl+C (the screen's) → dialog → takeover → the focused panel when
+it captures text or claims the key → global (`q`, Tab, ←) → panel or sidebar. `MenuSession`
+(`ui/app/session/`) mounts the views and draws; the routing and the hint bar live in `MenuKeys`
+(`menu-keys.ts`), which side has the keyboard and the sidebar cursor in `MenuNav`
+(`menu-nav.ts`), the views of a session in `ViewRegistry`. The session's frame clock stops when
+it ends and when its renderer is destroyed under it (Ctrl+C, a signal).
 
 The hint bar follows the same order: an open dialog's keys (`DialogLayer.hints()`, worded in
 `DIALOG_HINTS`) replace those of the screen behind it — in the menu, in the run view and on the
@@ -320,7 +322,7 @@ The area specs were written before the foundation. Import these; never redeclare
 | `PlannedUpdate` / `RunPlan` (scheduler) | `ScheduledTarget` / `TickPlan` (scheduler-owned names) | — |
 | `PackagesPanel(onSubmit)`, `{ onSubmit, onSchedule }` | `PackagesPanel({ onLaunch, onRescan? }, options)` + `PackageAction` | `src/ui/panels/packages-panel.ts` |
 | `class UpdateLauncher` (update-flow) | `UpdateLauncher` interface + `LauncherFactory` slot | `src/ui/app/update-launcher.ts` |
-| `MenuController.providersStatus/updatePackages/updateTargets/validateTargets` | the Providers view's status port; `updateOutside(packages, request?)` | `src/ui/views/providers-view.ts`, `src/ui/app/menu-session.ts` |
+| `MenuController.providersStatus/updatePackages/updateTargets/validateTargets` | the Providers view's status port; `updateOutside(packages, request?)` | `src/ui/views/providers-view.ts`, `src/ui/app/session/menu-session.ts` |
 | `PANEL_FRAME` | `panelFrame(density)` | `src/ui/tui/text-panel.ts` |
 | `tests/ui/tui-test-host.ts`, `createTestHost(width, height)` | `tests/support/tui/test-host.ts`, `createTestHost({ size, createAppearance })` | — |
 
@@ -408,7 +410,11 @@ Recorded so the integration agent and the wave-2 branches are not surprised.
   `scanOnLaunch` off, Paquets must tell "no scan yet — `r`" from "scan running"; a session that
   starts with neither a scan nor previous results no longer announces empty results.
 - **`menu-session.ts` split:** the keyboard focus and sidebar cursor moved to `menu-nav.ts`
-  (the slot F-10 kept in `ui/app`), bringing the session back under the 300-line alert.
+  (the slot F-10 kept in `ui/app`), bringing the session back under the 300-line alert. Once the
+  in-screen launcher and the result actions had grown it past the alert again, `fix/final-polish`
+  moved the session and its private collaborators (`menu-nav.ts`, `view-registry.ts`) to
+  `ui/app/session/` and the key routing and hint bar to `session/menu-keys.ts`; `ui/app` keeps 7
+  files.
 
 ## 10. Folder budget after the foundation
 

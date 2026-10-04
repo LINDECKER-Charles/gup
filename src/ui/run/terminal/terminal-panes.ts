@@ -1,8 +1,8 @@
 import type { BoxRenderable, TextRenderable } from "@opentui/core";
-import type { PtyPane, PtyPanes } from "../../core/pty/pty-sink.js";
-import type { UpdateOutcome } from "../../core/types.js";
-import type { Screen } from "../tui/screen-host.js";
-import { seg, toStyledText } from "../tui/styled-lines.js";
+import type { PtyPane, PtyPanes } from "../../../core/pty/pty-sink.js";
+import type { UpdateOutcome } from "../../../core/types.js";
+import type { Screen } from "../../tui/screen-host.js";
+import { seg, toStyledText } from "../../tui/styled-lines.js";
 import type { PromptSample } from "./prompt-hint.js";
 import { TerminalPane } from "./terminal-pane.js";
 

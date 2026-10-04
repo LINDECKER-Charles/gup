@@ -55,10 +55,10 @@ import {
   RUN_TITLES,
   STOP_DIALOG,
 } from "../../../src/ui/text/run-labels.js";
-import { PROMPT_IDLE_MS } from "../../../src/ui/run/prompt-hint.js";
+import { PROMPT_IDLE_MS } from "../../../src/ui/run/terminal/prompt-hint.js";
 import { DIALOG_HINTS } from "../../../src/ui/text/menu-labels.js";
 import { NOTIFY_MIN_RUN_MS } from "../../../src/ui/run/run-view.js";
-import { RETAINED_RECENT_PANES } from "../../../src/ui/run/terminal-panes.js";
+import { RETAINED_RECENT_PANES } from "../../../src/ui/run/terminal/terminal-panes.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
 import type { ViewDefinition } from "../../../src/ui/app/view-definition.js";
@@ -88,6 +88,7 @@ interface RunMenuOptions {
   readonly clock?: () => number;
   readonly createAppearance?: AppearanceFactory;
   readonly views?: readonly ViewDefinition[];
+  readonly size?: { readonly cols: number; readonly rows: number };
 }
 
 interface RunMenu {
@@ -130,15 +131,23 @@ async function launched(options: RunMenuOptions = {}): Promise<RunMenu> {
       platform: options.platform ?? "win32",
       ...(options.clock && { clock: options.clock }),
     }),
-    ...(options.preferences && { preferences: options.preferences }),
-    ...(options.createAppearance && { createAppearance: options.createAppearance }),
-    ...(options.views && { views: options.views }),
+    ...menuOptions(options),
   });
   await shown(menu, (options.packages ?? PACKAGES)[0]!.id);
   await menu.press("a", "enter");
   await shown(menu, "vont être mis à jour");
   await menu.press("o");
   return { menu, pty };
+}
+
+/** What a test sets on the menu itself, passed on as given. */
+function menuOptions({ preferences, createAppearance, views, size }: RunMenuOptions) {
+  return {
+    ...(preferences && { preferences }),
+    ...(createAppearance && { createAppearance }),
+    ...(views && { views }),
+    ...(size && { size }),
+  };
 }
 
 /** Wait until `count` installs have started in the fake pseudo-terminal. */
@@ -234,6 +243,18 @@ describe("run view", () => {
     await shown(menu, EXPORT_LABELS.opened(report));
     expect(source.export).toHaveBeenCalledTimes(1);
     expect(source.export).toHaveBeenCalledWith("html", expect.objectContaining({ key: "12m" }));
+  });
+
+  it("keeps the way back and the HTML report on the results bar at 80 columns", async () => {
+    const source = scriptedSource(journalData(), { ok: true, path: "C:\\r\\r.html", opened: true });
+    const views = [...defaultViews(), journalView(source)];
+    const size = { cols: 80, rows: 24 };
+    const { menu, pty } = await launched({ packages: [pkg("alpha")], views, size });
+    await installsStarted(pty, 1);
+    pty.last().emitExit({ exitCode: 0 });
+    const bar = hintBar(await shown(menu, RUN_TITLES.done));
+    expect(bar).toContain(RUN_HINTS.done.back);
+    expect(bar).toContain(JOURNAL_HINTS.report);
   });
 
   it("s skips the install in flight and goes on with the next package", async () => {

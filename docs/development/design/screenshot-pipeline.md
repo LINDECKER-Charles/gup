@@ -195,7 +195,8 @@ and still opens Providers.
 Seen while capturing at 100 × 28 (the README column), not changed here:
 
 - The Scan view's per-provider time column needs 75 columns of panel; at 100 terminal
-  columns it is cut off.
+  columns it is cut off. Fixed in `fix/final-polish`: the name and result columns now shrink
+  to the panel, so the time stays in view down to an 80-column terminal.
 - At 100 columns the key-hint bar of Paquets loses its tail (`tab menu · q quitter`), and the
   Options view cuts its setting descriptions.
 - `PackageList` and `ScanPanel` sort names with `localeCompare()` and no locale: the order

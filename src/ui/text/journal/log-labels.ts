@@ -99,7 +99,8 @@ export function diagnosticReadme(contents: DiagnosticContents): string {
     `(${system.platform} ${system.arch}, Node ${system.node}).`,
     "",
     "Contenu :",
-    `  ${DIAGNOSTIC_ENTRIES.system}   versions, plateforme et variables d'environnement propres à gup`,
+    `  ${DIAGNOSTIC_ENTRIES.system}   versions, plateforme et variables d'environnement ` +
+      "propres à gup",
     "                (liste fermée : le reste de l'environnement n'est jamais copié)",
     `  ${DIAGNOSTIC_ENTRIES.logs}/         journal de debug, ${logs.length} fichier(s)`,
     ...logs.map((name) => `                  ${name}`),

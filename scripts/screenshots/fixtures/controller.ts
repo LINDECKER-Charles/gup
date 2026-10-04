@@ -1,7 +1,7 @@
 import type { MenuState } from "../../../src/commands/menu-state.js";
 import type { ProviderScanResult } from "../../../src/core/types.js";
 import type { UpdateReport } from "../../../src/core/update/update-report.js";
-import type { MenuController } from "../../../src/ui/app/menu-session.js";
+import type { MenuController } from "../../../src/ui/app/session/menu-session.js";
 import type { ScanEvents } from "../../../src/ui/panels/scan-panel.js";
 import { registeredProvider } from "./registered-provider.js";
 import type { ScanFixture, ScanStep } from "./scan.js";

@@ -15,7 +15,7 @@ export default {
     ogDescription:
       "একটিমাত্র বাইনারি winget, scoop, Homebrew, MacPorts, npm, pip, cargo, helm, kubectl, " +
       "VS Code ও JetBrains — মোট {providers}টি উৎস — একসঙ্গে স্ক্যান করে, আর আপনি যা বেছে নেন, " +
-      "তার ইন্টারফেস ছেড়ে না বেরিয়েই তা আপডেট করে।",
+      "তা ইন্টারফেসের ভেতরে বসানো একটি টার্মিনালে আপডেট করে।",
     ogImageAlt:
       "gup — এক কমান্ড, {providers}টি উৎস আপ-টু-ডেট। winget, Homebrew, npm, pip, cargo ও " +
       "helm-এর জন্য ওপেন সোর্স CLI।",
@@ -53,7 +53,7 @@ export default {
     lead:
       "**winget**, **brew**, **npm**, pip, cargo আর helm-এর পেছনে আলাদা করে ছোটাছুটি বন্ধ " +
       "করুন। gup এগুলো সব একসঙ্গে স্ক্যান করে, কী পুরোনো হয়েছে দেখায়, আর আপনি যা বেছে নেন " +
-      "তা আপডেট করে — নিজের ইন্টারফেস থেকে কখনো না বেরিয়েই।",
+      "তা সরাসরি আপডেট করে — ইন্টারফেসের ভেতরে বসানো একটি টার্মিনালে।",
     secondaryCta: "GitHub-এ দেখুন",
     trust: [
       "MIT · ওপেন সোর্স",
