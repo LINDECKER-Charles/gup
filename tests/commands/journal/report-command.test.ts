@@ -134,6 +134,9 @@ describe("gup report (HTML)", () => {
     setTerminal(false);
     const out = join(dir, "open.html");
 
+    // Neither --open nor --no-open: the command line leaves the choice to the setting.
+    expect(await gup("report", "--out", join(dir, "unasked.html"))).toBe(0);
+    expect(commandOpen).not.toHaveBeenCalled();
     expect(await gup("report", "--open", "--out", out)).toBe(0);
 
     expect(commandOpen).toHaveBeenCalledWith(out);

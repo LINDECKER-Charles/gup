@@ -76,7 +76,8 @@ export function registerReportCommand(program: Command): void {
     .option("-s, --since <période>", REPORT_COMMAND_LABELS.since)
     .option("--until <date>", REPORT_COMMAND_LABELS.until)
     .option("-o, --out <fichier>", REPORT_COMMAND_LABELS.out)
-    // Both forms: `--open` first keeps the value undefined when neither is
+    // Both forms: a lone `--no-open` would make commander default the value
+    // to true; with `--open` declared too it stays undefined when neither is
     // given, so the setting can decide.
     .option("--open", REPORT_COMMAND_LABELS.open)
     .option("--no-open", REPORT_COMMAND_LABELS.noOpen)
