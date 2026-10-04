@@ -130,15 +130,17 @@ function resolveLabel(expression) {
   throw new Error(`no string constant ${expression} under src/ui/text/`);
 }
 
+/** A field, or a getter returning a constant: `label: X,` or `get label() { return X; }`. */
+const LABEL = /\blabel: ([A-Za-z_.]+),|\bget label\(\) \{\s*return ([A-Za-z_.]+);/;
+
 /** A registered view's sidebar entry, from its definition in src/ui/views/. */
 function sidebarEntryOf(viewFile) {
   const source = read(join("src/ui/views", `${viewFile}.ts`));
-  const field = (name, pattern) => source.match(new RegExp(`\\b${name}: (${pattern}),`))?.[1];
-  const label = field("label", "[A-Za-z_.]+");
-  const order = field("order", "\\d+");
-  const group = field("group", "\\d+");
-  assert.ok(label && order && group, `${viewFile}.ts: label, order and group as literals`);
-  return { label: resolveLabel(label), order: Number(order), group: Number(group) };
+  const field = (name) => source.match(new RegExp(`\\b${name}: (\\d+),`))?.[1];
+  const [, label, gotLabel] = source.match(LABEL) ?? [];
+  const [order, group] = [field("order"), field("group")];
+  assert.ok((label ?? gotLabel) && order && group, `${viewFile}.ts: label, order and group`);
+  return { label: resolveLabel(label ?? gotLabel), order: Number(order), group: Number(group) };
 }
 
 /** The sidebar gup builds: the views menu-views.ts registers, by group and order, then Quitter. */
