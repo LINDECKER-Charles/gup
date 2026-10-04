@@ -54,15 +54,18 @@ export class FlowContext {
 
   /**
    * Before a change that leaves a schedule enabled: the user's consent to
-   * register the OS trigger, asked once — when nothing is registered yet.
+   * register the OS trigger, asked once — when nothing is registered yet. A
+   * refusal says that nothing changed, and why.
    */
   async consent(): Promise<boolean> {
     const mechanism = this.port.mechanism();
     if (mechanism === null || !this.port.needsConsent()) return true;
-    return this.view.dialogs.confirm({
+    const isGiven = await this.view.dialogs.confirm({
       title: CONSENT_DIALOG.title,
       text: CONSENT_DIALOG.text(mechanism),
     });
+    if (!isGiven) this.notify([[seg(SCHEDULE_NOTICES.consentRefused, "warning")]]);
+    return isGiven;
   }
 
   /** Run a change, then say what was saved (`describe`) and what the trigger did. */

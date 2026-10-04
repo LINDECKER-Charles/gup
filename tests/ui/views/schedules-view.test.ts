@@ -159,7 +159,9 @@ describe("p in Paquets", () => {
     await ctrlS(menu);
     await menu.waitForText("Activer la planification");
     await menu.press("n");
-    expect(await settled(menu)).toContain("Nouvelle planification");
+    const refused = await settled(menu);
+    expect(refused).toContain("Nouvelle planification");
+    expect(refused).toContain("Rien n'a été modifié");
     expect(port.calls).toEqual([]);
   });
 

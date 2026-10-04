@@ -209,6 +209,10 @@ export const SCHEDULE_NOTICES = {
     `${WARNING_MARK} Le déclencheur système n'a pas pu être modifié : ${reason} — ` +
     `${REPAIR_KEY} pour réessayer`,
   unsupported: (reason: string) => `Déclencheur : ${reason}`,
+  /** "Non" to the consent: whatever was asked for stays as it was. */
+  consentRefused:
+    `${WARNING_MARK} Rien n'a été modifié : une planification active a besoin du ` +
+    "déclencheur système.",
 } as const;
 
 /** The sidebar badge when a run the user has not looked at failed. */
