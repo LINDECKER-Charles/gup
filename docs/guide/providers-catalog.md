@@ -69,8 +69,12 @@ Deliberate choices:
   never asked for its version.
 
 The lists are frozen by `tests/core/platform/provider-platforms.test.ts`:
-changing a set means changing that test on purpose. Adding a provider: see
-the header of `src/providers/_template.ts`.
+changing a set means changing that test on purpose. The declaration is the
+only gate: `tests/core/platform/platform-gate-source.test.ts` fails when a
+provider's `isAvailable()` tests `process.platform`, when anything but the
+registry probes a provider, or when a restricted provider declares an install
+hint for an OS where it can never be shown. Adding a provider: see the header
+of `src/providers/_template.ts`.
 
 ---
 

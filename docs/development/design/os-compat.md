@@ -3,8 +3,9 @@
 Status: wave 2 of 0.5.0, on top of the foundation (`int/wave-1`). Scope: os-compat spec steps 2,
 4 and 5 (the parts the foundation left), 8 (this branch's docs), and the plan's §6.2 additions
 (`showIncompatibleProviders`, the `--provider` warning). Steps 6 and 7 — removing the leading
-`isAvailable()` guards, the static drift test, the unreachable install hints — belong to the wave-3
-branch `refactor/provider-platform-gate`.
+`isAvailable()` guards, the static drift test, the unreachable install hints — landed in wave 3 on
+`refactor/provider-platform-gate`, with amendment U-4 (§10). Sections 1 to 9 record wave 2; where
+wave 3 changed the picture, they point to §10.
 
 User request (FR): *griser les providers non compatibles avec l'OS — ceux qui n'existent que sous
 Windows doivent apparaître grisés dans la liste des providers sur Mac, et inversement.*
@@ -20,7 +21,7 @@ Windows doivent apparaître grisés dans la liste des providers sur Mac, et inve
 | The `showIncompatibleProviders` preference (on by default) hides that group, live. | `ui/views/providers-view.ts` |
 | `gup doctor` prints the same group, dimmed, after the missing providers. | `ui/table.ts` |
 | `gup list` / `gup update` warn once per `--provider` id gup cannot act on (foreign to the OS, or unknown) instead of scanning nothing in silence. | `commands/warn-ignored-providers.ts` |
-| Side effects of the declarations: a `winget`/`scoop`/`choco` shim on a POSIX `PATH` no longer lights up those providers (the `self` meta-provider's self-update targets of the same names keep their PATH probe until wave 3, §9.5); `gup update brew-cask:x` exits 2 on Windows (the foundation's refusal, now live). | — |
+| Side effects of the declarations: a `winget`/`scoop`/`choco` shim on a POSIX `PATH` no longer lights up those providers (nor, since wave 3, the `self` meta-provider's self-update targets of the same names, §10); `gup update brew-cask:x` exits 2 on Windows (the foundation's refusal, now live). | — |
 
 ## 2. What the foundation already provided
 
@@ -49,12 +50,12 @@ incompatible) were checked against the code: every `process.platform` gate under
 `src/providers/` is either one of these 35 or a path/flavour branch (`gem`, `nuget`,
 `dotnet-sdk`, `semgrep`, `jetbrains`, the unregistered IDE providers).
 
-**Guards.** The leading `isAvailable()` guards stay until wave 3: they keep a provider honest when
-something probes it without the registry. Where a guard carried the rationale (`brew`,
+**Guards.** In wave 2 the leading `isAvailable()` guards stayed: they kept a provider honest when
+something probed it without the registry. Where a guard carried the rationale (`brew`,
 `brew-cask`, `pyenv`, `mint`), the rationale moved onto the `platforms` line and the guard got a
-one-line pointer (`Mirrors \`platforms\` for a caller that probes without the registry gate.`), so
-wave 3 deletes guard + pointer and keeps the knowledge. Helper guards (`findPacmanExe`,
-`isWslAvailable`, `installerDirs`…) are method contracts and stay for good.
+one-line pointer, so wave 3 could delete guard + pointer and keep the knowledge — which it did
+(§10). Helper guards (`findPacmanExe`, `isWslAvailable`, `installerDirs`…) are method contracts
+and stay for good.
 
 **`self`.** `SelfTarget.platforms` is a `PlatformSet` checked by `isSupportedOn`; the `brew`
 target declares `PLATFORMS.notWindows` like the `brew` provider (it was an ad-hoc
@@ -119,7 +120,7 @@ uniquement) — ignoré.` / `Attention : Provider inconnu: nope — ignoré.`. s
 
 - Smaller execution surface: on an OS outside the set, no `where`/`which` probe and no command
   of a same-named binary (`brew.cmd` → WSL, NCAR `ncl`, a `winget` shim on POSIX) by the
-  provider itself; the `self` targets of the same names are the one remaining exception (§9.5).
+  provider itself, nor, since wave 3, by the `self` targets of the same names (§10).
 - No new input surface: ids come from the existing parsing; messages interpolate the id the user
   typed, as `Provider inconnu` already did. No new I/O, dependency or process.
 
@@ -147,21 +148,92 @@ uniquement) — ignoré.` / `Attention : Provider inconnu: nope — ignoré.`. s
    at 100 columns and invisible at 80. `gup doctor` keeps a 20-column id cell. Likewise the
    one-line summary of spec §2.1 breaks between its parts when the panel is narrower than it.
 4. **Unregistered `notepad-pp` / `unity-hub` are not annotated** (spec §3.3): the task and
-   amendment U-4 leave the seven manual IDE providers to wave 3, which deletes them.
+   amendment U-4 leave the seven manual IDE providers to wave 3, which deletes them (done, §10).
 5. **`self` winget/scoop/choco targets stay unrestricted** (spec §4.9, optional): restricting
    them changes the rows `tests/providers/self*.test.ts` expect on the POSIX CI legs, and
    `tests/providers/**` belongs to `test/provider-contracts` in wave 2. Candidate for wave 3.
    Until then, on macOS/Linux the `self` meta-provider still runs a PATH probe for those three
    binaries (and, if a shim answers, its `--version`): the shim exclusion of §7 holds for the
-   `winget`, `scoop` and `choco` providers, not yet for these self-update targets.
+   `winget`, `scoop` and `choco` providers, not yet for these self-update targets. Restricted in
+   wave 3 (§10).
 6. **No duplicate `getProvidersToScan` case**: the foundation's `registry-extra.test.ts` already
    proves an injected unsupported provider is dropped.
 
-## 10. Hand-off to wave 3 (`refactor/provider-platform-gate`)
+## 10. Wave 3: the gate leaves the providers (`refactor/provider-platform-gate`)
 
-- Remove the leading guards of the 19 registered providers listed in spec §4.6 with their
-  `Mirrors \`platforms\`…` pointers where present; the rationale is already on `platforms`.
-- Add `tests/core/platform-gate-source.test.ts` (no `process.platform` in `isAvailable()`, no
-  `.isAvailable(` outside the registry) and delete the superseded per-provider tests.
-- Drop the install-hint keys made unreachable by the declarations (spec §4.9 rule).
-- Consider `PLATFORMS.windows` on the `self` winget/scoop/choco targets with their tests.
+Os-compat spec steps 6 and 7, the `self` alignment of spec §4.9, and amendment U-4. No
+user-visible change but two: the `self` targets below, and the `nix` hint off macOS/Linux.
+
+### 10.1 One gate, enforced at the source
+
+- **Guards removed.** The 19 registered providers that opened `isAvailable()` with a
+  `process.platform` test (spec §4.6) lost it, with the `Mirrors \`platforms\`` pointers; the
+  rationale already sat on each `platforms` line. Stale mentions went with them (`nix`'s header,
+  `pyenv`'s "isAvailable() has already refused win32"). Kept: every helper guard and the
+  `listOutdated`/`update` branches (`sparkle#listOutdated` included).
+- **Source drift test** — `tests/core/platform/platform-gate-source.test.ts`, on the TypeScript
+  AST (the `process-chokepoints` precedent), three rules:
+  1. no `implements Provider` class under `src/providers/` reads `process.platform` (or
+     `process["platform"]`) in `isAvailable()`; a provider class with no `isAvailable` body to
+     check fails, and every registered provider's class must be among those checked, so a
+     signature refactor cannot switch the rule off in silence;
+  2. no file under `src/` but `src/core/registry.ts` calls `.isAvailable(…)`, except a
+     non-provider class calling its own method of that name (`ThemePicker`'s private helper);
+  3. a provider declaring `platforms` declares no `pickInstallHint()` key it can never show, and
+     no `pickInstallHint()` left with a single shown hint (§10.2).
+- **Deleted tests** (24, listed in the commit body): every per-provider "refuses a foreign OS by
+  itself" case and the `pyenv`/`nvm` mutual-exclusion cases. Their behaviour is the golden lists,
+  the detection gate and the shared-binary split of `provider-platforms.test.ts`, plus rule 1.
+  `nerd-fonts` "looks at nothing elsewhere" went too: `isAvailable()` reads `userFontsDir()`,
+  not the guarded `resolveUserFontsDir()`, so it held only through the removed guard.
+
+### 10.2 Install hints
+
+A restricted provider is listed as missing only on its own platforms; elsewhere it sits in the
+incompatible group, which shows no hint. Rule (spec §4.9): a `win32`/`darwin`/`linux` key outside
+the set is never shown, nor is the `fallback` once every supported platform has its own key; a
+single shown hint is a plain string. Applied: the 21 Windows-only and 6 macOS-only providers keep
+one string; `brew`, `nvm`, `mint`, `pkgx` lose their `win32` key and keep their fallback as a
+string; `pyenv` and `pkgin` lose their `win32` key. The comments that only explained the dropped
+hints went with them. The template and `pickInstallHint`'s doc state the rule.
+
+### 10.3 `self` targets
+
+`self:winget`, `self:scoop` and `self:choco` declare `PLATFORMS.windows`, like their providers
+(`self:brew` already used `notWindows`): a POSIX shim of those names no longer lights up `self`
+nor gets run for its version, which closes §9.5. Test: Linux with the three shims, Windows with a
+`brew.cmd` shim — unavailable, no rows, no probe.
+
+### 10.4 Manual-only IDE providers (U-4)
+
+`jetbrains-plugins`, `zed-ext`, `sublime-pc`, `obsidian-plugins`, `unity-hub`, `notepad-pp` and
+`eclipse-marketplace` were never registered (every row `manual`, dropped by `scanAll`): deleted
+with `ide-manual.test.ts` (135 tests), the registry test asserting `jetbrains-plugins` was not
+registered, and their four `eslint.config.security.js` overrides. They imported only core
+helpers that other providers use; nothing else was theirs. `providers-catalog.md` lists them as
+candidates (⬜) with the reason; the 🚧 status, left without entries, leaves the legend.
+
+### 10.5 Schedules
+
+`gup schedule add brew:git --every …` on Windows exits 2 with `✖ brew:git : Provider brew
+indisponible sur Windows (macOS/Linux uniquement)`: `validateDraft` asks
+`REGISTRY_PROVIDER_FACTS`, which is `lookupProvider`. It had no test (the command tests use a
+fake provider table); `schedule-commands.test.ts` now runs it on the real registry facts. Without
+a frequency the argument errors come first: `parseAddArgs` runs before the registry is asked.
+
+### 10.6 Deviations
+
+1. **Drift test location**: `tests/core/platform/platform-gate-source.test.ts`, not
+   `tests/core/`, next to the other platform tests (`provider-platforms.test.ts` moved there in
+   wave 2 too).
+2. **AST, not regex**: the spec's "no `.isAvailable(` outside the registry" regex flags
+   `ThemePicker`'s own `this.isAvailable(id)`; an allowlisted file would have blinded the rule
+   for that file. Rule 3 (hints) is an addition: it keeps step 7 from regressing.
+3. **`nix` hint rewritten**, beyond the strict rule: its fallback was its Windows hint ("Nix
+   s'installe dans WSL"), still reachable on the BSDs where it was wrong. The three entries
+   collapse to `https://nixos.org/download`.
+4. **Shared docs touched**: CONTRIBUTING §5.3, `how-gup-works.md` (§3 tree, §5 note, §13, §14.4)
+   and the `architecture.md` tree described the deleted files; they now say such a source gets no
+   provider and is a catalog candidate. `docs/feature-guides` consolidates these pages later.
+5. **`swiftly` hint unchanged**: its fallback ("macOS et Linux uniquement…") is still shown on
+   the BSDs; its Windows-worded test still exercises that fallback.
