@@ -1,14 +1,18 @@
+import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { decodePayload } from "../../../src/core/pty/trampoline-payload.js";
 import { locateTrampoline, trampolineLaunch } from "../../../src/core/pty/trampoline.js";
+import { SUITE_LOCALE, useLocale } from "../../support/locale.js";
 
 /**
  * Where the trampoline is found and how node-pty is told to start it: always
  * node, the kept loader flags, the sibling script and one encoded argument.
  */
+
+const SPAWN_TIMEOUT_MS = 60_000;
 
 let dir: string;
 let distDir: string;
@@ -112,16 +116,66 @@ describe("trampolineLaunch", () => {
       v: 1,
       ...request,
       exitFile: "/tmp/gup-pty-1/a.exit",
+      locale: SUITE_LOCALE,
     });
   });
 
-  it("carries only the request's own fields", () => {
+  it("carries only the request's own fields, and the language gup speaks", () => {
     const request = { command: "npm", args: ["i", "-g", "pnpm"], extra: "ignored" };
     const encoded = trampolineLaunch(request, location).args.at(-1)!;
     expect(decodePayload(encoded)).toStrictEqual({
       v: 1,
       command: "npm",
       args: ["i", "-g", "pnpm"],
+      locale: SUITE_LOCALE,
     });
+  });
+});
+
+/**
+ * The trampoline runs in a process of its own, which never chooses a
+ * language: it speaks the one its request carries. The real one, through
+ * tsx, given a command the runner's barrier refuses once the request is
+ * decoded (`;` is in no command name), prints its refusal.
+ */
+describe("the trampoline's language", () => {
+  const source = {
+    script: join(process.cwd(), "src", "pty-exec.ts"),
+    execArgv: ["--import", "tsx"],
+  };
+
+  function refusal(): Promise<{ readonly code: unknown; readonly stderr: string }> {
+    const launch = trampolineLaunch({ command: "refused;command", args: [] }, source);
+    return new Promise((resolve) => {
+      execFile(launch.file, [...launch.args], { timeout: SPAWN_TIMEOUT_MS }, (error, _out, stderr) =>
+        resolve({ code: error?.code ?? 0, stderr: String(stderr) }),
+      );
+    });
+  }
+
+  it(
+    "is gup's, which the request carries",
+    async () => {
+      await expect(refusal()).resolves.toEqual({
+        code: 2,
+        stderr: "gup : requête de terminal invalide\n",
+      });
+    },
+    SPAWN_TIMEOUT_MS,
+  );
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it(
+      "refuses a request in English",
+      async () => {
+        await expect(refusal()).resolves.toEqual({
+          code: 2,
+          stderr: "gup: invalid terminal request\n",
+        });
+      },
+      SPAWN_TIMEOUT_MS,
+    );
   });
 });
