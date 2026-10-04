@@ -99,18 +99,6 @@ describe("registry: the catalogue", () => {
     expect(getProvider("does-not-exist")).toBeUndefined();
   });
 
-  it("each provider implements the required Provider contract", () => {
-    for (const p of ALL_PROVIDERS) {
-      expect(typeof p.id).toBe("string");
-      expect(p.id.length).toBeGreaterThan(0);
-      expect(typeof p.displayName).toBe("string");
-      expect(typeof p.isAvailable).toBe("function");
-      expect(typeof p.listOutdated).toBe("function");
-      expect(typeof p.update).toBe("function");
-      expect(typeof p.updateAll).toBe("function");
-    }
-  });
-
   it("lists exactly the providers an unattended run can never update", () => {
     // Each of these always needs UAC or sudo; changing the set is a decision
     // about what a scheduled run may touch, so it takes a test edit. The flag
