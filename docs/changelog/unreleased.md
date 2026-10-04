@@ -144,6 +144,7 @@ The 0.5.0 cycle, built on `chore/integration-0-5-0` in three waves of branches a
 - **ui:** The README of `gup log export`'s diagnostic archive agrees with its counts: `1 ligne illisible du journal a été omise.` / `2 lignes illisibles du journal ont été omises.` instead of `1 ligne(s) illisible(s) du journal ont été omise(s).`, and `journal de debug, 1 fichier` instead of `1 fichier(s)` (`fix(ui): agree the diagnostic README with its counts`)
 - **ui:** Options' notices wrap to the panel instead of being cut: at 80 columns, `Réglages modifiés — r pour rescanner avec ces réglages.` read `… avec ces régl…`, and a settings file that cannot be written gave its reason the same way (`fix(ui): wrap Options' notices to the panel`)
 - **ui:** Paquets' hint bar keeps the keys nothing else on screen tells: at 80 columns it read `↑↓ naviguer · espace cocher · a tout cocher · …`, dropping `/ filtrer`, `r rescanner` and `p planifier`; it now reads `espace cocher · / filtrer · p planifier · … · tab menu · q quitter`, launching coming last since the selection bar under the table already offers it. The landing's Interface scene lists the keys in the new order (`fix(ui): keep filter and schedule on Paquets' narrow hint bar`)
+- **ui:** A scan's detail in the Journal names the providers it was filtered to as the rest of the view does — `Providers  Chocolatey, npm (global)` instead of `choco, npm-g` (`fix(ui): name a scan's filtered providers in the journal`)
 
 ## Removed
 

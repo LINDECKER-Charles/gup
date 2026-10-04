@@ -144,7 +144,7 @@ function scanDetail(event: ScanEvent, { width, now, providerName }: DetailContex
     [EVENT_LABELS.date, formatRelative(new Date(event.ts), now)],
     [EVENT_LABELS.duration, formatDuration(event.durationMs)],
     [EVENT_LABELS.mode, event.fast ? EVENT_LABELS.fast : EVENT_LABELS.full],
-    [EVENT_LABELS.filter, event.filter.join(", ") || EVENT_LABELS.allProviders],
+    [EVENT_LABELS.filter, event.filter.map(providerName).join(", ") || EVENT_LABELS.allProviders],
     ...sessionFields(event),
   ];
   const byOutdated = [...event.providers].sort((a, b) => b.outdated - a.outdated);

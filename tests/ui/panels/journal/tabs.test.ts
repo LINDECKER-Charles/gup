@@ -5,7 +5,7 @@ import type { Viewport } from "../../../../src/ui/panels/panel.js";
 import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS, RECURRENCE_LABELS } from "../../../../src/ui/text/journal/journal-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import type { Line } from "../../../../src/ui/tui/styled-lines.js";
-import { updateEvent } from "../../../support/history-fixtures.js";
+import { scanEvent, updateEvent } from "../../../support/history-fixtures.js";
 import { JOURNAL_NOW, journalData, logRecord, scriptedSource } from "./journal-data.js";
 
 const VIEWPORT: Viewport = { width: 100, height: 26 };
@@ -172,6 +172,19 @@ describe("provider names", () => {
     press("escape", "end", "return");
     expect(screen().join("\n")).toMatch(/Winget +9 en retard · 12,4 s/);
     expect(screen().join("\n")).toMatch(/Azure CLI +erreur : Please run 'az login'/);
+  });
+
+  it("names the providers a scan was filtered to in its detail", async () => {
+    const filtered = scanEvent({
+      ts: "2026-10-02T12:00:00.000Z",
+      filter: ["choco", "npm-g"],
+      providers: [{ providerId: "choco", outdated: 1, durationMs: 2_000 }],
+    });
+    const { press, screen } = await journalOn("3", journalData([filtered]), named);
+
+    press("return");
+
+    expect(screen().join("\n")).toMatch(/Providers +Chocolatey, npm \(global\)\n/);
   });
 
   it("still finds an event by its provider's id", async () => {
