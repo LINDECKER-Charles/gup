@@ -5,11 +5,12 @@ import { settingsService } from "../../ui/settings/settings-service.js";
 import { logLevelSource, type SettingView } from "../../ui/settings/settings-sources.js";
 import { ERROR_LABELS } from "../../ui/text/cli-labels.js";
 import {
+  LOG_COMMAND_LABELS,
   LOG_DIAGNOSTIC_LABELS,
-  LOG_LEVEL_OPTION,
   LOG_MESSAGES,
   LOG_SOURCE_LABELS,
   thresholdLabel,
+  VALUE_PLACEHOLDERS,
 } from "../../ui/text/journal/log-labels.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "../cli/cli-module.js";
 import { registerLogCommand } from "./log-command.js";
@@ -44,7 +45,7 @@ export function createJournalModule(deps: JournalModuleDeps = DEFAULT_DEPS): Cli
     order: MODULE_ORDER.logging,
     runsInElevatedChild: true,
     register(program) {
-      program.option("--log-level <niveau>", LOG_LEVEL_OPTION);
+      program.option(`--log-level ${VALUE_PLACEHOLDERS.level}`, LOG_COMMAND_LABELS.logLevel);
       registerLogCommand(program);
       registerReportCommand(program);
     },
@@ -69,7 +70,7 @@ function logLevelFlag(raw: unknown): LogThreshold | undefined {
   return process.exit(USAGE_EXIT_CODE);
 }
 
-/** The "Système" line of `gup doctor`: what the log records, from where, into which directory. */
+/** The System line of `gup doctor`: what the log records, from where, into which directory. */
 export function logDiagnostic(session: LogSession | null): DiagnosticLine {
   const line = (value: string, status: DiagnosticLine["status"]): DiagnosticLine => ({
     label: LOG_DIAGNOSTIC_LABELS.label,

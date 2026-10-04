@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import manifest from "../../../package.json" with { type: "json" };
-import { JOURNAL_LABELS, TAB_LABELS } from "../../../src/ui/text/journal/journal-labels.js";
+import { JOURNAL_LABELS } from "../../../src/ui/text/journal/journal-labels.js";
 import {
   PANEL_HINTS_TAIL,
   QUIT_LABEL,
@@ -42,7 +42,7 @@ const VIEWS: ReadonlyArray<{ readonly title: string; readonly shows: string | Re
   { title: VIEW_LABELS.packages, shows: PACKAGES_PLACEHOLDERS.upToDate },
   { title: SCHEDULES_LABEL, shows: EMPTY_SCHEDULES[0] },
   { title: VIEW_LABELS.providers, shows: anyCount(PROVIDERS_PANEL_LABELS.detected) },
-  { title: JOURNAL_LABELS.view, shows: TAB_LABELS[0] },
+  { title: JOURNAL_LABELS.view, shows: JOURNAL_LABELS.tabs[0] },
   { title: VIEW_LABELS.options, shows: OPTIONS_SECTIONS.scan },
 ];
 

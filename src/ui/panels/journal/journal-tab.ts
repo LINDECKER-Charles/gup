@@ -1,5 +1,5 @@
 import type { ChartGlyphs } from "../../charts/chart-glyphs.js";
-import { EMPTY_ACTIVITY } from "../../text/journal/activity-labels.js";
+import { ACTIVITY_LABELS } from "../../text/journal/activity-labels.js";
 import { JOURNAL_HINTS, JOURNAL_LABELS } from "../../text/journal/journal-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { fillLine, seg, wrap, type Line } from "../../tui/styled-lines.js";
@@ -46,8 +46,8 @@ export function historyPlaceholder(history: JournalHistory): Line[] | null {
   if (history.error !== undefined) return placeholder(JOURNAL_LABELS.unreadable(history.error));
   const { totals, period } = history.insights;
   if (totals.attempts > 0 || totals.scans > 0) return null;
-  if (period.since === null) return placeholder(EMPTY_ACTIVITY);
-  return [...placeholder(EMPTY_ACTIVITY), [seg(`  ${JOURNAL_LABELS.widenHint}`, "muted")]];
+  if (period.since === null) return placeholder(ACTIVITY_LABELS.empty);
+  return [...placeholder(ACTIVITY_LABELS.empty), [seg(`  ${JOURNAL_LABELS.widenHint}`, "muted")]];
 }
 
 /** The banner above a history tab while recording is off, wrapped to the width. */

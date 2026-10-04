@@ -16,7 +16,7 @@ export interface JournalViewPorts {
  * Journal: the activity of a period — at a glance, per package, event by
  * event — and the debug log, read when the view comes to the front. The
  * source (history, log, exports) and the schedule names are the composition
- * root's. It also adds `o rapport HTML` to the results of an update run in
+ * root's. It also adds `o HTML report` to the results of an update run in
  * the screen: the report of the period the Journal opens on, which ends with
  * that run.
  */

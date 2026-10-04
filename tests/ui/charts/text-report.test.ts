@@ -5,9 +5,10 @@ import { parsePeriod } from "../../../src/core/time/period.js";
 import { linesToAnsi, linesToText } from "../../../src/ui/charts/ansi-lines.js";
 import { chartGlyphs } from "../../../src/ui/charts/chart-glyphs.js";
 import { renderTextReport } from "../../../src/ui/charts/text-report.js";
-import { EMPTY_ACTIVITY, TEXT_REPORT_LABELS } from "../../../src/ui/text/journal/activity-labels.js";
+import { ACTIVITY_LABELS, TEXT_REPORT_LABELS } from "../../../src/ui/text/journal/activity-labels.js";
 import { seg } from "../../../src/ui/tui/styled-lines.js";
 import { updateEvent } from "../../support/history-fixtures.js";
+import { useLocale } from "../../support/locale.js";
 
 const NOW = new Date("2026-10-03T12:00:00.000Z");
 const PERIOD = parsePeriod("90d", NOW)!;
@@ -21,7 +22,7 @@ const day = (daysAgo: number) => new Date(NOW.getTime() - daysAgo * 86_400_000).
 
 describe("renderTextReport", () => {
   it("titles the report with its period and says so when nothing happened", () => {
-    expect(report([])).toBe(`gup — activité · 90 derniers jours\n\n${EMPTY_ACTIVITY}\n`);
+    expect(report([])).toBe(`gup — activité · 90 derniers jours\n\n${ACTIVITY_LABELS.empty}\n`);
   });
 
   it("follows the summary with the most updated packages and the recurring failures", () => {
@@ -45,6 +46,31 @@ describe("renderTextReport", () => {
     const text = report([updateEvent("winget", "Git.Git", { ts: day(2) })], 60);
 
     expect(text).toMatch(/ {2}Git\.Git +winget +█+ +1\n/);
+  });
+});
+
+describe("renderTextReport in English", () => {
+  useLocale("en");
+
+  it("titles the report, its charts and its sections in English", () => {
+    const text = report([
+      updateEvent("winget", "Google.Chrome", { ts: day(16) }),
+      updateEvent("winget", "Google.Chrome", { ts: day(9) }),
+      updateEvent("winget", "Google.Chrome", { ts: day(2) }),
+      updateEvent("choco", "nodejs", { ts: day(3), status: "failed", message: "exit code 1603" }),
+    ]);
+
+    expect(text).toMatch(/^gup — activity · past 90 days\n\n3 updates · 75% successful · 1 package · 1 failure/);
+    expect(text).toContain("Successful updates per day\n");
+    expect(text).toContain("less · ░ ▒ ▓ █ more\n");
+    expect(text).toContain("Outdated packages (full scans)  —\nSlowest scans  —\n");
+    expect(text).toMatch(/\nMost updated packages\n {2}Package +Provider +Updates +Pace\n/);
+    expect(text).toMatch(/ {2}Google\.Chrome +winget +█+ +3 +~7 d weekly\n/);
+    expect(text).toContain("Recurring failures\n  1× choco · nodejs — exit code 1603\n");
+  });
+
+  it("says so in English when nothing happened", () => {
+    expect(report([])).toBe("gup — activity · past 90 days\n\nNo activity recorded in this period.\n");
   });
 });
 

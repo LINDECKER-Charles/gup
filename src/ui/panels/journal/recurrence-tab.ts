@@ -31,10 +31,10 @@ import {
 } from "./journal-tab.js";
 
 /**
- * Tab 2, Récurrence: which packages get updated, how often and at which pace
+ * Tab 2, Recurrence: which packages get updated, how often and at which pace
  * — a bar per package, its typical interval and cadence. `s` cycles the
  * order (most updated, most failed — the bars then count the failures —,
- * most recent); Entrée opens a package: its counts, pace, first and last
+ * most recent); Enter opens a package: its counts, pace, first and last
  * attempt, latest versions.
  */
 

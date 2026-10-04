@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import type { HistoryEvent, ScanEvent, UpdateEvent } from "../../../src/core/history/types.js";
 import type { ProviderScanResult, UpdateOutcome } from "../../../src/core/types.js";
+import { SUITE_LOCALE } from "../../support/locale.js";
 
 /**
  * The store keeps two pieces of module state — the per-process run id and the
@@ -47,6 +48,8 @@ beforeEach(async () => {
   process.env["GUP_HISTORY"] = "1";
   stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
   vi.resetModules();
+  // The fresh module graph has its own locale, which starts in the default language.
+  (await import("../../../src/core/i18n/locale.js")).setActiveLocale(SUITE_LOCALE);
   store = await import("../../../src/core/history/store.js");
 });
 

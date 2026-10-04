@@ -6,11 +6,7 @@ import {
   weekStartOf,
   type DayKey,
 } from "../../core/time/calendar.js";
-import {
-  HEATMAP_LABELS,
-  MONTH_ABBREVIATIONS,
-  WEEKDAY_LABELS,
-} from "../text/journal/activity-labels.js";
+import { HEATMAP_LABELS } from "../text/journal/activity-labels.js";
 import { seg, type Line, type Segment, type Tone } from "../tui/styled-lines.js";
 import type { ChartGlyphs } from "./chart-glyphs.js";
 import { quantileLevels } from "./scale.js";
@@ -33,7 +29,7 @@ export interface HeatmapInput {
   readonly glyphs: ChartGlyphs;
 }
 
-/** Row label column: "lun ". */
+/** Row label column: "Mon ". */
 const LABEL_WIDTH = 4;
 const DAYS_PER_WEEK = 7;
 const WIDE_CELL = 2;
@@ -50,7 +46,7 @@ export function renderHeatmap(input: HeatmapInput): Line[] {
   const grid = gridOf(input);
   const level = quantileLevels(countsInWindow(input, grid), HEAT_LEVELS);
   const context: RowContext = { input, grid, level };
-  const rows = WEEKDAY_LABELS.map((label, weekday) => dayRow(context, label, weekday));
+  const rows = HEATMAP_LABELS.weekdays.map((label, weekday) => dayRow(context, label, weekday));
   const gridWidth = LABEL_WIDTH + grid.weeks * grid.cell;
   return [monthRow(grid, input.width), ...rows, legend(input.glyphs, gridWidth)];
 }
@@ -93,12 +89,13 @@ function dayRow({ input, grid, level }: RowContext, label: string, weekday: numb
 
 /** Month names over the week holding the 1st, each clear of the previous one and within `width`. */
 function monthRow(grid: Grid, width: number): Line {
+  const { months } = HEATMAP_LABELS;
   let row = " ".repeat(LABEL_WIDTH);
   for (let week = 0; week < grid.weeks; week++) {
     const month = monthStarting(addDays(grid.first, week * DAYS_PER_WEEK));
     if (month === null) continue;
     const column = LABEL_WIDTH + week * grid.cell;
-    const name = MONTH_ABBREVIATIONS[month] ?? "";
+    const name = months[month] ?? "";
     const isClear = column > row.trimEnd().length;
     const fits = column + name.length <= width;
     if (isClear && fits) row = row.padEnd(column) + name;
@@ -115,7 +112,7 @@ function monthStarting(monday: DayKey): number | null {
   return null;
 }
 
-/** "moins · ░ ▒ ▓ █ plus", right-aligned under the grid. */
+/** "less · ░ ▒ ▓ █ more", right-aligned under the grid. */
 function legend(glyphs: ChartGlyphs, width: number): Line {
   const marks = glyphs.heat.map((mark, heat) => seg(` ${mark}`, heat === 0 ? "muted" : "success"));
   const { fewer, more } = HEATMAP_LABELS;
