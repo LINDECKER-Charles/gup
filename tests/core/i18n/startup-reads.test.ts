@@ -9,8 +9,11 @@ import { describe, expect, it, vi } from "vitest";
  * and every read the locale saw is a failure, with the stack that names the
  * module.
  */
+/** A fresh graph of every module the command line loads: seconds on a busy machine. */
+const LOAD_TIMEOUT_MS = 60_000;
+
 describe("startup", () => {
-  it("reads no localized text while the command line's modules load", async () => {
+  it("reads no localized text while the command line's modules load", { timeout: LOAD_TIMEOUT_MS }, async () => {
     vi.resetModules();
     const { localeReadsBeforeStartup } = await import("../../../src/core/i18n/locale.js");
     await import("../../../src/commands/cli/cli-modules.js");
