@@ -56,10 +56,11 @@ const active: TriggerSummary = {
 };
 
 describe("SchedulesPanel, list", () => {
-  it("tells how to schedule when there is nothing yet", () => {
+  it("tells how to schedule when there is nothing yet, with no key of its own", () => {
     const { render, panel } = setup([]);
     expect(render().filter(Boolean)).toEqual(EMPTY_SCHEDULES.map((line) => `  ${line}`));
     expect(panel.title).toBe("Planification");
+    expect(panel.hints()).toBe("");
   });
 
   it("wraps that how-to under its indent on an 80-column terminal, down to its key", () => {

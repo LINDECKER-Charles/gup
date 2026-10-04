@@ -112,8 +112,10 @@ export class SchedulesPanel implements Panel {
   }
 
   hints(): string {
-    if (!this.#editor) return SCHEDULES_HINTS.list(this.#underCursor()?.enabled === true);
-    return this.#editor.typing ? SCHEDULES_HINTS.typing : SCHEDULES_HINTS.editor;
+    if (this.#editor) return this.#editor.typing ? SCHEDULES_HINTS.typing : SCHEDULES_HINTS.editor;
+    // Nothing to edit, run, delete or switch: the empty state says where schedules come from.
+    if (this.#schedules().length === 0) return "";
+    return SCHEDULES_HINTS.list(this.#underCursor()?.enabled === true);
   }
 
   onShow(): void {
