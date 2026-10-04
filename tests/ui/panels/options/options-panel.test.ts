@@ -1,4 +1,4 @@
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -22,7 +22,10 @@ import {
   OPTIONS_SECTIONS,
   TIMEOUT_OUT_OF_RANGE,
 } from "../../../../src/ui/text/settings/options-labels.js";
-import { CONFIG_STATE_LABELS } from "../../../../src/ui/text/settings/settings-labels.js";
+import {
+  CONFIG_STATE_LABELS,
+  invalidSettingsLabel,
+} from "../../../../src/ui/text/settings/settings-labels.js";
 import { COLORS_UNAVAILABLE, CONTRAST_STATUS } from "../../../../src/ui/text/settings/theme-labels.js";
 import { seg } from "../../../../src/ui/tui/styled-lines.js";
 import {
@@ -259,6 +262,18 @@ describe("OptionsPanel saving", () => {
     // The save created the file: the row no longer says there is none.
     expect(saved).toContain(CONFIG_STATE_LABELS.saved);
     expect(saved).not.toContain(CONFIG_STATE_LABELS.defaults);
+  });
+
+  it("says on the file row that a setting is invalid, until a save rewrote its section", async () => {
+    const file = join(await mkdtemp(join(tmpdir(), "gup-options-")), "config.json");
+    await writeFile(file, JSON.stringify({ version: 1, sections: { scan: { v: 1, fast: "oui" } } }));
+    const { panel } = setup({ store: new ConfigStore({ file }) });
+    press(panel, "end");
+    expect(text(panel.render(VIEW))).toContain(invalidSettingsLabel(["scan.fast : booléen attendu"]));
+    press(panel, "home", "enter", "end");
+    const saved = text(panel.render(VIEW));
+    expect(saved).toContain(CONFIG_STATE_LABELS.saved);
+    expect(saved).not.toContain("invalide");
   });
 });
 

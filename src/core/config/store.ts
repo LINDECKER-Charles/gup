@@ -39,7 +39,10 @@ export interface ConfigStatus {
   readonly state: ConfigState;
   /** Where a corrupt file was moved, when state is "recovered". */
   readonly backup?: string;
-  /** Human-readable problems (French): "interface.mouse : booléen attendu". */
+  /**
+   * Human-readable problems (French): "interface.mouse : booléen attendu".
+   * A section's own go once a save rewrote it; the file's stay.
+   */
   readonly issues: readonly string[];
   /** Sections written by a newer gup: readable, never overwritten. */
   readonly readOnlySections: readonly string[];
@@ -97,7 +100,10 @@ export class ConfigStore {
   readonly #options: ConfigStoreOptions;
   #loaded: LoadedFile | null = null;
   readonly #values = new Map<string, object>();
-  readonly #issues: string[] = [];
+  /** What was wrong with the file itself (corrupt, unreadable) when it was loaded. */
+  readonly #fileIssues: string[] = [];
+  /** What was wrong with each section as read, until a save rewrites it. */
+  readonly #sectionIssues = new Map<string, readonly string[]>();
   readonly #readOnly = new Set<string>();
   #lastWriteError: string | undefined;
   readonly #listeners = new Set<(sectionKey: string) => void>();
@@ -112,7 +118,9 @@ export class ConfigStore {
     if (cached) return cached as T;
     const document = this.#file().document;
     if (isReadOnlySection(document, section)) this.#readOnly.add(section.key);
-    const value = parseSection(section, document, this.#issues);
+    const issues: string[] = [];
+    const value = parseSection(section, document, issues);
+    this.#sectionIssues.set(section.key, issues);
     this.#values.set(section.key, value);
     return value;
   }
@@ -157,7 +165,7 @@ export class ConfigStore {
       file: this.#options.file,
       state: loaded.state,
       ...(loaded.backup !== undefined && { backup: loaded.backup }),
-      issues: [...this.#issues],
+      issues: [...this.#fileIssues, ...[...this.#sectionIssues.values()].flat()],
       readOnlySections: [...new Set([...readOnly, ...this.#readOnly])],
       ...(this.#lastWriteError !== undefined && { lastWriteError: this.#lastWriteError }),
     };
@@ -189,7 +197,7 @@ export class ConfigStore {
   #recover(file: string, reason: string): LoadedFile {
     try {
       const backup = backupCorruptFile(file, (this.#options.now ?? (() => new Date()))());
-      this.#issues.push(`${FILE_LABEL} : ${reason} — copie de sauvegarde ${backup}`);
+      this.#fileIssues.push(`${FILE_LABEL} : ${reason} — copie de sauvegarde ${backup}`);
       return { state: "recovered", document: emptyDocument(), backup };
     } catch (err) {
       return this.#unavailable(`${reason} (sauvegarde impossible : ${messageOf(err)})`);
@@ -197,7 +205,7 @@ export class ConfigStore {
   }
 
   #unavailable(reason: string): LoadedFile {
-    this.#issues.push(`${FILE_LABEL} : ${reason}`);
+    this.#fileIssues.push(`${FILE_LABEL} : ${reason}`);
     return { state: "unavailable", document: emptyDocument() };
   }
 
@@ -212,7 +220,7 @@ export class ConfigStore {
     try {
       mkdirSync(dirname(file), { recursive: true, mode: DIR_MODE });
       const stored = withFileLock(file, () => this.#rewrite(file, { section, compute }));
-      this.#persisted();
+      this.#persisted(section.key);
       return stored;
     } catch (err) {
       throw this.#failed(err);
@@ -221,10 +229,12 @@ export class ConfigStore {
 
   /**
    * The file holds what this process wrote: an earlier failure no longer
-   * stands, and a file that was missing at load exists now.
+   * stands, a file that was missing at load exists now, and the section was
+   * rewritten from valid values only — what was wrong with it is gone.
    */
-  #persisted(): void {
+  #persisted(sectionKey: string): void {
     this.#lastWriteError = undefined;
+    this.#sectionIssues.delete(sectionKey);
     const loaded = this.#file();
     if (loaded.state === "missing") this.#loaded = { ...loaded, state: "loaded" };
   }
