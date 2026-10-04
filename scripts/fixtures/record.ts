@@ -81,12 +81,19 @@ function publishable(ref: FixtureRef, text: string): ReturnType<typeof redact> {
   return redacted;
 }
 
+/** The manifest at `manifestFile`, or null when this directory has none yet. */
+async function readManifest(manifestFile: string): Promise<FixtureManifest | null> {
+  try {
+    return JSON.parse(await readFile(manifestFile, "utf8")) as FixtureManifest;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
 async function updateManifest(file: string, entry: ManifestEntry): Promise<void> {
   const manifestFile = join(dirname(file), "_manifest.json");
-  const known = existsSync(manifestFile)
-    ? (JSON.parse(await readFile(manifestFile, "utf8")) as FixtureManifest)
-    : null;
-  const next = withManifestEntry(known, entry);
+  const next = withManifestEntry(await readManifest(manifestFile), entry);
   await writeFile(manifestFile, `${JSON.stringify(next, null, 2)}\n`, "utf8");
 }
 
