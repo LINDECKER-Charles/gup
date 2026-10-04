@@ -280,7 +280,7 @@ export class RunView implements Takeover {
 
   private focusPane(): void {
     const isUacStep = this.model.phase === "elevating" && this.#elevation === "uac";
-    if (isUacStep) return this.say(RUN_NOTICES.skipAdmin.uac, "warning");
+    if (isUacStep) return this.say(RUN_NOTICES.typeElsewhere, "warning");
     if (!this.panes.focus()) this.say(RUN_NOTICES.typeIdle, "muted");
   }
 

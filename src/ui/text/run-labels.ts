@@ -113,6 +113,9 @@ export const RUN_NOTICES = {
   stopAfterStep: "Arrêt demandé — gup s'arrêtera après l'étape administrateur.",
   prompt: "⌨ Le programme attend peut-être une réponse — t pour écrire dans le terminal.",
   typeIdle: "Aucun programme en cours.",
+  /** `t` during the UAC step: the elevated installers run in a window of their own. */
+  typeElsewhere:
+    "L'étape administrateur a sa propre fenêtre : répondez-y directement, rien ne se tape ici.",
 } as const;
 
 export const STOP_DIALOG = {

@@ -351,8 +351,9 @@ unseen.
 
 **Elevated step.** `elevationStarted` opens the elevated pane. Windows: `Administrateur (UAC)`,
 two notes, rows tagged `fenêtre admin…`; `s` and `t` are refused (the window is outside gup's
-tree, and `^C` would only kill the waiter and lose the outcomes); `x` stops after the step,
-without a confirmation. POSIX (IT-7): `Administrateur (sudo)`, the `sudo` child runs in the
+tree, and `^C` would only kill the waiter and lose the outcomes), each with its own notice —
+`t` says the elevated window is where to answer; `x` stops after the step, without a
+confirmation. POSIX (IT-7): `Administrateur (sudo)`, the `sudo` child runs in the
 pane, `t` to type the password, once for the batch; `s` is refused (it would lose every outcome
 of the batch).
 

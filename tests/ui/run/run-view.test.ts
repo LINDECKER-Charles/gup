@@ -342,6 +342,10 @@ describe("run view", () => {
     expect(waiting).toContain(PANE_LABELS.approveUac);
     expect(waiting).toContain(RUN_HINTS.elevating.uac);
     expect(waiting).toMatch(/nodejs .* fenêtre admin…/);
+    await menu.press("t");
+    const typing = await menu.frame();
+    expect(typing).toContain(RUN_NOTICES.typeElsewhere);
+    expect(typing).not.toContain(RUN_NOTICES.skipAdmin.uac);
     await menu.press("s");
     expect(await menu.frame()).toContain(RUN_NOTICES.skipAdmin.uac);
     await menu.press("x");
