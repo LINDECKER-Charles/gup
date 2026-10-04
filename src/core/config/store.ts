@@ -1,16 +1,25 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { localized } from "../i18n/localized.js";
 import { withFileLock } from "../state/file-lock.js";
 import { NODE_FILE_OPS, writeFileAtomic, type FileOps } from "./atomic-write.js";
 import {
   backupCorruptFile,
+  CORRUPT_REASONS,
   emptyDocument,
   ENVELOPE_VERSION,
   readConfigFile,
   serializeDocument,
   type ConfigDocument,
+  type CorruptReason,
 } from "./config-file.js";
-import { createFieldReader, isJsonObject, isSafeKey } from "./field-reader.js";
+import {
+  createFieldReader,
+  isJsonObject,
+  isSafeKey,
+  objectExpected,
+  type ConfigIssue,
+} from "./field-reader.js";
 import { configFilePath, isConfigDisabled } from "./paths.js";
 import type { ConfigSectionDef, JsonObject, JsonValue } from "./section.js";
 
@@ -40,8 +49,9 @@ export interface ConfigStatus {
   /** Where a corrupt file was moved, when state is "recovered". */
   readonly backup?: string;
   /**
-   * Human-readable problems (French): "interface.mouse : booléen attendu".
-   * A section's own go once a save rewrote it; the file's stay.
+   * Human-readable problems, in the language active when the status is read:
+   * "interface.mouse: expected a boolean". A section's own go once a save
+   * rewrote it; the file's stay.
    */
   readonly issues: readonly string[];
   /** Sections written by a newer gup: readable, never overwritten. */
@@ -94,16 +104,39 @@ interface SectionChange<T extends object> {
 const VERSION_FIELD = "v";
 const DIR_MODE = 0o700;
 const FILE_LABEL = "config.json";
-const UNAVAILABLE_MESSAGE = "emplacement de configuration indisponible";
+
+/** The store's own words: what is wrong with the file, and why a save failed. */
+const STORE_LABELS = localized({
+  en: {
+    /** "config.json: EACCES: permission denied, open '…'". */
+    unreadable: (reason: string) => `${FILE_LABEL}: ${reason}`,
+    /** "config.json: invalid JSON — kept as …\config.corrupt-20261003T142205.json". */
+    recovered: (reason: string, backup: string) => `${FILE_LABEL}: ${reason} — kept as ${backup}`,
+    /** `why`: why the file could not be moved aside. */
+    unrecoverable: (reason: string, why: string) =>
+      `${FILE_LABEL}: ${reason} (backup failed: ${why})`,
+    noLocation: "no location for the settings file",
+    readOnly: (key: string) => `section ${key} written by a newer version of gup`,
+    changedOnDisk: (reason: string) => `file changed in the meantime: ${reason}`,
+  },
+  fr: {
+    unreadable: (reason) => `${FILE_LABEL} : ${reason}`,
+    recovered: (reason, backup) => `${FILE_LABEL} : ${reason} — copie de sauvegarde ${backup}`,
+    unrecoverable: (reason, why) => `${FILE_LABEL} : ${reason} (sauvegarde impossible : ${why})`,
+    noLocation: "emplacement de configuration indisponible",
+    readOnly: (key) => `section ${key} écrite par une version plus récente de gup`,
+    changedOnDisk: (reason) => `fichier modifié entre-temps : ${reason}`,
+  },
+});
 
 export class ConfigStore {
   readonly #options: ConfigStoreOptions;
   #loaded: LoadedFile | null = null;
   readonly #values = new Map<string, object>();
   /** What was wrong with the file itself (corrupt, unreadable) when it was loaded. */
-  readonly #fileIssues: string[] = [];
+  readonly #fileIssues: ConfigIssue[] = [];
   /** What was wrong with each section as read, until a save rewrites it. */
-  readonly #sectionIssues = new Map<string, readonly string[]>();
+  readonly #sectionIssues = new Map<string, readonly ConfigIssue[]>();
   readonly #readOnly = new Set<string>();
   #lastWriteError: string | undefined;
   readonly #listeners = new Set<(sectionKey: string) => void>();
@@ -118,7 +151,7 @@ export class ConfigStore {
     if (cached) return cached as T;
     const document = this.#file().document;
     if (isReadOnlySection(document, section)) this.#readOnly.add(section.key);
-    const issues: string[] = [];
+    const issues: ConfigIssue[] = [];
     const value = parseSection(section, document, issues);
     this.#sectionIssues.set(section.key, issues);
     this.#values.set(section.key, value);
@@ -157,6 +190,7 @@ export class ConfigStore {
     this.write(section, section.defaults);
   }
 
+  /** The file's state now, its problems worded in the active language. */
   status(): ConfigStatus {
     const loaded = this.#file();
     const newerEnvelope = loaded.document.version > ENVELOPE_VERSION;
@@ -165,7 +199,7 @@ export class ConfigStore {
       file: this.#options.file,
       state: loaded.state,
       ...(loaded.backup !== undefined && { backup: loaded.backup }),
-      issues: [...this.#fileIssues, ...[...this.#sectionIssues.values()].flat()],
+      issues: [this.#fileIssues, ...this.#sectionIssues.values()].flat().map((issue) => issue()),
       readOnlySections: [...new Set([...readOnly, ...this.#readOnly])],
       ...(this.#lastWriteError !== undefined && { lastWriteError: this.#lastWriteError }),
     };
@@ -189,30 +223,37 @@ export class ConfigStore {
     const read = readConfigFile(file, this.#options.maxBytes);
     if (read.kind === "missing") return { state: "missing", document: emptyDocument() };
     if (read.kind === "loaded") return { state: "loaded", document: read.document };
-    if (read.kind === "unreadable") return this.#unavailable(read.reason);
+    if (read.kind === "unreadable") {
+      return this.#unavailable(() => STORE_LABELS.unreadable(read.reason));
+    }
     return this.#recover(file, read.reason);
   }
 
-  /** Move the corrupt file aside and start empty — or, if it cannot be moved, never touch it. */
-  #recover(file: string, reason: string): LoadedFile {
+  /**
+   * Move the corrupt file aside and start empty — or, if it cannot be moved,
+   * never touch it. Runs while startup reads the language setting: what went
+   * wrong is worded later, when the status is read.
+   */
+  #recover(file: string, reason: CorruptReason): LoadedFile {
     try {
       const backup = backupCorruptFile(file, (this.#options.now ?? (() => new Date()))());
-      this.#fileIssues.push(`${FILE_LABEL} : ${reason} — copie de sauvegarde ${backup}`);
+      this.#fileIssues.push(() => STORE_LABELS.recovered(CORRUPT_REASONS[reason], backup));
       return { state: "recovered", document: emptyDocument(), backup };
     } catch (err) {
-      return this.#unavailable(`${reason} (sauvegarde impossible : ${messageOf(err)})`);
+      const error = messageOf(err);
+      return this.#unavailable(() => STORE_LABELS.unrecoverable(CORRUPT_REASONS[reason], error));
     }
   }
 
-  #unavailable(reason: string): LoadedFile {
-    this.#fileIssues.push(`${FILE_LABEL} : ${reason}`);
+  #unavailable(issue: ConfigIssue): LoadedFile {
+    this.#fileIssues.push(issue);
     return { state: "unavailable", document: emptyDocument() };
   }
 
   #persist<T extends object>(section: ConfigSectionDef<T>, compute: (current: T) => T): T {
     const { file } = this.#options;
     if (file === null || this.#file().state === "unavailable") {
-      throw this.#failed(new ConfigWriteError("unavailable", UNAVAILABLE_MESSAGE));
+      throw this.#failed(new ConfigWriteError("unavailable", STORE_LABELS.noLocation));
     }
     if (isReadOnlySection(this.#file().document, section)) {
       throw this.#failed(readOnlyError(section));
@@ -285,10 +326,7 @@ function messageOf(err: unknown): string {
 }
 
 function readOnlyError(section: ConfigSectionDef<object>): ConfigWriteError {
-  return new ConfigWriteError(
-    "read-only",
-    `section ${section.key} écrite par une version plus récente de gup`,
-  );
+  return new ConfigWriteError("read-only", STORE_LABELS.readOnly(section.key));
 }
 
 /** The file as it is now, inside the lock. */
@@ -297,7 +335,8 @@ function freshDocument(file: string, maxBytes: number | undefined): ConfigDocume
   if (read.kind === "loaded") return read.document;
   if (read.kind === "missing") return emptyDocument();
   if (read.kind === "corrupt") {
-    throw new ConfigWriteError("changed-on-disk", `fichier modifié entre-temps : ${read.reason}`);
+    const reason = CORRUPT_REASONS[read.reason];
+    throw new ConfigWriteError("changed-on-disk", STORE_LABELS.changedOnDisk(reason));
   }
   throw new ConfigWriteError("io", read.reason);
 }
@@ -316,10 +355,10 @@ function isReadOnlySection(document: ConfigDocument, section: ConfigSectionDef<o
 function parseSection<T extends object>(
   section: ConfigSectionDef<T>,
   document: ConfigDocument,
-  issues: string[],
+  issues: ConfigIssue[],
 ): T {
   const raw = document.sections[section.key];
-  if (raw !== undefined && !isJsonObject(raw)) issues.push(`${section.key} : objet attendu`);
+  if (raw !== undefined && !isJsonObject(raw)) issues.push(objectExpected(section.key));
   const object = (isJsonObject(raw) ? raw : {}) as JsonObject;
   const version = sectionVersion(raw, section.version);
   const upgraded =
