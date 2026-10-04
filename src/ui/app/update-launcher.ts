@@ -6,7 +6,7 @@ import type { Screen } from "../tui/screen-host.js";
 import type { MenuController, SessionExit } from "./menu-session.js";
 import { outsideLauncher } from "./outside-launcher.js";
 import type { UiPreferences } from "./ui-preferences.js";
-import type { Takeover, TakeoverSurface, ViewId } from "./view-definition.js";
+import type { ResultAction, Takeover, TakeoverSurface, ViewId } from "./view-definition.js";
 
 /**
  * Where the menu's updates run is pluggable: the foundation runs them
@@ -46,6 +46,8 @@ export interface LauncherContext {
   readonly preferences: () => UiPreferences;
   /** True while a scan of the session runs: package managers are busy, no update starts. */
   isScanning(): boolean;
+  /** The keys the views add to the results of an update run inside the screen. */
+  readonly resultActions: () => readonly ResultAction[];
   takeOver(start: (surface: TakeoverSurface) => Takeover): () => void;
   /** End the session: quit, or run an update on the plain terminal. */
   exit(exit: SessionExit): void;

@@ -109,6 +109,14 @@ describe("journal source", () => {
     });
   });
 
+  it("writes the HTML report without opening it when the setting says not to", async () => {
+    const exportHistory = vi.fn(async () => written("C:\\r\\gup-report.html", null));
+    const source = createJournalSource({ exportHistory, opensReport: () => false });
+
+    await expect(source.export("html", PERIOD)).resolves.toEqual({ ok: true, path: "C:\\r\\gup-report.html" });
+    expect(exportHistory).toHaveBeenCalledWith({ format: "html", period: PERIOD, target: { kind: "file" } });
+  });
+
   it("turns an export failure into an outcome, never a rejection", async () => {
     const source = createJournalSource({
       exportHistory: async () => {

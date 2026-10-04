@@ -3,20 +3,32 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CliModule } from "../../../src/commands/cli/cli-module.js";
 import { installStartup } from "../../../src/commands/cli/startup.js";
-import { journalModule, logDiagnostic } from "../../../src/commands/journal/journal-module.js";
 import {
+  createJournalModule,
+  journalModule,
+  logDiagnostic,
+} from "../../../src/commands/journal/journal-module.js";
+import {
+  currentLogLevel,
   currentLogSession,
   stopLogSession,
   type LogSession,
 } from "../../../src/commands/journal/log-session.js";
+import { ConfigStore } from "../../../src/core/config/store.js";
 import { elevatedLogBuffer } from "../../../src/core/log/elevated-bridge.js";
-import { log } from "../../../src/core/log/log.js";
+import { log, type LogThreshold } from "../../../src/core/log/log.js";
 import type { SinkLogBackend } from "../../../src/core/log/log-backend.js";
 import type { LogRecord } from "../../../src/core/log/types.js";
 import { traceCommand } from "../../../src/core/process/command-tracer.js";
 import { updateObservers } from "../../../src/core/update/update-extensions.js";
+import { OptionsPanel } from "../../../src/ui/panels/options/options-panel.js";
+import { journalOptions } from "../../../src/ui/settings/journal-options.js";
+import { SettingsService } from "../../../src/ui/settings/settings-service.js";
+import { logLevelSource } from "../../../src/ui/settings/settings-sources.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
+import { key, optionsFixture } from "../../ui/panels/options/options-fixture.js";
 
 let dir: string;
 
@@ -33,14 +45,27 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-/** The real module on a program shaped like gup's. */
-async function run(...args: string[]): Promise<void> {
+/** `module` on a program shaped like gup's. */
+async function runModule(module: CliModule, ...args: string[]): Promise<void> {
   const program = new Command().exitOverride();
-  journalModule.register?.(program, { modules: [journalModule] });
+  module.register?.(program, { modules: [module] });
   program.command("update [targets...]").action(() => {});
   program.command("__admin-batch <file>").action(() => {});
-  installStartup(program, [journalModule]);
+  installStartup(program, [module]);
   await program.parseAsync(["node", "gup", ...args]);
+}
+
+/** The real module. */
+async function run(...args: string[]): Promise<void> {
+  await runModule(journalModule, ...args);
+}
+
+/** The module over an in-memory settings file whose log level is `level`. */
+function withLogSetting(level: LogThreshold) {
+  const settings = new SettingsService(new ConfigStore({ file: null, isDisabled: true }));
+  settings.update("log", { level });
+  const logLevelSetting = vi.fn(() => logLevelSource(settings));
+  return { settings, logLevelSetting, module: createJournalModule({ logLevelSetting }) };
 }
 
 function written(): LogRecord[] {
@@ -119,6 +144,102 @@ describe("journalModule startup", () => {
       "info session.cancelled",
     ]);
     expect(records[1]?.data).toMatchObject({ error: { name: "TypeError", message: "cannot read properties of undefined" } });
+  });
+});
+
+describe("the log.level setting", () => {
+  beforeEach(() => {
+    // The suites run with GUP_LOG_LEVEL=off, which wins over any setting.
+    vi.stubEnv("GUP_LOG_LEVEL", "");
+  });
+
+  const probe = () => traceCommand("probe", "npm", ["outdated"]).end({ exitCode: 0, failed: false });
+  const events = () => written().map((record) => record.event);
+
+  it("sets what the log records, and gup doctor says it came from the setting", async () => {
+    const { module } = withLogSetting("debug");
+    await runModule(module, "update");
+    probe();
+    expect(events()).toEqual(["session.start", "cmd.end"]);
+    expect(await module.diagnostics?.()).toEqual([
+      { label: "Journal de debug", value: expect.stringMatching(/^debug \(réglage\) · .+logs$/), status: "ok" },
+    ]);
+  });
+
+  it("gives way to --log-level and to GUP_LOG_LEVEL", async () => {
+    const { module } = withLogSetting("debug");
+    await runModule(module, "--log-level", "warn", "update");
+    expect(currentLogLevel()).toEqual({ threshold: "warn", source: "flag" });
+    vi.stubEnv("GUP_LOG_LEVEL", "off");
+    await runModule(module, "update");
+    expect(currentLogLevel()).toEqual({ threshold: "off", source: "env" });
+    expect(existsSync(join(dir, "logs"))).toBe(false);
+  });
+
+  it("is never read by the elevated child, which takes its parent's threshold", async () => {
+    const { module, logLevelSetting } = withLogSetting("trace");
+    await runModule(module, "__admin-batch", "batch.json");
+    expect(logLevelSetting).not.toHaveBeenCalled();
+    expect(currentLogLevel()).toEqual({ threshold: "info", source: "default" });
+  });
+
+  it("is followed while gup runs: a changed level applies at once", async () => {
+    const { module, settings } = withLogSetting("info");
+    await runModule(module, "update");
+    probe();
+    settings.update("log", { level: "debug" });
+    probe();
+    expect(events()).toEqual(["session.start", "log.threshold", "cmd.end"]);
+    expect(currentLogLevel()).toEqual({ threshold: "debug", source: "setting" });
+  });
+
+  it("starts a log that was off when it is turned on, and records nothing more once off", async () => {
+    const { module, settings } = withLogSetting("off");
+    await runModule(module, "update");
+    expect(existsSync(join(dir, "logs"))).toBe(false);
+    settings.update("log", { level: "info" });
+    log.info("scan.start");
+    settings.update("log", { level: "off" });
+    log.error("session.crash");
+    expect(events()).toEqual(["session.start", "scan.start", "log.threshold"]);
+    expect(written().at(-1)?.data).toEqual({ threshold: "off", source: "setting" });
+    expect(updateObservers()).toHaveLength(1);
+  });
+
+  it("records a level turned down before it goes quiet", async () => {
+    const { module, settings } = withLogSetting("debug");
+    await runModule(module, "update");
+    settings.update("log", { level: "error" });
+    log.warn("scan.provider");
+    expect(events()).toEqual(["session.start", "log.threshold"]);
+    expect(currentLogLevel()).toEqual({ threshold: "error", source: "setting" });
+  });
+
+  it("starts the next gup at the level saved in Options, unless --log-level says otherwise", async () => {
+    const file = join(dir, "config.json");
+    const options = optionsFixture({ store: new ConfigStore({ file }) });
+    const panel = new OptionsPanel([journalOptions({ logLevel: currentLogLevel })], options.host);
+    panel.press(key("enter"));
+    expect(options.settings.get("log").level).toBe("debug");
+
+    // The next process: its own settings, read from the file the Options view wrote.
+    const nextStart = () =>
+      createJournalModule({
+        logLevelSetting: () => logLevelSource(new SettingsService(new ConfigStore({ file }))),
+      });
+    await runModule(nextStart(), "update");
+    expect(currentLogLevel()).toEqual({ threshold: "debug", source: "setting" });
+    await runModule(nextStart(), "--log-level", "warn", "update");
+    expect(currentLogLevel()).toEqual({ threshold: "warn", source: "flag" });
+  });
+
+  it("does not move a level the flag set", async () => {
+    const { module, settings } = withLogSetting("info");
+    await runModule(module, "--log-level", "error", "update");
+    settings.update("log", { level: "trace" });
+    expect(currentLogLevel()).toEqual({ threshold: "error", source: "flag" });
+    probe();
+    expect(events()).toEqual([]);
   });
 });
 

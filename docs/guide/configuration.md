@@ -4,7 +4,8 @@
 view of the interactive app (`gup`, then Options in the menu): each change
 applies at once and is kept in one JSON file, read when `gup` starts. Scripts
 are never affected by it except for the install timeout (see
-[Scan & install](#scan--install)).
+[Scan & install](#scan--install)), the debug log's level and what
+`gup report` does in a terminal (see [Journal](#journal)).
 
 - [The Options view](#the-options-view)
 - [Where the file lives](#where-the-file-lives)
@@ -26,6 +27,7 @@ The settings are grouped in sections, one row per setting: `Label   [value]   hi
 | SCAN & INSTALLATION | Mode rapide, Timeout install, Filtre providers |
 | APPARENCE | Thème, Couleurs perso., Niveau de contraste, Symboles, Densité |
 | CONFORT | Vue au lancement, Scanner au lancement, Confirmer les MAJ, Rescanner après MAJ, Tri des paquets, Colonne Note, Providers incompat., Animations, Souris, Notification de fin |
+| JOURNAL | Journal de debug, Période du journal, Ouvrir le rapport (see [journal-and-reports.md](journal-and-reports.md#settings)) |
 | FICHIER | Réinitialiser…, Fichier (the file's state and path) |
 
 | Key | Effect |
@@ -47,11 +49,13 @@ The settings are grouped in sections, one row per setting: `Label   [value]   hi
 - **Réinitialiser…** puts a group back to its defaults, after a confirmation that
   answers *Non* by default: *Apparence* (theme, colours, contrast, symbols,
   density), *Confort* (the rest of the comfort rows, mouse included), *Scan &
-  installation* (fast mode, filter, timeout), or *Tout*.
+  installation* (fast mode, filter, timeout), or *Tout* (the JOURNAL rows
+  included).
 - Fast mode, the filter and the timeout apply to the session at once; for the
   first two, `r` rescans with them. The launch view and "scan at launch" apply
   the next time the menu opens; everything else applies at once (sort, Note
-  column, animations, mouse, symbols, density, theme, colours).
+  column, animations, mouse, symbols, density, theme, colours, the debug log's
+  level; the Journal's period the next time the view comes to the front).
 - In a narrow terminal (80 columns leave the Options panel 50), a hint that
   does not fit beside its row is shown whole under the list while the cursor is
   on that row, and the colour editor leaves out its "Affichée" column — the
@@ -81,7 +85,9 @@ comes from your settings.
     "theme": { "v": 1, "id": "dark", "custom": { "dark": { "accent": "#FF8800" } } },
     "interface": { "v": 1, "mouse": false, "glyphs": "ascii" },
     "scan": { "v": 1, "fast": true },
-    "install": { "v": 1, "timeoutSeconds": 600 }
+    "install": { "v": 1, "timeoutSeconds": 600 },
+    "log": { "v": 1, "level": "debug" },
+    "journal": { "v": 1, "period": "30d" }
   }
 }
 ```
@@ -145,6 +151,21 @@ timeout is a safety net and applies everywhere, with this precedence:
 A filtered provider id this version of `gup` does not know is ignored (and
 reported at startup).
 
+### Journal
+
+| Section | Field | Values | Default | Applies to |
+|---|---|---|---|---|
+| `log` | `level` | `off`, `error`, `warn`, `info`, `debug`, `trace` | `info` | the debug log of every command but the elevated helper |
+| `journal` | `period` | `30d`, `90d`, `12m`, `all` | `12m` | the period the Journal view shows |
+| `journal` | `openReport` | `true`, `false` | `true` | opening an HTML report in the browser (the Journal, the update results, `gup report` in a terminal) |
+
+The debug log's level follows this precedence:
+
+> `--log-level` > `GUP_LOG_LEVEL` > `log.level` > `info`
+
+`gup report --open` and `--no-open` win over `journal.openReport`. What each
+setting does: [journal-and-reports.md](journal-and-reports.md#settings).
+
 ## Environment variables
 
 | Variable | Effect |
@@ -153,6 +174,7 @@ reported at startup).
 | `GUP_CONFIG_DIR` | keep `config.json` in another directory |
 | `NO_COLOR` | any non-empty value: no colour at all, in the screens (monochrome) and in console output ([no-color.org](https://no-color.org)) |
 | `GUP_INSTALL_TIMEOUT` | per-install cap in seconds; wins over the file, `--timeout` wins over it |
+| `GUP_LOG_LEVEL` | the debug log's level; wins over `log.level`, `--log-level` wins over it |
 | `GUP_ASCII` | `1`: ASCII symbols and borders when `glyphs` is `auto` |
 
 ## When something is wrong

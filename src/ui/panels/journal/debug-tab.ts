@@ -3,7 +3,7 @@ import { levelLabel, logRecordLine, printable, recordTime } from "../../log-line
 import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS } from "../../text/journal/journal-labels.js";
 import { LOG_SOURCE_LABELS, thresholdLabel } from "../../text/journal/log-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
-import { fit, seg, type Line } from "../../tui/styled-lines.js";
+import { fit, seg, wrap, type Line } from "../../tui/styled-lines.js";
 import { placeholder } from "../panel.js";
 import { BrowsableList } from "./browsable-list.js";
 import { detailView, fieldLines, indentedLines, type DetailField } from "./detail-lines.js";
@@ -21,8 +21,9 @@ import {
 /**
  * Tab 4, Debug: the newest records of the debug log, newest first, one line
  * each. `l` steps the level shown (never the level written: that is
- * `--log-level` / `GUP_LOG_LEVEL`, shown in the header), `/` filters, Entrée
- * shows a record's context and data, `x` writes the diagnostic archive.
+ * `--log-level`, `GUP_LOG_LEVEL` or Options › Journal de debug, shown in the
+ * header), `/` filters, Entrée shows a record's context and data, `x` writes
+ * the diagnostic archive.
  */
 
 type LevelFilter = keyof typeof DEBUG_LABELS.levels;
@@ -115,7 +116,7 @@ export class DebugTab implements JournalTab {
       DEBUG_LABELS.count(this.#list.visible.length),
     ];
     const summary: Line = [seg(fit(parts.join(" · "), width).trimEnd(), "muted")];
-    return [summary, ...offNotice(log), ...filterLine(this.#list)];
+    return [summary, ...offNotice(log, width), ...filterLine(this.#list)];
   }
 
   private emptyLines(log: JournalLog): Line[] {
@@ -124,10 +125,14 @@ export class DebugTab implements JournalTab {
   }
 }
 
-/** Said above the list while this run writes no log (older records may still show). */
-function offNotice(log: JournalLog): Line[] {
+/**
+ * Said above the list while this run writes no log (older records may still
+ * show). The hint wraps: an 80-column terminal leaves the panel 50.
+ */
+function offNotice(log: JournalLog, width: number): Line[] {
   if (log.threshold !== "off") return [];
-  return [[seg(DEBUG_LABELS.off, "warning")], [seg(DEBUG_LABELS.offHint, "muted")]];
+  const hint = wrap(DEBUG_LABELS.offHint[log.source], width);
+  return [[seg(DEBUG_LABELS.off, "warning")], ...hint.map((text): Line => [seg(text, "muted")])];
 }
 
 function searchTextOf(record: LogRecord): string {

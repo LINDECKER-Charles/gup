@@ -2,15 +2,20 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { buildInsights } from "../../../../src/core/insights/build-insights.js";
-import { parsePeriod } from "../../../../src/core/time/period.js";
+import { parsePeriod, type PeriodPreset } from "../../../../src/core/time/period.js";
 import type { GlyphMode } from "../../../../src/ui/theme/glyphs.js";
-import { JournalPanel, type JournalPanelDeps } from "../../../../src/ui/panels/journal/journal-panel.js";
+import {
+  exportNotice,
+  JournalPanel,
+  type JournalPanelDeps,
+} from "../../../../src/ui/panels/journal/journal-panel.js";
 import type { JournalData, JournalSource } from "../../../../src/ui/panels/journal/journal-source.js";
 import type { Viewport } from "../../../../src/ui/panels/panel.js";
 import { EMPTY_ACTIVITY } from "../../../../src/ui/text/journal/activity-labels.js";
 import { EXPORT_LABELS, JOURNAL_LABELS } from "../../../../src/ui/text/journal/journal-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import { lineWidth, type Line } from "../../../../src/ui/tui/styled-lines.js";
+import { updateEvent } from "../../../support/history-fixtures.js";
 import { JOURNAL_NOW, journalData, scriptedSource } from "./journal-data.js";
 
 const WIDE: Viewport = { width: 90, height: 26 };
@@ -80,6 +85,36 @@ describe("JournalPanel", () => {
     expect(source.load).toHaveBeenLastCalledWith(expect.objectContaining({ key: "all" }));
     expect(journal.title).toBe("Journal · tout l'historique ↻");
     expect(text(journal.render(WIDE)).join("\n")).toContain("3 mises à jour");
+  });
+
+  it("shows the period the settings name, and follows them until p picks one", async () => {
+    const source = scriptedSource();
+    let setting: PeriodPreset = "30d";
+    const { journal } = await shown(source, { defaultPeriod: () => setting });
+    expect(journal.title).toBe("Journal · 30 derniers jours");
+
+    setting = "90d";
+    journal.onShow();
+    expect(source.load).toHaveBeenLastCalledWith(expect.objectContaining({ key: "90d" }));
+
+    journal.press(key("p"));
+    setting = "all";
+    journal.onShow();
+    expect(source.load).toHaveBeenLastCalledWith(expect.objectContaining({ key: "12m" }));
+  });
+
+  it("names the schedule an update ran for in its detail, and keeps the id of one it cannot name", async () => {
+    const events = [
+      updateEvent("winget", "Git.Git", { ts: "2026-10-02T09:00:00.000Z", scheduleId: "a1b2c3d4" }),
+      updateEvent("pip", "rich", { ts: "2026-10-01T09:00:00.000Z", scheduleId: "0badc0de" }),
+    ];
+    const scheduleName = (id: string) => (id === "a1b2c3d4" ? "Outils dev" : undefined);
+    const { journal } = await shown(scriptedSource(journalData(events)), { scheduleName });
+
+    for (const name of ["3", "return"]) journal.press(key(name));
+    expect(text(journal.render(WIDE)).join("\n")).toMatch(/Planification +Outils dev/);
+    for (const name of ["escape", "down", "return"]) journal.press(key(name));
+    expect(text(journal.render(WIDE)).join("\n")).toMatch(/Planification +0badc0de/);
   });
 
   it("leaves Ctrl combinations to the tab", async () => {
@@ -194,6 +229,16 @@ describe("JournalPanel", () => {
     const status = journal.render(WIDE).at(-1);
     expect(text([status ?? []])[0]).toBe(EXPORT_LABELS.notOpened(path));
     expect(status?.[0]?.tone).toBe("warning");
+  });
+
+  it("words the run results' report from ~, the path whole when no width bounds it", () => {
+    const folder = join("AppData", "Local", "gup", "reports");
+    const file = "gup-rapport-2026-10-04-1430.html";
+
+    const notice = exportNotice({ ok: true, path: join(homedir(), folder, file), opened: true });
+
+    expect(notice.text).toBe(EXPORT_LABELS.opened(join("~", folder, file)));
+    expect(notice.tone).toBe("success");
   });
 
   it("writes the diagnostic archive from the Debug tab with x", async () => {

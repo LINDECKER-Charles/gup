@@ -182,6 +182,7 @@ export class MenuSession {
       controller: this.#deps.controller,
       preferences,
       isScanning: () => this.#scans.isRunning,
+      resultActions: () => this.#views.resultActions(),
       takeOver: (start) => this.takeOver(start),
       exit: (exit) => this.#exit(exit),
       afterUpdate: (report, returnTo) => this.afterUpdate(report, returnTo),

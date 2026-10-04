@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { runCommandFor, type RunKeyMode } from "../../../src/ui/run/run-keys.js";
+import { runCommandFor, runHintsFor, type RunKeyMode } from "../../../src/ui/run/run-keys.js";
+import { RUN_HINTS } from "../../../src/ui/text/run-labels.js";
 
 const key = (name: string, ctrl = false) => ({ name, ctrl, sequence: name });
 
@@ -39,5 +40,14 @@ describe("runCommandFor", () => {
     for (const mode of ["running", "elevating", "waiting", "done"] as const) {
       expect(runCommandFor(key("c", true), mode)).toBe("none");
     }
+  });
+});
+
+describe("runHintsFor", () => {
+  it("ends the results' bar with the keys other views add to them, and only there", () => {
+    const context = { elevation: "uac", isEnlarged: false, resultHints: ["o rapport HTML"] } as const;
+    expect(runHintsFor("done", context)).toBe(`${RUN_HINTS.done(false)} · o rapport HTML`);
+    expect(runHintsFor("running", context)).toBe(RUN_HINTS.running(false));
+    expect(runHintsFor("done", { elevation: "uac", isEnlarged: true })).toBe(RUN_HINTS.done(true));
   });
 });

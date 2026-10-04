@@ -1,7 +1,6 @@
 import { readHistory, type HistoryRead } from "../../core/history/reader.js";
 import { isHistoryEnabled } from "../../core/history/store.js";
 import { buildInsights } from "../../core/insights/build-insights.js";
-import { effectiveLogThreshold } from "../../core/log/log.js";
 import { readLogTail } from "../../core/log/log-reader.js";
 import { stateDir } from "../../core/state/app-dirs.js";
 import type { Period } from "../../core/time/period.js";
@@ -13,15 +12,17 @@ import type {
   JournalLog,
   JournalSource,
 } from "../../ui/panels/journal/journal-source.js";
+import { settingsService } from "../../ui/settings/settings-service.js";
 import { writeDiagnostic } from "./diagnostic.js";
 import { exportHistory } from "./export-history.js";
-import { currentLogSession } from "./log-session.js";
+import { currentLogLevel } from "./log-session.js";
 
 /**
  * The journal view's source: the period's history aggregated, the debug
  * log's newest records and how this run writes it, and the exports — each
  * read independently, a failure turned into data the view shows. Never
- * rejects.
+ * rejects. A written HTML report opens in the browser when the
+ * `journal.openReport` setting says so.
  */
 
 /** Events the Événements tab lists, newest first. */
@@ -34,6 +35,8 @@ export interface JournalSourceDeps {
   readonly readLog: typeof readLogTail;
   readonly exportHistory: typeof exportHistory;
   readonly writeDiagnostic: typeof writeDiagnostic;
+  /** Whether a written HTML report opens in the browser; read at each export. */
+  readonly opensReport: () => boolean;
 }
 
 const DEFAULT_DEPS: JournalSourceDeps = {
@@ -41,6 +44,7 @@ const DEFAULT_DEPS: JournalSourceDeps = {
   readLog: readLogTail,
   exportHistory,
   writeDiagnostic,
+  opensReport: () => settingsService().get("journal").openReport,
 };
 
 const NO_STATS = { files: 0, lines: 0, malformed: 0, unsupported: 0 };
@@ -72,11 +76,7 @@ async function loadHistory(period: Period, deps: JournalSourceDeps): Promise<Jou
 }
 
 async function loadLog(period: Period, deps: JournalSourceDeps): Promise<JournalLog> {
-  const settings = currentLogSession()?.settings;
-  const writing = {
-    threshold: settings?.threshold ?? effectiveLogThreshold(),
-    source: settings?.source ?? "default",
-  } as const;
+  const writing = currentLogLevel();
   try {
     const query = { limit: MAX_DEBUG_RECORDS, since: period.since };
     const tail = await deps.readLog(query, stateDir("logs"));
@@ -98,7 +98,10 @@ async function exportTo(
   }
 }
 
-/** The file an export wrote, in the reports directory; the HTML report is opened too. */
+/**
+ * The file an export wrote, in the reports directory; the HTML report is
+ * opened too when the setting asks for it (`opened` says whether it was).
+ */
 async function exportedFile(
   format: ExportFormat,
   period: Period,
@@ -107,15 +110,15 @@ async function exportedFile(
   if (format === "diagnostic") {
     return { path: await deps.writeDiagnostic({ period, withHistory: true }) };
   }
-  const isReport = format === "html";
+  const opens = format === "html" && deps.opensReport();
   const { path, opened } = await deps.exportHistory({
     format,
     period,
     target: { kind: "file" },
-    ...(isReport && { open: true }),
+    ...(opens && { open: true }),
   });
   if (path === null) throw new TypeError("a file export returned no path");
-  return isReport ? { path, opened: opened?.opened === true } : { path };
+  return opens ? { path, opened: opened?.opened === true } : { path };
 }
 
 function reasonOf(error: unknown): string {

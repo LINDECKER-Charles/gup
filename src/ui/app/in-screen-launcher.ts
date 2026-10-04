@@ -169,9 +169,10 @@ class InScreenLauncher implements UpdateLauncher {
   private takeOver(): { readonly view: RunView; readonly releaseTakeover: () => void } {
     const { preferences } = this.#context;
     const { platform, clock } = this.#deps;
+    const actions = this.#context.resultActions();
     const started: { view?: RunView } = {};
     const releaseTakeover = this.#context.takeOver(
-      (surface) => (started.view = new RunView({ surface, preferences, platform, clock })),
+      (surface) => (started.view = new RunView({ surface, preferences, platform, clock, actions })),
     );
     if (!started.view) {
       releaseTakeover();

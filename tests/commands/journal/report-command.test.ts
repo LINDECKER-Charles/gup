@@ -116,6 +116,32 @@ describe("gup report (HTML)", () => {
     expect(output(stdout)).toContain(pathToFileURL(out).href);
   });
 
+  it("leaves the report closed when the setting says so, unless --open asks for it", async () => {
+    interactive();
+    const openExternal = opener(true);
+    const closed = { glyphs: "auto", openReport: false } as const;
+
+    expect(await runReport({ out: join(dir, "closed.html") }, { openExternal }, closed)).toBe(0);
+    expect(openExternal).not.toHaveBeenCalled();
+
+    setTerminal(false);
+    const asked = join(dir, "asked.html");
+    expect(await runReport({ out: asked, open: true }, { openExternal }, closed)).toBe(0);
+    expect(openExternal).toHaveBeenCalledWith(asked);
+  });
+
+  it("takes --open on the command line, even with nobody at a terminal", async () => {
+    setTerminal(false);
+    const out = join(dir, "open.html");
+
+    // Neither --open nor --no-open: the command line leaves the choice to the setting.
+    expect(await gup("report", "--out", join(dir, "unasked.html"))).toBe(0);
+    expect(commandOpen).not.toHaveBeenCalled();
+    expect(await gup("report", "--open", "--out", out)).toBe(0);
+
+    expect(commandOpen).toHaveBeenCalledWith(out);
+  });
+
   it("writes the HTML to standard output with --out -", async () => {
     interactive();
     const openExternal = opener(true);
@@ -165,6 +191,21 @@ describe("gup report", () => {
     expect(text).toContain("1 mise à jour · 50 % réussies · 1 paquet · 1 échec");
     expect(text).toContain("Mises à jour réussies par jour");
     expect(output(stderr)).toBe("");
+  });
+
+  it("draws its text charts with the symbols chosen in Options", async () => {
+    const preferences = (glyphs: "ascii" | "unicode") => ({ glyphs, openReport: true });
+
+    expect(await runReport({ format: "text" }, {}, preferences("ascii"))).toBe(0);
+    const ascii = output(stdout);
+    stdout.mockClear();
+    vi.stubEnv("GUP_ASCII", "1");
+    expect(await runReport({ format: "text" }, {}, preferences("unicode"))).toBe(0);
+    const unicode = output(stdout);
+
+    expect(ascii).toContain("moins . : + * # plus");
+    expect(ascii).not.toMatch(/[░▒▓█▁▂▃▄▅▆▇]/);
+    expect(unicode).toMatch(/[░▒▓█]/);
   });
 
   it("writes JSON to standard output, the period's events only", async () => {
@@ -252,7 +293,11 @@ describe("gup report", () => {
     [{ since: "2026-06-01", until: "2026-05-01" }, REPORT_MESSAGES.untilBeforeSince],
     [{ format: "csv", delimiter: "|" }, REPORT_MESSAGES.badDelimiter("|")],
   ])("refuses %j with exit 2", async (options, message) => {
-    expect(reportRequestOf(options, new Date("2026-10-03T12:00:00Z"))).toBe(message);
+    const context = {
+      now: new Date("2026-10-03T12:00:00Z"),
+      preferences: { glyphs: "auto", openReport: true },
+    } as const;
+    expect(reportRequestOf(options, context)).toBe(message);
     expect(await runReport(options)).toBe(2);
     expect(output(stderr)).toContain(message);
   });

@@ -7,7 +7,12 @@ import type {
   UpdatePorts,
 } from "../../core/update/update-ports.js";
 import type { UiPreferences } from "../app/ui-preferences.js";
-import type { Takeover, TakeoverKey, TakeoverSurface } from "../app/view-definition.js";
+import type {
+  ResultAction,
+  Takeover,
+  TakeoverKey,
+  TakeoverSurface,
+} from "../app/view-definition.js";
 import {
   elevationKindOf,
   PANE_LABELS,
@@ -53,14 +58,17 @@ export interface RunViewDeps {
   readonly preferences: () => UiPreferences;
   readonly platform?: NodeJS.Platform;
   readonly clock?: () => number;
+  /** Keys other views add to the results (`o rapport HTML`). */
+  readonly actions?: readonly ResultAction[];
 }
 
 /**
  * The run view: the full-body screen of an update running inside gup. A
  * status list (one row per package, overall progress) above one live
- * terminal pane — the package in flight — then the results, until the user
- * goes back to Paquets. It hands the pipeline its ports (observer, dialogs,
- * abort gate) and the PTY sink its panes; it never starts a process itself.
+ * terminal pane — the package in flight — then the results, with the keys
+ * other views add to them, until the user goes back to Paquets. It hands the
+ * pipeline its ports (observer, dialogs, abort gate) and the PTY sink its
+ * panes; it never starts a process itself.
  */
 export class RunView implements Takeover {
   readonly model: RunModel;
@@ -73,6 +81,9 @@ export class RunView implements Takeover {
   readonly #elevation: ElevationKind;
   readonly #layout: RunLayout;
   readonly #dialogs: RunDialogs;
+  readonly #actions: readonly ResultAction[];
+  /** A result action is running: another one waits for it. */
+  #isActing = false;
   #notice: Notice | null = null;
   #isPromptLikely = false;
   #lastSampleAt = 0;
@@ -89,6 +100,7 @@ export class RunView implements Takeover {
     this.#surface = deps.surface;
     this.#preferences = deps.preferences;
     this.#clock = deps.clock ?? Date.now;
+    this.#actions = deps.actions ?? [];
     this.#elevation = elevationKindOf(deps.platform ?? process.platform);
     this.#layout = new RunLayout(deps.surface.screen, deps.surface.body);
     this.panes = new TerminalPanes(deps.surface.screen, this.#layout.host, {
@@ -113,7 +125,8 @@ export class RunView implements Takeover {
     // while this very key is dispatched, and OpenTUI would hand it over.
     key.preventDefault();
     this.#notice = null;
-    this.run(command);
+    if (command === "none") void this.act(key);
+    else this.run(command);
   }
 
   /** The screen's Ctrl+C: skip the install in flight; twice in a row, stop the run. */
@@ -246,6 +259,23 @@ export class RunView implements Takeover {
     actions[command]?.();
   }
 
+  /**
+   * A key another view added to the results (`o rapport HTML`): one at a
+   * time, `pending` shown meanwhile, then its notice — unless the user left.
+   */
+  private async act(key: TakeoverKey): Promise<void> {
+    if (key.ctrl || this.model.phase !== "done" || this.#isActing) return;
+    const action = this.#actions.find((candidate) => candidate.key === key.name);
+    if (!action) return;
+    this.#isActing = true;
+    this.say(action.pending, "muted");
+    const notice = await action.run().catch(actionFailure);
+    this.#isActing = false;
+    if (this.#leave === null) return;
+    this.#notice = notice;
+    this.draw();
+  }
+
   private skipKey(): void {
     if (this.model.phase === "elevating") {
       return this.say(RUN_NOTICES.skipAdmin[this.#elevation], "warning");
@@ -339,11 +369,15 @@ export class RunView implements Takeover {
     return this.#scrolledTo ?? this.model.activeIndex();
   }
 
-  /** An open dialog's keys, else the run's for its mode. */
+  /** An open dialog's keys, else the run's for its mode, with the keys other views add. */
   private hints(): string {
     const { dialogs } = this.#surface;
     if (dialogs.isOpen) return dialogs.hints();
-    return runHintsFor(this.mode(), { elevation: this.#elevation, isEnlarged: this.#isEnlarged });
+    return runHintsFor(this.mode(), {
+      elevation: this.#elevation,
+      isEnlarged: this.#isEnlarged,
+      resultHints: this.#actions.map((action) => action.hint),
+    });
   }
 
   private paneTitle(): string {
@@ -367,6 +401,11 @@ export class RunView implements Takeover {
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/** A result action broke its promise not to reject: say why on the results. */
+function actionFailure(error: unknown): Notice {
+  return { text: RUN_NOTICES.actionFailed(messageOf(error)), tone: "danger" };
 }
 
 function clamp(value: number, min: number, max: number): number {

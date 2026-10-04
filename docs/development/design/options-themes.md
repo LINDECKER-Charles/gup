@@ -439,7 +439,8 @@ the test, an appearance control resolving for real).
 - **Journal settings (wave 3):** register `log`/`journal` sections in `core/config/` and Options
   rows through `optionsView({ extraSections: [...] })` (§5.4) in `menu-views.ts`; `choiceRow` and
   `controls.save` cover switches and choices, a sub-view goes through `controls.open`. The
-  settings module already prints every store issue at startup.
+  settings module already prints every store issue at startup. (Done:
+  [`journal-settings.md`](journal-settings.md) §4.)
 - **OS-compat / in-TUI updates:** "Providers incompat." writes `showIncompatibleProviders`,
   "Notification de fin" `notifyOnDone`, "Confirmer les MAJ" `confirmBeforeUpdate` and "Rescanner
   après MAJ" `rescanAfterUpdate`: read them through `ViewContext.preferences()` /

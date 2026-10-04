@@ -116,6 +116,7 @@ export const RUN_NOTICES = {
   /** `t` during the UAC step: the elevated installers run in a window of their own. */
   typeElsewhere:
     "L'étape administrateur a sa propre fenêtre : répondez-y directement, rien ne se tape ici.",
+  actionFailed: (reason: string): string => `Action impossible : ${reason}`,
 } as const;
 
 export const STOP_DIALOG = {

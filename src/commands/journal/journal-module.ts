@@ -1,6 +1,8 @@
 import chalk from "chalk";
 import type { LogThreshold } from "../../core/log/log.js";
 import { parseThreshold } from "../../core/log/types.js";
+import { settingsService } from "../../ui/settings/settings-service.js";
+import { logLevelSource, type SettingView } from "../../ui/settings/settings-sources.js";
 import {
   LOG_DIAGNOSTIC_LABELS,
   LOG_LEVEL_OPTION,
@@ -20,23 +22,41 @@ import { registerReportCommand } from "./report-command.js";
  * the crash record, and its `gup doctor` line.
  */
 
+export interface JournalModuleDeps {
+  /**
+   * The `log.level` setting. The log session asks for it only for a command
+   * that writes the log file — never in the elevated child, which must not
+   * read the user's settings.
+   */
+  readonly logLevelSetting: () => SettingView<LogThreshold>;
+}
+
+const DEFAULT_DEPS: JournalModuleDeps = {
+  logLevelSetting: () => logLevelSource(settingsService()),
+};
+
 const USAGE_EXIT_CODE = 2;
 
-export const journalModule: CliModule = {
-  id: "journal",
-  order: MODULE_ORDER.logging,
-  runsInElevatedChild: true,
-  register(program) {
-    program.option("--log-level <niveau>", LOG_LEVEL_OPTION);
-    registerLogCommand(program);
-    registerReportCommand(program);
-  },
-  beforeAction(context) {
-    startLogSession(context, logLevelFlag(context.options["logLevel"]));
-  },
-  diagnostics: async () => [logDiagnostic(currentLogSession())],
-  onCrash: logCrash,
-};
+export function createJournalModule(deps: JournalModuleDeps = DEFAULT_DEPS): CliModule {
+  return {
+    id: "journal",
+    order: MODULE_ORDER.logging,
+    runsInElevatedChild: true,
+    register(program) {
+      program.option("--log-level <niveau>", LOG_LEVEL_OPTION);
+      registerLogCommand(program);
+      registerReportCommand(program);
+    },
+    beforeAction(context) {
+      const flag = logLevelFlag(context.options["logLevel"]);
+      startLogSession(context, { flag, setting: deps.logLevelSetting });
+    },
+    diagnostics: async () => [logDiagnostic(currentLogSession())],
+    onCrash: logCrash,
+  };
+}
+
+export const journalModule = createJournalModule();
 
 /** `--log-level`, validated: anything but a level ends the run (exit 2) before it starts. */
 function logLevelFlag(raw: unknown): LogThreshold | undefined {

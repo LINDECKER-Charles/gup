@@ -1,3 +1,4 @@
+import { JOURNAL_SECTION } from "../../../core/config/journal-section.js";
 import { buildInsights } from "../../../core/insights/build-insights.js";
 import { withHomeShortened } from "../../../core/log/redact.js";
 import {
@@ -7,6 +8,7 @@ import {
   type Period,
   type PeriodPreset,
 } from "../../../core/time/period.js";
+import type { ResultNotice } from "../../app/view-definition.js";
 import { chartGlyphs } from "../../charts/chart-glyphs.js";
 import type { GlyphMode } from "../../theme/glyphs.js";
 import { periodLabel } from "../../text/journal/activity-labels.js";
@@ -32,10 +34,11 @@ import { RecurrenceTab } from "./recurrence-tab.js";
 /**
  * The Journal view: four tabs over one load of the period — Activité,
  * Récurrence, Événements, Debug — switched with 1-4 or [ ]. `p` steps the
- * period, `r` reloads, `o` opens the HTML report of the period in the
- * browser, `e` exports. A load never blanks the screen: the
- * previous data stays until the new one arrives (the title shows ↻), and a
- * load overtaken by a newer one is dropped.
+ * period, `r` reloads, `o` writes the HTML report of the period (opened in
+ * the browser when the setting says so), `e` exports. The period is the
+ * `journal.period` setting until `p` picks one. A load never blanks the
+ * screen: the previous data stays until the new one arrives (the title shows
+ * ↻), and a load overtaken by a newer one is dropped.
  */
 
 export interface JournalPanelDeps {
@@ -45,10 +48,16 @@ export interface JournalPanelDeps {
   /** The glyph mode of the screen, read at every draw (it follows the appearance). */
   readonly glyphMode: () => GlyphMode;
   readonly now?: () => Date;
-  readonly initialPeriod?: PeriodPreset;
+  /**
+   * The period the view shows (the `journal.period` setting), read again at
+   * each load until `p` picks another one.
+   */
+  readonly defaultPeriod?: () => PeriodPreset;
+  /** A schedule's name from its id, for the event detail; undefined when unknown. */
+  readonly scheduleName?: (scheduleId: string) => string | undefined;
 }
 
-const DEFAULT_PERIOD: PeriodPreset = "12m";
+const DEFAULT_PERIOD = JOURNAL_SECTION.defaults.period;
 /** Rows above a tab's content: the tab bar. */
 const TAB_BAR_ROWS = 1;
 const TAB_GAP = "  ";
@@ -67,6 +76,8 @@ export class JournalPanel implements Panel {
   readonly #tabs: readonly JournalTab[];
   #tabIndex = 0;
   #period: Period;
+  /** `p` picked the period: the setting no longer decides it. */
+  #isPeriodChosen = false;
   #data: JournalData | null = null;
   #isLoading = false;
   /** Loads started: a result whose number is not the latest is stale. */
@@ -77,11 +88,11 @@ export class JournalPanel implements Panel {
   constructor(deps: JournalPanelDeps) {
     this.#deps = deps;
     this.#now = deps.now ?? (() => new Date());
-    this.#period = presetPeriod(deps.initialPeriod ?? DEFAULT_PERIOD, this.#now());
+    this.#period = presetPeriod(this.defaultPeriod(), this.#now());
     this.#tabs = [
       new ActivityTab(),
       new RecurrenceTab(),
-      new EventsTab(),
+      new EventsTab(deps.scheduleName),
       new DebugTab({ onDiagnostic: () => void this.export("diagnostic") }),
     ];
   }
@@ -156,6 +167,7 @@ export class JournalPanel implements Panel {
       "]": () => this.showTab((this.#tabIndex + 1) % count),
       p: () => {
         this.#period = nextPeriod(this.#period, this.#now());
+        this.#isPeriodChosen = true;
         this.load();
       },
       r: () => this.load(),
@@ -168,10 +180,18 @@ export class JournalPanel implements Panel {
     this.#tabIndex = index;
   }
 
-  /** Load the period afresh (it ends now); a load overtaken by a newer one is dropped. */
+  private defaultPeriod(): PeriodPreset {
+    return this.#deps.defaultPeriod?.() ?? DEFAULT_PERIOD;
+  }
+
+  /**
+   * Load the period afresh (it ends now) — the setting's, until `p` picked
+   * one; a load overtaken by a newer one is dropped.
+   */
   private load(): void {
     const ticket = ++this.#loadCount;
-    this.#period = parsePeriod(this.#period.key, this.#now()) ?? this.#period;
+    const key = this.#isPeriodChosen ? this.#period.key : this.defaultPeriod();
+    this.#period = parsePeriod(key, this.#now()) ?? this.#period;
     const period = this.#period;
     this.#isLoading = true;
     this.#deps.redraw();
@@ -219,11 +239,11 @@ export class JournalPanel implements Panel {
   private statusLines(width: number): Line[] {
     const status = this.#status;
     if (!status) return [];
-    const line =
+    const { text, tone }: ResultNotice =
       status.kind === "running"
-        ? [seg(EXPORT_LABELS.running, "muted")]
-        : outcomeLine(status.outcome, width);
-    return wrapLine(line, width);
+        ? { text: EXPORT_LABELS.running, tone: "muted" }
+        : exportNotice(status.outcome, width);
+    return wrapLine([seg(text, tone)], width);
   }
 
   private async safeExport(format: ExportFormat): Promise<ExportOutcome> {
@@ -249,16 +269,19 @@ function tabBar(current: number, width: number): Line {
 }
 
 /**
- * Where the export went: written, opened in the browser, written but not
- * opened, or why not. The path reads from `~` and fits one row of `width`,
- * cut in its middle when it must be, so the file name always shows.
+ * Where an export went — written, opened in the browser, written but not
+ * opened, or why not — as the line that says it: the Journal's status, and
+ * what the run's results say after their `o rapport HTML`. The path reads
+ * from `~`; given a `width`, it fits one row of it, cut in its middle when it
+ * must be, so the file name always shows.
  */
-function outcomeLine(outcome: ExportOutcome, width: number): Line {
-  if (!outcome.ok) return [seg(EXPORT_LABELS.failed(outcome.error), "danger")];
-  const path = middleEllipsis(withHomeShortened(outcome.path), width);
-  if (outcome.opened === true) return [seg(EXPORT_LABELS.opened(path), "success")];
-  if (outcome.opened === false) return [seg(EXPORT_LABELS.notOpened(path), "warning")];
-  return [seg(EXPORT_LABELS.written(path), "success")];
+export function exportNotice(outcome: ExportOutcome, width?: number): ResultNotice {
+  if (!outcome.ok) return { text: EXPORT_LABELS.failed(outcome.error), tone: "danger" };
+  const home = withHomeShortened(outcome.path);
+  const path = width === undefined ? home : middleEllipsis(home, width);
+  if (outcome.opened === true) return { text: EXPORT_LABELS.opened(path), tone: "success" };
+  if (outcome.opened === false) return { text: EXPORT_LABELS.notOpened(path), tone: "warning" };
+  return { text: EXPORT_LABELS.written(path), tone: "success" };
 }
 
 function unreadableData(period: Period, error: string): JournalData {

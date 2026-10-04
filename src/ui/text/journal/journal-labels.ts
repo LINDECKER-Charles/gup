@@ -1,6 +1,7 @@
 import type { RunTrigger } from "../../../core/state/run-context.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import { counted } from "./activity-labels.js";
+import type { LOG_SOURCE_LABELS } from "./log-labels.js";
 
 /**
  * The journal view's words (French, the language of the interface): tabs,
@@ -29,6 +30,8 @@ export const JOURNAL_HINTS = {
   debug: "↑↓ naviguer · l niveau · / filtrer · entrée détails · x diagnostic",
   detail: "↑↓ défiler · échap retour",
   typing: "tapez pour filtrer · entrée valider · échap effacer",
+  /** On the results of an update run in the screen. */
+  report: "o rapport HTML",
 } as const;
 
 export const RECURRENCE_LABELS = {
@@ -94,7 +97,13 @@ export const DEBUG_LABELS = {
   writing: (threshold: string, source: string) => `écriture : ${threshold} (${source})`,
   count: (count: number) => counted(count, "ligne", "lignes"),
   off: "Journal de debug désactivé (niveau « off »).",
-  offHint: "Activez-le avec --log-level debug ou GUP_LOG_LEVEL=debug.",
+  /** How to turn it back on, by what turned it off. */
+  offHint: {
+    flag: "--log-level off ne vaut que pour cette exécution.",
+    env: "GUP_LOG_LEVEL=off l'impose : retirez-la ou choisissez un niveau (GUP_LOG_LEVEL=debug).",
+    setting: "Activez-le dans Options › Journal de debug.",
+    default: "Activez-le dans Options › Journal de debug.",
+  } satisfies Readonly<Record<keyof typeof LOG_SOURCE_LABELS, string>>,
   empty: "Aucune ligne de journal sur cette période.",
   noMatch: "Aucune ligne ne correspond.",
   unreadable: (reason: string) => `Journal de debug illisible : ${reason}`,
@@ -116,7 +125,7 @@ export const EXPORT_LABELS = {
   title: "Exporter le journal",
   period: (label: string) => `Période : ${label}`,
   footer: "Un fichier autonome, lisible hors ligne. Rien n'est envoyé.",
-  html: "Rapport HTML (s'ouvre dans le navigateur)",
+  html: "Rapport HTML (page à lire dans le navigateur)",
   json: "Données JSON (tous les événements)",
   csv: "Tableur CSV (mises à jour)",
   diagnostic: "Archive de diagnostic .zip (pour un rapport de bug)",

@@ -61,10 +61,14 @@ import { NOTIFY_MIN_RUN_MS } from "../../../src/ui/run/run-view.js";
 import { RETAINED_RECENT_PANES } from "../../../src/ui/run/terminal-panes.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
+import type { ViewDefinition } from "../../../src/ui/app/view-definition.js";
+import { EXPORT_LABELS, JOURNAL_HINTS } from "../../../src/ui/text/journal/journal-labels.js";
+import { journalView } from "../../../src/ui/views/journal-view.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { installerProvider } from "../../support/pty/fake-installer.js";
 import { fakePty, type FakePty } from "../../support/pty/fake-pty.js";
-import { bootMenu, type MenuDriver } from "../../support/tui/menu-driver.js";
+import { bootMenu, defaultViews, type MenuDriver } from "../../support/tui/menu-driver.js";
+import { journalData, scriptedSource } from "../panels/journal/journal-data.js";
 
 const TRAMPOLINE = { script: "pty-exec.js", execArgv: [] };
 const PACKAGES = [pkg("alpha"), pkg("beta"), pkg("gamma")];
@@ -83,6 +87,7 @@ interface RunMenuOptions {
   readonly retryable?: readonly string[];
   readonly clock?: () => number;
   readonly createAppearance?: AppearanceFactory;
+  readonly views?: readonly ViewDefinition[];
 }
 
 interface RunMenu {
@@ -127,6 +132,7 @@ async function launched(options: RunMenuOptions = {}): Promise<RunMenu> {
     }),
     ...(options.preferences && { preferences: options.preferences }),
     ...(options.createAppearance && { createAppearance: options.createAppearance }),
+    ...(options.views && { views: options.views }),
   });
   await shown(menu, (options.packages ?? PACKAGES)[0]!.id);
   await menu.press("a", "enter");
@@ -210,6 +216,24 @@ describe("run view", () => {
     expect(back).toContain("beta");
     expect(back).not.toContain("alpha");
     expect(back).not.toContain("gamma");
+  });
+
+  it("offers the journal's HTML report on the results only, and says where it went", async () => {
+    const report = "C:\\r\\rapport.html";
+    const source = scriptedSource(journalData(), { ok: true, path: report, opened: true });
+    const views = [...defaultViews(), journalView(source)];
+    const { menu, pty } = await launched({ packages: [pkg("alpha")], views });
+    await installsStarted(pty, 1);
+    await menu.press("o");
+    expect(source.export).not.toHaveBeenCalled();
+
+    pty.last().emitExit({ exitCode: 0 });
+    expect(await shown(menu, RUN_TITLES.done)).toContain(JOURNAL_HINTS.report);
+    await menu.press("o");
+
+    await shown(menu, EXPORT_LABELS.opened(report));
+    expect(source.export).toHaveBeenCalledTimes(1);
+    expect(source.export).toHaveBeenCalledWith("html", expect.objectContaining({ key: "12m" }));
   });
 
   it("s skips the install in flight and goes on with the next package", async () => {
