@@ -23,9 +23,10 @@ on:
     paths:
       - "index/**"
       - ".github/workflows/pages.yml"
-      # The site derives the version, the Node floor and the provider count
-      # from these (index/scripts/sync-facts.mjs).
+      # The site derives the version, the Node floor, the provider count and
+      # the install command from these (index/scripts/sync-facts.mjs).
       - "package.json"
+      - "README.md"
       - "src/core/registry.ts"
       - "src/providers/**"
       # The terminal demo mirrors the interface.
@@ -36,6 +37,7 @@ on:
       - "index/**"
       - ".github/workflows/pages.yml"
       - "package.json"
+      - "README.md"
       - "src/core/registry.ts"
       - "src/providers/**"
       - "src/ui/**"

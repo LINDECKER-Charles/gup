@@ -13,3 +13,8 @@
   for its box now wraps between its words instead of scrolling the flag out of sight, and
   `verify` checks the command is shown whole, inside its card, at 1440, 820 and 390 px in every
   locale (`fix(landing): show the install command with --allow-scripts=node-pty`)
+
+## CI
+
+- **pages:** the landing workflow also runs when `README.md` changes: the site reads its install
+  command from there now (`ci(pages): run the landing checks when the README changes`)
