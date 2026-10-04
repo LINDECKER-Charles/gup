@@ -1,5 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,6 +23,9 @@ import { SinkLogBackend } from "../../src/core/log/log-backend.js";
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../src/core/runner.js";
 import { restorePlatform, setPlatform } from "../support/platform.js";
+import { useTempDirs } from "../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
@@ -46,7 +48,7 @@ afterEach(() => {
  * "Insecure creation of file in the os temp dir".
  */
 async function mkInputFile(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "gup-admin-batch-test-"));
+  const dir = await tempDir("gup-admin-batch-test-");
   return join(dir, "input.json");
 }
 

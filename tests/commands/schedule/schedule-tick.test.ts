@@ -127,6 +127,7 @@ describe("runTick", () => {
       }),
     });
     expect(await runTick(crashing.runtime)).toBe(1);
+    await fixture.cleanup();
     const nowhere = await probe({ services: () => ({ error: "nowhere" }) });
     expect(await runTick(nowhere.runtime)).toBe(1);
   });
