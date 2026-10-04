@@ -82,6 +82,15 @@ jobs:
         env:
           GUP_MUTATE: "1"
 
+      # The screenshots in docs/ are rendered from the real TUI on fixture
+      # data (scripts/screenshots): a UI change committed without
+      # `npm run screenshots` fails here instead of leaving the docs lying.
+      # They are the same bytes on every OS by design, so one leg checks them;
+      # the Typecheck step already covers scripts/.
+      - name: Screenshots up to date
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run screenshots:check
+
       - name: Keep the coverage report
         if: always() && matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v7
