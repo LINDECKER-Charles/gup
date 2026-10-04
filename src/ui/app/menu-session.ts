@@ -336,7 +336,7 @@ export class MenuSession {
     this.drawSidebar();
     const { detectedCount } = this.#deps.state;
     this.#chrome.setFacts([providerCountFact(detectedCount), ...this.#views.facts()]);
-    this.#chrome.setHints(this.hints());
+    this.#chrome.setHints(...this.hints());
   }
 
   private drawSidebar(): void {
@@ -345,11 +345,12 @@ export class MenuSession {
     this.#sidebar.show(this.#nav.render(density, width));
   }
 
-  private hints(): string {
+  /** The focused side's key hints, then the global keys the bar must never cut. */
+  private hints(): [hints: string, pinned: string] {
     const panel = this.#views.panel;
-    if (this.#dialogs.isOpen) return "";
-    if (this.#nav.isSidebarFocused || !panel) return SIDEBAR_HINTS;
-    return `${panel.hints()} · ${PANEL_HINTS_TAIL}`;
+    if (this.#dialogs.isOpen) return ["", ""];
+    if (this.#nav.isSidebarFocused || !panel) return [SIDEBAR_HINTS, ""];
+    return [panel.hints(), PANEL_HINTS_TAIL];
   }
 }
 

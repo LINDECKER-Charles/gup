@@ -355,6 +355,18 @@ describe("MenuSession package contributions", () => {
     expect(run).toHaveBeenCalledWith([{ providerId: "winget", pkg: SCHEDULED.packages[0] }]);
   });
 
+  it("keeps the global keys on a hint bar too narrow for every view's keys", async () => {
+    const menu = await bootMenu({
+      scans: [SCHEDULED],
+      views: withContributions(vi.fn()),
+      size: { cols: 80, rows: 24 },
+    });
+    await menu.waitForText("Git.Git");
+    await menu.press("down", "space");
+    const hintBar = (await menu.frame()).trimEnd().split("\n").at(-1) ?? "";
+    expect(hintBar).toMatch(/ · … · tab menu · q quitter$/);
+  });
+
   it("re-sorts Paquets as soon as the preferred order changes", async () => {
     const menu = await bootMenu({ scans: [SCHEDULED] });
     const before = await menu.waitForText("Git.Git");

@@ -44,7 +44,7 @@ function mountPicker(
   const viewport = () => bodyPanelSize(screen);
   const draw = (): void => {
     view.show(packages.render(viewport()));
-    chrome.setHints(`${packages.hints()} · ${PICKER_LABELS.cancelHint}`);
+    chrome.setHints(packages.hints(), PICKER_LABELS.cancelHint);
   };
   screen.renderer.keyInput.on("keypress", (key: KeyEvent) => {
     if (!packages.isCapturingText && key.name === "q") return resolve([]);

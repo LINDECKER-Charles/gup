@@ -165,7 +165,9 @@ heavy focused one, dialogs double. A theme engine provides its own `AppearanceFa
 
 `Screen` = `{ renderer, tui, appearance, interceptCtrlC(handler) }`. `TextPanel` takes its
 border, title colour and padding from the appearance (`panelFrame(density)` replaces
-`PANEL_FRAME`) and gains `height` / `setHeight()`.
+`PANEL_FRAME`) and gains `height` / `setHeight()`. The chrome's `setHints(hints, pinned?)`
+fits the hint bar to the terminal: too long, it drops the screen's last hints whole (marked
+`…`) and keeps `pinned` — the menu's `tab menu · q quitter`, the picker's `q annuler` — intact.
 
 Glyphs: `STATUS_GLYPHS` (success `✔`, failed `✖`, skipped `↷`, cancelled `⊘`, pending `·`,
 running `◐◓◑◒`, scan `⟳`, scheduled `◷`, incompatible `–`, enabled `●`, disabled `○`),

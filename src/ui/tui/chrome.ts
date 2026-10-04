@@ -7,6 +7,31 @@ import { panelFrame } from "./text-panel.js";
 /** Rows the chrome itself takes: the title bar and the key-hint bar. */
 export const CHROME_ROWS = 2;
 
+/** Between two key hints. */
+const HINT_SEPARATOR = " · ";
+/** Stands for the hints cut off the end. */
+const CUT_MARK = "…";
+/** The hint bar's leading blank. */
+const HINT_INDENT = 1;
+
+/**
+ * The key hints that fit `width` columns: `hints` cut between two of its
+ * items, the cut marked "…", never inside a word; `pinned` (the keys every
+ * screen shares, "tab menu · q quitter") always whole, at the end. Hints come
+ * most important first, so the cut drops the last ones.
+ */
+export function fitHints(hints: string, pinned: string, width: number): string {
+  const tail = pinned === "" ? [] : [pinned];
+  const items = hints === "" ? [] : hints.split(HINT_SEPARATOR);
+  const full = [...items, ...tail].join(HINT_SEPARATOR);
+  if (full.length <= width) return full;
+  for (let kept = items.length - 1; kept > 0; kept--) {
+    const line = [...items.slice(0, kept), CUT_MARK, ...tail].join(HINT_SEPARATOR);
+    if (line.length <= width) return line;
+  }
+  return [CUT_MARK, ...tail].join(HINT_SEPARATOR);
+}
+
 /** Room inside a lone panel that fills the whole body (the one-shot screens). */
 export function bodyPanelSize(screen: Pick<Screen, "renderer" | "appearance">): {
   readonly width: number;
@@ -30,6 +55,7 @@ export class Chrome {
   readonly #root: BoxRenderable;
   #facts: readonly string[] = [];
   #hints = "";
+  #pinnedHints = "";
 
   constructor(screen: Screen) {
     const { renderer, tui } = screen;
@@ -64,8 +90,10 @@ export class Chrome {
     this.draw();
   }
 
-  setHints(hints: string): void {
+  /** The screen's key hints, then `pinned`, kept whole when the bar is too narrow for all. */
+  setHints(hints: string, pinned = ""): void {
     this.#hints = hints;
+    this.#pinnedHints = pinned;
     this.draw();
   }
 
@@ -79,6 +107,7 @@ export class Chrome {
     ];
     const width = renderer.terminalWidth;
     this.#top.content = toStyledText(this.#screen, [fillLine(title, width, "accent")]);
-    this.#status.content = toStyledText(this.#screen, [[seg(` ${this.#hints}`, "muted")]]);
+    const hints = fitHints(this.#hints, this.#pinnedHints, width - HINT_INDENT);
+    this.#status.content = toStyledText(this.#screen, [[seg(` ${hints}`, "muted")]]);
   }
 }
