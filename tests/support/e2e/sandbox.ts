@@ -67,8 +67,13 @@ export async function createSandbox(label: string): Promise<Sandbox> {
   };
 }
 
-function inheritedEnv(): Record<string, string> {
-  const kept = Object.entries(process.env).filter(
+/**
+ * What a process started in a sandbox keeps of `env`: everything but gup's
+ * variables and npm's lifecycle ones. Also the environment the harness
+ * detects the embedded terminal in, so it finds what the CLI under test finds.
+ */
+export function inheritedEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  const kept = Object.entries(env).filter(
     (entry): entry is [string, string] => entry[1] !== undefined && !NOT_INHERITED.test(entry[0]),
   );
   return Object.fromEntries(kept);

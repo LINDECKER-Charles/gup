@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DOCTOR_PROVIDER_LABELS } from "../../../src/ui/text/providers-labels.js";
 import { parseDoctor } from "../e2e/doctor.js";
+import { inheritedEnv } from "../e2e/sandbox.js";
 import { assertScanResults } from "../e2e/scan-schema.js";
 import { e2eScope, isE2eEnabled, isMutateEnabled } from "../e2e/scope.js";
 import {
@@ -120,6 +121,22 @@ describe("renderSummary", () => {
       "|---|---|---|",
       "| full/list | PASS 1/1 · a \\| b | 12.1 s |",
     ]);
+  });
+});
+
+describe("inheritedEnv", () => {
+  it("keeps the shell's environment but gup's variables and the outer npm run's", () => {
+    const shell = {
+      PATH: "/usr/bin",
+      HOME: "/home/u",
+      GUP_PTY: "0",
+      gup_history_dir: "/home/u/history",
+      npm_config_prefix: "/usr/local",
+      NPM_CONFIG_CACHE: "/home/u/.npm",
+      npm_lifecycle_event: "test:e2e",
+      UNSET: undefined,
+    };
+    expect(inheritedEnv(shell)).toEqual({ PATH: "/usr/bin", HOME: "/home/u" });
   });
 });
 

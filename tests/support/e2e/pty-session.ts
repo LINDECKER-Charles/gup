@@ -8,7 +8,7 @@ import {
 } from "../../../src/core/pty/pty-loader.js";
 import { PtySession as PtyProcess } from "../../../src/core/pty/pty-session.js";
 import { CLI_ENTRY, TRAMPOLINE_ENTRY } from "./cli.js";
-import type { Sandbox } from "./sandbox.js";
+import { inheritedEnv, type Sandbox } from "./sandbox.js";
 
 /**
  * The built CLI in a real pseudo-terminal (ConPTY on Windows), read the way a
@@ -50,9 +50,17 @@ export interface ScreenSnapshot {
   readonly text: string;
 }
 
-/** The embedded terminal as the built CLI finds it: node-pty, and `dist/pty-exec.js`. */
+/**
+ * The embedded terminal as the built CLI finds it in a sandbox: node-pty,
+ * `dist/pty-exec.js`, and none of the shell's `GUP_*` switches — a `GUP_PTY=0`
+ * there never reaches a sandboxed gup, so it must not turn the global setup's
+ * report or the suites' skips off either.
+ */
 export function detectTerminal(): Promise<EmbeddedTerminalSupport> {
-  return detectEmbeddedTerminal({ locate: () => ({ script: TRAMPOLINE_ENTRY, execArgv: [] }) });
+  return detectEmbeddedTerminal({
+    env: inheritedEnv(),
+    locate: () => ({ script: TRAMPOLINE_ENTRY, execArgv: [] }),
+  });
 }
 
 /** `gup` — the interactive menu — in a 100×30 terminal. */
