@@ -1,4 +1,4 @@
-import { readFileSync, renameSync, statSync } from "node:fs";
+import { closeSync, constants, fstatSync, openSync, readFileSync, renameSync } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 import { isJsonObject, isSafeKey } from "./field-reader.js";
 import type { JsonValue } from "./section.js";
@@ -16,6 +16,12 @@ export const MAX_CONFIG_BYTES = 256 * 1024;
 
 const BYTE_ORDER_MARK = "﻿";
 const JSON_INDENT = 2;
+/**
+ * Read-only, and non-blocking where the OS has the flag: a FIFO planted at the
+ * path is then classified as "not a file" instead of hanging the open until a
+ * writer shows up. Windows has neither the flag nor FIFOs.
+ */
+const READ_FLAGS = constants.O_RDONLY | (constants.O_NONBLOCK ?? 0);
 
 export interface ConfigDocument {
   readonly version: number;
@@ -40,20 +46,29 @@ export function readConfigFile(
   file: string,
   maxBytes: number = MAX_CONFIG_BYTES,
 ): ConfigFileRead {
-  let text: string;
   try {
-    const stats = statSync(file);
-    if (!stats.isFile()) return { kind: "corrupt", reason: "pas un fichier" };
-    if (stats.size > maxBytes) {
-      return { kind: "corrupt", reason: "fichier trop volumineux" };
+    const fd = openSync(file, READ_FLAGS);
+    try {
+      return readOpenFile(fd, maxBytes);
+    } finally {
+      closeSync(fd);
     }
-    text = readFileSync(file, "utf8");
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code === "ENOENT") return { kind: "missing" };
     return { kind: "unreadable", reason: err instanceof Error ? err.message : String(code) };
   }
-  return parseDocument(text);
+}
+
+/**
+ * The checks and the read go through one handle, so they see the same file:
+ * the path cannot be swapped (for a symlink, a bigger file) between them.
+ */
+function readOpenFile(fd: number, maxBytes: number): ConfigFileRead {
+  const stats = fstatSync(fd);
+  if (!stats.isFile()) return { kind: "corrupt", reason: "pas un fichier" };
+  if (stats.size > maxBytes) return { kind: "corrupt", reason: "fichier trop volumineux" };
+  return parseDocument(readFileSync(fd, "utf8"));
 }
 
 function parseDocument(text: string): ConfigFileRead {

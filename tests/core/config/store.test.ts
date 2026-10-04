@@ -1,4 +1,4 @@
-import { readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NODE_FILE_OPS } from "../../../src/core/config/atomic-write.js";
@@ -193,6 +193,14 @@ describe("ConfigStore: damaged and foreign files", () => {
   it("treats an oversized file as corrupt", async () => {
     await seed(" ".repeat(MAX_CONFIG_BYTES + 1));
     expect(new ConfigStore({ file }).status().state).toBe("recovered");
+  });
+
+  it("treats a directory at the file's path as corrupt, not as unreadable", async () => {
+    await mkdir(file, { recursive: true });
+    const store = new ConfigStore({ file });
+    expect(store.read(PREFS)).toEqual(PREFS.defaults);
+    expect(store.status()).toMatchObject({ state: "recovered" });
+    expect(store.status().issues).toEqual([expect.stringContaining("pas un fichier")]);
   });
 
   it("never writes over a file a newer gup owns", async () => {
