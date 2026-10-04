@@ -41,6 +41,21 @@ describe("Paquets", () => {
     expect(titleBar).not.toContain(updateCountFact(0));
   });
 
+  // npm's registry answering 503: no package, one error. Not "à jour".
+  it("shows the failed scan and never claims `à jour` when a provider could not scan", async () => {
+    const failed: ProviderScanResult = {
+      providerId: "npm-g",
+      available: true,
+      packages: [],
+      error: "npm outdated a échoué (E503)",
+    };
+    const menu = await bootMenu({ scans: [failed], size: SIZE });
+    const frame = await menu.waitForText("npm outdated a échoué (E503)");
+    const [titleBar = ""] = frame.split("\n");
+    expect(titleBar).toContain("1 scan(s) en échec");
+    expect(titleBar).not.toContain(updateCountFact(0));
+  });
+
   it("updates nothing on Entrée with nothing checked, and says how to check", async () => {
     const menu = await scanned();
     await menu.press("down", "enter");

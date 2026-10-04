@@ -52,7 +52,9 @@ export function renderScanTable(results: ProviderScanResult[]): string {
     if (!result.error) total += result.packages.length;
   }
 
-  if (total === 0) {
+  // A provider that could not scan is not up to date: its error row shows.
+  const hasErrors = sorted.some((result) => result.error);
+  if (total === 0 && !hasErrors) {
     return chalk.green("  à jour — aucune mise à jour disponible");
   }
   const footer = chalk.bold(`${total} mise(s) à jour disponible(s)`);

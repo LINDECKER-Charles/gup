@@ -44,8 +44,10 @@ export function providerCountFact(count: number): string {
   return `${count} provider(s)`;
 }
 
-export function updateCountFact(count: number): string {
-  return count === 0 ? "à jour" : `${count} mise(s) à jour`;
+/** "à jour" only when every provider scanned: one that failed may hide updates. */
+export function updateCountFact(count: number, failedScans = 0): string {
+  if (count > 0) return `${count} mise(s) à jour`;
+  return failedScans > 0 ? `${failedScans} scan(s) en échec` : "à jour";
 }
 
 export function scanModeFact(isFast: boolean, filteredProviders: number): string {

@@ -28,6 +28,35 @@ describe("NpmGlobalProvider.listOutdated", () => {
       { id: "pkg-ok", name: "pkg-ok", current: "1.0.0", latest: "2.0.0" },
     ]);
   });
+
+  // What npm 11 prints when its registry answers 503, or cannot be reached:
+  // read as "nothing outdated" before, so the scan said `à jour`.
+  it.each([
+    [
+      { code: "E503", summary: "503 Service Unavailable - GET https://registry.npmjs.org/typescript", detail: "" },
+      "npm outdated a échoué (E503) : 503 Service Unavailable - GET https://registry.npmjs.org/typescript",
+    ],
+    [
+      {
+        code: "ECONNREFUSED",
+        summary: "FetchError: request to https://registry.npmjs.org/typescript failed",
+        detail: "If you are behind a proxy, please make sure that the 'proxy' config is set properly.",
+      },
+      "npm outdated a échoué (ECONNREFUSED) : FetchError: request to https://registry.npmjs.org/typescript failed",
+    ],
+    [{ summary: "network\n  timeout" }, "npm outdated a échoué : network timeout"],
+  ])("reports npm's own error report as a scan error (%o)", async (error, message) => {
+    await system.load(npmMachine(JSON.stringify({ error }, null, 2)));
+    await expect(new NpmGlobalProvider().listOutdated()).rejects.toThrow(message);
+  });
+
+  it("still reads a global package that happens to be named `error`", async () => {
+    const report = { error: { current: "7.0.0", wanted: "7.0.0", latest: "10.4.0", location: "" } };
+    await system.load(npmMachine(JSON.stringify(report)));
+    await expect(new NpmGlobalProvider().listOutdated()).resolves.toEqual([
+      { id: "error", name: "error", current: "7.0.0", latest: "10.4.0" },
+    ]);
+  });
 });
 
 /**

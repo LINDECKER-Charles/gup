@@ -123,6 +123,14 @@ go through the same `runInherit`, inside a trampoline (§7).
 An uncaught exception is caught anyway — by `scanAll` for a scan, by `applyUpdate` for an update —
 but the contract is: if you can't, return empty or failed with a clear message.
 
+One deliberate exception: when the tool **itself reports** that its scan failed — npm's
+`{"error": {"code": "E503", …}}` report, a pnpm `ERR_PNPM_…` code with no report — `listOutdated`
+throws an `Error` that names it (`npm outdated a échoué (E503) : …`). `scanAll` turns it into the
+provider's scan error, shown as such in Scan, Paquets (whose title bar then counts failed scans
+instead of saying `à jour`) and `gup list` / `gup update`, where returning `[]` would have read as
+"nothing outdated". Output the parser cannot make sense of — empty, garbage, an exit code alone —
+still means "nothing to report": the contract tests' fault sweep holds every provider to it.
+
 ---
 
 ## 4. Full command lifecycle

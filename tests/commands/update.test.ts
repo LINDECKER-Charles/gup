@@ -207,6 +207,18 @@ describe("updateCommand: scan + interactive selection", () => {
     expect(promptPackageSelectionMock).not.toHaveBeenCalled();
   });
 
+  it("shows the scan errors instead of 'à jour' when a provider could not scan", async () => {
+    const results = [
+      { providerId: "npm-g", available: true, packages: [], error: "npm outdated a échoué (E503)" },
+    ];
+    scanWithProgressMock.mockResolvedValueOnce({ results, detectedCount: 1 });
+    const code = await updateCommand({});
+    expect(code).toBe(0);
+    const out = stdoutSpy.mock.calls.map((c) => String(c[0])).join("");
+    expect(out).toContain("scan error: npm outdated a échoué (E503)");
+    expect(out).not.toMatch(/à jour —/);
+  });
+
   it("returns 0 with 'Aucune sélection' when interactive prompt yields []", async () => {
     scanWithProgressMock.mockResolvedValueOnce({
       results: [

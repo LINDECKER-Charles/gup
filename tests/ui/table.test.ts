@@ -79,9 +79,23 @@ describe("renderScanTable", () => {
   });
 
   it("says everything is up to date instead of an empty table", () => {
-    expect(renderScanTable([scan("pip"), scan("az", [], { error: "boom" })])).toBe(
+    expect(renderScanTable([scan("pip"), scan("az")])).toBe(
       "  à jour — aucune mise à jour disponible",
     );
+  });
+
+  // A registry answering 503 left npm's scan empty: "à jour" was a lie.
+  it("shows the scan errors, never `à jour`, when nothing else is outdated", () => {
+    const out = renderScanTable([scan("pip"), scan("npm-g", [], { error: "npm outdated a échoué" })]);
+    expect(out).not.toContain("à jour —");
+    expect(rowsOf(out)).toContainEqual([
+      getProvider("npm-g")!.displayName,
+      "scan error: npm outdated a échoué",
+      "",
+      "",
+      "",
+    ]);
+    expect(out.split("\n").at(-1)?.trim()).toBe("0 mise(s) à jour disponible(s)");
   });
 });
 

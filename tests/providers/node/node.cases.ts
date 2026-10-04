@@ -58,12 +58,12 @@ const NPM: ProviderContractCase = {
 
 const PNPM_OUTDATED_ARGV = ["pnpm", "outdated", "--global", "--format", "json"];
 
-/** pnpm printing `report` for `pnpm outdated --global --format json`. */
-export function pnpmMachine(report: string): SystemSpec {
+/** pnpm printing `report` (and `stderr`) for `pnpm outdated --global --format json`. */
+export function pnpmMachine(report: string, stderr = ""): SystemSpec {
   return {
     platform: "darwin",
     bin: { pnpm: "/Users/u/Library/pnpm/pnpm" },
-    commands: [{ argv: PNPM_OUTDATED_ARGV, stdout: report, exitCode: 1 }],
+    commands: [{ argv: PNPM_OUTDATED_ARGV, stdout: report, stderr, exitCode: 1 }],
   };
 }
 

@@ -12,6 +12,7 @@ import { exitCodeOf, type UpdateReport } from "../core/update/update-report.js";
 import { confirm } from "../ui/prompts/confirm.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection } from "../ui/select.js";
+import { renderScanTable } from "../ui/table.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { consolePorts, printReport } from "../ui/update-console.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
@@ -46,7 +47,8 @@ export async function updateCommand(options: UpdateOptions): Promise<number> {
   );
 
   if (allPackages.length === 0) {
-    process.stdout.write(`${chalk.green("à jour — aucune mise à jour disponible")}\n`);
+    // "à jour" — or the errors of the providers that could not scan.
+    process.stdout.write(`${renderScanTable(scans)}\n`);
     return 0;
   }
 
