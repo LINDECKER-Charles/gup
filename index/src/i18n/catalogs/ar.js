@@ -48,8 +48,8 @@ export default {
     ogDescription: countingSources(
       (sources) =>
         "برنامج واحد يفحص بالتوازي winget وscoop وHomebrew وMacPorts وnpm وpip وcargo وhelm " +
-        `وkubectl وVS Code وJetBrains — {providers} ${sources} — ويحدّث ما تختاره دون أن ` +
-        "تغادر واجهته.",
+        `وkubectl وVS Code وJetBrains — {providers} ${sources} — ويحدّث ما تختاره في طرفية ` +
+        "مدمجة في واجهته.",
     ),
     ogImageAlt: countingSources(
       (sources) =>
@@ -93,7 +93,7 @@ export default {
     },
     lead:
       "توقّف عن ملاحقة **winget** و**brew** و**npm** وpip وcargo وhelm. يفحصها gup كلها " +
-      "بالتوازي، ويعرض ما صار قديمًا، ويحدّث ما تختاره — دون أن تغادر واجهته أبدًا.",
+      "بالتوازي، ويعرض ما صار قديمًا، ويحدّث ما تختاره — مباشرةً، في طرفية مدمجة في واجهته.",
     secondaryCta: "عرض على GitHub",
     trust: [
       "MIT · مفتوح المصدر",

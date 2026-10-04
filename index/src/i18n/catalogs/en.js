@@ -22,7 +22,7 @@ export default {
     ogDescription:
       "One binary scans winget, scoop, Homebrew, MacPorts, npm, pip, cargo, helm, kubectl, " +
       "VS Code and JetBrains — {providers} sources in parallel — and updates what you pick " +
-      "without leaving its interface.",
+      "in a terminal embedded in its interface.",
     ogImageAlt:
       "gup — one command, {providers} sources up to date. Open-source CLI for winget, " +
       "Homebrew, npm, pip, cargo and helm.",
@@ -59,8 +59,8 @@ export default {
     title: { before: "One command.", accent: "{providers} sources", after: "up to date." },
     lead:
       "Stop chasing **winget**, **brew** and **npm**, pip, cargo and helm. gup scans them all " +
-      "in parallel, shows what is outdated and updates what you pick — without ever leaving " +
-      "its interface.",
+      "in parallel, shows what is outdated and updates what you pick — live, in a terminal " +
+      "embedded in its interface.",
     secondaryCta: "View on GitHub",
     trust: [
       "MIT · open source",

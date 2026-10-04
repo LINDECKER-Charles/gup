@@ -14,8 +14,8 @@ export default {
     ogTitle: "gup — 一条命令，{providers} 个来源保持最新",
     ogDescription:
       "一个二进制文件并行扫描 winget、scoop、Homebrew、MacPorts、npm、pip、cargo、helm、" +
-      "kubectl、VS Code 和 JetBrains 等共 {providers} 个来源，选中什么就更新什么，全程不离开" +
-      "它的界面。",
+      "kubectl、VS Code 和 JetBrains 等共 {providers} 个来源，选中什么，就在它界面内嵌的" +
+      "终端里更新什么。",
     ogImageAlt:
       "gup — 一条命令，{providers} 个来源保持最新。面向 winget、Homebrew、npm、pip、cargo " +
       "和 helm 的开源 CLI。",
@@ -50,7 +50,7 @@ export default {
     title: { before: "一条命令。", accent: "{providers} 个来源", after: "全部保持最新。" },
     lead:
       "别再逐个折腾 **winget**、**brew**、**npm**、pip、cargo 和 helm 了。gup 并行扫描所有" +
-      "来源，列出哪些已过时，再更新你选中的软件包——全程无需离开它的界面。",
+      "来源，列出哪些已过时，再在界面内嵌的终端里实时更新你选中的软件包。",
     secondaryCta: "在 GitHub 上查看",
     trust: [
       "MIT · 开源",
