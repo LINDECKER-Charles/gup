@@ -17,6 +17,13 @@ const SYSTEM: SystemSnapshot = {
   env: { GUP_LOG_LEVEL: "debug", HTTPS_PROXY_NOTE: "http://bob:pw@proxy:8080" },
 };
 
+/**
+ * A made-up token in npm's legacy UUID shape. Assembled at run time so that
+ * secret scanners (GitHub push protection) do not mistake the fixture for a
+ * real credential.
+ */
+const FAKE_LEGACY_NPM_TOKEN = ["4f8a1c2e", "9b3d", "4e5f", "8a7b", "1c2d3e4f5a6b"].join("-");
+
 function line(over: Partial<LogRecord>): string {
   return JSON.stringify({
     v: 1,
@@ -73,7 +80,7 @@ describe("buildDiagnosticZip", () => {
     const older = line({
       ctx: { op: "update", providerId: "npm-g", packageId: join(home, "pkg") },
       data: {
-        [join(home, "npmrc")]: "//registry.npmjs.org/:_authToken=4f8a1c2e-9b3d-4e5f-8a7b-1c2d3e4f5a6b",
+        [join(home, "npmrc")]: `//registry.npmjs.org/:_authToken=${FAKE_LEGACY_NPM_TOKEN}`,
         stderrTail: `EACCES ${join(home, "AppData", "x")} AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG`,
       },
     });
