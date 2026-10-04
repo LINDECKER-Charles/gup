@@ -9,8 +9,12 @@ to ask for help and what to include so a question gets an answer quickly.
    that are not installed, and how to install them. Many "gup does not see X"
    questions end here.
 2. Check the documentation:
+   - [Troubleshooting](docs/guide/troubleshooting.md): the messages gup
+     prints, what causes them and how to fix them.
    - [Installation](docs/guide/installation.md): requirements (Node ≥ 26.9),
-     install methods, per-platform support.
+     install methods, npm 11 and install scripts, per-platform support.
+   - [Interactive app](docs/guide/interactive-app.md): every view and key of
+     the full-screen app, updating inside it.
    - [CLI reference](docs/guide/cli-reference.md): every command and flag,
      targeting syntax, stuck-install timeouts, retries, elevation, exit codes.
    - [Scope](docs/guide/scope.md): what `gup` covers and what it deliberately
@@ -46,8 +50,9 @@ reproduce a problem on someone else's machine.
   with `gup update -y <provider>:<package> 2>&1 | tee gup.log`: `-y` skips
   the retry prompt, which needs a terminal and cannot open once the output
   goes to a pipe.
-- If your version of `gup` has the `gup log` command, the debug log
-  (`gup log -n 50`) or the diagnostic archive from `gup log export`.
+- The debug log (`gup log -n 50`) or, better, the diagnostic archive from
+  `gup log export` — [how to collect it](docs/guide/troubleshooting.md#collecting-a-diagnostic-for-a-bug-report)
+  (gup 0.5.0 and later).
 
 Outputs can contain your username, home directory and the list of software
 installed on your machine. **Read them and redact what you do not want to

@@ -241,7 +241,8 @@ after `beforeprint`, real mouse and key events for the focus paths), not by the 
   `SECURITY.md` (the report's CSP, Trusted Types, JSON embedding, opener), `architecture.md`
   (`src/report/` and the data flow above), README feature list; screenshots of the report for
   the docs (the CDP harness used here is not committed: `chore/screenshot-pipeline` owns
-  screenshots).
+  screenshots). (Done in the 0.5.0 documentation pass; the picture is
+  `docs/assets/screens/html-report.png`, made by `npm run screenshots:report`.)
 - **Manual pass (R7)**: open a real report in Edge, Chrome, Firefox, Safari; check the DevTools
   console for CSP messages, keyboard-only navigation, print preview, dark mode, Narrator /
   VoiceOver on the key numbers, table and drawer.

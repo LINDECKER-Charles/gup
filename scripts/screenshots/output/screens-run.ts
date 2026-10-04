@@ -1,7 +1,7 @@
 import { rm } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { renderScene } from "../scenes/render-scene.js";
-import { SCENE_ID, type Scene } from "../scenes/scene.js";
+import { SCENE_ID, type Scene, type SceneGroup } from "../scenes/scene.js";
 import { findOrphans } from "./find-orphans.js";
 import { renderGallery } from "./render-gallery.js";
 import { syncFile, type SyncMode, type SyncResult } from "./sync-file.js";
@@ -41,9 +41,9 @@ export class ScreensRun {
     return this.verified(await syncFile(join(this.#dir, `${scene.id}.svg`), svg, this.#mode));
   }
 
-  /** Sync the gallery page listing `scenes`. */
-  async gallery(scenes: readonly Scene[]): Promise<SyncResult> {
-    const page = renderGallery(scenes);
+  /** Sync the gallery page listing `groups`. */
+  async gallery(groups: readonly SceneGroup[]): Promise<SyncResult> {
+    const page = renderGallery(groups);
     return this.verified(await syncFile(join(this.#dir, GALLERY), page, this.#mode));
   }
 

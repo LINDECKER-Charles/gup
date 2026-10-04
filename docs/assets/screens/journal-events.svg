@@ -1,0 +1,289 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968.0 594.0" width="968.0" height="594.0" role="img" aria-labelledby="t d">
+<title id="t">gup — Journal</title>
+<desc id="d">Journal, Événements tab: every scan and update attempt, newest first, with its outcome, provider, package, versions and duration; scheduled runs among them.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:16px}
+.t{font-size:12px;letter-spacing:.4px;fill:#8b949e}
+.b{font-weight:700}
+.i{font-style:italic}
+.u{text-decoration:underline}
+.s{text-decoration:line-through}
+.us{text-decoration:underline line-through}
+.d{opacity:0.62}
+.c0{fill:#39c5cf}
+.c1{fill:#2b3036}
+.c2{fill:#0d1117}
+.c3{fill:#6e7681}
+.c4{fill:#e6edf3}
+.c5{fill:#91979d}
+.c6{fill:#d29922}
+.c7{fill:#3fb950}
+</style>
+<rect y="0.0" width="968.0" height="594.0" rx="10.0" fill="#0d1117"/>
+<rect y="0.0" width="968.0" height="34.0" rx="10.0" fill="#161b22"/>
+<rect y="24.0" width="968.0" height="10.0" fill="#161b22"/>
+<line x1="0.0" y1="34.0" x2="968.0" y2="34.0" stroke="#21262d"/>
+<circle cx="22.0" cy="17.0" r="5.5" fill="#ff5f57"/>
+<circle cx="40.0" cy="17.0" r="5.5" fill="#febc2e"/>
+<circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
+<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Journal</text>
+<rect class="c0" x="16.0" y="42.0" width="936.0" height="17.0"/>
+<rect class="c1" x="234.4" y="110.0" width="702.0" height="17.0"/>
+<rect class="c1" x="31.6" y="161.0" width="171.6" height="17.0"/>
+<text class="c2 b" x="16.0" y="55.0" textLength="694.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.4.0  │  14 provider(s)  │  12 mise(s) à jour  │  mode normal · tous les providers</text>
+<text class="c3" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
+<text class="c4" x="31.6" y="72.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Menu </text>
+<text class="c3" x="78.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────╮</text>
+<text class="c0" x="218.8" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┏━</text>
+<text class="c4" x="234.4" y="72.0" textLength="218.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Journal · 12 derniers mois </text>
+<text class="c0" x="452.8" y="72.0" textLength="499.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</text>
+<text class="c3" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="89.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scan              </text>
+<text class="c3" x="211.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="89.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1 Activité</text>
+<text class="c5" x="328.0" y="89.0" textLength="93.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">2 Récurrence</text>
+<text class="c0" x="437.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌</text>
+<text class="c4 b" x="445.0" y="89.0" textLength="93.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3 Événements</text>
+<text class="c5" x="554.2" y="89.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">4 Debug</text>
+<text class="c0" x="944.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Paquets           </text>
+<text class="c6" x="187.6" y="106.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12</text>
+<text class="c3" x="211.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="106.0" textLength="249.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">type : tous (f) · 583 événements</text>
+<text class="c0" x="944.2" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Planification     </text>
+<text class="c5" x="187.6" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3</text>
+<text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="234.4" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› </text>
+<text class="c5" x="250.0" y="123.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">15/09 09:09  </text>
+<text class="c7" x="351.4" y="123.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="123.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">winget       </text>
+<text class="c4 b" x="530.8" y="123.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Spotify.Spotify        </text>
+<text class="c5" x="710.2" y="123.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1.2.70 → 1.2.71       10,1 s</text>
+<text class="c0" x="944.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="140.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">15/09 09:00  </text>
+<text class="c0" x="351.4" y="140.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="140.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 12 en retard                              </text>
+<text class="c5" x="874.0" y="140.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   5,9 s</text>
+<text class="c0" x="944.2" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="157.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Providers         </text>
+<text class="c3" x="211.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="157.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">15/09 03:00  </text>
+<text class="c0" x="351.4" y="157.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="157.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1 provider · 0 en retard                                 </text>
+<text class="c5" x="874.0" y="157.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   3,4 s</text>
+<text class="c0" x="944.2" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="31.6" y="174.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌ </text>
+<text class="c4 b" x="47.2" y="174.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Journal           </text>
+<text class="c3" x="211.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="174.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14/09 09:01  </text>
+<text class="c7" x="351.4" y="174.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="174.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pipx         </text>
+<text class="c4 b" x="530.8" y="174.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ruff                   </text>
+<text class="c5" x="710.2" y="174.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.12.9 → 0.13.0        2,6 s</text>
+<text class="c0" x="944.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
+<text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="191.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14/09 09:00  </text>
+<text class="c7" x="351.4" y="191.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="191.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c4 b" x="530.8" y="191.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pnpm                   </text>
+<text class="c5" x="710.2" y="191.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.16.9 → 10.17.0      4,2 s</text>
+<text class="c0" x="944.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="208.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14/09 09:00  </text>
+<text class="c7" x="351.4" y="208.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="208.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c4 b" x="530.8" y="208.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">typescript             </text>
+<text class="c5" x="710.2" y="208.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 6.0.1 → 6.0.2          3,1 s</text>
+<text class="c0" x="944.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quitter           </text>
+<text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="225.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14/09 09:00  </text>
+<text class="c0" x="351.4" y="225.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="225.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">2 providers · 3 en retard                                </text>
+<text class="c5" x="874.0" y="225.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   3,4 s</text>
+<text class="c0" x="944.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="242.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14/09 09:00  </text>
+<text class="c0" x="351.4" y="242.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="242.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 6 en retard                               </text>
+<text class="c5" x="874.0" y="242.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   5,7 s</text>
+<text class="c0" x="944.2" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="259.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12/09 09:07  </text>
+<text class="c7" x="351.4" y="259.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="259.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pipx         </text>
+<text class="c4 b" x="530.8" y="259.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ruff                   </text>
+<text class="c5" x="710.2" y="259.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.12.8 → 0.12.9        3,0 s</text>
+<text class="c0" x="944.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="276.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12/09 09:00  </text>
+<text class="c0" x="351.4" y="276.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="276.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 10 en retard                              </text>
+<text class="c5" x="874.0" y="276.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   5,5 s</text>
+<text class="c0" x="944.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="293.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11/09 09:13  </text>
+<text class="c7" x="351.4" y="293.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="293.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">vscode-ext   </text>
+<text class="c4 b" x="530.8" y="293.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">esbenp.prettier-vscode </text>
+<text class="c5" x="710.2" y="293.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.9.9 → 11.0.0        2,5 s</text>
+<text class="c0" x="944.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="310.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11/09 09:08  </text>
+<text class="c7" x="351.4" y="310.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="310.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">winget       </text>
+<text class="c4 b" x="530.8" y="310.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Git.Git                </text>
+<text class="c5" x="710.2" y="310.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 2.50.9 → 2.51.0       19,0 s</text>
+<text class="c0" x="944.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="327.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11/09 09:00  </text>
+<text class="c0" x="351.4" y="327.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="327.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 3 en retard                               </text>
+<text class="c5" x="874.0" y="327.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   5,3 s</text>
+<text class="c0" x="944.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="344.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">10/09 09:05  </text>
+<text class="c7" x="351.4" y="344.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="344.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c4 b" x="530.8" y="344.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pnpm                   </text>
+<text class="c5" x="710.2" y="344.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.16.8 → 10.16.9      5,1 s</text>
+<text class="c0" x="944.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="361.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">10/09 09:00  </text>
+<text class="c0" x="351.4" y="361.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="361.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 5 en retard                               </text>
+<text class="c5" x="874.0" y="361.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   5,2 s</text>
+<text class="c0" x="944.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="378.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">09/09 09:00  </text>
+<text class="c0" x="351.4" y="378.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="378.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 7 en retard                               </text>
+<text class="c5" x="874.0" y="378.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   5,0 s</text>
+<text class="c0" x="944.2" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="395.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">08/09 09:00  </text>
+<text class="c0" x="351.4" y="395.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="395.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 9 en retard                               </text>
+<text class="c5" x="874.0" y="395.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   4,9 s</text>
+<text class="c0" x="944.2" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="412.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">07/09 09:13  </text>
+<text class="c7" x="351.4" y="412.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="412.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">vscode-ext   </text>
+<text class="c4 b" x="530.8" y="412.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">esbenp.prettier-vscode </text>
+<text class="c5" x="710.2" y="412.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.9.8 → 10.9.9        2,4 s</text>
+<text class="c0" x="944.2" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="429.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">07/09 09:06  </text>
+<text class="c7" x="351.4" y="429.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="429.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c4 b" x="530.8" y="429.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">typescript             </text>
+<text class="c5" x="710.2" y="429.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 6.0.0 → 6.0.1          3,5 s</text>
+<text class="c0" x="944.2" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="446.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">07/09 09:00  </text>
+<text class="c0" x="351.4" y="446.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="446.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 11 en retard                              </text>
+<text class="c5" x="874.0" y="446.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   4,8 s</text>
+<text class="c0" x="944.2" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="463.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">05/09 09:00  </text>
+<text class="c0" x="351.4" y="463.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="463.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 6 en retard                               </text>
+<text class="c5" x="874.0" y="463.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   4,5 s</text>
+<text class="c0" x="944.2" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="480.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">04/09 09:00  </text>
+<text class="c0" x="351.4" y="480.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="480.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 8 en retard                               </text>
+<text class="c5" x="874.0" y="480.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   4,4 s</text>
+<text class="c0" x="944.2" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="497.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">03/09 09:09  </text>
+<text class="c6" x="351.4" y="497.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">↷ ignorée </text>
+<text class="c5" x="429.4" y="497.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">winget       </text>
+<text class="c4 b" x="530.8" y="497.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Spotify.Spotify        </text>
+<text class="c5" x="710.2" y="497.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1.2.70 → 1.2.71       10,0 s</text>
+<text class="c0" x="944.2" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="514.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">03/09 09:05  </text>
+<text class="c7" x="351.4" y="514.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="514.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c4 b" x="530.8" y="514.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pnpm                   </text>
+<text class="c5" x="710.2" y="514.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.16.7 → 10.16.8      5,0 s</text>
+<text class="c0" x="944.2" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="531.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="531.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="531.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="531.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">03/09 09:00  </text>
+<text class="c0" x="351.4" y="531.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">⟳ scan    </text>
+<text class="c4" x="429.4" y="531.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14 providers · 10 en retard                              </text>
+<text class="c5" x="874.0" y="531.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   4,2 s</text>
+<text class="c0" x="944.2" y="531.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="250.0" y="548.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">02/09 09:07  </text>
+<text class="c7" x="351.4" y="548.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
+<text class="c5" x="429.4" y="548.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pipx         </text>
+<text class="c4 b" x="530.8" y="548.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ruff                   </text>
+<text class="c5" x="710.2" y="548.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.12.7 → 0.12.8        2,9 s</text>
+<text class="c0" x="944.2" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="565.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯</text>
+<text class="c0" x="218.8" y="565.0" textLength="733.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
+<text class="c5" x="16.0" y="582.0" textLength="670.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ naviguer · / filtrer · f type · entrée détails · e exporter · tab menu · q quitter</text>
+</svg>

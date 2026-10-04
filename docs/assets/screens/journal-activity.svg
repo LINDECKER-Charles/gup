@@ -1,0 +1,364 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968.0 594.0" width="968.0" height="594.0" role="img" aria-labelledby="t d">
+<title id="t">gup — Journal</title>
+<desc id="d">Journal, Activité tab: a year of updates as a calendar heatmap, the headline figures (updates, success rate, failures, scans), the outdated-package trend and the slowest provider scans.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:16px}
+.t{font-size:12px;letter-spacing:.4px;fill:#8b949e}
+.b{font-weight:700}
+.i{font-style:italic}
+.u{text-decoration:underline}
+.s{text-decoration:line-through}
+.us{text-decoration:underline line-through}
+.d{opacity:0.62}
+.c0{fill:#39c5cf}
+.c1{fill:#2b3036}
+.c2{fill:#0d1117}
+.c3{fill:#6e7681}
+.c4{fill:#e6edf3}
+.c5{fill:#91979d}
+.c6{fill:#d29922}
+.c7{fill:#ff7b72}
+.c8{fill:#3fb950}
+</style>
+<rect y="0.0" width="968.0" height="594.0" rx="10.0" fill="#0d1117"/>
+<rect y="0.0" width="968.0" height="34.0" rx="10.0" fill="#161b22"/>
+<rect y="24.0" width="968.0" height="10.0" fill="#161b22"/>
+<line x1="0.0" y1="34.0" x2="968.0" y2="34.0" stroke="#21262d"/>
+<circle cx="22.0" cy="17.0" r="5.5" fill="#ff5f57"/>
+<circle cx="40.0" cy="17.0" r="5.5" fill="#febc2e"/>
+<circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
+<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Journal</text>
+<rect class="c0" x="16.0" y="42.0" width="936.0" height="17.0"/>
+<rect class="c1" x="31.6" y="161.0" width="171.6" height="17.0"/>
+<text class="c2 b" x="16.0" y="55.0" textLength="694.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.4.0  │  14 provider(s)  │  12 mise(s) à jour  │  mode normal · tous les providers</text>
+<text class="c3" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
+<text class="c4" x="31.6" y="72.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Menu </text>
+<text class="c3" x="78.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────╮</text>
+<text class="c0" x="218.8" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┏━</text>
+<text class="c4" x="234.4" y="72.0" textLength="218.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Journal · 12 derniers mois </text>
+<text class="c0" x="452.8" y="72.0" textLength="499.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</text>
+<text class="c3" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="89.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scan              </text>
+<text class="c3" x="211.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="234.4" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌</text>
+<text class="c4 b" x="242.2" y="89.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1 Activité</text>
+<text class="c5" x="335.8" y="89.0" textLength="93.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">2 Récurrence</text>
+<text class="c5" x="445.0" y="89.0" textLength="93.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3 Événements</text>
+<text class="c5" x="554.2" y="89.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">4 Debug</text>
+<text class="c0" x="944.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Paquets           </text>
+<text class="c6" x="187.6" y="106.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12</text>
+<text class="c3" x="211.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c4 b" x="234.4" y="106.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">257 mises à jour</text>
+<text class="c5" x="359.2" y="106.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> · </text>
+<text class="c4" x="382.6" y="106.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">96 % réussies</text>
+<text class="c5" x="484.0" y="106.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> · </text>
+<text class="c4" x="507.4" y="106.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">9 paquets</text>
+<text class="c5" x="577.6" y="106.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> · </text>
+<text class="c7" x="601.0" y="106.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12 échecs</text>
+<text class="c5" x="671.2" y="106.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> · </text>
+<text class="c4" x="694.6" y="106.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">10 ignorées</text>
+<text class="c5" x="780.4" y="106.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> · </text>
+<text class="c4" x="803.8" y="106.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">304 scans</text>
+<text class="c0" x="944.2" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Planification     </text>
+<text class="c5" x="187.6" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3</text>
+<text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="123.0" textLength="468.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">dernière mise à jour il y a 2 h · dernier scan il y a 2 h · </text>
+<text class="c6" x="702.4" y="123.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12 paquets en retard</text>
+<text class="c0" x="944.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="157.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Providers         </text>
+<text class="c3" x="211.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c4 b" x="234.4" y="157.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Mises à jour réussies par jour</text>
+<text class="c0" x="944.2" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="31.6" y="174.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌ </text>
+<text class="c4 b" x="47.2" y="174.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Journal           </text>
+<text class="c3" x="211.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="174.0" textLength="460.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      oct.     déc.    févr.    avr.     juin    août sept.</text>
+<text class="c0" x="944.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
+<text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="191.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">lun ·</text>
+<text class="c8" x="273.4" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="281.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="289.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▒</text>
+<text class="c5" x="296.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="304.6" y="191.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░▒░░░</text>
+<text class="c5" x="343.6" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="351.4" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▓</text>
+<text class="c5" x="359.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="367.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="374.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="382.6" y="191.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░▒░░░</text>
+<text class="c5" x="421.6" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="429.4" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="437.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="445.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▓</text>
+<text class="c5" x="452.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="460.6" y="191.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░░░</text>
+<text class="c5" x="499.6" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="507.4" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="515.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="523.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="530.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="538.6" y="191.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░░░</text>
+<text class="c5" x="577.6" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="585.4" y="191.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▒░░</text>
+<text class="c5" x="608.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="616.6" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="624.4" y="191.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="640.0" y="191.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">█░</text>
+<text class="c5" x="655.6" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="663.4" y="191.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░▒</text>
+<text class="c0" x="944.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="265.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="273.4" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="289.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="296.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="304.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="312.4" y="208.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">····</text>
+<text class="c8" x="343.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="351.4" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="367.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="374.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="382.6" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="398.2" y="208.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">···</text>
+<text class="c8" x="421.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="429.4" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="445.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="452.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="460.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="468.4" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="476.2" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="491.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="499.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="507.4" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="523.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="530.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="538.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="546.4" y="208.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">····</text>
+<text class="c8" x="577.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="585.4" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="601.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="608.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="616.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="624.4" y="208.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">····</text>
+<text class="c8" x="655.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="663.4" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="671.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c0" x="944.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quitter           </text>
+<text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="225.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">mer </text>
+<text class="c8" x="265.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="273.4" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="281.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="289.0" y="225.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">····</text>
+<text class="c8" x="320.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="328.0" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="343.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="351.4" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="359.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="367.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="374.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="382.6" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="398.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="406.0" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="421.6" y="225.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░</text>
+<text class="c5" x="445.0" y="225.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">····</text>
+<text class="c8" x="476.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="484.0" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="499.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="507.4" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="515.2" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="530.8" y="225.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">···</text>
+<text class="c8" x="554.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="562.0" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="577.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="585.4" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="593.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="601.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="608.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="616.6" y="225.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·····</text>
+<text class="c8" x="655.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="663.4" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c0" x="944.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="265.6" y="242.0" textLength="358.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░░░░░░░▒░░░░░░░░░▒░░░░░░░░░░░░░░░░░░░░░░░░░░</text>
+<text class="c5" x="624.4" y="242.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="640.0" y="242.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░▒░░</text>
+<text class="c0" x="944.2" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="259.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ven </text>
+<text class="c8" x="265.6" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="281.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="289.0" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="304.6" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="312.4" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▒░</text>
+<text class="c5" x="328.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="335.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="343.6" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="351.4" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="367.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="374.8" y="259.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░</text>
+<text class="c5" x="398.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="406.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="413.8" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="429.4" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="437.2" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="452.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="460.6" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="468.4" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="484.0" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="499.6" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="515.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="523.0" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="538.6" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="546.4" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▒</text>
+<text class="c5" x="554.2" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="569.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="577.6" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="585.4" y="259.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░░░</text>
+<text class="c5" x="624.4" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="640.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="647.8" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="663.4" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c0" x="944.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="265.6" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="281.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="289.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="296.8" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="304.6" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="312.4" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="328.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="335.8" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="351.4" y="276.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░</text>
+<text class="c5" x="374.8" y="276.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">····</text>
+<text class="c8" x="406.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="413.8" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="429.4" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="437.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="445.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="452.8" y="276.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">····</text>
+<text class="c8" x="484.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="491.8" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="507.4" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="515.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="523.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="530.8" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="538.6" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░</text>
+<text class="c5" x="554.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="562.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="569.8" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="585.4" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="593.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">·</text>
+<text class="c8" x="601.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="608.8" y="276.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">····</text>
+<text class="c8" x="640.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c5" x="647.8" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">··</text>
+<text class="c8" x="663.4" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░</text>
+<text class="c0" x="944.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="293.0" textLength="436.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">dim ····················································</text>
+<text class="c0" x="944.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="234.4" y="310.0" textLength="343.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">                                     moins ·</text>
+<text class="c8" x="577.6" y="310.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ░ ▒ ▓ █</text>
+<text class="c5" x="640.0" y="310.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> plus</text>
+<text class="c0" x="944.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c4 b" x="234.4" y="344.0" textLength="265.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Paquets en retard (scans complets)</text>
+<text class="c0" x="515.2" y="344.0" textLength="265.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▆▇▇██▇▇▇██▇█▇▇█▇█▇▇▇▇▇█▇▇▇▇█▇▇▅▆██</text>
+<text class="c5" x="780.4" y="344.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  max 12 · actuel 12</text>
+<text class="c0" x="944.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c4 b" x="234.4" y="378.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scans les plus lents  </text>
+<text class="c5" x="406.0" y="378.0" textLength="397.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pwsh-modules 5,9 s · choco 4,0 s · vscode-ext 3,6 s</text>
+<text class="c0" x="944.2" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="531.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="531.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="531.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="531.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="218.8" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="944.2" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="565.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯</text>
+<text class="c0" x="218.8" y="565.0" textLength="733.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
+<text class="c5" x="16.0" y="582.0" textLength="709.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1-4 onglets · p période · o rapport HTML · e exporter · r recharger · tab menu · q quitter</text>
+</svg>

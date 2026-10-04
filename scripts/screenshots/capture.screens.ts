@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ScreensRun } from "./output/screens-run.js";
-import { SCENES } from "./scenes/catalog.js";
+import { SCENE_GROUPS, SCENES } from "./scenes/catalog.js";
 import { catalogueProblems } from "./scenes/catalogue-problems.js";
 
 /**
@@ -28,7 +28,7 @@ describe("screenshots", () => {
   }
 
   it.skipIf(isCatalogueBroken)("gallery", async () => {
-    await run.gallery(SCENES);
+    await run.gallery(SCENE_GROUPS);
   });
 
   it.skipIf(isCatalogueBroken)("orphans", async () => {

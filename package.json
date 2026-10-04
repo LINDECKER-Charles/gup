@@ -95,6 +95,7 @@
     "lint:security": "eslint src --config eslint.config.security.js",
     "screenshots": "vitest run --config scripts/screenshots/vitest.config.ts",
     "screenshots:check": "vitest run --config scripts/screenshots/vitest.config.ts --mode check",
+    "screenshots:report": "npm run build && tsx scripts/screenshots/report-sample.ts",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
     "audit:deps:ci": "audit-ci --config audit-ci.json",
     "security": "npm run audit:deps:ci && npm run lint:security && npm run test:security"

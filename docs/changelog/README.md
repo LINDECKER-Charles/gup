@@ -8,7 +8,7 @@ and the pull request when there was one. Generated from `git log` on
 
 | Version | Published | Commits | In one sentence |
 |---|---|---:|---|
-| [Unreleased](unreleased.md) | `main` after 0.4.0 | 0 | Nothing yet. |
+| [Unreleased](unreleased.md) | `main` after 0.4.0 | 444 | The 0.5.0 cycle: updates run inside the interactive app in an embedded terminal, packages are picked by checking them, a debug log, an activity journal and an HTML report read the history back, chosen packages update on a schedule, ten themes hold every text to WCAG AA, providers of other systems are greyed out, the landing site speaks eight languages, and the provider tests run as contracts on a fake machine. |
 | [`0.4.0`](0.4.0.md) | not yet published | 38 | 0.4.0 fixes the terminal freezes seen on Windows, rebuilds the interactive UI on OpenTUI in place of `@inquirer/prompts` and `ora`, and moves the runtime floor to Node >= 26.9.0. |
 | [`0.3.2`](0.3.2.md) | 2026-08-09 | 15 | Version 0.3.2 adds 19 providers (MSYS2, Cygwin, Npackd, Fink, pkgin, Nix, pkgx, nvm, pyenv, swiftly, mint, vcpkg, Visual Studio, Git for Windows, .NET SDK, NuGet, PSResourceGet, Sparkle, xcodes), taking the registry from 134 to 153 entries. |
 | [`0.3.1`](0.3.1.md) | 2026-08-08 | 11 | gup 0.3.1 introduces a local activity history: every scan and every update attempt is appended synchronously to a monthly JSONL shard under the platform state directory, opt-out via GUP_HISTORY=0 and relocatable via GUP_HISTORY_DIR, and never read back by the tool. |
@@ -55,17 +55,16 @@ What is *not* a bullet:
 
 ## Keeping it current
 
-- Work merged to `main` goes into [`unreleased.md`](unreleased.md) under the
+- Work merged to `main` ends up in [`unreleased.md`](unreleased.md) under the
   same headings.
-- While several branches are in flight at once (the 0.5.0 development), each
-  branch writes its own fragment instead:
-  [`unreleased/<branch-slug>.md`](unreleased/) — `feat/scheduled-updates` writes
+- A pull request does not edit `unreleased.md`: it adds its own fragment,
+  `unreleased/<branch-slug>.md` — `feat/scheduled-updates` writes
   `unreleased/scheduled-updates.md` — with the headings above and the usual
-  bullet shape, the commit hashes of that branch only. Nobody edits
-  `unreleased.md` meanwhile, so parallel branches never conflict there. The
-  documentation pass that closes the cycle folds every fragment into
-  `unreleased.md` (one bullet per change, related bullets of several branches
-  merged) and deletes the folder.
+  bullet shape, the commits of that branch only (by subject until they have a
+  hash on `main`). Parallel branches therefore never conflict there. Before a
+  release, the fragments are folded into `unreleased.md` (one bullet per
+  change, related bullets of several branches merged, every hash and subject
+  kept) and the folder is deleted, as the 0.5.0 cycle's were.
 - At release time, rename `unreleased.md` to `<version>.md`, set the title and
   the header links, start a fresh `unreleased.md`, and add the row above. Write
   the matching [`../releases/<version>.md`](../releases/README.md) alongside.

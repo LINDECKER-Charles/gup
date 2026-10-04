@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
+import { FIXTURE_CLOCK } from "../fixtures/clock.js";
 
 /** gup's own settings and data overrides: none of the developer's may reach a screenshot. */
 const GUP_VARIABLE = /^GUP_/i;
@@ -19,11 +20,13 @@ const DATA_DIRS: Readonly<Record<string, string>> = {
  * The terminal a screenshot pretends to run in, whatever the host's: a
  * UTF-8 locale and a 256-colour terminal resolve the glyph mode to unicode on
  * every OS (a CI runner with `TERM=dumb` or a POSIX `C` locale would draw
- * ASCII). `NO_COLOR` is the host's choice, never the screenshot's.
+ * ASCII). The locale is the one the generator's workers start in, so ICU
+ * sees the same one whenever it first reads it. `NO_COLOR` is the host's
+ * choice, never the screenshot's.
  */
 const TERMINAL_ENV: Readonly<Record<string, string | undefined>> = {
   TERM: "xterm-256color",
-  LC_ALL: "C.UTF-8",
+  LC_ALL: FIXTURE_CLOCK.locale,
   NO_COLOR: undefined,
 };
 

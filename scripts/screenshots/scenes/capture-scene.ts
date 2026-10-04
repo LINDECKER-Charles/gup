@@ -5,6 +5,8 @@ import { sidebarEntries } from "../../../src/ui/app/sidebar.js";
 import type { ViewDefinition, ViewId } from "../../../src/ui/app/view-definition.js";
 import type { ScreenHost } from "../../../src/ui/tui/screen-host.js";
 import { createTestHost, press } from "../../../tests/support/tui/test-host.js";
+import { stepFrameClock } from "../sandbox/frozen-clock.js";
+import { compose } from "./composition.js";
 import type { Scene, Stage } from "./scene.js";
 
 /** How long a scene may wait for its text: generous, the machine may be busy. */
@@ -12,14 +14,20 @@ const TEXT_WAIT_MS = 10_000;
 const TEXT_POLL_MS = 25;
 
 /**
- * Mount gup's interactive app (`MenuApp`, as `gup` starts it) on OpenTUI's
- * in-memory renderer of `scene.size`, play the scene, and capture the frame's
- * spans. The app always ends afterwards — even when `play()` throws — and the
- * host releases the renderer as on a normal exit.
+ * Mount gup's interactive app (`MenuApp`, as `gup` starts it, composed as
+ * its startup composes it) on OpenTUI's in-memory renderer of `scene.size`,
+ * play the scene, and capture the frame's spans. The app always ends
+ * afterwards — even when `play()` throws — the host releases the renderer as
+ * on a normal exit, and the composition is undone.
  */
 export async function captureScene(scene: Scene): Promise<CapturedFrame> {
-  const { state, controller, views } = scene.fixture();
-  const { host, next } = createTestHost({ size: scene.size });
+  const fixture = scene.fixture();
+  const { state, controller, views } = fixture;
+  const composition = compose(fixture);
+  const { host, next } = createTestHost({
+    size: scene.size,
+    createAppearance: composition.createAppearance,
+  });
   const capture = new AbortController();
   const app = new MenuApp(
     { state, controller, views },
@@ -31,11 +39,13 @@ export async function captureScene(scene: Scene): Promise<CapturedFrame> {
     await setup.renderOnce();
     return setup.captureSpans();
   } finally {
-    controller.release();
+    fixture.release();
     capture.abort();
-    await app.catch((error: unknown) => {
-      if (error !== capture.signal.reason) throw error;
-    });
+    await app
+      .catch((error: unknown) => {
+        if (error !== capture.signal.reason) throw error;
+      })
+      .finally(composition.undo);
   }
 }
 
@@ -60,6 +70,10 @@ function stageOf(setup: TestRendererSetup, views: readonly ViewDefinition[]): St
     press: (...keys) => press(setup, ...keys),
     open: (view) => press(setup, ...sidebarKeys(views, view)),
     waitForText: (text) => waitForText(setup, text),
+    tick: async () => {
+      stepFrameClock();
+      await setup.renderOnce();
+    },
   };
 }
 

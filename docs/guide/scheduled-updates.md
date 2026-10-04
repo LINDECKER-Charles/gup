@@ -36,15 +36,19 @@ enabled schedule, the trigger is removed: nothing is registered anywhere.
 
 ```mermaid
 flowchart LR
-  OS[["OS trigger<br/>Task Scheduler · launchd · crontab"]] -- every 15 min --> Tick["gup __schedule-tick"]
-  Tick --> Due{"a schedule due?"}
-  Due -- no --> Exit(["exit"])
-  Due -- yes --> Batch{{"update batch free?"}}
-  Batch -- "another gup updates" --> Exit
-  Batch -- yes --> Scan["scan the needed providers only"]
+  Save["first schedule enabled<br/>gup schedule · Planification"] -->|registers| OS[["OS trigger<br/>Task Scheduler · launchd · crontab"]]
+  OS -- every 15 min --> Tick["gup __schedule-tick"]
+  Tick --> Batch{{"update batch free?"}}
+  Batch -- "another gup updates" --> Exit(["exit"])
+  Batch -- yes --> Due{"a schedule due?"}
+  Due -- no --> Exit
+  Due -- yes --> Scan["scan the needed providers only"]
   Scan --> Update["update the outdated targets<br/>(never elevated, never forced)"]
   Update --> Record[("state.json · history · log")]
 ```
+
+The same run, step by step, with what it reads and writes:
+[architecture.md § Scheduling](../development/architecture.md#10-scheduling).
 
 - **Targeted.** A tick detects and scans only the providers its due targets
   name, and updates a target only when that scan lists it as outdated — with
@@ -143,20 +147,7 @@ run had failures (schedules are always saved first), `2` invalid arguments.
 `gup` with no argument opens the interactive menu; its **Planification** view,
 under Paquets, does everything `gup schedule` does except removing the trigger.
 
-```text
-┏━ Planification ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Déclencheur : actif · Planificateur de tâches Windows · dernier passage il y a 4 min       ┃
-┃                                                                                            ┃
-┃     Nom            Fréquence              Paquets Prochaine           Dernière             ┃
-┃ › ● Outils dev     chaque lundi à 09:00         2 lun. 12 oct. 09:00  ◐ 1/2 — 1 échec(s)   ┃
-┃   ○ Python         cron : 0 */6 * * *           1 désactivée          —                    ┃
-┃                                                                                            ┃
-┃ Prochaine : lun. 12 oct. 09:00 · cron 0 9 * * 1                                            ┃
-┃ Dernière exécution · Outils dev · il y a 54 min · 2 min 14 s · à l'heure                   ┃
-┃   ✔ Winget         Git.Git              2.46.0 → 2.47.0                                    ┃
-┃   ✖ npm (global)   pnpm                 échec — code 1                                     ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-```
+![Planification view: the Task Scheduler trigger active, three schedules with their recurrence, package count, next and last run; the cursor on the one whose last run failed, its per-package results below.](../assets/screens/schedules.svg)
 
 The first line is the trigger's state, as in
 [Troubleshooting](#troubleshooting), with `i` as the repair. Below the
@@ -198,26 +189,7 @@ have not seen yet (`planif. : 2 exécution(s) · 1 échec`).
 
 ### The editor
 
-```text
-┏━ Nouvelle planification ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃   Nom              [Git.Git +1]                                                            ┃
-┃   Fréquence        [Personnalisée (cron)]                                                  ┃
-┃ › Expression cron  0 9 * * 1-5█                                                            ┃
-┃   Rattrapage       [oui]   relance à la prochaine occasion si l'heure est manquée          ┃
-┃                                                                                            ┃
-┃   cron 0 9 * * 1-5 · prochaines : demain 09:00 · mer. 7 oct. 09:00 · jeu. 8 oct. 09:00     ┃
-┃                                                                                            ┃
-┃   Paquets (2)                                                                              ┃
-┃     Winget         Git.Git                                                                 ┃
-┃     Winget         Mozilla.Firefox                                                         ┃
-┃   + Ajouter un paquet…                                                                     ┃
-┃     note : un paquet winget installé pour tous les utilisateurs peut demander l'UAC — il   ┃
-┃     sera alors ignoré (jamais d'élévation sans surveillance)                               ┃
-┃                                                                                            ┃
-┃   [ Enregistrer ]                                                                          ┃
-┃   [ Annuler ]                                                                              ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-```
+![Schedule editor: name, a weekly recurrence on Monday at 09:00 with catch-up, the cron expression and the next run times, and the three packages the schedule updates.](../assets/screens/schedule-edit.svg)
 
 | Field | How |
 |---|---|
@@ -239,11 +211,17 @@ under a winget package is the UAC caveat of
 
 ### Run now
 
-`x`, then *Oui*: gup scans the providers the schedule needs, then updates its
-outdated packages where the menu runs updates — in its run view, or on the
-plain terminal when the embedded terminal is unavailable — and comes back to
-Planification. The result becomes the schedule's last run (`manuelle`) and its
-history attempts carry the schedule id; the next occurrence is unchanged.
+`x`: gup scans the providers the schedule needs, then updates its outdated
+packages where the menu runs updates — in its run view, or on the plain
+terminal when the embedded terminal is unavailable — and comes back to
+Planification. You are asked once: with Options › **Confirmer les MAJ** on (the
+default), the update's own confirmation lists the packages the scan found
+outdated; with it off, gup asks `Exécuter « <nom> » maintenant ?` before the
+scan instead. Nothing outdated: the run is recorded at once, nothing launched.
+No run starts while a scan of the menu is running.
+
+The result becomes the schedule's last run (`manuelle`) and its history
+attempts carry the schedule id; the next occurrence is unchanged.
 
 ## The OS trigger
 

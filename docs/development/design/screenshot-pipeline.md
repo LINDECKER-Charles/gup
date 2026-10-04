@@ -1,11 +1,11 @@
 # Design note — reproducible TUI screenshots (`chore/screenshot-pipeline`)
 
-Status: shipped on `chore/screenshot-pipeline` (wave 2 of 0.5.0): the generator, its scenes
-for the views the menu has today (Scan, Paquets, Providers, Options), its unit tests and the
-documentation conventions. The generated SVGs, the scenes of the 0.5.0 views and the
-`screenshots:check` CI step come with the wave-3 documentation pass (`docs/feature-guides`),
-once every view has merged: generated now, the images would be stale by the end of wave 2.
-Nothing under `src/` changed.
+Status: shipped in two passes. `chore/screenshot-pipeline` (wave 2 of 0.5.0): the generator,
+its scenes for the views the menu had then (Scan, Paquets, Providers, Options), its unit tests
+and the documentation conventions. `docs/feature-guides` (wave 3, §9): the scenes of every
+0.5.0 view on the composed app, the fixtures they need, the generated SVGs and gallery, the
+HTML report's picture and the `screenshots:check` CI step. Nothing under `src/` changed in
+either.
 
 The how-to lives in [`../documentation.md`](../documentation.md#screenshots); this note
 records the architecture, the guarantees and the decisions.
@@ -108,19 +108,19 @@ is verified by the CI step of wave 3.
 | `resolve-color.test.ts` | ANSI slots through the palette, xterm-256 above slot 15, default and transparent colours, literal colours kept |
 | `frame-model.test.ts` | INVERSE, HIDDEN, wide-glyph column accounting, attribute decoding |
 | `svg-frame.test.ts` | grid placement, escaping, merged backgrounds, classes by first use, blank cells, same bytes, document size and labels |
-| `output.test.ts` | CRLF counts as unchanged, stale/missing in check mode without writing, write mode, orphans, gallery markup escaped |
+| `output.test.ts` | CRLF counts as unchanged, stale/missing in check mode without writing, write mode, orphans, gallery markup escaped, gallery sections and contents in order with the report last |
 | `catalogue-problems.test.ts` | the shipped catalogue is valid; unsafe or duplicate ids, alt text and sizes refused |
 | `env-sandbox.test.ts` | `GUP_*` hidden, data dirs in a temporary tree, Unicode glyphs whatever the host, full restore |
-| `frozen-clock.test.ts` | `Date` and the frame clock stopped at the instant while timeouts run, real timers back on thaw |
-| `no-spawn.test.ts` | every process-starting runner export refused and recorded, process-free helpers real, unknown exports refused, a refusal the app swallowed still on record |
-| `capture-scene.test.ts` | the frame of the reached state, waiting for data a view loads while the renderer idles, opening a view wherever the sidebar lists it, teardown when a scene fails (held scan released) |
+| `frozen-clock.test.ts` | `Date` and the frame clock stopped at the instant while timeouts run, one frame stepped on demand, real timers back on thaw |
+| `no-spawn.test.ts` | every process-starting runner export refused and recorded, process-free helpers real; node-pty's loader, the report opener and the OS trigger factory refused, their pure helpers real; unknown exports refused; a refusal the app swallowed still on record |
+| `machine-paths.test.ts` | the rendering machine's paths found whatever their separators or case; the fixture's neutral paths let through |
+| `capture-scene.test.ts` | the frame of the reached state, waiting for data a view loads while the renderer idles, opening views wherever the sidebar lists them, an update run in the screen on its script with nothing left routed after, every startup slot back after the capture, teardown when a scene fails (held scan released) |
 | `screens-run.test.ts` | byte-identical consecutive runs; check mode fails on stale, missing and orphan files and writes nothing; write mode deletes orphans |
 
 The pipeline tests wait for fixture data only (a provider, a package, an install command)
 and reach views with `Stage.open`, not the shipped catalogue: the catalogue follows UI
 strings and keys that other wave-2 branches change, and its own check is the generator's
-run. One test inserts a view ahead of Providers, as the scheduler's Planification will be,
-and still opens Providers.
+run. One test opens Options, then Planification above it, through the sidebar.
 
 ## 6. Deviations from the plan and the spec (`oss-docs.md` §4.3)
 
@@ -200,6 +200,84 @@ Seen while capturing at 100 × 28 (the README column), not changed here:
 - At 100 columns the key-hint bar of Paquets loses its tail (`tab menu · q quitter`), and the
   Options view cuts its setting descriptions.
 - `PackageList` and `ScanPanel` sort names with `localeCompare()` and no locale: the order
-  depends on the host's ICU locale (identical for the fixture's ASCII names today).
+  depends on the host's ICU locale. Not identical for ASCII names after all: under ICU's
+  POSIX collation (`LANG=C.UTF-8`, common on Linux) `Scoop` and `Winget` come before `npm`
+  and `pipx`, so a Linux user sees another order than a Windows one. The generator pins its
+  workers' locale (§9.2); an explicit locale in the sort would fix it for users.
 - The title bar draws slot 0 on slot 6 (`onAccent` on cyan), about 4:1 with GitHub Dark —
   faithful, below AA; a known item for the themes branch.
+
+## 9. The wave-3 pass (`docs/feature-guides`, part 1)
+
+The notes of §7 applied, against the integration tip after wave 3a (`int/wave-3a`).
+
+### 9.1 What changed
+
+- **The composed app.** `captureScene` runs what `gup`'s startup composes (§7.3): the theme
+  engine (`ThemedAppearance`) on the scene's settings, the menu preferences read from them,
+  the in-screen update launcher, a debug-log backend at the default level (`info`) that writes
+  nowhere. `scenes/composition.ts` fills the slots and empties them after every scene.
+  Settings live **in memory** (`ConfigStore({ file: null, isDisabled: true })`, as with
+  `GUP_CONFIG=0`), the defaults plus the scene's patch, and Options and the Journal read
+  them through their `settings` port. The terminal is the docs palette reported over OSC
+  (`staticProbe`, truecolor, dark): the default `terminal` theme paints in its detected mode,
+  every pair raised to AA, as on Windows Terminal or iTerm2.
+- **Fixtures** (§7.4), one story: a year of history (`fixtures/journal/`: daily scans except
+  Sundays and a summer holiday, nine update habits from the spec's recurrence table, the
+  schedules' last runs; versions walk back from the scan fixture's, so Paquets and the Journal
+  agree), this morning's debug log, three schedules with their run state and a healthy
+  Task Scheduler record (`fixtures/schedules/`), and a scripted update run
+  (`fixtures/update/`). Everything is written whole into the sandbox, so writing it again
+  changes nothing.
+- **Updates in the screen.** The in-screen launcher, run view, PTY sink, `PtySession` and
+  panes are the shipped code; `ScriptedRun` replaces the pipeline (same plan, same observer
+  events, same elevation and retry questions, in the same order) and an in-memory
+  pseudo-terminal (`tests/support/pty/fake-pty.ts`) plays each install's canned output. The
+  run's clock is the script's, so durations read what the script says. A held install ends
+  when the capture is over, and the run stops after it, so no install sink stays routed.
+- **Guards** (§7.2): node-pty's loader, the report opener and the OS trigger factory are
+  guarded like the runner, each with its own process-free list (`openerFor`, `systemRootOf`);
+  `guardedModule(load, kind)` is the `vi.mock` body. A last check refuses a frame showing the
+  rendering machine's home, temp directory or checkout.
+- **Scenes**: 24, in six gallery sections (`SceneGroup`): the menu (`scan-progress`,
+  `packages-select`, `confirm-update`, `providers-os`), updates (`update-running`,
+  `update-retry`, `update-summary`), Planification (`schedules`, `schedule-edit`), the
+  Journal's four tabs, Options (`options-themes`, `options-colors`, and `options-journal`,
+  added by the review of this branch) and eight themes.
+  `providers` and `options` are retired (§7.1).
+- **The gallery page** has a contents list, a section per group and, last, the HTML report's
+  picture: `npm run screenshots:report` writes the fixture history in a throw-away directory,
+  runs the built CLI's `gup report --no-open` there and photographs the page with a headless
+  Chromium in a throw-away profile. Not checked by CI (a browser's rasterisation varies).
+- **CI**: the **Screenshots up to date** step on the Ubuntu leg of `ci.yml` (job name and
+  matrix unchanged).
+
+### 9.2 Deviations
+
+| Spec / §7 | Shipped | Why |
+|---|---|---|
+| Theme scenes write the theme through the process-wide config store (spec §4.3.3) | Per-scene settings in memory, wired to Options and the Journal | The process-wide store is opened once per process: a unit test's later sandbox wrote into an earlier, deleted one (recreating it). In memory, no file is touched and no scene sees another's |
+| A light docs palette and `Scene.palette` (§7.5) | Not added | Every RGB theme paints its own background, `light` and `github-light` included; nothing lands on the window's colour |
+| `theme-terminal` in the gallery | Left out (as `auto`) | It is `packages-select`, byte for byte; every other screenshot shows the `terminal` theme |
+| `update-summary` alt "five updated, one failure with a retry offer" | Two scenes: `update-retry` (the offer) and `update-summary` (the results) | The offer is a dialog over the run; the results screen comes after it |
+| Update queue: Git done, PowerToys running, 7-Zip, typescript, ruff queued | typescript, ruff and Git done, PowerToys running, 7-Zip queued, nodejs-lts waiting for the UAC step | The plan groups packages by provider in the checked order, which follows the table (Chocolatey, npm, pipx, then Winget) |
+| History `runId` `fixture-<yyyymmdd>`, `origin: "scheduled"` | `<yyyymmdd>-fixture`, `<yyyymmdd>-tick-<id>`; `trigger: "schedule"` with `scheduleId` | The Journal shows a run id's first 8 characters: the date reads, "fixture-" did not. `origin` is spelled `trigger` in the shipped schema |
+| Spec's recurrence table, occurrences on fixed days | An occurrence on a Sunday or the holiday moves to the next active day | Every-14-days from day 5 always fell on a Sunday: typescript was never updated |
+| CI step `npm run typecheck:scripts && npm run screenshots:check` | `npm run screenshots:check` | The Typecheck step of every leg already covers `scripts/` |
+| — | `Stage.tick()` | The frame clock is frozen: a running update's durations are drawn by the session's tick |
+| — | `LC_ALL=fr_FR.UTF-8` in the workers, checked by the setup | §8's "identical for ASCII names" does not hold under ICU's POSIX collation (a runner's `C.UTF-8`): `Scoop`, `Winget` sort before `npm`, `pipx` |
+
+### 9.3 Verified
+
+- Two consecutive `npm run screenshots` on Windows, then `npm run screenshots:check` twice:
+  identical (`diff -r`). The Ubuntu leg of CI is the cross-OS proof (risk R3); it could not
+  run here (no Linux available without starting Docker Desktop).
+- Every SVG rendered to PNG in a headless Chromium and looked at.
+- No temporary directory left behind by the generator, its unit tests or the report script.
+
+### 9.4 Left for the second part of the branch
+
+The guides that embed these screenshots (`interactive-app.md`, `scheduled-updates.md`,
+`journal-and-reports.md`, `themes-and-accessibility.md`, `troubleshooting.md`), the README's
+screens, the docs index (§7.7 included) and the consolidation of the design notes. (Done in part
+2: the design notes became the indexed [design records](README.md).)

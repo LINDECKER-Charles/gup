@@ -65,21 +65,26 @@ Then, in the same branch:
    `index/src/data/facts.js` (version, provider count, Node floor) from the
    root `package.json` and the registry; the landing build does the same, but
    the committed copy must not lag behind the release.
-4. **Full checks** on Node 26, the npm gates CI runs (CodeQL, Semgrep and
+4. **Screenshots.** Run `npm run screenshots`. The title bar of every generated
+   screenshot shows `gup v<version>`, read from `package.json`: after the bump
+   they are all out of date, and CI's **Screenshots up to date** step fails
+   the release pull request until they are regenerated.
+5. **Full checks** on Node 26, the npm gates CI runs (CodeQL, Semgrep and
    gitleaks run on the pull request):
 
    ```bash
    npm run typecheck && npm run lint && npm run lint:security \
-     && npm run test:run && npm run build && npm run security
+     && npm run test:run && npm run build && npm run security \
+     && npm run screenshots:check
    node dist/cli.js --version    # prints x.y.z
    npm pack --dry-run            # package.json, dist/, LICENSE, README.md, SECURITY.md
    ```
 
    On Windows, `check.cmd` runs the security audit, the tests and the coverage
    in parallel and prints a summary; it does not replace the gates above.
-5. Commit the bump as `chore(release): x.y.z`, with the changelog, the release
-   notes and the landing facts in the same commit (release notes travel with
-   the commit they document).
+6. Commit the bump as `chore(release): x.y.z`, with the changelog, the release
+   notes, the landing facts and the regenerated screenshots in the same commit
+   (release notes travel with the commit they document).
 
 ## 3. Merge, tag, publish
 

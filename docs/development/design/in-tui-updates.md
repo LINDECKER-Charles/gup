@@ -222,7 +222,8 @@ use CIM on Windows and `ps` on POSIX, read-only.
 
 No foundation contract changed. The `0 false off no` switch set now exists in three modules
 (`config/paths.ts`, `history/store.ts`, `pty/pty-loader.ts`); the first two belong to other
-branches, so the shared helper is left to the wave-3 consolidation.
+branches, so the shared helper is left to the wave-3 consolidation. (Still three copies after
+0.5.0: the documentation pass changed no code.)
 
 ---
 
@@ -440,3 +441,9 @@ audit (options-themes, then e2e-coverage-ci) can include the run view through th
 this launcher; other views that change the idle menu from a promise continuation (lazy loads on
 `onShow`) can hit the same OpenTUI frame race (§14); the real UAC and `sudo` round trips stay
 manual (the UI suites replace `runElevatedBatch`; macOS session for `sudo`).
+
+Status after 0.5.0: `cli-reference.md` points at the guide, `themes-and-accessibility.md` states
+IT-6, and the contrast audit covers the run view (`test/e2e-coverage-ci`) — where it found that
+the pane draws default-coloured output in white, a known issue on light terminals (see the
+guide's [embedded terminal](../../guide/themes-and-accessibility.md#the-embedded-terminal)
+section). The frame race in other views and the manual round trips remain as stated.

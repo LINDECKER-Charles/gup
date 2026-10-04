@@ -18,6 +18,11 @@ export interface Stage {
   open(view: ViewId): Promise<void>;
   /** Resolves once `text` is on screen; throws with the frame dumped otherwise. */
   waitForText(text: string): Promise<void>;
+  /**
+   * Let the menu's frozen frame clock tick once: spinners take one step and
+   * a running update redraws its durations, as ten times a second in gup.
+   */
+  tick(): Promise<void>;
 }
 
 /** A scene id is a file stem: kebab-case, so it is always a safe file name. */
@@ -35,4 +40,11 @@ export interface Scene {
   fixture(): AppFixture;
   /** Drive the mounted app to the state to capture; ends on a `waitForText`. */
   play(stage: Stage): Promise<void>;
+}
+
+/** Scenes of one part of the app: a section of the gallery page. */
+export interface SceneGroup {
+  /** The section's heading, in English. */
+  readonly title: string;
+  readonly scenes: readonly Scene[];
 }

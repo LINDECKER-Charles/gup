@@ -400,4 +400,5 @@ sends no attempt and records nothing.
 - `menu-views.ts` and its test, `cli-modules.ts` and its test: adjacent-line
   conflicts with other wave-2 branches; keep every line, sorted.
 - The Planification view joins the contrast audit and the screenshot scenes
-  in wave 3 (`test/e2e-coverage-ci`, `docs/feature-guides`).
+  in wave 3 (`test/e2e-coverage-ci`, `docs/feature-guides`). (Done: `schedules.svg`,
+  `schedule-edit.svg`.)

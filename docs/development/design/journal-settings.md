@@ -195,7 +195,9 @@ temporary directory for the round trip); nothing writes through the process-wide
 
 - **`docs/feature-guides`**: `cli-reference.md` (`gup report --open`, the level setting in the
   precedence), `interactive-app.md` completion, `architecture.md` (the `ResultAction` seam next
-  to `PackageAction`); screenshots of Options › JOURNAL and of the results' `o` notice.
+  to `PackageAction`); screenshots of Options › JOURNAL and of the results' `o` notice. (Done in
+  the 0.5.0 documentation pass: Options › JOURNAL is `options-journal.svg`; the results show
+  the `o` key on `update-summary.svg`, not the notice written after it.)
 - **`test/e2e-coverage-ci`**: the contrast audit can register the JOURNAL section
   (`optionsView({ extraSections: [journalOptions({ logLevel })] })`, its override hint is the
   `warning` tone) and the run results with an action notice.
