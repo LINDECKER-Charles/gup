@@ -100,7 +100,7 @@ function openReportRow(controls: OptionsControls, host: OptionsHost): OptionRow 
   });
 }
 
-/** The Journal's presets in its own words ("30 derniers jours"…), shortest first. */
+/** The Journal's presets in its own words ("past 30 days"…), shortest first. */
 function periodChoices(): Choice<PeriodPreset>[] {
   const now = new Date();
   return PERIOD_CYCLE.map((value) => ({ value, label: periodLabel(presetPeriod(value, now)) }));

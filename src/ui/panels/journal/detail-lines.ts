@@ -3,7 +3,7 @@ import { seg, wrap, type Line } from "../../tui/styled-lines.js";
 import type { BrowsableList } from "./browsable-list.js";
 
 /**
- * The detail mode every journal list opens with Entrée: a title, then
+ * The detail mode every journal list opens with Enter: a title, then
  * "label  value" rows and free text, scrolled within the panel. Free text
  * keeps its paragraphs and is made printable (a message may carry what a
  * tool printed). Nothing is lost at the panel's edge: a title, a value or a

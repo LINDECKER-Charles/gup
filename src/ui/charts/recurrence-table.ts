@@ -9,7 +9,7 @@ import type { ChartGlyphs } from "./chart-glyphs.js";
 /**
  * Packages as a table of bars — name, provider, successful updates (or
  * failed attempts) as a bar and a count, typical interval and cadence —
- * shared by the journal's Récurrence tab and `gup report --format text`.
+ * shared by the journal's Recurrence tab and `gup report --format text`.
  * Narrow tables drop the pace columns first, then the provider.
  */
 
@@ -34,9 +34,10 @@ export interface RecurrenceRowContext {
   readonly providerName?: ProviderName | undefined;
 }
 
-const MEASURE_TITLES: Readonly<Record<RecurrenceMeasure, string>> = {
-  successes: RECURRENCE_COLUMNS.updates,
-  failures: RECURRENCE_COLUMNS.failures,
+/** The column titling each measure; its words are read when the header is drawn. */
+const MEASURE_COLUMNS: Readonly<Record<RecurrenceMeasure, keyof typeof RECURRENCE_COLUMNS>> = {
+  successes: "updates",
+  failures: "failures",
 };
 const MEASURE_TONES: Readonly<Record<RecurrenceMeasure, Tone>> = {
   successes: "success",
@@ -54,7 +55,7 @@ const MIN_BAR_WIDTH = 4;
 /** Below these widths the pace, then the provider, columns are dropped. */
 const PACE_MIN_WIDTH = 70;
 const PROVIDER_MIN_WIDTH = 50;
-/** "  ~14 j hebdo." after the count. */
+/** "  ~14 d weekly" after the count. */
 const PACE_WIDTH = 2 + INTERVAL_WIDTH + 1 + CADENCE_WIDTH;
 
 export function recurrenceColumns(width: number): RecurrenceColumns {
@@ -69,7 +70,7 @@ export function recurrenceColumns(width: number): RecurrenceColumns {
 export function recurrenceHeader(columns: RecurrenceColumns, measure: RecurrenceMeasure): Segment[] {
   const titles = [fit(RECURRENCE_COLUMNS.name, columns.name)];
   if (columns.provider > 0) titles.push(fit(RECURRENCE_COLUMNS.provider, columns.provider));
-  titles.push(fit(MEASURE_TITLES[measure], columns.bar + 1 + COUNT_WIDTH));
+  titles.push(fit(RECURRENCE_COLUMNS[MEASURE_COLUMNS[measure]], columns.bar + 1 + COUNT_WIDTH));
   const pace = columns.showsPace ? `  ${RECURRENCE_COLUMNS.pace}` : "";
   return [seg(`${titles.join(" ")}${pace}`, "muted")];
 }

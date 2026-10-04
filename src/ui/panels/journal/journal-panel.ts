@@ -11,7 +11,7 @@ import type { ResultNotice } from "../../app/view-definition.js";
 import { chartGlyphs } from "../../charts/chart-glyphs.js";
 import type { GlyphMode } from "../../theme/glyphs.js";
 import { periodLabel } from "../../text/journal/activity-labels.js";
-import { EXPORT_LABELS, JOURNAL_LABELS, TAB_LABELS } from "../../text/journal/journal-labels.js";
+import { EXPORT_LABELS, JOURNAL_LABELS } from "../../text/journal/journal-labels.js";
 import type { ChoiceSpec } from "../../tui/dialog.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import {
@@ -31,8 +31,8 @@ import type { JournalTab, TabFrame } from "./journal-tab.js";
 import { RecurrenceTab } from "./recurrence-tab.js";
 
 /**
- * The Journal view: four tabs over one load of the period — Activité,
- * Récurrence, Événements, Debug — switched with 1-4 or [ ]. `p` steps the
+ * The Journal view: four tabs over one load of the period — Activity,
+ * Recurrence, Events, Debug — switched with 1-4 or [ ]. `p` steps the
  * period, `r` reloads, `o` writes the HTML report of the period (opened in
  * the browser when the setting says so), `e` exports. The period is the
  * `journal.period` setting until `p` picks one. A load never blanks the
@@ -257,10 +257,10 @@ export class JournalPanel implements Panel {
   }
 }
 
-/** "▌1 Activité  2 Récurrence  3 Événements  4 Debug": the current tab marked, not only tinted. */
+/** "▌1 Activity  2 Recurrence  3 Events  4 Debug": the current tab marked, not only tinted. */
 function tabBar(current: number, width: number): Line {
   const segments: Segment[] = [];
-  TAB_LABELS.forEach((label, index) => {
+  JOURNAL_LABELS.tabs.forEach((label, index) => {
     if (index > 0) segments.push(seg(TAB_GAP));
     const text = `${index + 1} ${label}`;
     if (index === current) segments.push(seg("▌", "accent"), seg(text, "strong"));
@@ -273,7 +273,7 @@ function tabBar(current: number, width: number): Line {
 /**
  * Where an export went — written, opened in the browser, written but not
  * opened, or why not — as the line that says it: the Journal's status, and
- * what the run's results say after their `o rapport HTML`. The path reads
+ * what the run's results say after their `o HTML report`. The path reads
  * from `~`; given a `width`, it fits one row of it, cut in its middle when it
  * must be, so the file name always shows.
  */
