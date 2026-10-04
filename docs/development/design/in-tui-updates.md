@@ -314,7 +314,9 @@ forces its frames, so only the real-terminal smoke shows it (§18).
 the list takes the rows it needs, at most 45 % of the body; the terminal always keeps 6 rows.
 `v` enlarges: the list shrinks to the progress line and the package in flight. The pane is laid
 out at 100 % of its host (it follows the list's growth) and created at the layout's expected
-size, so a child starts at the right size; later layout changes resize the child.
+size, so a child starts at the right size; later layout changes resize the child. The view's
+teardown disposes the status `TextPanel` (`dispose()`), so a run leaves no appearance listener
+behind on the screen that outlives it.
 
 **Status list.** Header: a 10–40 column bar, `done/total`, `✔ ↷ ✖` (and `⊘` when some were
 cancelled), the clock. Rows: `STATUS_GLYPHS` icon (spinner while in flight), the package name,

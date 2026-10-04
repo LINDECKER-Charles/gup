@@ -124,6 +124,7 @@ export class RunLayout {
   }
 
   destroy(): void {
+    this.status.dispose();
     this.#root.destroyRecursively();
   }
 

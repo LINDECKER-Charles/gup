@@ -470,6 +470,28 @@ describe("run view", () => {
     expect(titleSpan?.bg.intent).toBe("rgb");
   });
 
+  it("stops following the appearance once the run view is gone", async () => {
+    const listeners = new Set<() => void>();
+    const tracked: AppearanceFactory = (renderer, tui) => ({
+      ...legacyAppearance(renderer, tui),
+      onChange: (listener) => {
+        listeners.add(listener);
+        return () => void listeners.delete(listener);
+      },
+    });
+    const { menu, pty } = await launched({ createAppearance: tracked, packages: [pkg("alpha")] });
+    await installsStarted(pty, 1);
+    const whileRunning = listeners.size;
+    pty.last().emitExit({ exitCode: 0 });
+    await shown(menu, RUN_TITLES.done);
+    await menu.press("enter");
+    await shown(menu, "┏━ Paquets");
+    // The run's status panel was the only listener the run view added.
+    expect(listeners.size).toBe(whileRunning - 1);
+    for (const listener of listeners) listener();
+    expect(await menu.frame()).toContain("┏━ Paquets");
+  });
+
   it("closes its gate on the signals that end gup, only while the batch runs", async () => {
     const { menu, pty } = await launched({ packages: [pkg("alpha")] });
     await installsStarted(pty, 1);
