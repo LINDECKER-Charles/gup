@@ -1,13 +1,15 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Runs security audit, tests, and coverage in parallel and prints a compact summary.
+    Runs the typecheck, security audit, tests, and coverage in parallel and prints a compact summary.
 
 .DESCRIPTION
-    Spawns three background jobs (npm run security | test:run | test:coverage),
+    Spawns four background jobs (npm run typecheck | security | test:run | test:coverage),
     streams progress while they execute, then renders a synthetic report:
     status (OK/KO), per-job duration, parsed metrics (vulns / passed-failed / coverage %),
     and tails the output of any failed job. Exit code is non-zero if any check failed.
+    Coverage fails only on the floors of the safety-critical modules
+    (tests/support/coverage-floors.ts); the overall percentages are informative.
 #>
 
 $ErrorActionPreference = 'Continue'
@@ -24,13 +26,14 @@ function Strip-Ansi([string]$text) {
 }
 
 $tasks = @(
-    [pscustomobject]@{ Name = 'Security'; Script = 'security'      }
-    [pscustomobject]@{ Name = 'Tests';    Script = 'test:run'      }
-    [pscustomobject]@{ Name = 'Coverage'; Script = 'test:coverage' }
+    [pscustomobject]@{ Name = 'Typecheck'; Script = 'typecheck'     }
+    [pscustomobject]@{ Name = 'Security';  Script = 'security'      }
+    [pscustomobject]@{ Name = 'Tests';     Script = 'test:run'      }
+    [pscustomobject]@{ Name = 'Coverage';  Script = 'test:coverage' }
 )
 
 Write-Host ''
-Write-Host '>>> Running in parallel: security | tests | coverage' -ForegroundColor Magenta
+Write-Host '>>> Running in parallel: typecheck | security | tests | coverage' -ForegroundColor Magenta
 Write-Host ''
 
 $globalSw = [Diagnostics.Stopwatch]::StartNew()
@@ -129,6 +132,9 @@ foreach ($t in $tasks) {
     Write-Host (' {0}  ' -f $dur)         -ForegroundColor DarkGray     -NoNewline
 
     switch ($t.Name) {
+        'Typecheck' {
+            Write-Host 'tsc: src, then tests + scripts' -ForegroundColor DarkCyan
+        }
         'Security' {
             $vuln = Parse-Audit $r.Output
             if ($null -ne $vuln) {
