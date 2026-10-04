@@ -33,18 +33,24 @@ const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 /** Sample data, never vocabulary: versions, counts, clocks. */
 const isNumeric = (text) => /\d/.test(text) && /^[\d\s.,:/()+-]+$/.test(text);
 
+/** `counted(n, "one", "many")` in fr-format: a number then the word agreeing with it. */
+const COUNTED_CALL = /\bcounted\([^"]*?,\s*"([^"]+)",\s*"([^"]+)"\)/gu;
+const COUNTED_TEXT = /^\d+ (.+)$/u;
+
 /**
  * What the TUI can write: every string literal under src/ui/, and every
  * template literal as a pattern whose interpolations take a number or a text
  * the TUI writes elsewhere (a glyph, a label constant). Both are split at the
- * separator, so one hint of a composed hint bar is found on its own.
+ * separator, so one hint of a composed hint bar is found on its own. A count
+ * written by `counted()` ("47 détectés") is a number and one of its words.
  */
 class Vocabulary {
   texts = new Set();
   patterns = [];
+  countedWords = new Set();
 
-  constructor(literals) {
-    for (const literal of literals) {
+  constructor(sources) {
+    for (const literal of sources.flatMap((source) => tsLiterals(source))) {
       const joined = literal.kind === "string" ? literal.text : literal.parts.join(HOLE);
       if (literal.kind === "string") this.texts.add(literal.text.trim());
       for (const fragment of joined.split(SEPARATOR).map((part) => part.trim())) {
@@ -52,10 +58,13 @@ class Vocabulary {
         else if (fragment.replaceAll(HOLE, "").trim()) this.patterns.push(patternOf(fragment));
       }
     }
+    for (const [, one, many] of sources.flatMap((source) => [...source.matchAll(COUNTED_CALL)])) {
+      this.countedWords.add(one).add(many);
+    }
   }
 
   has(text) {
-    if (this.isValue(text)) return true;
+    if (this.isValue(text) || this.isCounted(text)) return true;
     return this.patterns.some((pattern) => {
       const match = text.match(pattern);
       return match !== null && match.slice(1).every((value) => this.isValue(value));
@@ -65,14 +74,17 @@ class Vocabulary {
   isValue(text) {
     return isNumeric(text) || this.texts.has(text.trim());
   }
+
+  isCounted(text) {
+    const words = text.trim().match(COUNTED_TEXT)?.[1];
+    return words !== undefined && this.countedWords.has(words);
+  }
 }
 
 const patternOf = (fragment) =>
   new RegExp(`^${fragment.split(HOLE).map(escapeRegExp).join("(.+?)")}$`, "u");
 
-const vocabulary = new Vocabulary(
-  typescriptUnder("src/ui").flatMap((file) => tsLiterals(read(file))),
-);
+const vocabulary = new Vocabulary(typescriptUnder("src/ui").map((file) => read(file)));
 const unknown = (texts) =>
   texts.flatMap((text) => text.split(SEPARATOR)).filter((part) => !vocabulary.has(part));
 
@@ -93,6 +105,8 @@ test("the vocabulary tells the TUI's words from words it never writes", () => {
   assert.ok(!vocabulary.has("a tout sélectionner"));
   assert.ok(!vocabulary.has("entrée lancer (3)"));
   assert.ok(!vocabulary.has("Mettre à jour maintenant (3)"));
+  assert.ok(vocabulary.has("47 détectés"), "a count written by counted()");
+  assert.ok(!vocabulary.has("47 trouvés"));
 });
 
 /** A view definition's label, `CONST` or `CONST.key`, resolved in src/ui/text/. */

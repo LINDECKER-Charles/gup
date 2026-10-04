@@ -8,7 +8,10 @@ import type { ReportedColors } from "../../../src/ui/theme/terminal-palette.js";
  * light, low-contrast) shows up.
  */
 
-/** Windows Terminal's default dark scheme ("Campbell"). */
+/**
+ * Windows Terminal's default dark scheme ("Campbell"), also the Windows
+ * console's default since Windows 10 1709.
+ */
 export const CAMPBELL: ReportedColors = {
   defaultForeground: "#cccccc",
   defaultBackground: "#0c0c0c",
@@ -48,6 +51,46 @@ export const ONE_HALF_LIGHT: ReportedColors = {
   ],
 };
 
+/** The Windows console before Windows 10 1709: kept by consoles set up then. */
+export const WINDOWS_CONSOLE_LEGACY: ReportedColors = {
+  defaultForeground: "#c0c0c0",
+  defaultBackground: "#000000",
+  palette: [
+    "#000000", "#800000", "#008000", "#808000", "#000080", "#800080", "#008080", "#c0c0c0",
+    "#808080", "#ff0000", "#00ff00", "#ffff00", "#0000ff", "#ff00ff", "#00ffff", "#ffffff",
+  ],
+};
+
+/** iTerm2's default profile. */
+export const ITERM2_DEFAULT: ReportedColors = {
+  defaultForeground: "#c7c7c7",
+  defaultBackground: "#000000",
+  palette: [
+    "#000000", "#c91b00", "#00c200", "#c7c400", "#0225c7", "#ca30c7", "#00c5c7", "#c7c7c7",
+    "#686868", "#ff6e67", "#5ffa68", "#fffc67", "#6871ff", "#ff77ff", "#60fdff", "#ffffff",
+  ],
+};
+
+/** GNOME Terminal's Tango dark. */
+export const GNOME_TANGO_DARK: ReportedColors = {
+  defaultForeground: "#d3d7cf",
+  defaultBackground: "#2e3436",
+  palette: [
+    "#2e3436", "#cc0000", "#4e9a06", "#c4a000", "#3465a4", "#75507b", "#06989a", "#d3d7cf",
+    "#555753", "#ef2929", "#8ae234", "#fce94f", "#729fcf", "#ad7fa8", "#34e2e2", "#eeeeec",
+  ],
+};
+
+/** xterm's defaults: black on white. */
+export const XTERM_DEFAULT: ReportedColors = {
+  defaultForeground: "#000000",
+  defaultBackground: "#ffffff",
+  palette: [
+    "#000000", "#cd0000", "#00cd00", "#cdcd00", "#0000ee", "#cd00cd", "#00cdcd", "#e5e5e5",
+    "#7f7f7f", "#ff0000", "#00ff00", "#ffff00", "#5c5cff", "#ff00ff", "#00ffff", "#ffffff",
+  ],
+};
+
 /** What a terminal that ignores the queries answers: nothing. */
 export const UNSUPPORTED: ReportedColors = {
   defaultForeground: null,
@@ -57,7 +100,11 @@ export const UNSUPPORTED: ReportedColors = {
 
 export const REFERENCE_PALETTES: Readonly<Record<string, ReportedColors>> = {
   Campbell: CAMPBELL,
+  "Windows console (legacy)": WINDOWS_CONSOLE_LEGACY,
   "Terminal.app Basic": TERMINAL_APP_BASIC,
+  "iTerm2 default": ITERM2_DEFAULT,
+  "GNOME Tango dark": GNOME_TANGO_DARK,
+  xterm: XTERM_DEFAULT,
   "Solarized Dark": SOLARIZED_DARK,
   "One Half Light": ONE_HALF_LIGHT,
 };

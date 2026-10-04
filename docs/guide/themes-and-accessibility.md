@@ -58,9 +58,12 @@ one every other screenshot of these docs shows):
 ## Choosing a theme
 
 In **Options**, the *Thème* row shows the theme in use and, as its hint, how
-readable it is on your terminal: `✔ AA · contraste min. 6,1:1`, `⚠ 2 couleur(s)
-ajustée(s) · min. 4,6:1`, or `? palette du terminal inconnue — contraste non
-vérifiable`. `entrée` opens the theme picker:
+readable it is on your terminal: `✔ AA · contraste min. 6,1:1`, `⚠ 2 couleurs
+ajustées · min. 4,6:1`, or `? palette du terminal inconnue — contraste non
+vérifiable`. The count is of the colours you can set in the colour editor —
+the same number the picker and the editor give; the colours drawn from them
+(the title bar's fill, the text on it, the focus border) follow without being
+counted again. `entrée` opens the theme picker:
 
 ![Options, theme picker: every built-in theme with its lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
 
@@ -108,8 +111,8 @@ belong to that theme: an accent tuned for `dark` does not change `light`.
 A colour you type is saved at once; nudges with the arrows and `+` `-` are
 saved when you move to another role or leave the editor. **However you set
 them, what is painted stays readable**: the setting keeps your choice, the screen
-shows the adjusted colour, and the editor tells you so (`⚠ 1 couleur(s)
-ajustée(s) automatiquement pour rester lisible (AA)`).
+shows the adjusted colour, and the editor tells you so (`⚠ 1 couleur ajustée
+automatiquement pour rester lisible (AA)`).
 
 The editor is unavailable — and the row says why — when there is nothing to
 tune: `monochrome`, `NO_COLOR`, a 16-colour terminal, or the `terminal` theme
@@ -129,14 +132,28 @@ once per run):
   Windows Terminal's "Campbell" red (below 2.5:1 on its background) is
   lightened, and macOS Terminal.app's light "Basic" profile gets darker cyan,
   green and yellow.
-- **The terminal does not answer.** `gup` cannot know your colours, so it does
-  not invent any: text is your terminal's own text colour, the accents are your
-  ANSI colours, and the selected row and the title bar are drawn in **inverse
-  video** — their contrast is your terminal's own by construction. Contrast
-  cannot be verified in this case; pick an RGB theme for a guaranteed one.
+- **The terminal does not answer.** `gup` cannot measure your colours, so it
+  paints no RGB of its own: text is your terminal's own text colour, the
+  selected row and the title bar are drawn in **inverse video** — their
+  contrast is your terminal's own by construction — and each accent is one of
+  your ANSI colours, picked to read on the default colours of the terminals
+  that stay silent:
+
+  | What `gup` knows | Defaults it relies on | What changes from the usual slots |
+  |---|---|---|
+  | Windows — its console (conhost) never answers | Campbell (the console's default since Windows 10 1709, and Windows Terminal's), the console colours of before | red, green and cyan take their **bright** slots — Campbell's red is 3.2:1 on its background, its bright red 5.1:1; yellow and the borders keep theirs |
+  | the background is **dark**, and nothing more | iTerm2's default profile, GNOME Terminal's Tango dark | green and cyan take their bright slots; red and the borders of the panels without focus, readable in no slot on both, are drawn in your text colour |
+  | the background is **light**, and nothing more | Terminal.app's *Basic* profile, xterm's black on white | green, yellow, cyan and the focused border, readable in no slot (about 3:1), are drawn in your text colour; red keeps its slot |
+  | nothing at all, outside Windows | — | nothing: the usual slots, unverified |
+
+  That is at AA; at AAA more of them may fall back to your text colour. A
+  colour drawn in your text colour keeps its meaning through its symbol (`✔`,
+  `✖`, `⚠`). If you changed your console's colours, `gup` paints with yours,
+  unverified: pick an RGB theme for ratios guaranteed whatever the terminal.
 
 Which terminals answer is not recorded here yet: the manual verification passes
-of 0.5.0 (conhost and Windows Terminal, then macOS) will list them.
+of 0.5.0 (conhost and Windows Terminal, then macOS) will list them. conhost
+never does.
 
 ## The contrast guarantee
 
@@ -162,7 +179,10 @@ Checked on every pair `gup` paints:
   thousand random palettes pass after adjustment at both levels, random custom
   colours on every theme and random terminal palettes pass as painted — on
   true-colour and 256-colour terminals, at AA and AAA — and an audit walks the
-  whole menu under every theme and measures every cell on screen.
+  whole menu under every theme and measures every cell on screen, including on
+  the Windows console and on Terminal.app's *Basic* profile when they keep their
+  palette to themselves. The colours picked for a silent terminal are checked
+  against the defaults of the table above, at AA and AAA.
 
 ## Not by colour alone
 

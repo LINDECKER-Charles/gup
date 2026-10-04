@@ -89,6 +89,22 @@ describe("updateCommand: --targets", () => {
     expect(getProviderMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["an option", "p:--registry=http://attacker.invalid", "« - »"],
+    ["an empty package id", "p:", "identifiant de paquet manquant"],
+    ["a control character", "p:pkg\u001b]0;title\u0007", "caractère de contrôle"],
+  ])("returns 2 without updating anything when a target holds %s", async (_case, target, reason) => {
+    const p = mkProvider();
+    getProviderMock.mockReturnValue(p);
+
+    expect(await updateCommand({ targets: ["p:ok", target] })).toBe(2);
+
+    const message = String(stderrSpy.mock.calls[0]![0]);
+    expect(message).toContain(reason);
+    expect(message.trimEnd()).not.toMatch(/[\u0000-\u001f\u007f]/);
+    expect(p.update).not.toHaveBeenCalled();
+  });
+
   it("returns 2 and prints stderr when the provider is unknown", async () => {
     getProviderMock.mockReturnValueOnce(undefined);
     const code = await updateCommand({ targets: ["nope:foo"] });
@@ -205,6 +221,18 @@ describe("updateCommand: scan + interactive selection", () => {
     const out = stdoutSpy.mock.calls.map((c) => String(c[0])).join("");
     expect(out).toMatch(/à jour.*aucune/);
     expect(promptPackageSelectionMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the scan errors instead of 'à jour' when a provider could not scan", async () => {
+    const results = [
+      { providerId: "npm-g", available: true, packages: [], error: "npm outdated a échoué (E503)" },
+    ];
+    scanWithProgressMock.mockResolvedValueOnce({ results, detectedCount: 1 });
+    const code = await updateCommand({});
+    expect(code).toBe(0);
+    const out = stdoutSpy.mock.calls.map((c) => String(c[0])).join("");
+    expect(out).toContain("scan error: npm outdated a échoué (E503)");
+    expect(out).not.toMatch(/à jour —/);
   });
 
   it("returns 0 with 'Aucune sélection' when interactive prompt yields []", async () => {

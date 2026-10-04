@@ -1,8 +1,10 @@
 import type { CustomColors, ThemeSettings } from "../settings/theme-section.js";
 import { fromOklch, toOklch } from "./color/oklch.js";
 import { isSameRgb, mix, parseHex, type Rgb } from "./color/rgb.js";
+import { unreportedColors } from "./color/unreported-palette.js";
 import { BUILTIN_PALETTES } from "./builtin-themes.js";
 import {
+  adjustedRoles,
   enforceContrast,
   minTextRatio,
   quantizeToXterm256,
@@ -32,11 +34,11 @@ import {
  *
  * 1. `NO_COLOR` → monochrome; 2. the `monochrome` theme → monochrome;
  * 3. a 16-colour terminal → trusted ANSI slots (RGB cannot be painted);
- * 4. `terminal` → the detected palette, enforced (trusted slots while the
- *    palette is unknown); 5. `auto` → gup dark or light per the terminal's
- *    background; 6. an RGB theme → its palette. Customs apply to their own
- *    theme; on a 256-colour terminal every RGB colour moves to a standardized
- *    slot, re-checked there.
+ * 4. `terminal` → the detected palette, enforced (while it is unknown, the
+ *    terminal's own slots most likely to read: `color/unreported-palette.ts`);
+ * 5. `auto` → gup dark or light per the terminal's background; 6. an RGB
+ *    theme → its palette. Customs apply to their own theme; on a 256-colour
+ *    terminal every RGB colour moves to a standardized slot, re-checked there.
  */
 
 export type ColorDepth = "truecolor" | "256" | "16" | "unknown";
@@ -86,6 +88,11 @@ export interface ResolveInput {
   readonly terminal: TerminalFacts;
   /** `NO_COLOR` present and non-empty (no-color.org). */
   readonly isNoColor: boolean;
+  /**
+   * Where gup runs: what a terminal that reports no palette most likely
+   * paints with (the Windows console's defaults). Default: this process's.
+   */
+  readonly platform?: NodeJS.Platform;
 }
 
 /** `disabled` = the neutral of text blended this far into the background, then lifted to AA. */
@@ -130,7 +137,7 @@ export function themeAvailability(input: ResolveInput): ThemeAvailability[] {
       ...(isUnpaintable && { reason: "depth-16" as const }),
       minTextRatio: report.minTextRatio,
       mode,
-      isCorrected: report.corrections.length > 0,
+      isCorrected: adjustedRoles(report.corrections).length > 0,
     };
   });
 }
@@ -140,10 +147,8 @@ export function resolveTheme(input: ResolveInput): ResolvedTheme {
   const { id } = settings;
   if (input.isNoColor) return withoutPalette(settings, "monochrome", ["no-color"]);
   if (id === "monochrome") return withoutPalette(settings, "monochrome", []);
-  if (terminal.depth === "16") {
-    return withoutPalette(settings, "trusted", id === "terminal" ? [] : ["depth-16"]);
-  }
-  if (id === "terminal") return resolveTerminal(settings, terminal);
+  if (terminal.depth === "16") return trusted(input, id === "terminal" ? [] : ["depth-16"]);
+  if (id === "terminal") return resolveTerminal(input);
   return resolveRgb({ settings, terminal, id });
 }
 
@@ -162,10 +167,24 @@ function withoutPalette(
   };
 }
 
-function resolveTerminal(settings: ThemeSettings, terminal: TerminalFacts): ResolvedTheme {
+/**
+ * The terminal's own colours, unmeasured: its text colour, and for each
+ * coloured role the ANSI slot most likely to read on it (`unreportedColors`).
+ */
+function trusted(input: ResolveInput, notices: readonly ThemeNotice[]): ResolvedTheme {
+  const terminal = {
+    platform: input.platform ?? process.platform,
+    themeMode: input.terminal.themeMode,
+  };
+  const sources = unreportedColors(terminal, input.settings.contrast);
+  return { ...withoutPalette(input.settings, "trusted", notices), sources };
+}
+
+function resolveTerminal(input: ResolveInput): ResolvedTheme {
+  const { settings, terminal } = input;
   if (!terminal.colors) {
     const isPending = terminal.detection !== "done";
-    return withoutPalette(settings, "trusted", [isPending ? "palette-pending" : "palette-unknown"]);
+    return trusted(input, [isPending ? "palette-pending" : "palette-unknown"]);
   }
   const derived = deriveTerminalPalette(terminal.colors);
   const enforced = enforceContrast(

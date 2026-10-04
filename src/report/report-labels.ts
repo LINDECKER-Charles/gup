@@ -29,8 +29,9 @@ export const REPORT_LABELS = {
     print: "Imprimer",
   },
   search: {
-    label: "Rechercher",
-    placeholder: "Rechercher un paquet, un provider, un message…",
+    label: "Rechercher un paquet, un provider ou un message",
+    /** Whole in the search box of a 320 px phone: the label says the rest. */
+    placeholder: "Paquet, provider ou message…",
     shortcut: "/",
     active: "Recherche : « {query} »",
     clear: "Effacer la recherche",
@@ -113,7 +114,9 @@ export const REPORT_LABELS = {
     lastScan: "Dernier scan {when}.",
     noActivity: "Aucune activité enregistrée.",
     activity: "Activité",
-    activityIntro: "Mises à jour réussies par jour, sur les dernières semaines de la période.",
+    activityIntro: "Mises à jour réussies par jour, sur toute la période.",
+    /** A period longer than the calendar's 53 weeks: it shows the end of it. */
+    activityIntroRecent: "Mises à jour réussies par jour, sur les 12 derniers mois de la période.",
     openCalendar: "Ouvrir le calendrier →",
     watch: "À surveiller",
     allFailures: "Tous les échecs →",

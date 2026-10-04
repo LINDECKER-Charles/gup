@@ -40,9 +40,9 @@ describe("runStatusLabel", () => {
     expect(runStatusLabel(undefined)).toBe("—");
     expect(runStatusLabel(record(["updated", "updated", "no-update"], "success"))).toBe("✔ 2 mis à jour");
     expect(runStatusLabel(record(["no-update"], "up-to-date"))).toBe("✔ à jour");
-    expect(runStatusLabel(record(["updated", "failed", "failed"], "partial"))).toBe("◐ 1/3 — 2 échec(s)");
-    expect(runStatusLabel(record(["updated", "skipped"], "partial"))).toBe("◐ 1/2 — 1 ignoré(s)");
-    expect(runStatusLabel(record(["failed"], "failed"))).toBe("✖ 1 échec(s)");
+    expect(runStatusLabel(record(["updated", "failed", "failed"], "partial"))).toBe("◐ 1/3 — 2 échecs");
+    expect(runStatusLabel(record(["updated", "skipped"], "partial"))).toBe("◐ 1/2 — 1 ignorée");
+    expect(runStatusLabel(record(["failed"], "failed"))).toBe("✖ 1 échec");
     expect(runStatusLabel(record(["skipped"], "skipped"))).toBe("↷ ignorée");
     expect(runStatusLabel(record([], "missed"))).toBe("– manquée");
   });
@@ -54,7 +54,7 @@ describe("targetResultLabel", () => {
     expect(targetResultLabel({ target: "a:b", status: "no-update" })).toBe("aucune mise à jour");
     expect(targetResultLabel({ target: "a:b", status: "failed", message: "1603" })).toBe("échec — 1603");
     expect(targetResultLabel({ target: "a:b", status: "skipped", message: "hors ligne" })).toBe(
-      "ignoré — hors ligne",
+      "ignorée — hors ligne",
     );
   });
 });

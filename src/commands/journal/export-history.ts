@@ -210,6 +210,7 @@ function serializeText({ request, insights, deps }: SerializeInput): string {
     width: request.width ?? DEFAULT_TEXT_WIDTH,
     glyphs: chartGlyphs(mode),
     now: deps.now(),
+    providerName: deps.nameOf,
   };
   const lines = renderTextReport(insights, context);
   return request.target.kind === "stdout" ? linesToAnsi(lines, mode) : linesToText(lines, mode);

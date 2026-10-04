@@ -29,11 +29,15 @@ export const RUN_FACTS = {
   total: (count: number): string => `${count} paquet(s)`,
 } as const;
 
+/**
+ * An update's outcome agrees with « mise à jour », as in the Journal and the
+ * HTML report: `ignorée`, `annulée`; the row of the package says the same.
+ */
 export const RUN_SUMMARY = {
   succeeded: (count: number): string => `${count} mis à jour`,
-  skipped: (count: number): string => `${count} ignoré(s)`,
-  failed: (count: number): string => `${count} échec(s)`,
-  cancelled: (count: number): string => `${count} annulé(s)`,
+  skipped: (count: number): string => counted(count, "ignorée", "ignorées"),
+  failed: (count: number): string => counted(count, "échec", "échecs"),
+  cancelled: (count: number): string => counted(count, "annulée", "annulées"),
   elapsed: (clock: string): string => `en ${clock}`,
 } as const;
 
@@ -46,7 +50,7 @@ export const RUN_TAGS = {
 export const RUN_MESSAGES = {
   retryable: (message: string): string => `${message} — réessai proposé à la fin`,
   failedWithoutMessage: "échec",
-  cancelled: "annulé (arrêt demandé)",
+  cancelled: "annulée (arrêt demandé)",
 } as const;
 
 export const RUN_WAITING = {
@@ -104,6 +108,14 @@ export const RUN_HINTS = {
     resize: (isEnlarged: boolean): string =>
       isEnlarged ? "v réduire la sortie" : "v agrandir la sortie",
   },
+} as const;
+
+/** The keys of an update on the plain terminal, printed as the batch starts. */
+export const CONSOLE_KEYS = {
+  skip: "Ctrl+C : passer l'install bloquée",
+  stopAll: "Ctrl+C ×2 : tout arrêter",
+  timeout: (seconds: number): string =>
+    seconds > 0 ? `timeout auto ${seconds}s` : "timeout auto désactivé",
 } as const;
 
 export const RUN_NOTICES = {
@@ -181,7 +193,8 @@ export const LAUNCH_ERROR = {
 export const RUN_NOTIFICATION = {
   title: "gup",
   body: (succeeded: number, skipped: number, failed: number): string =>
-    `Mise à jour terminée : ${succeeded} mis à jour, ${skipped} ignoré(s), ${failed} échec(s).`,
+    `Mise à jour terminée : ${RUN_SUMMARY.succeeded(succeeded)}, ` +
+    `${RUN_SUMMARY.skipped(skipped)}, ${RUN_SUMMARY.failed(failed)}.`,
 } as const;
 
 /** The `gup doctor` line of the embedded terminal ("Système" section). */

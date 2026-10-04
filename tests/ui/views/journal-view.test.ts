@@ -104,6 +104,24 @@ describe("journal view", () => {
     await menu.waitForText("Rapport ouvert dans le navigateur");
     expect(source.export).toHaveBeenCalledWith("html", expect.objectContaining({ key: "12m" }));
   });
+
+  it("names providers as the menu does, not by their ids", async () => {
+    const names: Readonly<Record<string, string>> = { choco: "Chocolatey", winget: "Winget" };
+    const menu = await bootMenu({
+      views: [...defaultViews(), journalView(scriptedSource(journalData()))],
+      initialView: "journal",
+      scanOnStart: false,
+      size: { cols: 120, rows: 30 },
+      controller: { displayName: (providerId) => names[providerId] ?? providerId },
+    });
+    await menu.waitForText("Mises à jour réussies par jour");
+
+    await menu.press("3");
+
+    const frame = await menu.waitForText("Chocolatey");
+    expect(frame).toMatch(/échec +Chocolatey +nodejs/);
+    expect(frame).not.toMatch(/échec +choco +nodejs/);
+  });
 });
 
 describe("journal view and the settings", () => {

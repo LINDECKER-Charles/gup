@@ -135,3 +135,46 @@ describe("openExternal", () => {
     expect(launch).not.toHaveBeenCalled();
   });
 });
+
+describe("openExternal: an HTML page only", () => {
+  it.each([
+    ["an HTML application, which mshta runs", "win32", "C:\\Users\\user\\rapport.hta"],
+    ["an executable", "win32", "C:\\Users\\user\\rapport.exe"],
+    ["a name whose last extension is not HTML", "win32", "C:\\Users\\user\\rapport.html.hta"],
+    ["a name with no extension", "win32", "C:\\Users\\user\\rapport"],
+    ["a Terminal script, which macOS runs", "darwin", "/Users/user/rapport.command"],
+    ["a desktop entry, which xdg-open may run", "linux", "/home/user/rapport.desktop"],
+  ] as const)("never hands %s to the default application", async (_case, platform, file) => {
+    const launch = vi.fn<Launch>(async () => true);
+    const which = vi.fn(async () => "/usr/bin/xdg-open");
+
+    const result = await openExternal(file, { platform, env: {}, which, launch });
+
+    expect(result).toEqual({ opened: false, launcher: null, reason: "not an HTML file", isNotHtml: true });
+    expect(launch).not.toHaveBeenCalled();
+    expect(which).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["win32", "C:\\Users\\user\\RAPPORT.HTML"],
+    ["win32", "C:\\Users\\user\\rapport.htm"],
+    ["darwin", "/Users/user/rapport.Html"],
+  ] as const)("opens an HTML page whatever the case of its extension (%s, %s)", async (platform, file) => {
+    const launch = vi.fn<Launch>(async () => true);
+
+    expect(await openExternal(file, { platform, env: {}, launch })).toMatchObject({ opened: true });
+  });
+
+  it("refuses an NTFS stream named like a page: x.hta:y.html is a stream of x.hta", async () => {
+    const launch = vi.fn<Launch>(async () => true);
+
+    const result = await openExternal("C:\\Users\\user\\x.hta:y.html", { platform: "win32", env: {}, launch });
+
+    expect(result).toMatchObject({ opened: false, reason: expect.stringContaining("stream") });
+    expect(launch).not.toHaveBeenCalled();
+    // The colon of a long path's drive is part of its root, not a stream.
+    expect(openerFor("\\\\?\\C:\\Users\\user\\rapport.html", facts({ platform: "win32" }))).toMatchObject({
+      args: ["\\\\?\\C:\\Users\\user\\rapport.html"],
+    });
+  });
+});

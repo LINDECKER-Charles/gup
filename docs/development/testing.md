@@ -230,9 +230,15 @@ A suite that changes anything real wraps its tests in `describe.runIf(isMutateEn
 | Typecheck (src and tests) | ✓ | ✓ | ✓ |
 | Lint, security lint | | | ✓ |
 | Build | ✓ | ✓ | ✓ |
-| Tests (`test:run`, `GUP_MUTATE=1`) | ✓ (the Task Scheduler round trip included) | ✓ | |
+| Tests (`test:run`, mutating suites skipped) | ✓ | ✓ | |
 | Tests with coverage (floors), report uploaded | | | ✓ |
 | End-to-end smoke | ✓ | ✓ | ✓ (menu suite skipped if node-pty did not build) |
+
+The mutating integration suites (`GUP_MUTATE=1`: the Task Scheduler round trip on Windows, the
+`npm install -g` stopped mid-download) run in their own `mutate (node 26 / <os>)` job, on the
+three OSes. It is **not** a required check: whether a hosted image lets Task Scheduler start a
+task is the runner's business, and a required check failing for it would block every pull
+request. `tests/scripts/ci-required-checks.test.ts` keeps `GUP_MUTATE` out of the required job.
 
 The `packed install (node 26 / <os>)` job, on Windows and macOS, installs what users install:
 `npm pack`, then `npm install --global ./*.tgz --ignore-scripts`, then `gup doctor` must report

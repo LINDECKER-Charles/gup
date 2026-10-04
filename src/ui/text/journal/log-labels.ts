@@ -5,6 +5,7 @@ import {
 } from "../../../core/export/diagnostic-bundle.js";
 import type { LogLevel, LogThreshold } from "../../../core/log/log.js";
 import type { UpdateStatus } from "../../../core/history/types.js";
+import { counted } from "../fr-format.js";
 
 /**
  * The debug log's words (French, the language of the interface): `gup log`
@@ -102,7 +103,8 @@ export function diagnosticReadme(contents: DiagnosticContents): string {
     `  ${DIAGNOSTIC_ENTRIES.system}   versions, plateforme et variables d'environnement ` +
       "propres à gup",
     "                (liste fermée : le reste de l'environnement n'est jamais copié)",
-    `  ${DIAGNOSTIC_ENTRIES.logs}/         journal de debug, ${logs.length} fichier(s)`,
+    `  ${DIAGNOSTIC_ENTRIES.logs}/         journal de debug, ` +
+      counted(logs.length, "fichier", "fichiers"),
     ...logs.map((name) => `                  ${name}`),
     ...historyLines(contents.history),
     "",
@@ -112,9 +114,18 @@ export function diagnosticReadme(contents: DiagnosticContents): string {
     "",
     "Relisez-la avant de la joindre à un rapport de bug : un secret dans un",
     "format inconnu de gup pourrait subsister.",
-    ...(dropped > 0 ? ["", `${dropped} ligne(s) illisible(s) du journal ont été omise(s).`] : []),
+    ...(dropped > 0 ? ["", `${droppedLines(dropped)}.`] : []),
   ];
   return `${lines.join("\n")}\n`;
+}
+
+/** "1 ligne illisible du journal a été omise", "2 lignes … ont été omises". */
+function droppedLines(count: number): string {
+  return counted(
+    count,
+    "ligne illisible du journal a été omise",
+    "lignes illisibles du journal ont été omises",
+  );
 }
 
 /** The README's line on the activity summary; none when it was left out on request. */

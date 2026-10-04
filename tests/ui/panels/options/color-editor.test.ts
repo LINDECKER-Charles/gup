@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { appearanceSection } from "../../../../src/ui/panels/options/appearance-section.js";
 import { OptionsPanel } from "../../../../src/ui/panels/options/options-panel.js";
-import { COLOR_EDITOR, HEX_DIALOG } from "../../../../src/ui/text/settings/theme-labels.js";
+import {
+  COLOR_EDITOR,
+  HEX_DIALOG,
+  THEME_PICKER,
+} from "../../../../src/ui/text/settings/theme-labels.js";
 import * as wcag from "../../../support/contrast/wcag.js";
 import { key, lineWith, optionsFixture, settle, text, VIEW } from "./options-fixture.js";
 
 /** The dark theme's background: unreadable as text on itself. */
-const DARK_BACKGROUND = "#0B0D13";
+const DARK_BACKGROUND = "#0B0D13" as const;
 
 /** The colour editor open on the dark theme, the cursor on "Accent". */
 function openEditor() {
@@ -74,6 +78,19 @@ describe("colour editor", () => {
     expect(text([lineWith(editor.panel.render(VIEW), "Accent")])).toMatch(/✔/);
   });
 
+  it("counts the adjusted colours as the Thème row and the picker do: the ones a user tunes", () => {
+    const fixture = optionsFixture();
+    const custom = { accent: DARK_BACKGROUND, success: DARK_BACKGROUND };
+    fixture.settings.update("theme", { id: "dark", custom: { dark: custom } });
+    const panel = new OptionsPanel([appearanceSection], fixture.host);
+    expect(text([lineWith(panel.render(VIEW), "Thème")])).toMatch(/⚠ 2 couleurs ajustées · min\./);
+    panel.press(key("enter"));
+    expect(text(panel.render(VIEW))).toContain(THEME_PICKER.corrections(2));
+    panel.press(key("escape"));
+    for (const name of ["down", "enter"]) panel.press(key(name));
+    expect(text(panel.render(VIEW))).toContain(COLOR_EDITOR.corrected(2, "AA"));
+  });
+
   it("keeps the contrast and its warning whole on a narrow panel, the painted colour left out", async () => {
     const editor = openEditor();
     await typeColor(editor, DARK_BACKGROUND);
@@ -81,6 +98,16 @@ describe("colour editor", () => {
     expect(text(narrow)).not.toContain(COLOR_EDITOR.columns.shown);
     expect(text([lineWith(narrow, "Accent")])).toMatch(/1,0 → \d+,\d:1 ⚠/);
     expect(text(editor.panel.render(VIEW))).toContain(COLOR_EDITOR.columns.shown);
+  });
+
+  it("keeps the ✔ of the Contraste column in one column, a ratio of 10:1 or more included", () => {
+    const { panel } = openEditor();
+    const rows = text(panel.render(VIEW))
+      .split("\n")
+      .filter((line) => /\d,\d:1 +✔/.test(line));
+    expect(rows.some((line) => /\d\d,\d:1/.test(line))).toBe(true);
+    expect(rows.some((line) => /[^\d]\d,\d:1/.test(line))).toBe(true);
+    expect(new Set(rows.map((line) => line.indexOf("✔"))).size).toBe(1);
   });
 
   it("gives a role back to the theme with Suppr", async () => {

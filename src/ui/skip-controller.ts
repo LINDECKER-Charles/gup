@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import { getInstallTimeoutSeconds, skipCurrent } from "../core/runner.js";
+import { CONSOLE_KEYS } from "./text/run-labels.js";
 
 /**
  * Interactive "skip" layer for update batches on a plain terminal.
@@ -100,13 +101,31 @@ function announceInterrupt(isDouble: boolean, skipped: boolean): boolean {
   return true;
 }
 
+const HINT_INDENT = "  ";
+const HINT_SEPARATOR = " · ";
+/** Output that reports no width (piped, redirected) is kept within a classic terminal's. */
+const DEFAULT_COLUMNS = 80;
+
+/** The keys of the batch, on as many lines as the terminal's width needs. */
 function printHint(): void {
-  const timeout = getInstallTimeoutSeconds();
-  const timeoutLabel =
-    timeout > 0 ? `timeout auto ${timeout}s` : "timeout auto désactivé";
-  process.stdout.write(
-    chalk.dim(
-      `  Ctrl+C : passer l'install bloquée · Ctrl+C ×2 : tout arrêter · ${timeoutLabel}\n`,
-    ),
-  );
+  const keys = [
+    CONSOLE_KEYS.skip,
+    CONSOLE_KEYS.stopAll,
+    CONSOLE_KEYS.timeout(getInstallTimeoutSeconds()),
+  ];
+  const width = (process.stdout.columns ?? DEFAULT_COLUMNS) - HINT_INDENT.length;
+  const lines = joinWithin(keys, width).map((line) => `${HINT_INDENT}${line}\n`);
+  process.stdout.write(chalk.dim(lines.join("")));
+}
+
+/** `parts` joined by " · ", a line broken between two parts rather than past `width`. */
+function joinWithin(parts: readonly string[], width: number): string[] {
+  const lines: string[] = [];
+  for (const part of parts) {
+    const last = lines.at(-1);
+    const joined = last === undefined ? part : `${last}${HINT_SEPARATOR}${part}`;
+    if (last !== undefined && joined.length <= width) lines[lines.length - 1] = joined;
+    else lines.push(part);
+  }
+  return lines;
 }

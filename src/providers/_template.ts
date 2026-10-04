@@ -20,7 +20,9 @@
  *  - Return `skipped: true` from update() when the action requires user input
  *    outside the provider (manual download, GUI tool, etc.).
  *  - Avoid throwing in listOutdated/update. Return empty list / failed outcome
- *    instead so other providers keep working.
+ *    instead so other providers keep working. Throw only when the tool itself
+ *    reports its scan failed (an error object, an error code): the registry
+ *    then shows that message as the provider's scan error, not as "à jour".
  */
 import { commandExists, run, runInherit } from "../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../core/types.js";

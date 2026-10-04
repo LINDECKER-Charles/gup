@@ -73,7 +73,7 @@ reasoning behind the exclusion: [`scope.md`](../guide/scope.md).
 | **Provider id** | Stable kebab-case identifier, unique across the registry. Used at the CLI: `gup update <provider-id>:<packageId>` (e.g. `winget:Microsoft.PowerShell`). |
 | **Platform set** | The OSes gup supports a provider on (`PLATFORMS.windows`, `macos`, `notWindows`; omitted = everywhere). Elsewhere the provider is never probed, scanned or updated, and listings grey it out. |
 | **OutdatedPackage** | One scan-result entry: `{ id, name?, current, latest, note?, manual?, requiresAdmin?, aggregate? }`. The **currency** between the provider layer and everything above it. |
-| **UpdateOutcome** | Result of an update: `{ id, success, skipped?, message?, retryable? }`. |
+| **UpdateOutcome** | Result of an update: `{ id, success, skipped?, message?, retryable?, recovery? }`. |
 | **ProviderScanResult** | Per-provider aggregate after a scan: `{ providerId, available, packages[], error? }`. |
 | **slow** | Declarative flag on a provider whose scan does HTTP per package or a heavy filesystem walk. Skipped in `--fast` mode. |
 | **manual** | Flag on an `OutdatedPackage`: no command can update it. Filtered out by `scanAll` → never shown, never updated. |
@@ -122,6 +122,14 @@ go through the same `runInherit`, inside a trampoline (§7).
 
 An uncaught exception is caught anyway — by `scanAll` for a scan, by `applyUpdate` for an update —
 but the contract is: if you can't, return empty or failed with a clear message.
+
+One deliberate exception: when the tool **itself reports** that its scan failed — npm's
+`{"error": {"code": "E503", …}}` report, a pnpm `ERR_PNPM_…` code with no report — `listOutdated`
+throws an `Error` that names it (`npm outdated a échoué (E503) : …`). `scanAll` turns it into the
+provider's scan error, shown as such in Scan, Paquets (whose title bar then counts failed scans
+instead of saying `à jour`) and `gup list` / `gup update`, where returning `[]` would have read as
+"nothing outdated". Output the parser cannot make sense of — empty, garbage, an exit code alone —
+still means "nothing to report": the contract tests' fault sweep holds every provider to it.
 
 ---
 
@@ -185,13 +193,15 @@ listCommand({ only?, fast?, json? })
 No prompt, no install. The scan is recorded in the history. Always exits 0: a provider that fails
 to scan is reported in its row, not as a process failure.
 
-### 4.3 `gup update [targets...]`
+### 4.3 `gup update [cibles...]`
 
 ```
 updateCommand({ all, yes, only, fast, targets })
 
 (a) targets given:
-    → resolveTargets: "provider:packageId", lookupProvider (unknown or foreign → exit 2)
+    → resolveTargets: resolveUpdateTarget per target (core/platform/update-target.ts):
+      "provider:packageId", no empty or `-…` package id, no control character,
+      lookupProvider (unknown or foreign) → any refusal exits 2
     → updateOnConsole(requests)            no scan
 
 (b) --all:
@@ -386,6 +396,7 @@ interface UpdateOutcome {
   skipped?: boolean;    // abandoned on purpose: user skip, timeout, missing rights, GUI-only
   message?: string;     // reason for failure / skip
   retryable?: boolean;  // could pass with a more aggressive strategy
+  recovery?: string;    // what the provider undid after an unfinished attempt (kept past a skip)
 }
 
 interface UpdateOptions {
@@ -660,8 +671,12 @@ providers; the install hint matching the running platform, so `gup doctor` never
 
 ### 9.1 `cli.ts` and the CLI modules
 
-`cli.ts` registers every module of `CLI_MODULES` (one line each, sorted by id) and installs the
-startup hook. A module adds its commands and global options (`register`), answers which trigger
+`cli.ts` parses the program `createProgram` (`commands/cli/program.ts`) assembles: commander put
+in French first (`commander-french.ts`: the help's headings and `[commande]`, `-h` and `help`,
+`--version`, and its usage errors reworded line by line — the words live in
+`ui/text/cli-labels.ts`), then every module of `CLI_MODULES` (one line each, sorted by id)
+registered, then the startup hook. The French settings come first because commander copies the
+help and output configuration into each command when it is created. A module adds its commands and global options (`register`), answers which trigger
 a command path is (`triggerFor`: the tick is a `schedule` run), installs process-wide slots
 before the action (`beforeAction`), contributes its `gup doctor` line (`diagnostics`) and hears
 crashes (`onCrash`). The elevated `__admin-batch` child runs only the modules that opt in
@@ -669,8 +684,10 @@ crashes (`onCrash`). The elevated `__admin-batch` child runs only the modules th
 
 Global error handling (`startup.ts`): a `PromptCancelledError` (Ctrl+C while a prompt or a screen
 holds the keyboard — raw mode turns it into a key, not SIGINT) exits 130 silently; any other
-error prints `Error: <message>` on stderr and exits 1. A signal while a screen is up exits
-128 + the signal number once the terminal is restored.
+error prints `Erreur : <message>` on stderr and exits 1. A signal while a screen is up exits
+128 + the signal number once the terminal is restored. Standard output's EPIPE — its reader left,
+`gup … | head` — exits 0 at once and silently (`broken-pipe.ts`, installed by `cli.ts` before
+parsing); any other error of that stream still crashes as unhandled.
 
 ### 9.2 `list.ts`, `update.ts`, `doctor.ts`
 
@@ -702,7 +719,9 @@ entry), `schedules-controller.ts` (the Planification view's port).
 ### 9.6 `admin-batch.ts`
 
 The hidden `__admin-batch <file>` command the elevated batch starts as administrator: reads the
-targets, calls `provider.update()` for each one under its operation context, writes the outcomes
+targets, re-checks each one with `resolveUpdateTarget` — the check `gup update` applies, since the
+payload sat in the temp directory — and fails the ones it refuses without running them, calls
+`provider.update()` for each other one under its operation context, writes the outcomes
 and its debug-log lines back to a file the unelevated parent validates. It never touches the
 history and never reads the settings.
 
@@ -1073,7 +1092,7 @@ Conventions:
 | `gup __admin-batch <file>` (hidden) | `adminBatchModule` | the elevated executor |
 | `--log-level <niveau>` | `journalModule` (global option) | `resolveLogSettings()` |
 | Ctrl+C inside a prompt | `handleFatal` | `PromptCancelledError` → exit 130 |
-| Fatal error | `handleFatal` | `Error: <message>` on stderr, exit 1 |
+| Fatal error | `handleFatal` | `Erreur : <message>` on stderr, exit 1 |
 
 ---
 

@@ -152,6 +152,12 @@ export const LEAVE_DIALOG = {
   text: "Les changements de cette planification seront perdus.",
 } as const;
 
+/** Leaving the editor of a schedule never saved, changed or not. */
+export const LEAVE_NEW_DIALOG = {
+  title: "Abandonner la nouvelle planification ?",
+  text: "Elle n'a pas encore été enregistrée.",
+} as const;
+
 export const REMOVE_DIALOG = {
   title: (name: string) => `Supprimer « ${name} » ?`,
   text: "Cette planification ne sera plus exécutée.",

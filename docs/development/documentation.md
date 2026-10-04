@@ -262,7 +262,9 @@ The `docs` workflow (`.github/workflows/docs.yml`) checks every relative link
 and its anchor in the tracked Markdown files, offline (lychee with
 `--include-fragments`), on pull requests that touch Markdown or
 `docs/assets/`. It is not a required check — a path-filtered workflow cannot
-be — but a red run is fixed before merging.
+be — but a red run is fixed before merging. The lychee action is pinned to a
+commit SHA, its release in a comment, like any third-party action
+(`tests/security/workflow-pins.test.ts`); Dependabot bumps both.
 
 - Link to a file by relative path, to a section by its GitHub anchor:
   [`documentation.md#screenshots`](#screenshots).

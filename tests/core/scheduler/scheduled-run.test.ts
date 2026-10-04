@@ -326,6 +326,27 @@ describe("ScheduledRun.tick", () => {
     expect(h.batch.released).toBe(1);
   });
 
+  it("keeps what the stopped install's provider recovered after the stop message", async () => {
+    const h = harness({
+      schedules: [twoTargets],
+      outcomes: {
+        "winget:Git.Git": outcome("Git.Git", {
+          success: false,
+          skipped: true,
+          message: `${MANUAL_SKIP_MESSAGE} — version précédente restaurée`,
+          recovery: "version précédente restaurée",
+        }),
+      },
+      beforeAttempt: (self) => self.run.stop(),
+    });
+    await h.run.tick();
+    expect(h.state.current.schedules["a1b2c3d4"]?.lastRun?.targets?.[0]).toEqual({
+      target: "winget:Git.Git",
+      status: "skipped",
+      message: `${SCHEDULED_RUN_MESSAGES.stopped} — version précédente restaurée`,
+    });
+  });
+
   it("drops the state of schedules that no longer exist", async () => {
     const h = harness({
       state: { v: 1, schedules: { a1b2c3d4: { lastAttemptAt: YESTERDAY }, deadbeef: {} } },

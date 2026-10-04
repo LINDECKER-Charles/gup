@@ -8,7 +8,7 @@ import { restorePlatform, setPlatform } from "../../support/platform.js";
  * levers and the exit-file watch are replaced, so the tests drive both.
  */
 const { ptyKillMock, watchMock } = vi.hoisted(() => ({
-  ptyKillMock: { terminate: vi.fn(), force: vi.fn() },
+  ptyKillMock: { terminate: vi.fn(async () => {}) },
   watchMock: vi.fn(),
 }));
 vi.mock("../../../src/core/pty/pty-kill.js", () => ({ ptyKill: ptyKillMock }));
@@ -192,23 +192,20 @@ describe("PtySession: kill", () => {
     expect(ptyKillMock.terminate).toHaveBeenCalledExactlyOnceWith(31);
   });
 
-  it("forces the group after the grace period while the child is still there", async () => {
-    vi.useFakeTimers();
-    const { session } = start(LAUNCH, { pid: 31 });
-    session.kill();
-    await vi.advanceTimersByTimeAsync(4_999);
-    expect(ptyKillMock.force).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
-    expect(ptyKillMock.force).toHaveBeenCalledExactlyOnceWith(31);
-  });
-
-  it("does not force a child that exited during the grace period", async () => {
-    vi.useFakeTimers();
+  // The trampoline dies at once; the installer it started may still be
+  // running (npm finishing its rollback, a download that never ends). A
+  // provider repairs what an interrupted installer left, so the outcome waits
+  // for the whole tree, not for the trampoline.
+  it("reports a killed child once its whole tree is gone, not when the trampoline died", async () => {
+    let treeGone!: () => void;
+    ptyKillMock.terminate.mockReturnValueOnce(new Promise<void>((done) => (treeGone = done)));
     const { session, handle } = start();
     session.kill();
-    handle.emitExit({ exitCode: 1 });
-    await vi.advanceTimersByTimeAsync(10_000);
-    expect(ptyKillMock.force).not.toHaveBeenCalled();
+    handle.emitExit({ exitCode: 0, signal: 15 });
+    expect(await peek(session.exited)).toBe(PENDING);
+
+    treeGone();
+    await expect(session.exited).resolves.toEqual({ exitCode: -1, failed: true });
   });
 
   it("does nothing once the child exited", () => {

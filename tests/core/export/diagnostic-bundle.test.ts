@@ -121,6 +121,6 @@ describe("buildDiagnosticZip", () => {
     expect([...files.keys()].sort()).toEqual(["README.txt", "logs/gup-2026-10-03.jsonl", "system.json"]);
     expect(files.get("logs/gup-2026-10-03.jsonl")!.trim().split("\n")).toHaveLength(1);
     expect(archive).toMatchObject({ records: 1, dropped: 2 });
-    expect(files.get("README.txt")).toContain("2 ligne(s) illisible(s)");
+    expect(files.get("README.txt")).toContain("2 lignes illisibles du journal ont été omises.");
   });
 });

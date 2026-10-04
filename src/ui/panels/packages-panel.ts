@@ -124,6 +124,12 @@ export class PackagesPanel implements Panel {
     this.#notice = null;
   }
 
+  /**
+   * The keys, the ones nothing else on screen tells first: the bar cuts from
+   * the end, and at 80 columns keeps three. Checking, filtering and the
+   * other views' actions (`p planifier`) lead; launching comes last, the
+   * selection bar under the table already offering it.
+   */
   hints(): string {
     if (this.#isFiltering) return PACKAGES_HINTS.filtering;
     const rescan = this.#handlers.onRescan ? [PACKAGES_HINTS.rescan] : [];
@@ -132,13 +138,13 @@ export class PackagesPanel implements Panel {
     const checked = list.selection.length;
     const canLaunch = checked > 0 && !this.isScanRunning();
     return [
-      PACKAGES_HINTS.navigate,
       PACKAGES_HINTS.check,
-      list.isAllVisibleChecked() ? PACKAGES_HINTS.clearAll : PACKAGES_HINTS.checkAll,
       PACKAGES_HINTS.filter,
-      ...(canLaunch ? [PACKAGES_HINTS.launch(checked)] : []),
-      ...rescan,
       ...this.actions().map((action) => action.hint),
+      list.isAllVisibleChecked() ? PACKAGES_HINTS.clearAll : PACKAGES_HINTS.checkAll,
+      PACKAGES_HINTS.navigate,
+      ...rescan,
+      ...(canLaunch ? [PACKAGES_HINTS.launch(checked)] : []),
     ].join(HINT_SEPARATOR);
   }
 

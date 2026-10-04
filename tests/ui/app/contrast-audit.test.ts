@@ -136,7 +136,7 @@ async function walkTheColours(audit: Audit): Promise<void> {
   for (let i = 0; i < "#RRGGBB".length; i++) menu.screen.mockInput.pressBackspace();
   await menu.screen.mockInput.typeText(hexOf(audit.ground()));
   await menu.press("enter");
-  await capture("colour editor, an unreadable accent adjusted", "ajustée(s) automatiquement");
+  await capture("colour editor, an unreadable accent adjusted", "automatiquement pour rester lisible");
   await escape(menu);
 }
 
@@ -150,7 +150,10 @@ async function violationsOf(audited: Audited, isLegacy = false): Promise<string[
   });
   await walkTheViews(audit);
   await walkTheOptions(audit);
-  if (audited.theme !== "monochrome" && !isLegacy) await walkTheColours(audit);
+  // No colour editor where there is nothing to tune: monochrome, the terminal's unknown palette.
+  const isPaletteUnknown = audited.theme === "terminal" && audited.terminal.colors === null;
+  const hasColourEditor = audited.theme !== "monochrome" && !isPaletteUnknown;
+  if (hasColourEditor && !isLegacy) await walkTheColours(audit);
   return audit.violations();
 }
 

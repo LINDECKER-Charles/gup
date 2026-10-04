@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { JournalPanel } from "../../../../src/ui/panels/journal/journal-panel.js";
+import { JournalPanel, type JournalPanelDeps } from "../../../../src/ui/panels/journal/journal-panel.js";
 import type { JournalData } from "../../../../src/ui/panels/journal/journal-source.js";
 import type { Viewport } from "../../../../src/ui/panels/panel.js";
 import { DEBUG_LABELS, EVENT_LABELS, JOURNAL_HINTS, RECURRENCE_LABELS } from "../../../../src/ui/text/journal/journal-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import type { Line } from "../../../../src/ui/tui/styled-lines.js";
-import { updateEvent } from "../../../support/history-fixtures.js";
+import { scanEvent, updateEvent } from "../../../support/history-fixtures.js";
 import { JOURNAL_NOW, journalData, logRecord, scriptedSource } from "./journal-data.js";
 
 const VIEWPORT: Viewport = { width: 100, height: 26 };
@@ -13,13 +13,14 @@ const VIEWPORT: Viewport = { width: 100, height: 26 };
 const key = (name: string): KeyPress => ({ name, ctrl: false, sequence: name.length === 1 ? name : "" });
 const text = (lines: readonly Line[]) => lines.map((line) => line.map((segment) => segment.text).join("").trimEnd());
 
-async function journalOn(tab: string, data: JournalData = journalData()) {
+async function journalOn(tab: string, data: JournalData = journalData(), over: Partial<JournalPanelDeps> = {}) {
   const journal = new JournalPanel({
     source: scriptedSource(data),
     redraw: vi.fn(),
     choose: vi.fn(async () => undefined),
     glyphMode: () => "unicode",
     now: () => JOURNAL_NOW,
+    ...over,
   });
   journal.onShow();
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -145,6 +146,68 @@ describe("Récurrence", () => {
     expect(detail).toMatch(/Rythme +hebdomadaire/);
     expect(detail).toContain(RECURRENCE_LABELS.versions);
     expect(detail).toMatch(/02\/10\/2026 {2}129\.0 → 130\.0\n {2}25\/09\/2026 {2}128\.0 → 129\.0/);
+  });
+});
+
+describe("provider names", () => {
+  // The names every other view shows, from the menu's own lookup.
+  const DISPLAY_NAMES: Readonly<Record<string, string>> = {
+    winget: "Winget",
+    choco: "Chocolatey",
+    "npm-g": "npm (global)",
+    az: "Azure CLI",
+  };
+  const named = { providerName: (providerId: string) => DISPLAY_NAMES[providerId] ?? providerId };
+
+  it("names providers in Événements' rows and details, and filters on those names", async () => {
+    const { press, screen } = await journalOn("3", journalData(), named);
+
+    expect(screen().join("\n")).toMatch(/✖ échec +Chocolatey +nodejs/);
+    expect(screen().join("\n")).toMatch(/✔ réussie +npm \(global\) +typescript/);
+    expect(screen().join("\n")).not.toMatch(/ choco | npm-g /);
+    press("/", ...[..."chocolatey"], "return");
+    expect(screen()[1]).toContain("1 événement");
+    press("escape", "escape", "down", "down", "down", "return");
+    expect(screen()[1]).toBe("Mise à jour · Chocolatey · nodejs");
+    press("escape", "end", "return");
+    expect(screen().join("\n")).toMatch(/Winget +9 en retard · 12,4 s/);
+    expect(screen().join("\n")).toMatch(/Azure CLI +erreur : Please run 'az login'/);
+  });
+
+  it("names the providers a scan was filtered to in its detail", async () => {
+    const filtered = scanEvent({
+      ts: "2026-10-02T12:00:00.000Z",
+      filter: ["choco", "npm-g"],
+      providers: [{ providerId: "choco", outdated: 1, durationMs: 2_000 }],
+    });
+    const { press, screen } = await journalOn("3", journalData([filtered]), named);
+
+    press("return");
+
+    expect(screen().join("\n")).toMatch(/Providers +Chocolatey, npm \(global\)\n/);
+  });
+
+  it("still finds an event by its provider's id", async () => {
+    const { press, screen } = await journalOn("3", journalData(), named);
+
+    press("/", ..."npm-g", "return");
+
+    expect(screen()[1]).toContain("1 événement");
+  });
+
+  it("names providers in Récurrence's rows and details", async () => {
+    const { press, screen } = await journalOn("2", journalData(), named);
+
+    expect(screen()[3]).toMatch(/^› Google\.Chrome +Winget +█+ +2 /);
+    expect(screen().join("\n")).toMatch(/nodejs +Chocolatey +0 /);
+    press("return");
+    expect(screen()[1]).toBe("Google.Chrome · Winget");
+  });
+
+  it("names the slowest scans of Activité", async () => {
+    const { screen } = await journalOn("1", journalData(), named);
+
+    expect(screen().join("\n")).toMatch(/Scans les plus lents +Winget 10,7 s/);
   });
 });
 

@@ -1,4 +1,5 @@
 import type { PackageRecurrence } from "../../../core/insights/types.js";
+import type { ProviderName } from "../../charts/activity-sections.js";
 import {
   recurrenceColumns,
   recurrenceHeader,
@@ -50,8 +51,13 @@ const ORDER: Readonly<Record<SortMode, (a: PackageRecurrence, b: PackageRecurren
 
 export class RecurrenceTab implements JournalTab {
   readonly #list = new BrowsableList<PackageRecurrence>();
+  readonly #providerName: ProviderName;
   #history: JournalHistory | null = null;
   #sort: SortMode = "frequency";
+
+  constructor(providerName: ProviderName) {
+    this.#providerName = providerName;
+  }
 
   get isModal(): boolean {
     return this.#list.isModal;
@@ -72,7 +78,8 @@ export class RecurrenceTab implements JournalTab {
     const current = this.#list.current;
     if (this.#list.isDetailOpen && current) {
       const body = detailBody(current, frame);
-      return detailView(detailTitle(current), body, { list: this.#list, ...frame });
+      const title = detailTitle(current, this.#providerName);
+      return detailView(title, body, { list: this.#list, ...frame });
     }
     if (this.#list.visible.length === 0) return placeholder(RECURRENCE_LABELS.empty);
     const head = this.headLines(history, frame.width);
@@ -122,7 +129,8 @@ export class RecurrenceTab implements JournalTab {
     const { measure } = this;
     const columns = recurrenceColumns(frame.width - CURSOR_GUTTER);
     const max = Math.max(1, ...this.#list.visible.map((entry) => entry[measure]));
-    const context = { columns, measure, max, glyphs: frame.glyphs };
+    const { glyphs } = frame;
+    const context = { columns, measure, max, glyphs, providerName: this.#providerName };
     return listWindow(this.#list, (entry) => recurrenceRow(entry, context), frame);
   }
 
@@ -132,8 +140,8 @@ export class RecurrenceTab implements JournalTab {
   }
 }
 
-function detailTitle(entry: PackageRecurrence): Line {
-  return [seg(entry.packageId, "strong"), seg(` · ${entry.providerId}`, "muted")];
+function detailTitle(entry: PackageRecurrence, providerName: ProviderName): Line {
+  return [seg(entry.packageId, "strong"), seg(` · ${providerName(entry.providerId)}`, "muted")];
 }
 
 function detailBody(entry: PackageRecurrence, frame: TabFrame): Line[] {

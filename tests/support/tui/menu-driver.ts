@@ -123,7 +123,7 @@ export function contextView(): { readonly view: ViewDefinition; context(): ViewC
   };
 }
 
-/** A controller whose scan reports one finished provider per scan result and stores them. */
+/** A controller whose scan reports one finished provider (or its error) per result, and stores them. */
 export function scriptedController(scans: readonly ProviderScanResult[]): MenuController {
   return {
     scan: vi.fn(async (state: MenuState, events) => {
@@ -131,7 +131,8 @@ export function scriptedController(scans: readonly ProviderScanResult[]): MenuCo
       events.planned(scans.length);
       for (const scan of scans) {
         events.started(scan.providerId);
-        events.finished(scan.providerId, { updates: scan.packages.length, ms: 1000 });
+        const failure = scan.error === undefined ? {} : { error: scan.error };
+        events.finished(scan.providerId, { updates: scan.packages.length, ms: 1000, ...failure });
       }
       events.completed(1000);
       state.scans = [...scans];

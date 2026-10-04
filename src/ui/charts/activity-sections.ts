@@ -31,6 +31,19 @@ export interface ChartContext {
   readonly width: number;
   readonly glyphs: ChartGlyphs;
   readonly now: Date;
+  /** A provider's display name from its id; without it, the id shows. */
+  readonly providerName?: ProviderName | undefined;
+}
+
+/** A provider's display name from its id (`npm-g` → `npm (global)`). */
+export type ProviderName = (providerId: string) => string;
+
+/** How the charts name a provider: its display name when the context knows it, else its id. */
+export function providerLabel(
+  providerId: string,
+  context: { readonly providerName?: ProviderName | undefined },
+): string {
+  return context.providerName?.(providerId) ?? providerId;
 }
 
 /** A labelled item of a list joined by " · ". */
@@ -120,7 +133,10 @@ export function slowProvidersLine(insights: Insights, ctx: ChartContext): Line {
     .filter((provider) => provider.medianScanMs !== null)
     .sort((a, b) => (b.medianScanMs ?? 0) - (a.medianScanMs ?? 0))
     .slice(0, SLOWEST_SHOWN)
-    .map((provider) => `${provider.providerId} ${formatDuration(provider.medianScanMs ?? 0)}`);
+    .map((provider) => {
+      const name = providerLabel(provider.providerId, ctx);
+      return `${name} ${formatDuration(provider.medianScanMs ?? 0)}`;
+    });
   const title = `${SLOWEST_LABELS.title}${GAP}`;
   const list = slowest.length > 0 ? slowest.join(SEPARATOR) : NO_DATA;
   const room = Math.max(0, ctx.width - title.length);

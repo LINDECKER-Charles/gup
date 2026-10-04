@@ -44,6 +44,7 @@ function setup(schedules: readonly Schedule[] = [storedSchedule()]) {
     addTarget: vi.fn(),
     save: vi.fn(),
     leave: vi.fn(),
+    cancel: vi.fn(),
   };
   const panel = new SchedulesPanel(port, { list, editor });
   const press = (...keys: readonly KeyPress[]): void => keys.forEach((k) => panel.press(k));
@@ -109,6 +110,81 @@ describe("SchedulesPanel, list", () => {
     expect(render(NARROW)[2]).toMatch(/^ {4}Nom +Fréquence +Dernière$/);
   });
 
+  it("sizes Fréquence to its labels on an 80-column terminal, Dernière to its own", () => {
+    const { render, panel } = setup([
+      storedSchedule({ recurrence: { kind: "weekly", weekday: 1, at: { hour: 9, minute: 0 } } }),
+      storedSchedule({
+        id: "0badf00d",
+        name: "Python",
+        recurrence: { kind: "monthly", day: 15, at: { hour: 9, minute: 0 } },
+      }),
+    ]);
+    panel.setTrigger(active);
+    const lines = render({ width: 52, height: 24 });
+    expect(lines[2]).toMatch(/^ {4}Nom +Fréquence +Dernière$/);
+    expect(lines[3]).toBe("› ● Outils dev chaque lundi à 09:00         —");
+    expect(lines[4]).toBe("  ● Python     le 15 de chaque mois à 09:00 —");
+  });
+
+  // 50: the panel's content on an 80-column terminal, beside the sidebar.
+  it("keeps every recurrence whole at 80 columns, the last run told by its mark", () => {
+    const monthly = (day: number | "last") => ({
+      kind: "monthly" as const,
+      day,
+      at: { hour: 9, minute: 0 },
+    });
+    const { port, render, panel } = setup([
+      storedSchedule({ recurrence: { kind: "weekly", weekday: 1, at: { hour: 9, minute: 0 } } }),
+      storedSchedule({ id: "0badf00d", name: "Mensuel", recurrence: monthly(15) }),
+      storedSchedule({ id: "0ddba11a", name: "Fin de mois", recurrence: monthly("last") }),
+    ]);
+    port.state = {
+      v: 1,
+      schedules: {
+        "0badf00d": {
+          lastRun: {
+            kind: "on-time",
+            status: "failed",
+            startedAt: "2026-10-05T08:00:00.000Z",
+            finishedAt: "2026-10-05T08:01:00.000Z",
+            targets: [{ target: "winget:Git.Git", status: "failed", message: "1603" }],
+          },
+        },
+      },
+    };
+    port.reload();
+    panel.setTrigger(active);
+    const lines = render({ width: 50, height: 24 });
+    expect(lines[2]).toMatch(/^ {4}Nom +Fréquence$/);
+    expect(lines[3]).toMatch(/^› ● Outils dev +chaque lundi à 09:00 +—$/);
+    expect(lines[4]).toMatch(/^ {2}● Mensuel +le 15 de chaque mois à 09:00 +✖$/);
+    expect(lines[5]).toMatch(/^ {2}● Fin de mois le dernier jour du mois à 09:00 —$/);
+    expect(lines.slice(2, 6).every((line) => line.length <= 50)).toBe(true);
+  });
+
+  it("keeps the count and the next run on a 120-column terminal, the longest recurrence whole", () => {
+    const { render, panel } = setup([
+      storedSchedule({ recurrence: { kind: "monthly", day: "last", at: { hour: 9, minute: 0 } } }),
+    ]);
+    panel.setTrigger(active);
+    const lines = render(WIDE);
+    expect(lines[2]).toMatch(/^ {4}Nom +Fréquence +Paquets Prochaine +Dernière$/);
+    expect(lines[3]).toMatch(/^› ● Outils dev le dernier jour du mois à 09:00 +1 \S.* —$/);
+  });
+
+  it("narrows the wider of name and recurrence once the last run is down to its mark", () => {
+    const { render, panel } = setup([
+      storedSchedule({
+        name: "Outils de développement",
+        recurrence: { kind: "monthly", day: "last", at: { hour: 9, minute: 0 } },
+      }),
+    ]);
+    panel.setTrigger(active);
+    const [header, row] = render({ width: 52, height: 24 }).slice(2);
+    expect(header).toMatch(/^ {4}Nom +Fréquence$/);
+    expect(row).toBe("› ● Outils de développeme… le dernier jour du moi… —");
+  });
+
   it("details the last run: when, how long, each package's result", () => {
     const { port, render, panel } = setup();
     port.state = {
@@ -135,7 +211,7 @@ describe("SchedulesPanel, list", () => {
       "Dernière exécution · Outils dev · il y a 1 h · 2 min 14 s · rattrapage",
       "  ✔ Winget         Git.Git              2.46.0 → 2.47.0",
       "  = npm (global)   pnpm                 aucune mise à jour",
-      "  ↷ Chocolatey     vlc                  ignoré — droits administrateur requis",
+      "  ↷ Chocolatey     vlc                  ignorée — droits administrateur requis",
     ]);
   });
 
@@ -286,6 +362,9 @@ describe("SchedulesPanel, editor", () => {
     press(key("up"), key("return"));
     expect(editor.addTarget).toHaveBeenCalledOnce();
     press(key("escape"));
+    expect(editor.leave).toHaveBeenCalledOnce();
+    press(key("end"), key("return"));
+    expect(editor.cancel).toHaveBeenCalledWith(panel.editor);
     expect(editor.leave).toHaveBeenCalledOnce();
   });
 

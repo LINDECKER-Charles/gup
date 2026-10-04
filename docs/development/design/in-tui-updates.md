@@ -113,8 +113,13 @@ for it. A pane that throws on output, note, attach or tail never fails the insta
   modes.
 - **Kill (skip, timeout).** `ptyKill.terminate(pid)`: Windows `taskkill /T /F` on the trampoline
   (the runner's `killProcessTree`), POSIX `SIGTERM` to the process group (node-pty starts the
-  child as a session leader); after 5 s without an exit, `SIGKILL` to the group (POSIX).
-  Idempotent, never throws. **`IPty.kill()` is never called**: on Windows it forks a
+  child as a session leader), then `SIGKILL` to the group if any of it is still alive after 5 s —
+  checked on the group (`kill(-pid, 0)`), not on the trampoline, which dies at once while npm may
+  still be rolling back or stuck on a download. A killed session's `exited` resolves only once
+  `terminate` did (taskkill returned, or the group is gone); the terminal and pipe sinks of
+  `runInherit` wait for their taskkill the same way. A provider can then repair what the
+  interrupted installer left (npm's staged copy of the package) without racing it. Idempotent,
+  never throws. **`IPty.kill()` is never called**: on Windows it forks a
   console-list agent that crashed with `AttachConsole failed` and printed its stack on gup's
   stderr, over the full-screen app.
 - **ConPTY release (IT-1).** node-pty 1.1.0 calls `ClosePseudoConsole` only inside
@@ -196,7 +201,7 @@ start with `runner: `), `erreur inattendue : <raison>` for anything else.
 
 | Suite | What it holds |
 |---|---|
-| `tests/core/pty/*.test.ts` (unit, every OS) | payload round trip and refusals; trampoline lookup, symlinked CLI, execArgv allowlist, launch; exit file write/read/watch, strict parse, `wx`; ptyKill per platform (taskkill and `process.kill` replaced); session I/O, clamping, exit mapping, kill grace (fake timers), fast path, ConPTY release once and only for the pinned shape; every detection step and reason, default probe, Windows shape guard, cache, pin; sink binding, keyboard, tail, spawn failure, routed by `runInherit`; spawn-helper branches (+ a real 0644 file on POSIX) |
+| `tests/core/pty/*.test.ts` (unit, every OS) | payload round trip and refusals; trampoline lookup, symlinked CLI, execArgv allowlist, launch; exit file write/read/watch, strict parse, `wx`; ptyKill per platform (taskkill and `process.kill` replaced; group survivors and grace with fake timers); session I/O, clamping, exit mapping, exit held until the killed tree is gone, fast path, ConPTY release once and only for the pinned shape; every detection step and reason, default probe, Windows shape guard, cache, pin; sink binding, keyboard, tail, spawn failure, routed by `runInherit`; spawn-helper branches (+ a real 0644 file on POSIX) |
 | `tests/integration/pty-session.test.ts` | a real ConPTY / PTY: availability (**fails** on Windows and macOS, may skip on Linux), output, exit codes 0/3010/7/-1, a prompt answered by typing in the pane, a skip that kills the whole tree and leaves no child, a `.cmd` shim by bare name, shell routing, a success under 500 ms (best of 3), 20 sequential installs leaving no conhost child and no `MessagePort`, the sources under tsx |
 | `tests/security/process-chokepoints.test.ts` | §7.5 |
 | `tests/core/update/apply-update.test.ts` | §8, through the real argv barrier |

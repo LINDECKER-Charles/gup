@@ -45,7 +45,7 @@ export function optionsView(ports: OptionsViewPorts = {}): ViewDefinition {
     // An unsaved preview first: a narrow title bar cuts its end.
     facts: ({ state, screen }) => [
       ...(isPreviewShown(screen.appearance) ? [PREVIEW_FACT] : []),
-      scanModeFact(state.fast, state.filter.length),
+      scanModeFact(state.fast),
     ],
   };
 }

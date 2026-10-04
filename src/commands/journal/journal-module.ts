@@ -3,6 +3,7 @@ import type { LogThreshold } from "../../core/log/log.js";
 import { parseThreshold } from "../../core/log/types.js";
 import { settingsService } from "../../ui/settings/settings-service.js";
 import { logLevelSource, type SettingView } from "../../ui/settings/settings-sources.js";
+import { ERROR_PREFIX } from "../../ui/text/cli-labels.js";
 import {
   LOG_DIAGNOSTIC_LABELS,
   LOG_LEVEL_OPTION,
@@ -63,7 +64,7 @@ function logLevelFlag(raw: unknown): LogThreshold | undefined {
   if (raw === undefined) return undefined;
   const threshold = typeof raw === "string" ? parseThreshold(raw) : null;
   if (threshold !== null) return threshold;
-  process.stderr.write(`${chalk.red("Error:")} ${LOG_MESSAGES.badThreshold(String(raw))}\n`);
+  process.stderr.write(`${chalk.red(ERROR_PREFIX)} ${LOG_MESSAGES.badThreshold(String(raw))}\n`);
   return process.exit(USAGE_EXIT_CODE);
 }
 

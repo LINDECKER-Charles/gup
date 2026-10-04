@@ -7,7 +7,7 @@ import {
 } from "../core/elevation.js";
 import { elevatedLogBuffer } from "../core/log/elevated-bridge.js";
 import { applyLogThreshold } from "../core/log/log.js";
-import { lookupProvider } from "../core/platform/lookup-provider.js";
+import { resolveUpdateTarget } from "../core/platform/update-target.js";
 import { setInstallTimeoutSeconds } from "../core/runner.js";
 import { withOperation } from "../core/state/run-context.js";
 import type { UpdateOutcome } from "../core/types.js";
@@ -63,17 +63,15 @@ function applyParentSettings(input: AdminBatchInput): void {
 }
 
 async function runOneTarget(target: string): Promise<UpdateOutcome> {
-  const idx = target.indexOf(":");
-  if (idx === -1) {
-    return { id: target, success: false, message: `Format invalide: ${target}` };
+  // Defence in depth for the elevated path: the batch file sat in the temp
+  // directory, so its targets pass the CLI's own check again — no option
+  // (`-…`), no control character, a known provider of this host — before an
+  // administrator process hands them to a package manager.
+  const resolved = resolveUpdateTarget(target);
+  if (!resolved.isValid) {
+    return { id: resolved.packageId, success: false, message: resolved.error };
   }
-  const providerId = target.slice(0, idx);
-  const packageId = target.slice(idx + 1);
-  // Defence in depth for the elevated path: a tampered or stale batch file
-  // cannot send an elevated process into a provider foreign to this host.
-  const lookup = lookupProvider(providerId);
-  if (!lookup.isFound) return { id: packageId, success: false, message: lookup.error };
-  const { provider } = lookup;
+  const { provider, packageId } = resolved;
   process.stdout.write(chalk.bold(`→ ${provider.displayName}: ${packageId}\n`));
   // Same operation context as an in-process update: the commands traced in
   // the child's log name the package they belong to.

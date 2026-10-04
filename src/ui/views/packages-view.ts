@@ -26,8 +26,11 @@ export function packagesView(): ViewDefinition {
       return count > 0 ? { text: String(count), tone: "warning" } : null;
     },
     // No results yet (a scan running, or none at launch): "à jour" would be a claim.
-    facts: ({ state }) =>
-      state.scans.length === 0 ? [] : [updateCountFact(countPackages(state.scans))],
+    facts: ({ state }) => {
+      if (state.scans.length === 0) return [];
+      const failed = state.scans.filter((scan) => scan.error !== undefined).length;
+      return [updateCountFact(countPackages(state.scans), failed)];
+    },
   };
 }
 

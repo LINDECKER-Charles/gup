@@ -153,6 +153,14 @@ describe("report page: overview", () => {
     expect(page.text("[data-page-section='failures'] .empty-title")).toBe("Aucun échec sur cette période.");
   });
 
+  it("says which days its calendar covers: the whole period, or its last 12 months", async () => {
+    const intro = (page: Page) => page.text("section .card-intro");
+    expect(intro(await openReport())).toBe("Mises à jour réussies par jour, sur toute la période.");
+    expect(intro(await openReport(reportModelOf(EVENTS, "3y")))).toBe(
+      "Mises à jour réussies par jour, sur les 12 derniers mois de la période.",
+    );
+  });
+
   it("warns when the attempts were capped", async () => {
     const page = await openReport({ ...reportModelOf(EVENTS), truncated: 12 });
 

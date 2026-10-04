@@ -16,6 +16,7 @@ import {
 } from "../../src/core/process/inherit-sink.js";
 import {
   consumeInterrupt,
+  createPipeSink,
   DEFAULT_INSTALL_TIMEOUT_S,
   getInstallTimeoutSeconds,
   isElevated,
@@ -308,21 +309,32 @@ describe("runner.runInherit with an install sink", () => {
 });
 
 describe("runner.killProcessTree", () => {
-  it("runs taskkill on the whole tree on Windows", () => {
+  it("runs taskkill on the whole tree on Windows, capped in time", async () => {
     setPlatform("win32");
     execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
-    killProcessTree(4242);
+    await killProcessTree(4242);
     expect(execaMock).toHaveBeenCalledWith("taskkill", ["/pid", "4242", "/t", "/f"], {
       reject: false,
       windowsHide: true,
+      timeout: 10_000,
     });
   });
 
-  it("does nothing off Windows or without a pid", () => {
-    setPlatform("linux");
-    killProcessTree(4242);
+  it("never rejects, whatever taskkill does", async () => {
     setPlatform("win32");
-    killProcessTree(undefined);
+    execaMock.mockReturnValueOnce(Promise.reject(new Error("spawn taskkill ENOENT")));
+    await expect(killProcessTree(4242)).resolves.toBeUndefined();
+    execaMock.mockImplementationOnce(() => {
+      throw new TypeError("bad options");
+    });
+    await expect(killProcessTree(4242)).resolves.toBeUndefined();
+  });
+
+  it("does nothing off Windows or without a pid", async () => {
+    setPlatform("linux");
+    await killProcessTree(4242);
+    setPlatform("win32");
+    await killProcessTree(undefined);
     expect(execaMock).not.toHaveBeenCalled();
   });
 });
@@ -378,10 +390,28 @@ describe("runner install-timeout config", () => {
   });
 });
 
+const PENDING = Symbol("pending");
+
+/** The value of a promise if it already settled, else PENDING. */
+async function peek<T>(promise: Promise<T>): Promise<T | typeof PENDING> {
+  const later = new Promise<typeof PENDING>((resolve) => setImmediate(() => resolve(PENDING)));
+  return Promise.race([promise, later]);
+}
+
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((settle) => (resolve = settle));
+  return { promise, resolve };
+}
+
 describe("runner skip + interrupt channel", () => {
+  let restoreSink: (() => void) | null = null;
+
   afterEach(() => {
     // Tidy any flag a test left behind so the next test starts clean.
     consumeInterrupt();
+    restoreSink?.();
+    restoreSink = null;
   });
 
   it("skipCurrent returns false when no install is in flight", () => {
@@ -412,6 +442,71 @@ describe("runner skip + interrupt channel", () => {
     const flags = consumeInterrupt();
     expect(flags.aborted).toBe(true);
     expect(consumeInterrupt().aborted).toBe(false); // consumed → reset
+  });
+
+  // The direct child dies first — cmd.exe behind npm.cmd, which execa's abort
+  // kills — while the installer under it waits on taskkill. A provider repairs
+  // what an interrupted installer left (npm-g's staged copy): the outcome must
+  // not come back before nothing of the tree is left to race that repair.
+  it.each([
+    ["the terminal", (): void => {}],
+    [
+      "a pipe sink",
+      (): void => {
+        restoreSink = routeInheritTo(createPipeSink({ onLine: () => {}, capBytes: 1024 }));
+      },
+    ],
+  ])("reports a stopped install on %s once taskkill took its tree (Windows)", async (_, route) => {
+    setPlatform("win32");
+    route();
+    const install = deferred<unknown>();
+    const taskkill = deferred<unknown>();
+    execaMock
+      .mockReturnValueOnce(Object.assign(install.promise, { pid: 4242 }))
+      .mockReturnValueOnce(taskkill.promise);
+
+    const pending = runInherit("npm", ["install", "-g", "x@latest"]);
+    expect(skipCurrent()).toBe(true);
+    install.resolve({ exitCode: 1, failed: true });
+    expect(await peek(pending)).toBe(PENDING);
+
+    taskkill.resolve({ exitCode: 0 });
+    await expect(pending).resolves.toMatchObject({ aborted: true, failed: true });
+    expect(execaMock.mock.calls[1]?.[0]).toBe("taskkill");
+  });
+
+  // taskkill /T walks the tree from the pid it is given: once execa's abort
+  // killed that process, taskkill finds nothing and the installer under it
+  // (npm, waiting on a download) keeps running, orphaned.
+  it.each([
+    ["the terminal", (): void => {}],
+    [
+      "a pipe sink",
+      (): void => {
+        restoreSink = routeInheritTo(createPipeSink({ onLine: () => {}, capBytes: 1024 }));
+      },
+    ],
+  ])("takes the tree down on %s before aborting the direct child (Windows)", async (_, route) => {
+    setPlatform("win32");
+    route();
+    const install = deferred<unknown>();
+    let isAbortedAtTaskkill: boolean | null = null;
+    const signalOf = (): AbortSignal =>
+      (execaMock.mock.calls[0]![2] as { cancelSignal: AbortSignal }).cancelSignal;
+    execaMock
+      .mockReturnValueOnce(Object.assign(install.promise, { pid: 4242 }))
+      .mockImplementationOnce(() => {
+        isAbortedAtTaskkill = signalOf().aborted;
+        return mkExecaResult();
+      });
+
+    const pending = runInherit("npm", ["install", "-g", "x@latest"]);
+    skipCurrent();
+    install.resolve({ exitCode: 1, failed: true });
+    await pending;
+
+    expect(isAbortedAtTaskkill).toBe(false);
+    expect(signalOf().aborted).toBe(true);
   });
 
   it("clears the abort hook after completion (no stale skip target)", async () => {

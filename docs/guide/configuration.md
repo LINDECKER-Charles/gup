@@ -106,8 +106,11 @@ Three exceptions:
 | Linux and others | `$XDG_CONFIG_HOME/gup/config.json`, else `~/.config/gup/config.json` |
 | Anywhere | `GUP_CONFIG_DIR=<dir>` → `<dir>/config.json` |
 
-The Options view's **Fichier** row shows the same path and state (`c` copies
-the path), and `gup doctor` prints them in its "Système" section
+The Options view's **Fichier** row shows the same state and path — from `~`,
+cut in its middle when the row is too short, so the file name stays whole;
+when the row cannot hold even the name, the path shows on the line under the
+list once the row is selected; `c` copies the whole path — and `gup doctor`
+prints them in its "Système" section
 (`Configuration`). With `GUP_CONFIG=0` the file is neither read nor written:
 `gup` runs on its defaults, which is the quickest way to tell whether a problem
 comes from your settings.

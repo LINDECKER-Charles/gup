@@ -7,7 +7,14 @@ import {
 import { quantizeWithin } from "./color/quantize-256.js";
 import { BLACK, isDark, isSameRgb, WHITE, worstRatio, type Rgb } from "./color/rgb.js";
 import { CONTRAST_RULES, CONTRAST_TARGETS, TEXT_TOKENS } from "./contrast-rules.js";
-import { COLOR_TOKENS, type ColorToken, type ContrastLevel, type Palette } from "./palette.js";
+import {
+  COLOR_TOKENS,
+  CUSTOMIZABLE_TOKENS,
+  type ColorToken,
+  type ContrastLevel,
+  type CustomizableToken,
+  type Palette,
+} from "./palette.js";
 
 /**
  * Make a palette meet every rule of {@link CONTRAST_RULES}, whatever its
@@ -33,6 +40,22 @@ export interface Correction {
   /** Worst ratio over the token's grounds, before and after. */
   readonly before: number;
   readonly after: number;
+}
+
+/** A correction of a colour the user can tune. */
+export type RoleCorrection = Correction & { readonly token: CustomizableToken };
+
+/**
+ * The corrections of the colours a user can tune — the colour editor's
+ * roles: what "N couleurs ajustées" counts wherever gup says it. The others
+ * (the accent's fill and its text, the focus border) only follow the role
+ * they are drawn from, and would count one choice several times.
+ */
+export function adjustedRoles(corrections: readonly Correction[]): RoleCorrection[] {
+  const tunable: ReadonlySet<ColorToken> = new Set(CUSTOMIZABLE_TOKENS);
+  return corrections.filter((correction): correction is RoleCorrection =>
+    tunable.has(correction.token),
+  );
 }
 
 export interface EnforcedPalette {

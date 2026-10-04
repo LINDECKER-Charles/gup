@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from "node:util";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -27,6 +28,40 @@ beforeEach(() => {
 afterEach(() => {
   writeSpy.mockRestore();
   vi.clearAllMocks();
+});
+
+/** What the session printed when it began, without colour, one entry per line. */
+function hintLines(columns: number | undefined): string[] {
+  const descriptor = Object.getOwnPropertyDescriptor(process.stdout, "columns");
+  Object.defineProperty(process.stdout, "columns", { value: columns, configurable: true });
+  try {
+    beginSkipSession().dispose();
+  } finally {
+    if (descriptor) Object.defineProperty(process.stdout, "columns", descriptor);
+    else delete (process.stdout as { columns?: number }).columns;
+  }
+  const printed = writeSpy.mock.calls.map((call: readonly unknown[]) => String(call[0])).join("");
+  return stripVTControlCharacters(printed).split("\n").filter(Boolean);
+}
+
+describe("the keys' hint printed as the batch starts", () => {
+  it("keeps within an 80-column terminal, broken between two keys rather than in a word", () => {
+    timeoutMock.mockReturnValue(600);
+    const lines = hintLines(80);
+    expect(lines).toEqual([
+      "  Ctrl+C : passer l'install bloquée · Ctrl+C ×2 : tout arrêter",
+      "  timeout auto 600s",
+    ]);
+  });
+
+  it("stays on one line when the terminal is wide enough, and within 80 columns piped", () => {
+    timeoutMock.mockReturnValue(0);
+    expect(hintLines(120)).toEqual([
+      "  Ctrl+C : passer l'install bloquée · Ctrl+C ×2 : tout arrêter · timeout auto désactivé",
+    ]);
+    writeSpy.mockClear();
+    expect(hintLines(undefined).every((line) => line.length <= 80)).toBe(true);
+  });
 });
 
 describe("beginSkipSession", () => {

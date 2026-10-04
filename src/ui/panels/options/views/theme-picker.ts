@@ -1,3 +1,4 @@
+import { adjustedRoles } from "../../../theme/enforce-contrast.js";
 import { THEME_IDS, type ThemeId } from "../../../theme/palette.js";
 import type { ResolvedTheme, ThemeAvailability } from "../../../theme/resolve-theme.js";
 import {
@@ -187,8 +188,9 @@ function reportLines(theme: ResolvedTheme, width: number): Line[] {
     return wrapped(status.text, width, status.tone);
   }
   const report: Line = [seg(THEME_PICKER.report(minTextRatio, level), "success")];
-  if (corrections.length === 0) return [report];
-  return [report, ...wrapped(THEME_PICKER.corrections(corrections.length), width, "warning")];
+  const adjusted = adjustedRoles(corrections).length;
+  if (adjusted === 0) return [report];
+  return [report, ...wrapped(THEME_PICKER.corrections(adjusted), width, "warning")];
 }
 
 function wrapped(text: string, width: number, tone: Segment["tone"]): Line[] {

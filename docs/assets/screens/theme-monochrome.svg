@@ -21,11 +21,11 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <circle cx="40.0" cy="17.0" r="5.5" fill="#febc2e"/>
 <circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
 <text class="t" x="406.0" y="21.0" text-anchor="middle">gup — Paquets · Monochrome</text>
-<rect class="c0" x="16.0" y="42.0" width="780.0" height="17.0"/>
+<rect class="c0" x="16.0" y="42.0" width="772.2" height="17.0"/>
 <rect class="c0" x="31.6" y="93.0" width="171.6" height="17.0"/>
 <rect class="c0" x="234.4" y="263.0" width="546.0" height="17.0"/>
 <rect class="c0" x="562.0" y="467.0" width="210.6" height="17.0"/>
-<text class="c1 b" x="16.0" y="55.0" textLength="780.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.4.0  │  14 provider(s)  │  12 mise(s) à jour  │  mode normal · tous les providers           </text>
+<text class="c1 b" x="16.0" y="55.0" textLength="772.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.4.0  │  14 détectés  │  12 mises à jour  │  mode normal                                    </text>
 <text class="c0" x="16.0" y="72.0" textLength="780.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─ Menu ─────────────────╮┏━ Paquets ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</text>
 <text class="c0" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="31.6" y="89.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Scan              </text>
@@ -153,5 +153,5 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="772.6" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌</text>
 <text class="c0" x="788.2" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c0" x="16.0" y="497.0" textLength="780.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
-<text class="c0" x="16.0" y="514.0" textLength="647.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ naviguer · espace cocher · a tout cocher · / filtrer · … · tab menu · q quitter</text>
+<text class="c0" x="16.0" y="514.0" textLength="756.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> espace cocher · / filtrer · p planifier · a tout cocher · ↑↓ naviguer · … · tab menu · q quitter</text>
 </svg>

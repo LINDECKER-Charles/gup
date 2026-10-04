@@ -9,6 +9,7 @@ import type { Mechanism } from "../../../core/scheduler/trigger/os-trigger.js";
 import type { TriggerHealth } from "../../../core/scheduler/trigger/trigger-health.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import { formatDuration, formatRelative } from "../fr-format.js";
+import { RUN_SUMMARY } from "../run-labels.js";
 
 /**
  * The scheduler's words (French, the language of the interface), shared by
@@ -61,7 +62,7 @@ function monthDayLabel(day: number | "last"): string {
   return `le ${day === FIRST_OF_MONTH ? "1er" : day} de chaque mois`;
 }
 
-/** The last run in a few characters: "✔ 2 mis à jour", "◐ 1/3 — 2 échec(s)", "—". */
+/** The last run in a few characters: "✔ 2 mis à jour", "◐ 1/3 — 2 échecs", "—". */
 export function runStatusLabel(record: ScheduleRunRecord | undefined): string {
   if (!record) return NEVER_RAN;
   const count = (status: TargetResult["status"]): number =>
@@ -77,7 +78,7 @@ export function runStatusLabel(record: ScheduleRunRecord | undefined): string {
       return partialLabel(count("updated"), problems);
     }
     case "failed":
-      return `${failed} ${count("failed")} échec(s)`;
+      return `${failed} ${RUN_SUMMARY.failed(count("failed"))}`;
     case "skipped":
       return `${skipped} ignorée`;
     case "missed":
@@ -88,7 +89,9 @@ export function runStatusLabel(record: ScheduleRunRecord | undefined): string {
 function partialLabel(updated: number, problems: { failed: number; skipped: number }): string {
   const total = updated + problems.failed + problems.skipped;
   const detail =
-    problems.failed > 0 ? `${problems.failed} échec(s)` : `${problems.skipped} ignoré(s)`;
+    problems.failed > 0
+      ? RUN_SUMMARY.failed(problems.failed)
+      : RUN_SUMMARY.skipped(problems.skipped);
   return `${STATUS_GLYPHS.running[0]} ${updated}/${total} — ${detail}`;
 }
 
@@ -102,7 +105,7 @@ export function targetResultLabel(result: TargetResult): string {
     case "failed":
       return `échec — ${result.message ?? "erreur inconnue"}`;
     case "skipped":
-      return `ignoré — ${result.message ?? "sans raison"}`;
+      return `ignorée — ${result.message ?? "sans raison"}`;
   }
 }
 

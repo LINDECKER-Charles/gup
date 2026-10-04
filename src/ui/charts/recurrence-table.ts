@@ -2,6 +2,7 @@ import type { PackageRecurrence } from "../../core/insights/types.js";
 import { CADENCE_LABELS, intervalLabel, RECURRENCE_COLUMNS } from "../text/journal/activity-labels.js";
 import { formatCount } from "../text/fr-format.js";
 import { fit, seg, type Segment, type Tone } from "../tui/styled-lines.js";
+import { providerLabel, type ProviderName } from "./activity-sections.js";
 import { barText } from "./bar-chart.js";
 import type { ChartGlyphs } from "./chart-glyphs.js";
 
@@ -29,6 +30,8 @@ export interface RecurrenceRowContext {
   /** The measure of the longest bar. */
   readonly max: number;
   readonly glyphs: ChartGlyphs;
+  /** A provider's display name from its id; without it, the id shows. */
+  readonly providerName?: ProviderName | undefined;
 }
 
 const MEASURE_TITLES: Readonly<Record<RecurrenceMeasure, string>> = {
@@ -76,7 +79,9 @@ export function recurrenceRow(entry: PackageRecurrence, context: RecurrenceRowCo
   const { columns, measure, max, glyphs } = context;
   const value = entry[measure];
   const cells: Segment[] = [seg(`${fit(entry.packageId, columns.name)} `)];
-  if (columns.provider > 0) cells.push(seg(`${fit(entry.providerId, columns.provider)} `, "muted"));
+  if (columns.provider > 0) {
+    cells.push(seg(`${fit(providerLabel(entry.providerId, context), columns.provider)} `, "muted"));
+  }
   cells.push(
     seg(barText({ value, max, cells: columns.bar }, glyphs), MEASURE_TONES[measure]),
     seg(` ${formatCount(value).padStart(COUNT_WIDTH)}`),

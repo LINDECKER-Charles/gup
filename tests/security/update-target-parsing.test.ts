@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { formatBadTargetMessage } from "../../src/commands/update.js";
+import { resolveUpdateTarget } from "../../src/core/platform/update-target.js";
+import { getProvider } from "../../src/core/registry.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 /**
  * `gup update provider:packageId` is the only CLI surface where a user can hand
@@ -18,7 +21,7 @@ function splitTarget(target: string): { providerId: string; packageId: string } 
 const FAKE_PROVIDERS = [
   { id: "choco", displayName: "Chocolatey" },
   { id: "winget", displayName: "Winget" },
-  { id: "npm-global", displayName: "npm (global)" },
+  { id: "npm-g", displayName: "npm (global)" },
 ];
 
 describe("update target parsing", () => {
@@ -28,8 +31,8 @@ describe("update target parsing", () => {
   });
 
   it("splits on the FIRST colon only — package ids may legitimately contain ':'", () => {
-    expect(splitTarget("npm-global:@scope/pkg")).toEqual({
-      providerId: "npm-global",
+    expect(splitTarget("npm-g:@scope/pkg")).toEqual({
+      providerId: "npm-g",
       packageId: "@scope/pkg",
     });
     expect(splitTarget("winget:Microsoft.VisualStudioCode")).toEqual({
@@ -46,7 +49,7 @@ describe("update target parsing", () => {
     // The CLI must hand the literal id to the provider; sanitization (if any)
     // belongs to the provider, never to the parser.
     expect(splitTarget("winget:foo; rm -rf /")?.packageId).toBe("foo; rm -rf /");
-    expect(splitTarget("npm-global:`whoami`")?.packageId).toBe("`whoami`");
+    expect(splitTarget("npm-g:`whoami`")?.packageId).toBe("`whoami`");
   });
 });
 
@@ -81,6 +84,24 @@ describe("formatBadTargetMessage", () => {
     // The hint always uses the canonical id, never the display label, to avoid
     // teaching users an id that getProvider() will then reject.
     expect(msg).not.toContain("--provider Chocolatey");
+  });
+
+  describe("the generic examples", () => {
+    afterEach(() => restorePlatform());
+
+    // A wrong id taught here (`npm-global` for `npm-g`) fails the very next command.
+    it("only suggest targets that `gup update` accepts, on the OS their provider runs on", () => {
+      const message = formatBadTargetMessage("totally-unknown", FAKE_PROVIDERS);
+      const targets = [...message.matchAll(/gup update ([^\s:]+:\S+)/g)].map(([, target]) => target ?? "");
+
+      expect(targets.length).toBeGreaterThan(0);
+      for (const target of targets) {
+        const provider = getProvider(target.slice(0, target.indexOf(":")));
+        expect(provider, target).toBeDefined();
+        setPlatform(provider?.platforms?.[0] ?? process.platform);
+        expect(resolveUpdateTarget(target), target).toMatchObject({ isValid: true });
+      }
+    });
   });
 
   it("falls back to generic provider:packageId examples for an unknown token", () => {

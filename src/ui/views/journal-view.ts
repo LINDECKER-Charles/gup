@@ -39,6 +39,7 @@ export function journalView(source: JournalSource, ports: JournalViewPorts = {})
         choose: (spec) => context.dialogs.choose(spec),
         glyphMode: () => context.screen.appearance.glyphMode,
         defaultPeriod,
+        providerName: (providerId) => context.displayName(providerId),
         ...(ports.scheduleName && { scheduleName: ports.scheduleName }),
       }),
     resultActions: () => [reportAction(source, defaultPeriod)],

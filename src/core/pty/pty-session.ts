@@ -7,8 +7,6 @@ import { ptyKill } from "./pty-kill.js";
 /** What the child sees in `TERM`: OpenTUI's embedded terminal emulates xterm. */
 export const TERM_NAME = "xterm-256color";
 
-/** execa's `forceKillAfterDelay` default: SIGTERM, then SIGKILL this long after (POSIX). */
-const KILL_GRACE_MS = 5_000;
 const MIN_COLS = 20;
 const MIN_ROWS = 3;
 /** Reported when a signal ended the child, as `runInherit` does without a PTY. */
@@ -33,7 +31,7 @@ export interface PtyLaunch {
  * `exited` resolves on node-pty's exit event — or earlier, on Windows, when
  * the trampoline's exit file says 0. A non-zero code always waits for the
  * exit event: by then ConPTY has flushed the last output, so a failure's
- * tail is complete.
+ * tail is complete. After a kill it also waits for the whole tree to be gone.
  */
 export class PtySession implements InheritProcess {
   readonly exited: Promise<InheritExit>;
@@ -41,7 +39,8 @@ export class PtySession implements InheritProcess {
   private hasExited = false;
   private isKilled = false;
   private lastOutput = Date.now();
-  private killTimer: NodeJS.Timeout | null = null;
+  /** Settled at once until a kill; then when the kill took the whole tree down. */
+  private treeGone: Promise<void> = Promise.resolve();
   private settle: (exit: InheritExit) => void = () => {};
 
   /** Throws when node-pty cannot start the child. */
@@ -103,11 +102,7 @@ export class PtySession implements InheritProcess {
   kill(): void {
     if (this.hasExited || this.isKilled) return;
     this.isKilled = true;
-    ptyKill.terminate(this.handle.pid);
-    this.killTimer = setTimeout(() => {
-      this.killTimer = null;
-      if (!this.hasExited) ptyKill.force(this.handle.pid);
-    }, KILL_GRACE_MS);
+    this.treeGone = Promise.resolve(ptyKill.terminate(this.handle.pid));
   }
 
   private forward(data: string, onData: (data: string) => void): void {
@@ -123,11 +118,15 @@ export class PtySession implements InheritProcess {
     if (code === 0) this.finish(SUCCESS);
   }
 
+  /**
+   * A killed child is reported once nothing of its tree is left, not when the
+   * trampoline died: a provider repairs what an interrupted installer left
+   * (npm's staged copy), which must not race an installer still running.
+   */
   private finish(exit: InheritExit): void {
     if (this.hasExited) return;
     this.hasExited = true;
-    if (this.killTimer) clearTimeout(this.killTimer);
-    this.settle(exit);
+    void this.treeGone.then(() => this.settle(exit));
   }
 }
 

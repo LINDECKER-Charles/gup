@@ -152,8 +152,13 @@ under Paquets, does everything `gup schedule` does except removing the trigger.
 The first line is the trigger's state, as in
 [Troubleshooting](#troubleshooting), with `i` as the repair. Below the
 table, the schedule under the cursor: its next run, then what its last run
-did package by package — or, if it never ran, the packages it covers. The
-package count and next-run columns appear from a 120-column terminal.
+did package by package — or, if it never ran, the packages it covers. Each
+column is as wide as what it holds. The package count and next-run columns
+appear when the whole table fits — on a 120-column terminal, usually. When
+even the rest does not, the last run keeps only its mark (`✔`, `◐`, `✖`,
+`—`), its words staying in the details, and only then is the wider of the
+name and the recurrence cut: on an 80-column terminal a recurrence keeps its
+time.
 
 | Key | In the list |
 |---|---|
@@ -205,7 +210,9 @@ The line under the fields shows the cron expression and the next three runs,
 recomputed at every keystroke, or why the recurrence is refused (`✖ Fréquence
 trop élevée — au plus une exécution par heure`). Each problem shows under its
 field and *Enregistrer* stays muted until there is none. `Ctrl+S` saves from
-anywhere, `échap` leaves (asking first when something changed). The note
+anywhere, `échap` leaves (asking first when something changed, and always
+for a new schedule not saved yet); *Annuler* drops a new schedule at once,
+asking only once you changed something. The note
 under a winget package is the UAC caveat of
 [What a scheduled run never does](#what-a-scheduled-run-never-does).
 

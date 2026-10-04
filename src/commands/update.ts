@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import type { Command } from "commander";
 import { isSupportedOn } from "../core/platform/is-supported-on.js";
-import { lookupProvider } from "../core/platform/lookup-provider.js";
+import { resolveUpdateTarget, type InvalidUpdateTarget } from "../core/platform/update-target.js";
 import { ALL_PROVIDERS } from "../core/registry.js";
 import type { Provider, ProviderScanResult, SelectedPackage } from "../core/types.js";
 import { setInstallTimeoutSeconds } from "../core/runner.js";
@@ -12,6 +12,8 @@ import { exitCodeOf, type UpdateReport } from "../core/update/update-report.js";
 import { confirm } from "../ui/prompts/confirm.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
 import { promptPackageSelection } from "../ui/select.js";
+import { renderScanTable } from "../ui/table.js";
+import { ERROR_PREFIX } from "../ui/text/cli-labels.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { consolePorts, printReport } from "../ui/update-console.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
@@ -46,7 +48,8 @@ export async function updateCommand(options: UpdateOptions): Promise<number> {
   );
 
   if (allPackages.length === 0) {
-    process.stdout.write(`${chalk.green("à jour — aucune mise à jour disponible")}\n`);
+    // "à jour" — or the errors of the providers that could not scan.
+    process.stdout.write(`${renderScanTable(scans)}\n`);
     return 0;
   }
 
@@ -93,28 +96,26 @@ async function chooseSelection(
 /**
  * Validate every `provider:packageId` up front, before opening a skip session:
  * a typo must not leave a session dangling behind it. Returns null after
- * writing the diagnostic to stderr.
+ * writing the diagnostic to stderr. The elevated child applies the same check.
  */
 function resolveTargets(targets: string[]): UpdateRequest[] | null {
   const requests: UpdateRequest[] = [];
   for (const target of targets) {
-    const idx = target.indexOf(":");
-    if (idx === -1) {
-      // Only suggest providers that can act here: never
-      // `gup list --provider winget` on a Mac.
-      const actionable = ALL_PROVIDERS.filter((p) => isSupportedOn(p));
-      process.stderr.write(formatBadTargetMessage(target, actionable));
+    const resolved = resolveUpdateTarget(target);
+    if (!resolved.isValid) {
+      process.stderr.write(badTargetMessage(target, resolved));
       return null;
     }
-    const providerId = target.slice(0, idx);
-    const lookup = lookupProvider(providerId);
-    if (!lookup.isFound) {
-      process.stderr.write(`${lookup.error}\n`);
-      return null;
-    }
-    requests.push({ providerId, packageId: target.slice(idx + 1) });
+    requests.push({ providerId: resolved.provider.id, packageId: resolved.packageId });
   }
   return requests;
+}
+
+/** A target with no provider gets examples; the others, the check's own reason. */
+function badTargetMessage(target: string, { problem, error }: InvalidUpdateTarget): string {
+  if (problem !== "format") return `${error}\n`;
+  // Only suggest providers that can act here: never `gup list --provider winget` on a Mac.
+  return formatBadTargetMessage(target, ALL_PROVIDERS.filter((p) => isSupportedOn(p)));
 }
 
 async function runTargets(targets: string[], opts: { yes?: boolean } = {}): Promise<number> {
@@ -199,7 +200,7 @@ function providerNameHint(typed: string, providerId: string): string[] {
 
 const GENERIC_TARGET_EXAMPLES = [
   `Exemples : gup update winget:Microsoft.VisualStudioCode`,
-  `           gup update npm-global:typescript`,
+  `           gup update npm-g:typescript`,
   `Pour mettre à jour tout un provider sans cibler un paquet :`,
   `           gup update --provider <id> --all`,
 ];
@@ -217,14 +218,14 @@ export const updateModule: CliModule = {
   order: MODULE_ORDER.commands,
   register(program: Command) {
     program
-      .command("update [targets...]")
+      .command("update [cibles...]")
       .description("Mise à jour directe (sans menu). Cibles au format provider:packageId.")
       .option("-a, --all", "Tout mettre à jour")
       .option("-y, --yes", "Skip la confirmation en mode --all")
       .option("-p, --provider <ids...>", "Restreint à certains providers")
       .option("--fast", "Skip les scans lents")
       .option(
-        "--timeout <seconds>",
+        "--timeout <secondes>",
         "Timeout par install en secondes — l'install bloquée est skippée (0 = désactivé)",
       )
       .action(async (targets: string[], opts: UpdateFlags) => {
@@ -241,12 +242,13 @@ export const updateModule: CliModule = {
   },
 };
 
-/** `--timeout <seconds>` wins over GUP_INSTALL_TIMEOUT; a bad value exits 2. */
+/** `--timeout <secondes>` wins over GUP_INSTALL_TIMEOUT; a bad value exits 2. */
 function applyTimeoutFlag(raw: string | undefined): void {
   if (raw === undefined) return;
   const seconds = Number(raw);
   if (!Number.isFinite(seconds) || seconds < 0) {
-    process.stderr.write(`${chalk.red("Error:")} --timeout attend un nombre de secondes >= 0\n`);
+    const reason = "--timeout attend un nombre de secondes >= 0";
+    process.stderr.write(`${chalk.red(ERROR_PREFIX)} ${reason}\n`);
     process.exit(2);
   }
   setInstallTimeoutSeconds(seconds);

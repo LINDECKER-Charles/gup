@@ -107,7 +107,9 @@ export function renderItems(
  * Under the list when some row cannot show its whole hint beside it: a blank
  * row, then — when the cursor row is one of them — its hint in full, wrapped
  * on a fixed number of rows (kept blank otherwise, so the list never jumps).
- * Empty when every hint fits inline.
+ * The hint is given the line's width, so a path in it is cut in its middle
+ * there rather than wrapped past the last row. Empty when every hint fits
+ * inline.
  */
 export function detailLines(
   items: readonly ListItem[],
@@ -118,15 +120,15 @@ export function detailLines(
   const fits = (row: OptionRow): boolean =>
     lineWidth(cellsOf(row, columns, false)) + lineWidth(row.hint()) <= width;
   if (rowsOf(items).every(fits)) return [];
-  const hint = cursor && !fits(cursor) ? wrapLine(cursor.hint(), width) : [];
+  const hint = cursor && !fits(cursor) ? wrapLine(cursor.hint(width), width) : [];
   return [[], ...Array.from({ length: DETAIL_HINT_ROWS }, (_, index) => hint[index] ?? [])];
 }
 
 /** The row cut to `width`, with its hint when it has room to say something. */
 function rowLine(row: OptionRow, columns: Columns, at: { width: number; isCursor: boolean }): Line {
   const cells = cellsOf(row, columns, at.isCursor);
-  const hasRoom = at.width - lineWidth(cells) >= MIN_HINT_WIDTH;
-  return clipLine(hasRoom ? [...cells, ...row.hint()] : cells, at.width);
+  const room = at.width - lineWidth(cells);
+  return clipLine(room >= MIN_HINT_WIDTH ? [...cells, ...row.hint(room)] : cells, at.width);
 }
 
 /** Gutter, label and value; an action row (no value) lets its hint start in the value column. */

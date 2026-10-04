@@ -173,6 +173,33 @@ describe("adminBatchCommand", () => {
     expect(provider.update).not.toHaveBeenCalled();
   });
 
+  it("re-checks every target as the CLI does: no option, no control character, no empty id", async () => {
+    const file = await mkInputFile();
+    const targets = ["choco:--source=http://attacker.invalid", "choco:-y", "choco:git\u001b[2J", "choco:", "choco:git"];
+    await writeFile(file, JSON.stringify({ version: 1, targets }), { encoding: "utf8", flag: "wx" });
+    const provider = {
+      id: "choco",
+      displayName: "Chocolatey",
+      isAvailable: vi.fn(),
+      listOutdated: vi.fn(),
+      update: vi.fn(async (id: string) => ({ id, success: true })),
+      updateAll: vi.fn(),
+    };
+    getProviderMock.mockReturnValue(provider);
+
+    await expect(adminBatchCommand(file)).resolves.toBe(1);
+
+    expect(provider.update.mock.calls).toEqual([["git"]]);
+    const out = JSON.parse(await readFile(`${file}.out`, "utf8")) as { outcomes: unknown[] };
+    expect(out.outcomes).toEqual([
+      { id: "--source=http://attacker.invalid", success: false, message: expect.stringContaining("« - »") },
+      { id: "-y", success: false, message: expect.stringContaining("« - »") },
+      { id: "git\u001b[2J", success: false, message: expect.stringContaining("caractère de contrôle") },
+      { id: "", success: false, message: expect.stringContaining("identifiant de paquet manquant") },
+      { id: "git", success: true },
+    ]);
+  });
+
   it("returns exit 2 and prints to stderr when the input file is unreadable or malformed", async () => {
     const code = await adminBatchCommand("/this/path/definitely/does/not/exist.json");
     expect(code).toBe(2);

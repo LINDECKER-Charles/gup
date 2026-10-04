@@ -231,8 +231,19 @@ export class ScheduleEditor {
     return [{ field: "recurrence", message: INVALID_TIME }];
   }
 
+  /** Changed since the editor opened. */
   get isDirty(): boolean {
     return this.#fingerprint() !== this.#initial;
+  }
+
+  /** A schedule that was never saved: no id yet. */
+  get isNew(): boolean {
+    return this.id === undefined;
+  }
+
+  /** What leaving would lose: a new schedule, changed or not, or changes to a stored one. */
+  get hasUnsavedWork(): boolean {
+    return this.isNew || this.isDirty;
   }
 
   #recurrence(): Recurrence {

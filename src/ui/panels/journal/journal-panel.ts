@@ -1,6 +1,5 @@
 import { JOURNAL_SECTION } from "../../../core/config/journal-section.js";
 import { buildInsights } from "../../../core/insights/build-insights.js";
-import { withHomeShortened } from "../../../core/log/redact.js";
 import {
   nextPeriod,
   parsePeriod,
@@ -17,8 +16,8 @@ import type { ChoiceSpec } from "../../tui/dialog.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import {
   fit,
-  middleEllipsis,
   seg,
+  shownPath,
   wrapLine,
   type Line,
   type Segment,
@@ -55,6 +54,8 @@ export interface JournalPanelDeps {
   readonly defaultPeriod?: () => PeriodPreset;
   /** A schedule's name from its id, for the event detail; undefined when unknown. */
   readonly scheduleName?: (scheduleId: string) => string | undefined;
+  /** A provider's display name from its id, as every other view names it; default: the id. */
+  readonly providerName?: (providerId: string) => string;
 }
 
 const DEFAULT_PERIOD = JOURNAL_SECTION.defaults.period;
@@ -89,10 +90,11 @@ export class JournalPanel implements Panel {
     this.#deps = deps;
     this.#now = deps.now ?? (() => new Date());
     this.#period = presetPeriod(this.defaultPeriod(), this.#now());
+    const providerName = deps.providerName ?? ((providerId: string) => providerId);
     this.#tabs = [
-      new ActivityTab(),
-      new RecurrenceTab(),
-      new EventsTab(deps.scheduleName),
+      new ActivityTab(providerName),
+      new RecurrenceTab(providerName),
+      new EventsTab({ providerName, scheduleName: deps.scheduleName }),
       new DebugTab({ onDiagnostic: () => void this.export("diagnostic") }),
     ];
   }
@@ -277,8 +279,7 @@ function tabBar(current: number, width: number): Line {
  */
 export function exportNotice(outcome: ExportOutcome, width?: number): ResultNotice {
   if (!outcome.ok) return { text: EXPORT_LABELS.failed(outcome.error), tone: "danger" };
-  const home = withHomeShortened(outcome.path);
-  const path = width === undefined ? home : middleEllipsis(home, width);
+  const path = shownPath(outcome.path, width);
   if (outcome.opened === true) return { text: EXPORT_LABELS.opened(path), tone: "success" };
   if (outcome.opened === false) return { text: EXPORT_LABELS.notOpened(path), tone: "warning" };
   return { text: EXPORT_LABELS.written(path), tone: "success" };

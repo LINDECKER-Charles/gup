@@ -197,11 +197,22 @@ leave short moves too (notice `depth-256`, §4.3).
 |---|---|---|---|
 | rgb | palette RGB (slots on 256 colours), no DIM | highlight / accent fill as RGB | painted |
 | detected | unchanged colours keep the terminal's slot or default (with the detected RGB as snapshot); corrected ones RGB | idem | the terminal's own |
-| trusted | terminal foreground, ANSI slots 6/2/3/1, DIM for muted/disabled | inverse video, no background colour | the terminal's own |
+| trusted | terminal foreground, DIM for muted/disabled; accent/success/warning/danger and the borders on the ANSI slot (or the foreground) `color/unreported-palette.ts` picks | inverse video, no background colour | the terminal's own |
 | monochrome | terminal foreground only, no DIM | inverse video (+ bold on the accent fill) | the terminal's own |
 
 A terminal "default" colour means its foreground in the foreground role and its background in the
 background role, so the detected background's colour reaches `onAccent` (a foreground) as RGB.
+
+**Trusted colours** (`color/unreported-palette.ts`). The palette is unknown, so nothing can be
+measured; each coloured role takes the first of its candidates — the slot of a reported palette
+(6/2/3/1, borders 8 and 6), its bright twin (14/10/11/9), the terminal's foreground — that reaches
+the level (text, or 3:1 for borders) on every default palette the terminal most likely has: by the
+lightness it reported (dark: iTerm2, GNOME Tango; light: Terminal.app Basic, xterm), else on
+Windows, whose console never answers, Campbell and the pre-1709 console colours; with nothing
+known elsewhere, the reported-palette slots unchanged. On conhost at AA: danger 9, success 10,
+accent 14, warning 3, borders 8/6. `resolveTheme` puts the choice in `sources`;
+`ResolveInput.platform` (default `process.platform`) and `ThemedAppearanceDeps.platform` let
+tests pin the platform.
 
 ### 4.5 Runtime (`runtime/`)
 
@@ -355,7 +366,8 @@ the renderer reads it when it is created.
 | `tests/ui/theme/enforce-contrast.test.ts` | built-ins with zero corrections (AA; high-contrast AAA); 1,000 seeded palettes × AA/AAA; correction report; seeking tokens unreported; mid-grey background moved |
 | `tests/ui/theme/terminal-palette.test.ts` | OSC answers converted or refused; sources; Campbell, Terminal.app Basic, Solarized Dark, One Half Light meet every rule at AA and AAA |
 | `tests/ui/theme/resolve-theme.test.ts` | the precedence matrix, customs per theme, 256-colour slots still AA, availability, `NO_COLOR`; seeded property test on the paint: random custom colours and terminal palettes, truecolor and 256 colours, AA and AAA |
-| `tests/ui/theme/style-table.test.ts` | accent fill, no DIM in palette modes, detected defaults, trusted inverse fills, monochrome without colour |
+| `tests/ui/theme/style-table.test.ts` | accent fill, no DIM in palette modes, detected defaults, trusted inverse fills, trusted colours readable on the Windows console's Campbell (AA, AAA), monochrome without colour |
+| `tests/ui/theme/unreported-palette.test.ts` | the trusted colours against the real defaults of terminals that report no palette (Campbell, pre-1709 console, Terminal.app Basic, iTerm2, GNOME Tango, xterm) with the WCAG oracle, never worse than the usual slots on a light default, unchanged when nothing is known |
 | `tests/ui/theme/terminal-probe.test.ts` | lazy and bounded queries, process cache, unsupported/suspended terminals, events, bounded settle, dispose |
 | `tests/ui/theme/themed-appearance.test.ts` | finding 1 (plain text and input in the terminal's colour), on-screen AA for RGB and detected themes, preview, live settings, detection policy, dispose |
 | `tests/ui/app/contrast-audit.test.ts` | every registered view walked — Paquets (cursor, checked rows, filter, confirmation), Scan with a failure, Providers, Options (list, timeout dialog, theme picker and a preview, reset choice and confirmation, colour editor, hex dialog, an accent typed unreadable on purpose) — under every built-in theme: the seven RGB ones, `auto` on a light terminal, `terminal` on Campbell and Terminal.app Basic (also as a 256-colour terminal), `dark` at AAA on a 256-colour terminal, `monochrome` on both with the terminal's own text colour. Every span ≥ 4.5:1 (7:1 at AAA), borders ≥ 3:1; the legacy look on a light terminal is caught |
@@ -386,6 +398,10 @@ the test, an appearance control resolving for real).
   tested on any OS.
 - conhost does not render SGR 2 (DIM): in trusted mode muted text then looks plain; meaning is
   carried by glyphs and labels. Palette modes never use DIM.
+- OpenTUI 0.5.14 turns inverse video off within a row but not at a row change (a ConPTY stream
+  shows `⎋[7m` … then `⎋[38;5;8m╭─`, no `⎋[27m`; colours do get `⎋[49m`). In trusted and
+  monochrome modes the title bar is reversed: it stops one column short of the right edge
+  (`chrome.ts`), so the sidebar's `╭─` below it is not drawn reversed.
 
 ---
 
@@ -411,6 +427,7 @@ the test, an appearance control resolving for real).
 | D16 | Under 80 columns the hint column is dropped; picker side by side from 90 columns, cut to 4 lines below | a hint with fewer than 16 columns left is dropped from its row, and whenever some hint does not fit the cursor row's is shown whole under the list; picker side by side from 66 columns, the contrast report first when stacked; the colour editor drops Affichée on a narrow panel | The panel is 50 columns wide in an 80-column terminal: hints cut to 4 characters said nothing and hid the Thème row's contrast status. The list (31) and the sample (32) fit side by side in a 100-column terminal's panel (70). |
 | D17 | `c` copies the path on the FICHIER row | anywhere in the list (a section shortcut), and Entrée on the Fichier row | One key the hint bar can announce; `OptionSection.shortcuts` keeps it in the file section. |
 | D18 | `a` keeps the adjusted value (of the row) | keeps every adjusted role | Matches the warning under the table, which counts every adjusted role. |
+| D22 | — | "N couleurs ajustées" counts the corrections of tunable roles (`adjustedRoles` in `enforce-contrast.ts`) on the Thème row, in the picker (its report and its `⚠` mark) and in the colour editor — since `fix/release-blockers` | The Thème row counted every corrected token: two custom colours read `5 couleur(s) ajustée(s)` there and `2` in the editor, the accent's fill, its text and the focus border counting the accent three more times. |
 | D19 | Colour editor: "Échap/←" leaves (§2.4), ← → nudge the hue (key table) | ← → nudge the hue, Échap leaves | The key table is the precise one; ← → on a colour read as "turn the hue". |
 | D20 | — | ← also leaves the picker (cancel) and the provider filter | Back, as everywhere else in the menu; neither view uses ← otherwise. |
 | D21 | The FICHIER row shows the store status | as specified since `fix/wave-2-polish`: a failed save shows on the row (and on the notice line) until a later save persists | The first version hid `lastWriteError` from the row, because `ConfigStore` kept it for the rest of the process; the store now clears it once a write persists, so the workaround is gone. |

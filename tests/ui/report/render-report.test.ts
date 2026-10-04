@@ -110,3 +110,18 @@ describe("escapeHtml", () => {
     );
   });
 });
+
+/**
+ * The search box of a 320 px phone (the narrowest common one) leaves its
+ * placeholder about 30 characters before the `/` key cap covers the rest.
+ */
+const PHONE_PLACEHOLDER_CHARS = 30;
+
+describe("the search box", () => {
+  it("keeps its placeholder whole on a phone, its label saying what is searched", () => {
+    const html = renderReportHtml(reportModelOf([]));
+    const placeholder = /<input id="search" type="search" placeholder="([^"]*)"/.exec(html)?.[1];
+    expect(placeholder?.length).toBeLessThanOrEqual(PHONE_PLACEHOLDER_CHARS);
+    expect(html).toContain(`<label class="sr-only" for="search">${REPORT_LABELS.search.label}</label>`);
+  });
+});

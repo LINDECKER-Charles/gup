@@ -60,17 +60,12 @@ const CURSOR = "› ";
 const MARGIN = "  ";
 /** The cursor and the enabled mark before the name. */
 const ROW_LEAD = CURSOR.length + MARGIN.length;
-const NAME_WIDTH = 14;
-const COUNT_WIDTH = 7;
-/** "lun. 12 sept. 09:00", "aujourd'hui 14:00". */
-const NEXT_WIDTH = 19;
-/** "◐ 1/3 — 2 échec(s)". */
-const LAST_WIDTH = 20;
-const RECURRENCE_WIDTH = 22;
-const MIN_RECURRENCE_WIDTH = 12;
-/** From this width on (a 120-column terminal), the table also shows the count and next run. */
-const WIDE_TABLE =
-  ROW_LEAD + NAME_WIDTH + RECURRENCE_WIDTH + COUNT_WIDTH + NEXT_WIDTH + LAST_WIDTH + 4;
+/** Blank after each column but the last. */
+const GAP = 1;
+/** Narrowest the name and the recurrence get on a panel too narrow for them. */
+const MIN_TEXT_WIDTH = 8;
+/** The last run told by its mark alone (`✔`, `◐`, `✖`, `—`): the details give its words. */
+const LAST_MARK_WIDTH = 1;
 const PROVIDER_WIDTH = 14;
 const PACKAGE_WIDTH = 20;
 
@@ -79,12 +74,13 @@ interface Columns {
   readonly recurrence: number;
   /** Zero: the column is not shown. */
   readonly count: number;
+  /** Zero: the column is not shown. */
   readonly next: number;
   readonly last: number;
 }
 
 export function listLines(context: ListRenderContext): ListRender {
-  const columns = columnsFor(context.width);
+  const columns = columnsFor(context);
   const { schedules } = context.snapshot;
   const rows = schedules.map((schedule, index) => {
     const line = rowLine(schedule, { context, columns });
@@ -122,19 +118,68 @@ function healthTone(health: TriggerHealth): Tone {
 }
 
 /**
- * Every column on a wide panel; below, the count and the next run go (the
- * details under the table give the next run) and the recurrence shrinks
- * before the last run does.
+ * Each column as wide as what it holds (its title at least). When they do
+ * not all fit, the count and the next run go, then the last run keeps only
+ * its mark — the details under the table give both in full — and only then
+ * does the wider of the name and the recurrence shrink: on an 80-column
+ * terminal a recurrence keeps its time (`le 15 de chaque mois à 09:00`).
  */
-function columnsFor(width: number): Columns {
-  if (width >= WIDE_TABLE) {
-    const wide = { name: NAME_WIDTH, recurrence: RECURRENCE_WIDTH, count: COUNT_WIDTH };
-    return { ...wide, next: NEXT_WIDTH, last: width - (WIDE_TABLE - LAST_WIDTH) };
+function columnsFor(context: ListRenderContext): Columns {
+  const natural = naturalWidths(context);
+  const full: Columns = { ...natural, count: LIST_HEADERS.targets.length };
+  if (tableWidth(full) <= context.width) return full;
+  const narrow: Columns = { ...natural, count: 0, next: 0 };
+  if (tableWidth(narrow) <= context.width) return narrow;
+  const room = context.width - ROW_LEAD - 2 * GAP - LAST_MARK_WIDTH;
+  const [name = 0, recurrence = 0] = shrinkWidest(
+    [natural.name, natural.recurrence],
+    [MIN_TEXT_WIDTH, MIN_TEXT_WIDTH],
+    room,
+  );
+  return { name, recurrence, count: 0, next: 0, last: LAST_MARK_WIDTH };
+}
+
+/** The width each text column needs to show every schedule whole. */
+function naturalWidths(context: ListRenderContext): Omit<Columns, "count"> {
+  const { schedules, state } = context.snapshot;
+  const widest = (title: string, cells: readonly string[]): number =>
+    Math.max(title.length, ...cells.map((cell) => cell.length));
+  return {
+    name: widest(LIST_HEADERS.name, schedules.map((schedule) => schedule.name)),
+    recurrence: widest(
+      LIST_HEADERS.recurrence,
+      schedules.map((schedule) => recurrenceLabel(schedule.recurrence)),
+    ),
+    next: widest(LIST_HEADERS.next, schedules.map((schedule) => nextRun(schedule, context.now))),
+    last: widest(
+      LIST_HEADERS.last,
+      schedules.map((schedule) => runStatusLabel(state.schedules[schedule.id]?.lastRun)),
+    ),
+  };
+}
+
+/** A row's width with these columns, the ones not shown left out. */
+function tableWidth(columns: Columns): number {
+  const shown = Object.values(columns).filter((width) => width > 0);
+  return ROW_LEAD + shown.reduce((sum, width) => sum + width, 0) + GAP * (shown.length - 1);
+}
+
+/** `widths` narrowed one column at a time, the widest first, to fit `room` or their floors. */
+function shrinkWidest(
+  widths: readonly number[],
+  floors: readonly number[],
+  room: number,
+): number[] {
+  const shrunk = [...widths];
+  let excess = shrunk.reduce((sum, width) => sum + width, 0) - room;
+  while (excess > 0) {
+    const candidates = shrunk.map((width, index) => (width > (floors[index] ?? 0) ? width : -1));
+    const widest = candidates.indexOf(Math.max(...candidates));
+    if (candidates[widest] === -1) break;
+    shrunk[widest] = (shrunk[widest] ?? 0) - 1;
+    excess -= 1;
   }
-  const room = width - ROW_LEAD - NAME_WIDTH - LAST_WIDTH - 2;
-  const recurrence = Math.min(RECURRENCE_WIDTH, Math.max(MIN_RECURRENCE_WIDTH, room));
-  const last = Math.max(LAST_WIDTH, width - ROW_LEAD - NAME_WIDTH - recurrence - 2);
-  return { name: NAME_WIDTH, recurrence, count: 0, next: 0, last };
+  return shrunk;
 }
 
 function headerLine(columns: Columns): Line {
@@ -143,9 +188,15 @@ function headerLine(columns: Columns): Line {
     fit(LIST_HEADERS.recurrence, columns.recurrence),
     ...(columns.count > 0 ? [LIST_HEADERS.targets.padStart(columns.count)] : []),
     ...(columns.next > 0 ? [fit(LIST_HEADERS.next, columns.next)] : []),
-    LIST_HEADERS.last,
+    // A column of marks has no room for its title.
+    ...(columns.last > LAST_MARK_WIDTH ? [LIST_HEADERS.last] : []),
   ];
   return [seg(cells.join(" "), "muted")];
+}
+
+/** The last run in its column: its words, or its mark alone in a column of marks. */
+function lastRunCell(label: string, width: number): string {
+  return width > LAST_MARK_WIDTH ? fit(label, width) : ([...label][0] ?? "");
 }
 
 function rowLine(
@@ -164,7 +215,7 @@ function rowLine(
     seg(`${fit(recurrenceLabel(schedule.recurrence), columns.recurrence)} `),
     ...(columns.count > 0 ? [seg(`${count} `, "muted")] : []),
     ...(columns.next > 0 ? [seg(`${fit(nextRun(schedule, context.now), columns.next)} `)] : []),
-    seg(fit(runStatusLabel(lastRun), columns.last), lastTone),
+    seg(lastRunCell(runStatusLabel(lastRun), columns.last), lastTone),
   ];
 }
 

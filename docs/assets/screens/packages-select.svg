@@ -32,7 +32,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <rect class="c1" x="31.6" y="93.0" width="171.6" height="17.0"/>
 <rect class="c1" x="234.4" y="263.0" width="546.0" height="17.0"/>
 <rect class="c0" x="562.0" y="467.0" width="210.6" height="17.0"/>
-<text class="c2 b" x="16.0" y="55.0" textLength="694.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.4.0  │  14 provider(s)  │  12 mise(s) à jour  │  mode normal · tous les providers</text>
+<text class="c2 b" x="16.0" y="55.0" textLength="491.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.4.0  │  14 détectés  │  12 mises à jour  │  mode normal</text>
 <text class="c3" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
 <text class="c4" x="31.6" y="72.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Menu </text>
 <text class="c3" x="78.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────╮</text>
@@ -237,5 +237,5 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="788.2" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="497.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯</text>
 <text class="c0" x="218.8" y="497.0" textLength="577.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
-<text class="c5" x="16.0" y="514.0" textLength="647.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ naviguer · espace cocher · a tout cocher · / filtrer · … · tab menu · q quitter</text>
+<text class="c5" x="16.0" y="514.0" textLength="756.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> espace cocher · / filtrer · p planifier · a tout cocher · ↑↓ naviguer · … · tab menu · q quitter</text>
 </svg>

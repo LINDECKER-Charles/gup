@@ -255,7 +255,7 @@ flowchart LR
 | Rule | Why |
 |---|---|
 | **One file = one provider** | No coupling. Removal is trivial. |
-| **No `throw` inside `listOutdated` / `update`** | A broken provider must not break the global scan. Return `[]` or `success: false`. |
+| **No `throw` inside `listOutdated` / `update`** | A broken provider must not break the global scan. Return `[]` or `success: false`. The one exception: a scan the tool itself reports as failed (npm's `{"error": …}`, an `ERR_PNPM_…` code) throws an `Error` naming it, so it shows as a scan error rather than as "up to date". |
 | **`run` / `runInherit` only** — never `child_process` | Windows-safe encoding, `shell: true` forbidden (security allowlist aside). |
 | **`fetch` with `AbortSignal.timeout(5_000)`** | No scan hanging on a slow upstream. |
 | **HTTPS only** in `fetch` | Pinned by `tests/security/http-targets.test.ts`. |

@@ -1,7 +1,8 @@
+import { adjustedRoles } from "../../theme/enforce-contrast.js";
 import type { PaintMode, ResolvedTheme } from "../../theme/resolve-theme.js";
 import type { ContrastLevel, CustomizableToken, ThemeId } from "../../theme/palette.js";
 import type { Tone } from "../../tui/styled-lines.js";
-import { formatDecimal } from "../fr-format.js";
+import { counted, formatDecimal } from "../fr-format.js";
 
 /**
  * The theme engine's words (French, the language of the interface): theme
@@ -59,6 +60,20 @@ export function formatRatioValue(ratio: number): string {
   return formatDecimal(Math.floor(ratio * 10) / 10, 1);
 }
 
+/** "1 couleur ajustée", "2 couleurs ajustées". */
+function adjustedColors(count: number): string {
+  return counted(count, "couleur ajustée", "couleurs ajustées");
+}
+
+/** "1 couleur ajustée <how>pour rester lisible", "2 couleurs ajustées <how>pour rester lisibles". */
+function adjustedToStayReadable(count: number, how = ""): string {
+  return counted(
+    count,
+    `couleur ajustée ${how}pour rester lisible`,
+    `couleurs ajustées ${how}pour rester lisibles`,
+  );
+}
+
 /** `6.14` → "6,1:1". */
 export function formatRatio(ratio: number): string {
   return `${formatRatioValue(ratio)}:1`;
@@ -68,7 +83,7 @@ export const CONTRAST_STATUS = {
   pass: (level: ContrastLevel, ratio: number) =>
     `✔ ${level} · contraste min. ${formatRatio(ratio)}`,
   corrected: (count: number, ratio: number) =>
-    `⚠ ${count} couleur(s) ajustée(s) · min. ${formatRatio(ratio)}`,
+    `⚠ ${adjustedColors(count)} · min. ${formatRatio(ratio)}`,
   approximated: (ratio: number) =>
     `couleurs approchées (terminal 256 couleurs) · min. ${formatRatio(ratio)}`,
   unverified: "? palette du terminal inconnue — contraste non vérifiable",
@@ -94,8 +109,9 @@ export function contrastStatus(theme: ResolvedTheme): StatusLabel {
   if (notices.includes("depth-256")) {
     return { text: CONTRAST_STATUS.approximated(minTextRatio), tone: "warning" };
   }
-  if (corrections.length > 0) {
-    return { text: CONTRAST_STATUS.corrected(corrections.length, minTextRatio), tone: "warning" };
+  const adjusted = adjustedRoles(corrections).length;
+  if (adjusted > 0) {
+    return { text: CONTRAST_STATUS.corrected(adjusted, minTextRatio), tone: "warning" };
   }
   return { text: CONTRAST_STATUS.pass(level, minTextRatio), tone: "success" };
 }
@@ -107,7 +123,7 @@ export const THEME_PICKER = {
   hints: "↑↓ essayer · entrée appliquer · échap annuler",
   report: (ratio: number, level: ContrastLevel) =>
     `Contraste minimal ${formatRatio(ratio)} — ${level} ✔`,
-  corrections: (count: number) => `${count} couleur(s) ajustée(s) pour rester lisible`,
+  corrections: (count: number) => adjustedToStayReadable(count),
   modeNotes: {
     rgb: "Fond peint par gup (la transparence du terminal n'est pas conservée).",
     detected: "Suit la palette de votre terminal.",
@@ -152,7 +168,7 @@ export const COLOR_EDITOR = {
   ground: "—",
   groundCorrected: "ajusté ⚠",
   corrected: (count: number, level: ContrastLevel) =>
-    `⚠ ${count} couleur(s) ajustée(s) automatiquement pour rester lisible (${level}). ` +
+    `⚠ ${adjustedToStayReadable(count, "automatiquement ")} (${level}). ` +
     "a : garder la valeur ajustée.",
   samples: {
     accent: "› sélection",

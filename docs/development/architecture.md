@@ -116,7 +116,7 @@ flowchart TB
 
 | Layer | Role | Rule |
 |---|---|---|
-| `cli.ts` | Builds the Commander program from the CLI modules | No logic: commands, global options and startup hooks come from `commands/cli/cli-modules.ts` (§12). |
+| `cli.ts` | Parses the Commander program `commands/cli/program.ts` builds from the CLI modules, commander's own words in French | No logic: commands, global options and startup hooks come from `commands/cli/cli-modules.ts` (§12). |
 | `commands/` | One use case per module: `list`, `update`, `doctor`, the menu's controller, `log` and `report` (`journal/`), `schedule` and the tick (`schedule/`), the elevated child (`admin-batch.ts`) | Composes core and UI; owns the composition roots (`menu-views.ts`, `cli-modules.ts`). |
 | `ui/app/` | The interactive app: `MenuApp` (a loop of sessions), `MenuSession` (layout, key routing, view registry), the update launchers, menu preferences | Knows views only through `ViewDefinition`; imports nothing from `commands/` but the menu's state type (`menu-state.ts`). |
 | `ui/views/`, `ui/panels/` | One view per sidebar entry: a factory (`views/<id>-view.ts`) and plain-object panels that render lines and take keys | Ports as parameters; no process, no file access of their own. |
@@ -166,6 +166,7 @@ classDiagram
         +skipped?: boolean
         +message?: string
         +retryable?: boolean
+        +recovery?: string
     }
 
     class UpdateOptions {
@@ -204,6 +205,9 @@ classDiagram
 - `skipped: true` on an outcome is not a failure: shown `↷`, counted apart, never retried.
 - `retryable: true` lets the retry pass offer `force` / `uninstallPrevious` / `reinstall`;
   `unattended` is set by scheduled runs (winget then runs with `--disable-interactivity`).
+- `recovery` on an outcome says what the provider undid after an attempt that did not finish
+  (npm-g moving back the copy a killed npm had staged): `finalizeOutcome` appends it to the
+  final message, the skip reason of an interrupted install included.
 - `updateAll` stays in the contract (the contract harness checks its shape), but gup's own
   paths update one package per `update()` call: that is what lets a skip or a timeout drop a
   single wedged install while the batch goes on.
