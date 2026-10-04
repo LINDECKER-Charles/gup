@@ -15,16 +15,16 @@ import type { SchedulesPort, SchedulesSnapshot } from "../panels/schedules/sched
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import {
   SCHEDULE_ACTION,
-  SCHEDULES_LABEL,
+  SCHEDULE_MENU_LABELS,
   UNSEEN_FAILURE_BADGE,
   unseenRunsFact,
 } from "../text/schedule/schedule-menu-labels.js";
 
 /**
- * Planification: the schedules of this machine — create them from Paquets
+ * Schedules: the schedules of this machine — create them from Packages
  * (`p` on the checked packages), edit, switch on and off, delete, run now,
- * repair the OS trigger. Paquets marks the packages an enabled schedule
- * covers (`◷`); the sidebar counts the enabled schedules, or shows `!` when
+ * repair the OS trigger. Packages marks the packages an enabled schedule
+ * covers (`∞`); the sidebar counts the enabled schedules, or shows `!` when
  * a scheduled run failed since the view was last opened, and the title bar
  * counts the runs not seen yet.
  */
@@ -33,7 +33,9 @@ export function schedulesView(port: SchedulesPort): ViewDefinition {
   const marker = scheduledMarker(port);
   return {
     id: "schedules",
-    label: SCHEDULES_LABEL,
+    get label() {
+      return SCHEDULE_MENU_LABELS.schedulesLabel;
+    },
     order: 30,
     group: 0,
     create(context) {
@@ -74,9 +76,9 @@ function factsOf(snapshot: SchedulesSnapshot): readonly string[] {
 }
 
 /**
- * `◷` on the packages an enabled schedule names — matched like a run
+ * `∞` on the packages an enabled schedule names — matched like a run
  * matches them, case aside. The keys are worked out once per read of the
- * schedules: Paquets asks for every row at every frame.
+ * schedules: Packages asks for every row at every frame.
  */
 function scheduledMarker(port: SchedulesPort): PackageMarker {
   let known: { snapshot: SchedulesSnapshot; keys: ReadonlySet<string> } | null = null;

@@ -7,22 +7,21 @@ import {
 } from "../../../core/scheduler/model/validate-schedule.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import { formatRelative } from "../../text/format.js";
-import { WINGET_UAC_NOTE } from "../../text/schedule/schedule-cli-labels.js";
-import { WARNING_MARK, WEEKDAY_NAMES } from "../../text/schedule/schedule-labels.js";
+import { SCHEDULE_CLI_LABELS } from "../../text/schedule/schedule-cli-labels.js";
 import {
   CATCH_UP_VALUES,
   EDITOR_TEXT,
   FIELD_LABELS,
   FREQUENCY_LABELS,
-  LAST_MONTH_DAY,
-} from "../../text/schedule/schedule-menu-labels.js";
+} from "../../text/schedule/schedule-editor-labels.js";
+import { WARNING_MARK, WEEKDAY_NAMES } from "../../text/schedule/schedule-labels.js";
 import { fillLine, fit, seg, wrap, type Line } from "../../tui/styled-lines.js";
 import type { EditorField, EditorItem, ScheduleEditor } from "./schedule-editor.js";
 
 /**
  * The editor drawn as lines: the fields, the preview of the next runs (or
  * why the recurrence is refused), the packages, the buttons. Each problem
- * shows under what it is about; "Enregistrer" is muted while there is one.
+ * shows under what it is about; Save is muted while there is one.
  */
 
 export interface EditorRenderContext {
@@ -84,7 +83,8 @@ function after(item: EditorItem, drawing: Drawing): Line[] {
   if (item.kind === "field" && item.field === "name") return issueLines(context, "name");
   if (item.kind === "field" && item.field === "catchUp") return [[], previewLine(drawing)];
   if (item.kind === "add" && mayAskForUac(editor.targets)) {
-    return wrap(WINGET_UAC_NOTE, context.width - MARGIN.length * 2).map((text): Line => [
+    const room = context.width - MARGIN.length * 2;
+    return wrap(SCHEDULE_CLI_LABELS.wingetUacNote, room).map((text): Line => [
       seg(`${MARGIN}${MARGIN}${text}`, "muted"),
     ]);
   }
@@ -134,7 +134,7 @@ function fieldValue(field: EditorField, editor: ScheduleEditor): string {
 
 function dayValue(editor: ScheduleEditor): string {
   if (editor.kind === "weekly") return WEEKDAY_NAMES[editor.weekday];
-  return editor.monthDay === "last" ? LAST_MONTH_DAY : String(editor.monthDay);
+  return editor.monthDay === "last" ? EDITOR_TEXT.lastMonthDay : String(editor.monthDay);
 }
 
 /** The cron expression and the next runs, or why the recurrence cannot be saved. */

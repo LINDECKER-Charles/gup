@@ -1,3 +1,4 @@
+import { localized } from "../../i18n/localized.js";
 import { run, type RunResult } from "../../runner.js";
 import type { TaskCommand } from "./task-command.js";
 
@@ -34,9 +35,9 @@ export interface TriggerStatus {
 
 export interface OsTrigger {
   readonly mechanism: Mechanism;
-  /** Register (or replace) the trigger. Throws with a French reason. */
+  /** Register (or replace) the trigger. Throws with a reason for the user. */
   install(registration: TriggerRegistration): Promise<void>;
-  /** Remove the trigger; nothing registered is not an error. Throws with a French reason. */
+  /** Remove the trigger; nothing registered is not an error. Throws with a reason for the user. */
   uninstall(): Promise<void>;
   /** What the OS reports. Never throws: an unreadable state reads as not installed. */
   status(): Promise<TriggerStatus>;
@@ -64,8 +65,27 @@ export const DEFAULT_TRIGGER_RUNNER: TriggerRunner = (command, args, options = {
     ...(options.env !== undefined && { env: { ...options.env } }),
   });
 
+const COMMAND_ERRORS = localized({
+  en: {
+    failed: (command: string, code: number, output: string) =>
+      `${command} failed (code ${code}): ${output}`,
+  },
+  fr: {
+    failed: (command, code, output) => `${command} a échoué (code ${code}) : ${output}`,
+  },
+});
+
 /** First non-empty line of a command's output, for an error message. */
 export function firstLineOf(result: RunResult): string {
   const text = `${result.stderr}\n${result.stdout}`;
   return text.split(/\r?\n/).find((line) => line.trim() !== "")?.trim() ?? "";
+}
+
+/**
+ * The error of an OS command that failed — `command` is what ran, as the
+ * user would type it ("schtasks /Create") — with its exit code and the first
+ * line it wrote, which speaks the machine's language.
+ */
+export function commandFailure(command: string, result: RunResult): Error {
+  return new Error(COMMAND_ERRORS.failed(command, result.exitCode, firstLineOf(result)));
 }

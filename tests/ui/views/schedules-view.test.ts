@@ -5,10 +5,10 @@ import type { SelectedPackage } from "../../../src/core/types.js";
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
 import { MENU_LABELS, QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
+import { LEAVE_NEW_DIALOG } from "../../../src/ui/text/schedule/schedule-editor-labels.js";
 import {
-  EMPTY_SCHEDULES,
-  LEAVE_NEW_DIALOG,
   SCHEDULE_ACTION,
+  SCHEDULE_MENU_LABELS,
   SCHEDULE_NOTICES,
 } from "../../../src/ui/text/schedule/schedule-menu-labels.js";
 import { schedulesView } from "../../../src/ui/views/schedules-view.js";
@@ -237,7 +237,7 @@ describe("p in Paquets", () => {
     await menu.waitForText("Nouvelle planification");
     await menu.press("END", "enter");
     const list = await settled(menu);
-    expect(list).toContain(EMPTY_SCHEDULES[0]);
+    expect(list).toContain(SCHEDULE_MENU_LABELS.emptySchedules[0]);
     expect(list).not.toContain(LEAVE_NEW_DIALOG.title);
     expect(port.calls).toEqual([]);
   });

@@ -5,9 +5,8 @@ import type { InstallRecord } from "../../core/scheduler/persistence/install-rec
 import { STATUS_GLYPHS } from "../../ui/theme/glyphs.js";
 import { formatDateTime } from "../../ui/text/format.js";
 import {
-  NO_ACTIVE_TRIGGER,
-  NO_SCHEDULE,
   REPAIR_COMMAND,
+  SCHEDULE_CLI_LABELS,
   STATUS_DETAILS,
   TABLE_HEADERS,
   unsupportedTriggerLine,
@@ -50,7 +49,7 @@ export async function listSchedulesCommand(
     return 0;
   }
   if (schedules.length === 0) {
-    output.out(NO_SCHEDULE);
+    output.out(SCHEDULE_CLI_LABELS.noSchedule);
     return 0;
   }
   const line = triggerSummary(report, now);
@@ -84,7 +83,7 @@ function statusLines(
   const { record } = report;
   const recorded = record ? recordLines(record) : [];
   return [
-    triggerSummary(report, context.now) || NO_ACTIVE_TRIGGER,
+    triggerSummary(report, context.now) || SCHEDULE_CLI_LABELS.noActiveTrigger,
     ...(context.location ? [STATUS_DETAILS.location(context.location)] : []),
     ...recorded,
     STATUS_DETAILS.enabledCount(report.enabledCount),

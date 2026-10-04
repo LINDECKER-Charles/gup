@@ -5,6 +5,7 @@ import {
 } from "../scheduler-timing.js";
 import type { TriggerRegistration } from "../trigger/os-trigger.js";
 import { isUnsafePath } from "../trigger/task-command.js";
+import { ARTIFACT_ERRORS } from "./artifact-errors.js";
 import { escapeXml } from "./xml-text.js";
 
 /**
@@ -30,9 +31,15 @@ export interface WindowsTaskSpec {
   readonly systemRoot: string;
 }
 
+/**
+ * What Task Scheduler shows of the task. English whatever the interface's
+ * language: the task is found by its name, never by this text, and a
+ * description that followed the language would differ from one repair to
+ * the next.
+ */
 export const TASK_DESCRIPTION =
-  `gup : mises à jour planifiées. Vérifie toutes les ${TICK_INTERVAL_MINUTES} min ` +
-  "si une planification est due. Gérer : gup schedule.";
+  `gup: scheduled updates. Checks every ${TICK_INTERVAL_MINUTES} min ` +
+  "whether a schedule is due. Manage: gup schedule.";
 
 /**
  * The Task Scheduler schema's namespace: an identifier compared as a string,
@@ -49,7 +56,7 @@ const MINUTES_PER_HOUR = 60;
 const CRLF = "\r\n";
 
 export function buildWindowsTaskXml(spec: WindowsTaskSpec): string {
-  if (!SID.test(spec.userSid)) throw new Error(`SID utilisateur invalide : ${spec.userSid}`);
+  if (!SID.test(spec.userSid)) throw new Error(ARTIFACT_ERRORS.invalidSid(spec.userSid));
   const action = windowsTaskAction(spec);
   return [
     '<?xml version="1.0" encoding="UTF-16"?>',
@@ -84,7 +91,7 @@ export function windowsTaskAction(spec: WindowsTaskSpec): {
 } {
   const { command, launcher } = spec.registration;
   for (const path of [command.node, command.entry, spec.systemRoot]) {
-    if (isUnsafePath(path, "win32")) throw new Error(`chemin non planifiable : ${path}`);
+    if (isUnsafePath(path, "win32")) throw new Error(ARTIFACT_ERRORS.unsafePath(path));
   }
   const script = [`"${command.entry}"`, ...command.args].join(" ");
   if (launcher === "direct") return { command: command.node, arguments: script };

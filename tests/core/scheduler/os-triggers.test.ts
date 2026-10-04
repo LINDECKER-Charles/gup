@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CRON_BLOCK_BEGIN } from "../../../src/core/scheduler/artifacts/crontab-block.js";
 import { LAUNCHD_LABEL } from "../../../src/core/scheduler/artifacts/launchd-plist.js";
 import {
-  CRONTAB_MISSING,
+  CRONTAB_ERRORS,
   CrontabTrigger,
 } from "../../../src/core/scheduler/trigger/crontab-trigger.js";
 import {
@@ -262,7 +262,7 @@ describe("CrontabTrigger", () => {
 
   it("explains a missing crontab binary", async () => {
     const trigger = new CrontabTrigger({ run: fakeRunner().run, locate: async () => null });
-    await expect(trigger.install(registration)).rejects.toThrow(CRONTAB_MISSING);
+    await expect(trigger.install(registration)).rejects.toThrow(CRONTAB_ERRORS.missing);
   });
 });
 

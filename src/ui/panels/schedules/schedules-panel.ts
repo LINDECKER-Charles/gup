@@ -1,9 +1,8 @@
 import type { Schedule } from "../../../core/scheduler/model/types.js";
+import { EDITOR_TITLES } from "../../text/schedule/schedule-editor-labels.js";
 import {
-  EDITOR_TITLES,
-  EMPTY_SCHEDULES,
+  SCHEDULE_MENU_LABELS,
   SCHEDULES_HINTS,
-  SCHEDULES_LABEL,
 } from "../../text/schedule/schedule-menu-labels.js";
 import { ListCursor } from "../../tui/list-cursor.js";
 import type { KeyPress } from "../../tui/screen-host.js";
@@ -35,9 +34,9 @@ export interface EditorHandlers {
   chooseDay(editor: ScheduleEditor): void;
   addTarget(editor: ScheduleEditor): void;
   save(editor: ScheduleEditor): void;
-  /** Échap: leave the editor, after a confirmation when it holds unsaved work. */
+  /** Esc: leave the editor, after a confirmation when it holds unsaved work. */
   leave(editor: ScheduleEditor): void;
-  /** "Annuler": an explicit discard, confirmed only when something changed. */
+  /** Cancel: an explicit discard, confirmed only when something changed. */
   cancel(editor: ScheduleEditor): void;
 }
 
@@ -76,7 +75,7 @@ interface Layout {
 }
 
 /**
- * Planification: the schedules, their trigger and their last run (list
+ * Schedules: the schedules, their trigger and their last run (list
  * mode), or the form of one schedule (editor mode). Plain object: it renders
  * lines and reacts to keys; everything with a side effect goes through
  * {@link SchedulesHandlers}.
@@ -99,7 +98,7 @@ export class SchedulesPanel implements Panel {
 
   get title(): string {
     const editor = this.#editor;
-    if (!editor) return SCHEDULES_LABEL;
+    if (!editor) return SCHEDULE_MENU_LABELS.schedulesLabel;
     if (editor.id === undefined) return EDITOR_TITLES.create;
     const edited = this.#schedules().find((schedule) => schedule.id === editor.id);
     return EDITOR_TITLES.edit(edited?.name ?? editor.draft().name);
@@ -236,7 +235,7 @@ export class SchedulesPanel implements Panel {
     };
   }
 
-  /** Entrée on the item under the cursor. */
+  /** Enter on the item under the cursor. */
   #activate(editor: ScheduleEditor): void {
     const item = editor.current;
     if (item.kind === "field") return this.#activateField(editor, item.field);
@@ -338,7 +337,7 @@ export class SchedulesPanel implements Panel {
     const lines: Line[] = [
       ...this.#noticeLines(viewport.width),
       [],
-      ...EMPTY_SCHEDULES.flatMap((text) =>
+      ...SCHEDULE_MENU_LABELS.emptySchedules.flatMap((text) =>
         wrapLine([seg(text, "muted")], room).map((row): Line => [seg(EMPTY_INDENT), ...row]),
       ),
     ];

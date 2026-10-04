@@ -6,16 +6,17 @@ import {
   type ValidationIssue,
 } from "../../../core/scheduler/model/validate-schedule.js";
 import type { SelectedPackage } from "../../../core/types.js";
+import { EDITOR_TEXT } from "../../text/schedule/schedule-editor-labels.js";
 import { recurrenceLabel } from "../../text/schedule/schedule-labels.js";
-import { EDITOR_TEXT, SCHEDULE_PACKAGES } from "../../text/schedule/schedule-menu-labels.js";
+import { SCHEDULE_PACKAGES } from "../../text/schedule/schedule-menu-labels.js";
 import type { DialogChoice } from "../../tui/dialog.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
 import type { FlowContext } from "./flow-context.js";
 import { seedOf } from "./schedule-editor.js";
 
 /**
- * `p` in Paquets: schedule the checked packages — in a new schedule (the
- * editor opens on them in Planification) or added to an existing one. A
+ * `p` in Packages: schedule the checked packages — in a new schedule (the
+ * editor opens on them in Schedules) or added to an existing one. A
  * row that stands for a whole provider is never scheduled, nor a package of
  * a provider that needs an administrator for every update: they are left
  * out with the reason, the second place the "packages, never a provider"
@@ -98,7 +99,7 @@ export class PackageScheduling {
     });
   }
 
-  /** The editor on a new daily schedule of these packages, in Planification. */
+  /** The editor on a new daily schedule of these packages, in Schedules. */
   async #create(sorted: Sorted): Promise<void> {
     if (!(await this.#mayReplaceEditor())) return this.#kit.view.redraw();
     this.#kit.panel.openEditor({ draft: draftOf(sorted.targets), notes: sorted.notes });
@@ -135,7 +136,7 @@ export class PackageScheduling {
     return this.#kit.confirmDiscard(editor);
   }
 
-  /** Planification in front, with `notice` above it. */
+  /** Schedules in front, with `notice` above it. */
   #show(notice: readonly Line[]): void {
     this.#kit.view.show("schedules");
     this.#kit.notify(notice);

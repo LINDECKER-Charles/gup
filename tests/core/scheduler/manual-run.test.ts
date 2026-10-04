@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  MANUAL_STOP_MESSAGE,
+  MANUAL_RUN_MESSAGES,
   ManualRun,
   type ManualExecutor,
 } from "../../../src/core/scheduler/manual-run.js";
@@ -85,7 +85,7 @@ describe("ManualRun", () => {
       ),
     );
     expect(record?.targets).toEqual([
-      { target: "winget:Git.Git", status: "skipped", message: MANUAL_STOP_MESSAGE },
+      { target: "winget:Git.Git", status: "skipped", message: MANUAL_RUN_MESSAGES.stopped },
     ]);
   });
 

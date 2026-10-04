@@ -11,7 +11,7 @@ import {
   type SkippedTarget,
   type TickExecutor,
 } from "../../../src/core/scheduler/scheduled-run.js";
-import { TOO_FREQUENT } from "../../../src/core/scheduler/model/validate-schedule.js";
+import { VALIDATION_MESSAGES } from "../../../src/core/scheduler/model/validate-schedule.js";
 import { MAX_DEFERRALS } from "../../../src/core/scheduler/scheduler-timing.js";
 import { TargetResolver, type TargetScan } from "../../../src/core/scheduler/target-resolver.js";
 import type { UpdateOutcome } from "../../../src/core/types.js";
@@ -157,7 +157,7 @@ describe("ScheduledRun.tick", () => {
     expect(records).toContainEqual([
       "warn",
       "scheduler.schedule-invalid",
-      { scheduleId: "0badf00d", issues: [`recurrence: ${TOO_FREQUENT}`] },
+      { scheduleId: "0badf00d", issues: [`recurrence: ${VALIDATION_MESSAGES.tooFrequent}`] },
     ]);
   });
 

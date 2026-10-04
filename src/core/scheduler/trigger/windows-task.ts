@@ -1,11 +1,12 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, win32 } from "node:path";
+import { localize } from "../../i18n/localized.js";
 import type { RunResult } from "../../runner.js";
 import { buildWindowsTaskXml } from "../artifacts/windows-task-xml.js";
 import {
+  commandFailure,
   DEFAULT_TRIGGER_RUNNER,
-  firstLineOf,
   type OsTrigger,
   type TriggerRegistration,
   type TriggerRunner,
@@ -50,13 +51,15 @@ export class WindowsTaskTrigger implements OsTrigger {
     const name = await this.location();
     await withTaskFile(xml, async (file) => {
       const result = await this.#schtasks(["/Create", "/TN", name, "/XML", file, "/F"]);
-      if (result.failed) throw schtasksError("/Create", result);
+      if (result.failed) throw commandFailure("schtasks /Create", result);
     });
   }
 
   async uninstall(): Promise<void> {
     const result = await this.#schtasks(["/Delete", "/TN", await this.location(), "/F"]);
-    if (result.failed && (await this.status()).isInstalled) throw schtasksError("/Delete", result);
+    if (result.failed && (await this.status()).isInstalled) {
+      throw commandFailure("schtasks /Delete", result);
+    }
   }
 
   async status(): Promise<TriggerStatus> {
@@ -85,14 +88,17 @@ export class WindowsTaskTrigger implements OsTrigger {
     if (this.#userSid !== null) return this.#userSid;
     const result = await this.#run(this.#system32("whoami.exe"), ["/user", "/fo", "csv", "/nh"]);
     const sid = SID_IN_CSV.exec(result.stdout)?.[1];
-    if (result.failed || !sid) throw new Error("SID de l'utilisateur introuvable (whoami)");
+    if (result.failed || !sid) {
+      throw new Error(
+        localize({
+          en: "user SID not found (whoami)",
+          fr: "SID de l'utilisateur introuvable (whoami)",
+        }),
+      );
+    }
     this.#userSid = sid;
     return sid;
   }
-}
-
-function schtasksError(verb: string, result: RunResult): Error {
-  return new Error(`schtasks ${verb} a échoué (code ${result.exitCode}) : ${firstLineOf(result)}`);
 }
 
 /**

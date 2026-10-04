@@ -2,12 +2,14 @@ import { log } from "../../../core/log/log.js";
 import type { Schedule } from "../../../core/scheduler/model/types.js";
 import type { SyncResult } from "../../../core/scheduler/trigger/trigger-sync.js";
 import type { ViewContext } from "../../app/view-definition.js";
-import { TRIGGER_REMOVED, triggerInstalledLine } from "../../text/schedule/schedule-cli-labels.js";
+import {
+  SCHEDULE_CLI_LABELS,
+  triggerInstalledLine,
+} from "../../text/schedule/schedule-cli-labels.js";
+import { LEAVE_DIALOG, LEAVE_NEW_DIALOG } from "../../text/schedule/schedule-editor-labels.js";
 import { foreignInstallation } from "../../text/schedule/schedule-labels.js";
 import {
   CONSENT_DIALOG,
-  LEAVE_DIALOG,
-  LEAVE_NEW_DIALOG,
   REPAIR_KEY,
   SCHEDULE_NOTICES,
 } from "../../text/schedule/schedule-menu-labels.js";
@@ -17,7 +19,7 @@ import type { SchedulesPanel } from "./schedules-panel.js";
 import type { ChangeOutcome, SchedulesPort } from "./schedules-port.js";
 
 /**
- * What the Planification flows share: the menu, the scheduler port, the
+ * What the Schedules flows share: the menu, the scheduler port, the
  * panel to report to, and the steps every change goes through — the
  * one-time consent before the OS trigger is first registered, the notice
  * saying what was saved and what the trigger did, the trigger line read
@@ -99,7 +101,7 @@ export class FlowContext {
       case "installed":
         return mechanism ? [[seg(triggerInstalledLine(mechanism), "muted")]] : [];
       case "removed":
-        return [[seg(TRIGGER_REMOVED, "muted")]];
+        return [[seg(SCHEDULE_CLI_LABELS.triggerRemoved, "muted")]];
       case "foreign":
         return [[seg(foreignInstallation(sync.entry, REPAIR_KEY), "warning")]];
       case "failed":

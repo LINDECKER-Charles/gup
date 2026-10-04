@@ -1,3 +1,4 @@
+import { localized } from "../../i18n/localized.js";
 import { updateKeyOf } from "../../update/update-plan.js";
 import type { ScheduleTarget } from "./types.js";
 
@@ -16,9 +17,34 @@ import type { ScheduleTarget } from "./types.js";
 
 export const MAX_PACKAGE_ID_LENGTH = 256;
 
-/** The rule, as the CLI and the menu state it. */
-export const NEVER_A_PROVIDER =
-  "Une planification cible des paquets précis (provider:paquet), jamais un provider entier.";
+/** Why a text cannot be a target, in the interface's languages. */
+export const TARGET_MESSAGES = localized({
+  en: {
+    /** The rule, as the CLI and the menu state it. */
+    neverAProvider:
+      "A schedule targets specific packages (provider:package), never a whole provider.",
+    invalidProvider: (text: string) => `"${text}": invalid provider id`,
+    /** A package id's problem, after the text it was read from. */
+    ofTarget: (text: string, problem: string) => `"${text}": ${problem}`,
+    noPackageId: "missing package id — a schedule never targets a whole provider",
+    wildcard: "wildcards (* ?) are refused — a schedule targets specific packages",
+    leadingDash: 'a package id does not start with "-"',
+    controlCharacter: "control character not allowed",
+    tooLong: (max: number) => `id too long (${max} characters at most)`,
+  },
+  fr: {
+    neverAProvider:
+      "Une planification cible des paquets précis (provider:paquet), jamais un provider entier.",
+    invalidProvider: (text) => `« ${text} » : identifiant de provider invalide`,
+    ofTarget: (text, problem) => `« ${text} » : ${problem}`,
+    noPackageId:
+      "identifiant de paquet manquant — une planification ne vise jamais un provider entier",
+    wildcard: "les jokers (* ?) sont refusés — une planification vise des paquets précis",
+    leadingDash: "un identifiant de paquet ne commence pas par « - »",
+    controlCharacter: "caractère de contrôle interdit",
+    tooLong: (max) => `identifiant trop long (${max} caractères au plus)`,
+  },
+});
 
 const SEPARATOR = ":";
 const PROVIDER_ID = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
@@ -29,33 +55,29 @@ export type ParsedTarget =
   | { readonly ok: true; readonly target: ScheduleTarget }
   | { readonly ok: false; readonly reason: string };
 
-/** `"winget:Git.Git"` → its target, or why it cannot be one (French). */
+/** `"winget:Git.Git"` → its target, or why it cannot be one (in the active language). */
 export function parseTarget(text: string): ParsedTarget {
   const trimmed = text.trim();
   const at = trimmed.indexOf(SEPARATOR);
-  if (at === -1) return { ok: false, reason: NEVER_A_PROVIDER };
+  if (at === -1) return { ok: false, reason: TARGET_MESSAGES.neverAProvider };
   const providerId = trimmed.slice(0, at);
   const packageId = trimmed.slice(at + 1).trim();
   if (!PROVIDER_ID.test(providerId)) {
-    return { ok: false, reason: `« ${trimmed} » : identifiant de provider invalide` };
+    return { ok: false, reason: TARGET_MESSAGES.invalidProvider(trimmed) };
   }
   const problem = packageIdProblem(packageId);
-  if (problem !== null) return { ok: false, reason: `« ${trimmed} » : ${problem}` };
+  if (problem !== null) return { ok: false, reason: TARGET_MESSAGES.ofTarget(trimmed, problem) };
   return { ok: true, target: { providerId, packageId } };
 }
 
 /** Why `packageId` cannot name a single package, or null when it can. */
 export function packageIdProblem(packageId: string): string | null {
-  if (packageId.trim() === "") {
-    return "identifiant de paquet manquant — une planification ne vise jamais un provider entier";
-  }
-  if (WILDCARD.test(packageId)) {
-    return "les jokers (* ?) sont refusés — une planification vise des paquets précis";
-  }
-  if (packageId.startsWith("-")) return "un identifiant de paquet ne commence pas par « - »";
-  if (hasControlCharacter(packageId)) return "caractère de contrôle interdit";
+  if (packageId.trim() === "") return TARGET_MESSAGES.noPackageId;
+  if (WILDCARD.test(packageId)) return TARGET_MESSAGES.wildcard;
+  if (packageId.startsWith("-")) return TARGET_MESSAGES.leadingDash;
+  if (hasControlCharacter(packageId)) return TARGET_MESSAGES.controlCharacter;
   if (packageId.length > MAX_PACKAGE_ID_LENGTH) {
-    return `identifiant trop long (${MAX_PACKAGE_ID_LENGTH} caractères au plus)`;
+    return TARGET_MESSAGES.tooLong(MAX_PACKAGE_ID_LENGTH);
   }
   return null;
 }
