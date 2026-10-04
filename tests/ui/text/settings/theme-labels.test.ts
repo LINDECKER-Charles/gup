@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { ThemeSettings } from "../../../../src/ui/settings/theme-section.js";
 import { resolveTheme, type TerminalFacts } from "../../../../src/ui/theme/resolve-theme.js";
 import {
+  COLOR_EDITOR,
   CONTRAST_STATUS,
   contrastStatus,
   formatRatio,
+  THEME_PICKER,
 } from "../../../../src/ui/text/settings/theme-labels.js";
 
 const UNKNOWN: TerminalFacts = { colors: null, themeMode: null, depth: "truecolor", detection: "done" };
@@ -57,5 +59,18 @@ describe("contrastStatus", () => {
     expect(statusOf({ id: "monochrome" }).text).toBe(CONTRAST_STATUS.monochrome);
     expect(statusOf({}, { terminal: { depth: "16" } }).text).toBe(CONTRAST_STATUS.depth16);
     expect(statusOf({}, { terminal: { depth: "256" } }).text).toMatch(/^couleurs approchées/);
+  });
+});
+
+describe("adjusted colours, staying readable", () => {
+  it("agrees « lisible » with the colours it counts", () => {
+    expect(THEME_PICKER.corrections(1)).toBe("1 couleur ajustée pour rester lisible");
+    expect(THEME_PICKER.corrections(2)).toBe("2 couleurs ajustées pour rester lisibles");
+    expect(COLOR_EDITOR.corrected(1, "AA")).toMatch(
+      /^⚠ 1 couleur ajustée automatiquement pour rester lisible \(AA\)\. /,
+    );
+    expect(COLOR_EDITOR.corrected(3, "AAA")).toMatch(
+      /^⚠ 3 couleurs ajustées automatiquement pour rester lisibles \(AAA\)\. /,
+    );
   });
 });

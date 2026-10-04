@@ -65,6 +65,15 @@ function adjustedColors(count: number): string {
   return counted(count, "couleur ajustée", "couleurs ajustées");
 }
 
+/** "1 couleur ajustée <how>pour rester lisible", "2 couleurs ajustées <how>pour rester lisibles". */
+function adjustedToStayReadable(count: number, how = ""): string {
+  return counted(
+    count,
+    `couleur ajustée ${how}pour rester lisible`,
+    `couleurs ajustées ${how}pour rester lisibles`,
+  );
+}
+
 /** `6.14` → "6,1:1". */
 export function formatRatio(ratio: number): string {
   return `${formatRatioValue(ratio)}:1`;
@@ -114,7 +123,7 @@ export const THEME_PICKER = {
   hints: "↑↓ essayer · entrée appliquer · échap annuler",
   report: (ratio: number, level: ContrastLevel) =>
     `Contraste minimal ${formatRatio(ratio)} — ${level} ✔`,
-  corrections: (count: number) => `${adjustedColors(count)} pour rester lisible`,
+  corrections: (count: number) => adjustedToStayReadable(count),
   modeNotes: {
     rgb: "Fond peint par gup (la transparence du terminal n'est pas conservée).",
     detected: "Suit la palette de votre terminal.",
@@ -159,7 +168,7 @@ export const COLOR_EDITOR = {
   ground: "—",
   groundCorrected: "ajusté ⚠",
   corrected: (count: number, level: ContrastLevel) =>
-    `⚠ ${adjustedColors(count)} automatiquement pour rester lisible (${level}). ` +
+    `⚠ ${adjustedToStayReadable(count, "automatiquement ")} (${level}). ` +
     "a : garder la valeur ajustée.",
   samples: {
     accent: "› sélection",
