@@ -685,7 +685,9 @@ crashes (`onCrash`). The elevated `__admin-batch` child runs only the modules th
 Global error handling (`startup.ts`): a `PromptCancelledError` (Ctrl+C while a prompt or a screen
 holds the keyboard — raw mode turns it into a key, not SIGINT) exits 130 silently; any other
 error prints `Erreur : <message>` on stderr and exits 1. A signal while a screen is up exits
-128 + the signal number once the terminal is restored.
+128 + the signal number once the terminal is restored. Standard output's EPIPE — its reader left,
+`gup … | head` — exits 0 at once and silently (`broken-pipe.ts`, installed by `cli.ts` before
+parsing); any other error of that stream still crashes as unhandled.
 
 ### 9.2 `list.ts`, `update.ts`, `doctor.ts`
 

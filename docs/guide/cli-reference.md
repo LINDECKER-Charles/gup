@@ -386,7 +386,7 @@ fast). Used by gup's own test suites only: `GUP_E2E`, `GUP_E2E_SCOPE`, `GUP_MUTA
 
 | Code | Meaning |
 |---|---|
-| `0` | Success, or nothing to do |
+| `0` | Success, or nothing to do — or the reader of gup's output left (`gup report -f csv \| head`): gup stops at once, silently |
 | `1` | At least one update failed, the `--all` confirmation was declined, a file could not be read or written, a schedule's trigger could not be changed, or an unhandled error occurred (`Erreur : …` on stderr) |
 | `2` | Bad invocation: malformed target, unknown or foreign provider, invalid `--timeout`, `--log-level`, `--since`, `--format` or schedule arguments — nothing was changed |
 | `130` | Ctrl+C at a prompt or on a full screen |
