@@ -6,7 +6,11 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+
+const INSTALL_SCRIPT = "https://railway.app/install.ps1";
+const RELEASES_PAGE = "https://github.com/railwayapp/cli/releases";
 
 /**
  * Railway CLI. `railway --version` prints "railwayapp 3.5.0" (older) or
@@ -60,8 +64,10 @@ export class RailwayProvider implements Provider {
         winget: "Railway.Railway",
         brew: "railway",
       },
-      manualMessage:
-        "Relancer https://railway.app/install.ps1 ou télécharger https://github.com/railwayapp/cli/releases",
+      manualMessage: localize({
+        en: `Rerun ${INSTALL_SCRIPT} or download ${RELEASES_PAGE}`,
+        fr: `Relancer ${INSTALL_SCRIPT} ou télécharger ${RELEASES_PAGE}`,
+      }),
     });
   }
 

@@ -9,6 +9,7 @@ import {
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * Git for Windows — the distribution itself (git.exe plus its bundled MSYS2
@@ -78,7 +79,7 @@ export class GitForWindowsProvider implements Provider {
       return {
         id: this.id,
         success: false,
-        message: `échec inattendu de la mise à jour — ${MANUAL_MESSAGE}`,
+        message: withManualStep(TEXT.unexpectedFailure),
       };
     }
   }
@@ -94,8 +95,36 @@ export class GitForWindowsProvider implements Provider {
 // Scan
 // ---------------------------------------------------------------------------
 
-const MANUAL_MESSAGE =
-  "Télécharger l'installeur depuis https://gitforwindows.org/ et le relancer";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    manualStep: "Download the installer from https://gitforwindows.org/ and run it again",
+    unexpectedFailure: "unexpected update failure",
+    updaterMissing: "no built-in updater in this installation",
+    rerunInstaller: "rerun the installer by hand",
+    installerStarted:
+      "installer started in the background — open Git Bash sessions were closed",
+    noUpdateOffered: "git offered no update",
+    yesRefused: "the built-in updater rejected the --yes option (version too old)",
+    updaterFailed: (exitCode: string) => `git update-git-for-windows failed (code ${exitCode})`,
+  },
+  fr: {
+    manualStep: "Télécharger l'installeur depuis https://gitforwindows.org/ et le relancer",
+    unexpectedFailure: "échec inattendu de la mise à jour",
+    updaterMissing: "updater intégré absent de cette installation",
+    rerunInstaller: "installeur à relancer manuellement",
+    installerStarted:
+      "installeur lancé en arrière-plan — les sessions Git Bash ouvertes ont été fermées",
+    noUpdateOffered: "aucune mise à jour proposée par git",
+    yesRefused: "l'updater intégré a refusé l'option --yes (version trop ancienne)",
+    updaterFailed: (exitCode) => `git update-git-for-windows a échoué (code ${exitCode})`,
+  },
+});
+
+/** A failure, then the way out by hand: "<what failed> — <download the installer…>". */
+function withManualStep(failure: string): string {
+  return `${failure} — ${TEXT.manualStep}`;
+}
 
 // `git` is the Chocolatey meta-package that depends on `git.install` (both
 // published by the Git development community, same version stream); `Git.Git`
@@ -129,16 +158,14 @@ async function scanGitForWindows(id: string): Promise<OutdatedPackage[]> {
 }
 
 /**
- * `describeSource` would label a hand-installed setup "manuel", which is only
+ * `describeSource` would label a hand-installed setup "manual", which is only
  * half true here: that is precisely the case where the built-in updater
  * applies. So the note names the updater when the probe found it, and falls
  * back to a plain manual wording when it did not.
  */
 function describeUpdatePath(source: InstallSource, updater: UpdaterState): string {
   if (source !== "manual") return describeSource(source);
-  return updater === "present"
-    ? "via git update-git-for-windows"
-    : "installeur à relancer manuellement";
+  return updater === "present" ? "via git update-git-for-windows" : TEXT.rerunInstaller;
 }
 
 // ---------------------------------------------------------------------------
@@ -277,14 +304,14 @@ type UpdaterState = "present" | "absent" | "unknown";
 async function applyUpdate(id: string): Promise<UpdateOutcome> {
   const source = await detectInstallSource("git");
   if (source !== "manual") {
-    return runPmUpdate(id, source, PACKAGE_IDS, MANUAL_MESSAGE);
+    return runPmUpdate(id, source, PACKAGE_IDS, TEXT.manualStep);
   }
   if ((await probeBuiltinUpdater()) !== "present") {
     return {
       id,
       success: false,
       skipped: true,
-      message: `updater intégré absent de cette installation — ${MANUAL_MESSAGE}`,
+      message: withManualStep(TEXT.updaterMissing),
     };
   }
   return runBuiltinUpdater(id);
@@ -341,26 +368,17 @@ async function probeBuiltinUpdater(): Promise<UpdaterState> {
 async function runBuiltinUpdater(id: string): Promise<UpdateOutcome> {
   const { exitCode } = await runInherit("git", ["update-git-for-windows", "--yes"]);
   if (exitCode === 2) {
-    return {
-      id,
-      success: true,
-      message:
-        "installeur lancé en arrière-plan — les sessions Git Bash ouvertes ont été fermées",
-    };
+    return { id, success: true, message: TEXT.installerStarted };
   }
   if (exitCode === 0) {
-    return { id, success: true, message: "aucune mise à jour proposée par git" };
+    return { id, success: true, message: TEXT.noUpdateOffered };
   }
   if (exitCode === 1) {
-    return {
-      id,
-      success: false,
-      message: `l'updater intégré a refusé l'option --yes (version trop ancienne) — ${MANUAL_MESSAGE}`,
-    };
+    return { id, success: false, message: withManualStep(TEXT.yesRefused) };
   }
   return {
     id,
     success: false,
-    message: `git update-git-for-windows a échoué (code ${String(exitCode)}) — ${MANUAL_MESSAGE}`,
+    message: withManualStep(TEXT.updaterFailed(String(exitCode))),
   };
 }

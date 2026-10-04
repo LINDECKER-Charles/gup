@@ -2,6 +2,8 @@ import { commandExists, isElevated, run, runInherit } from "../../core/runner.js
 import type { RunResult } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 
 /**
  * Npackd — the third-party Windows package manager from npackd.org. Covers the
@@ -48,7 +50,9 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class NpackdProvider implements Provider {
   readonly id = "npackd";
   readonly displayName = "Npackd";
-  readonly installHint = "https://www.npackd.org/ — installer Npackd, puis le paquet NpackdCL";
+  get installHint(): string {
+    return TEXT.installHint;
+  }
   /** Npackd is a Windows package manager; on Linux, `ncl` is the unrelated NCAR binary. */
   readonly platforms = PLATFORMS.windows;
   /** Npackd installs machine-wide by default, behind UAC. */
@@ -82,7 +86,7 @@ export class NpackdProvider implements Provider {
         id: packageId,
         success: false,
         skipped: true,
-        message: MISSING_CLI_MESSAGE,
+        message: TEXT.missingCli,
       }
     );
   }
@@ -93,18 +97,34 @@ export class NpackdProvider implements Provider {
   }
 }
 
-const NOT_ADMIN_MESSAGE =
-  "Npackd installe à l'échelle du système par défaut : relancer gup depuis un terminal « Exécuter en tant qu'administrateur ».";
-
-const MISSING_CLI_MESSAGE = "NpackdCL introuvable (ni ncl ni npackdcl dans le PATH).";
-
-const INVALID_ID_MESSAGE =
-  "Nom de paquet Npackd invalide (espace, « .. », tiret initial ou caractère de contrôle) — mise à jour à lancer à la main.";
-
-const SPAWN_FAILED_MESSAGE = "Impossible de lancer NpackdCL pour cette mise à jour.";
-
-/** Explains the `?` in the latest column — the CLI simply has no such field. */
-const UNKNOWN_LATEST_NOTE = "version disponible non listée par ncl";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    installHint: "https://www.npackd.org/ — install Npackd, then the NpackdCL package",
+    notAdmin: (runAsAdministrator: string) =>
+      "Npackd installs system-wide by default: restart gup from a terminal opened with " +
+      `${runAsAdministrator}.`,
+    missingCli: "NpackdCL not found (neither ncl nor npackdcl on PATH).",
+    invalidId:
+      'Invalid Npackd package name (space, "..", leading dash or control character) — ' +
+      "run the update by hand.",
+    spawnFailed: "Could not start NpackdCL for this update.",
+    /** Explains the `?` in the latest column — the CLI simply has no such field. */
+    unknownLatestNote: "available version not listed by ncl",
+  },
+  fr: {
+    installHint: "https://www.npackd.org/ — installer Npackd, puis le paquet NpackdCL",
+    notAdmin: (runAsAdministrator) =>
+      "Npackd installe à l'échelle du système par défaut : relancer gup depuis un terminal " +
+      `${runAsAdministrator}.`,
+    missingCli: "NpackdCL introuvable (ni ncl ni npackdcl dans le PATH).",
+    invalidId:
+      "Nom de paquet Npackd invalide (espace, « .. », tiret initial ou caractère de contrôle) — " +
+      "mise à jour à lancer à la main.",
+    spawnFailed: "Impossible de lancer NpackdCL pour cette mise à jour.",
+    unknownLatestNote: "version disponible non listée par ncl",
+  },
+});
 
 const SEARCH_JSON_ARGS = ["search", "--status", "updateable", "--json"];
 const SEARCH_BARE_ARGS = ["search", "--status", "updateable", "--bare-format"];
@@ -202,18 +222,19 @@ async function applyBatch(ids: string[]): Promise<UpdateOutcome[]> {
 }
 
 function invalidIdOutcome(id: string): UpdateOutcome {
-  return { id, success: false, skipped: true, message: INVALID_ID_MESSAGE };
+  return { id, success: false, skipped: true, message: TEXT.invalidId };
 }
 
 /** Outcome shared by every id of one batch, minus the per-id `id` field. */
 async function runNpackdUpdate(ids: string[]): Promise<Omit<UpdateOutcome, "id">> {
   const bin = await resolveNpackdBinary();
-  if (!bin) return { success: false, skipped: true, message: MISSING_CLI_MESSAGE };
+  if (!bin) return { success: false, skipped: true, message: TEXT.missingCli };
   if (!(await isElevatedSafe())) {
-    return { success: false, skipped: true, message: NOT_ADMIN_MESSAGE };
+    const message = TEXT.notAdmin(MANUAL_STEPS.runAsAdministrator);
+    return { success: false, skipped: true, message };
   }
   const res = await runInheritSafe(bin, updateArgs(ids));
-  if (!res) return { success: false, message: SPAWN_FAILED_MESSAGE };
+  if (!res) return { success: false, message: TEXT.spawnFailed };
   return { success: !res.failed };
 }
 
@@ -298,7 +319,7 @@ export function parseNpackdBareSearch(stdout: string): OutdatedPackage[] {
       name: title || id,
       current: "?",
       latest: "?",
-      note: UNKNOWN_LATEST_NOTE,
+      note: TEXT.unknownLatestNote,
     });
   }
   return out;
@@ -330,7 +351,7 @@ function toOutdatedRow(entry: unknown): OutdatedPackage | null {
     name: title || id,
     current: installed ?? "?",
     latest: "?",
-    note: UNKNOWN_LATEST_NOTE,
+    note: TEXT.unknownLatestNote,
   };
 }
 

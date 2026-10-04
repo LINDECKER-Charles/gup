@@ -1,6 +1,9 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+
+const TOOLS_PAGE = "https://developer.android.com/tools";
 
 /**
  * Android SDK packages managed via `sdkmanager` (command-line tools).
@@ -21,11 +24,15 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class AndroidSdkProvider implements Provider {
   readonly id = "android-sdk";
   readonly displayName = "Android SDK";
-  readonly installHint = pickInstallHint({
-    win32:
-      "Installer Android Studio ou les Command-line Tools (sdkmanager) — https://developer.android.com/tools",
-    fallback: "brew install --cask android-commandlinetools",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: localize({
+        en: `Install Android Studio or the Command-line Tools (sdkmanager) — ${TOOLS_PAGE}`,
+        fr: `Installer Android Studio ou les Command-line Tools (sdkmanager) — ${TOOLS_PAGE}`,
+      }),
+      fallback: "brew install --cask android-commandlinetools",
+    });
+  }
   readonly slow = true;
 
   async isAvailable(): Promise<boolean> {

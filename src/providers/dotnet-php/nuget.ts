@@ -1,6 +1,32 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localized } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+
+const NUGET_EXE_URL = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe";
+const CLI_REFERENCE = "https://learn.microsoft.com/en-us/nuget/reference/nuget-exe-cli-reference";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    downloadHint: `Download ${NUGET_EXE_URL} and add it to PATH`,
+    monoHint: `Requires Mono — ${CLI_REFERENCE}`,
+    monoNote: "under Mono: update -self not guaranteed",
+    replacesItself:
+      "nuget.exe replaces itself in place: check the write permissions on its folder, " +
+      "or restart from an administrator terminal",
+    monoFailed: `\`nuget update -self\` failed under Mono — download ${NUGET_EXE_URL} again`,
+  },
+  fr: {
+    downloadHint: `Télécharger ${NUGET_EXE_URL} et l'ajouter au PATH`,
+    monoHint: `Nécessite Mono — ${CLI_REFERENCE}`,
+    monoNote: "sous Mono : update -self non garanti",
+    replacesItself:
+      "nuget.exe se remplace sur place : vérifier les droits d'écriture sur son dossier, " +
+      "ou relancer depuis un terminal administrateur",
+    monoFailed: `\`nuget update -self\` a échoué sous Mono — retélécharger ${NUGET_EXE_URL}`,
+  },
+});
 
 /**
  * `nuget.exe` — the standalone NuGet CLI.
@@ -40,12 +66,9 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class NugetProvider implements Provider {
   readonly id = "nuget";
   readonly displayName = "NuGet CLI";
-  readonly installHint = pickInstallHint({
-    win32:
-      "Télécharger https://dist.nuget.org/win-x86-commandline/latest/nuget.exe et l'ajouter au PATH",
-    fallback:
-      "Nécessite Mono — https://learn.microsoft.com/en-us/nuget/reference/nuget-exe-cli-reference",
-  });
+  get installHint(): string {
+    return pickInstallHint({ win32: TEXT.downloadHint, fallback: TEXT.monoHint });
+  }
 
   async isAvailable(): Promise<boolean> {
     return commandExists("nuget");
@@ -72,9 +95,7 @@ export class NugetProvider implements Provider {
         // Reported, not hidden: `manual: true` would drop the row from the scan
         // (registry.ts filters on `!pkg.manual`) and the user would never learn
         // that their nuget.exe is out of date.
-        ...(process.platform !== "win32" && {
-          note: "sous Mono : update -self non garanti",
-        }),
+        ...(process.platform !== "win32" && { note: TEXT.monoNote }),
       },
     ];
   }
@@ -120,18 +141,9 @@ export class NugetProvider implements Provider {
  */
 function describeSelfUpdateFailure(): Omit<UpdateOutcome, "id"> {
   if (process.platform === "win32") {
-    return {
-      success: false,
-      message:
-        "nuget.exe se remplace sur place : vérifier les droits d'écriture sur son dossier, ou relancer depuis un terminal administrateur",
-    };
+    return { success: false, message: TEXT.replacesItself };
   }
-  return {
-    success: false,
-    skipped: true,
-    message:
-      "`nuget update -self` a échoué sous Mono — retélécharger https://dist.nuget.org/win-x86-commandline/latest/nuget.exe",
-  };
+  return { success: false, skipped: true, message: TEXT.monoFailed };
 }
 
 /**

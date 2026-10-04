@@ -16,6 +16,7 @@ import {
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 const ID = "pyenv";
 
@@ -23,19 +24,48 @@ const ID = "pyenv";
  * Upstream package names, verified rather than guessed: `brew install pyenv`
  * is what pyenv's own README documents, and Debian ships a `pyenv` package
  * from trixie onwards. Fedora has none, so no `dnf` id — a dnf-owned binary
- * gets MANUAL_MESSAGE.
+ * gets the manual step.
  */
 const PACKAGE_IDS: PackageIds = { brew: "pyenv", apt: "pyenv" };
 
-/**
- * Shown when no automatic path applies: either nothing on the machine claims
- * the binary, or the owning package manager has no pyenv package we can name.
- * `brew` and `apt` are declared below (Homebrew ships the `pyenv` formula,
- * Debian the `pyenv` package since trixie); Fedora has no pyenv in its
- * repositories, so a dnf-owned binary lands here.
- */
-const MANUAL_MESSAGE =
-  "Aucune mise à jour automatique pour cette installation de pyenv : mettre à jour le clone git (cd $(pyenv root) && git pull --ff-only) ou réinstaller via https://pyenv.run";
+const INSTALLER = "https://pyenv.run";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    /**
+     * Shown when no automatic path applies: either nothing on the machine
+     * claims the binary, or the owning package manager has no pyenv package we
+     * can name. `brew` and `apt` are declared above (Homebrew ships the `pyenv`
+     * formula, Debian the `pyenv` package since trixie); Fedora has no pyenv in
+     * its repositories, so a dnf-owned binary lands here.
+     */
+    manualStep:
+      "No automatic update for this pyenv install: update the git clone " +
+      `(cd $(pyenv root) && git pull --ff-only) or reinstall through ${INSTALLER}`,
+    officialInstaller: `Official installer: curl -fsSL ${INSTALLER} | bash`,
+    cloneNote: "git clone — git pull --ff-only",
+    unknownSourceNote: "unknown source — manual update",
+    pullFailed: (root: string) =>
+      `git pull --ff-only failed in ${root} — HEAD detached on a tag, local commits ` +
+      "or a diverged branch",
+    spawnFailed: (root: string) =>
+      `Could not run git in ${root} — git missing from PATH or invalid pyenv root`,
+  },
+  fr: {
+    manualStep:
+      "Aucune mise à jour automatique pour cette installation de pyenv : mettre à jour le " +
+      `clone git (cd $(pyenv root) && git pull --ff-only) ou réinstaller via ${INSTALLER}`,
+    officialInstaller: `Installeur officiel : curl -fsSL ${INSTALLER} | bash`,
+    cloneNote: "clone git — git pull --ff-only",
+    unknownSourceNote: "source inconnue — mise à jour manuelle",
+    pullFailed: (root) =>
+      `git pull --ff-only a échoué dans ${root} — HEAD détaché sur un tag, commits locaux ` +
+      "ou branche divergente",
+    spawnFailed: (root) =>
+      `Impossible de lancer git sur ${root} — git absent du PATH ou racine pyenv invalide`,
+  },
+});
 
 /**
  * pyenv (pyenv/pyenv) — the POSIX original.
@@ -77,11 +107,13 @@ const MANUAL_MESSAGE =
 export class PyenvProvider implements Provider {
   readonly id = ID;
   readonly displayName = "pyenv";
-  readonly installHint = pickInstallHint({
-    darwin: "brew install pyenv",
-    linux: "curl -fsSL https://pyenv.run | bash",
-    fallback: "Installeur officiel : curl -fsSL https://pyenv.run | bash",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      darwin: "brew install pyenv",
+      linux: `curl -fsSL ${INSTALLER} | bash`,
+      fallback: TEXT.officialInstaller,
+    });
+  }
   /**
    * On Windows the `pyenv` on PATH belongs to pyenv-win, whose provider
    * already owns that row.
@@ -115,10 +147,10 @@ export class PyenvProvider implements Provider {
         id: ID,
         binary: "pyenv",
         packageIds: PACKAGE_IDS,
-        manualMessage: MANUAL_MESSAGE,
+        manualMessage: TEXT.manualStep,
       });
     } catch {
-      return { id: ID, success: false, message: MANUAL_MESSAGE };
+      return { id: ID, success: false, message: TEXT.manualStep };
     }
   }
 
@@ -235,7 +267,7 @@ async function buildRows(current: string, latest: string): Promise<OutdatedPacka
         name: "pyenv",
         current,
         latest,
-        note: "clone git — git pull --ff-only",
+        note: TEXT.cloneNote,
       },
     ];
   }
@@ -246,10 +278,7 @@ async function buildRows(current: string, latest: string): Promise<OutdatedPacka
     name: "pyenv",
     current,
     latest,
-    note:
-      source === "manual"
-        ? "source inconnue — mise à jour manuelle"
-        : describeSource(source),
+    note: source === "manual" ? TEXT.unknownSourceNote : describeSource(source),
   };
   return upgradeNeedsRoot(source, PACKAGE_IDS) ? flagForElevation([row]) : [row];
 }
@@ -352,16 +381,8 @@ async function pullCheckout(root: string): Promise<UpdateOutcome> {
   try {
     const res = await runInherit("git", ["-C", root, "pull", "--ff-only"]);
     if (!res.failed) return { id: ID, success: true };
-    return {
-      id: ID,
-      success: false,
-      message: `git pull --ff-only a échoué dans ${root} — HEAD détaché sur un tag, commits locaux ou branche divergente`,
-    };
+    return { id: ID, success: false, message: TEXT.pullFailed(root) };
   } catch {
-    return {
-      id: ID,
-      success: false,
-      message: `Impossible de lancer git sur ${root} — git absent du PATH ou racine pyenv invalide`,
-    };
+    return { id: ID, success: false, message: TEXT.spawnFailed(root) };
   }
 }

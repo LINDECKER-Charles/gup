@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { commandExists, runInherit } from "../../core/runner.js";
 import { nvimDataDir } from "../../core/nvim-paths.js";
 import { pathFlavour } from "../../core/platform/path-flavour.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -33,7 +34,10 @@ export class NvimMasonProvider implements Provider {
         name: "mason update",
         current: "?",
         latest: "refresh",
-        note: "Met à jour les registres + outils Mason",
+        note: localize({
+          en: "Updates the Mason registries + tools",
+          fr: "Met à jour les registres + outils Mason",
+        }),
       },
     ];
   }

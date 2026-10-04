@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -56,8 +57,10 @@ export class NerdctlProvider implements Provider {
         scoop: "nerdctl",
         brew: "nerdctl",
       },
-      manualMessage:
-        "Télécharger https://github.com/containerd/nerdctl/releases et remplacer nerdctl.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/containerd/nerdctl/releases",
+        "nerdctl.exe",
+      ),
     });
   }
 

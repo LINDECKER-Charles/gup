@@ -6,6 +6,7 @@ import type {
   UpdateOutcome,
 } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 /**
  * Winget has no machine-readable output for `upgrade`.
@@ -15,7 +16,12 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class WingetProvider implements Provider {
   readonly id = "winget";
   readonly displayName = "Winget";
-  readonly installHint = "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget";
+  get installHint(): string {
+    return localize({
+      en: "Preinstalled on Windows 11. Otherwise: https://aka.ms/getwinget",
+      fr: "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget",
+    });
+  }
   /** Winget is a Windows component: a `winget` found elsewhere is not it. */
   readonly platforms = PLATFORMS.windows;
 

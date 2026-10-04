@@ -6,6 +6,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -57,8 +58,10 @@ export class SyftProvider implements Provider {
         winget: "Anchore.Syft",
         brew: "syft",
       },
-      manualMessage:
-        "Télécharger https://github.com/anchore/syft/releases et remplacer syft.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/anchore/syft/releases",
+        "syft.exe",
+      ),
     });
   }
 

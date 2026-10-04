@@ -2,6 +2,7 @@ import { flagForElevation } from "../../core/elevation.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 /**
  * Fink — the oldest of the macOS ports trees, dpkg-based, installed under
@@ -73,10 +74,13 @@ export class FinkProvider implements Provider {
       {
         id: FINK_ROW_ID,
         aggregate: true,
-        name: "Fink (paquets installés)",
+        name: localize({ en: "Fink (installed packages)", fr: "Fink (paquets installés)" }),
         current: "?",
         latest: `${names.length} pkg`,
-        note: "sudo fink --yes update-all — d'après le dernier fink selfupdate",
+        note: localize({
+          en: "sudo fink --yes update-all — as of the last fink selfupdate",
+          fr: "sudo fink --yes update-all — d'après le dernier fink selfupdate",
+        }),
       },
     ]);
   }

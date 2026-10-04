@@ -5,6 +5,7 @@ import {
   describeSource,
   detectInstallSource,
 } from "../../core/install-source.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -60,8 +61,10 @@ export class SymfonyCliProvider implements Provider {
         winget: "SensioLabs.Symfony-Cli",
         brew: "symfony-cli",
       },
-      manualMessage:
-        "Télécharger https://github.com/symfony-cli/symfony-cli/releases et remplacer symfony.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/symfony-cli/symfony-cli/releases",
+        "symfony.exe",
+      ),
     });
   }
 

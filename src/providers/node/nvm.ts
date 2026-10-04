@@ -9,6 +9,7 @@ import {
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /** Single tracked artefact: nvm itself. */
 const ID = "nvm";
@@ -17,8 +18,45 @@ const REPO = "nvm-sh/nvm";
 
 const INSTALL_DOC = "https://github.com/nvm-sh/nvm#installing-and-updating";
 
-/** Shown when the install is not a clone, i.e. when no automatic path exists. */
-const MANUAL_MESSAGE = `Installation nvm hors dépôt git — mettre à jour en suivant ${INSTALL_DOC}`;
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    /** Shown when the install is not a clone, i.e. when no automatic path exists. */
+    notAClone: `nvm installed outside a git checkout — update it by following ${INSTALL_DOC}`,
+    unexpectedFailure: `Could not update nvm — update it by hand by following ${INSTALL_DOC}`,
+    cloneNote: "git repository — checks out the tag",
+    notACloneNote: "non-git install — manual update",
+    notFound: "nvm installation not found: set NVM_DIR or reinstall nvm.",
+    gitMissing: "git not found: it is needed to update the nvm repository.",
+    latestUnknown: "Latest nvm version unavailable (GitHub API unreachable).",
+    upToDate: (version: string) =>
+      `nvm is already on the latest published version (${version}) — no checkout.`,
+    fetchFailed: (dir: string) => `git fetch --tags origin failed in ${dir}.`,
+    checkoutFailed: (tag: string, dir: string) =>
+      `git checkout ${tag} failed — local changes in ${dir}?`,
+    updated: (tag: string) =>
+      `nvm updated to ${tag} — repository left on a detached HEAD at the tag (official nvm ` +
+      'recipe); reload the shell (source "$NVM_DIR/nvm.sh") to activate the new version.',
+  },
+  fr: {
+    notAClone: `Installation nvm hors dépôt git — mettre à jour en suivant ${INSTALL_DOC}`,
+    unexpectedFailure:
+      `Mise à jour de nvm impossible — mettre à jour à la main en suivant ${INSTALL_DOC}`,
+    cloneNote: "dépôt git — checkout du tag",
+    notACloneNote: "installation non-git — mise à jour manuelle",
+    notFound: "Installation nvm introuvable : définir NVM_DIR ou réinstaller nvm.",
+    gitMissing: "git est introuvable : requis pour mettre à jour le dépôt nvm.",
+    latestUnknown: "Version la plus récente de nvm indisponible (API GitHub injoignable).",
+    upToDate: (version) =>
+      `nvm est déjà sur la dernière version publiée (${version}) — aucun checkout.`,
+    fetchFailed: (dir) => `Échec de git fetch --tags origin dans ${dir}.`,
+    checkoutFailed: (tag, dir) =>
+      `Échec de git checkout ${tag} — modifications locales dans ${dir} ?`,
+    updated: (tag) =>
+      `nvm mis à jour vers ${tag} — dépôt laissé en HEAD détaché sur le tag (recette officielle ` +
+      'nvm) ; recharger le shell (source "$NVM_DIR/nvm.sh") pour activer la nouvelle version.',
+  },
+});
 
 /**
  * nvm (nvm-sh/nvm) — the POSIX Node version manager.
@@ -98,9 +136,7 @@ export class NvmProvider implements Provider {
     } catch {
       // runner sanitisation (a control char in $NVM_DIR), a home directory the
       // OS refuses to resolve: never let it escape into the update loop.
-      return failure(
-        `Mise à jour de nvm impossible — mettre à jour à la main en suivant ${INSTALL_DOC}`,
-      );
+      return failure(TEXT.unexpectedFailure);
     }
   }
 
@@ -267,9 +303,7 @@ async function scan(): Promise<OutdatedPackage[]> {
       name: "nvm",
       current,
       latest: latest.version,
-      note: isGitCheckout(dir)
-        ? "dépôt git — checkout du tag"
-        : "installation non-git — mise à jour manuelle",
+      note: isGitCheckout(dir) ? TEXT.cloneNote : TEXT.notACloneNote,
     },
   ];
 }
@@ -278,26 +312,21 @@ async function scan(): Promise<OutdatedPackage[]> {
 async function applyUpdate(): Promise<UpdateOutcome> {
   const dir = resolveNvmDir();
   if (dir === null) {
-    return failure("Installation nvm introuvable : définir NVM_DIR ou réinstaller nvm.");
+    return failure(TEXT.notFound);
   }
   if (!isGitCheckout(dir)) {
-    return { id: ID, success: false, skipped: true, message: MANUAL_MESSAGE };
+    return { id: ID, success: false, skipped: true, message: TEXT.notAClone };
   }
   if (!(await commandExists("git"))) {
-    return failure("git est introuvable : requis pour mettre à jour le dépôt nvm.");
+    return failure(TEXT.gitMissing);
   }
 
   const latest = await latestRelease();
   if (!latest) {
-    return failure("Version la plus récente de nvm indisponible (API GitHub injoignable).");
+    return failure(TEXT.latestUnknown);
   }
   if (await isAtLeast(dir, latest.version)) {
-    return {
-      id: ID,
-      success: false,
-      skipped: true,
-      message: `nvm est déjà sur la dernière version publiée (${latest.version}) — aucun checkout.`,
-    };
+    return { id: ID, success: false, skipped: true, message: TEXT.upToDate(latest.version) };
   }
   return checkoutTag(dir, latest.tag);
 }
@@ -320,19 +349,15 @@ async function isAtLeast(dir: string, version: string): Promise<boolean> {
 async function checkoutTag(dir: string, tag: string): Promise<UpdateOutcome> {
   const fetched = await runInherit("git", ["-C", dir, "fetch", "--tags", "origin"]);
   if (fetched.failed) {
-    return failure(`Échec de git fetch --tags origin dans ${dir}.`);
+    return failure(TEXT.fetchFailed(dir));
   }
 
   const checkout = await runInherit("git", ["-C", dir, "checkout", tag]);
   if (checkout.failed) {
-    return failure(`Échec de git checkout ${tag} — modifications locales dans ${dir} ?`);
+    return failure(TEXT.checkoutFailed(tag, dir));
   }
 
-  return {
-    id: ID,
-    success: true,
-    message: `nvm mis à jour vers ${tag} — dépôt laissé en HEAD détaché sur le tag (recette officielle nvm) ; recharger le shell (source "$NVM_DIR/nvm.sh") pour activer la nouvelle version.`,
-  };
+  return { id: ID, success: true, message: TEXT.updated(tag) };
 }
 
 function failure(message: string): UpdateOutcome {

@@ -4,6 +4,7 @@ import { run } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 /**
  * Rancher Desktop. Electron app with built-in updater. Same policy as the
@@ -51,8 +52,10 @@ export class RancherDesktopProvider implements Provider {
       id: "rancher-desktop",
       success: false,
       skipped: true,
-      message:
-        "Lancer Rancher Desktop → Preferences → Check for Updates pour appliquer.",
+      message: localize({
+        en: "Start Rancher Desktop → Preferences → Check for Updates to apply it.",
+        fr: "Lancer Rancher Desktop → Preferences → Check for Updates pour appliquer.",
+      }),
     };
   }
 

@@ -10,6 +10,8 @@ import { delegateUpdate } from "../core/install-source.js";
 import type { OutdatedPackage, PlatformSet, Provider, UpdateOutcome } from "../core/types.js";
 import { isSupportedOn } from "../core/platform/is-supported-on.js";
 import { PLATFORMS } from "../core/platform/platforms.js";
+import { localized } from "../core/i18n/localized.js";
+import { MANUAL_STEPS } from "./manual-steps.js";
 
 /**
  * Meta-provider that surfaces self-updates of the package managers themselves
@@ -73,7 +75,7 @@ export class SelfProvider implements Provider {
           latest,
           ...(t.manual && {
             manual: true,
-            note: t.manualMessage ?? "manuel",
+            note: t.manualMessage?.() ?? TEXT.manualNote,
           }),
         };
       }),
@@ -84,7 +86,7 @@ export class SelfProvider implements Provider {
   async update(packageId: string): Promise<UpdateOutcome> {
     const target = activeTargets().find((t) => t.id === packageId);
     if (!target) {
-      return { id: packageId, success: false, message: "Cible self inconnue" };
+      return { id: packageId, success: false, message: TEXT.unknownTarget };
     }
     return target.update();
   }
@@ -108,7 +110,8 @@ interface SelfTarget {
   update: () => Promise<UpdateOutcome>;
   /** Surface row but mark as manual:true — filtered out of "Update all". */
   manual?: boolean;
-  manualMessage?: string;
+  /** The manual row's note, read when the row is built (in the language of that moment). */
+  manualMessage?: () => string;
   /**
    * Platforms the target can exist on. Omitted means "everywhere".
    *
@@ -119,6 +122,28 @@ interface SelfTarget {
    */
   platforms?: PlatformSet;
 }
+
+const WINGET_RELEASES = "https://github.com/microsoft/winget-cli/releases";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    manualNote: "manual",
+    unknownTarget: "Unknown self target",
+    wingetManual: `Update through the Microsoft Store (App Installer) or ${WINGET_RELEASES}`,
+    wingetSkip: "Update through the Microsoft Store (App Installer) or a manual download.",
+    chocoNeedsAdmin: "Chocolatey needs an administrator terminal.",
+    pythonMissing: "Python not found on PATH",
+  },
+  fr: {
+    manualNote: "manuel",
+    unknownTarget: "Cible self inconnue",
+    wingetManual: `Mise à jour via le Microsoft Store (App Installer) ou ${WINGET_RELEASES}`,
+    wingetSkip: "Mise à jour via le Microsoft Store (App Installer) ou téléchargement manuel.",
+    chocoNeedsAdmin: "Chocolatey nécessite un terminal admin.",
+    pythonMissing: "Python introuvable dans le PATH",
+  },
+});
 
 /** Targets that can exist on the running platform. */
 function activeTargets(): SelfTarget[] {
@@ -231,16 +256,14 @@ const TARGETS: SelfTarget[] = [
     // same name is never asked for its version.
     platforms: PLATFORMS.windows,
     manual: true,
-    manualMessage:
-      "Mise à jour via le Microsoft Store (App Installer) ou https://github.com/microsoft/winget-cli/releases",
+    manualMessage: () => TEXT.wingetManual,
     current: async () => parseFirstSemver(await runStdout("winget", ["--version"])),
     latest: async () => fetchGitHubReleaseLatest("microsoft/winget-cli"),
     update: async () => ({
       id: "winget",
       success: false,
       skipped: true,
-      message:
-        "Mise à jour via le Microsoft Store (App Installer) ou téléchargement manuel.",
+      message: TEXT.wingetSkip,
     }),
   },
 
@@ -279,8 +302,7 @@ const TARGETS: SelfTarget[] = [
           id: "choco",
           success: false,
           skipped: true,
-          message:
-            "Chocolatey nécessite un terminal admin. Relancer gup depuis un terminal « Exécuter en tant qu'administrateur ».",
+          message: `${TEXT.chocoNeedsAdmin} ${MANUAL_STEPS.restartAsAdministrator}`,
         };
       }
       const res = await runInherit("choco", ["upgrade", "chocolatey", "-y"]);
@@ -391,7 +413,7 @@ const TARGETS: SelfTarget[] = [
         return {
           id: "pip",
           success: false,
-          message: "Python introuvable dans le PATH",
+          message: TEXT.pythonMissing,
         };
       }
       const res = await runInherit(py, [
@@ -439,8 +461,10 @@ const TARGETS: SelfTarget[] = [
           scoop: "gh",
           choco: "gh",
         },
-        manualMessage:
-          "Télécharger https://github.com/cli/cli/releases et remplacer gh.exe",
+        manualMessage: MANUAL_STEPS.downloadAndReplace(
+          "https://github.com/cli/cli/releases",
+          "gh.exe",
+        ),
       }),
   },
 ];

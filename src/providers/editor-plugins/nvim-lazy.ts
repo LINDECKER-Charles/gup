@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { commandExists, runInherit } from "../../core/runner.js";
 import { nvimConfigDir, nvimDataDir } from "../../core/nvim-paths.js";
 import { pathFlavour } from "../../core/platform/path-flavour.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -34,7 +35,10 @@ export class NvimLazyProvider implements Provider {
         name: "lazy.nvim sync",
         current: "?",
         latest: "refresh",
-        note: "Synchronise tous les plugins (:Lazy! sync)",
+        note: localize({
+          en: "Syncs all plugins (:Lazy! sync)",
+          fr: "Synchronise tous les plugins (:Lazy! sync)",
+        }),
       },
     ];
   }

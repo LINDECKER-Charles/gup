@@ -25,6 +25,7 @@ import {
   VSWHERE_ARGV,
   VSWHERE_EXE,
 } from "./visual-studio.cases.js";
+import { useLocale } from "../../support/locale.js";
 
 /**
  * Visual Studio's own knowledge: where the installer lives, how vswhere and
@@ -377,6 +378,27 @@ describe("vsInstallerOutcome", () => {
 
   it("fails without a message for a code Microsoft never documented", () => {
     expect(vsInstallerOutcome("i1", 4242)).toEqual({ id: "i1", success: false });
+  });
+});
+
+describe("vsInstallerOutcome in English", () => {
+  useLocale("en");
+
+  it("tells how to elevate when the installer asks for an administrator", () => {
+    expect(vsInstallerOutcome("i1", 740)).toEqual({
+      id: "i1",
+      success: false,
+      skipped: true,
+      message:
+        "The Visual Studio Installer needs administrator rights. " +
+        'Restart gup from a terminal opened with "Run as administrator".',
+    });
+  });
+
+  it("words a documented failure code in English", () => {
+    expect(vsInstallerOutcome("i1", 1001).message).toBe(
+      "The Visual Studio Installer is already running: close it, then retry.",
+    );
   });
 });
 

@@ -8,6 +8,9 @@ import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
+const RELEASES_PAGE = "https://github.com/coreybutler/nvm-windows/releases";
+import { localize } from "../../core/i18n/localized.js";
+
 /**
  * nvm-windows (coreybutler/nvm-windows) — distinct from the Linux/macOS
  * `nvm` shell function. Binary is `nvm.exe`. Scope is the nvm binary itself,
@@ -64,8 +67,10 @@ export class NvmWindowsProvider implements Provider {
         choco: "nvm",
         winget: "CoreyButler.NVMforWindows",
       },
-      manualMessage:
-        "Télécharger https://github.com/coreybutler/nvm-windows/releases et exécuter nvm-setup.exe",
+      manualMessage: localize({
+        en: `Download ${RELEASES_PAGE} and run nvm-setup.exe`,
+        fr: `Télécharger ${RELEASES_PAGE} et exécuter nvm-setup.exe`,
+      }),
     });
   }
 

@@ -1,9 +1,28 @@
 import { commandExists, isElevated, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 
-const NOT_ADMIN_MESSAGE =
-  "Chocolatey nécessite un terminal admin. Relancer gup depuis PowerShell ou Terminal lancé en « Exécuter en tant qu'administrateur ».";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    notAdmin: (runAsAdministrator: string) =>
+      "Chocolatey needs an administrator terminal. Restart gup from PowerShell or Terminal " +
+      `opened with ${runAsAdministrator}.`,
+    rebootRequired: "Update done — a reboot is required to finish.",
+  },
+  fr: {
+    notAdmin: (runAsAdministrator) =>
+      "Chocolatey nécessite un terminal admin. Relancer gup depuis PowerShell ou Terminal " +
+      `lancé en ${runAsAdministrator}.`,
+    rebootRequired: "Mise à jour effectuée — redémarrage requis pour finaliser.",
+  },
+});
+
+function notAdminMessage(): string {
+  return TEXT.notAdmin(MANUAL_STEPS.runAsAdministrator);
+}
 
 /**
  * `choco outdated -r --limit-output` emits: name|currentVersion|availableVersion|pinned
@@ -33,7 +52,7 @@ export class ChocoProvider implements Provider {
 
   async update(packageId: string): Promise<UpdateOutcome> {
     if (!(await isElevated())) {
-      return { id: packageId, success: false, skipped: true, message: NOT_ADMIN_MESSAGE };
+      return { id: packageId, success: false, skipped: true, message: notAdminMessage() };
     }
     const res = await runInherit("choco", ["upgrade", packageId, "-y"]);
     return chocoOutcome(packageId, res.exitCode);
@@ -42,12 +61,8 @@ export class ChocoProvider implements Provider {
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
     if (packages.length === 0) return [];
     if (!(await isElevated())) {
-      return packages.map((p) => ({
-        id: p.id,
-        success: false,
-        skipped: true,
-        message: NOT_ADMIN_MESSAGE,
-      }));
+      const message = notAdminMessage();
+      return packages.map((p) => ({ id: p.id, success: false, skipped: true, message }));
     }
     const res = await runInherit("choco", ["upgrade", "all", "-y"]);
     // `choco upgrade all` aggregates many MSI/installer exits into one final
@@ -85,11 +100,7 @@ export class ChocoProvider implements Provider {
 export function chocoOutcome(id: string, exitCode: number): UpdateOutcome {
   if (exitCode === 0) return { id, success: true };
   if (exitCode === 3010 || exitCode === 1641) {
-    return {
-      id,
-      success: true,
-      message: "Mise à jour effectuée — redémarrage requis pour finaliser.",
-    };
+    return { id, success: true, message: TEXT.rebootRequired };
   }
   return { id, success: false };
 }

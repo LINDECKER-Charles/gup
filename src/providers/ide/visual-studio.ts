@@ -4,6 +4,8 @@ import { win32 as winPath } from "node:path";
 import { isElevated, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 
 /**
  * Visual Studio — the Windows IDE, not VS Code (that one is `vscode-like`) and
@@ -115,14 +117,50 @@ interface VersionPair {
 
 const PRODUCT_ITEM_PREFIX = "Microsoft.VisualStudio.Product.";
 
-const NOT_ADMIN_MESSAGE =
-  "L'installeur Visual Studio exige des droits administrateur. Relancer gup depuis un terminal « Exécuter en tant qu'administrateur ».";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    upgradeNote: "via the Visual Studio Installer",
+    needsAdministrator: "The Visual Studio Installer needs administrator rights.",
+    installerMissing:
+      "Visual Studio Installer not found: update from the Visual Studio Installer app.",
+    spawnFailed:
+      "Could not start the Visual Studio Installer: update from the Visual Studio Installer app.",
+    instanceMissing: "Visual Studio instance not found — run the scan again.",
+    rebootRequired: "Update done — reboot to finish.",
+    cancelled: "Update cancelled.",
+    installerRunning: "The Visual Studio Installer is already running: close it, then retry.",
+    inUse: "Visual Studio is in use: close it, then retry.",
+    otherInstall: "Another Windows installation is already in progress.",
+    prerequisites: "This machine does not meet the prerequisites of the update.",
+    processesRunning: "Visual Studio processes are still running: close them, then retry.",
+    unsupportedSystem: "Operating system not supported by this update.",
+    networkFailure: "Network connection failed during the update.",
+  },
+  fr: {
+    upgradeNote: "via l'installeur Visual Studio",
+    needsAdministrator: "L'installeur Visual Studio exige des droits administrateur.",
+    installerMissing:
+      "Installeur Visual Studio introuvable : mettre à jour depuis l'application Visual Studio Installer.",
+    spawnFailed:
+      "Impossible de lancer l'installeur Visual Studio : mettre à jour depuis l'application Visual Studio Installer.",
+    instanceMissing: "Instance Visual Studio introuvable — relancer le scan.",
+    rebootRequired: "Mise à jour effectuée — redémarrer pour finaliser.",
+    cancelled: "Mise à jour annulée.",
+    installerRunning: "L'installeur Visual Studio tourne déjà : le fermer puis relancer.",
+    inUse: "Visual Studio est en cours d'utilisation : le fermer puis relancer.",
+    otherInstall: "Une autre installation Windows est déjà en cours.",
+    prerequisites: "Cette machine ne remplit pas les prérequis de la mise à jour.",
+    processesRunning: "Des processus Visual Studio tournent encore : les fermer puis relancer.",
+    unsupportedSystem: "Système d'exploitation non pris en charge par cette mise à jour.",
+    networkFailure: "Échec de connexion réseau pendant la mise à jour.",
+  },
+});
 
-const INSTALLER_MISSING_MESSAGE =
-  "Installeur Visual Studio introuvable : mettre à jour depuis l'application Visual Studio Installer.";
-
-const SPAWN_FAILED_MESSAGE =
-  "Impossible de lancer l'installeur Visual Studio : mettre à jour depuis l'application Visual Studio Installer.";
+/** Why the update cannot run unelevated, then how to elevate. */
+function notAdminMessage(): string {
+  return `${TEXT.needsAdministrator} ${MANUAL_STEPS.restartAsAdministrator}`;
+}
 
 // ---------------------------------------------------------------------------
 // Locating the installer bits
@@ -274,7 +312,7 @@ export function outdatedRow(
     name: instance.displayName ?? id,
     current: pair.current,
     latest: pair.latest,
-    note: "via l'installeur Visual Studio",
+    note: TEXT.upgradeNote,
     requiresAdmin: true,
   };
 }
@@ -408,22 +446,18 @@ async function updateInstance(
   installationPath: string | undefined,
 ): Promise<UpdateOutcome> {
   if (!installationPath) {
-    return {
-      id,
-      success: false,
-      message: "Instance Visual Studio introuvable — relancer le scan.",
-    };
+    return { id, success: false, message: TEXT.instanceMissing };
   }
   const installer = vsSetupExe();
   if (!installer) {
-    return { id, success: false, skipped: true, message: INSTALLER_MISSING_MESSAGE };
+    return { id, success: false, skipped: true, message: TEXT.installerMissing };
   }
   if (!(await elevated())) {
-    return { id, success: false, skipped: true, message: NOT_ADMIN_MESSAGE };
+    return { id, success: false, skipped: true, message: notAdminMessage() };
   }
   const exitCode = await runUpdate(installer, installationPath);
   if (exitCode === null) {
-    return { id, success: false, message: SPAWN_FAILED_MESSAGE };
+    return { id, success: false, message: TEXT.spawnFailed };
   }
   return vsInstallerOutcome(id, exitCode);
 }
@@ -459,26 +493,27 @@ async function runUpdate(
   }
 }
 
-const REBOOT_MESSAGE = "Mise à jour effectuée — redémarrer pour finaliser.";
+const cancelledMessage = (): string => TEXT.cancelled;
 
-const CANCELLED_MESSAGE = "Mise à jour annulée.";
-
-/** Deferrals: nothing was installed, and retrying later is the right move. */
-const SKIP_MESSAGES: ReadonlyMap<number, string> = new Map([
-  [740, NOT_ADMIN_MESSAGE],
-  [1602, CANCELLED_MESSAGE],
-  [5004, CANCELLED_MESSAGE],
-  [-1073741510, CANCELLED_MESSAGE],
+/**
+ * Deferrals: nothing was installed, and retrying later is the right move. Each
+ * message is read when an outcome is built, in the language of that moment.
+ */
+const SKIP_MESSAGES: ReadonlyMap<number, () => string> = new Map([
+  [740, notAdminMessage],
+  [1602, cancelledMessage],
+  [5004, cancelledMessage],
+  [-1073741510, cancelledMessage],
 ]);
 
-const FAILURE_MESSAGES: ReadonlyMap<number, string> = new Map([
-  [1001, "L'installeur Visual Studio tourne déjà : le fermer puis relancer."],
-  [1003, "Visual Studio est en cours d'utilisation : le fermer puis relancer."],
-  [1618, "Une autre installation Windows est déjà en cours."],
-  [5007, "Cette machine ne remplit pas les prérequis de la mise à jour."],
-  [8006, "Des processus Visual Studio tournent encore : les fermer puis relancer."],
-  [8010, "Système d'exploitation non pris en charge par cette mise à jour."],
-  [-1073720687, "Échec de connexion réseau pendant la mise à jour."],
+const FAILURE_MESSAGES: ReadonlyMap<number, () => string> = new Map([
+  [1001, () => TEXT.installerRunning],
+  [1003, () => TEXT.inUse],
+  [1618, () => TEXT.otherInstall],
+  [5007, () => TEXT.prerequisites],
+  [8006, () => TEXT.processesRunning],
+  [8010, () => TEXT.unsupportedSystem],
+  [-1073720687, () => TEXT.networkFailure],
 ]);
 
 /**
@@ -490,11 +525,11 @@ const FAILURE_MESSAGES: ReadonlyMap<number, string> = new Map([
 export function vsInstallerOutcome(id: string, exitCode: number): UpdateOutcome {
   if (exitCode === 0) return { id, success: true };
   if (exitCode === 3010 || exitCode === 1641) {
-    return { id, success: true, message: REBOOT_MESSAGE };
+    return { id, success: true, message: TEXT.rebootRequired };
   }
-  const skip = SKIP_MESSAGES.get(exitCode);
+  const skip = SKIP_MESSAGES.get(exitCode)?.();
   if (skip) return { id, success: false, skipped: true, message: skip };
-  const message = FAILURE_MESSAGES.get(exitCode);
+  const message = FAILURE_MESSAGES.get(exitCode)?.();
   return { id, success: false, ...(message && { message }) };
 }
 

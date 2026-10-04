@@ -41,14 +41,17 @@ function selfCase(scenario: string, target: SelfCase): ProviderContractCase {
 const WINGET_MANUAL_NOTE =
   "Mise à jour via le Microsoft Store (App Installer) ou https://github.com/microsoft/winget-cli/releases";
 
+/** winget behind its latest release, the only package manager on PATH. */
+export const WINGET_MACHINE: SystemSpec = {
+  platform: "win32",
+  bin: { winget: "C:\\Users\\u\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" },
+  commands: [versionProbe("winget", "v1.6.10121")],
+  http: [githubLatest("microsoft/winget-cli", "v1.7.10861")],
+};
+
 /** winget ships with App Installer: no CLI self-update, a manual row. */
 const WINGET = selfCase("winget", {
-  system: {
-    platform: "win32",
-    bin: { winget: "C:\\Users\\u\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" },
-    commands: [versionProbe("winget", "v1.6.10121")],
-    http: [githubLatest("microsoft/winget-cli", "v1.7.10861")],
-  },
+  system: WINGET_MACHINE,
   row: [
     {
       id: "winget",
