@@ -45,7 +45,7 @@ below when testing a checkout rather than an installed build.
 | ID | Area | Step | Expected |
 |---|---|---|---|
 | W-01 | prerequisites | Node 26 first on `PATH`; `npm ci`; `npm run build` | green, `dist\cli.js` and `dist\pty-exec.js` present |
-| W-02 | automated | `check.cmd -E2E mutate` (consent: it updates `is-number` in a throw-away npm prefix and creates, runs and deletes a `gup-it-<random>` scheduled task); `npm run fixtures:record -- --provider <ids>` for the tools installed here | all green; `Get-ScheduledTask gup-*` lists nothing afterwards; fixture diff reviewed, package names neutralised before any commit |
+| W-02 | automated | `scripts\check.cmd -E2E mutate` (consent: it updates `is-number` in a throw-away npm prefix and creates, runs and deletes a `gup-it-<random>` scheduled task); `npm run fixtures:record -- --provider <ids>` for the tools installed here | all green; `Get-ScheduledTask gup-*` lists nothing afterwards; fixture diff reviewed, package names neutralised before any commit |
 | W-03 | conhost | Win+R → `conhost.exe cmd /k node dist\cli.js` **(sandbox)**; ↓ ↓, Espace, `q` | the window **survives** (10.0.26100 constraint), the prompt comes back, no stray escape codes |
 | W-04 | conhost | same, then quit with Ctrl+C; then `set GUP_PTY=off` and run W-08's update | survives both; with `GUP_PTY=off` the update leaves the screen, `Entrée pour revenir à gup…`, the menu comes back |
 | W-05 | Windows Terminal | `gup` **(sandbox)**; resize the window down to 80×24 and back; click a package row; scroll with the wheel | the layout follows the size, nothing overlaps; the click checks the row |

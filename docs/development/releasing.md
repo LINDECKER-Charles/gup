@@ -34,7 +34,7 @@ flowchart LR
 ## 1. Pre-flight
 
 - `main` is green: the eight required checks listed in
-  [CONTRIBUTING.md § Pull request flow](../../CONTRIBUTING.md#9-pull-request-flow)
+  [CONTRIBUTING.md § Pull request flow](../../.github/CONTRIBUTING.md#9-pull-request-flow)
   passed on its last commit.
 - Open Dependabot pull requests are processed: merged when green and relevant,
   closed with a reason otherwise. A release never ships with a known
@@ -77,10 +77,10 @@ Then, in the same branch:
      && npm run test:run && npm run build && npm run security \
      && npm run screenshots:check
    node dist/cli.js --version    # prints x.y.z
-   npm pack --dry-run            # package.json, dist/, LICENSE, README.md, SECURITY.md
+   npm pack --dry-run            # package.json, dist/, LICENSE, README.md
    ```
 
-   On Windows, `check.cmd` runs the security audit, the tests and the coverage
+   On Windows, `scripts\check.cmd` runs the security audit, the tests and the coverage
    in parallel and prints a summary; it does not replace the gates above.
 6. Commit the bump as `chore(release): x.y.z`, with the changelog, the release
    notes, the landing facts and the regenerated screenshots in the same commit

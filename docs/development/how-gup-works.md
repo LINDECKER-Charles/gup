@@ -913,7 +913,7 @@ update path appears. Until 0.5.0 they existed as unregistered code in `src/provi
 ## 15. Security
 
 The threat model, its mitigations and the tests that pin them are in
-[`SECURITY.md`](../../SECURITY.md#threat-model); the architectural chokepoints are listed in
+[`SECURITY.md`](../../.github/SECURITY.md#threat-model); the architectural chokepoints are listed in
 [`architecture.md` §13](architecture.md#13-security).
 
 ### Tooling
@@ -921,10 +921,10 @@ The threat model, its mitigations and the tests that pin them are in
 | Layer | Tool | Config |
 |---|---|---|
 | Static SAST | CodeQL `security-extended` + `security-and-quality` | `.github/workflows/security.yml` |
-| Custom SAST | Semgrep + `p/typescript` + `p/nodejs` | `.semgrep.yml` |
+| Custom SAST | Semgrep + `p/typescript` + `p/nodejs` | `.github/semgrep.yml` |
 | Secrets | gitleaks | `.gitleaks.toml` |
-| Dependency vulnerabilities | `audit-ci` (CI) + weekly Dependabot | `audit-ci.json`, `.github/dependabot.yml` |
-| Lint | `eslint-plugin-security` | `eslint.config.security.js` |
+| Dependency vulnerabilities | `audit-ci` (CI) + weekly Dependabot | `.github/audit-ci.json`, `.github/dependabot.yml` |
+| Lint | `eslint-plugin-security` | `.github/eslint.config.security.js` |
 | Custom pins | Vitest security suite | `tests/security/**` |
 
 `npm run security` chains `audit:deps:ci` + `lint:security` + `test:security`.
@@ -979,7 +979,7 @@ necessary, no `any`. Comments say *why*, never *what*.
 dev                  # tsx src/cli.ts (no-build dev loop)
 build                # tsup → dist/cli.js + dist/pty-exec.js
 start                # node dist/cli.js
-typecheck            # tsc --noEmit, on src then on the tests (tsconfig.tests.json)
+typecheck            # tsc --noEmit, on src then on the tests (tests/tsconfig.json)
 typecheck:scripts    # tsc on the screenshot generator
 test, test:run, test:unit, test:integration, test:security, test:coverage, test:coverage:ci
 test:e2e:smoke, test:e2e, test:e2e:mutate   # build, then the end-to-end suites (testing.md §6)
@@ -992,9 +992,10 @@ security             # composite: audit + lint security + tests security
 
 ### Distribution choice
 
-- Published on npm so end users get a one-line install. The package ships `dist/`, the licence,
-  the README and SECURITY.md; its only install script is node-pty's (an optional dependency), which
-  npm 11 asks the user to review — see [`installation.md`](../guide/installation.md#npm-11-and-install-scripts).
+- Published on npm so end users get a one-line install. The package ships `dist/`, the licence
+  and the README, whose links lead to the security policy on GitHub; its only install script is
+  node-pty's (an optional dependency), which npm 11 asks the user to review — see
+  [`installation.md`](../guide/installation.md#npm-11-and-install-scripts).
 - Source install via `git clone` + `npm link` remains the easiest way to audit before running, and
   is the workflow for contributors.
 
@@ -1002,7 +1003,7 @@ security             # composite: audit + lint security + tests security
 
 ## 18. Extending `gup` — adding a provider in practice
 
-See [`CONTRIBUTING.md`](../../CONTRIBUTING.md#2-provider-addition-workflow). Typical workflow:
+See [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md#2-provider-addition-workflow). Typical workflow:
 
 ```powershell
 # 1. Copy the template

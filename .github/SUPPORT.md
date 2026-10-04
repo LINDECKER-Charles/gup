@@ -9,17 +9,17 @@ to ask for help and what to include so a question gets an answer quickly.
    that are not installed, and how to install them. Many "gup does not see X"
    questions end here.
 2. Check the documentation:
-   - [Troubleshooting](docs/guide/troubleshooting.md): the messages gup
+   - [Troubleshooting](../docs/guide/troubleshooting.md): the messages gup
      prints, what causes them and how to fix them.
-   - [Installation](docs/guide/installation.md): requirements (Node ≥ 26.9),
+   - [Installation](../docs/guide/installation.md): requirements (Node ≥ 26.9),
      install methods, npm 11 and install scripts, per-platform support.
-   - [Interactive app](docs/guide/interactive-app.md): every view and key of
+   - [Interactive app](../docs/guide/interactive-app.md): every view and key of
      the full-screen app, updating inside it.
-   - [CLI reference](docs/guide/cli-reference.md): every command and flag,
+   - [CLI reference](../docs/guide/cli-reference.md): every command and flag,
      targeting syntax, stuck-install timeouts, retries, elevation, exit codes.
-   - [Scope](docs/guide/scope.md): what `gup` covers and what it deliberately
+   - [Scope](../docs/guide/scope.md): what `gup` covers and what it deliberately
      leaves out.
-   - [Providers catalog](docs/guide/providers-catalog.md): every supported
+   - [Providers catalog](../docs/guide/providers-catalog.md): every supported
      source, and the candidates already evaluated or turned down.
 3. Search the [existing issues](https://github.com/LINDECKER-Charles/gup/issues?q=is%3Aissue),
    open and closed.
@@ -51,7 +51,7 @@ reproduce a problem on someone else's machine.
   the retry prompt, which needs a terminal and cannot open once the output
   goes to a pipe.
 - The debug log (`gup log -n 50`) or, better, the diagnostic archive from
-  `gup log export` — [how to collect it](docs/guide/troubleshooting.md#collecting-a-diagnostic-for-a-bug-report)
+  `gup log export` — [how to collect it](../docs/guide/troubleshooting.md#collecting-a-diagnostic-for-a-bug-report)
   (gup 0.5.0 and later).
 
 Outputs can contain your username, home directory and the list of software
@@ -66,7 +66,7 @@ publish** before pasting or attaching them.
   welcome. The interface itself is in French.
 - An issue that cannot be reproduced and gets no reply to a follow-up question
   may be closed. It can be reopened at any time with the missing details.
-- A request outside the [scope](docs/guide/scope.md) is closed with a link to
+- A request outside the [scope](../docs/guide/scope.md) is closed with a link to
   the reasoning, not ignored.
 - Every thread follows the [Code of Conduct](CODE_OF_CONDUCT.md), whoever
   asks and whoever answers.

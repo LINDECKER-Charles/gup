@@ -159,8 +159,8 @@ Walkthrough: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development
 - Architecture: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/architecture.md
 - How gup works: https://github.com/LINDECKER-Charles/gup/blob/main/docs/development/how-gup-works.md
 - Release notes: https://github.com/LINDECKER-Charles/gup/tree/main/docs/releases
-- Contributing: https://github.com/LINDECKER-Charles/gup/blob/main/CONTRIBUTING.md
-- Security policy: https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md
+- Contributing: https://github.com/LINDECKER-Charles/gup/blob/main/.github/CONTRIBUTING.md
+- Security policy: https://github.com/LINDECKER-Charles/gup/blob/main/.github/SECURITY.md
 - Extended version of this file: https://lindecker-charles.github.io/gup/llms-full.txt
 
 ## Languages

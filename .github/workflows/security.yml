@@ -75,7 +75,7 @@ jobs:
       # `semgrep ci` assumes the Semgrep AppSec Platform (baseline diff, app
       # token, findings upload). Without those it returns 2. `semgrep scan`
       # is the local-OSS entry point — same rules, no platform dependency.
-      - run: semgrep scan --config=.semgrep.yml --config=p/typescript --config=p/nodejs --error
+      - run: semgrep scan --config=.github/semgrep.yml --config=p/typescript --config=p/nodejs --error
 
   gitleaks:
     name: gitleaks

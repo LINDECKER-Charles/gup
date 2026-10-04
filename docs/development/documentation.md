@@ -3,7 +3,7 @@
 How `gup`'s documentation is written: where a page goes, what the README may
 contain, how diagrams are drawn and how the screenshots of the interactive app
 are produced. For the code conventions, see
-[`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+[`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md).
 
 ---
 

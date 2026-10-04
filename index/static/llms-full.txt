@@ -203,7 +203,7 @@ single offline HTML file, or exports it as JSON or CSV.
 - Destructive actions are opt-in. `--all` asks before it acts unless `-y` is passed.
 
 Threat model and disclosure process:
-https://github.com/LINDECKER-Charles/gup/blob/main/SECURITY.md
+https://github.com/LINDECKER-Charles/gup/blob/main/.github/SECURITY.md
 
 ## What gup deliberately does NOT do
 
