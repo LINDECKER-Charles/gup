@@ -17,7 +17,10 @@ afterEach(async () => {
 });
 
 /** Stands for the menu's run tracker: the module only hands it to the observer slot. */
-const MENU_RUNS = new ManualRunTracker(() => {});
+const MENU_RUNS = new ManualRunTracker(
+  () => {},
+  () => new Date(),
+);
 
 async function moduleWith(services?: () => SchedulerServices | { error: string }) {
   fixture = await schedulerFixture();

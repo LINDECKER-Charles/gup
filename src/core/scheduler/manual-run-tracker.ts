@@ -21,28 +21,41 @@ import type { PreparedRun } from "./manual-run.js";
  * last run after each attempt of that schedule; an update not attempted yet
  * counts as stopped, which is the truth if gup dies halfway through. A run
  * the user declined never sends an attempt, and records nothing.
+ *
+ * It also knows when the run ended: the in-screen launcher only returns its
+ * report once the user leaves the results screen, which is not when the
+ * updates finished.
  */
 
-/** Store what a prepared run did so far (`ManualRun.settle`). */
-export type SettleRun = (prepared: PreparedRun, report: UpdateReport) => void;
+/** Store what a prepared run did so far (`ManualRun.settle`), as of `endedAt`. */
+export type SettleRun = (prepared: PreparedRun, report: UpdateReport, endedAt: Date) => void;
 
 interface ArmedRun {
   readonly prepared: PreparedRun;
   /** Latest outcome per package key: a retry replaces the first attempt. */
   readonly entries: Map<string, OutcomeEntry>;
+  /** When its latest attempt ended or the batch stopped; null before either. */
+  endedAt: Date | null;
 }
 
 export class ManualRunTracker implements UpdateObserver {
   readonly #settle: SettleRun;
+  readonly #clock: () => Date;
   readonly #armed = new Map<string, ArmedRun>();
 
-  constructor(settle: SettleRun) {
+  constructor(settle: SettleRun, clock: () => Date) {
     this.#settle = settle;
+    this.#clock = clock;
   }
 
   /** The prepared run's updates are about to be launched: record their attempts. */
   arm(prepared: PreparedRun): void {
-    this.#armed.set(prepared.schedule.id, { prepared, entries: new Map() });
+    this.#armed.set(prepared.schedule.id, { prepared, entries: new Map(), endedAt: null });
+  }
+
+  /** When the armed run of `scheduleId` last ended an attempt (or stopped); null if it never did. */
+  endedAt(scheduleId: string): Date | null {
+    return this.#armed.get(scheduleId)?.endedAt ?? null;
   }
 
   /** The schedule's run was recorded from its report: stop listening for it. */
@@ -76,6 +89,7 @@ export class ManualRunTracker implements UpdateObserver {
   }
 
   #record(armed: ArmedRun): void {
-    this.#settle(armed.prepared, buildReport([...armed.entries.values()], []));
+    armed.endedAt = this.#clock();
+    this.#settle(armed.prepared, buildReport([...armed.entries.values()], []), armed.endedAt);
   }
 }

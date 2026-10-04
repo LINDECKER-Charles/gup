@@ -196,6 +196,25 @@ describe("SchedulesController run now", () => {
     });
   });
 
+  it("dates a run at its last update, not when the results screen is left", async () => {
+    const { controller, fixture } = await controllerWith({ scan: outdated });
+    const created = await controller.create(draft);
+    if (!created.isSaved) throw new Error("not saved");
+    const { id } = created.schedule;
+    const prepared = await controller.prepareRun(id);
+    if ("error" in prepared) throw new Error(prepared.error);
+    const updated = outcome("Git.Git");
+    const lastUpdateEnded = new Date(NOW.getTime() + 4_000);
+    fixture.clock.now = lastUpdateEnded;
+    controller.runTracker.finished({ item: attempt("winget:Git.Git", id), outcome: updated });
+    fixture.clock.now = new Date(NOW.getTime() + 600_000);
+    const report = buildReport([{ key: "winget:Git.Git", providerId: "winget", outcome: updated }], []);
+    expect(controller.recordRun(prepared, report)).toMatchObject({
+      status: "success",
+      finishedAt: lastUpdateEnded.toISOString(),
+    });
+  });
+
   it("stops listening once the launcher's report is recorded", async () => {
     const { controller } = await controllerWith({ scan: outdated });
     const created = await controller.create(draft);

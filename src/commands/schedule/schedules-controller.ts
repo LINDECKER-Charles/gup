@@ -51,7 +51,10 @@ export class SchedulesController implements SchedulesPort {
 
   constructor(services: Services) {
     this.#services = services;
-    this.#tracker = new ManualRunTracker((prepared, report) => this.#settle(prepared, report));
+    this.#tracker = new ManualRunTracker(
+      (prepared, report, endedAt) => void this.#settle(prepared, report, endedAt),
+      () => this.#ready()?.clock() ?? new Date(),
+    );
   }
 
   /** Records the view's "run now" when its updates run outside the screen. */
@@ -164,15 +167,26 @@ export class SchedulesController implements SchedulesPort {
     }
   }
 
+  /**
+   * The in-screen launcher hands its report over once the user leaves the
+   * results screen: the run ended with its last update, which the tracker
+   * saw, not now.
+   */
   recordRun(prepared: PreparedRun, report: UpdateReport | null): ScheduleRunRecord | null {
-    this.#tracker.disarm(prepared.schedule.id);
-    return this.#settle(prepared, report);
+    const { id } = prepared.schedule;
+    const endedAt = this.#tracker.endedAt(id) ?? undefined;
+    this.#tracker.disarm(id);
+    return this.#settle(prepared, report, endedAt);
   }
 
-  #settle(prepared: PreparedRun, report: UpdateReport | null): ScheduleRunRecord | null {
+  #settle(
+    prepared: PreparedRun,
+    report: UpdateReport | null,
+    endedAt?: Date,
+  ): ScheduleRunRecord | null {
     const services = this.#ready();
     this.#snapshot = null;
-    return services ? manualRun(services).settle(prepared, report) : null;
+    return services ? manualRun(services).settle(prepared, report, endedAt) : null;
   }
 
   /**

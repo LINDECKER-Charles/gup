@@ -61,15 +61,20 @@ export class ManualRun {
   /**
    * Store what the prepared run did as the schedule's last run: `report`
    * holds the updates attempted so far (null: there was nothing to update);
-   * a planned update it does not hold counts as stopped by the user.
+   * a planned update it does not hold counts as stopped by the user. The run
+   * ended at `endedAt`, by default now.
    */
-  settle(prepared: PreparedRun, report: UpdateReport | null): ScheduleRunRecord | null {
+  settle(
+    prepared: PreparedRun,
+    report: UpdateReport | null,
+    endedAt: Date = this.#deps.clock(),
+  ): ScheduleRunRecord | null {
     const { schedule, plan, startedAt } = prepared;
     const records = summarizeRun([{ schedule, kind: "manual" }], {
       plan,
       report,
       startedAt,
-      finishedAt: this.#deps.clock(),
+      finishedAt: endedAt,
       cancelledMessage: MANUAL_STOP_MESSAGE,
     });
     const record = records.get(schedule.id) ?? null;

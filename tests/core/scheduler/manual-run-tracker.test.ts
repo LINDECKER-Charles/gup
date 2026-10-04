@@ -36,10 +36,14 @@ function item(key: string, scheduleId?: string): PlannedUpdate {
 }
 
 function tracker() {
-  const settled: { prepared: PreparedRun; report: UpdateReport }[] = [];
-  const observer = new ManualRunTracker((run, report) => void settled.push({ prepared: run, report }));
+  const settled: { prepared: PreparedRun; report: UpdateReport; endedAt: Date }[] = [];
+  const clock = { now: PLANNED_AT };
+  const observer = new ManualRunTracker(
+    (run, report, endedAt) => void settled.push({ prepared: run, report, endedAt }),
+    () => clock.now,
+  );
   const keysOf = (index: number) => settled[index]?.report.entries.map((entry) => entry.key);
-  return { observer, settled, keysOf };
+  return { observer, settled, keysOf, clock };
 }
 
 describe("ManualRunTracker", () => {
@@ -58,6 +62,19 @@ describe("ManualRunTracker", () => {
       outcome("Git.Git"),
       retried,
     ]);
+  });
+
+  it("knows when the run's latest attempt ended, not when it is asked", () => {
+    const { observer, settled, clock } = tracker();
+    const run = prepared();
+    observer.arm(run);
+    expect(observer.endedAt(run.schedule.id)).toBeNull();
+    const ended = new Date("2026-10-05T14:00:04Z");
+    clock.now = ended;
+    observer.finished({ item: item("winget:Git.Git", run.schedule.id), outcome: outcome("Git.Git") });
+    clock.now = new Date("2026-10-05T14:10:00Z");
+    expect(observer.endedAt(run.schedule.id)).toEqual(ended);
+    expect(settled[0]?.endedAt).toEqual(ended);
   });
 
   it("records a batch stopped before any attempt", () => {

@@ -371,7 +371,10 @@ crontab line; what runs, every 15 minutes, nothing resident, how to remove).
 tracker is armed when something is outdated) → nothing outdated: recorded at
 once; otherwise `ctx.updates.launch(scan rows, { scheduleId, returnTo:
 "schedules" })`. A report (in-screen run view) is recorded through
-`recordRun`, which disarms the tracker. `null` means declined or run outside
+`recordRun`, which disarms the tracker. The record ends when the run's last
+update ended, as the tracker saw it: the in-screen launcher only resolves
+once the user leaves the results screen, and dating the run then would
+count the reading time as run time. `null` means declined or run outside
 the screen: the session may be ending, so the view does nothing more, and the
 tracker — an `UpdateObserver` installed by the scheduler module for the menu
 — records the outside run from its attempts: after each `finished` (latest
