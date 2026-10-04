@@ -3,6 +3,7 @@ import { win32 as winPath } from "node:path";
 import { run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * MSYS2 — the pacman package set living *inside* an MSYS2 root (msys2-runtime,
@@ -71,8 +72,9 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class Msys2Provider implements Provider {
   readonly id = "msys2";
   readonly displayName = "MSYS2 (pacman)";
-  readonly installHint =
-    "https://www.msys2.org/ — installeur officiel (racine par défaut C:\\msys64)";
+  get installHint(): string {
+    return TEXT.installHint;
+  }
   /** MSYS2 is a Windows distribution of the pacman toolchain. */
   readonly platforms = PLATFORMS.windows;
 
@@ -89,7 +91,7 @@ export class Msys2Provider implements Provider {
 
   async update(packageId: string): Promise<UpdateOutcome> {
     const pacman = findPacmanExe(process.env);
-    if (!pacman) return deferred(packageId, NO_ROOT_MESSAGE);
+    if (!pacman) return deferred(packageId, TEXT.noRoot);
     const failure = await syncTargets(pacman, [packageId]);
     if (!failure) return { id: packageId, success: true };
     return { id: packageId, success: false, message: failure };
@@ -98,7 +100,7 @@ export class Msys2Provider implements Provider {
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
     if (packages.length === 0) return [];
     const pacman = findPacmanExe(process.env);
-    if (!pacman) return packages.map((p) => deferred(p.id, NO_ROOT_MESSAGE));
+    if (!pacman) return packages.map((p) => deferred(p.id, TEXT.noRoot));
     // One transaction for the whole selection: pacman resolves the dependency
     // set once, which is strictly safer than N sequential single-package
     // transactions leaving the root half-upgraded in between.
@@ -110,17 +112,30 @@ export class Msys2Provider implements Provider {
   }
 }
 
-const NO_ROOT_MESSAGE =
-  "Racine MSYS2 introuvable — définir MSYS2_ROOT sur le dossier d'installation.";
-
-const SYNC_FAILED_MESSAGE = "pacman a terminé en erreur — voir sa sortie ci-dessus.";
-
-const STILL_PENDING_MESSAGE =
-  "Toujours listé par pacman -Qu après la transaction : mise à jour non appliquée.";
-
-const BASE_NOTE = "base locale (pas de -Sy au scan)";
-const CORE_NOTE = "cœur MSYS2 : relancer les shells MSYS2 après";
-const IGNORED_NOTE = "ignoré par pacman (IgnorePkg / dépôt exclu) — sera forcé";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    installHint: "https://www.msys2.org/ — official installer (default root C:\\msys64)",
+    noRoot: "MSYS2 root not found — set MSYS2_ROOT to the installation folder.",
+    syncFailed: "pacman ended with an error — see its output above.",
+    stillPending: "Still listed by pacman -Qu after the transaction: update not applied.",
+    baseNote: "local database (no -Sy at scan time)",
+    coreNote: "MSYS2 core: restart the MSYS2 shells afterwards",
+    ignoredNote: "ignored by pacman (IgnorePkg / excluded repository) — will be forced",
+    spawnFailed: (reason: string) => `Could not start pacman: ${reason}`,
+  },
+  fr: {
+    installHint: "https://www.msys2.org/ — installeur officiel (racine par défaut C:\\msys64)",
+    noRoot: "Racine MSYS2 introuvable — définir MSYS2_ROOT sur le dossier d'installation.",
+    syncFailed: "pacman a terminé en erreur — voir sa sortie ci-dessus.",
+    stillPending:
+      "Toujours listé par pacman -Qu après la transaction : mise à jour non appliquée.",
+    baseNote: "base locale (pas de -Sy au scan)",
+    coreNote: "cœur MSYS2 : relancer les shells MSYS2 après",
+    ignoredNote: "ignoré par pacman (IgnorePkg / dépôt exclu) — sera forcé",
+    spawnFailed: (reason) => `Lancement de pacman impossible : ${reason}`,
+  },
+});
 
 /**
  * Mirrors `alpm_pkg_is_core_package()` in msys2/msys2-pacman
@@ -187,9 +202,9 @@ export function parsePacmanUpgrades(stdout: string): OutdatedPackage[] {
 }
 
 function buildNote(name: string, trailing: string): string {
-  const parts = [BASE_NOTE];
-  if (isCorePackage(name)) parts.push(CORE_NOTE);
-  if (/\[[^\]]+\]/.test(trailing)) parts.push(IGNORED_NOTE);
+  const parts = [TEXT.baseNote];
+  if (isCorePackage(name)) parts.push(TEXT.coreNote);
+  if (/\[[^\]]+\]/.test(trailing)) parts.push(TEXT.ignoredNote);
   return parts.join(" · ");
 }
 
@@ -220,15 +235,15 @@ async function queryUpgradable(pacman: string): Promise<string | null> {
 
 /**
  * Upgrade `targets` in a single transaction. Returns null on success, or the
- * French reason to show the user. `--needed` keeps a target that turned out to
- * be current from being reinstalled for nothing.
+ * reason to show the user. `--needed` keeps a target that turned out to be
+ * current from being reinstalled for nothing.
  */
 async function syncTargets(pacman: string, targets: string[]): Promise<string | null> {
   try {
     const res = await runInherit(pacman, ["-S", "--needed", "--noconfirm", ...targets]);
-    return res.failed ? SYNC_FAILED_MESSAGE : null;
+    return res.failed ? TEXT.syncFailed : null;
   } catch (err) {
-    return `Lancement de pacman impossible : ${describeError(err)}`;
+    return TEXT.spawnFailed(describeError(err));
   }
 }
 
@@ -250,7 +265,7 @@ async function confirmUpgraded(
   return packages.map((p) => {
     const stillPending = pending === null ? failure !== null : pending.has(p.id);
     if (!stillPending) return { id: p.id, success: true };
-    return { id: p.id, success: false, message: failure ?? STILL_PENDING_MESSAGE };
+    return { id: p.id, success: false, message: failure ?? TEXT.stillPending };
   });
 }
 

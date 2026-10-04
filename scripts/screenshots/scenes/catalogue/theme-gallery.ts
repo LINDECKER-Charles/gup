@@ -13,21 +13,26 @@ import { checkWingetAndPnpm } from "./package-plays.js";
  */
 const SHOWN_ELSEWHERE: ReadonlySet<ThemeId> = new Set(["terminal", "auto"]);
 
+/** `theme`'s scene; its title and alt text name the theme as the app does when they are read. */
 function themeScene(theme: ThemeId): Scene {
-  const label = THEME_LABELS[theme];
   return {
     id: `theme-${theme}`,
-    title: `gup — ${VIEW_LABELS.packages} · ${label}`,
-    alt:
-      `The Paquets view in the ${label} theme, with packages checked, the cursor row ` +
-      "highlighted and the selection bar's button.",
+    get title() {
+      return `gup — ${VIEW_LABELS.packages} · ${THEME_LABELS[theme]}`;
+    },
+    get alt() {
+      return (
+        `The Packages view in the ${THEME_LABELS[theme]} theme, with packages checked, the ` +
+        "cursor row highlighted and the selection bar's button."
+      );
+    },
     size: SCENE_SIZES.default,
     fixture: () => appFixture({ settings: { theme: { id: theme } } }),
     play: checkWingetAndPnpm,
   };
 }
 
-/** The Paquets view of `packages-select` in every other built-in theme, in the picker's order. */
+/** The Packages view of `packages-select` in every other built-in theme, in the picker's order. */
 export const THEME_GROUP: SceneGroup = {
   title: "Themes",
   scenes: THEME_IDS.filter((theme) => !SHOWN_ELSEWHERE.has(theme)).map(themeScene),

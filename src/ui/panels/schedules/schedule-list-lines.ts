@@ -8,22 +8,21 @@ import type {
 } from "../../../core/scheduler/model/types.js";
 import type { TriggerHealth } from "../../../core/scheduler/trigger/trigger-health.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
-import { formatDuration, formatRelative } from "../../text/fr-format.js";
+import { formatDuration, formatRelative } from "../../text/format.js";
 import {
-  DISABLED_NEXT_RUN,
   NEVER_RAN,
   recurrenceLabel,
   runStatusLabel,
+  SCHEDULE_LABELS,
   targetResultLabel,
   triggerLine,
 } from "../../text/schedule/schedule-labels.js";
 import {
   LIST_HEADERS,
-  NEVER_RAN_DETAIL,
   NO_UPDATE_MARK,
   REPAIR_KEY,
+  SCHEDULE_MENU_LABELS,
   SCHEDULE_NOTICES,
-  TRIGGER_CHECKING,
   lastRunHeading,
   nextRunDetail,
 } from "../../text/schedule/schedule-menu-labels.js";
@@ -31,7 +30,7 @@ import { fillLine, fit, seg, type Line, type Tone } from "../../tui/styled-lines
 import type { SchedulesSnapshot, TriggerSummary } from "./schedules-port.js";
 
 /**
- * The Planification list drawn as lines: the trigger's state, one row per
+ * The Schedules list drawn as lines: the trigger's state, one row per
  * schedule, then what the schedule under the cursor covers and what its
  * last run did. Pure: the clock and the provider names are passed in.
  */
@@ -97,7 +96,7 @@ export function listLines(context: ListRenderContext): ListRender {
 /** The line about the OS trigger, and a blank one; nothing when no schedule exists. */
 function triggerLines(context: ListRenderContext): Line[] {
   const { trigger } = context;
-  if (!trigger) return [[seg(TRIGGER_CHECKING, "muted")], []];
+  if (!trigger) return [[seg(SCHEDULE_MENU_LABELS.triggerChecking, "muted")], []];
   // Nothing enabled: no trigger is needed, whatever the platform offers.
   if (trigger.health.kind === "none") return [];
   if (trigger.unsupported !== undefined) {
@@ -122,7 +121,7 @@ function healthTone(health: TriggerHealth): Tone {
  * not all fit, the count and the next run go, then the last run keeps only
  * its mark — the details under the table give both in full — and only then
  * does the wider of the name and the recurrence shrink: on an 80-column
- * terminal a recurrence keeps its time (`le 15 de chaque mois à 09:00`).
+ * terminal a recurrence keeps its time (`monthly on the 15th at 09:00`).
  */
 function columnsFor(context: ListRenderContext): Columns {
   const natural = naturalWidths(context);
@@ -219,9 +218,9 @@ function rowLine(
   ];
 }
 
-/** The next occurrence in words, or "désactivée". */
+/** The next occurrence in words, or "disabled". */
 function nextRun(schedule: Schedule, now: Date): string {
-  if (!schedule.enabled) return DISABLED_NEXT_RUN;
+  if (!schedule.enabled) return SCHEDULE_LABELS.disabledNextRun;
   const [next] = upcomingRuns(schedule.recurrence, now, 1);
   return next ? formatRelative(next, now) : NEVER_RAN;
 }
@@ -267,7 +266,7 @@ function lastRunLines(
 
 function neverRanLines(schedule: Schedule, context: ListRenderContext): Line[] {
   return [
-    [seg(NEVER_RAN_DETAIL, "muted")],
+    [seg(SCHEDULE_MENU_LABELS.neverRanDetail, "muted")],
     ...schedule.targets.map((target): Line => [
       seg(`${MARGIN}${STATUS_GLYPHS.pending} `, "muted"),
       seg(`${fit(context.providerName(target.providerId), PROVIDER_WIDTH)} `),

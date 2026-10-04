@@ -42,8 +42,13 @@ export function menuPreferencesSource(
   isKnownProvider: (providerId: string) => boolean,
 ): UiPreferencesSource {
   return cachedView(settings, ["interface", "scan"], (): UiPreferences => {
-    const { density: _density, glyphs: _glyphs, mouse: _mouse, ...menu } =
-      settings.get("interface");
+    const {
+      density: _density,
+      glyphs: _glyphs,
+      mouse: _mouse,
+      language: _language,
+      ...menu
+    } = settings.get("interface");
     const scan = settings.get("scan");
     return {
       ...menu,

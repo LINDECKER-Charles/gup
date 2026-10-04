@@ -8,6 +8,7 @@ import type { InstallSource } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * xcodes (XcodesOrg/xcodes) — the Xcode version manager. macOS-only, since the
@@ -86,14 +87,10 @@ export class XcodesProvider implements Provider {
         id: PACKAGE_ID,
         binary: "xcodes",
         packageIds: PACKAGE_IDS,
-        manualMessage: MANUAL_MESSAGE,
+        manualMessage: TEXT.manualStep,
       });
     } catch {
-      return {
-        id: PACKAGE_ID,
-        success: false,
-        message: "xcodes est introuvable ou la mise à jour n'a pas pu être lancée.",
-      };
+      return { id: PACKAGE_ID, success: false, message: TEXT.unreachable };
     }
   }
 
@@ -113,20 +110,34 @@ const PACKAGE_ID = "xcodes";
  * whichever keg is actually installed. The other ids are omitted on purpose —
  * xcodes is macOS-only, so a scoop/choco/winget/apt/dnf id would necessarily be
  * invented and would point an upgrade command at a package that does not exist.
- * Without a matching id, runPmUpdate falls back to MANUAL_MESSAGE instead of
+ * Without a matching id, runPmUpdate falls back to the manual step instead of
  * running anything.
  */
 const PACKAGE_IDS = { brew: "xcodes" };
 
-const MANUAL_MESSAGE =
-  "Installation manuelle : télécharger la dernière version sur " +
-  "https://github.com/XcodesOrg/xcodes/releases et remplacer le binaire xcodes.";
+const RELEASES_PAGE = "https://github.com/XcodesOrg/xcodes/releases";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    manualStep:
+      `Manual install: download the latest version from ${RELEASES_PAGE}` +
+      " and replace the xcodes binary.",
+    manualNote: "manual install — update it by hand",
+    unreachable: "xcodes not found, or the update could not be started.",
+  },
+  fr: {
+    manualStep:
+      `Installation manuelle : télécharger la dernière version sur ${RELEASES_PAGE}` +
+      " et remplacer le binaire xcodes.",
+    manualNote: "installation manuelle — mise à jour à faire à la main",
+    unreachable: "xcodes est introuvable ou la mise à jour n'a pas pu être lancée.",
+  },
+});
 
 /** Announce, in the scan row, what update() will actually be able to do. */
 function updateNote(source: InstallSource): string {
-  return source === "manual"
-    ? "installation manuelle — mise à jour à faire à la main"
-    : describeSource(source);
+  return source === "manual" ? TEXT.manualNote : describeSource(source);
 }
 
 /**

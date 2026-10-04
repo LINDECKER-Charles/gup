@@ -21,8 +21,8 @@ import {
 /**
  * Tab 4, Debug: the newest records of the debug log, newest first, one line
  * each. `l` steps the level shown (never the level written: that is
- * `--log-level`, `GUP_LOG_LEVEL` or Options › Journal de debug, shown in the
- * header), `/` filters, Entrée shows a record's context and data, `x` writes
+ * `--log-level`, `GUP_LOG_LEVEL` or Options › Debug log, shown in the
+ * header), `/` filters, Enter shows a record's context and data, `x` writes
  * the diagnostic archive.
  */
 

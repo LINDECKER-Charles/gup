@@ -1,6 +1,7 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 
@@ -58,7 +59,11 @@ export class ArduinoCliProvider implements Provider {
       const res = await runInherit("arduino-cli", ["lib", "upgrade", id]);
       return { id: packageId, success: !res.failed };
     }
-    return { id: packageId, success: false, message: "id inconnu" };
+    return {
+      id: packageId,
+      success: false,
+      message: localize({ en: "unknown id", fr: "id inconnu" }),
+    };
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {

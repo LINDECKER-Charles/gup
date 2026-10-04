@@ -21,39 +21,39 @@ import {
 } from "../../text/settings/theme-labels.js";
 import { seg } from "../../tui/styled-lines.js";
 import type { OptionRow, OptionsControls, OptionsHost, SectionFactory } from "./option-row.js";
-import { choiceRow, choicesOf, interfaceRow } from "./option-rows.js";
+import { choiceRow, choicesOf, interfaceRow, type RowBuilder } from "./option-rows.js";
 import { ColorEditor } from "./views/color-editor.js";
 import { ThemePicker } from "./views/theme-picker.js";
 
 /**
- * APPARENCE: the theme (picked with a live preview of the whole app, its
+ * APPEARANCE: the theme (picked with a live preview of the whole app, its
  * contrast status as the hint), the custom colours of that theme, the
  * contrast level, the symbol set and the density.
  */
 export const appearanceSection: SectionFactory = (controls, host) => {
-  const rows = [
-    themeRow(controls, host),
-    colorsRow(controls, host),
-    contrastRow(controls, host),
-    interfaceRow({
-      id: "glyphs",
-      label: OPTION_LABELS.glyphs,
-      choices: choicesOf(GLYPH_VALUES),
-      hint: OPTION_HINTS.glyphs,
-      read: (settings) => settings.glyphs,
-      patch: (glyphs) => ({ glyphs }),
-    })(controls, host),
-    interfaceRow({
-      id: "density",
-      label: OPTION_LABELS.density,
-      choices: choicesOf(DENSITY_VALUES),
-      hint: OPTION_HINTS.density,
-      read: (settings) => settings.density,
-      patch: (density) => ({ density }),
-    })(controls, host),
-  ];
+  const rows = [themeRow, colorsRow, contrastRow, GLYPHS_ROW, DENSITY_ROW].map((build) =>
+    build(controls, host),
+  );
   return { id: "appearance", title: OPTIONS_SECTIONS.appearance, rows: () => rows };
 };
+
+const GLYPHS_ROW: RowBuilder = interfaceRow(() => ({
+  id: "glyphs",
+  label: OPTION_LABELS.glyphs,
+  choices: choicesOf(GLYPH_VALUES),
+  hint: OPTION_HINTS.glyphs,
+  read: (settings) => settings.glyphs,
+  patch: (glyphs) => ({ glyphs }),
+}));
+
+const DENSITY_ROW: RowBuilder = interfaceRow(() => ({
+  id: "density",
+  label: OPTION_LABELS.density,
+  choices: choicesOf(DENSITY_VALUES),
+  hint: OPTION_HINTS.density,
+  read: (settings) => settings.density,
+  patch: (density) => ({ density }),
+}));
 
 function themeRow(controls: OptionsControls, host: OptionsHost): OptionRow {
   const picker = (): ThemePicker => new ThemePicker({ controls, host });

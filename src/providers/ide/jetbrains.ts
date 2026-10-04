@@ -9,6 +9,7 @@ import {
   describeSource,
   type InstallSource,
 } from "../../core/install-source.js";
+import { localized } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface ProductInfo {
@@ -87,7 +88,7 @@ export class JetBrainsProvider implements Provider {
       return {
         id: packageId,
         success: false,
-        message: `IDE ${packageId} introuvable — re-scanner ?`,
+        message: TEXT.notFound(packageId),
       };
     }
     return updateBySource(target);
@@ -100,15 +101,31 @@ export class JetBrainsProvider implements Provider {
   }
 }
 
-const TOOLBOX_SKIP = "Géré par Toolbox — ouvrir Toolbox pour appliquer.";
 const JETBRAINS_SITE = "https://www.jetbrains.com";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    notFound: (productCode: string) => `IDE ${productCode} not found — scan again?`,
+    toolboxSkip: "Managed by Toolbox — open Toolbox to apply it.",
+    noMapping: (source: string, productCode: string) =>
+      `No ${source} mapping for ${productCode}.`,
+    manualInstall: (downloadPage: string) => `Manual install — ${downloadPage}`,
+  },
+  fr: {
+    notFound: (productCode) => `IDE ${productCode} introuvable — re-scanner ?`,
+    toolboxSkip: "Géré par Toolbox — ouvrir Toolbox pour appliquer.",
+    noMapping: (source, productCode) => `Pas de mapping ${source} pour ${productCode}.`,
+    manualInstall: (downloadPage) => `Installation manuelle — ${downloadPage}`,
+  },
+});
 
 /** Route the update to whichever channel actually owns the install. */
 async function updateBySource(target: ProductInfo): Promise<UpdateOutcome> {
   const id = target.productCode;
   switch (target.source) {
     case "toolbox":
-      return { id, success: false, skipped: true, message: TOOLBOX_SKIP };
+      return { id, success: false, skipped: true, message: TEXT.toolboxSkip };
     case "scoop":
     case "choco":
     case "winget":
@@ -120,7 +137,7 @@ async function updateBySource(target: ProductInfo): Promise<UpdateOutcome> {
         id,
         target.source,
         packageIdsFor(id),
-        `Pas de mapping ${target.source} pour ${id}.`,
+        TEXT.noMapping(target.source, id),
       );
     case "manual":
     default:
@@ -128,7 +145,7 @@ async function updateBySource(target: ProductInfo): Promise<UpdateOutcome> {
         id,
         success: false,
         skipped: true,
-        message: `Installation manuelle — ${JETBRAINS_SITE}/${productSlug(id)}/download/`,
+        message: TEXT.manualInstall(`${JETBRAINS_SITE}/${productSlug(id)}/download/`),
       };
   }
 }

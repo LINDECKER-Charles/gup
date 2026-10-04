@@ -1,5 +1,6 @@
 import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface PnpmOutdatedEntry {
@@ -58,20 +59,31 @@ export class PnpmGlobalProvider implements Provider {
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
-    const res = await runInherit("pnpm", ["add", "-g", `${packageId}@latest`]);
+    const args = packageId === PNPM_PACKAGE ? SELF_UPDATE : ["add", "-g", `${packageId}@latest`];
+    const res = await runInherit("pnpm", args);
     return { id: packageId, success: !res.failed };
   }
 
+  /** The others in one `add -g`, then pnpm itself, so it is replaced after it ran the batch. */
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
-    if (packages.length === 0) return [];
-    const res = await runInherit("pnpm", [
-      "add",
-      "-g",
-      ...packages.map((p) => `${p.id}@latest`),
-    ]);
-    return packages.map((p) => ({ id: p.id, success: !res.failed }));
+    const others = packages.filter((p) => p.id !== PNPM_PACKAGE);
+    const outcomes = new Map<string, UpdateOutcome>();
+    if (others.length > 0) {
+      const res = await runInherit("pnpm", ["add", "-g", ...others.map((p) => `${p.id}@latest`)]);
+      for (const p of others) outcomes.set(p.id, { id: p.id, success: !res.failed });
+    }
+    if (others.length < packages.length) outcomes.set(PNPM_PACKAGE, await this.update(PNPM_PACKAGE));
+    return packages.map((p) => outcomes.get(p.id) ?? { id: p.id, success: false });
   }
 }
+
+/**
+ * pnpm lists itself among the global packages once `pnpm self-update` put
+ * it there, and refuses `pnpm add -g pnpm` (ERR_PNPM_GLOBAL_PNPM_INSTALL,
+ * "Use the pnpm self-update command"): it updates through its own command.
+ */
+const PNPM_PACKAGE = "pnpm";
+const SELF_UPDATE = ["self-update"];
 
 /** pnpm's report as an object, or null when stdout holds none. */
 function parseReport(stdout: string): Record<string, PnpmOutdatedEntry> | null {
@@ -105,5 +117,8 @@ function pnpmFailure(output: string): string | null {
   const code = PNPM_ERROR_CODE.exec(codeLine)?.[0] ?? "";
   const sameLine = codeLine.slice(codeLine.indexOf(code) + code.length).trim();
   const message = [sameLine, ...lines.slice(index + 1)].filter((part) => part !== "").join(" ");
-  return `pnpm outdated a échoué (${code}) : ${message}`;
+  return localize({
+    en: `pnpm outdated failed (${code}): ${message}`,
+    fr: `pnpm outdated a échoué (${code}) : ${message}`,
+  });
 }

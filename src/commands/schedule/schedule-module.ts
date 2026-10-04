@@ -5,11 +5,10 @@ import { batchLockLocation, createBatchGuard } from "../../core/update/batch-loc
 import { observeUpdates, setBatchGuard } from "../../core/update/update-extensions.js";
 import type { UpdateObserver } from "../../core/update/update-ports.js";
 import {
-  DIAGNOSTIC_LABEL,
-  NO_ACTIVE_SCHEDULE,
   REPAIR_COMMAND,
-  TRIGGER_REPAIRED,
+  SCHEDULE_CLI_LABELS,
 } from "../../ui/text/schedule/schedule-cli-labels.js";
+import { SCHEDULE_COMMAND_LABELS } from "../../ui/text/schedule/schedule-command-labels.js";
 import { triggerLine } from "../../ui/text/schedule/schedule-labels.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "../cli/cli-module.js";
 import { addCommand, disableCommand, enableCommand, removeCommand } from "./crud-commands.js";
@@ -33,15 +32,16 @@ import { installCommand, uninstallCommand } from "./trigger-commands.js";
  * command, the batch guard that makes an interactive update wait for a
  * scheduled one; self-heal of the OS trigger when the menu or a reporting
  * `gup schedule` command starts; for the menu, the observer that records a
- * "run now" whose updates leave the screen; the "Planification" line of
- * `gup doctor`.
+ * "run now" whose updates leave the screen; the scheduler's line of
+ * `gup doctor`. The help is read when commander is built, after startup
+ * chose the language.
  */
 
 export interface ScheduleModuleDeps {
   readonly services: () => SchedulerServices | { readonly error: string };
   readonly output: CommandOutput;
   readonly exit: (code: number) => void;
-  /** Records the menu's "run now" (the Planification view's run tracker). */
+  /** Records the menu's "run now" (the Schedules view's run tracker). */
   readonly menuRuns: () => UpdateObserver;
   /** The pipeline's process-wide observer slot. */
   readonly observe: (observer: UpdateObserver) => () => void;
@@ -75,7 +75,8 @@ export function createScheduleModule(deps: ScheduleModuleDeps): CliModule {
     async diagnostics(): Promise<readonly DiagnosticLine[]> {
       const services = deps.services();
       if ("error" in services) {
-        return [{ label: DIAGNOSTIC_LABEL, value: services.error, status: "warn" }];
+        const label = SCHEDULE_CLI_LABELS.diagnosticLabel;
+        return [{ label, value: services.error, status: "warn" }];
       }
       return [diagnosticOf(await readTriggerReport(services), services.clock())];
     },
@@ -83,9 +84,7 @@ export function createScheduleModule(deps: ScheduleModuleDeps): CliModule {
 }
 
 function registerCommands(program: Command, deps: ScheduleModuleDeps): void {
-  const schedule = program
-    .command("schedule")
-    .description("Met à jour automatiquement des paquets précis, à heure fixe.");
+  const schedule = program.command("schedule").description(SCHEDULE_COMMAND_LABELS.schedule);
   const run = (command: (services: SchedulerServices) => Promise<number>) => async () => {
     const services = deps.services();
     if ("error" in services) {
@@ -108,10 +107,11 @@ interface Registration {
 }
 
 function registerReports(schedule: Command, { deps, run }: Registration): void {
+  const labels = SCHEDULE_COMMAND_LABELS;
   schedule
     .command("list")
-    .description("Liste les planifications, leur prochaine et leur dernière exécution.")
-    .option("--json", "Sortie JSON")
+    .description(labels.list)
+    .option("--json", labels.json)
     .action((opts: { json?: boolean }) =>
       run((services) =>
         listSchedulesCommand(services, { json: opts.json === true }, deps.output),
@@ -119,8 +119,8 @@ function registerReports(schedule: Command, { deps, run }: Registration): void {
     );
   schedule
     .command("status")
-    .description("État du déclencheur système (tâche, agent launchd ou crontab).")
-    .option("--json", "Sortie JSON")
+    .description(labels.status)
+    .option("--json", labels.json)
     .action((opts: { json?: boolean }) =>
       run((services) => statusCommand(services, { json: opts.json === true }, deps.output))(),
     );
@@ -137,23 +137,25 @@ interface AddFlags {
 }
 
 function registerChanges(schedule: Command, { deps, run }: Registration): void {
+  const labels = SCHEDULE_COMMAND_LABELS;
+  const { placeholders } = labels;
   schedule
-    .command("add <cibles...>")
-    .description("Planifie des paquets (provider:paquet), jamais un provider entier.")
-    .option("--every <fréquence>", "daily, weekly ou monthly")
-    .option("--on <jour>", "weekly : lun…dim · monthly : 1 à 28 ou dernier")
-    .option("--at <HH:MM>", "Heure (défaut 09:00)")
-    .option("--cron <expression>", 'Expression cron à 5 champs, ex. "0 9 * * 1-5"')
-    .option("--name <nom>", "Nom de la planification")
-    .option("--no-catch-up", "Ne pas rattraper une exécution manquée")
-    .option("--disabled", "Créer la planification désactivée")
+    .command(`add <${placeholders.targets}...>`)
+    .description(labels.add)
+    .option(`--every <${placeholders.frequency}>`, labels.every)
+    .option(`--on <${placeholders.day}>`, labels.on)
+    .option("--at <HH:MM>", labels.at)
+    .option("--cron <expression>", labels.cron)
+    .option(`--name <${placeholders.name}>`, labels.name)
+    .option("--no-catch-up", labels.noCatchUp)
+    .option("--disabled", labels.disabled)
     .action((targets: string[], opts: AddFlags) =>
       run((services) => addCommand(services, addOptions(targets, opts), deps.output))(),
     );
   for (const [verb, description, command] of [
-    ["remove", "Supprime des planifications.", removeCommand],
-    ["enable", "Active des planifications.", enableCommand],
-    ["disable", "Désactive des planifications.", disableCommand],
+    ["remove", labels.remove, removeCommand],
+    ["enable", labels.enable, enableCommand],
+    ["disable", labels.disable, disableCommand],
   ] as const) {
     schedule
       .command(`${verb} <ids...>`)
@@ -163,21 +165,22 @@ function registerChanges(schedule: Command, { deps, run }: Registration): void {
 }
 
 function registerTrigger(schedule: Command, { deps, run }: Registration): void {
+  const labels = SCHEDULE_COMMAND_LABELS;
   schedule
     .command("run-now <id>")
-    .description("Exécute une planification maintenant, dans ce terminal.")
+    .description(labels.runNow)
     .action((id: string) => run((services) => runNowCommand(services, { id }, deps.output))());
   schedule
     .command("install")
-    .description("Installe ou répare le déclencheur système.")
-    .option("--launcher <lanceur>", "Windows : headless (défaut) ou direct")
+    .description(labels.install)
+    .option(`--launcher <${labels.placeholders.launcher}>`, labels.launcher)
     .action((opts: { launcher?: string }) =>
       run((services) => installCommand(services, launcherOf(opts), deps.output))(),
     );
   schedule
     .command("uninstall")
-    .description("Retire le déclencheur système et désactive les planifications.")
-    .option("--purge", "Supprime aussi les planifications et leur état")
+    .description(labels.uninstall)
+    .option("--purge", labels.purge)
     .action((opts: { purge?: boolean }) =>
       run((services) => uninstallCommand(services, { purge: opts.purge === true }, deps.output))(),
     );
@@ -205,19 +208,22 @@ async function heal(deps: ScheduleModuleDeps, isVisible: boolean): Promise<void>
   if ("error" in services || !services.sync) return;
   const enabled = services.repo.list().filter((schedule) => schedule.enabled).length;
   const result = await services.sync.heal(enabled);
-  if (isVisible && result.kind === "installed") deps.output.err(TRIGGER_REPAIRED);
+  if (isVisible && result.kind === "installed") {
+    deps.output.err(SCHEDULE_CLI_LABELS.triggerRepaired);
+  }
 }
 
 function diagnosticOf(report: TriggerReport, now: Date): DiagnosticLine {
   const { health } = report;
+  const label = SCHEDULE_CLI_LABELS.diagnosticLabel;
   if (health.kind === "none") {
-    return { label: DIAGNOSTIC_LABEL, value: NO_ACTIVE_SCHEDULE, status: "off" };
+    return { label, value: SCHEDULE_CLI_LABELS.noActiveSchedule, status: "off" };
   }
   const state = report.mechanism
     ? triggerLine(health, { mechanism: report.mechanism, now, repair: REPAIR_COMMAND })
     : (report.unsupported ?? "");
-  const value = `${report.enabledCount} active(s) — ${state}`;
-  return { label: DIAGNOSTIC_LABEL, value, status: health.kind === "active" ? "ok" : "warn" };
+  const value = SCHEDULE_CLI_LABELS.diagnosticValue(report.enabledCount, state);
+  return { label, value, status: health.kind === "active" ? "ok" : "warn" };
 }
 
 export const scheduleModule: CliModule = createScheduleModule({

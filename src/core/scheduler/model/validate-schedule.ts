@@ -1,6 +1,12 @@
+import { localized } from "../../i18n/localized.js";
 import { CronExpression } from "./cron.js";
 import { toCron } from "./recurrence.js";
-import { hasControlCharacter, packageIdProblem, targetKey } from "./schedule-target.js";
+import {
+  hasControlCharacter,
+  packageIdProblem,
+  TARGET_MESSAGES,
+  targetKey,
+} from "./schedule-target.js";
 import type {
   ProviderFacts,
   Recurrence,
@@ -10,10 +16,10 @@ import type {
 } from "./types.js";
 
 /**
- * Everything that makes a draft unschedulable, in French, field by field —
- * the CLI prints them, the editor shows each under its field. A schedule is
- * a short list of packages updated at most hourly, by providers that can
- * update without an administrator.
+ * Everything that makes a draft unschedulable, in the interface's languages,
+ * field by field — the CLI prints them, the editor shows each under its
+ * field. A schedule is a short list of packages updated at most hourly, by
+ * providers that can update without an administrator.
  */
 
 /** Updating a package more often than hourly only hammers its registry. */
@@ -35,10 +41,46 @@ const MAX_HOUR = 23;
 const MAX_MINUTE = 59;
 const MAX_WEEKDAY = 6;
 
-export const TOO_FREQUENT = "Fréquence trop élevée — au plus une exécution par heure";
-export const INVALID_TIME = "heure invalide (HH:MM attendu)";
-/** The name of a schedule that has no target to be named after yet. */
-const UNNAMED = "planification";
+export const VALIDATION_MESSAGES = localized({
+  en: {
+    tooFrequent: "Too frequent — at most one run per hour",
+    invalidTime: "invalid time (HH:MM expected)",
+    /** The name of a schedule that has no target to be named after yet. */
+    unnamed: "schedule",
+    nameRequired: "name required",
+    nameTooLong: (max: number) => `${max} characters at most`,
+    notWithinYear: "this expression does not fire within the coming year",
+    invalidWeekday: "invalid day of the week",
+    invalidMonthDay: (max: number) => `invalid day of the month (1 to ${max}, or the last)`,
+    cronRequired: "cron expression required",
+    cronTooLong: (max: number) => `cron expression too long (${max} characters at most)`,
+    noTarget: "at least one package required",
+    tooManyTargets: (max: number) => `${max} packages at most per schedule`,
+    duplicateTarget: "duplicate package",
+    adminOnly: (name: string) =>
+      `"${name}" asks for sudo/admin on every update: cannot be scheduled`,
+    tooManySchedules: (max: number) => `${max} schedules at most`,
+  },
+  fr: {
+    tooFrequent: "Fréquence trop élevée — au plus une exécution par heure",
+    invalidTime: "heure invalide (HH:MM attendu)",
+    unnamed: "planification",
+    nameRequired: "nom requis",
+    nameTooLong: (max) => `${max} caractères au plus`,
+    notWithinYear: "cette expression ne se déclenche pas dans l'année à venir",
+    invalidWeekday: "jour de la semaine invalide",
+    invalidMonthDay: (max) => `jour du mois invalide (1 à ${max}, ou le dernier)`,
+    cronRequired: "expression cron requise",
+    cronTooLong: (max) => `expression cron trop longue (${max} caractères au plus)`,
+    noTarget: "au moins un paquet requis",
+    tooManyTargets: (max) => `${max} paquets au plus par planification`,
+    duplicateTarget: "paquet en double",
+    adminOnly: (name) =>
+      `« ${name} » demande sudo/admin à chaque mise à jour : non planifiable`,
+    tooManySchedules: (max) => `${max} planifications au plus`,
+  },
+});
+
 /** Its packages installed machine-wide may ask for UAC. */
 const UAC_PRONE_PROVIDER = "winget";
 
@@ -66,7 +108,8 @@ export function validateDraft(
   if (horizon) issues.push({ field: "recurrence", message: horizon });
   issues.push(...targetIssues(draft.targets, context.providers));
   if (context.existingCount >= MAX_SCHEDULES) {
-    issues.push({ field: "schedules", message: `${MAX_SCHEDULES} planifications au plus` });
+    const message = VALIDATION_MESSAGES.tooManySchedules(MAX_SCHEDULES);
+    issues.push({ field: "schedules", message });
   }
   return issues;
 }
@@ -98,7 +141,7 @@ export function scheduleIssues(
 export function defaultScheduleName(targets: readonly ScheduleTarget[]): string {
   const [first] = targets;
   const rest = targets.length - 1;
-  const name = `${first?.packageId ?? UNNAMED}${rest > 0 ? ` +${rest}` : ""}`;
+  const name = `${first?.packageId ?? VALIDATION_MESSAGES.unnamed}${rest > 0 ? ` +${rest}` : ""}`;
   return name.length > MAX_NAME_LENGTH ? `${name.slice(0, MAX_NAME_LENGTH - 1)}…` : name;
 }
 
@@ -113,9 +156,9 @@ export function mayAskForUac(targets: readonly ScheduleTarget[]): boolean {
 
 function nameProblem(name: string): string | null {
   const trimmed = name.trim();
-  if (trimmed === "") return "nom requis";
-  if (trimmed.length > MAX_NAME_LENGTH) return `${MAX_NAME_LENGTH} caractères au plus`;
-  if (hasControlCharacter(trimmed)) return "caractère de contrôle interdit";
+  if (trimmed === "") return VALIDATION_MESSAGES.nameRequired;
+  if (trimmed.length > MAX_NAME_LENGTH) return VALIDATION_MESSAGES.nameTooLong(MAX_NAME_LENGTH);
+  if (hasControlCharacter(trimmed)) return TARGET_MESSAGES.controlCharacter;
   return null;
 }
 
@@ -126,7 +169,7 @@ function recurrenceProblem(recurrence: Recurrence, now: Date): string | null {
   const parsed = CronExpression.tryParse(toCron(recurrence));
   if (!parsed.ok) return parsed.reason;
   if (parsed.cron.minGapMinutes(now, MIN_INTERVAL_SAMPLE) < MIN_INTERVAL_MINUTES) {
-    return TOO_FREQUENT;
+    return VALIDATION_MESSAGES.tooFrequent;
   }
   return null;
 }
@@ -136,20 +179,20 @@ function horizonProblem(recurrence: Recurrence, now: Date): string | null {
   const parsed = CronExpression.tryParse(toCron(recurrence));
   const next = parsed.ok ? parsed.cron.nextRun(now) : null;
   if (next === null || next.getTime() - now.getTime() > MAX_HORIZON_DAYS * DAY_MS) {
-    return "cette expression ne se déclenche pas dans l'année à venir";
+    return VALIDATION_MESSAGES.notWithinYear;
   }
   return null;
 }
 
 function shapeProblem(recurrence: Recurrence): string | null {
   if (recurrence.kind === "cron") return expressionProblem(toCron(recurrence));
-  if (!isTimeOfDay(recurrence.at)) return INVALID_TIME;
+  if (!isTimeOfDay(recurrence.at)) return VALIDATION_MESSAGES.invalidTime;
   if (recurrence.kind === "weekly" && !isInRange(recurrence.weekday, 0, MAX_WEEKDAY)) {
-    return "jour de la semaine invalide";
+    return VALIDATION_MESSAGES.invalidWeekday;
   }
   if (recurrence.kind === "monthly" && recurrence.day !== "last") {
     if (!isInRange(recurrence.day, 1, MAX_MONTH_DAY)) {
-      return `jour du mois invalide (1 à ${MAX_MONTH_DAY}, ou le dernier)`;
+      return VALIDATION_MESSAGES.invalidMonthDay(MAX_MONTH_DAY);
     }
   }
   return null;
@@ -157,9 +200,9 @@ function shapeProblem(recurrence: Recurrence): string | null {
 
 /** A custom expression, blanks collapsed as it is stored and evaluated. */
 function expressionProblem(expression: string): string | null {
-  if (expression === "") return "expression cron requise";
+  if (expression === "") return VALIDATION_MESSAGES.cronRequired;
   if (expression.length > MAX_CRON_LENGTH) {
-    return `expression cron trop longue (${MAX_CRON_LENGTH} caractères au plus)`;
+    return VALIDATION_MESSAGES.cronTooLong(MAX_CRON_LENGTH);
   }
   return null;
 }
@@ -176,16 +219,20 @@ function targetIssues(
   targets: readonly ScheduleTarget[],
   providers: ProviderFacts,
 ): ValidationIssue[] {
-  if (targets.length === 0) return [{ field: "targets", message: "au moins un paquet requis" }];
+  if (targets.length === 0) {
+    return [{ field: "targets", message: VALIDATION_MESSAGES.noTarget }];
+  }
   if (targets.length > MAX_TARGETS_PER_SCHEDULE) {
-    const message = `${MAX_TARGETS_PER_SCHEDULE} paquets au plus par planification`;
+    const message = VALIDATION_MESSAGES.tooManyTargets(MAX_TARGETS_PER_SCHEDULE);
     return [{ field: "targets", message }];
   }
   const seen = new Set<string>();
   const issues: ValidationIssue[] = [];
   targets.forEach((target, index) => {
     const key = targetKey(target).toLowerCase();
-    const problem = seen.has(key) ? "paquet en double" : targetProblem(target, providers);
+    const problem = seen.has(key)
+      ? VALIDATION_MESSAGES.duplicateTarget
+      : targetProblem(target, providers);
     seen.add(key);
     if (problem) issues.push({ field: `target:${index}`, message: problem });
   });
@@ -197,8 +244,6 @@ function targetProblem(target: ScheduleTarget, providers: ProviderFacts): string
   if (packageProblem) return packageProblem;
   const fact = providers.lookup(target.providerId);
   if (!fact.isFound) return fact.error;
-  if (!fact.canUpdateUnattended) {
-    return `« ${fact.displayName} » demande sudo/admin à chaque mise à jour : non planifiable`;
-  }
+  if (!fact.canUpdateUnattended) return VALIDATION_MESSAGES.adminOnly(fact.displayName);
   return null;
 }

@@ -1,3 +1,4 @@
+import { localized } from "../i18n/localized.js";
 import { log } from "../log/log.js";
 import { isManualSkip, skippedAs } from "../update/finalize-outcome.js";
 import type { BatchHolder } from "../update/update-extensions.js";
@@ -69,11 +70,22 @@ export type TickOutcome =
   | { readonly kind: "deferred" }
   | { readonly kind: "ran"; readonly records: ReadonlyMap<string, ScheduleRunRecord> };
 
-export const SCHEDULED_RUN_MESSAGES = {
-  deadline: "durée maximale d'exécution atteinte",
-  stopped: "interrompu (arrêt du planificateur)",
-  offline: "aucun provider n'a pu être interrogé (hors ligne ?)",
-} as const;
+/**
+ * Why a due target got no update, stored with the run: in the language the
+ * tick speaks, which startup chose from the user's settings like any gup.
+ */
+export const SCHEDULED_RUN_MESSAGES = localized({
+  en: {
+    deadline: "maximum run time reached",
+    stopped: "interrupted (scheduler stopped)",
+    offline: "no provider could be queried (offline?)",
+  },
+  fr: {
+    deadline: "durée maximale d'exécution atteinte",
+    stopped: "interrompu (arrêt du planificateur)",
+    offline: "aucun provider n'a pu être interrogé (hors ligne ?)",
+  },
+});
 
 const IDLE: TickOutcome = { kind: "idle" };
 
@@ -324,8 +336,8 @@ function everyTargetFailed(runs: readonly ScheduleRun[], message: string): TickP
 }
 
 /**
- * The install a stop interrupted reads "interrompu", not as a user's skip —
- * what its provider recovered still said after it.
+ * The install a stop interrupted reads as interrupted by the scheduler, not
+ * as a user's skip — what its provider recovered still said after it.
  */
 function asStopped(report: UpdateReport): UpdateReport {
   const entries = report.entries.map((entry) =>

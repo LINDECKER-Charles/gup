@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968.0 594.0" width="968.0" height="594.0" role="img" aria-labelledby="t d">
-<title id="t">gup — Mise à jour</title>
+<title id="t">gup — Update</title>
 <desc id="d">End of an in-app update: five packages updated, PowerToys failed, and gup offers to retry it with a stronger strategy, the safe one first, or to leave the failure.</desc>
 <style>
 text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:16px}
@@ -27,13 +27,13 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <circle cx="22.0" cy="17.0" r="5.5" fill="#ff5f57"/>
 <circle cx="40.0" cy="17.0" r="5.5" fill="#febc2e"/>
 <circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
-<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Mise à jour</text>
+<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Update</text>
 <rect class="c0" x="16.0" y="42.0" width="936.0" height="17.0"/>
 <rect class="c1" x="203.2" y="297.0" width="561.6" height="17.0"/>
-<text class="c2 b" x="16.0" y="55.0" textLength="351.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  Mise à jour  │  6/6  │  02:27</text>
+<text class="c2 b" x="16.0" y="55.0" textLength="312.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  Update  │  6/6  │  02:27</text>
 <text class="c3" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
-<text class="c4" x="31.6" y="72.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Mise à jour </text>
-<text class="c3" x="133.0" y="72.0" textLength="819.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">────────────────────────────────────────────────────────────────────────────────────────────────────────╮</text>
+<text class="c4" x="31.6" y="72.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Update </text>
+<text class="c3" x="94.0" y="72.0" textLength="858.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────────────────────────────────────────────────────────────────────────────────────────────────╮</text>
 <text class="c3" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="31.6" y="89.0" textLength="312.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">████████████████████████████████████████</text>
 <text class="c4 b" x="367.0" y="89.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">6/6</text>
@@ -73,7 +73,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c6" x="897.4" y="174.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">01:03</text>
 <text class="c3" x="944.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c6" x="31.6" y="191.0" textLength="280.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  └ échec — réessai proposé à la fin</text>
+<text class="c6" x="31.6" y="191.0" textLength="288.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  └ failed — retry offered at the end</text>
 <text class="c3" x="944.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="31.6" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">√ </text>
@@ -91,45 +91,45 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="944.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="242.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰─────────────────────</text>
 <text class="c0" x="187.6" y="242.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╔═</text>
-<text class="c4" x="203.2" y="242.0" textLength="163.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Échecs récupérables </text>
-<text class="c0" x="367.0" y="242.0" textLength="413.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">════════════════════════════════════════════════════╗</text>
+<text class="c4" x="203.2" y="242.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Recoverable failures </text>
+<text class="c0" x="374.8" y="242.0" textLength="405.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">═══════════════════════════════════════════════════╗</text>
 <text class="c3" x="780.4" y="242.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────────╯</text>
 <text class="c3" x="16.0" y="259.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
-<text class="c4" x="31.6" y="259.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Administrateur (UAC</text>
+<text class="c4" x="31.6" y="259.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Administrator (UAC)</text>
 <text class="c0" x="187.6" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c4" x="203.2" y="259.0" textLength="546.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1 échec(s) récupérable(s) (Winget: 1) — typiquement hash d'installeur,</text>
+<text class="c4" x="203.2" y="259.0" textLength="514.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1 recoverable failure (Winget: 1) — typically an installer hash, a</text>
 <text class="c0" x="772.6" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c3" x="780.4" y="259.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────────╮</text>
 <text class="c3" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c8 d" x="31.6" y="276.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› Validez l'invite U</text>
+<text class="c8 d" x="31.6" y="276.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› Approve the UAC pr</text>
 <text class="c0" x="187.6" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c4" x="203.2" y="276.0" textLength="475.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">manifest locale, ou changement de technologie d'installation.</text>
+<text class="c4" x="203.2" y="276.0" textLength="413.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">locale manifest, or a change of installer technology.</text>
 <text class="c0" x="772.6" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c3" x="944.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c8 d" x="31.6" y="293.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› 1 paquet s'install</text>
+<text class="c8 d" x="31.6" y="293.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› 1 package installs</text>
 <text class="c0" x="187.6" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="772.6" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c3" x="944.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="187.6" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="203.2" y="310.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› </text>
-<text class="c4" x="218.8" y="310.0" textLength="546.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Aucun — laisser les échecs                                            </text>
+<text class="c4" x="218.8" y="310.0" textLength="546.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">None — leave the failures                                             </text>
 <text class="c0" x="772.6" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c3" x="944.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="187.6" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c4" x="218.8" y="327.0" textLength="304.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">--force (bypass vérification SHA — sûr)</text>
+<text class="c4" x="218.8" y="327.0" textLength="288.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">--force (bypass the SHA check — safe)</text>
 <text class="c0" x="772.6" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c3" x="944.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="187.6" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c4" x="218.8" y="344.0" textLength="546.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">--force --uninstall-previous (désinstalle puis réinstalle — destructif</text>
+<text class="c4" x="218.8" y="344.0" textLength="538.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">--force --uninstall-previous (uninstall then reinstall — destructive)</text>
 <text class="c0" x="772.6" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c3" x="944.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="187.6" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c4" x="218.8" y="361.0" textLength="491.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">uninstall + install (deux commandes séparées — dernier recours)</text>
+<text class="c4" x="218.8" y="361.0" textLength="444.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">uninstall + install (two separate commands — last resort)</text>
 <text class="c0" x="772.6" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c3" x="944.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -156,5 +156,5 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="944.2" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="16.0" y="565.0" textLength="936.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
-<text class="c6" x="16.0" y="582.0" textLength="343.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ choisir · entrée valider · échap annuler</text>
+<text class="c6" x="16.0" y="582.0" textLength="304.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ choose · enter confirm · esc cancel</text>
 </svg>

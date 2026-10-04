@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { commandExists, runInherit } from "../../core/runner.js";
 import { nvimConfigDir, nvimDataDir } from "../../core/nvim-paths.js";
 import { pathFlavour } from "../../core/platform/path-flavour.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -36,7 +37,10 @@ export class VimPlugProvider implements Provider {
         name: "vim-plug update",
         current: "?",
         latest: "refresh",
-        note: "Met à jour tous les plugins (:PlugUpdate --sync)",
+        note: localize({
+          en: "Updates all plugins (:PlugUpdate --sync)",
+          fr: "Met à jour tous les plugins (:PlugUpdate --sync)",
+        }),
       },
     ];
   }

@@ -14,8 +14,8 @@ import { locateTrampoline, type TrampolineLocation } from "./trampoline.js";
  * without a build toolchain, `--omit=optional`), fail to load, or load and
  * still be unable to spawn (an antivirus quarantining `conpty.node`, which
  * loads lazily at the first spawn; macOS's `spawn-helper` without its exec
- * bit). Each case yields a French reason, and the menu then updates outside
- * the screen as before. Never throws.
+ * bit). Each case yields a reason in the interface's language, and the menu
+ * then updates outside the screen as before. Never throws.
  */
 
 /** The node-pty version whose Windows internals `releaseConpty` relies on; package.json pins it. */

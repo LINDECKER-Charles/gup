@@ -103,9 +103,24 @@ function declaredPlatforms(providerClass: ts.ClassDeclaration): PlatformSet | un
   return PLATFORMS[initializer.name.text as keyof typeof PLATFORMS];
 }
 
+/**
+ * What the install hint is built from: the field's initializer, or what its
+ * getter returns — a hint with words in it is a getter, read in the language
+ * of the moment it is shown.
+ */
+function installHintExpression(providerClass: ts.ClassDeclaration): ts.Expression | undefined {
+  const field = fieldInitializer(providerClass, "installHint");
+  if (field) return field;
+  const getter = providerClass.members.find(
+    (m): m is ts.GetAccessorDeclaration =>
+      ts.isGetAccessorDeclaration(m) && memberName(m) === "installHint",
+  );
+  return getter?.body?.statements.find(ts.isReturnStatement)?.expression;
+}
+
 /** The keys handed to `pickInstallHint({ … })`; null when the hint is not picked per OS. */
 function pickedHintKeys(providerClass: ts.ClassDeclaration): string[] | null {
-  const initializer = fieldInitializer(providerClass, "installHint");
+  const initializer = installHintExpression(providerClass);
   if (!initializer || !ts.isCallExpression(initializer)) return null;
   const [hints] = initializer.arguments;
   if (initializer.expression.getText() !== "pickInstallHint" || !hints) return null;

@@ -139,7 +139,7 @@ function updatedProviders() {
 }
 
 /**
- * "Afficher 50 de plus" under a list showing view.limit of its total items,
+ * "Show 50 more" under a list showing view.limit of its total items,
  * view.step more at each click; nothing when every item is shown.
  */
 function moreButton(view, total, refresh) {

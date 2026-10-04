@@ -7,16 +7,16 @@ import type {
 } from "../../../core/history/types.js";
 import type { ProviderName } from "../../charts/activity-sections.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
-import { formatDateTime, formatDuration, formatRelative } from "../../text/fr-format.js";
+import { formatDateTime, formatDuration, formatRelative } from "../../text/format.js";
 import { EVENT_LABELS, TRIGGER_LABELS } from "../../text/journal/journal-labels.js";
 import { UPDATE_STATUS_LABELS } from "../../text/journal/log-labels.js";
 import { fit, seg, type Line, type Segment, type Tone } from "../../tui/styled-lines.js";
 import { fieldLines, textBlock, type DetailField } from "./detail-lines.js";
 
 /**
- * One history event as a row of the Événements tab — when, what happened
+ * One history event as a row of the Events tab — when, what happened
  * (always a mark and a word, never a colour alone), where, which versions,
- * how long — and as the detail Entrée opens.
+ * how long — and as the detail Enter opens.
  */
 
 export interface EventDetail {
@@ -38,10 +38,14 @@ interface Columns {
   readonly versions: number;
 }
 
-const DATE_WIDTH = 11;
 const STATUS_WIDTH = 10;
 const DURATION_WIDTH = 8;
-const FIXED_WIDTH = DATE_WIDTH + 2 + STATUS_WIDTH + DURATION_WIDTH;
+/**
+ * The status and duration columns. The date's is as wide as the interface
+ * language writes a date and time ("Oct 03 14:22", "03/10 14:22"): every row
+ * the same, so the columns stay aligned.
+ */
+const FIXED_WIDTH = STATUS_WIDTH + DURATION_WIDTH;
 const WIDE_PROVIDER = 12;
 const NARROW_PROVIDER = 10;
 const VERSIONS_WIDTH = 21;
@@ -62,8 +66,8 @@ const STATUS_LOOK: Readonly<Record<UpdateStatus, StatusLook>> = {
 };
 
 export function eventRow(event: HistoryEvent, width: number, providerName: ProviderName): Line {
-  const middle = Math.max(0, width - FIXED_WIDTH);
   const date = seg(`${formatDateTime(new Date(event.ts))}  `, "muted");
+  const middle = Math.max(0, width - date.text.length - FIXED_WIDTH);
   const duration = seg(durationOf(event.durationMs).padStart(DURATION_WIDTH), "muted");
   if (event.kind === "scan") {
     const summary = EVENT_LABELS.scanSummary(event.providers.length, event.outdated);
@@ -163,7 +167,7 @@ function scanDetail(event: ScanEvent, { width, now, providerName }: DetailContex
   };
 }
 
-/** "20 en retard · 12,4 s", or the provider's scan error. */
+/** "20 outdated · 12.4 s", or the provider's scan error. */
 function providerResult(provider: ScanProviderRecord): string {
   if (provider.error !== undefined) return EVENT_LABELS.providerError(provider.error);
   const duration = optionalDuration(provider.durationMs);

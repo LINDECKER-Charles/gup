@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LineSplitter, TRUNCATED_OUTPUT_LINE } from "../../../src/core/process/line-splitter.js";
+import { LineSplitter, OUTPUT_LABELS } from "../../../src/core/process/line-splitter.js";
 
 function split(capBytes: number) {
   const lines: string[] = [];
@@ -37,19 +37,19 @@ describe("LineSplitter", () => {
     splitter.push("67890\nabc\n");
     splitter.push("more\n");
     splitter.end();
-    expect(lines).toEqual(["12345", TRUNCATED_OUTPUT_LINE]);
+    expect(lines).toEqual(["12345", OUTPUT_LABELS.truncated]);
   });
 
   it("counts UTF-8 bytes, not characters", () => {
     const { lines, splitter } = split(6);
     splitter.push("ééé\n");
-    expect(lines).toEqual([TRUNCATED_OUTPUT_LINE]);
+    expect(lines).toEqual([OUTPUT_LABELS.truncated]);
   });
 
   it("bounds a line that never ends", () => {
     const { lines, splitter } = split(8);
     splitter.push("x".repeat(20));
     splitter.push("y".repeat(20));
-    expect(lines).toEqual([TRUNCATED_OUTPUT_LINE]);
+    expect(lines).toEqual([OUTPUT_LABELS.truncated]);
   });
 });

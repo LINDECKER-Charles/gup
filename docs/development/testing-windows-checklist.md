@@ -45,13 +45,13 @@ below when testing a checkout rather than an installed build.
 | ID | Area | Step | Expected |
 |---|---|---|---|
 | W-01 | prerequisites | Node 26 first on `PATH`; `npm ci`; `npm run build` | green, `dist\cli.js` and `dist\pty-exec.js` present |
-| W-02 | automated | `check.cmd -E2E mutate` (consent: it updates `is-number` in a throw-away npm prefix and creates, runs and deletes a `gup-it-<random>` scheduled task); `npm run fixtures:record -- --provider <ids>` for the tools installed here | all green; `Get-ScheduledTask gup-*` lists nothing afterwards; fixture diff reviewed, package names neutralised before any commit |
-| W-03 | conhost | Win+R → `conhost.exe cmd /k node dist\cli.js` **(sandbox)**; ↓ ↓, Espace, `q` | the window **survives** (10.0.26100 constraint), the prompt comes back, no stray escape codes |
-| W-04 | conhost | same, then quit with Ctrl+C; then `set GUP_PTY=off` and run W-08's update | survives both; with `GUP_PTY=off` the update leaves the screen, `Entrée pour revenir à gup…`, the menu comes back |
+| W-02 | automated | `scripts\check.cmd -E2E mutate` (consent: it updates `is-number` in a throw-away npm prefix and creates, runs and deletes a `gup-it-<random>` scheduled task); `npm run fixtures:record -- --provider <ids>` for the tools installed here | all green; `Get-ScheduledTask gup-*` lists nothing afterwards; fixture diff reviewed, package names neutralised before any commit |
+| W-03 | conhost | Win+R → `conhost.exe cmd /k node dist\cli.js` **(sandbox)**; ↓ ↓, Space, `q` | the window **survives** (10.0.26100 constraint), the prompt comes back, no stray escape codes |
+| W-04 | conhost | same, then quit with Ctrl+C; then `set GUP_PTY=off` and run W-08's update | survives both; with `GUP_PTY=off` the update leaves the screen, `Press Enter to return to gup…`, the menu comes back |
 | W-05 | Windows Terminal | `gup` **(sandbox)**; resize the window down to 80×24 and back; click a package row; scroll with the wheel | the layout follows the size, nothing overlaps; the click checks the row |
-| W-06 | shells | `gup --version`, `gup doctor`, `gup list` in PowerShell 5.1, PowerShell 7, cmd.exe and the VS Code terminal | same output everywhere; accents (`détectés`, `Système`) correct |
-| W-07 | Git Bash (mintty) | `gup` | the French non-TTY message, exit 1, no crash |
-| W-08 | in-menu update | **(sandbox)** Paquets: check `is-number`, Entrée, `o` | the run view opens, npm's output scrolls in the embedded pane, `√ 1 mis à jour`; Entrée returns to Paquets without the package; the history records it with `trigger: "menu"` |
+| W-06 | shells | `gup --version`, `gup doctor`, `gup list` in PowerShell 5.1, PowerShell 7, cmd.exe and the VS Code terminal | same output everywhere; run again with `GUP_LANG` set to `fr`: accents (`détectés`, `Système`) correct |
+| W-07 | Git Bash (mintty) | `gup` | the non-TTY message (`Error: this action needs an interactive terminal (stdin/stdout TTY)`), exit 1, no crash |
+| W-08 | in-menu update | **(sandbox)** Packages: check `is-number`, Enter, `o` | the run view opens, npm's output scrolls in the embedded pane, `√ 1 updated`; Enter returns to Packages without the package; the history records it with `trigger: "menu"` |
 | W-09 | stop and skip | repeat W-08 (`npm install --global is-number@6.0.0` first): `s` during the install; again with Ctrl+C once, then twice; `x`; `t`, a few keys, Ctrl+G | `s` and the first Ctrl+C skip the current package, a second Ctrl+C or `x` stops the run; in typing mode the keys go to the pane only and Ctrl+G gives them back; the terminal is restored after quitting |
 | W-10 | installer window | update one real winget package whose installer shows a window (a package you meant to update anyway) | the installer window is visible, the pane waits, the outcome is recorded |
 | W-11 | retry | provoke a retryable winget failure (the application left running) | the end-of-run consent dialog; nothing is retried with `--force` unless chosen |
@@ -61,6 +61,8 @@ below when testing a checkout rather than an installed build.
 | W-15 | scheduler | `gup schedule add npm-g:is-number --every daily --at <in 20 min>` (registers the real per-user trigger `gup-scheduler-<SID>`); `schtasks /Query /TN gup-scheduler-<SID> /XML`; wait for the time; `gup schedule list`; `gup schedule uninstall --purge` | task with `InteractiveToken`, `LeastPrivilege`, `PT15M`, `conhost.exe --headless`; no window ever opens; the run is listed with its result; after uninstall the query fails |
 | W-16 | journal and report | Journal view: the four tabs, `e` export, `o` report; `gup report --since all` | the export file is written; the report opens in the default browser, works offline, no CSP error in the console |
 | W-17 | high contrast | Windows *Contrast themes* on; `gup` | still readable; nothing relies on colour alone |
+| W-18 | language | **(sandbox)** `gup language fr`; `gup`, `gup --help`, `gup doctor`; Options → CONFORT → Langue → English, quit, `gup` again; `$env:GUP_LANG = 'de'; gup doctor` | French in the app, the help and the doctor; the Options change applies at the next start, not before; the doctor's Language line warns that `GUP_LANG=de` is ignored |
+| W-19 | gup's own update | **(sandbox)** `npm install --global @charles_lindecker/gup@0.3.2` (an older gup in the sandbox prefix); `gup`, Packages: Space on its row, `a`, `q`; `gup update npm-g:@charles_lindecker/gup`; then the command printed | the row has no checkbox and `a` leaves it out; Space and the update say to quit gup first and give `npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty`, which quitting prints too; run once gup has exited, it updates the sandbox's gup |
 
 ## Results
 

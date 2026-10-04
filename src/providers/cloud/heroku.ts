@@ -6,6 +6,7 @@ import {
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -63,7 +64,10 @@ export class HerokuProvider implements Provider {
           winget: "Heroku.HerokuCLI",
           brew: "heroku",
         },
-        "Réinstaller depuis https://devcenter.heroku.com/articles/heroku-cli",
+        localize({
+          en: "Reinstall from https://devcenter.heroku.com/articles/heroku-cli",
+          fr: "Réinstaller depuis https://devcenter.heroku.com/articles/heroku-cli",
+        }),
       );
     }
     // Standalone tarball install: built-in updater.

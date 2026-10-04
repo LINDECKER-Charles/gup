@@ -19,6 +19,7 @@ import {
   RELEASES_INDEX_URL,
   RELEASES_ROUTE,
 } from "./dotnet-php.cases.js";
+import { useLocale } from "../../support/locale.js";
 
 /**
  * The .NET SDK: one row for the installed channel only (a new major is a
@@ -146,6 +147,29 @@ describe("isUpgrade", () => {
   it("keeps a preview user moving — including onto the GA that supersedes it", () => {
     expect(isUpgrade("10.0.100-preview.5.25277.114", "10.0.100-preview.6.25358.103")).toBe(true);
     expect(isUpgrade("10.0.100-preview.6.25358.103", "10.0.100")).toBe(true);
+  });
+});
+
+describe("DotnetSdkProvider in English", () => {
+  useLocale("en");
+
+  it("labels the channel's support phase in English", async () => {
+    await system.load(sdkMachine("8.0.404 [/usr/share/dotnet/sdk]"));
+    await expect(new DotnetSdkProvider().listOutdated()).resolves.toMatchObject([
+      { id: "8.0", note: "LTS · active support" },
+    ]);
+  });
+
+  it("still ignores a support phase named like an object property", async () => {
+    const index = indexOf({
+      "channel-version": "8.0",
+      "latest-sdk": "8.0.414",
+      "support-phase": "toString",
+    });
+    await system.load(sdkMachine("8.0.404 [/usr/share/dotnet/sdk]", index));
+    const [row] = await new DotnetSdkProvider().listOutdated();
+    expect(row).toBeDefined();
+    expect(row?.note).toBeUndefined();
   });
 });
 

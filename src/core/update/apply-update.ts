@@ -1,4 +1,5 @@
 import { recordUpdate } from "../history/store.js";
+import { localized } from "../i18n/localized.js";
 import { withOperation } from "../state/run-context.js";
 import type { OutdatedPackage, Provider, UpdateOptions, UpdateOutcome } from "../types.js";
 import { finalizeOutcome } from "./finalize-outcome.js";
@@ -26,15 +27,22 @@ export interface ApplyOptions {
   readonly scheduleId?: string;
 }
 
-/**
- * Message of an attempt the runner's argv barrier refused (`sanitizeCommand`
- * / `sanitizeArgs` in `core/runner.ts`, whose errors start with
- * {@link BARRIER_ERROR_PREFIX}); the reason follows.
- */
-export const BARRIER_REFUSAL_MESSAGE = "refusé par la barrière de sécurité";
-
-/** Message of an attempt whose provider threw anything else; the reason follows. */
-export const UNEXPECTED_FAILURE_MESSAGE = "erreur inattendue";
+/** The message of an attempt whose `update()` threw, with the reason it threw. */
+export const REJECTION_MESSAGES = localized({
+  en: {
+    /**
+     * The runner's argv barrier refused it (`sanitizeCommand` / `sanitizeArgs`
+     * in `core/runner.ts`, whose errors start with {@link BARRIER_ERROR_PREFIX}).
+     */
+    barrierRefusal: (reason: string) => `refused by the safety barrier: ${reason}`,
+    /** The provider threw anything else. */
+    unexpectedFailure: (reason: string) => `unexpected error: ${reason}`,
+  },
+  fr: {
+    barrierRefusal: (reason) => `refusé par la barrière de sécurité : ${reason}`,
+    unexpectedFailure: (reason) => `erreur inattendue : ${reason}`,
+  },
+});
 
 const BARRIER_ERROR_PREFIX = "runner: ";
 
@@ -84,8 +92,8 @@ async function settledUpdate(
 function rejectionMessage(error: unknown): string {
   const reason = error instanceof Error ? error.message : String(error);
   return reason.startsWith(BARRIER_ERROR_PREFIX)
-    ? `${BARRIER_REFUSAL_MESSAGE} : ${reason.slice(BARRIER_ERROR_PREFIX.length)}`
-    : `${UNEXPECTED_FAILURE_MESSAGE} : ${reason}`;
+    ? REJECTION_MESSAGES.barrierRefusal(reason.slice(BARRIER_ERROR_PREFIX.length))
+    : REJECTION_MESSAGES.unexpectedFailure(reason);
 }
 
 /**

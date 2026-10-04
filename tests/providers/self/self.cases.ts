@@ -41,14 +41,17 @@ function selfCase(scenario: string, target: SelfCase): ProviderContractCase {
 const WINGET_MANUAL_NOTE =
   "Mise à jour via le Microsoft Store (App Installer) ou https://github.com/microsoft/winget-cli/releases";
 
+/** winget behind its latest release, the only package manager on PATH. */
+export const WINGET_MACHINE: SystemSpec = {
+  platform: "win32",
+  bin: { winget: "C:\\Users\\u\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" },
+  commands: [versionProbe("winget", "v1.6.10121")],
+  http: [githubLatest("microsoft/winget-cli", "v1.7.10861")],
+};
+
 /** winget ships with App Installer: no CLI self-update, a manual row. */
 const WINGET = selfCase("winget", {
-  system: {
-    platform: "win32",
-    bin: { winget: "C:\\Users\\u\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe" },
-    commands: [versionProbe("winget", "v1.6.10121")],
-    http: [githubLatest("microsoft/winget-cli", "v1.7.10861")],
-  },
+  system: WINGET_MACHINE,
   row: [
     {
       id: "winget",
@@ -189,7 +192,13 @@ export const PNPM_MACHINE: SystemSpec = {
 const PNPM = selfCase("pnpm", {
   system: PNPM_MACHINE,
   row: [{ id: "pnpm", name: "pnpm", current: "9.0.0", latest: "9.5.0" }],
-  update: { packageId: "pnpm", installs: [["pnpm", "self-update"]] },
+  update: {
+    packageId: "pnpm",
+    installs: [["pnpm", "self-update"]],
+    // This machine's pnpm never changes version: an exit 0 that left the PATH
+    // on 9.0.0 did not take effect (self.test.ts covers the version that moves).
+    outcome: { success: false },
+  },
 });
 
 /** Yarn classic outside Corepack, on a machine without Corepack: npm reinstalls it. */

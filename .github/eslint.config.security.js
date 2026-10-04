@@ -5,6 +5,10 @@
  *   - command injection (execa shell:true / dynamic argv)
  *   - prototype pollution / unsafe regex / eval-likes
  *   - tainted fs paths
+ *
+ * Passed to ESLint with `--config`, so the `files` and `ignores` globs below
+ * resolve against the working directory (the repository root, where npm runs
+ * the script), not against .github/.
  */
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";

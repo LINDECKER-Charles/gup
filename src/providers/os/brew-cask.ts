@@ -3,6 +3,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
 import { parseBrewOutdated } from "./brew.js";
+import { localize } from "../../core/i18n/localized.js";
 
 /**
  * Homebrew casks — GUI applications and binary-only distributions installed
@@ -20,7 +21,12 @@ import { parseBrewOutdated } from "./brew.js";
 export class BrewCaskProvider implements Provider {
   readonly id = "brew-cask";
   readonly displayName = "Homebrew (casks)";
-  readonly installHint = "https://brew.sh puis `brew install --cask <app>`";
+  get installHint(): string {
+    return localize({
+      en: "https://brew.sh then `brew install --cask <app>`",
+      fr: "https://brew.sh puis `brew install --cask <app>`",
+    });
+  }
   /**
    * Casks are macOS-only: `brew` exists on Linuxbrew but rejects every cask
    * command there, so probing the binary alone would surface a provider that

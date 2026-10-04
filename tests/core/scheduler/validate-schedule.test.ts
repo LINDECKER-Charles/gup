@@ -6,11 +6,12 @@ import {
   mayAskForUac,
   MAX_SCHEDULES,
   MAX_TARGETS_PER_SCHEDULE,
-  TOO_FREQUENT,
+  VALIDATION_MESSAGES,
   validateDraft,
   type ValidationContext,
 } from "../../../src/core/scheduler/model/validate-schedule.js";
-import type { ScheduleDraft } from "../../../src/core/scheduler/model/types.js";
+import type { ScheduleDraft, Weekday } from "../../../src/core/scheduler/model/types.js";
+import { useLocale } from "../../support/locale.js";
 import { providerFacts, target } from "./scheduler-fixtures.js";
 
 const context: ValidationContext = {
@@ -85,8 +86,9 @@ describe("validateDraft", () => {
   it("refuses expressions firing more than hourly, or not within a year", () => {
     const cron = (expression: string): ScheduleDraft =>
       draft({ recurrence: { kind: "cron", expression } });
-    expect(messages(cron("*/20 * * * *"))).toEqual([`recurrence: ${TOO_FREQUENT}`]);
-    expect(messages(cron("0,30 9 * * 1"))).toEqual([`recurrence: ${TOO_FREQUENT}`]);
+    const tooFrequent = `recurrence: ${VALIDATION_MESSAGES.tooFrequent}`;
+    expect(messages(cron("*/20 * * * *"))).toEqual([tooFrequent]);
+    expect(messages(cron("0,30 9 * * 1"))).toEqual([tooFrequent]);
     expect(messages(cron("0 * * * *"))).toEqual([]);
     expect(messages(cron("0 9 31 2 *"))).toEqual([
       "recurrence: cette expression ne se déclenche pas dans l'année à venir",
@@ -144,5 +146,46 @@ describe("mayAskForUac", () => {
   it("warns about winget packages only, which may be installed machine-wide", () => {
     expect(mayAskForUac([target("npm-g", "pnpm"), target("winget", "Git.Git")])).toBe(true);
     expect(mayAskForUac([target("npm-g", "pnpm")])).toBe(false);
+  });
+});
+
+describe("validateDraft in English", () => {
+  useLocale("en");
+
+  it("says what is wrong with a draft in English", () => {
+    expect(messages(draft({ name: "x".repeat(61) }))).toEqual(["name: 60 characters at most"]);
+    expect(messages(draft({ name: "dev\u0007tools" }))).toEqual([
+      "name: control character not allowed",
+    ]);
+    const many = Array.from({ length: MAX_TARGETS_PER_SCHEDULE + 1 }, (_, i) =>
+      target("npm-g", `pkg-${i}`),
+    );
+    expect(messages(draft({ targets: many }))).toEqual([
+      "targets: 50 packages at most per schedule",
+    ]);
+    expect(messages(draft({ targets: [target("choco", "vlc")] }))).toEqual([
+      'target:0: "Chocolatey" asks for sudo/admin on every update: cannot be scheduled',
+    ]);
+  });
+
+  it("checks a recurrence's shape in English", () => {
+    const at = { hour: 9, minute: 0 };
+    // A hand-edited settings file can hold any number; the type only knows 0 to 6.
+    const weekday = 9 as Weekday;
+    expect(messages(draft({ recurrence: { kind: "weekly", weekday, at } }))).toEqual([
+      "recurrence: invalid day of the week",
+    ]);
+    expect(messages(draft({ recurrence: { kind: "monthly", day: 31, at } }))).toEqual([
+      "recurrence: invalid day of the month (1 to 28, or the last)",
+    ]);
+    const cron = (expression: string): ScheduleDraft =>
+      draft({ recurrence: { kind: "cron", expression } });
+    expect(messages(cron("60 9 * * *"))).toEqual([
+      "recurrence: invalid value for the minutes: 60",
+    ]);
+    const days = Array.from({ length: 28 }, (_, i) => i + 1).join(",");
+    expect(messages(cron(`0 9 ${days} jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov *`))).toEqual([
+      `recurrence: cron expression too long (${MAX_CRON_LENGTH} characters at most)`,
+    ]);
   });
 });

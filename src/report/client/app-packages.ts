@@ -1,5 +1,5 @@
 /**
- * Client "Paquets" page: every package of the period in a sortable table
+ * Client "Packages" page: every package of the period in a sortable table
  * (`aria-sort` headers), narrowed by the header search (package, provider,
  * version, failure message), a provider and a pace filter, shown 100 rows at
  * a time. A row opens the package's drawer.
@@ -180,7 +180,7 @@ function sortedPackages(rows) {
   const column = PACKAGE_COLUMNS.find((candidate) => candidate.key === packagesTable.sort);
   const direction = packagesTable.isDescending ? -1 : 1;
   return rows.slice().sort((a, b) => compareValues(column.value(a), column.value(b), direction) ||
-    a.name.localeCompare(b.name, "fr"));
+    a.name.localeCompare(b.name, LOCALE));
 }
 
 /** Missing values last, whatever the direction. */
@@ -188,7 +188,7 @@ function compareValues(a, b, direction) {
   if (a === b) return 0;
   if (a === null) return 1;
   if (b === null) return -1;
-  if (typeof a === "string") return direction * a.localeCompare(b, "fr", { sensitivity: "base" });
+  if (typeof a === "string") return direction * a.localeCompare(b, LOCALE, { sensitivity: "base" });
   return direction * (a - b);
 }
 

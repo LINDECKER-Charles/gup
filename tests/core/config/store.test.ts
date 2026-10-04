@@ -5,6 +5,8 @@ import { NODE_FILE_OPS } from "../../../src/core/config/atomic-write.js";
 import { MAX_CONFIG_BYTES } from "../../../src/core/config/config-file.js";
 import { defineSection, type JsonObject } from "../../../src/core/config/section.js";
 import { ConfigStore, ConfigWriteError } from "../../../src/core/config/store.js";
+import { setActiveLocale } from "../../../src/core/i18n/locale.js";
+import { useLocale } from "../../support/locale.js";
 import { useTempDirs } from "../../support/temp-dirs.js";
 
 const tempDir = useTempDirs();
@@ -284,6 +286,35 @@ describe("ConfigStore: without a file", () => {
     );
     expect(store.read(PREFS).fast).toBe(true);
     expect(store.status()).toMatchObject({ file: null, state: "unavailable" });
+  });
+});
+
+describe("ConfigStore: problems in the language they are read in", () => {
+  useLocale("en");
+
+  // Startup reads the language setting before it chooses the language: what
+  // the store finds then must not stay worded in the language active before.
+  it("words a section's problems when they are read out, not when they are found", async () => {
+    await seed({ version: 1, sections: { prefs: { v: 1, mode: "z", count: 99 } } });
+    setActiveLocale("fr");
+    const store = new ConfigStore({ file });
+    store.read(PREFS);
+    setActiveLocale("en");
+    expect(store.status().issues).toEqual([
+      "prefs.mode: expected one of a, b",
+      "prefs.count: expected an integer from 0 to 10",
+    ]);
+  });
+
+  it("words what is wrong with the file itself the same way", async () => {
+    await seed("{ not json");
+    const now = () => new Date("2026-10-03T14:22:05.000Z");
+    setActiveLocale("fr");
+    const store = new ConfigStore({ file, now });
+    store.read(PREFS);
+    setActiveLocale("en");
+    const backup = join(dir, "nested", "config.corrupt-20261003T142205.json");
+    expect(store.status().issues).toEqual([`config.json: invalid JSON — kept as ${backup}`]);
   });
 });
 

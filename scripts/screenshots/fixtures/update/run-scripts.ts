@@ -1,4 +1,10 @@
-import { npmOutput, pipxOutput, wingetOutput, type WingetDownload } from "./canned-output.js";
+import {
+  downloadSizes,
+  npmOutput,
+  pipxOutput,
+  wingetOutput,
+  type WingetDownload,
+} from "./canned-output.js";
 import type { ScriptedInstall } from "./scripted-run.js";
 
 /** Where winget downloads each installer from (the manifests' URLs). */
@@ -32,6 +38,10 @@ const SEVEN_ZIP: WingetDownload = {
 };
 /** PowerToys halfway through its download when the run is held. */
 const POWERTOYS_RECEIVED_MB = 118;
+const POWERTOYS_HALFWAY: WingetDownload = { ...POWERTOYS, received: POWERTOYS_RECEIVED_MB };
+
+/** The last thing the held run's pane shows: how far PowerToys' download got. */
+export const POWERTOYS_PROGRESS = downloadSizes(POWERTOYS_HALFWAY);
 
 /** What runs before PowerToys in both scripts: npm, pipx, then Git through winget. */
 const BEFORE_POWERTOYS: readonly ScriptedInstall[] = [
@@ -53,7 +63,7 @@ export const RUN_IN_FLIGHT: readonly ScriptedInstall[] = [
   ...BEFORE_POWERTOYS,
   {
     key: "winget:Microsoft.PowerToys",
-    output: wingetOutput({ ...POWERTOYS, received: POWERTOYS_RECEIVED_MB }, "downloading"),
+    output: wingetOutput(POWERTOYS_HALFWAY, "downloading"),
     ms: 41_000,
     holds: true,
   },

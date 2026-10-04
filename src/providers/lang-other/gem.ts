@@ -1,5 +1,6 @@
 import { commandExists, run, runInherit, whichFirst } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -10,11 +11,21 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class GemProvider implements Provider {
   readonly id = "gem";
   readonly displayName = "RubyGems";
-  readonly installHint = pickInstallHint({
-    win32: "https://www.ruby-lang.org / RubyInstaller for Windows",
-    darwin: "brew install ruby, ou rbenv/asdf — le Ruby système d'Apple n'est pas gérable",
-    fallback: "https://www.ruby-lang.org/fr/documentation/installation/",
-  });
+  // The fallback is ruby-lang.org's installation page in the interface's
+  // language: the site publishes one per language.
+  get installHint(): string {
+    return pickInstallHint({
+      win32: "https://www.ruby-lang.org / RubyInstaller for Windows",
+      darwin: localize({
+        en: "brew install ruby, or rbenv/asdf — Apple's system Ruby cannot be managed",
+        fr: "brew install ruby, ou rbenv/asdf — le Ruby système d'Apple n'est pas gérable",
+      }),
+      fallback: localize({
+        en: "https://www.ruby-lang.org/en/documentation/installation/",
+        fr: "https://www.ruby-lang.org/fr/documentation/installation/",
+      }),
+    });
+  }
 
   async isAvailable(): Promise<boolean> {
     if (!(await commandExists("gem"))) return false;

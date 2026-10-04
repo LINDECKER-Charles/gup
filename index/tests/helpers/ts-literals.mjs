@@ -2,7 +2,8 @@
  * The string and template literals of a TypeScript source, with comments and
  * regular expressions skipped: just enough lexing to read what a CLI file
  * writes on screen without the TypeScript compiler (the site's tests run on
- * the site's own dependencies, in CI too).
+ * the site's own dependencies, in CI too). The same lexing gives the source's
+ * code alone, for readers of its structure (./ts-catalogs.mjs).
  *
  * @typedef {{ kind: "string", text: string }} StringLiteral
  * @typedef {{ kind: "template", parts: string[] }} TemplateLiteral
@@ -31,6 +32,8 @@ function unescape(source, at) {
 class Lexer {
   /** @type {Literal[]} */
   literals = [];
+  /** `[start, end)` of every comment, literal and regular expression consumed. */
+  spans = [];
   at = 0;
 
   constructor(source) {
@@ -59,11 +62,14 @@ class Lexer {
    * a literal or a regular expression ("token"); null for plain code.
    */
   skipped(char, previous) {
+    const start = this.at;
     const next = this.source[this.at + 1];
+    let kind = "comment";
     if (char === "/" && next === "/") this.at = this.endOf("\n", this.at);
     else if (char === "/" && next === "*") this.at = this.endOf("*/", this.at + 2) + 1;
-    else return this.token(char, previous);
-    return "comment";
+    else kind = this.token(char, previous);
+    if (kind !== null) this.spans.push([start, this.at]);
+    return kind;
   }
 
   token(char, previous) {
@@ -129,9 +135,32 @@ class Lexer {
   }
 }
 
-/** @param {string} source @returns {Literal[]} */
-export function tsLiterals(source) {
+/** A source lexed whole, its line breaks normalized to `\n`. */
+function lexed(source) {
   const lexer = new Lexer(source.replaceAll("\r\n", "\n"));
   lexer.code(false);
-  return lexer.literals;
+  return lexer;
+}
+
+/** @param {string} source @returns {Literal[]} */
+export function tsLiterals(source) {
+  return lexed(source).literals;
+}
+
+/**
+ * The code of a source: every comment, literal and regular expression
+ * blanked out, everything else where it was (line breaks normalized to `\n`
+ * and kept), so a scan for brackets and property names never trips on a `{`
+ * inside a string or a comment.
+ *
+ * @param {string} source
+ * @returns {string}
+ */
+export function tsCode(source) {
+  const lexer = lexed(source);
+  const units = lexer.source.split("");
+  for (const [start, end] of lexer.spans) {
+    for (let at = start; at < end; at++) if (units[at] !== "\n") units[at] = " ";
+  }
+  return units.join("");
 }

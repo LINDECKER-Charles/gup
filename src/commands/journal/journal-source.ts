@@ -25,7 +25,7 @@ import { currentLogLevel } from "./log-session.js";
  * `journal.openReport` setting says so.
  */
 
-/** Events the Événements tab lists, newest first. */
+/** Events the Events tab lists, newest first. */
 export const MAX_JOURNAL_EVENTS = 10_000;
 /** Records the Debug tab lists. */
 export const MAX_DEBUG_RECORDS = 500;

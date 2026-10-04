@@ -18,6 +18,7 @@ import { DIAGNOSTIC_TIMEOUT_MS, doctorCommand } from "../../src/commands/doctor.
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import type { ProviderStatusReport } from "../../src/core/platform/types.js";
 import { DOCTOR_PROVIDER_LABELS } from "../../src/ui/text/providers-labels.js";
+import { useLocale } from "../support/locale.js";
 
 let stdout: ReturnType<typeof vi.spyOn>;
 const ANSI = new RegExp(String.raw`\x1b\[[0-9;]*m`, "g");
@@ -184,5 +185,32 @@ describe("doctorCommand: Système", () => {
     await vi.advanceTimersByTimeAsync(DIAGNOSTIC_TIMEOUT_MS);
     await expect(done).resolves.toBe(0);
     expect(printed()).toContain("diagnostic indisponible (délai dépassé)");
+  });
+});
+
+describe("doctorCommand in English", () => {
+  useLocale("en");
+
+  it("titles the provider groups, badges and the System section in English", async () => {
+    vi.useFakeTimers();
+    const stuck = reporting("schedule", () => new Promise(() => {}));
+    const done = doctorCommand([stuck]);
+    await vi.advanceTimersByTimeAsync(DIAGNOSTIC_TIMEOUT_MS);
+    await done;
+
+    const titles = printed()
+      .split("\n")
+      .filter((_line, index, lines) => lines[index + 1] === RULE);
+    expect(titles).toEqual([
+      "  Detected providers",
+      "  Not installed / not on PATH",
+      "  Incompatible with Windows",
+      "  System",
+    ]);
+    expect(sectionOf("Incompatible with Windows").slice(2)).toEqual([
+      `  – ${"Homebrew".padEnd(24)} ${"(brew)".padEnd(20)} macOS/Linux only`,
+      `  – ${"Homebrew (casks)".padEnd(24)} ${"(brew-cask)".padEnd(20)} macOS only`,
+    ]);
+    expect(printed()).toContain(`▲ ${"schedule".padEnd(24)} diagnostic unavailable (timed out)`);
   });
 });

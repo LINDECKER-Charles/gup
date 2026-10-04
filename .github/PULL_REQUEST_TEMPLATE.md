@@ -6,8 +6,9 @@
       (English, imperative, subject ≤ 72 chars) — see CONTRIBUTING.md
 - [ ] Tests ship with the change and check behaviour, not implementation
 - [ ] `npm run typecheck`, `npm run lint`, `npm run test:run`, `npm run test:e2e:smoke`,
-      `npm run security` pass locally on Node ≥ 26.9 (`check.cmd` on Windows)
-- [ ] User-facing strings are French; docs, comments and commits are English
+      `npm run security` pass locally on Node ≥ 26.9 (`scripts\check.cmd` on Windows)
+- [ ] User-facing strings exist in English and French (`localize()` / `localized()`, read
+      when shown); docs, comments and commits are English
 - [ ] Docs updated where behaviour changed (README, docs/guide, providers catalog + count)
 - [ ] Mermaid diagrams checked in the rich diff ("Files changed" → rendered view)
 - [ ] Changelog entry added as `docs/changelog/unreleased/<branch-slug>.md`

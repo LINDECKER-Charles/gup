@@ -15,7 +15,7 @@ and the code — win.**
 |---|---|
 | [`architecture.md`](../architecture.md) | Layers, data model, scan, update pipeline, interactive app, process seams, local state, scheduling, settings, composition — with the diagrams |
 | [`how-gup-works.md`](../how-gup-works.md) | The end-to-end walkthrough, command by command, and the provider contract in detail |
-| [`SECURITY.md`](../../../SECURITY.md#threat-model) | The threat model, its mitigations and the tests that pin them |
+| [`SECURITY.md`](../../../.github/SECURITY.md#threat-model) | The threat model, its mitigations and the tests that pin them |
 | [`testing.md`](../testing.md) | The test strategy, how to run each layer, CI |
 | [`docs/guide/`](../../guide/) | What each feature does, for users |
 
@@ -27,7 +27,7 @@ In the order the branches were merged:
 |---|---|---|
 | [`foundation.md`](foundation.md) | The extension points every 0.5.0 feature plugs into: platforms, state directories, install sinks, the log facade, the settings store, the update pipeline and batch lock, CLI modules, the appearance seam, the view registry and launchers; the extension cookbook | [architecture §6, §8, §12](../architecture.md#12-composition-cli-modules-and-slots) |
 | [`test-harness.md`](test-harness.md) | Vitest projects, the shared sandbox, the fake machine, the provider contract harness | [testing.md](../testing.md) |
-| [`package-multi-select.md`](package-multi-select.md) | Paquets: Entrée updates the checked set only; the selection bar | [interactive-app.md § Paquets](../../guide/interactive-app.md#paquets-pick-what-to-update) |
+| [`package-multi-select.md`](package-multi-select.md) | Paquets: Entrée updates the checked set only; the selection bar | [interactive-app.md § Packages](../../guide/interactive-app.md#packages-pick-what-to-update) |
 | [`os-compat.md`](os-compat.md) | Providers foreign to the OS: declarations, the greyed group, the `--provider` warning; §10 the platform gate as the only gate | [architecture §4](../architecture.md#4-providers-and-the-platform-gate) |
 | [`options-themes.md`](options-themes.md) | The settings file, ten themes, terminal palette detection, the WCAG contrast enforcement, the Options view | [architecture §11](../architecture.md#11-settings-themes-and-contrast), [themes-and-accessibility.md](../../guide/themes-and-accessibility.md) |
 | [`in-tui-updates.md`](in-tui-updates.md) | Updates inside the app: the PTY trampoline, ConPTY release, the exit-file fast path, the run view, the in-screen launcher | [architecture §7, §8](../architecture.md#8-runner-and-process-seams), [interactive-app.md](../../guide/interactive-app.md) |

@@ -1,5 +1,5 @@
 import type { ScanEvent, ScanProviderRecord } from "../../../../src/core/history/types.js";
-import { SCAN_FIXTURE } from "../scan.js";
+import { SCAN_FIXTURE, SCOOP_ERROR } from "../scan.js";
 import { SCHEDULES_FIXTURE, type FixtureSchedule } from "../schedules/schedule-data.js";
 import { atLocalTime, type FixtureDay } from "./fixture-days.js";
 import { envelope, scheduledSession, sessionOf } from "./history-envelope.js";
@@ -25,13 +25,11 @@ const SCHEDULED_SCAN_MS = 3_400;
 const OUTDATED_PROVIDERS: readonly string[] = SCAN_FIXTURE.results
   .filter((result) => result.packages.length > 0)
   .map((result) => result.providerId);
-const SCOOP_ERROR =
-  SCAN_FIXTURE.results.find((result) => result.error !== undefined)?.error ?? "scan failed";
 
 /**
  * Every scan of the year: the morning one of each active day — today's
  * being the fixture scan itself, so the Journal's latest numbers are those
- * of Paquets — and the targeted scans of the schedules' last runs.
+ * of Packages — and the targeted scans of the schedules' last runs.
  */
 export function scanHistory(days: readonly FixtureDay[]): ScanEvent[] {
   const today = days.at(-1);
@@ -54,7 +52,7 @@ function morningScan(day: FixtureDay, isToday: boolean): ScanEvent {
   };
 }
 
-/** The fixture scan as the history records it: what Paquets shows. */
+/** The fixture scan as the history records it: what Packages shows. */
 function fixtureScanProviders(): ScanProviderRecord[] {
   return SCAN_FIXTURE.steps.map(({ providerId, ms }) => {
     const result = SCAN_FIXTURE.results.find((candidate) => candidate.providerId === providerId);

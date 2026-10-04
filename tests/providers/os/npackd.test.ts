@@ -19,6 +19,7 @@ import {
   NPACKD_NOTE,
   npackdMachine,
 } from "./windows.cases.js";
+import { useLocale } from "../../support/locale.js";
 
 /**
  * Npackd: `ncl search --status updateable` (JSON, or the older bare format),
@@ -285,6 +286,22 @@ describe("NpackdProvider.update", () => {
     });
   });
 
+});
+
+describe("NpackdProvider.update in English", () => {
+  useLocale("en");
+
+  it("names Windows' elevated launch in the UAC hint", async () => {
+    await system.load(npackdMachine(false));
+    await expect(new NpackdProvider().update("a.b")).resolves.toEqual({
+      id: "a.b",
+      success: false,
+      skipped: true,
+      message:
+        "Npackd installs system-wide by default: restart gup from a terminal opened with " +
+        '"Run as administrator".',
+    });
+  });
 });
 
 describe("NpackdProvider.updateAll", () => {

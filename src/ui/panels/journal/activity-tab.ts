@@ -18,7 +18,7 @@ import {
 } from "./journal-tab.js";
 
 /**
- * Tab 1, Activité: the period at a glance — headline numbers, the calendar
+ * Tab 1, Activity: the period at a glance — headline numbers, the calendar
  * heatmap of successful updates, the outdated trend, the slowest scans. On a
  * short panel the blank lines between blocks go first, then the last blocks.
  */

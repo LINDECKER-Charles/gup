@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968.0 594.0" width="968.0" height="594.0" role="img" aria-labelledby="t d">
-<title id="t">gup — Mise à jour</title>
+<title id="t">gup — Update</title>
 <desc id="d">Results of an in-app update: five updated, one failure under the cursor, its installer output kept in the pane below, and the key that writes the HTML report.</desc>
 <style>
 text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:16px}
@@ -26,17 +26,17 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <circle cx="22.0" cy="17.0" r="5.5" fill="#ff5f57"/>
 <circle cx="40.0" cy="17.0" r="5.5" fill="#febc2e"/>
 <circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
-<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Mise à jour</text>
+<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Update</text>
 <rect class="c0" x="16.0" y="42.0" width="936.0" height="17.0"/>
-<text class="c1 b" x="16.0" y="55.0" textLength="483.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  Mise à jour terminée  │  6 paquet(s)  │  02:27</text>
+<text class="c1 b" x="16.0" y="55.0" textLength="436.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  Update finished  │  6 packages  │  02:27</text>
 <text class="c2" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
-<text class="c3" x="31.6" y="72.0" textLength="187.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Mise à jour — terminée </text>
-<text class="c2" x="218.8" y="72.0" textLength="733.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────────────────────────────────────────────────────────────────────────────────╮</text>
+<text class="c3" x="31.6" y="72.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Update — finished </text>
+<text class="c2" x="179.8" y="72.0" textLength="772.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">──────────────────────────────────────────────────────────────────────────────────────────────────╮</text>
 <text class="c2" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="31.6" y="89.0" textLength="109.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">√ 5 mis à jour</text>
-<text class="c5" x="164.2" y="89.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">→ 0 ignorée</text>
-<text class="c6" x="273.4" y="89.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">× 1 échec</text>
-<text class="c5" x="874.0" y="89.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">en 02:27</text>
+<text class="c4" x="31.6" y="89.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">√ 5 updated</text>
+<text class="c5" x="140.8" y="89.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">→ 0 skipped</text>
+<text class="c6" x="250.0" y="89.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">× 1 failed</text>
+<text class="c5" x="874.0" y="89.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">in 02:27</text>
 <text class="c2" x="944.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="944.2" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -85,31 +85,29 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c2" x="944.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="225.0" textLength="936.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
 <text class="c2" x="16.0" y="242.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
-<text class="c3" x="31.6" y="242.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Winget · PowerToys — sortie </text>
+<text class="c3" x="31.6" y="242.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Winget · PowerToys — output </text>
 <text class="c2" x="257.8" y="242.0" textLength="694.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">────────────────────────────────────────────────────────────────────────────────────────╮</text>
 <text class="c2" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="23.8" y="259.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Trouvé PowerToys [Microsoft.PowerToys] Version 0.95.0                                                                </text>
+<text class="c7" x="23.8" y="259.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Found PowerToys [Microsoft.PowerToys] Version 0.95.0                                                                 </text>
 <text class="c2" x="944.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="23.8" y="276.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Ce package d’application vous est concédé sous licence par son propriétaire.                                         </text>
+<text class="c7" x="23.8" y="276.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> This application is licensed to you by its owner.                                                                    </text>
 <text class="c2" x="944.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="23.8" y="293.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Microsoft n’est pas responsable des packages tiers et n’accorde pas de licences à ceux-ci.                           </text>
+<text class="c7" x="23.8" y="293.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.                           </text>
 <text class="c2" x="944.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="23.8" y="310.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Téléchargement en cours https://github.com/microsoft/PowerToys/releases/download/v0.95.0/PowerToysUserSetup-0.95.0-x </text>
+<text class="c7" x="23.8" y="310.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Downloading https://github.com/microsoft/PowerToys/releases/download/v0.95.0/PowerToysUserSetup-0.95.0-x64.exe       </text>
 <text class="c2" x="944.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="23.8" y="327.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 64.exe                                                                                                               </text>
+<text class="c7" x="23.8" y="327.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ██████████████████████████████   196 MB /  196 MB                                                                  </text>
 <text class="c2" x="944.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="23.8" y="344.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ██████████████████████████████  196 Mo / 196 Mo                                                                    </text>
+<text class="c7" x="23.8" y="344.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Installer hash does not match.                                                                                       </text>
 <text class="c2" x="944.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="23.8" y="361.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Le hachage de l’installateur ne correspond pas.                                                                      </text>
 <text class="c2" x="944.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="23.8" y="378.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Échec de l’installation : le fichier téléchargé a été supprimé.                                                      </text>
 <text class="c2" x="944.2" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="944.2" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -132,5 +130,5 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c2" x="16.0" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="944.2" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="565.0" textLength="936.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
-<text class="c5" x="16.0" y="582.0" textLength="600.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ choisir un paquet · entrée retour · o rapport HTML · v agrandir la sortie</text>
+<text class="c5" x="16.0" y="582.0" textLength="561.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ choose a package · enter back · o HTML report · v enlarge the output</text>
 </svg>

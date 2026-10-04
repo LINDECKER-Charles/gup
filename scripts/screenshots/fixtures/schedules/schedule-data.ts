@@ -15,7 +15,7 @@ export interface FixtureSchedule {
 
 const AT_NINE = { hour: 9, minute: 0 } as const;
 const MONDAY = 1;
-const NETWORK_DOWN = "réseau indisponible";
+const NETWORK_DOWN = "network unavailable";
 
 /**
  * The fixture machine's three schedules: its dev tools every Monday, Git
@@ -26,7 +26,7 @@ export const SCHEDULES_FIXTURE: readonly FixtureSchedule[] = [
   {
     id: "a1b2c3d4",
     draft: {
-      name: "Outils dev",
+      name: "Dev tools",
       recurrence: { kind: "weekly", weekday: MONDAY, at: AT_NINE },
       targets: [
         { providerId: "npm-g", packageId: "typescript", label: "typescript" },

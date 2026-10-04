@@ -7,6 +7,7 @@ import {
 } from "../../core/wsl.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 /**
  * Pacman inside Arch-family WSL distros.
@@ -81,6 +82,9 @@ async function probeUpgradable(distro: string): Promise<PacmanProbe | null> {
   }
   return {
     count: 0,
-    note: "pacman-contrib absent — déclencher pacman -Syu pour vérifier",
+    note: localize({
+      en: "pacman-contrib missing — run pacman -Syu to check",
+      fr: "pacman-contrib absent — déclencher pacman -Syu pour vérifier",
+    }),
   };
 }

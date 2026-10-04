@@ -5,7 +5,7 @@ import { isLogLevel, type LogRecord } from "../../core/log/types.js";
 import { stateDir } from "../../core/state/app-dirs.js";
 import { parsePeriod } from "../../core/time/period.js";
 import { logRecordText } from "../../ui/log-line.js";
-import { ERROR_PREFIX } from "../../ui/text/cli-labels.js";
+import { ERROR_LABELS } from "../../ui/text/cli-labels.js";
 import { LOG_MESSAGES } from "../../ui/text/journal/log-labels.js";
 
 /**
@@ -82,7 +82,7 @@ function levelOf(raw: string | undefined): LogLevel | undefined | null {
 }
 
 function fail(message: string, code: number): number {
-  process.stderr.write(`${chalk.red(ERROR_PREFIX)} ${message}\n`);
+  process.stderr.write(`${chalk.red(ERROR_LABELS.prefix)} ${message}\n`);
   return code;
 }
 

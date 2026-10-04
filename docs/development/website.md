@@ -82,29 +82,42 @@ flowchart LR
 ### The terminal demo
 
 The hero's three tabs show one sample machine (`scenes/sample-machine.js`): **Interface** is
-Paquets with three packages checked (`app-scene.js`), **Update** is the run view updating exactly
-those three (`update-scene.js`), **JSON** is `gup list --json --fast` (`json-scene.js`). The TUI
-mocks are French on purpose — they are the real interface — and are drawn as structured HTML
-(`src/ui/terminal/`), never as box-drawing art.
+Packages with three packages checked (`app-scene.js`), **Update** is the run view updating
+exactly those three (`update-scene.js`), **JSON** is `gup list --json --fast` (`json-scene.js`).
+The TUI mocks are the real interface, drawn as structured HTML (`src/ui/terminal/`), never as
+box-drawing art, and each exists once per language the interface speaks: one table of words per
+language around the same sample machine. A page shows the interface in its own language when gup
+speaks it, in English otherwise (`interfaceLanguageOf()` in `scenes/interface-languages.js`): the
+French page shows the French interface, the seven other pages the English one. The words a
+screen reader says for the marks and the unheaded columns travel with each scene, in its
+language. The JSON tab is command output, the same on every page.
 
-`tests/rules/scenes-truth.test.mjs` holds them to the CLI's sources, read as text (a small
-literal reader in `tests/helpers/ts-literals.mjs`; the site's tests never depend on the CLI's
-TypeScript toolchain). It fails when a mock shows:
+`tests/rules/scenes-truth.test.mjs` holds the mocks to the CLI's sources, read as text (a small
+literal reader in `tests/helpers/ts-literals.mjs`, and `tests/helpers/ts-catalogs.mjs`, which
+splits each `localized({ en, fr })` catalog by language; the site's tests never depend on the
+CLI's TypeScript toolchain). Each variant is checked against its own language: the English mocks
+against the `en` blocks of the TUI's catalogs, the French ones against the `fr` blocks. Outside
+the catalogs, only what carries no word — marks, punctuation, key names, the templates around
+the words — counts for every language. It fails when a mock shows:
 
-- a title-bar fact, panel title, column heading, selection-bar text or key hint that no string
-  or template literal under `src/ui/` writes (a template's interpolations may only take numbers
-  or texts the TUI writes elsewhere, so `entrée mettre à jour (3)` passes and `entrée lancer (3)`
-  does not);
-- a sidebar other than the one the views registered in `src/commands/menu-views.ts` build (labels
-  resolved from their constants, ordered by group and order, separators between groups,
-  `Quitter` last);
+- a title-bar fact, panel title, column heading, selection-bar text or key hint the TUI does not
+  write in the mock's language (a template's interpolations may only take numbers or texts the
+  TUI writes elsewhere, so `enter update (3)` passes and `enter launch (3)` does not; a French
+  hint in the English mock fails too);
+- a sidebar other than the one the views registered in `src/commands/menu-views.ts` build in
+  that language (labels resolved from their constants — a view's `label` field, or a getter that
+  returns one — in that language's block, ordered by group and order, separators between
+  groups, the quit entry last: `Quit`, `Quitter` in French);
 - a mark other than the TUI's (`STATUS_GLYPHS`, the checkboxes, the cursor);
 - a provider the registry does not register (display names in the mocks, ids in the JSON tab).
+
+It also fails when the scenes do not cover exactly the languages of the CLI's catalogs — a
+language added to gup needs its mocks — and pins which interface each of the eight pages shows.
 
 Numbers (versions, counts, clocks), layout, colours and the order of the key hints are outside
 its reach. When the interface renames a label or a key, the site's tests fail until the scene
 follows. Where the wording in the plan and the shipped code disagree, the scenes follow the code
-(the run view says `s passer ce paquet` and `v agrandir le terminal`).
+(the run view says `s skip this package` and `v enlarge the terminal`).
 
 Catalog strings may use:
 
@@ -209,7 +222,7 @@ looked at and what it changed. A native speaker has not reviewed these yet: one
 
 | Locale | Key risks | Back-translation notes |
 |---|---|---|
-| zh | Idiomatic headings drift easily ("know everything" vs "in control"); spacing between Han and Latin runs; colloquial verbs in marketing copy. | One fix: the install title "一切尽在掌握" read "everything under control" — now "一切了然" ("everything is clear"). "折腾" (fiddle with) in the lead is informal but common in Chinese developer copy: kept. The terminal caption adds "目前" (for now), consistent with the FAQ. "updates reviewed weekly" made explicit as dependency updates. |
+| zh | Idiomatic headings drift easily ("know everything" vs "in control"); spacing between Han and Latin runs; colloquial verbs in marketing copy. | One fix: the install title "一切尽在掌握" read "everything under control" — now "一切了然" ("everything is clear"). "折腾" (fiddle with) in the lead is informal but common in Chinese developer copy: kept. "updates reviewed weekly" made explicit as dependency updates. |
 | hi | Symlink "resolved" has no settled Hindi verb; gender of *कमांड*; English-heavy loanwords. | One fix: "सिमलिंक … हल होते हैं" read "symlinks get solved" — now "फ़ॉलो किए जाते हैं" (followed). The hero adds "हमेशा" (always) before *अप-टू-डेट*: idiomatic headline, accepted. *कमांड* kept feminine throughout. |
 | es | *registro* means both a package registry and a log; *terminal* has both genders across regions; Enter is *Intro* on Spanish keyboards. | Clean except one fix: "Sin registro" read as "no logging", contradicting the journal — now "Sin registro de paquetes". "one full-screen terminal app" shortened to "una app de terminal" in `meta.description` for the 160-column budget, as in French. "opt-in scheduling" reads "optional scheduling": same meaning for a reader. |
 | ar | The counted noun changes with the number; *سجل* means both a log and a registry; Latin names inside right-to-left sentences; *shell* and *commit* have no single settled term. | Count phrases are plural objects built from one table (few/many/other verified for 103/153/200). One fix: "لا سجل حزم" (no package registry) collided with "سجل النشاط" (activity journal) — now "لا مستودع حزم". The hero's last line is "كلها محدَّثة" (all of them updated), which avoids an agreement error after the accusative count noun. *shell* is "صدفة الأوامر", *commit* "إيداع" (Microsoft terminology). Bidi of mixed runs, punctuation placement and mirroring checked on the 1440 and 390 px screenshots. |
@@ -244,6 +257,11 @@ Hindi *एम्बेड किया गया टर्मिनल*, Chinese
 "live" is *en direct*, *en directo*, *ao vivo*, *مباشرةً* (directly), *সরাসরি* (directly),
 *लाइव* and *实时* (in real time). A rule test holds the English source to it.
 
+Since gup 0.5.1 the terminal caption and the FAQ's language answer say, in every language, that
+the interface is English by default and French with `gup language fr`, which saves the choice,
+or with `GUP_LANG=fr`, for one shell and taking precedence — with the same command spans in
+every catalog. They used to say it was French "for now".
+
 The footer's Project column links the community files a visitor looks for besides
 CONTRIBUTING: `SUPPORT.md` and `CODE_OF_CONDUCT.md`. Their labels use each language's usual
 name for the document — for the code of conduct, French *Code de conduite*, Spanish *Código de
@@ -260,9 +278,9 @@ reads "code of conduct" and "support" or "help".
 |---|---|
 | `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda, Arabic punctuation), Arabic count agreement. |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
-| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, every non-Latin script rendering its sans, display and mono faces from its own fonts, the terminal demo held to the CLI's sources (see "The terminal demo"), every `gup` command and flag the page, its examples and the two llms texts cite registered by the CLI's commander declarations (flags of the tools gup drives, such as Homebrew's `--greedy` and npm's `--allow-scripts`, are named in the test), every provider id llms.txt lists under a category named after a domain (`Cloud CLIs`, `Dev CLIs`…) belonging to that domain, and the English hero lead and social description saying updates run in the embedded terminal, never "without ever leaving" the interface (the UAC window and the no-PTY fallback are exceptions). |
+| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, every non-Latin script rendering its sans, display and mono faces from its own fonts, the terminal demo held to the CLI's sources in each interface language, with exactly the CLI's languages and the page-to-language mapping pinned (see "The terminal demo"), every `gup` command and flag the page, its examples and the two llms texts cite registered by the CLI's commander declarations (flags of the tools gup drives, such as Homebrew's `--greedy` and npm's `--allow-scripts`, are named in the test), every provider id llms.txt lists under a category named after a domain (`Cloud CLIs`, `Dev CLIs`…) belonging to that domain, and the English hero lead and social description saying updates run in the embedded terminal, never "without ever leaving" the interface (the UAC window and the no-PTY fallback are exceptions). |
 | `tests/facts/*` | The registry reader: registered providers only, per-system counts from the `platforms` declarations, refusal of an unknown set, an unreadable declaration or a count mismatch. The README reader: the command under `## Install`, flags kept, LF or CRLF, refusal of a missing command or of one that does not install the package. |
-| `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no letter-spacing on Arabic, Indic or Han text, no-JS and reduced-motion rendering, overflow at 1440/820/390 px, and at each width the install command whole in both its boxes — unscrolled, inside its card. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, language menu names on the right, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu (each name tagged with its own language, all starting on one edge). |
+| `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, the `lang` of the prerendered terminal demo (the page's own interface language when gup speaks it, English otherwise), CSP, clean console (hydration and CSP errors included), heading outline, skip link, no letter-spacing on Arabic, Indic or Han text, no-JS and reduced-motion rendering, overflow at 1440/820/390 px, and at each width the install command whole in both its boxes — unscrolled, inside its card. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, language menu names on the right, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu (each name tagged with its own language, all starting on one edge). |
 | `npm run lhci` | Lighthouse mobile ≥ 0.95 on performance (best of 3), accessibility, best practices and SEO (median of 3). |
 
 Budgets: HTML ≤ 30 KB gzipped per locale, JavaScript ≤ 62 KB, CSS ≤ 12 KB, preloaded fonts

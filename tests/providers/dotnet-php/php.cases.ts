@@ -77,7 +77,7 @@ const COMPOSER_GLOBAL: ProviderContractCase = {
   ],
   update: {
     packageId: "phpstan/phpstan",
-    installs: [["composer", "global", "update", "phpstan/phpstan"]],
+    installs: [["composer", "global", "update", "phpstan/phpstan", "--with-dependencies"]],
   },
   updateAll: "one-batch",
   // The global project is updated as a whole: one resolution, one lock file.

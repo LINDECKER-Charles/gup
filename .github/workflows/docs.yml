@@ -26,6 +26,8 @@ jobs:
       - uses: actions/checkout@v7
       # Offline: relative links and anchors only. External URLs (badges, npm,
       # commits) would make the job flaky and say nothing about our docs.
+      # lychee's globs skip hidden directories: the Markdown files of .github/
+      # get a glob of their own.
       # Third-party: pinned to a commit, as a tag can be moved to other code
       # (tests/security/workflow-pins.test.ts); Dependabot bumps both.
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
@@ -34,5 +36,5 @@ jobs:
             --offline --include-fragments --no-progress
             --exclude-path node_modules --exclude-path index/node_modules
             --exclude-path docs/archived --exclude-path coverage
-            './**/*.md'
+            './**/*.md' './.github/*.md'
           fail: true

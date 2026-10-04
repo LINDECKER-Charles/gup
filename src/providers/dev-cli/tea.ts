@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface GiteaReleaseJson {
@@ -62,8 +63,10 @@ export class TeaProvider implements Provider {
         // The homebrew-core `tea` formula is the Gitea CLI (gitea.com/gitea/tea).
         brew: "tea",
       },
-      manualMessage:
-        "Télécharger https://gitea.com/gitea/tea/releases et remplacer tea.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://gitea.com/gitea/tea/releases",
+        "tea.exe",
+      ),
     });
   }
 

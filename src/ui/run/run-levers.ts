@@ -1,4 +1,5 @@
-import { RUN_NOTICES, type ElevationKind } from "../text/run-labels.js";
+import { RUN_NOTICES } from "../text/run-key-labels.js";
+import type { ElevationKind } from "../text/run-labels.js";
 import type { RunControl } from "./run-control.js";
 import type { RunDialogs } from "./run-dialogs.js";
 import type { Notice } from "./run-lines.js";

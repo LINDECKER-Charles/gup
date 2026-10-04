@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SUITE_LOCALE } from "../../support/locale.js";
 import { fakePty, type FakePty } from "../../support/pty/fake-pty.js";
 import { restorePlatform, setPlatform } from "../../support/platform.js";
 import { recordingPane, type RecordingPane } from "../../support/pty/recording-pane.js";
@@ -49,7 +50,8 @@ describe("createPtySink", () => {
     const [call] = pty.spawned;
     expect(call).toMatchObject({ file: process.execPath, options: { cols: 100, rows: 20 } });
     expect(call!.args[0]).toBe(TRAMPOLINE.script);
-    expect(decodePayload(call!.args[1]!)).toStrictEqual({ v: 1, ...REQUEST });
+    // The trampoline speaks gup's language: the request carries it.
+    expect(decodePayload(call!.args[1]!)).toStrictEqual({ v: 1, ...REQUEST, locale: SUITE_LOCALE });
   });
 
   it("on Windows, hands the trampoline an exit file, removed once the install settled", async () => {

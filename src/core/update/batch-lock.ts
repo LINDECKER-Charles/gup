@@ -18,7 +18,7 @@ import type { BatchGuard, BatchHolder, BatchWait } from "./update-extensions.js"
  * The operating system releases it when the holder exits, however it exits,
  * so a crash can never leave a lock behind and no lock is ever broken by age
  * while its holder lives. A JSON file in that dir only carries what a
- * waiting run shows ("planifiée, commencée il y a 4 min").
+ * waiting run shows (a scheduled run, started 4 min ago).
  */
 
 export interface BatchLockLocation {

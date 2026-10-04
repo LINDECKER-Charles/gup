@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { localized } from "../../i18n/localized.js";
 import { pathFlavour } from "../../platform/path-flavour.js";
 import { hasControlCharacter } from "../model/schedule-target.js";
 import type { InstallationProbe } from "./trigger-sync.js";
@@ -41,18 +42,32 @@ export const PACKAGE_NAME = "@charles_lindecker/gup";
 
 const INSTALL_GLOBALLY = `npm i -g ${PACKAGE_NAME}`;
 
-const TO_SCHEDULE = "pour planifier des mises à jour";
+/** What installing gup globally is for, at the end of two refusals. */
+const TO_SCHEDULE = { en: "to schedule updates", fr: "pour planifier des mises à jour" } as const;
 
-export const COMMAND_REFUSALS = {
-  notGlobal: `gup doit être installé globalement — ${INSTALL_GLOBALLY} — ${TO_SCHEDULE}`,
-  fromSources: `gup tourne depuis ses sources : ${INSTALL_GLOBALLY} ${TO_SCHEDULE}`,
-  root: "n'utilisez pas sudo avec gup schedule : la planification est propre à l'utilisateur",
-  wsl:
-    "dans WSL, planifiez depuis gup sous Windows — les providers wsl-* couvrent vos distributions",
-  noEntry: "point d'entrée de gup introuvable",
-  unsafePath: (path: string): string =>
-    `chemin non planifiable (guillemet, %, apostrophe ou caractère de contrôle) : ${path}`,
-} as const;
+/** Why this gup cannot be registered with the OS, in the interface's languages. */
+export const COMMAND_REFUSALS = localized({
+  en: {
+    notGlobal: `gup must be installed globally — ${INSTALL_GLOBALLY} — ${TO_SCHEDULE.en}`,
+    fromSources: `gup runs from its sources: ${INSTALL_GLOBALLY} ${TO_SCHEDULE.en}`,
+    root: "do not use sudo with gup schedule: schedules belong to the user",
+    wsl: "in WSL, schedule from gup on Windows — the wsl-* providers cover your distributions",
+    noEntry: "gup entry point not found",
+    unsafePath: (path: string): string =>
+      `unschedulable path (quote, %, apostrophe or control character): ${path}`,
+  },
+  fr: {
+    notGlobal: `gup doit être installé globalement — ${INSTALL_GLOBALLY} — ${TO_SCHEDULE.fr}`,
+    fromSources: `gup tourne depuis ses sources : ${INSTALL_GLOBALLY} ${TO_SCHEDULE.fr}`,
+    root: "n'utilisez pas sudo avec gup schedule : la planification est propre à l'utilisateur",
+    wsl:
+      "dans WSL, planifiez depuis gup sous Windows — les providers wsl-* couvrent " +
+      "vos distributions",
+    noEntry: "point d'entrée de gup introuvable",
+    unsafePath: (path) =>
+      `chemin non planifiable (guillemet, %, apostrophe ou caractère de contrôle) : ${path}`,
+  },
+});
 
 const NPX_CACHE = /[\\/]_npx[\\/]/;
 /** Task Scheduler expands %VAR% and splits on quotes; cron expands % and the shell sees quotes. */

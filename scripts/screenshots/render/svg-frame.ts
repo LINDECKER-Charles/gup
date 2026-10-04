@@ -2,7 +2,7 @@ import type { Hex, TerminalPalette } from "./docs-palette.js";
 import type { FrameModel, FrameSpan } from "./frame-model.js";
 
 export interface SvgOptions {
-  /** Window title and `<title>`: "gup — Paquets". */
+  /** Window title and `<title>`: "gup — Packages". */
   readonly title: string;
   /** `<desc>`: the scene's alt text. */
   readonly description: string;

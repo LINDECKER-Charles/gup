@@ -6,6 +6,7 @@ vi.mock("../../../src/core/registry.js", () => ({ getProvider: getProviderMock }
 
 import { PLATFORMS } from "../../../src/core/platform/platforms.js";
 import { resolveUpdateTarget } from "../../../src/core/platform/update-target.js";
+import { useLocale } from "../../support/locale.js";
 import { restorePlatform, setPlatform } from "../../support/platform.js";
 
 /**
@@ -96,6 +97,22 @@ describe("resolveUpdateTarget", () => {
       isValid: false,
       problem: "provider",
       error: expect.stringContaining("indisponible sur macOS"),
+    });
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it.each([
+      ["typescript", 'Invalid format: "typescript". Expected provider:packageId'],
+      ["npm-g:-g", 'Target refused: "npm-g:-g" — a package id never starts with "-"'],
+      ["npm-g:", 'Target refused: "npm-g:" — missing package id'],
+      ["npm-g:pkg\u0007", "Target refused: forbidden control character"],
+      ["nope:x", "Unknown provider: nope"],
+      ["choco:git", "Provider choco unavailable on macOS (Windows only)"],
+    ])("words the refusal of %j in English", (target, error) => {
+      setPlatform("darwin");
+      expect(resolveUpdateTarget(target)).toMatchObject({ isValid: false, error });
     });
   });
 });

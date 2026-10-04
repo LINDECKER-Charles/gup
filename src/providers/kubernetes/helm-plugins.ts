@@ -1,4 +1,5 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
+import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 /**
@@ -34,7 +35,10 @@ export class HelmPluginsProvider implements Provider {
         name: "helm plugin update --all",
         current: "?",
         latest: "refresh",
-        note: `${plugins.length} plugin(s) installé(s)`,
+        note: localize({
+          en: `${plugins.length} plugin(s) installed`,
+          fr: `${plugins.length} plugin(s) installé(s)`,
+        }),
       },
     ];
   }

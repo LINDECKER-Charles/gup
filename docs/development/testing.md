@@ -90,9 +90,9 @@ put 26 first on `PATH` for the session:
 | `npm run test:e2e` | build, then every end-to-end suite, read-only (real tools, network) |
 | `npm run test:e2e:mutate` | build, then every end-to-end suite, the sandboxed mutating ones included |
 | `npm run fixtures:record -- --provider <id>…` | re-record provider fixtures from the tools installed here ([`provider-contracts.md`](design/provider-contracts.md#7-recorded-fixtures-s11)) |
-| `npm run typecheck` | `tsc` on `src`, then on `tsconfig.tests.json` (tests, scripts, configs) |
+| `npm run typecheck` | `tsc` on `src`, then on `tests/tsconfig.json` (tests, scripts, configs) |
 | `npm run lint` | `eslint src tests scripts` |
-| `check.cmd` (Windows) | every gate above in parallel, then the end-to-end smoke alone; `check.cmd -E2E full` or `-E2E mutate` for more, `-E2E none` for less |
+| `scripts\check.cmd` (Windows) | every gate above in parallel, then the end-to-end smoke alone; `scripts\check.cmd -E2E full` or `-E2E mutate` for more, `-E2E none` for less |
 
 The end-to-end scripts load their switches with `node --env-file=tests/e2e/opt-in*.env`, which
 behaves the same in every shell. To run one file or one test, call vitest directly with the same
@@ -156,10 +156,15 @@ A file matching no project never runs, and one matching two runs twice:
   ever touch a throw-away npm prefix and a uniquely named `gup-it-<random>` task. A unit test
   never spawns a browser, a scheduled task or `taskkill`: `launchDetached` and `killProcessTree`
   are mocked explicitly.
-- **French strings come from their constants.** Tests import the labels the interface uses
-  (`src/ui/text/**`) rather than retyping them; a copy change then touches one constant. Only
-  strings asserted as behaviour (`Format invalide`, the non-TTY refusal, the `gup update`
-  summary lines) stay literal.
+- **The suites speak French, through the interface's constants.** `tests/support/locale.ts`
+  makes French (`SUITE_LOCALE`) the language of every worker — the one the suites were written
+  in, when the interface had no other — and `test-env.ts` gives the CLI a suite spawns
+  `GUP_LANG=fr`; `useLocale("en")` makes the tests of a `describe` speak English. Tests import
+  the labels the interface uses (`src/ui/text/**`) rather than retyping them; a copy change then
+  touches one constant. Only strings asserted as behaviour (`Format invalide`, the non-TTY
+  refusal, the `gup update` summary lines) stay literal. `tests/core/i18n/startup-reads.test.ts`
+  loads the whole command line with no language chosen and fails on any text read while a
+  module loads.
 - **node-pty is reached through `detectEmbeddedTerminal()`**, and a pseudo-terminal is ended
   through gup's `PtySession.kill()` / `ptyKill`, never node-pty's `IPty.kill()`
   (`tests/security/process-chokepoints.test.ts` scans `src`, `tests` and `scripts`).

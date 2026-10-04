@@ -6,6 +6,7 @@ import type {
   UpdateOutcome,
 } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 /**
  * Winget has no machine-readable output for `upgrade`.
@@ -15,7 +16,12 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class WingetProvider implements Provider {
   readonly id = "winget";
   readonly displayName = "Winget";
-  readonly installHint = "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget";
+  get installHint(): string {
+    return localize({
+      en: "Preinstalled on Windows 11. Otherwise: https://aka.ms/getwinget",
+      fr: "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget",
+    });
+  }
   /** Winget is a Windows component: a `winget` found elsewhere is not it. */
   readonly platforms = PLATFORMS.windows;
 
@@ -76,12 +82,7 @@ export class WingetProvider implements Provider {
 
     const res = await runInherit("winget", args);
     if (!res.failed) return { id: packageId, success: true };
-    // Retryable until the explicit uninstall+install fallback has been
-    // attempted. Earlier tiers (--force, --uninstall-previous) sometimes
-    // refuse to proceed (unknown current version, "no applicable upgrade",
-    // technology change detected post-download) — the CLI walks through
-    // progressively more aggressive strategies on subsequent passes.
-    return { id: packageId, success: false, retryable: true };
+    return failedUpgrade(packageId, res.exitCode);
   }
 
   /**
@@ -142,6 +143,58 @@ export class WingetProvider implements Provider {
     }
     return ids;
   }
+}
+
+/** What a failure says to do, built when it happens: in the language of the moment. */
+type FailureMessage = (packageId: string) => string;
+
+/** winget's HRESULTs reach the runner as signed 32-bit exit codes. */
+const hresult = (code: number): number => code | 0;
+
+/**
+ * Failures no stronger tier can fix, winget says so itself: they end as a
+ * skip that says what to do, never as an offer to force, uninstall or
+ * reinstall the package.
+ */
+const FINAL_FAILURES: ReadonlyMap<number, FailureMessage> = new Map<number, FailureMessage>([
+  // APPINSTALLER_CLI_ERROR_INSTALL_UPGRADE_NOT_SUPPORTED: the manifest
+  // forbids upgrades (Parsec, Android Studio).
+  [
+    hresult(0x8a150114),
+    () =>
+      localize({
+        en: "winget cannot upgrade this package: use its publisher's own updater",
+        fr: "winget ne peut pas mettre à jour ce paquet : passer par l'outil de son éditeur",
+      }),
+  ],
+  // APPINSTALLER_CLI_ERROR_PROMPT_INPUT_ERROR: winget asked a question no
+  // flag answers (Battle.net's install location) and could not read a reply.
+  [
+    hresult(0x8a150042),
+    (packageId) =>
+      localize({
+        en:
+          "winget needs an answer gup cannot give: " +
+          `run winget upgrade --id ${packageId} in a terminal`,
+        fr:
+          "winget attend une réponse que gup ne peut pas donner : " +
+          `lancer winget upgrade --id ${packageId} dans un terminal`,
+      }),
+  ],
+]);
+
+/**
+ * A failed upgrade. Retryable until the explicit uninstall+install fallback
+ * has been attempted: earlier tiers (--force, --uninstall-previous) sometimes
+ * refuse to proceed (unknown current version, "no applicable upgrade",
+ * technology change detected post-download) — the CLI walks through
+ * progressively more aggressive strategies on subsequent passes. Unless
+ * winget says no strategy can work.
+ */
+function failedUpgrade(packageId: string, exitCode: number): UpdateOutcome {
+  const final = FINAL_FAILURES.get(exitCode);
+  if (final) return { id: packageId, success: false, skipped: true, message: final(packageId) };
+  return { id: packageId, success: false, retryable: true };
 }
 
 export interface WingetRow {

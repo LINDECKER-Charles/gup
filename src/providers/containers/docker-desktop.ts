@@ -3,6 +3,7 @@ import { win32 as winPath } from "node:path";
 import { run } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize } from "../../core/i18n/localized.js";
 
 interface GitHubReleaseJson {
   tag_name?: string;
@@ -57,8 +58,10 @@ export class DockerDesktopProvider implements Provider {
       id: "docker-desktop",
       success: false,
       skipped: true,
-      message:
-        "Ouvrir Docker Desktop → Settings → Software Updates pour appliquer.",
+      message: localize({
+        en: "Open Docker Desktop → Settings → Software Updates to apply it.",
+        fr: "Ouvrir Docker Desktop → Settings → Software Updates pour appliquer.",
+      }),
     };
   }
 

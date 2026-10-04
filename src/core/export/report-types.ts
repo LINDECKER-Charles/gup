@@ -1,6 +1,7 @@
 import type { HistoryReadStats } from "../history/reader.js";
 import type { Cadence, InsightTotals } from "../insights/types.js";
 import type { RunTrigger } from "../state/run-context.js";
+import type { IntlLocale } from "../i18n/locale.js";
 import type { DayKey } from "../time/calendar.js";
 
 /**
@@ -71,12 +72,15 @@ export type DayRow = readonly [
 /** `[day, outdated]`: the last full scan of the day. */
 export type TrendRow = readonly [day: DayKey, outdated: number];
 
+/** The Intl locale a report is written in: its interface language's (`core/i18n/locale.ts`). */
+export type ReportIntlLocale = IntlLocale;
+
 export interface ReportPeriod {
   /** `12m`, `all`, `2026-01-01`. */
   readonly key: string;
-  /** "12 derniers mois": the period as the interface words it. */
+  /** The period as the interface words it ("12 derniers mois" in French). */
   readonly label: string;
-  /** "Sur les 12 derniers mois": the period opening a sentence. */
+  /** The period opening a sentence ("Sur les 12 derniers mois" in French). */
   readonly lead: string;
   readonly since: string | null;
   readonly until: string;
@@ -92,7 +96,11 @@ export interface ReportMeta {
   readonly platform: string;
   /** IANA zone the days were computed in, so the report reads the same anywhere. */
   readonly timeZone: string;
-  readonly locale: "fr-FR";
+  /**
+   * The Intl locale of the language the report is written in: its client
+   * picks plurals and writes numbers and dates with it, whatever the browser.
+   */
+  readonly locale: ReportIntlLocale;
   readonly period: ReportPeriod;
   readonly stats: HistoryReadStats;
 }

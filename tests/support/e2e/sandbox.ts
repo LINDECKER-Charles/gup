@@ -6,6 +6,7 @@ import { SCAN_SECTION } from "../../../src/core/config/scan-section.js";
 import { ConfigStore } from "../../../src/core/config/store.js";
 import { parseHistoryLine } from "../../../src/core/history/parse-event.js";
 import type { HistoryEvent } from "../../../src/core/history/types.js";
+import { SUITE_LOCALE } from "../locale.js";
 
 /**
  * A throw-away home for one end-to-end suite. Every directory gup writes to —
@@ -94,6 +95,8 @@ export function inheritedEnv(env: NodeJS.ProcessEnv = process.env): Record<strin
 
 function sandboxVariables(dirs: SandboxDirs): Record<string, string> {
   return {
+    // The language the suites' expectations are written in (tests/support/locale.ts).
+    GUP_LANG: SUITE_LOCALE,
     GUP_HISTORY_DIR: dirs.history,
     GUP_CONFIG_DIR: dirs.config,
     GUP_LOG_DIR: dirs.logs,

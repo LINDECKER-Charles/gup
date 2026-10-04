@@ -1,4 +1,5 @@
 import { homedir, uptime } from "node:os";
+import { localize } from "../../core/i18n/localized.js";
 import { lookupProvider } from "../../core/platform/lookup-provider.js";
 import type { ProviderFacts } from "../../core/scheduler/model/types.js";
 import {
@@ -69,7 +70,13 @@ export const CONSOLE_OUTPUT: CommandOutput = {
   err: (line) => void process.stderr.write(`${line}\n`),
 };
 
-export const NO_STATE_DIR = "emplacement de planification indisponible sur cette machine";
+/** Why there is no scheduler: the platform gives no state dir. */
+function noStateDir(): string {
+  return localize({
+    en: "no scheduling location available on this machine",
+    fr: "emplacement de planification indisponible sur cette machine",
+  });
+}
 
 /** Provider facts from the registry: unknown and foreign ids fail with lookupProvider's reason. */
 export const REGISTRY_PROVIDER_FACTS: ProviderFacts = {
@@ -86,7 +93,7 @@ export const REGISTRY_PROVIDER_FACTS: ProviderFacts = {
 
 export function schedulerServices(): SchedulerServices | { readonly error: string } {
   const files = schedulerFiles();
-  if (files === null) return { error: NO_STATE_DIR };
+  if (files === null) return { error: noStateDir() };
   const clock = (): Date => new Date();
   const installs = new InstallRecordStore(files.install);
   const trigger = osTriggerFor({
@@ -115,7 +122,7 @@ let shared: ReturnType<typeof schedulerServices> | undefined;
 
 /**
  * The process's scheduler services, built on first use: the CLI module and
- * the menu's Planification view share one set of stores and one trigger.
+ * the menu's Schedules view share one set of stores and one trigger.
  */
 export function processSchedulerServices(): SchedulerServices | { readonly error: string } {
   return (shared ??= schedulerServices());

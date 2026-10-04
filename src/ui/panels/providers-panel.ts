@@ -1,5 +1,6 @@
 import { supportLabel } from "../../core/platform/platform-label.js";
 import type { ProviderStatusReport, ProviderSummary } from "../../core/platform/types.js";
+import { VIEW_LABELS } from "../text/menu-labels.js";
 import {
   PROVIDERS_PANEL_LABELS as LABELS,
   providersSummaryParts,
@@ -39,7 +40,6 @@ export interface ProvidersPanelOptions {
  * hands it to {@link setData}.
  */
 export class ProvidersPanel implements Panel {
-  readonly title = "Providers";
   readonly isCapturingText = false;
   readonly #load: () => void;
   readonly #showIncompatible: () => boolean;
@@ -50,6 +50,10 @@ export class ProvidersPanel implements Panel {
   constructor(load: () => void, options: ProvidersPanelOptions = {}) {
     this.#load = load;
     this.#showIncompatible = options.showIncompatible ?? (() => true);
+  }
+
+  get title(): string {
+    return VIEW_LABELS.providers;
   }
 
   onShow(): void {

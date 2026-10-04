@@ -3,7 +3,9 @@ import type {
   ProviderScanResult,
   SelectedPackage,
 } from "../../core/types.js";
+import { isUpdatableNow } from "../../core/self-update.js";
 import type { PackageSort } from "../app/ui-preferences.js";
+import { compareNames } from "../text/format.js";
 import { orderPackages } from "./package-order.js";
 
 export type PackageRow =
@@ -38,7 +40,8 @@ interface Group {
  * The checked set is the only selection: nothing acts on the row under the
  * cursor. Checked packages survive filtering — narrowing the list to find one
  * more package never loses what was already picked. Toggling a group or "all"
- * only acts on what the filter currently shows.
+ * only acts on what the filter currently shows. A package gup can only update
+ * once it has exited (gup itself on Windows) is listed, never checked.
  */
 export class PackageList {
   readonly #scanned: readonly Group[];
@@ -56,7 +59,7 @@ export class PackageList {
     this.#sortOf = options.sort ?? (() => "provider");
     this.#scanned = [...scans]
       .filter((scan) => scan.packages.length > 0 || scan.error)
-      .sort((a, b) => nameOf(a.providerId).localeCompare(nameOf(b.providerId)))
+      .sort((a, b) => compareNames(nameOf(a.providerId), nameOf(b.providerId)))
       .map((scan) => ({
         providerId: scan.providerId,
         title: nameOf(scan.providerId),
@@ -119,9 +122,9 @@ export class PackageList {
     return this.#checked.has(keyOf(providerId, pkg));
   }
 
-  /** Checked / visible package counts of one provider. */
+  /** Checked / visible checkable package counts of one provider. */
   groupState(providerId: string): { checked: number; total: number } {
-    const visible = this.visiblePackages(providerId);
+    const visible = this.visiblePackages(providerId).filter(isUpdatableNow);
     const checked = visible.filter((pkg) => this.isChecked(providerId, pkg)).length;
     return { checked, total: visible.length };
   }
@@ -129,8 +132,10 @@ export class PackageList {
   /** A package flips; a group header checks all of its visible packages, or clears them. */
   toggleCurrent(): void {
     const row = this.rows[this.#cursor];
-    if (row?.kind === "package") this.flip(keyOf(row.providerId, row.pkg));
-    else if (row?.kind === "group") this.setAll([row.providerId]);
+    if (row?.kind === "group") this.setAll([row.providerId]);
+    else if (row?.kind === "package" && isUpdatableNow(row.pkg)) {
+      this.flip(keyOf(row.providerId, row.pkg));
+    }
   }
 
   /** Check every visible package, or clear them all when they already are. */
@@ -157,7 +162,11 @@ export class PackageList {
   }
 
   private visibleKeys(providerIds: readonly string[]): string[] {
-    return providerIds.flatMap((id) => this.visiblePackages(id).map((pkg) => keyOf(id, pkg)));
+    return providerIds.flatMap((id) =>
+      this.visiblePackages(id)
+        .filter(isUpdatableNow)
+        .map((pkg) => keyOf(id, pkg)),
+    );
   }
 
   private areChecked(keys: readonly string[]): boolean {

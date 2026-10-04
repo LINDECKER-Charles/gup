@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        The [documentation](https://github.com/LINDECKER-Charles/gup/blob/main/docs/README.md) and [SUPPORT.md](https://github.com/LINDECKER-Charles/gup/blob/main/SUPPORT.md) answer the most common questions. If something is broken rather than unclear, use the **Bug report** form.
+        The [documentation](https://github.com/LINDECKER-Charles/gup/blob/main/docs/README.md) and [SUPPORT.md](https://github.com/LINDECKER-Charles/gup/blob/main/.github/SUPPORT.md) answer the most common questions. If something is broken rather than unclear, use the **Bug report** form.
   - type: textarea
     id: goal
     attributes:

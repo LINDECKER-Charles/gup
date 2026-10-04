@@ -1,5 +1,6 @@
 import { existsSync, realpathSync } from "node:fs";
 import { dirname, extname, join } from "node:path";
+import { activeLocale } from "../i18n/locale.js";
 import type { InheritRequest } from "../process/inherit-sink.js";
 import { encodePayload, PAYLOAD_VERSION, type TrampolinePayload } from "./trampoline-payload.js";
 
@@ -60,7 +61,10 @@ export function locateTrampoline(host: TrampolineHost = runningHost()): Trampoli
   }
 }
 
-/** node, its kept flags, the trampoline and the encoded request — nothing else. */
+/**
+ * node, its kept flags, the trampoline and the encoded request — nothing
+ * else. The request carries this process's language, the trampoline's own.
+ */
 export function trampolineLaunch(
   request: InheritRequest,
   location: TrampolineLocation,
@@ -73,6 +77,7 @@ export function trampolineLaunch(
     ...(request.cwd !== undefined && { cwd: request.cwd }),
     ...(request.shell !== undefined && { shell: request.shell }),
     ...(exitFile !== undefined && { exitFile }),
+    locale: activeLocale(),
   };
   return {
     file: process.execPath,

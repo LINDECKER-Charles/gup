@@ -1,7 +1,20 @@
+import { CONFIRM_UPDATE } from "../../../../src/ui/text/menu-labels.js";
+import { SELECTION_BAR } from "../../../../src/ui/text/packages-labels.js";
+import { SCAN_FIXTURE } from "../../fixtures/scan.js";
 import type { Stage } from "../scene.js";
 
-/** What shows once the scan is over, Paquets in front: the last package of the table. */
+/** What shows once the scan is over, Packages in front: the last package of the table. */
 export const SCAN_DONE = "Visual Studio Code";
+
+/** The table's rows: every package the fixture scan finds outdated. */
+const PACKAGE_COUNT = SCAN_FIXTURE.results.reduce(
+  (count, { packages }) => count + packages.length,
+  0,
+);
+/** Winget's four packages and pnpm. */
+const README_CHECKED = 5;
+/** nodejs-lts, typescript, ruff, Git, PowerToys and 7-Zip. */
+const LAUNCHED = 6;
 
 function times(count: number, key: string): string[] {
   return Array.from({ length: count }, () => key);
@@ -15,29 +28,29 @@ function times(count: number, key: string): string[] {
  * on row 0.
  */
 
-/** The README's Paquets: Winget checked as a group, pnpm alone, the cursor on ruff. */
+/** The README's Packages: Winget checked as a group, pnpm alone, the cursor on ruff. */
 export async function checkWingetAndPnpm(stage: Stage): Promise<void> {
   await stage.waitForText(SCAN_DONE);
   await stage.press(...times(13, "down"), "space", ...times(6, "up"), "space", ...times(3, "down"));
-  await stage.waitForText("5 sur 12 coché(s)");
+  await stage.waitForText(SELECTION_BAR.count(README_CHECKED, PACKAGE_COUNT));
 }
 
 /**
  * The six packages the update scenes run — nodejs-lts (admin), typescript,
- * ruff, Git, PowerToys, 7-Zip — then Entrée: the confirmation opens.
+ * ruff, Git, PowerToys, 7-Zip — then Enter: the confirmation opens.
  */
 export async function launchSix(stage: Stage): Promise<void> {
   await stage.waitForText(SCAN_DONE);
   await stage.press(...times(4, "down"), "space", ...times(2, "down"), "space");
   await stage.press(...times(4, "down"), "space", ...times(4, "down"), "space");
   await stage.press("down", "space", "down", "space");
-  await stage.waitForText("6 sur 12 coché(s)");
+  await stage.waitForText(SELECTION_BAR.count(LAUNCHED, PACKAGE_COUNT));
   await stage.press("enter");
-  await stage.waitForText("être mis à jour :");
+  await stage.waitForText(CONFIRM_UPDATE.heading(LAUNCHED));
 }
 
-/** {@link launchSix}, confirmed: the run view takes the screen. */
+/** {@link launchSix}, confirmed with `y` as the dialog says: the run view takes the screen. */
 export async function runSix(stage: Stage): Promise<void> {
   await launchSix(stage);
-  await stage.press("o");
+  await stage.press("y");
 }

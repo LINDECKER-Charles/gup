@@ -7,12 +7,13 @@ import {
 } from "../../../../src/ui/panels/schedules/schedules-panel.js";
 import type { TriggerSummary } from "../../../../src/ui/panels/schedules/schedules-port.js";
 import {
-  EMPTY_SCHEDULES,
+  SCHEDULE_MENU_LABELS,
   SCHEDULE_NOTICES,
   SCHEDULES_HINTS,
 } from "../../../../src/ui/text/schedule/schedule-menu-labels.js";
 import type { KeyPress } from "../../../../src/ui/tui/screen-host.js";
 import type { Line } from "../../../../src/ui/tui/styled-lines.js";
+import { useLocale } from "../../../support/locale.js";
 import { FakeSchedulesPort, storedSchedule } from "./fake-schedules-port.js";
 
 const WIDE = { width: 90, height: 24 };
@@ -59,7 +60,8 @@ const active: TriggerSummary = {
 describe("SchedulesPanel, list", () => {
   it("tells how to schedule when there is nothing yet, with no key of its own", () => {
     const { render, panel } = setup([]);
-    expect(render().filter(Boolean)).toEqual(EMPTY_SCHEDULES.map((line) => `  ${line}`));
+    const empty = SCHEDULE_MENU_LABELS.emptySchedules;
+    expect(render().filter(Boolean)).toEqual(empty.map((line) => `  ${line}`));
     expect(panel.title).toBe("Planification");
     expect(panel.hints()).toBe("");
   });
@@ -68,9 +70,10 @@ describe("SchedulesPanel, list", () => {
     const { render } = setup([]);
     const width = 52;
     const lines = render({ width, height: 24 }).filter(Boolean);
-    expect(lines.length).toBeGreaterThan(EMPTY_SCHEDULES.length);
+    const empty = SCHEDULE_MENU_LABELS.emptySchedules;
+    expect(lines.length).toBeGreaterThan(empty.length);
     expect(lines.every((line) => line.length <= width && line.startsWith("  "))).toBe(true);
-    expect(lines.map((line) => line.trim()).join(" ")).toBe(EMPTY_SCHEDULES.join(" "));
+    expect(lines.map((line) => line.trim()).join(" ")).toBe(empty.join(" "));
   });
 
   it("lists the schedules under the trigger's state, the one under the cursor detailed", () => {
@@ -389,5 +392,63 @@ describe("SchedulesPanel, editor", () => {
     panel.closeEditor();
     expect(panel.title).toBe("Planification");
     expect(render()[0]).toBe("Déclencheur : vérification…");
+  });
+});
+
+describe("SchedulesPanel in English", () => {
+  useLocale("en");
+
+  it("lists the schedules under the trigger's state, the one under the cursor detailed", () => {
+    const { render, panel } = setup([
+      storedSchedule(),
+      storedSchedule({ id: "0badf00d", name: "Python", enabled: false }),
+    ]);
+    expect(render()[0]).toBe("Trigger: checking…");
+    panel.setTrigger(active);
+    const lines = render();
+    expect(lines[0]).toBe("Trigger: active · Windows Task Scheduler · last check 4 min ago");
+    expect(lines[2]).toMatch(/^ {4}Name +Frequency +Packages Next +Last$/);
+    expect(lines[3]).toMatch(/^› ● Outils dev +every day at 09:00 +1 tomorrow 09:00 +—$/);
+    expect(lines[4]).toMatch(/^ {2}○ Python .* disabled +—$/);
+    expect(lines.slice(6)).toEqual([
+      "Next: tomorrow 09:00 · cron 0 9 * * *",
+      "Never run.",
+      "  · Winget         Git.Git",
+    ]);
+    expect(panel.title).toBe("Schedules");
+    expect(panel.hints()).toBe(
+      "enter edit · x run · del delete · space disable · i trigger · ↑↓ navigate",
+    );
+  });
+
+  it("says how to schedule when there is nothing yet", () => {
+    const { render } = setup([]);
+    expect(render().filter(Boolean)).toEqual([
+      "  No schedules.",
+      '  In "Packages", check some packages then press p.',
+    ]);
+  });
+
+  it("draws the editor: its fields, the next runs, the packages and the buttons", () => {
+    const { panel, press, render } = setup();
+    press(key("return"));
+    expect(panel.title).toBe('Edit "Outils dev"');
+    expect(panel.hints()).toBe(SCHEDULES_HINTS.editor);
+    const lines = render();
+    expect(lines.slice(0, 4)).toEqual([
+      "› Name             [Outils dev]",
+      "  Frequency        [Every day]",
+      "  Time             [09:00]",
+      "  Catch-up         [yes]   runs at the next opportunity if the time is missed",
+    ]);
+    expect(lines).toEqual(
+      expect.arrayContaining([
+        "  cron 0 9 * * * · next: tomorrow 09:00 · Wed, Oct 7 09:00 · Thu, Oct 8 09:00",
+        "  Packages (1)",
+        "  + Add a package…",
+        "  [ Save ]",
+        "  [ Cancel ]",
+      ]),
+    );
   });
 });

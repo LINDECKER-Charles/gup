@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface TerraformVersionJson {
@@ -76,8 +77,10 @@ export class TerraformProvider implements Provider {
         // is enough for `brew upgrade`.
         brew: "terraform",
       },
-      manualMessage:
-        "Télécharger https://releases.hashicorp.com/terraform/ et remplacer terraform.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://releases.hashicorp.com/terraform/",
+        "terraform.exe",
+      ),
     });
   }
 

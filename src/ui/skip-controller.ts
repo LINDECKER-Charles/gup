@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import { localized } from "../core/i18n/localized.js";
 import { getInstallTimeoutSeconds, skipCurrent } from "../core/runner.js";
 import { CONSOLE_KEYS } from "./text/run-labels.js";
 
@@ -75,6 +76,20 @@ function makeSigintHandler(session: ActiveSession): () => void {
   };
 }
 
+/** What a Ctrl+C answers on the plain terminal. */
+const INTERRUPT_LABELS = localized({
+  en: {
+    stopAfterCurrent: "stop requested — finishing the current package, then stopping",
+    skipping: "skipping the current install… (Ctrl+C ×2 to stop all)",
+    stop: "stop requested…",
+  },
+  fr: {
+    stopAfterCurrent: "arrêt demandé — fin du paquet en cours puis stop",
+    skipping: "skip de l'install en cours… (Ctrl+C ×2 pour tout arrêter)",
+    stop: "arrêt demandé…",
+  },
+});
+
 /**
  * Write the message matching the Ctrl+C received. Returns true when the
  * interrupt should stop the whole batch, false when it only skips the install
@@ -82,22 +97,16 @@ function makeSigintHandler(session: ActiveSession): () => void {
  */
 function announceInterrupt(isDouble: boolean, skipped: boolean): boolean {
   if (isDouble) {
-    process.stdout.write(
-      chalk.red("\n  arrêt demandé — fin du paquet en cours puis stop\n"),
-    );
+    process.stdout.write(chalk.red(`\n  ${INTERRUPT_LABELS.stopAfterCurrent}\n`));
     return true;
   }
   if (skipped) {
-    process.stdout.write(
-      chalk.yellow(
-        "\n  skip de l'install en cours… (Ctrl+C ×2 pour tout arrêter)\n",
-      ),
-    );
+    process.stdout.write(chalk.yellow(`\n  ${INTERRUPT_LABELS.skipping}\n`));
     return false;
   }
   // No install running (between packages / during a prompt) — treat the
   // keypress as intent to stop the batch.
-  process.stdout.write(chalk.red("\n  arrêt demandé…\n"));
+  process.stdout.write(chalk.red(`\n  ${INTERRUPT_LABELS.stop}\n`));
   return true;
 }
 

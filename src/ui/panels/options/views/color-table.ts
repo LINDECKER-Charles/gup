@@ -5,8 +5,8 @@ import { adjustedRoles } from "../../../theme/enforce-contrast.js";
 import { STATUS_GLYPHS } from "../../../theme/glyphs.js";
 import { CUSTOMIZABLE_TOKENS, type CustomizableToken } from "../../../theme/palette.js";
 import type { ResolvedTheme } from "../../../theme/resolve-theme.js";
+import { COLOR_EDITOR } from "../../../text/settings/color-editor-labels.js";
 import {
-  COLOR_EDITOR,
   formatRatio,
   formatRatioValue,
   ROLE_LABELS,
@@ -48,7 +48,8 @@ interface RoleCell {
 }
 
 interface Column {
-  readonly heading: string;
+  /** Read when the table is drawn: the columns are declared while modules load. */
+  heading(): string;
   /** Fixed width; 0 for the last column, which takes what is left. */
   readonly width: number;
   cell(role: RoleCell): Segment;
@@ -58,8 +59,6 @@ const GUTTER = "  ";
 const ROLE_WIDTH = 17;
 const HEX_WIDTH = 9;
 const RATIO_WIDTH = 16;
-/** The widest ratio, 21:1: a shorter one is padded to it, so every √ stands in one column. */
-const RATIO_TEXT_WIDTH = formatRatio(21).length;
 const GROUNDS: ReadonlySet<CustomizableToken> = new Set(["background", "highlight"]);
 const SAMPLE_TONE: Readonly<Record<CustomizableToken, Tone>> = {
   accent: "accent",
@@ -72,28 +71,40 @@ const SAMPLE_TONE: Readonly<Record<CustomizableToken, Tone>> = {
   highlight: "plain",
 };
 
+/**
+ * The widest ratio, 21:1: a shorter one is padded to it, so every √ stands in one column.
+ * Measured when drawn: the decimal separator is the active language's.
+ */
+function ratioTextWidth(): number {
+  return formatRatio(21).length;
+}
+
 const ROLE: Column = {
-  heading: COLOR_EDITOR.columns.role,
+  heading: () => COLOR_EDITOR.columns.role,
   width: ROLE_WIDTH,
   cell: ({ token }) => seg(fit(ROLE_LABELS[token], ROLE_WIDTH)),
 };
 const CHOSEN: Column = {
-  heading: COLOR_EDITOR.columns.chosen,
+  heading: () => COLOR_EDITOR.columns.chosen,
   width: HEX_WIDTH,
   cell: ({ chosen }) =>
     seg(fit(chosen ?? COLOR_EDITOR.themeValue, HEX_WIDTH), chosen ? "plain" : "muted"),
 };
 const SHOWN: Column = {
-  heading: COLOR_EDITOR.columns.shown,
+  heading: () => COLOR_EDITOR.columns.shown,
   width: HEX_WIDTH,
   cell: ({ token, theme }) => {
     const shown = theme.palette?.[token];
     return seg(fit(shown ? toHex(shown) : "", HEX_WIDTH));
   },
 };
-const RATIO: Column = { heading: COLOR_EDITOR.columns.ratio, width: RATIO_WIDTH, cell: ratioCell };
+const RATIO: Column = {
+  heading: () => COLOR_EDITOR.columns.ratio,
+  width: RATIO_WIDTH,
+  cell: ratioCell,
+};
 const SAMPLE: Column = {
-  heading: COLOR_EDITOR.columns.sample,
+  heading: () => COLOR_EDITOR.columns.sample,
   width: 0,
   cell: ({ token }) =>
     token === "highlight"
@@ -112,7 +123,7 @@ function columnsFor(width: number): readonly Column[] {
 export function colorTableLines(table: ColorTable, width: number): Line[] {
   const columns = columnsFor(width);
   const headings = columns.map((column) =>
-    column.width === 0 ? column.heading : fit(column.heading, column.width),
+    column.width === 0 ? column.heading() : fit(column.heading(), column.width),
   );
   const rows = CUSTOMIZABLE_TOKENS.map((token, index): Line => {
     const role = { token, theme: table.theme, chosen: table.customs[token] };
@@ -136,7 +147,7 @@ function ratioCell({ token, theme }: RoleCell): Segment {
   const ratio = formatRatio(worstRatio(palette[token], [palette.background, palette.highlight]));
   const { success, warning } = STATUS_GLYPHS;
   if (!correction) {
-    return seg(fit(`${ratio.padEnd(RATIO_TEXT_WIDTH)} ${success}`, RATIO_WIDTH), "success");
+    return seg(fit(`${ratio.padEnd(ratioTextWidth())} ${success}`, RATIO_WIDTH), "success");
   }
   const moved = `${formatRatioValue(correction.before)} → ${ratio} ${warning}`;
   return seg(fit(moved, RATIO_WIDTH), "warning");

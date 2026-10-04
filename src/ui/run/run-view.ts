@@ -7,10 +7,10 @@ import type {
   TakeoverKey,
   TakeoverSurface,
 } from "../app/view-definition.js";
+import { RUN_NOTICES } from "../text/run-key-labels.js";
 import {
   elevationKindOf,
   PANE_LABELS,
-  RUN_NOTICES,
   RUN_NOTIFICATION,
   type ElevationKind,
 } from "../text/run-labels.js";

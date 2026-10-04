@@ -1,5 +1,5 @@
 /* The structured TUI mocks: the frame every gup screen shares (title bar,
-   body, key hints), titled boxes, Paquets (sidebar, package table, selection
+   body, key hints), titled boxes, Packages (sidebar, package table, selection
    bar) and the run view (status list, embedded terminal pane). Real layout,
    not box-drawing art, so it reflows and never misaligns when a glyph falls
    back to another font. Tones follow the TUI's: accent title bar and button,

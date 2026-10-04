@@ -6,7 +6,7 @@ import {
   OPTION_HINTS,
   OPTION_LABELS,
   OPTIONS_SECTIONS,
-  TIMEOUT_OUT_OF_RANGE,
+  TIMEOUT_LABELS,
   TIMEOUT_VALUE,
 } from "../../text/settings/options-labels.js";
 import { seg } from "../../tui/styled-lines.js";
@@ -15,7 +15,7 @@ import { choiceRow, switchChoices } from "./option-rows.js";
 import { ProviderFilter } from "./views/provider-filter.js";
 
 /**
- * SCAN & INSTALLATION: fast mode, install timeout, provider filter. Each
+ * SCAN & INSTALL: fast mode, install timeout, provider filter. Each
  * change applies to the session at once and is saved; the two scan settings
  * change what a scan finds, so the panel then offers `r` to rescan.
  */
@@ -90,7 +90,7 @@ function validTimeout(value: string): true | string {
   const seconds = Number(value);
   if (value === "" || !Number.isFinite(seconds) || seconds < 0) return TIMEOUT_DIALOG.invalid;
   if (!Number.isInteger(seconds) || seconds > INSTALL_TIMEOUT_BOUNDS.max) {
-    return TIMEOUT_OUT_OF_RANGE;
+    return TIMEOUT_LABELS.outOfRange;
   }
   return true;
 }

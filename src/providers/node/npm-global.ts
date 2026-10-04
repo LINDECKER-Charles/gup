@@ -2,6 +2,14 @@ import { pickInstallHint } from "../../core/install-hint.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { restoreStagedCopy, type StagedCopyFate } from "./npm-staged-copy.js";
+import { localized } from "../../core/i18n/localized.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
+import {
+  canReplaceItselfWhileRunning,
+  isGupPackage,
+  SELF_UPDATE_COMMAND,
+  SELF_UPDATE_TEXT,
+} from "../../core/self-update.js";
 
 interface NpmOutdatedEntry {
   current?: string;
@@ -17,13 +25,22 @@ interface NpmErrorReport {
   latest?: unknown;
 }
 
-/** The outcome's recovery note once npm's staged copy is back in place. */
-const RESTORED_NOTE = "version précédente restaurée";
-
-/** …and when npm had begun writing the new version: the old copy is left where npm put it. */
-function keptNote(path: string): string {
-  return `ancienne version mise de côté par npm dans ${path}`;
-}
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    /** The outcome's recovery note once npm's staged copy is back in place. */
+    restoredNote: "previous version restored",
+    /** …and when npm had begun writing the new version: the old copy is left where npm put it. */
+    keptNote: (path: string) => `old version set aside by npm in ${path}`,
+    /** `code` is empty or " (<npm error code>)". */
+    outdatedFailed: (code: string, summary: string) => `npm outdated failed${code}: ${summary}`,
+  },
+  fr: {
+    restoredNote: "version précédente restaurée",
+    keptNote: (path) => `ancienne version mise de côté par npm dans ${path}`,
+    outdatedFailed: (code, summary) => `npm outdated a échoué${code} : ${summary}`,
+  },
+});
 
 /**
  * Uses `npm outdated -g --json` (built-in, no `npm-check-updates` dependency).
@@ -36,10 +53,12 @@ function keptNote(path: string): string {
 export class NpmGlobalProvider implements Provider {
   readonly id = "npm-g";
   readonly displayName = "npm (global)";
-  readonly installHint = pickInstallHint({
-    win32: "Installer Node.js: https://nodejs.org",
-    fallback: "brew install node",
-  });
+  get installHint(): string {
+    return pickInstallHint({
+      win32: MANUAL_STEPS.install("Node.js", "https://nodejs.org"),
+      fallback: "brew install node",
+    });
+  }
   private globalRoot: string | null = null;
 
   async isAvailable(): Promise<boolean> {
@@ -63,25 +82,30 @@ export class NpmGlobalProvider implements Provider {
 
     return Object.entries(parsed)
       .filter(([, info]) => info.current && info.latest && info.current !== info.latest)
-      .map<OutdatedPackage>(([name, info]) => ({
-        id: name,
-        name,
-        current: info.current ?? "?",
-        latest: info.latest ?? "?",
-      }));
+      .map(([name, info]) => rowOf(name, info));
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
-    const [outcome] = await this.install([packageId]);
+    const [outcome] = await this.installNow([packageId]);
     return outcome ?? { id: packageId, success: false };
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
     if (packages.length === 0) return [];
-    return this.install(packages.map((p) => p.id));
+    return this.installNow(packages.map((p) => p.id));
+  }
+
+  /** gup itself is refused where it cannot replace itself; the rest goes to npm, in order. */
+  private async installNow(ids: readonly string[]): Promise<UpdateOutcome[]> {
+    const installed = await this.install(ids.filter((id) => !isOnlyAfterExit(id)));
+    const byId = new Map(installed.map((outcome) => [outcome.id, outcome]));
+    return ids.map((id) =>
+      isOnlyAfterExit(id) ? selfUpdateRefused(id) : (byId.get(id) ?? { id, success: false }),
+    );
   }
 
   private async install(ids: readonly string[]): Promise<UpdateOutcome[]> {
+    if (ids.length === 0) return [];
     const root = await this.npmRoot();
     const res = await runInherit("npm", ["install", "-g", ...ids.map((id) => `${id}@latest`)]);
     if (!res.failed) return ids.map((id) => ({ id, success: true }));
@@ -127,11 +151,26 @@ function npmFailure(report: Record<string, NpmOutdatedEntry>): string | null {
   if (typeof error?.summary !== "string" || error.latest !== undefined) return null;
   const summary = error.summary.replace(/\s+/g, " ").trim();
   const code = typeof error.code === "string" ? ` (${error.code})` : "";
-  return `npm outdated a échoué${code} : ${summary}`;
+  return TEXT.outdatedFailed(code, summary);
 }
 
 function recoveryOf(fate: StagedCopyFate | null): Pick<UpdateOutcome, "recovery"> {
-  if (fate?.kind === "restored") return { recovery: RESTORED_NOTE };
-  if (fate?.kind === "kept") return { recovery: keptNote(fate.path) };
+  if (fate?.kind === "restored") return { recovery: TEXT.restoredNote };
+  if (fate?.kind === "kept") return { recovery: TEXT.keptNote(fate.path) };
   return {};
+}
+
+/** gup itself, where a running gup cannot replace its own files (`core/self-update.ts`). */
+function isOnlyAfterExit(packageId: string): boolean {
+  return isGupPackage(packageId) && !canReplaceItselfWhileRunning();
+}
+
+function rowOf(name: string, info: NpmOutdatedEntry): OutdatedPackage {
+  const row = { id: name, name, current: info.current ?? "?", latest: info.latest ?? "?" };
+  if (!isOnlyAfterExit(name)) return row;
+  return { ...row, note: SELF_UPDATE_TEXT.note, updateAfterExit: SELF_UPDATE_COMMAND };
+}
+
+function selfUpdateRefused(id: string): UpdateOutcome {
+  return { id, success: false, skipped: true, message: SELF_UPDATE_TEXT.refused };
 }

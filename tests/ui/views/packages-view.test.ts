@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { MenuState } from "../../../src/commands/menu-state.js";
 import type { ProviderScanResult } from "../../../src/core/types.js";
 import type { ScanEvents } from "../../../src/ui/panels/scan-panel.js";
-import { CONFIRM_UPDATE, NO_SCAN_YET, updateCountFact } from "../../../src/ui/text/menu-labels.js";
+import { CONFIRM_UPDATE, MENU_LABELS, updateCountFact } from "../../../src/ui/text/menu-labels.js";
 import {
   LAUNCH_NOTICES,
   PACKAGES_HINTS,
@@ -37,7 +37,7 @@ async function clickOn(menu: MenuDriver, text: string): Promise<void> {
 describe("Paquets", () => {
   it("claims no update count in the title bar before the first results", async () => {
     const menu = await bootMenu({ scanOnStart: false, initialView: "packages", size: SIZE });
-    const [titleBar = ""] = (await menu.waitForText(NO_SCAN_YET)).split("\n");
+    const [titleBar = ""] = (await menu.waitForText(MENU_LABELS.noScanYet)).split("\n");
     expect(titleBar).not.toContain(updateCountFact(0));
   });
 

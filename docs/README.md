@@ -18,14 +18,14 @@ stays light; everything dense lives here.
 
 | Document | Content |
 |---|---|
-| [`guide/installation.md`](guide/installation.md) | Install methods (npm, from source), npm 11 and install scripts, requirements, per-platform support, updating and removing `gup`. |
-| [`guide/interactive-app.md`](guide/interactive-app.md) | The full-screen app, view by view: Scan, Paquets and its multi-select, updating inside the app (run view, typing into an installer, administrator rights, retries, results), Planification, Providers, Journal, Options; every key — **screenshots, mermaid diagrams**. |
-| [`guide/cli-reference.md`](guide/cli-reference.md) | Every command and flag (`list`, `update`, `doctor`, `log`, `report`, `schedule`), targeting syntax, stuck-install timeouts, retry strategies, elevation, JSON output, environment variables, exit codes. |
-| [`guide/scheduled-updates.md`](guide/scheduled-updates.md) | Per-package scheduled updates: how a run works, recurrences, what an unattended run never does, the commands, the Planification view, the OS trigger, troubleshooting — **screenshots, mermaid diagram**. |
+| [`guide/installation.md`](guide/installation.md) | Install methods (npm, from source), choosing the language, npm 11 and install scripts, requirements, per-platform support, updating and removing `gup`. |
+| [`guide/interactive-app.md`](guide/interactive-app.md) | The full-screen app, view by view: Scan, Packages and its multi-select, updating inside the app (run view, typing into an installer, administrator rights, retries, results), Schedules, Providers, Journal, Options; every key — **screenshots, mermaid diagrams**. |
+| [`guide/cli-reference.md`](guide/cli-reference.md) | Every command and flag (`list`, `update`, `doctor`, `log`, `report`, `schedule`, `language`), targeting syntax, stuck-install timeouts, retry strategies, elevation, JSON output, environment variables, exit codes. |
+| [`guide/scheduled-updates.md`](guide/scheduled-updates.md) | Per-package scheduled updates: how a run works, recurrences, what an unattended run never does, the commands, the Schedules view, the OS trigger, troubleshooting — **screenshots, mermaid diagram**. |
 | [`guide/journal-and-reports.md`](guide/journal-and-reports.md) | The activity history, the Journal view, the HTML report, `gup report`, the debug log and `gup log`, privacy — **screenshots, mermaid diagram**. |
-| [`guide/configuration.md`](guide/configuration.md) | The Options view, which value wins, the settings file and its sections, environment variables — **mermaid diagram**. |
+| [`guide/configuration.md`](guide/configuration.md) | The Options view, which value wins, the interface language, the settings file and its sections, environment variables — **mermaid diagram**. |
 | [`guide/themes-and-accessibility.md`](guide/themes-and-accessibility.md) | The ten themes, the theme picker, custom colours, how the default theme follows the terminal, the contrast guarantee, accessibility — **screenshots**. |
-| [`guide/troubleshooting.md`](guide/troubleshooting.md) | Each message, its cause and the fix: install scripts, Node, conhost, the embedded terminal, providers, schedules, the report; where gup keeps its files; collecting a diagnostic. |
+| [`guide/troubleshooting.md`](guide/troubleshooting.md) | Each message, its cause and the fix: install scripts, Node, conhost, the embedded terminal, providers, schedules, the report, the language; where gup keeps its files; collecting a diagnostic. |
 | [`guide/scope.md`](guide/scope.md) | Why `gup` exists, what belongs in it, and what is deliberately excluded — with the reasoning. |
 | [`guide/providers-catalog.md`](guide/providers-catalog.md) | Exhaustive catalog of the 153 providers, implementation status (✅ ⬜ ➡️ ❌), the OSes each runs on, and evaluated candidates. |
 | [`assets/screens/`](assets/screens/README.md) | The screenshot gallery: every view of the app, eight themes, the HTML report. |
@@ -46,16 +46,17 @@ stays light; everything dense lives here.
 
 ## Community
 
-The files GitHub surfaces in the repository's *Community* tab, at the root of
-the repository and in `.github/`.
+The community health files GitHub surfaces — in the *Community* tab and
+beside the README — live in `.github/`. `CHANGELOG.md` and `CITATION.cff` stay
+at the root: *Cite this repository* only reads the citation file there.
 
 | Document | Content |
 |---|---|
-| [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | Ways to contribute, local setup and node-pty, provider-addition workflow, conventions and enforced code limits, branches, commits and the scope map, the pull request flow and its required checks — **mermaid diagrams**. |
-| [`../CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md) | The Contributor Covenant 2.1: expected behaviour, the private contact for reports, the enforcement guidelines. |
-| [`../SUPPORT.md`](../SUPPORT.md) | Where to ask for help, what to include, what to expect from a single-maintainer project. |
-| [`../SECURITY.md`](../SECURITY.md) | Supported versions, private vulnerability reporting and response aims, scope, the threat model (process spawning, the embedded terminal, elevation, schedules, local data, the HTML report), CI/local mitigations. |
-| [`../GOVERNANCE.md`](../GOVERNANCE.md) | Maintainer-led model, roles, how decisions are made, dependency and release policies, continuity. |
+| [`../.github/CONTRIBUTING.md`](../.github/CONTRIBUTING.md) | Ways to contribute, local setup and node-pty, provider-addition workflow, conventions and enforced code limits, branches, commits and the scope map, the pull request flow and its required checks — **mermaid diagrams**. |
+| [`../.github/CODE_OF_CONDUCT.md`](../.github/CODE_OF_CONDUCT.md) | The Contributor Covenant 2.1: expected behaviour, the private contact for reports, the enforcement guidelines. |
+| [`../.github/SUPPORT.md`](../.github/SUPPORT.md) | Where to ask for help, what to include, what to expect from a single-maintainer project. |
+| [`../.github/SECURITY.md`](../.github/SECURITY.md) | Supported versions, private vulnerability reporting and response aims, scope, the threat model (process spawning, the embedded terminal, elevation, schedules, local data, the HTML report), CI/local mitigations. |
+| [`../.github/GOVERNANCE.md`](../.github/GOVERNANCE.md) | Maintainer-led model, roles, how decisions are made, dependency and release policies, continuity. |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | Pointer to the changelog and the release notes below. |
 | [`../CITATION.cff`](../CITATION.cff) | Citation metadata behind GitHub's *Cite this repository* button. |
 | [`../.github/ISSUE_TEMPLATE/`](../.github/ISSUE_TEMPLATE/) | Issue forms (bug report, feature request, new provider, question) and the chooser links. |
@@ -91,7 +92,7 @@ to export one (copy-paste the block). The rules for writing one are in
 | Where do the history and the debug log come from and go? | [architecture.md § Local state](development/architecture.md#9-local-state-history-debug-log-reports); [journal-and-reports.md](guide/journal-and-reports.md) |
 | What happens when a scheduled update fires? | [architecture.md § Scheduling](development/architecture.md#10-scheduling); [scheduled-updates.md § How it runs](guide/scheduled-updates.md#how-it-runs) |
 | Which value wins: flag, variable or settings file? | [configuration.md § Which value wins](guide/configuration.md#which-value-wins) |
-| How does a contribution reach `main`? | [CONTRIBUTING.md § Pull request flow](../CONTRIBUTING.md#9-pull-request-flow) |
+| How does a contribution reach `main`? | [CONTRIBUTING.md § Pull request flow](../.github/CONTRIBUTING.md#9-pull-request-flow) |
 | How is a version released? | [releasing.md](development/releasing.md#release-flow) |
 | Which tests prove what? | [testing.md § The test pyramid](development/testing.md#2-the-test-pyramid) |
 | How is the landing site built? | [website.md § How a page is built](development/website.md#how-a-page-is-built) |

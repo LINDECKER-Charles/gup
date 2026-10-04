@@ -29,6 +29,7 @@ import { runUpdates } from "../../src/core/update/update-pipeline.js";
 import type { PlannedUpdate } from "../../src/core/update/update-ports.js";
 import { consolePorts, printReport } from "../../src/ui/update-console.js";
 import { RUN_WAITING, waitingMessage } from "../../src/ui/text/run-labels.js";
+import { useLocale } from "../support/locale.js";
 import { restorePlatform, setPlatform } from "../support/platform.js";
 
 let stdout: ReturnType<typeof vi.spyOn>;
@@ -180,5 +181,51 @@ describe("printReport", () => {
         chalk.red("     - ko") +
         "\n",
     );
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it("agrees each header with its count, the tags unchanged", () => {
+      const skip = (id: string) => entryOf(item(id), { id, success: false, skipped: true });
+      printReport(
+        buildReport(
+          [
+            entryOf(item("ok"), { id: "ok", success: true }),
+            entryOf(item("ok2"), { id: "ok2", success: true }),
+            skip("s1"),
+            skip("s2"),
+            entryOf(item("ko"), { id: "ko", success: false }),
+          ],
+          [],
+        ),
+      );
+      const headers = printed()
+        .split("\n")
+        .filter((line) => line !== "" && !line.includes("     - "));
+      expect(headers).toEqual([
+        chalk.green("OK   2 updates applied"),
+        chalk.yellow("SKIP 2 manual actions required:"),
+        chalk.red("FAIL 1/5 failed:"),
+      ]);
+    });
+
+    it("asks which retry strategy to use in English", async () => {
+      fakeProvider("winget", "Winget", ["Git.Git"]);
+      selectMock.mockResolvedValueOnce("none");
+      await runUpdates(
+        [{ providerId: "winget", packageId: "Git.Git", pkg: scanned("Git.Git") }],
+        consolePorts({ gate: open }),
+      );
+      expect(printed()).toContain("1 recoverable failure (Winget: 1) — typically an installer hash");
+      const question = selectMock.mock.calls[0]![0] as { message: string; choices: unknown[] };
+      expect(question.message).toBe("Retry strategy");
+      expect(question.choices).toEqual([
+        { label: "None — leave the failures", value: "none" },
+        expect.objectContaining({ value: "force", label: "--force (bypass the SHA check — safe)" }),
+        expect.objectContaining({ value: "force-uninstall" }),
+        expect.objectContaining({ value: "reinstall" }),
+      ]);
+    });
   });
 });

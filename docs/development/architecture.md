@@ -4,7 +4,7 @@ Technical view of `gup`. Audience: contributors, maintainers, security review.
 
 > The provider list and status: [`providers-catalog.md`](../guide/providers-catalog.md).
 > The end-to-end walkthrough, command by command: [`how-gup-works.md`](how-gup-works.md).
-> Adding a provider: [`CONTRIBUTING.md`](../../CONTRIBUTING.md). How each layer is tested:
+> Adding a provider: [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md). How each layer is tested:
 > [`testing.md`](testing.md). Why things are the way they are, area by area: the
 > [design records](design/README.md).
 
@@ -26,6 +26,7 @@ Technical view of `gup`. Audience: contributors, maintainers, security review.
 - [12. Composition: CLI modules and slots](#12-composition-cli-modules-and-slots)
 - [13. Security](#13-security)
 - [14. Tree layout](#14-tree-layout)
+- [15. Interface language](#15-interface-language)
 - [Notable decisions](#notable-decisions)
 
 ---
@@ -42,7 +43,7 @@ the user asked of it:
 | Activity history (scans, update attempts) | the Journal view, `gup report`, the HTML report | decide whether or what to update |
 | Debug log | `gup log`, the Journal's Debug tab, `gup log export` | change a run's behaviour |
 | Settings (`config.json`) | the menu, the screens' look, the install timeout | steer the elevated child |
-| Schedules and their run state | `gup schedule`, the Planification view, the scheduled tick | act on a whole provider |
+| Schedules and their run state | `gup schedule`, the Schedules view, the scheduled tick | act on a whole provider |
 
 ```mermaid
 flowchart LR
@@ -72,8 +73,9 @@ flowchart LR
 - **One update path.** `gup update`, the menu and scheduled runs share the same pipeline (§6).
 - **Recorded, never consulted.** History and log are read back only to be shown or exported; a
   test pins the import graph that keeps it so (§9).
-- **French interface, English code.** Every user-facing string is French and lives in a labels
-  module; identifiers, comments, log events and export fields are English.
+- **Two interface languages, English code.** Every user-facing string exists in English and
+  French, in a catalog read when the text is shown (§15); identifiers, comments, log events and
+  export fields are English.
 
 ---
 
@@ -94,7 +96,7 @@ flowchart TB
     end
     subgraph UI["ui/ — terminal"]
         App["app/<br/>MenuApp · session · launchers"]
-        Views["views/ · panels/<br/>Scan · Paquets · Planification<br/>Providers · Journal · Options"]
+        Views["views/ · panels/<br/>Scan · Packages · Schedules<br/>Providers · Journal · Options"]
         Run["run/<br/>run view · terminal panes"]
         Tui["tui/ · theme/<br/>screen host · chrome · contrast"]
     end
@@ -116,7 +118,7 @@ flowchart TB
 
 | Layer | Role | Rule |
 |---|---|---|
-| `cli.ts` | Parses the Commander program `commands/cli/program.ts` builds from the CLI modules, commander's own words in French | No logic: commands, global options and startup hooks come from `commands/cli/cli-modules.ts` (§12). |
+| `cli.ts` | Chooses the interface language (§15), then parses the Commander program `commands/cli/program.ts` builds from the CLI modules, commander's own words in that language | No logic: commands, global options and startup hooks come from `commands/cli/cli-modules.ts` (§12). |
 | `commands/` | One use case per module: `list`, `update`, `doctor`, the menu's controller, `log` and `report` (`journal/`), `schedule` and the tick (`schedule/`), the elevated child (`admin-batch.ts`) | Composes core and UI; owns the composition roots (`menu-views.ts`, `cli-modules.ts`). |
 | `ui/app/` | The interactive app: `MenuApp` (a loop of sessions), `MenuSession` (layout, key routing, view registry), the update launchers, menu preferences | Knows views only through `ViewDefinition`; imports nothing from `commands/` but the menu's state type (`menu-state.ts`). |
 | `ui/views/`, `ui/panels/` | One view per sidebar entry: a factory (`views/<id>-view.ts`) and plain-object panels that render lines and take keys | Ports as parameters; no process, no file access of their own. |
@@ -124,7 +126,7 @@ flowchart TB
 | `ui/tui/`, `ui/theme/` | Screen host (OpenTUI renderer lifecycle, teardown, signals), chrome, dialogs; the theme engine and contrast enforcement | Nothing outside `ui/theme/` builds a colour; panels speak in tones. |
 | `ui/` root, `ui/prompts/`, `ui/charts/` | The one-shot commands' console output and screens, the charts shared by the Journal and `gup report --format text` | — |
 | `report/` | The self-contained HTML report: markup, stylesheet, browser script | Not terminal code (outside the glyph guard); reads only the report model. |
-| `core/` | Domain and primitives: registry, platform gate, runner and process seams, update pipeline, settings store, state directories, history, debug log, insights, exports, scheduler, elevation | Never imports `ui/` or `commands/`. |
+| `core/` | Domain and primitives: registry, platform gate, runner and process seams, update pipeline, settings store, state directories, history, debug log, insights, exports, scheduler, elevation, the interface language | Never imports `ui/` or `commands/`. |
 | `providers/` | Adapters to one package source each | Implement `Provider`; no cross-import; spawn only through the runner. |
 
 ---
@@ -221,16 +223,16 @@ Why a provider is scanned, missing or greyed out on the machine in front of you:
 ```mermaid
 flowchart TD
     P[Registered provider] --> S{"supported on this OS?<br/>platforms"}
-    S -->|no| G["Incompatibles avec …<br/>greyed · never probed, scanned or updated"]
+    S -->|no| G["Incompatible with …<br/>greyed · never probed, scanned or updated"]
     S -->|yes| A{"isAvailable()<br/>8 probes at a time, 15 s each"}
-    A -->|yes| D["Détectés<br/>scanned"]
-    A -->|"no, or timed out"| M["Non installés / hors PATH<br/>install hint"]
+    A -->|yes| D["Detected<br/>scanned"]
+    A -->|"no, or timed out"| M["Not installed / not on PATH<br/>install hint"]
 ```
 
 - `isSupportedOn()` is the single predicate, applied by the registry before any probe:
   detection, `getProvidersToScan`, `lookupProvider` (the targets of `gup update`, schedules, the
   elevated child). `gup update brew-cask:x` on Windows exits `2` with
-  `Provider brew-cask indisponible sur Windows (macOS uniquement)`.
+  `Provider brew-cask unavailable on Windows (macOS only)`.
 - `readProviderStatus()` sorts every provider into the three groups for `gup doctor` and the
   Providers view. A source-level test (`tests/core/platform/platform-gate-source.test.ts`)
   fails when a provider reads `process.platform` in `isAvailable()`, when anything but the
@@ -239,7 +241,7 @@ flowchart TD
 - `isAvailable()` never does network I/O: a PATH lookup (resolved in-process, never by spawning
   `where` or `which`), a file check, or a bounded probe.
 - The anatomy of a provider, with the sequence of a scan and an update:
-  [`CONTRIBUTING.md` § Provider anatomy](../../CONTRIBUTING.md#3-provider-anatomy).
+  [`CONTRIBUTING.md` § Provider anatomy](../../.github/CONTRIBUTING.md#3-provider-anatomy).
 
 ---
 
@@ -319,11 +321,11 @@ the OS releases however the holder exits; a JSON file beside it only carries dis
 gives up); a scheduled tick never waits.
 
 **Direct installs.** `applyUpdate` calls `provider.update()` inside an operation context,
-finalises the outcome (a skip or a timeout reads `ignorée par l'utilisateur`), records it in the
-history, and turns a rejection into a failed outcome — `refusé par la barrière de sécurité : …`
-when the runner's argv barrier refused, `erreur inattendue : …` otherwise — so one refused package
-never stops the batch. Ctrl+C (or `s` in the run view) and the per-install timeout kill the
-install's process tree and move on.
+finalises the outcome (a skip reads `skipped by the user`, a timeout
+`timeout (1200s) — install skipped`), records it in the history, and turns a rejection into a
+failed outcome — `refused by the safety barrier: …` when the runner's argv barrier refused,
+`unexpected error: …` otherwise — so one refused package never stops the batch. Ctrl+C (or `s`
+in the run view) and the per-install timeout kill the install's process tree and move on.
 
 **Elevated batch.** The packages flagged `requiresAdmin` run behind one prompt:
 
@@ -333,8 +335,9 @@ install's process tree and move on.
 | Where it runs | its own administrator window, outside gup's process tree | the active sink: the terminal pane in the menu, the terminal otherwise |
 | Providers that call `sudo` themselves | — | do not prompt again: they already run as root (MacPorts, Fink, pkgin, the apt/dnf delegations) |
 
-The child is a pure executor: it reads its targets from a private input file, runs only the CLI
-modules that opt in (never the settings), calls `provider.update()` for each target and writes
+The child is a pure executor: it reads its targets — and its parent's install timeout, log
+threshold and language — from a private input file, runs only the CLI modules that opt in (never
+the settings), calls `provider.update()` for each target and writes
 the outcomes — and its debug-log lines — back to a file. The parent validates them and records
 them in the invoking user's history and log. Declining the prompt marks the batch skipped.
 
@@ -363,23 +366,23 @@ any time):
 ```mermaid
 stateDiagram-v2
     [*] --> Scan: menu opens, scan at launch
-    Scan --> Paquets: scan done
-    Paquets --> Confirm: Entrée, packages checked
-    Planification --> Confirm: x, run a schedule now
+    Scan --> Packages: scan done
+    Packages --> Confirm: Enter, packages checked
+    Schedules --> Confirm: x, run a schedule now
     Confirm --> RunView: confirmed, embedded terminal available
     Confirm --> Outside: confirmed, no embedded terminal
-    Confirm --> Paquets: Non
+    Confirm --> Packages: No
     RunView --> Results: batch over
-    Results --> Paquets: leave, updated rows dropped
-    Results --> Planification: leave, after a run now
-    Outside --> Paquets: Entrée, a new session
-    Paquets --> [*]: q
+    Results --> Packages: leave, updated rows dropped
+    Results --> Schedules: leave, after a run now
+    Outside --> Packages: Enter, a new session
+    Packages --> [*]: q
 ```
 
-- **Views** are `ViewDefinition`s registered in `commands/menu-views.ts`: Scan, Paquets,
-  Planification (group 0), Providers, Journal, Options (group 1). A view contributes package
-  actions (`p planifier`), package marks (`∞`), title-bar facts, sidebar badges and actions on the
-  run results (`o rapport HTML`) without touching the session.
+- **Views** are `ViewDefinition`s registered in `commands/menu-views.ts`: Scan, Packages,
+  Schedules (group 0), Providers, Journal, Options (group 1). A view contributes package
+  actions (`p schedule`), package marks (`∞`), title-bar facts, sidebar badges and actions on the
+  run results (`o HTML report`) without touching the session.
 - **Key routing** (`ui/app/session/menu-keys.ts`): Ctrl+C (the screen's) → the open dialog → the
   takeover → the focused panel when it captures text or claims the key → global keys (`q`, Tab,
   `←`) → panel or sidebar. While a dialog is open the hint bar shows its keys.
@@ -387,9 +390,9 @@ stateDiagram-v2
   in-screen launcher warms up the embedded terminal when the menu opens, confirms, then takes over
   the body with the run view; when the embedded terminal is unavailable it delegates to the
   *outside* launcher, which ends the session: `MenuApp` tears the screen down, runs the update on
-  the plain terminal, waits for Entrée, then opens a new session. Both refuse to start while a
+  the plain terminal, waits for Enter, then opens a new session. Both refuse to start while a
   scan of the session runs.
-- **After an update** the updated packages are dropped from Paquets without a rescan (a full scan
+- **After an update** the updated packages are dropped from Packages without a rescan (a full scan
   takes seconds); the `rescanAfterUpdate` preference brings the rescan back.
 
 The run view's own states — who has the keyboard, and when:
@@ -406,7 +409,7 @@ stateDiagram-v2
     Running --> Elevating: elevated batch starts
     Elevating --> Running: batch over
     Running --> Done: queue drained, or x, or Ctrl+C twice
-    Done --> [*]: Entrée, Échap or q
+    Done --> [*]: Enter, Esc or q
     note right of Elevating
         Windows waits for the UAC window.
         macOS and Linux run sudo in the pane,
@@ -464,7 +467,8 @@ flowchart LR
   once the installer exits (`releaseConpty`).
 - **Embedded terminal detection** (`core/pty/pty-loader.ts`) never throws: `GUP_PTY` turned off, a
   missing trampoline, node-pty not installed, a macOS `spawn-helper` gup cannot make executable, or
-  a failed probe each give a French reason, shown by the update confirmation and `gup doctor`, and
+  a failed probe each give a reason in the interface language, shown by the update confirmation
+  and `gup doctor`, and
   the menu falls back to updating outside the screen.
 - **Other seams.** `commandExists` / `whichFirst` resolve PATH in-process; `launchDetached` opens a
   file with the OS opener (no shell); `isElevated()` is `net session` on Windows and
@@ -610,11 +614,13 @@ flowchart TD
 | Opening the HTML report | `--open`, `--no-open` | — | `journal.openReport` | open, in a terminal outside CI |
 | Symbols | — | `GUP_ASCII=1` (when `auto`) | `interface.glyphs` | `auto` |
 | Colours | — | `NO_COLOR` (always wins) | `theme.id` | `terminal` |
+| Interface language | — | `GUP_LANG` | `interface.language` | `en` |
 
 Exceptions: the scan settings (`scan.fast`, `scan.providerFilter`) apply to the menu only —
 `gup list` and `gup update` keep their explicit flags; a scheduled tick logs at least `info` and
-clamps the timeout; the elevated child reads no setting at all — its timeout and log threshold
-come from its parent's payload.
+clamps the timeout; the elevated child reads no setting at all — its timeout, log threshold and
+language come from its parent's payload. The language is chosen once, before the program is built
+(§15).
 
 **Theme engine** (`ui/theme/`). Panels speak in tones (`plain`, `strong`, `muted`, `disabled`,
 `accent`, `success`, `warning`, `danger`, `onAccent`) and fills; the screen's `Appearance` paints
@@ -632,7 +638,7 @@ under every theme and measures every painted cell. User guide:
 ## 12. Composition: CLI modules and slots
 
 A feature plugs into the command line with a `CliModule` — `register` (its commands and global
-options), `triggerFor`, `beforeAction`, `diagnostics` (its `gup doctor` "Système" line),
+options), `triggerFor`, `beforeAction`, `diagnostics` (its `gup doctor` "System" line),
 `onCrash`, `runsInElevatedChild` — and one line in `CLI_MODULES`. Before every command,
 `installStartup` records what started the run, then runs every `beforeAction` in order: logging,
 settings, scheduler, then the commands' own. The elevated `__admin-batch` child runs only the
@@ -661,7 +667,7 @@ the ports between features (the Journal's schedule names, its Options rows).
 ## 13. Security
 
 The threat model, the mitigations and the tests that pin them are in
-[`SECURITY.md`](../../SECURITY.md#threat-model). The architectural chokepoints it relies on:
+[`SECURITY.md`](../../.github/SECURITY.md#threat-model). The architectural chokepoints it relies on:
 
 | Chokepoint | Where | Pinned by |
 |---|---|---|
@@ -679,12 +685,12 @@ The threat model, the mitigations and the tests that pin them are in
 
 ```
 src/
-├── cli.ts                  # Commander program, built from the CLI modules
+├── cli.ts                  # the interface language, then the Commander program built from the CLI modules
 ├── pty-exec.ts             # the PTY trampoline (second bundle, dist/pty-exec.js)
 ├── commands/
-│   ├── cli/                # CliModule contract, CLI_MODULES, startup, settings and embedded-terminal modules
+│   ├── cli/                # CliModule contract, CLI_MODULES, startup, settings, language and embedded-terminal modules
 │   ├── journal/            # gup log, gup report, the Journal's data source, the debug-log session
-│   ├── schedule/           # gup schedule, the tick, the Planification controller
+│   ├── schedule/           # gup schedule, the tick, the Schedules controller
 │   ├── list.ts · update.ts · doctor.ts · menu.ts · admin-batch.ts · warn-ignored-providers.ts
 │   └── menu-state.ts · menu-views.ts    # the menu's state and composition root
 ├── core/
@@ -695,6 +701,7 @@ src/
 │   ├── install-source.ts · ownership.ts · corepack-ownership.ts   # who owns a binary
 │   ├── gh-releases.ts · hashicorp-releases.ts · wsl.ts · nvim-paths.ts · install-hint.ts · version.ts
 │   ├── platform/           # platform sets, the gate, provider status
+│   ├── i18n/               # the interface language: locales, live catalogs, the startup choice
 │   ├── process/            # install sinks, output router, command tracer, PATH lookup
 │   ├── pty/                # embedded terminal: loader, session, trampoline, exit file, spawn-helper
 │   ├── update/             # the update pipeline, its ports, the batch lock
@@ -713,20 +720,70 @@ src/
 └── ui/
     ├── app/                # MenuApp, launchers, preferences, view contract; session/ (MenuSession, keys, nav)
     ├── views/              # one factory per sidebar entry
-    ├── panels/             # Scan, Paquets, Providers; journal/, options/, schedules/
+    ├── panels/             # Scan, Packages, Providers; journal/, options/, schedules/
     ├── run/                # the run view; terminal/ (panes over OpenTUI's embedded terminal)
     ├── tui/                # OpenTUI loader, screen host, teardown, chrome, dialogs, text panel
     ├── theme/              # appearance seam, glyphs, built-in themes, contrast; color/, runtime/
     ├── settings/           # settings service and sections the UI owns, Options rows of other features
     ├── charts/             # heatmap, bars, sparklines, the text report
-    ├── text/               # French labels by domain, fr-format.ts
+    ├── text/               # the interface's words by domain, English and French; format.ts
     ├── prompts/            # one-shot screens: scan, package picker, confirm, select
     └── scan-progress.ts · update-console.ts · select.ts · table.ts · skip-controller.ts · retry-choices.ts · log-line.ts
 ```
 
-A folder holds at most 10 files ([`CONTRIBUTING.md` § Code style](../../CONTRIBUTING.md#7-code-style)):
+A folder holds at most 10 files ([`CONTRIBUTING.md` § Code style](../../.github/CONTRIBUTING.md#7-code-style)):
 a full folder grows a sub-folder by domain. `src/core/registry.ts` (length) and
 `src/providers/<domain>/` (file count) are the two named exceptions.
+
+---
+
+## 15. Interface language
+
+gup speaks English, the default, and French. A process speaks one language, chosen once before
+anything is printed, and every text is read in it when it is shown.
+
+| Process | Where its language comes from |
+|---|---|
+| every command, the menu, the scheduled tick | `applyStartupLocale(argv)` in `cli.ts`, before the program is built: `GUP_LANG` > the `interface.language` setting > English. `GUP_LANG` is read on its primary subtag, in any case (`fr_FR.UTF-8` is French); a language gup has no translation for is ignored, never fatal. The machine's own locale is never consulted. |
+| the elevated child (`__admin-batch`) | never the settings: its parent's language travels in the batch payload, validated like the timeout and the log threshold (§6); a parent older than 0.5.1 sends none, and the child speaks English |
+| the PTY trampoline (`dist/pty-exec.js`) | never `cli.ts`: the request carries the parent's language, validated with the rest of the payload; a request that cannot be decoded is refused in English |
+
+The module, `core/i18n/`:
+
+- `locale.ts` — `LOCALES` (`en`, `fr`), `DEFAULT_LOCALE`, the Intl locale of each (`en-US`,
+  `fr-FR`), `parseLocale`, the active locale and `setActiveLocale`.
+- `localized.ts` — `localized({ en, fr })`: a frozen catalog whose every key is a getter that
+  answers in the active locale, so spreading it or reading it later follows the language;
+  `localize({ en, fr })` for one text built where it is used. `Translations<T>` makes English the
+  reference: the French side must match it key for key and parameter for parameter.
+- `resolve-locale.ts` — `resolveLocale({ env, setting })`, pure: the locale, where it comes from
+  (`env`, `setting`, `default`) and a `GUP_LANG` it ignored. `gup language` and the doctor line
+  show the same answer.
+
+Around it: `commands/cli/language-module.ts` (the startup choice, `gup language [code]` — exit 2 for
+an unknown code, 1 when the setting cannot be saved — and the "Language" line of `gup doctor`),
+`commands/cli/commander-locale.ts` (commander's own words, from `ui/text/cli-labels.ts`), and the
+setting itself, `interface.language` in the `interface` section: written only when it is not the
+default, applied at the next start, put back to English by resetting Behavior in Options.
+
+**Read when shown.** Every module is evaluated before startup chooses: a text read while a module
+loads — a module-level constant, a field a provider sets at construction, which the registry does at
+import — would stay English for the whole run. `activeLocale()` records the stack of any read made
+before the choice, and `tests/core/i18n/startup-reads.test.ts` loads `cli-modules`, `menu-views`
+and the registry with no locale chosen and expects none. Providers build an `installHint` with
+words as a getter and their messages where they return them; the steps several providers suggest
+are worded once, in `providers/manual-steps.ts`.
+
+**What follows the language:** every screen, message, dialog and `--help`; numbers and dates
+(`ui/text/format.ts`: the explicit Intl locale of the language, plain spaces, `2026-10-03` or
+`Oct 03 14:22` in English, `03/10/2026` or `03/10 14:22` in French); the HTML report
+(`report/labels/`, `<html lang>`, the page's own formats). **What does not:** the fields of history
+records, log events, exports and `--json` output — data contracts, the same English in both
+languages; a message inside them keeps the language it was written in.
+
+The test suites speak French unless a `describe` asks otherwise (`tests/support/locale.ts`,
+`useLocale("en")`), and the CLI they spawn gets `GUP_LANG=fr`
+([testing.md § 5](testing.md#5-rules-every-suite-follows)).
 
 ---
 
@@ -746,5 +803,7 @@ a full folder grows a sub-folder by domain. `src/core/registry.ts` (length) and
   no tray icon, nothing registered while no schedule is enabled.
 - **History is read back, never trusted.** Display and export only, pinned by an import-graph
   test: a tampered history can mislead a chart, never an update.
-- **French interface, English code.** The interface's audience is French; the code base stays
-  readable by anyone.
+- **English by default, French on demand; English code.** The interface speaks English until the
+  user picks French (`gup language fr`, `GUP_LANG`, Options), and never takes the language from the
+  machine's locale: the same command prints the same words everywhere until someone chooses. The
+  code base stays readable by anyone.

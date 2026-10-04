@@ -1,5 +1,6 @@
 import { getProvider } from "../core/registry.js";
 import { requestsFrom } from "../core/update/update-plan.js";
+import { afterExitNotice } from "../ui/after-exit-notice.js";
 import { MenuApp } from "../ui/app/menu-app.js";
 import { uiPreferences } from "../ui/app/ui-preferences.js";
 import type { MenuController } from "../ui/app/session/menu-session.js";
@@ -20,6 +21,8 @@ export async function menuCommand(): Promise<number> {
     providers: [],
   };
   await new MenuApp({ controller: menuController, state, views: menuViews() }).run();
+  // The screen is gone: what gup could only leave for after it exits (its own update on Windows).
+  process.stdout.write(afterExitNotice(state.scans));
   return 0;
 }
 

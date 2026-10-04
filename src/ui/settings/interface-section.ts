@@ -1,4 +1,5 @@
 import { defineSection } from "../../core/config/section.js";
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "../../core/i18n/locale.js";
 import {
   DEFAULT_UI_PREFERENCES,
   type NoteColumn,
@@ -10,10 +11,11 @@ import type { Density } from "../theme/appearance.js";
 import type { GlyphPreference } from "../theme/glyphs.js";
 
 /**
- * The `interface` section: how the full-screen app looks and behaves. Its
- * menu fields are the menu's own preferences ({@link UiPreferences}, minus
- * the scan settings, which live in the `scan` section); the rest — density,
- * symbols, mouse — belong to the screens.
+ * The `interface` section: how gup looks, behaves and speaks. Its menu fields
+ * are the menu's own preferences ({@link UiPreferences}, minus the scan
+ * settings, which live in the `scan` section); density, symbols and mouse
+ * belong to the screens; the language to the whole command line, read once
+ * at startup (`core/i18n/resolve-locale.ts`).
  */
 
 type MenuSettings = Omit<UiPreferences, "scan">;
@@ -22,6 +24,7 @@ export interface InterfaceSettings extends MenuSettings {
   readonly density: Density;
   readonly glyphs: GlyphPreference;
   readonly mouse: boolean;
+  readonly language: Locale;
 }
 
 // Every value of each enumeration, as a record so a new member is a compile
@@ -50,6 +53,7 @@ const DEFAULTS: InterfaceSettings = Object.freeze({
   density: "comfortable",
   glyphs: "auto",
   mouse: true,
+  language: DEFAULT_LOCALE,
 });
 
 export const INTERFACE_SECTION = defineSection<InterfaceSettings>({
@@ -72,5 +76,6 @@ export const INTERFACE_SECTION = defineSection<InterfaceSettings>({
     density: read.oneOf("density", DENSITIES, DEFAULTS.density),
     glyphs: read.oneOf("glyphs", GLYPH_PREFERENCES, DEFAULTS.glyphs),
     mouse: read.boolean("mouse", DEFAULTS.mouse),
+    language: read.oneOf("language", LOCALES, DEFAULTS.language),
   }),
 });

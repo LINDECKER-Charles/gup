@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,11 +17,13 @@ vi.mock("../../src/core/config/store.js", async (importOriginal) => ({
 }));
 
 import { adminBatchCommand } from "../../src/commands/admin-batch.js";
+import { activeLocale, setActiveLocale } from "../../src/core/i18n/locale.js";
 import { elevatedLogBuffer } from "../../src/core/log/elevated-bridge.js";
 import { installLogBackend, log, type LogThreshold } from "../../src/core/log/log.js";
 import { SinkLogBackend } from "../../src/core/log/log-backend.js";
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import { getInstallTimeoutSeconds, setInstallTimeoutSeconds } from "../../src/core/runner.js";
+import { SUITE_LOCALE } from "../support/locale.js";
 import { restorePlatform, setPlatform } from "../support/platform.js";
 import { useTempDirs } from "../support/temp-dirs.js";
 
@@ -109,7 +111,7 @@ describe("adminBatchCommand", () => {
 
   it("emits a Format invalide outcome for a target missing the separator", async () => {
     const file = await mkInputFile();
-    await writeFile(file, JSON.stringify({ version: 1, targets: ["malformed"] }), {
+    await writeFile(file, JSON.stringify({ version: 1, targets: ["malformed"], locale: SUITE_LOCALE }), {
       encoding: "utf8",
       flag: "wx",
     });
@@ -126,7 +128,7 @@ describe("adminBatchCommand", () => {
 
   it("emits a Provider inconnu outcome when getProvider returns undefined", async () => {
     const file = await mkInputFile();
-    await writeFile(file, JSON.stringify({ version: 1, targets: ["ghost:x"] }), {
+    await writeFile(file, JSON.stringify({ version: 1, targets: ["ghost:x"], locale: SUITE_LOCALE }), {
       encoding: "utf8",
       flag: "wx",
     });
@@ -143,7 +145,7 @@ describe("adminBatchCommand", () => {
 
   it("refuses a target whose provider does not run on this platform", async () => {
     const file = await mkInputFile();
-    await writeFile(file, JSON.stringify({ version: 1, targets: ["brew-cask:firefox"] }), {
+    await writeFile(file, JSON.stringify({ version: 1, targets: ["brew-cask:firefox"], locale: SUITE_LOCALE }), {
       encoding: "utf8",
       flag: "wx",
     });
@@ -176,7 +178,10 @@ describe("adminBatchCommand", () => {
   it("re-checks every target as the CLI does: no option, no control character, no empty id", async () => {
     const file = await mkInputFile();
     const targets = ["choco:--source=http://attacker.invalid", "choco:-y", "choco:git\u001b[2J", "choco:", "choco:git"];
-    await writeFile(file, JSON.stringify({ version: 1, targets }), { encoding: "utf8", flag: "wx" });
+    await writeFile(file, JSON.stringify({ version: 1, targets, locale: SUITE_LOCALE }), {
+      encoding: "utf8",
+      flag: "wx",
+    });
     const provider = {
       id: "choco",
       displayName: "Chocolatey",
@@ -204,6 +209,60 @@ describe("adminBatchCommand", () => {
     const code = await adminBatchCommand("/this/path/definitely/does/not/exist.json");
     expect(code).toBe(2);
     expect(stderrSpy).toHaveBeenCalled();
+  });
+
+  it("returns exit 2 and says so, in the parent's language, when it cannot write the outcomes", async () => {
+    getProviderMock.mockReturnValue({
+      id: "choco",
+      displayName: "Chocolatey",
+      isAvailable: vi.fn(),
+      listOutdated: vi.fn(),
+      update: vi.fn(async (id: string) => ({ id, success: true })),
+      updateAll: vi.fn(),
+    });
+    try {
+      for (const [locale, words] of [
+        ["fr", "échec d'écriture des outcomes"],
+        ["en", "could not write the outcomes"],
+      ] as const) {
+        const file = await mkInputFile();
+        const input = { version: 1, targets: ["choco:caddy"], locale };
+        await writeFile(file, JSON.stringify(input), { encoding: "utf8", flag: "wx" });
+        // A directory where the outcome file goes: writing it fails.
+        await mkdir(`${file}.out`);
+        stderrSpy.mockClear();
+        await expect(adminBatchCommand(file)).resolves.toBe(2);
+        expect(stderrSpy.mock.calls.join("")).toContain(words);
+      }
+    } finally {
+      setActiveLocale(SUITE_LOCALE);
+    }
+  });
+
+  it("speaks the parent's language, or English for a parent that sends none", async () => {
+    const localesDuringUpdate: string[] = [];
+    getProviderMock.mockReturnValue({
+      id: "choco",
+      displayName: "Chocolatey",
+      isAvailable: vi.fn(),
+      listOutdated: vi.fn(),
+      update: vi.fn(async (id: string) => {
+        localesDuringUpdate.push(activeLocale());
+        return { id, success: true };
+      }),
+      updateAll: vi.fn(),
+    });
+    try {
+      for (const payload of [{ locale: "fr" }, {}]) {
+        const file = await mkInputFile();
+        const input = { version: 1, targets: ["choco:caddy"], ...payload };
+        await writeFile(file, JSON.stringify(input), { encoding: "utf8", flag: "wx" });
+        await expect(adminBatchCommand(file)).resolves.toBe(0);
+      }
+    } finally {
+      setActiveLocale(SUITE_LOCALE);
+    }
+    expect(localesDuringUpdate).toEqual(["fr", "en"]);
   });
 
   it("runs with the parent's timeout and log threshold, never its own settings", async () => {

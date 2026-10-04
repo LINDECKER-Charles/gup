@@ -6,6 +6,7 @@ import pLimit from "p-limit";
 import { commandExists, run } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localize, localized } from "../../core/i18n/localized.js";
 
 /**
  * Sparkle — the de-facto self-update framework for macOS apps distributed
@@ -54,9 +55,14 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
  */
 export class SparkleProvider implements Provider {
   readonly id = "sparkle";
-  readonly displayName = "Sparkle (apps macOS)";
-  readonly installHint =
-    "Rien à installer : gup lit le flux Sparkle (SUFeedURL) des apps de /Applications.";
+  get displayName(): string {
+    return localize({ en: "Sparkle (macOS apps)", fr: "Sparkle (apps macOS)" });
+  }
+
+  get installHint(): string {
+    return TEXT.installHint;
+  }
+
   /** Reads the Sparkle feeds of the macOS app bundles in /Applications. */
   readonly platforms = PLATFORMS.macos;
   // Filesystem walk over every .app bundle plus one HTTP request per app that
@@ -86,14 +92,7 @@ export class SparkleProvider implements Provider {
   }
 
   async update(packageId: string): Promise<UpdateOutcome> {
-    return {
-      id: packageId,
-      success: false,
-      skipped: true,
-      message:
-        `Ouvrir ${packageId}, puis le menu de l'application → ` +
-        "« Check for Updates… » : Sparkle télécharge et vérifie la signature lui-même.",
-    };
+    return { id: packageId, success: false, skipped: true, message: TEXT.openTheApp(packageId) };
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
@@ -114,8 +113,27 @@ const MAX_FEED_CHARS = 512_000;
 /** Feeds list every release ever shipped; the newest is never at the bottom. */
 const MAX_ITEMS = 200;
 
-const NOTE_SHORT = "Sparkle — updater intégré à l'app";
-const NOTE_BUILD = "Sparkle — comparaison sur le build, updater intégré à l'app";
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    installHint:
+      "Nothing to install: gup reads the Sparkle feed (SUFeedURL) of the apps in /Applications.",
+    openTheApp: (app: string) =>
+      `Open ${app}, then the app's menu → ` +
+      '"Check for Updates…": Sparkle downloads the update and checks its signature itself.',
+    shortNote: "Sparkle — the app's built-in updater",
+    buildNote: "Sparkle — compared on the build, the app's built-in updater",
+  },
+  fr: {
+    installHint:
+      "Rien à installer : gup lit le flux Sparkle (SUFeedURL) des apps de /Applications.",
+    openTheApp: (app) =>
+      `Ouvrir ${app}, puis le menu de l'application → ` +
+      "« Check for Updates… » : Sparkle télécharge et vérifie la signature lui-même.",
+    shortNote: "Sparkle — updater intégré à l'app",
+    buildNote: "Sparkle — comparaison sur le build, updater intégré à l'app",
+  },
+});
 
 async function scanBundles(): Promise<OutdatedPackage[]> {
   const bundles = await listAppBundles();
@@ -223,7 +241,7 @@ async function inspectBundle(bundlePath: string): Promise<OutdatedPackage | null
     name,
     current: pair.current,
     latest: pair.latest,
-    note: pair.kind === "build" ? NOTE_BUILD : NOTE_SHORT,
+    note: pair.kind === "build" ? TEXT.buildNote : TEXT.shortNote,
   };
 }
 

@@ -27,12 +27,12 @@ probes, scans or updates the provider, whatever happens to be on the `PATH`
 (a `brew.cmd` shim forwarding into WSL, the unrelated NCAR `ncl` on Linux):
 
 - `gup doctor` and the menu's **Providers** view list it last, greyed, under
-  **Incompatibles avec \<OS\>**, with a `–` mark and a badge saying where it
-  runs (`macOS uniquement`). The mark, the title and the badge carry the
+  **Incompatible with \<OS\>**, with a `–` mark and a badge saying where it
+  runs (`macOS only`). The mark, the title and the badge carry the
   meaning without colour. The menu preference `showIncompatibleProviders`
   (on by default) hides the group from the view.
 - `gup update <id>:<package>` exits 2 with
-  `Provider <id> indisponible sur <OS> (<badge>)`; the elevated batch refuses
+  `Provider <id> unavailable on <OS> (<badge>)`; the elevated batch refuses
   such a target with the same reason.
 - `gup list` / `gup update` with `--provider <id>` print one warning line per
   such id (an unknown id too) and scan the rest.
@@ -147,7 +147,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | ID | Source | Status |
 |---|---|---|
 | `npm-g` | npm global | ✅ |
-| `pnpm-g` | pnpm global | ✅ |
+| `pnpm-g` | pnpm global (pnpm itself through `pnpm self-update`) | ✅ |
 | `yarn-g` | Yarn global | ✅ |
 | `bun-g` | Bun global | ✅ |
 | `deno` | Deno runtime | ✅ |
@@ -165,7 +165,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 
 | ID | Source | Status |
 |---|---|---|
-| `pip` | pip (user) | ✅ |
+| `pip` | pip (user); an upgrade `pip check` says breaks a dependent is undone | ✅ |
 | `pipx` | pipx | ✅ |
 | `uv-tools` | uv tools | ✅ |
 | `poetry` | Poetry self-update | ✅ |
@@ -184,7 +184,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 | `dotnet-sdk` | .NET SDK, compared within its own channel | ✅ |
 | `nuget` | NuGet CLI binary (`nuget update -self`) | ✅ |
 | `composer-self` | Composer (binary) | ✅ |
-| `composer-g` | Composer global | ✅ |
+| `composer-g` | Composer global (`composer global update <pkg> --with-dependencies`) | ✅ |
 | `symfony-cli` | Symfony CLI | ✅ |
 | `phive` | PHIVE | ✅ |
 
@@ -389,11 +389,11 @@ GUI. (Until 0.5.0 they existed as unregistered code in `src/providers/ide/`.)
 | `self:scoop` | GitHub `ScoopInstaller/Scoop` | `scoop update` | ✅ |
 | `self:choco` | GitHub `chocolatey/choco` | `choco upgrade chocolatey -y` (admin) | ✅ |
 | `self:npm` | npm registry | `npm install -g npm@latest` | ✅ |
-| `self:pnpm` | npm registry | `pnpm add -g pnpm` | ✅ |
+| `self:pnpm` | npm registry | `pnpm self-update`; a failure when the `pnpm` on `PATH` keeps its version | ✅ |
 | `self:yarn` | npm registry | `corepack prepare yarn@stable --activate` | ✅ |
 | `self:pip` | PyPI | `python -m pip install --user -U pip` | ✅ |
 | `self:pipx` | PyPI | `pipx upgrade pipx` | ✅ |
-| `self:gh` | GitHub `cli/cli` | delegated to install source | ✅ |
+| `self:gh` | GitHub `cli/cli` | delegated to install source; left to `winget` when winget lists `GitHub.cli` | ✅ |
 | `self:symfony-cli` | — | already covered by `SymfonyCliProvider` | ❌ |
 | `self:rustup` | — | already covered by the `rustup` provider | ❌ |
 | `self:jb-toolbox` | — | GUI auto-update, no CLI | ❌ |
@@ -1571,7 +1571,7 @@ macOS included.
 |---|---|---|---|
 | `msys2` | `pacman -Qu` against the root's local sync DB — **no `-Sy` at scan time** | `pacman -S --needed --noconfirm <targets>`, never `-Syu` | ✅ |
 | `vcpkg` | `vcpkg update` (classic mode) | `vcpkg upgrade --no-dry-run` | ✅ |
-| `visual-studio` | `vswhere -all -products * -format json` vs the release channel manifest under `aka.ms/vs/<major>/release/channel` | `vs_installer.exe update --passive --norestart --installPath "<path>"`, row flagged `requiresAdmin` | ✅ |
+| `visual-studio` | `vswhere -all -products * -format json` vs the release channel manifest under `aka.ms/vs/<major>/release/channel` | `vs_installer.exe update --passive --norestart --installPath "<path>"`, row flagged `requiresAdmin`; winget's Visual Studio editions give way to it | ✅ |
 | `psresource` | `Get-InstalledPSResource` vs `Find-PSResource` | `Update-PSResource -Scope CurrentUser` | ✅ |
 | `dotnet-sdk` | `dotnet --list-sdks` vs Microsoft's release index, **within the installed channel** | delegated (`Microsoft.DotNet.SDK.<major>` on winget, `dotnet-sdk` on brew) | ✅ (macOS too) |
 | `cygwin` | refresh row — the "what is newer" answer lives in the mirror's `setup.ini`, not in any installed binary | `setup-x86_64.exe --quiet-mode --upgrade-also --no-shortcuts --wait --root <root>` | ✅ |

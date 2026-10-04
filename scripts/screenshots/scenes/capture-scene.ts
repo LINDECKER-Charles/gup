@@ -80,7 +80,7 @@ function stageOf(setup: TestRendererSetup, views: readonly ViewDefinition[]): St
 /**
  * The keys that open `view` from whichever view is in front: Tab gives the
  * sidebar the keyboard, Up reaches its first entry (the cursor stops there),
- * Down walks to the view's entry, Entrée opens it. The entries come in the
+ * Down walks to the view's entry, Enter opens it. The entries come in the
  * production sidebar order, so the count never goes stale.
  */
 function sidebarKeys(views: readonly ViewDefinition[], view: ViewId): string[] {
@@ -110,7 +110,7 @@ async function waitForText(setup: TestRendererSetup, text: string): Promise<void
   }
 }
 
-/** The app waits for Entrée only after an update on the plain terminal: never in a scene. */
+/** The app waits for Enter only after an update on the plain terminal: never in a scene. */
 function neverPauses(): Promise<void> {
   return Promise.reject(new Error("a screenshot never leaves the screen"));
 }

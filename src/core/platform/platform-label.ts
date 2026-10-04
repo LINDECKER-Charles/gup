@@ -1,8 +1,10 @@
+import { localized } from "../i18n/localized.js";
 import type { PlatformSet } from "../types.js";
 
 /**
- * French display vocabulary for platforms: the OS name and the "X uniquement"
- * badge are two halves of one vocabulary, so they share this module.
+ * Display vocabulary for platforms, in the interface's languages: the OS name
+ * and the "X only" badge are two halves of one vocabulary, so they share this
+ * module. The OS names are proper names, the same in every language.
  */
 
 const NAMES: Partial<Record<NodeJS.Platform, string>> = {
@@ -15,7 +17,11 @@ const NAMES: Partial<Record<NodeJS.Platform, string>> = {
 const DISPLAY_ORDER: PlatformSet = ["win32", "darwin", "linux"];
 
 const LABEL_SEPARATOR = "/";
-const EXCLUSIVE_SUFFIX = "uniquement";
+
+const PLATFORM_LABELS = localized({
+  en: { exclusive: (names: string) => `${names} only` },
+  fr: { exclusive: (names) => `${names} uniquement` },
+});
 
 /** "Windows" / "macOS" / "Linux", or the raw platform id for the rest. */
 export function platformName(platform: NodeJS.Platform): string {
@@ -23,12 +29,12 @@ export function platformName(platform: NodeJS.Platform): string {
 }
 
 /**
- * "Windows uniquement", "macOS/Linux uniquement"… Only the named platforms
- * are listed when the set holds any, so `notWindows` reads `macOS/Linux`
- * rather than enumerating the BSDs gup is never installed on.
+ * "Windows only", "macOS/Linux only"… Only the named platforms are listed
+ * when the set holds any, so `notWindows` reads `macOS/Linux` rather than
+ * enumerating the BSDs gup is never installed on.
  */
 export function supportLabel(platforms: PlatformSet): string {
   const named = DISPLAY_ORDER.filter((platform) => platforms.includes(platform));
   const labels = (named.length > 0 ? named : platforms).map(platformName);
-  return `${labels.join(LABEL_SEPARATOR)} ${EXCLUSIVE_SUFFIX}`;
+  return PLATFORM_LABELS.exclusive(labels.join(LABEL_SEPARATOR));
 }

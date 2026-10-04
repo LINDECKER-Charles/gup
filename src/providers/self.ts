@@ -6,10 +6,13 @@ import {
   fetchGitHubReleaseLatest,
   normalizeVersion,
 } from "../core/gh-releases.js";
+import { localize } from "../core/i18n/localized.js";
 import { delegateUpdate } from "../core/install-source.js";
 import type { OutdatedPackage, PlatformSet, Provider, UpdateOutcome } from "../core/types.js";
 import { isSupportedOn } from "../core/platform/is-supported-on.js";
 import { PLATFORMS } from "../core/platform/platforms.js";
+import { localized } from "../core/i18n/localized.js";
+import { MANUAL_STEPS } from "./manual-steps.js";
 
 /**
  * Meta-provider that surfaces self-updates of the package managers themselves
@@ -73,7 +76,7 @@ export class SelfProvider implements Provider {
           latest,
           ...(t.manual && {
             manual: true,
-            note: t.manualMessage ?? "manuel",
+            note: t.manualMessage?.() ?? TEXT.manualNote,
           }),
         };
       }),
@@ -84,7 +87,7 @@ export class SelfProvider implements Provider {
   async update(packageId: string): Promise<UpdateOutcome> {
     const target = activeTargets().find((t) => t.id === packageId);
     if (!target) {
-      return { id: packageId, success: false, message: "Cible self inconnue" };
+      return { id: packageId, success: false, message: TEXT.unknownTarget };
     }
     return target.update();
   }
@@ -108,7 +111,8 @@ interface SelfTarget {
   update: () => Promise<UpdateOutcome>;
   /** Surface row but mark as manual:true — filtered out of "Update all". */
   manual?: boolean;
-  manualMessage?: string;
+  /** The manual row's note, read when the row is built (in the language of that moment). */
+  manualMessage?: () => string;
   /**
    * Platforms the target can exist on. Omitted means "everywhere".
    *
@@ -119,6 +123,28 @@ interface SelfTarget {
    */
   platforms?: PlatformSet;
 }
+
+const WINGET_RELEASES = "https://github.com/microsoft/winget-cli/releases";
+
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    manualNote: "manual",
+    unknownTarget: "Unknown self target",
+    wingetManual: `Update through the Microsoft Store (App Installer) or ${WINGET_RELEASES}`,
+    wingetSkip: "Update through the Microsoft Store (App Installer) or a manual download.",
+    chocoNeedsAdmin: "Chocolatey needs an administrator terminal.",
+    pythonMissing: "Python not found on PATH",
+  },
+  fr: {
+    manualNote: "manuel",
+    unknownTarget: "Cible self inconnue",
+    wingetManual: `Mise à jour via le Microsoft Store (App Installer) ou ${WINGET_RELEASES}`,
+    wingetSkip: "Mise à jour via le Microsoft Store (App Installer) ou téléchargement manuel.",
+    chocoNeedsAdmin: "Chocolatey nécessite un terminal admin.",
+    pythonMissing: "Python introuvable dans le PATH",
+  },
+});
 
 /** Targets that can exist on the running platform. */
 function activeTargets(): SelfTarget[] {
@@ -202,6 +228,20 @@ async function resolvePythonForPip(): Promise<string | null> {
   return null;
 }
 
+/** Why `pnpm self-update` exited 0 and the pnpm on PATH still reports `version`. */
+function pnpmStillOnPath(version: string): string {
+  const folder = process.platform === "win32" ? "%PNPM_HOME%\\bin" : "$PNPM_HOME/bin";
+  return localize({
+    en:
+      `pnpm self-update succeeded, but the pnpm on PATH still reports ${version}: ` +
+      `add ${folder} to PATH, where pnpm 11+ puts its new version, then open a new terminal`,
+    fr:
+      `pnpm self-update a réussi, mais le pnpm du PATH indique toujours ${version} : ` +
+      `ajouter ${folder} au PATH, où pnpm 11+ installe sa nouvelle version, puis ouvrir un ` +
+      "nouveau terminal",
+  });
+}
+
 /** Fallback Python launcher when `pip` isn't on PATH (pipx-only setups, …). */
 async function resolvePython(): Promise<string | null> {
   if (await commandExists("py")) return "py";
@@ -231,16 +271,14 @@ const TARGETS: SelfTarget[] = [
     // same name is never asked for its version.
     platforms: PLATFORMS.windows,
     manual: true,
-    manualMessage:
-      "Mise à jour via le Microsoft Store (App Installer) ou https://github.com/microsoft/winget-cli/releases",
+    manualMessage: () => TEXT.wingetManual,
     current: async () => parseFirstSemver(await runStdout("winget", ["--version"])),
     latest: async () => fetchGitHubReleaseLatest("microsoft/winget-cli"),
     update: async () => ({
       id: "winget",
       success: false,
       skipped: true,
-      message:
-        "Mise à jour via le Microsoft Store (App Installer) ou téléchargement manuel.",
+      message: TEXT.wingetSkip,
     }),
   },
 
@@ -279,8 +317,7 @@ const TARGETS: SelfTarget[] = [
           id: "choco",
           success: false,
           skipped: true,
-          message:
-            "Chocolatey nécessite un terminal admin. Relancer gup depuis un terminal « Exécuter en tant qu'administrateur ».",
+          message: `${TEXT.chocoNeedsAdmin} ${MANUAL_STEPS.restartAsAdministrator}`,
         };
       }
       const res = await runInherit("choco", ["upgrade", "chocolatey", "-y"]);
@@ -334,6 +371,11 @@ const TARGETS: SelfTarget[] = [
   // ("Le chemin d'accès spécifié est introuvable"). We compare the resolved
   // version before/after rather than trusting the exit code so this benign
   // cleanup race doesn't surface as a false failure.
+  //
+  // The reverse happens too: pnpm 11+ installs the new version under
+  // `$PNPM_HOME/bin`, which a PATH set up by an older pnpm does not hold, and
+  // exits 0 while the pnpm on PATH stays where it was. Same version after
+  // than before is an update that did not take effect, not a success.
   {
     id: "pnpm",
     displayName: "pnpm",
@@ -346,6 +388,9 @@ const TARGETS: SelfTarget[] = [
       const after = parseFirstSemver(await runStdout("pnpm", ["--version"]));
       if (before && after && before !== after) {
         return { id: "pnpm", success: true };
+      }
+      if (!res.failed && before && after) {
+        return { id: "pnpm", success: false, message: pnpmStillOnPath(before) };
       }
       return { id: "pnpm", success: !res.failed };
     },
@@ -391,7 +436,7 @@ const TARGETS: SelfTarget[] = [
         return {
           id: "pip",
           success: false,
-          message: "Python introuvable dans le PATH",
+          message: TEXT.pythonMissing,
         };
       }
       const res = await runInherit(py, [
@@ -439,8 +484,10 @@ const TARGETS: SelfTarget[] = [
           scoop: "gh",
           choco: "gh",
         },
-        manualMessage:
-          "Télécharger https://github.com/cli/cli/releases et remplacer gh.exe",
+        manualMessage: MANUAL_STEPS.downloadAndReplace(
+          "https://github.com/cli/cli/releases",
+          "gh.exe",
+        ),
       }),
   },
 ];

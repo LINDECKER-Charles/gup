@@ -24,6 +24,9 @@ function bump(id: string, current: string, latest: string): OutdatedPackage {
   return { id, current, latest };
 }
 
+/** Why Scoop's scan fails on the fixture machine, worded as gup words a failed command. */
+export const SCOOP_ERROR = "scoop status failed (code 1)";
+
 /**
  * A fictional but plausible Windows developer machine: real provider ids,
  * made-up versions, nothing taken from a real machine. Twelve outdated
@@ -48,7 +51,7 @@ export const SCAN_FIXTURE: ScanFixture = {
     found("choco", [
       { ...bump("nodejs-lts", "24.8.0", "24.9.0"), requiresAdmin: true, note: "admin" },
     ]),
-    { providerId: "scoop", available: true, packages: [], error: "scoop status a échoué (code 1)" },
+    { providerId: "scoop", available: true, packages: [], error: SCOOP_ERROR },
   ],
   steps: [
     { providerId: "winget", ms: 3100 },

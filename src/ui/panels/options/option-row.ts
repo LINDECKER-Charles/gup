@@ -10,7 +10,7 @@ import type { Viewport } from "../panel.js";
 
 /**
  * The building blocks of the Options view. The view is a list of sections
- * (APPARENCE, CONFORT…), each a list of rows; a row may open a sub-view in
+ * (APPEARANCE, BEHAVIOR…), each a list of rows; a row may open a sub-view in
  * place of the list (theme picker, colour editor, provider filter). Sections
  * are built by factories, so another feature adds its own (journal settings)
  * without editing the panel: `optionsView({ extraSections })`.
@@ -21,7 +21,7 @@ export interface OptionRow {
   /** Stable within the view: the cursor follows it. */
   readonly id: string;
   readonly label: string;
-  /** Shown as `[value]`; empty for an action row ("Réinitialiser…"). */
+  /** Shown as `[value]`; empty for an action row ("Reset…"). */
   value(): string;
   /**
    * After the value: an explanation, a status, or why the row is disabled.
@@ -32,7 +32,7 @@ export interface OptionRow {
    */
   hint(room?: number): Line;
   isEnabled(): boolean;
-  /** Entrée, Espace or a click: toggle, cycle forward, open a sub-view or a dialog. */
+  /** Enter, Space or a click: toggle, cycle forward, open a sub-view or a dialog. */
   activate(): void;
   /** ← → ; absent, the row does not step and the arrows keep their menu meaning. */
   step?(direction: -1 | 1): void;
@@ -41,14 +41,14 @@ export interface OptionRow {
 /** A key a section answers in the main list wherever the cursor is (`c` copies the path). */
 export interface OptionShortcut {
   readonly key: string;
-  /** Shown in the key-hint bar: "c copier le chemin". */
+  /** Shown in the key-hint bar: "c copy path". */
   readonly hint: string;
   run(): void;
 }
 
 export interface OptionSection {
   readonly id: string;
-  /** "APPARENCE". */
+  /** "APPEARANCE", read when the panel is built. */
   readonly title: string;
   rows(): readonly OptionRow[];
   shortcuts?(): readonly OptionShortcut[];
@@ -56,7 +56,7 @@ export interface OptionSection {
 
 /** A screen shown in place of the list until it closes itself. */
 export interface OptionsView {
-  /** Appended to the panel's: "Options › Thème". */
+  /** Appended to the panel's: "Options › Theme". */
   readonly title: string;
   hints(): string;
   render(viewport: Viewport): readonly Line[];

@@ -1,4 +1,5 @@
 import type { ReportModel } from "../core/export/report-types.js";
+import { activeLocale } from "../core/i18n/locale.js";
 import { REPORT_JS } from "./client/index.js";
 import { contentSecurityPolicy, sha256Base64 } from "./csp.js";
 import { embedJson } from "./embed-json.js";
@@ -13,6 +14,11 @@ import { REPORT_CSS } from "./styles/index.js";
  * page's Content-Security-Policy; nothing else may load or run. The labels
  * and the data travel as escaped JSON blocks the script reads; the only
  * dynamic text in the markup itself (the title, the version) is HTML-escaped.
+ *
+ * The report is written in the language active when it is rendered: the
+ * page's `lang`, its markup and the labels it embeds, while the data carries
+ * the matching Intl locale. The script is the same in every language, and so
+ * is the policy that allows it.
  */
 
 /** A check mark on the accent colour: the tab icon, inline (img-src data: only). */
@@ -37,7 +43,7 @@ export function renderReportHtml(model: ReportModel): string {
   const title = REPORT_LABELS.document.title.replace("{period}", model.meta.period.label);
   return [
     "<!doctype html>",
-    '<html lang="fr">',
+    `<html lang="${activeLocale()}">`,
     "<head>",
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
@@ -51,7 +57,8 @@ export function renderReportHtml(model: ReportModel): string {
     "</head>",
     "<body>",
     reportBody(),
-    jsonBlock(REPORT_IDS.labels, REPORT_LABELS),
+    // Read now, key by key: the active language's catalog, as plain data.
+    jsonBlock(REPORT_IDS.labels, { ...REPORT_LABELS }),
     jsonBlock(REPORT_IDS.data, model),
     `<script>${REPORT_JS}</script>`,
     "</body>",

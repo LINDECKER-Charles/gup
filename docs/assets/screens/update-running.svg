@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 968.0 594.0" width="968.0" height="594.0" role="img" aria-labelledby="t d">
-<title id="t">gup — Mise à jour</title>
+<title id="t">gup — Update</title>
 <desc id="d">In-app update: three packages done, PowerToys downloading with winget's progress bar in the embedded terminal pane below, 7-Zip queued and nodejs-lts waiting for the administrator step.</desc>
 <style>
 text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:16px}
@@ -25,12 +25,12 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <circle cx="22.0" cy="17.0" r="5.5" fill="#ff5f57"/>
 <circle cx="40.0" cy="17.0" r="5.5" fill="#febc2e"/>
 <circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
-<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Mise à jour</text>
+<text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Update</text>
 <rect class="c0" x="16.0" y="42.0" width="936.0" height="17.0"/>
-<text class="c1 b" x="16.0" y="55.0" textLength="351.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  Mise à jour  │  3/6  │  01:06</text>
+<text class="c1 b" x="16.0" y="55.0" textLength="312.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  Update  │  3/6  │  01:06</text>
 <text class="c2" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
-<text class="c3" x="31.6" y="72.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Mise à jour </text>
-<text class="c2" x="133.0" y="72.0" textLength="819.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">────────────────────────────────────────────────────────────────────────────────────────────────────────╮</text>
+<text class="c3" x="31.6" y="72.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Update </text>
+<text class="c2" x="94.0" y="72.0" textLength="858.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────────────────────────────────────────────────────────────────────────────────────────────────╮</text>
 <text class="c2" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="31.6" y="89.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">████████████████████</text>
 <text class="c4" x="187.6" y="89.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░░░░░░░░░░░░░░░░░░</text>
@@ -88,22 +88,21 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="31.6" y="242.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Winget · PowerToys </text>
 <text class="c2" x="187.6" y="242.0" textLength="764.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────────────────────────────────────────────────────────────────────────────────────╮</text>
 <text class="c2" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c6" x="23.8" y="259.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Trouvé PowerToys [Microsoft.PowerToys] Version 0.95.0                                                                </text>
+<text class="c6" x="23.8" y="259.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Found PowerToys [Microsoft.PowerToys] Version 0.95.0                                                                 </text>
 <text class="c2" x="944.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c6" x="23.8" y="276.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Ce package d’application vous est concédé sous licence par son propriétaire.                                         </text>
+<text class="c6" x="23.8" y="276.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> This application is licensed to you by its owner.                                                                    </text>
 <text class="c2" x="944.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c6" x="23.8" y="293.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Microsoft n’est pas responsable des packages tiers et n’accorde pas de licences à ceux-ci.                           </text>
+<text class="c6" x="23.8" y="293.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.                           </text>
 <text class="c2" x="944.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c6" x="23.8" y="310.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Téléchargement en cours https://github.com/microsoft/PowerToys/releases/download/v0.95.0/PowerToysUserSetup-0.95.0-x </text>
+<text class="c6" x="23.8" y="310.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Downloading https://github.com/microsoft/PowerToys/releases/download/v0.95.0/PowerToysUserSetup-0.95.0-x64.exe       </text>
 <text class="c2" x="944.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c6" x="23.8" y="327.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 64.exe                                                                                                               </text>
+<text class="c6" x="23.8" y="327.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ██████████████████               118 MB /  196 MB                                                                  </text>
 <text class="c2" x="944.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c6" x="23.8" y="344.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ██████████████████              118 Mo / 196 Mo                                                                    </text>
 <text class="c2" x="944.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="944.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -130,5 +129,5 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c2" x="16.0" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="944.2" y="548.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="565.0" textLength="936.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯</text>
-<text class="c4" x="16.0" y="582.0" textLength="694.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> s passer ce paquet · x tout arrêter · t écrire dans le terminal · v agrandir le terminal</text>
+<text class="c4" x="16.0" y="582.0" textLength="647.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> s skip this package · x stop all · t type in the terminal · v enlarge the terminal</text>
 </svg>

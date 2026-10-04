@@ -8,17 +8,14 @@ import type {
   ViewDefinition,
 } from "../../../src/ui/app/view-definition.js";
 import type { Panel } from "../../../src/ui/panels/panel.js";
-import {
-  NO_SCAN_YET,
-  PANEL_HINTS_TAIL,
-  QUIT_DIALOG,
-} from "../../../src/ui/text/menu-labels.js";
+import { MENU_LABELS, QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
 import { STATUS_GLYPHS, toAscii } from "../../../src/ui/theme/glyphs.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
 import { providersView } from "../../../src/ui/views/providers-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
+import { useLocale } from "../../support/locale.js";
 import { bootMenu, defaultViews } from "../../support/tui/menu-driver.js";
 
 const pkg = (id: string, current: string, latest: string) => ({ id, current, latest });
@@ -156,7 +153,7 @@ describe("MenuSession", () => {
 
   it("says how to scan when it starts with neither a scan nor results", async () => {
     const menu = await bootMenu({ scanOnStart: false, initialView: "packages" });
-    const text = await menu.waitForText(NO_SCAN_YET);
+    const text = await menu.waitForText(MENU_LABELS.noScanYet);
     expect(text).not.toContain("Tout est à jour");
     expect(menu.controller.scan).not.toHaveBeenCalled();
     await menu.press("r");
@@ -208,7 +205,7 @@ describe("MenuSession views", () => {
       },
     };
     const menu = await bootMenu({ views: [testView(() => panel)], scanOnStart: false });
-    expect(hintBar(await menu.frame())).toBe(`essai · ${PANEL_HINTS_TAIL}`);
+    expect(hintBar(await menu.frame())).toBe(`essai · ${MENU_LABELS.panelHintsTail}`);
     isTyping = true;
     await menu.press("x");
     expect(hintBar(await menu.frame())).toBe("tapez pour filtrer");
@@ -449,5 +446,43 @@ describe("MenuSession package contributions", () => {
     menu.setPreferences({ packageSort: "bump" });
     const after = await menu.frame();
     expect(after.indexOf("Git.Git")).toBeLessThan(after.indexOf("zlib"));
+  });
+});
+
+/**
+ * The menu built while English is active: views, sidebar and title bar take
+ * their words when the session is built, not when their modules load (the
+ * suites load them in French).
+ */
+describe("MenuSession in English", () => {
+  useLocale("en");
+
+  it("lands on Packages with the title bar and the hint bar in English", async () => {
+    const text = await (await scanned()).frame();
+    expect(text).toContain("┏━ Packages");
+    expect(text).toContain("1 detected  │  2 updates  │  normal mode");
+    expect(text).toMatch(/Package +Current +Latest/);
+    expect(hintBar(text)).toBe(
+      "space check · / filter · a check all · ↑↓ navigate · r rescan · tab menu · q quit",
+    );
+  });
+
+  it("lists the views and Quit in the sidebar, with the sidebar's own keys", async () => {
+    const menu = await scanned();
+    await menu.press("tab");
+    const text = await menu.frame();
+    for (const entry of ["▌ Packages", "  Scan", "  Providers", "  Options", "  Quit"]) {
+      expect(text).toContain(entry);
+    }
+    expect(hintBar(text)).toBe("↑↓ navigate · enter open · tab content · q quit");
+  });
+
+  it("sums the scan up in English on the Scan view", async () => {
+    const menu = await scanned();
+    await menu.press("tab", "up", "tab");
+    const text = await menu.waitForText("Scan finished in");
+    expect(text).toContain("1 provider, 2 updates");
+    expect(text).toMatch(/√ winget +2 updates/);
+    expect(hintBar(text)).toBe("r rescan · ↑↓ scroll · tab menu · q quit");
   });
 });

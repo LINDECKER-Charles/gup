@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createFieldReader } from "../../../src/core/config/field-reader.js";
+import { createFieldReader, type ConfigIssue } from "../../../src/core/config/field-reader.js";
 
 function reader(raw: unknown) {
-  const issues: string[] = [];
+  const issues: ConfigIssue[] = [];
   return { read: createFieldReader(raw, "interface", issues), issues };
 }
+
+/** The problems recorded, as the user reads them. */
+const worded = (issues: readonly ConfigIssue[]): string[] => issues.map((issue) => issue());
 
 describe("createFieldReader", () => {
   it("returns present valid values and silently falls back for absent ones", () => {
@@ -21,7 +24,7 @@ describe("createFieldReader", () => {
     expect(read.boolean("mouse", true)).toBe(true);
     expect(read.oneOf("density", ["comfortable", "compact"], "comfortable")).toBe("comfortable");
     expect(read.integer("timeout", { min: 0, max: 86_400 }, 1200)).toBe(1200);
-    expect(issues).toEqual([
+    expect(worded(issues)).toEqual([
       "interface.mouse : booléen attendu",
       "interface.density : une valeur parmi comfortable, compact attendue",
       "interface.timeout : entier entre 0 et 86400 attendu",
@@ -40,14 +43,14 @@ describe("createFieldReader", () => {
     expect(read.hexColor("danger")).toBe("#B00020");
     expect(read.hexColor("border")).toBeUndefined();
     expect(read.hexColor("missing")).toBeUndefined();
-    expect(issues).toEqual(["interface.border : couleur #RRGGBB attendue"]);
+    expect(worded(issues)).toEqual(["interface.border : couleur #RRGGBB attendue"]);
   });
 
   it("keeps valid, de-duplicated ids up to the bound", () => {
     const bounds = { max: 2, pattern: /^[a-z-]+$/ };
     const { read, issues } = reader({ filter: ["winget", "BAD", "winget", "npm-g", "scoop"] });
     expect(read.ids("filter", bounds)).toEqual(["winget", "npm-g"]);
-    expect(issues).toEqual(["interface.filter : identifiants invalides ignorés"]);
+    expect(worded(issues)).toEqual(["interface.filter : identifiants invalides ignorés"]);
     expect(reader({ filter: "winget" }).read.ids("filter", bounds)).toEqual([]);
   });
 
@@ -55,7 +58,7 @@ describe("createFieldReader", () => {
     const { read, issues } = reader({ custom: { dark: { accent: "#123" } }, broken: 3 });
     expect(read.object("custom").object("dark").hexColor("accent")).toBe("#112233");
     expect(read.object("broken").keys()).toEqual([]);
-    expect(issues).toEqual(["interface.broken : objet attendu"]);
+    expect(worded(issues)).toEqual(["interface.broken : objet attendu"]);
   });
 
   it("never exposes prototype-polluting keys", () => {

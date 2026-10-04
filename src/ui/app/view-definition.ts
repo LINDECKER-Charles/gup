@@ -129,11 +129,15 @@ export interface ViewContext {
 
 export interface ViewDefinition {
   readonly id: ViewId;
-  /** Sidebar label (French, from the feature's labels module). */
+  /**
+   * Sidebar label, from the feature's labels module. Read when the view is
+   * defined — by `menuViews()`, as the menu starts — never while a module
+   * loads: it is in the language the run speaks.
+   */
   readonly label: string;
   /** Position in the sidebar within its group, lower first. */
   readonly order: number;
-  /** 0: work views, 1: information and settings; a blank row separates them, "Quitter" follows. */
+  /** 0: work views, 1: information and settings; a blank row separates them, "Quit" follows. */
   readonly group: 0 | 1;
   create(context: ViewContext): Panel;
   badge?(context: ViewContext): SidebarBadge | null;

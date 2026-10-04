@@ -3,7 +3,7 @@ import {
   parseMonthDay,
   parseTimeOfDay,
 } from "../../core/scheduler/model/recurrence.js";
-import { NEVER_A_PROVIDER, parseTarget } from "../../core/scheduler/model/schedule-target.js";
+import { parseTarget, TARGET_MESSAGES } from "../../core/scheduler/model/schedule-target.js";
 import type {
   Recurrence,
   ScheduleDraft,
@@ -13,12 +13,14 @@ import type {
 } from "../../core/scheduler/model/types.js";
 import { defaultScheduleName } from "../../core/scheduler/model/validate-schedule.js";
 import type { Launcher } from "../../core/scheduler/trigger/os-trigger.js";
-import { ARGUMENT_ERRORS, NOT_A_PACKAGE } from "../../ui/text/schedule/schedule-cli-labels.js";
+import { ARGUMENT_ERRORS, notAPackage } from "../../ui/text/schedule/schedule-cli-labels.js";
 
 /**
  * `gup schedule add` options → a schedule draft, or every reason it is not
- * one (French, exit code 2). Pure: validation that needs the registry or
- * the clock (`validateDraft`) comes after.
+ * one (exit code 2). Pure: validation that needs the registry or the clock
+ * (`validateDraft`) comes after. The words typed after `--on` are read in
+ * both languages, whichever the interface speaks: `lun` or `mon`, `dernier`
+ * or `last`.
  */
 
 export interface AddOptions {
@@ -87,7 +89,8 @@ function parseTargets(texts: readonly string[]): Parsed<ScheduleTarget[]> {
   for (const text of texts) {
     const parsed = parseTarget(text);
     if (parsed.ok) value.push(parsed.target);
-    else errors.push(parsed.reason === NEVER_A_PROVIDER ? NOT_A_PACKAGE : parsed.reason);
+    else if (parsed.reason === TARGET_MESSAGES.neverAProvider) errors.push(notAPackage());
+    else errors.push(parsed.reason);
   }
   return { value, errors: [...new Set(errors)] };
 }

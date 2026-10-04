@@ -3,10 +3,26 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 
+import { activeLocale, LOCALES, type Locale } from "./i18n/locale.js";
+import { localized } from "./i18n/localized.js";
 import { ingestElevatedLines } from "./log/elevated-bridge.js";
 import { effectiveLogThreshold, LOG_THRESHOLDS, type LogThreshold } from "./log/log.js";
 import { getInstallTimeoutSeconds, isElevated, runInherit } from "./runner.js";
 import type { OutdatedPackage, UpdateOutcome } from "./types.js";
+
+/** What every target of a batch the elevated child could not run reports, and why. */
+const ELEVATION_FAILURE_LABELS = localized({
+  en: {
+    failed: (reason: string) => `Elevated process failed: ${reason}`,
+    uacFailed: "elevated PowerShell Start-Process failed",
+    sudoFailed: "sudo failed or was refused",
+  },
+  fr: {
+    failed: (reason) => `Échec du process élevé : ${reason}`,
+    uacFailed: "PowerShell Start-Process élevé a échoué",
+    sudoFailed: "sudo a échoué ou a été refusé",
+  },
+});
 
 /**
  * Shape of the temp file written by the parent before spawning the elevated
@@ -26,6 +42,8 @@ export interface AdminBatchInput {
   installTimeoutSeconds?: number;
   /** The parent's log threshold, so the child's log lines match it. */
   logThreshold?: LogThreshold;
+  /** The parent's language, so the outcomes the child writes read like the parent's. */
+  locale?: Locale;
 }
 
 /**
@@ -121,7 +139,7 @@ export async function readBatchInput(file: string): Promise<AdminBatchInput> {
 
 /** The optional settings, when present, must be exactly what the parent writes. */
 function assertSettings(input: AdminBatchInput): void {
-  const { installTimeoutSeconds, logThreshold } = input;
+  const { installTimeoutSeconds, logThreshold, locale } = input;
   const isTimeoutValid =
     installTimeoutSeconds === undefined ||
     (Number.isInteger(installTimeoutSeconds) &&
@@ -134,6 +152,9 @@ function assertSettings(input: AdminBatchInput): void {
   }
   if (logThreshold !== undefined && !LOG_THRESHOLDS.includes(logThreshold)) {
     throw new Error("admin-batch: logThreshold must be a log level or off");
+  }
+  if (locale !== undefined && !LOCALES.includes(locale)) {
+    throw new Error(`admin-batch: locale must be one of ${LOCALES.join(", ")}`);
   }
 }
 
@@ -185,6 +206,7 @@ async function writeBatchInput(
     targets,
     installTimeoutSeconds: Math.min(getInstallTimeoutSeconds(), MAX_INSTALL_TIMEOUT_S),
     logThreshold: effectiveLogThreshold(),
+    locale: activeLocale(),
   };
   await writeFile(inputFile, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
   return {
@@ -255,7 +277,7 @@ function fallbackFailure(target: string, err: unknown): UpdateOutcome {
   return {
     id,
     success: false,
-    message: `Échec du process élevé : ${err instanceof Error ? err.message : String(err)}`,
+    message: ELEVATION_FAILURE_LABELS.failed(err instanceof Error ? err.message : String(err)),
   };
 }
 
@@ -315,7 +337,7 @@ async function spawnWithUac({ node, cli, inputFile, timeout }: ElevatedLaunch): 
   const res = await runInherit("powershell.exe", [...powershellArgs, ps1, node, cli, inputFile], {
     timeout,
   });
-  if (res.failed) throw new Error("PowerShell Start-Process élevé a échoué");
+  if (res.failed) throw new Error(ELEVATION_FAILURE_LABELS.uacFailed);
 }
 
 /**
@@ -325,7 +347,7 @@ async function spawnWithUac({ node, cli, inputFile, timeout }: ElevatedLaunch): 
  */
 async function spawnWithSudo({ node, cli, inputFile, timeout }: ElevatedLaunch): Promise<void> {
   const res = await runInherit("sudo", [node, cli, ADMIN_BATCH_COMMAND, inputFile], { timeout });
-  if (res.failed) throw new Error("sudo a échoué ou a été refusé");
+  if (res.failed) throw new Error(ELEVATION_FAILURE_LABELS.sudoFailed);
 }
 
 /**

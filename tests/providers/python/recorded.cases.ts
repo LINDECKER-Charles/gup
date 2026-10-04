@@ -2,7 +2,7 @@ import { PipProvider } from "../../../src/providers/python/pip.js";
 import type { ProviderContractCase } from "../../support/contract/types.js";
 import { fixture, golden } from "../../support/fixtures/refs.js";
 import { WIN_HOME } from "../../support/system/os-identity.js";
-import { PIP_INSTALL_ARGS, PIP_LIST_ARGS } from "./python.cases.js";
+import { PIP_INSTALL_ARGS, PIP_LIST_ARGS, pipProbes } from "./python.cases.js";
 
 /**
  * pip on its real `list --outdated` report, recorded on Windows 11 by
@@ -27,6 +27,7 @@ const PIP_RECORDED: ProviderContractCase = {
         argv: ["pip", ...PIP_LIST_ARGS],
         stdout: fixture("providers/python/pip/list-outdated.win32.json"),
       },
+      ...pipProbes("pip", { "package-01": "1.0.0" }),
     ],
   },
   outdated: golden("python", "pip.recorded.win32"),

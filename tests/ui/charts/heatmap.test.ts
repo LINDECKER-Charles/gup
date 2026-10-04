@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { chartGlyphs } from "../../../src/ui/charts/chart-glyphs.js";
 import { renderHeatmap, type HeatmapInput } from "../../../src/ui/charts/heatmap.js";
-import { MONTH_ABBREVIATIONS } from "../../../src/ui/text/journal/activity-labels.js";
+import { HEATMAP_LABELS } from "../../../src/ui/text/journal/activity-labels.js";
 import type { Line } from "../../../src/ui/tui/styled-lines.js";
 
 const text = (line: Line) => line.map((segment) => segment.text).join("");
@@ -62,7 +62,7 @@ describe("renderHeatmap", () => {
 
     // The window runs from mid-November 2025 to October 2026: unroll the year.
     const unrolled = names.map((name) => {
-      const month = MONTH_ABBREVIATIONS.indexOf(name as (typeof MONTH_ABBREVIATIONS)[number]);
+      const month = HEATMAP_LABELS.months.indexOf(name);
       expect(month, `${name} is a month`).not.toBe(-1);
       return month >= 10 ? month : month + 12;
     });

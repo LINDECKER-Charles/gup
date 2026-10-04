@@ -5,6 +5,7 @@ import {
   detectInstallSource,
 } from "../../core/install-source.js";
 import { pickInstallHint } from "../../core/install-hint.js";
+import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 
 interface GitHubReleaseJson {
@@ -64,8 +65,10 @@ export class HelmProvider implements Provider {
         winget: "Helm.Helm",
         brew: "helm",
       },
-      manualMessage:
-        "Télécharger https://github.com/helm/helm/releases/latest et remplacer helm.exe",
+      manualMessage: MANUAL_STEPS.downloadAndReplace(
+        "https://github.com/helm/helm/releases/latest",
+        "helm.exe",
+      ),
     });
   }
 

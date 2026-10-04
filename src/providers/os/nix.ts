@@ -6,6 +6,7 @@ import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { run, runInherit, commandExists, whichFirst } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { localized } from "../../core/i18n/localized.js";
 
 /**
  * Nix as the *native* package manager on macOS and Linux.
@@ -65,17 +66,9 @@ export class NixProvider implements Provider {
     try {
       if (packageId === PROFILE_ID) return await upgradeProfile();
       if (packageId === BINARY_ID) return await upgradeBinary();
-      return {
-        id: packageId,
-        success: false,
-        message: `Cible inconnue pour nix : ${packageId}`,
-      };
+      return { id: packageId, success: false, message: TEXT.unknownTarget(packageId) };
     } catch {
-      return {
-        id: packageId,
-        success: false,
-        message: "La commande nix n'a pas pu être lancée.",
-      };
+      return { id: packageId, success: false, message: TEXT.spawnFailed };
     }
   }
 
@@ -115,25 +108,67 @@ const EXPERIMENTAL_FEATURES = "nix-command flakes";
  */
 type NixFlavour = "determinate" | "nixos-system" | "standalone";
 
-const FLAVOUR_NOTES: Record<NixFlavour, string> = {
-  determinate: "Determinate Nix — mise à jour par sudo determinate-nixd upgrade",
-  "nixos-system": "profil système NixOS — mise à jour par nixos-rebuild",
-  standalone: "nix upgrade-nix — install mono-utilisateur uniquement",
-};
-
-/**
- * Upstream documents both refusals, so running `nix upgrade-nix` in these two
- * cases is a guaranteed failure: `getProfileDir()` throws "Nix on NixOS must be
- * upgraded via 'nixos-rebuild'", and Determinate ships its own daemon-driven
- * updater. We surface them as skips carrying the real command instead of
- * spending a minute proving upstream right.
- */
-const FLAVOUR_SKIPS: Record<Exclude<NixFlavour, "standalone">, string> = {
-  determinate:
-    "Determinate Nix se met à jour avec sa propre commande : sudo determinate-nixd upgrade",
-  "nixos-system":
-    "Nix fait partie de la clôture système NixOS : mettre à jour avec nixos-rebuild switch",
-};
+/** What this provider tells the user, in the interface's languages. */
+const TEXT = localized({
+  en: {
+    flavourNotes: {
+      determinate: "Determinate Nix — updated by sudo determinate-nixd upgrade",
+      "nixos-system": "NixOS system profile — updated by nixos-rebuild",
+      standalone: "nix upgrade-nix — single-user install only",
+    } as Readonly<Record<NixFlavour, string>>,
+    /**
+     * Upstream documents both refusals, so running `nix upgrade-nix` in these
+     * two cases is a guaranteed failure: `getProfileDir()` throws "Nix on NixOS
+     * must be upgraded via 'nixos-rebuild'", and Determinate ships its own
+     * daemon-driven updater. We surface them as skips carrying the real command
+     * instead of spending a minute proving upstream right.
+     */
+    flavourSkips: {
+      determinate:
+        "Determinate Nix updates itself with its own command: sudo determinate-nixd upgrade",
+      "nixos-system":
+        "Nix is part of the NixOS system closure: update it with nixos-rebuild switch",
+    } as Readonly<Record<Exclude<NixFlavour, "standalone">, string>>,
+    unknownTarget: (packageId: string) => `Unknown nix target: ${packageId}`,
+    spawnFailed: "The nix command could not be started.",
+    profileName: "user profile",
+    profileNote: "nix profile upgrade --all — re-evaluates every flake of the profile",
+    upgradeNixFailed:
+      "nix upgrade-nix failed: on a multi-user install the profile belongs to root, " +
+      "and upgrade-nix refuses a profile managed by nix profile.",
+    profileUpgradeFailed:
+      "nix profile upgrade --all failed. No fallback to nix-env: this profile is " +
+      "managed by nix profile, nix-env would update something else.",
+    nixEnvMissing: "nix profile upgrade --all failed and nix-env was not found.",
+    bothFailed: "nix profile upgrade --all then nix-env -u '*' failed.",
+  },
+  fr: {
+    flavourNotes: {
+      determinate: "Determinate Nix — mise à jour par sudo determinate-nixd upgrade",
+      "nixos-system": "profil système NixOS — mise à jour par nixos-rebuild",
+      standalone: "nix upgrade-nix — install mono-utilisateur uniquement",
+    },
+    flavourSkips: {
+      determinate:
+        "Determinate Nix se met à jour avec sa propre commande : sudo determinate-nixd upgrade",
+      "nixos-system":
+        "Nix fait partie de la clôture système NixOS : mettre à jour avec nixos-rebuild switch",
+    },
+    unknownTarget: (packageId) => `Cible inconnue pour nix : ${packageId}`,
+    spawnFailed: "La commande nix n'a pas pu être lancée.",
+    profileName: "profil utilisateur",
+    profileNote: "nix profile upgrade --all — réévalue chaque flake du profil",
+    upgradeNixFailed:
+      "nix upgrade-nix a échoué : sur une install multi-utilisateur le profil " +
+      "appartient à root, et un profil géré par nix profile est refusé par " +
+      "upgrade-nix.",
+    profileUpgradeFailed:
+      "nix profile upgrade --all a échoué. Pas de repli sur nix-env : ce " +
+      "profil est géré par nix profile, nix-env mettrait à jour autre chose.",
+    nixEnvMissing: "nix profile upgrade --all a échoué et nix-env est introuvable.",
+    bothFailed: "nix profile upgrade --all puis nix-env -u '*' ont échoué.",
+  },
+});
 
 // ---------------------------------------------------------------------------
 // Scan
@@ -155,7 +190,7 @@ async function scanBinary(): Promise<OutdatedPackage | null> {
     name: "nix",
     current,
     latest,
-    note: FLAVOUR_NOTES[flavour],
+    note: TEXT.flavourNotes[flavour],
   };
 }
 
@@ -206,10 +241,10 @@ function isDeterminate(versionOutput: string): boolean {
 function profileRow(): OutdatedPackage {
   return {
     id: PROFILE_ID,
-    name: "profil utilisateur",
+    name: TEXT.profileName,
     current: "?",
     latest: "refresh",
-    note: "nix profile upgrade --all — réévalue chaque flake du profil",
+    note: TEXT.profileNote,
   };
 }
 
@@ -284,20 +319,13 @@ async function upgradeBinary(): Promise<UpdateOutcome> {
       id: BINARY_ID,
       success: false,
       skipped: true,
-      message: FLAVOUR_SKIPS[flavour],
+      message: TEXT.flavourSkips[flavour],
     };
   }
 
   const res = await runInherit("nix", ["upgrade-nix"]);
   if (!res.failed) return { id: BINARY_ID, success: true };
-  return {
-    id: BINARY_ID,
-    success: false,
-    message:
-      "nix upgrade-nix a échoué : sur une install multi-utilisateur le profil " +
-      "appartient à root, et un profil géré par nix profile est refusé par " +
-      "upgrade-nix.",
-  };
+  return { id: BINARY_ID, success: false, message: TEXT.upgradeNixFailed };
 }
 
 /**
@@ -319,13 +347,7 @@ async function upgradeProfile(): Promise<UpdateOutcome> {
   // retrying with nix-env would restart work the user just interrupted.
   if (res.aborted || res.timedOut) return { id: PROFILE_ID, success: false };
   if (isNixProfileManaged()) {
-    return {
-      id: PROFILE_ID,
-      success: false,
-      message:
-        "nix profile upgrade --all a échoué. Pas de repli sur nix-env : ce " +
-        "profil est géré par nix profile, nix-env mettrait à jour autre chose.",
-    };
+    return { id: PROFILE_ID, success: false, message: TEXT.profileUpgradeFailed };
   }
   return legacyProfileUpgrade();
 }
@@ -345,11 +367,7 @@ function isNixProfileManaged(): boolean {
 
 async function legacyProfileUpgrade(): Promise<UpdateOutcome> {
   if (!(await commandExists("nix-env"))) {
-    return {
-      id: PROFILE_ID,
-      success: false,
-      message: "nix profile upgrade --all a échoué et nix-env est introuvable.",
-    };
+    return { id: PROFILE_ID, success: false, message: TEXT.nixEnvMissing };
   }
   // "*" is not a regex here: nix-env special-cases that exact selector to mean
   // "every package" (DrvName::matches in libstore/names.cc).
@@ -357,9 +375,7 @@ async function legacyProfileUpgrade(): Promise<UpdateOutcome> {
   return {
     id: PROFILE_ID,
     success: !res.failed,
-    ...(res.failed && {
-      message: "nix profile upgrade --all puis nix-env -u '*' ont échoué.",
-    }),
+    ...(res.failed && { message: TEXT.bothFailed }),
   };
 }
 

@@ -70,7 +70,7 @@ Each exclusion below is a decision, not a gap.
 ## Missing a source?
 
 If a source meets the two conditions above and no provider covers it yet, it is
-one file away — see [`CONTRIBUTING.md`](../../CONTRIBUTING.md) for the workflow.
+one file away — see [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md) for the workflow.
 
 Check [`providers-catalog.md`](providers-catalog.md) first: alongside the
 implemented providers it tracks candidates that were evaluated, and the ones

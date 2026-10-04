@@ -1,6 +1,6 @@
 // Main lint config (flat). Parses TS and enforces the size/complexity ceilings
 // declared in CLAUDE.md — nothing else. Style is not linted (no formatter in
-// this repo), and the security ruleset lives in eslint.config.security.js,
+// this repo), and the security ruleset lives in .github/eslint.config.security.js,
 // invoked separately via `npm run lint:security`.
 //
 // Counting policy: `skipComments` / `skipBlankLines` are ON. These limits exist

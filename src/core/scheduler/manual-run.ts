@@ -1,3 +1,4 @@
+import { localized } from "../i18n/localized.js";
 import { log } from "../log/log.js";
 import type { UpdateRequest } from "../update/update-ports.js";
 import type { UpdateReport } from "../update/update-report.js";
@@ -34,8 +35,13 @@ export interface PreparedRun {
   readonly startedAt: Date;
 }
 
-/** Planned but not attempted: the user stopped the run. */
-export const MANUAL_STOP_MESSAGE = "arrêtée avant son tour";
+export const MANUAL_RUN_MESSAGES = localized({
+  en: {
+    /** Planned but not attempted: the user stopped the run. */
+    stopped: "stopped before its turn",
+  },
+  fr: { stopped: "arrêtée avant son tour" },
+});
 
 export class ManualRun {
   readonly #deps: ManualRunDeps;
@@ -75,7 +81,7 @@ export class ManualRun {
       report,
       startedAt,
       finishedAt: endedAt,
-      cancelledMessage: MANUAL_STOP_MESSAGE,
+      cancelledMessage: MANUAL_RUN_MESSAGES.stopped,
     });
     const record = records.get(schedule.id) ?? null;
     if (record) this.#remember(schedule.id, record);

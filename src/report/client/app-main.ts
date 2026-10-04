@@ -2,7 +2,7 @@
  * Client shell of the HTML report: hash routing (`#/overview`,
  * `#/packages[/<n>]`, `#/sessions?day=…`, `?pkg=` for the drawer, so Back
  * works), lazy page rendering, the header (period, truncation banner, nav
- * counts), the search box (`/` focuses it, Échap clears it), the theme
+ * counts), the search box (`/` focuses it, Escape clears it), the theme
  * switch kept in localStorage, printing every page, and `boot()`.
  */
 export const MAIN_JS = String.raw`

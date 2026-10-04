@@ -33,58 +33,58 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <rect class="c0" x="16.0" y="42.0" width="780.0" height="17.0"/>
 <rect class="c1" x="234.4" y="127.0" width="546.0" height="17.0"/>
 <rect class="c1" x="31.6" y="178.0" width="171.6" height="17.0"/>
-<rect class="c1" x="647.8" y="246.0" width="132.6" height="17.0"/>
-<text class="c2 b" x="16.0" y="55.0" textLength="491.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  14 détectés  │  12 mises à jour  │  mode normal</text>
+<rect class="c1" x="647.8" y="246.0" width="109.2" height="17.0"/>
+<text class="c2 b" x="16.0" y="55.0" textLength="452.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.0  │  14 detected  │  12 updates  │  normal mode</text>
 <text class="c3" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
 <text class="c4" x="31.6" y="72.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Menu </text>
 <text class="c3" x="78.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────╮</text>
 <text class="c5" x="218.8" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┏━</text>
-<text class="c4" x="234.4" y="72.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Options › Couleurs </text>
-<text class="c5" x="390.4" y="72.0" textLength="405.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</text>
+<text class="c4" x="234.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Options › Colors </text>
+<text class="c5" x="374.8" y="72.0" textLength="421.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</text>
 <text class="c3" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="89.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scan              </text>
 <text class="c3" x="211.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c6" x="234.4" y="89.0" textLength="522.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Thème de base : Terminal — les rôles non modifiés suivent le thème.</text>
+<text class="c6" x="234.4" y="89.0" textLength="436.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Base theme: Terminal — unchanged roles follow the theme.</text>
 <text class="c5" x="788.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Paquets           </text>
+<text class="c4" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Packages          </text>
 <text class="c7" x="187.6" y="106.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12</text>
 <text class="c3" x="211.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="788.2" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Planification     </text>
+<text class="c4" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Schedules         </text>
 <text class="c6" x="187.6" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3</text>
 <text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c6" x="234.4" y="123.0" textLength="460.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Rôle             Choisie  Affichée Contraste       Aperçu</text>
+<text class="c6" x="234.4" y="123.0" textLength="460.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Role             Chosen   Shown    Contrast        Sample</text>
 <text class="c5" x="788.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c8" x="234.4" y="140.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› </text>
 <text class="c4" x="250.0" y="140.0" textLength="273.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Accent           #1f4e5a  #6E9EAB  </text>
-<text class="c7" x="523.0" y="140.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1,4 → 4,5:1 ‼   </text>
-<text class="c8" x="655.6" y="140.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› sélection</text>
+<text class="c7" x="523.0" y="140.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1.4 → 4.5:1 ‼   </text>
+<text class="c8" x="655.6" y="140.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› selection</text>
 <text class="c5" x="788.2" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="157.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Providers         </text>
 <text class="c3" x="211.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4" x="234.4" y="157.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Succès           </text>
-<text class="c6" x="382.6" y="157.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(thème)  </text>
+<text class="c4" x="234.4" y="157.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Success          </text>
+<text class="c6" x="382.6" y="157.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(theme)  </text>
 <text class="c4" x="452.8" y="157.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">#3FB950  </text>
-<text class="c9" x="523.0" y="157.0" textLength="187.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">5,2:1  √        √ à jour</text>
+<text class="c9" x="523.0" y="157.0" textLength="218.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">5.2:1  √        √ up to date</text>
 <text class="c5" x="788.2" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="174.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Journal           </text>
 <text class="c3" x="211.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4" x="234.4" y="174.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Attention        </text>
-<text class="c6" x="382.6" y="174.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(thème)  </text>
+<text class="c4" x="234.4" y="174.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Warning          </text>
+<text class="c6" x="382.6" y="174.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(theme)  </text>
 <text class="c4" x="452.8" y="174.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">#D29922  </text>
-<text class="c9" x="523.0" y="174.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">5,2:1  √        </text>
+<text class="c9" x="523.0" y="174.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">5.2:1  √        </text>
 <text class="c7" x="647.8" y="174.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">2.51.0</text>
 <text class="c5" x="788.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -92,47 +92,47 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4 b" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
 <text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4" x="234.4" y="191.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Erreur           </text>
-<text class="c6" x="382.6" y="191.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(thème)  </text>
+<text class="c4" x="234.4" y="191.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Error            </text>
+<text class="c6" x="382.6" y="191.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(theme)  </text>
 <text class="c4" x="452.8" y="191.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">#FF7B72  </text>
-<text class="c9" x="523.0" y="191.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">5,2:1  √        </text>
-<text class="c10" x="647.8" y="191.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">× échec</text>
+<text class="c9" x="523.0" y="191.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">5.2:1  √        </text>
+<text class="c10" x="647.8" y="191.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">× failed</text>
 <text class="c5" x="788.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4" x="234.4" y="208.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Texte            </text>
-<text class="c6" x="382.6" y="208.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(thème)  </text>
+<text class="c4" x="234.4" y="208.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Text             </text>
+<text class="c6" x="382.6" y="208.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(theme)  </text>
 <text class="c4" x="452.8" y="208.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">#E6EDF3  </text>
-<text class="c9" x="523.0" y="208.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11,2:1 √        </text>
+<text class="c9" x="523.0" y="208.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11.2:1 √        </text>
 <text class="c4" x="647.8" y="208.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Git.Git</text>
 <text class="c5" x="788.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c6" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quitter           </text>
+<text class="c6" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4" x="234.4" y="225.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Texte secondaire </text>
-<text class="c6" x="382.6" y="225.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(thème)  </text>
+<text class="c4" x="234.4" y="225.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Secondary text   </text>
+<text class="c6" x="382.6" y="225.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(theme)  </text>
 <text class="c4" x="452.8" y="225.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">#91979D  </text>
-<text class="c9" x="523.0" y="225.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">4,5:1  √        </text>
+<text class="c9" x="523.0" y="225.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">4.5:1  √        </text>
 <text class="c6" x="647.8" y="225.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">note</text>
 <text class="c5" x="788.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4" x="234.4" y="242.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Fond             </text>
-<text class="c6" x="382.6" y="242.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(thème)  </text>
+<text class="c4" x="234.4" y="242.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Background       </text>
+<text class="c6" x="382.6" y="242.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(theme)  </text>
 <text class="c4" x="452.8" y="242.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">#0D1117  </text>
-<text class="c6" x="523.0" y="242.0" textLength="257.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">—               fond de référence</text>
+<text class="c6" x="523.0" y="242.0" textLength="257.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">—               screen background</text>
 <text class="c5" x="788.2" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c4" x="234.4" y="259.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Surbrillance     </text>
-<text class="c6" x="382.6" y="259.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(thème)  </text>
+<text class="c4" x="234.4" y="259.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  Highlight        </text>
+<text class="c6" x="382.6" y="259.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">(theme)  </text>
 <text class="c4" x="452.8" y="259.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">#2B3036  </text>
 <text class="c6" x="523.0" y="259.0" textLength="124.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">—               </text>
-<text class="c4" x="647.8" y="259.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› ligne sélectio…</text>
+<text class="c4" x="647.8" y="259.0" textLength="109.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› selected row</text>
 <text class="c5" x="788.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -141,12 +141,12 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="293.0" textLength="514.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">‼ 1 couleur ajustée automatiquement pour rester lisible (AA). a :</text>
+<text class="c7" x="234.4" y="293.0" textLength="530.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">‼ 1 color adjusted automatically to stay readable (AA). a: keep the</text>
 <text class="c5" x="788.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="310.0" textLength="195.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">garder la valeur ajustée.</text>
+<text class="c7" x="234.4" y="310.0" textLength="117.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">adjusted value.</text>
 <text class="c5" x="788.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -190,5 +190,5 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c5" x="788.2" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="497.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯</text>
 <text class="c5" x="218.8" y="497.0" textLength="577.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
-<text class="c6" x="16.0" y="514.0" textLength="725.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ rôle · entrée #hex · échap retour · ←→ teinte · +/- luminosité · … · tab menu · q quitter</text>
+<text class="c6" x="16.0" y="514.0" textLength="764.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> ↑↓ role · enter #hex · esc back · ←→ hue · +/- lightness · a keep · del theme · tab menu · q quit</text>
 </svg>

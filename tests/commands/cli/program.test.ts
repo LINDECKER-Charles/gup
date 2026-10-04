@@ -1,13 +1,15 @@
 import { Command, CommanderError } from "commander";
 import { describe, expect, it } from "vitest";
 import { CLI_MODULES } from "../../../src/commands/cli/cli-modules.js";
-import { localizeCommander } from "../../../src/commands/cli/commander-french.js";
+import { localizeCommander } from "../../../src/commands/cli/commander-locale.js";
 import { createProgram } from "../../../src/commands/cli/program.js";
 import { HELP_LABELS } from "../../../src/ui/text/cli-labels.js";
+import { useLocale } from "../../support/locale.js";
 
 /**
- * The command line speaks French, commander's own words included: every help
- * screen gup prints, and the usage errors commander raises.
+ * The command line speaks the interface's language, commander's own words
+ * included: every help screen gup prints, and the usage errors commander
+ * raises. The suites speak French; English keeps commander's own wording.
  */
 
 /** What commander writes in English when nobody configured it. */
@@ -104,5 +106,50 @@ describe("commander's usage errors", () => {
     [["help", "me"], "Erreur : trop d'arguments : 0 attendu(s), 2 reçu(s) (help, me)\n"],
   ])("words `gup %j` in French", (argv, expected) => {
     expect(parse(...argv)).toBe(expected);
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it.each([
+      [["list", "--provder", "x"], "Error: unknown option '--provder'\n(Did you mean --provider?)\n"],
+      [["schedule", "ad"], "Error: unknown command 'ad'\n(Did you mean add?)\n"],
+      [["list", "extra"], "Error: too many arguments for 'list'. Expected 0 arguments but got 1: extra.\n"],
+    ])("keeps commander's wording for `gup %j`, behind the interface's prefix", (argv, expected) => {
+      expect(parse(...argv)).toBe(expected);
+    });
+  });
+});
+
+describe("gup's help in English", () => {
+  useLocale("en");
+
+  /** Built once English is active: the program reads its texts as it is built. */
+  function helpOf(path: string): string {
+    const command = visibleCommands(createProgram(CLI_MODULES)).find((c) => pathOf(c) === path);
+    return command?.helpInformation() ?? "";
+  }
+
+  it("keeps commander's headings and built-in option and command", () => {
+    const gup = helpOf("gup");
+
+    expect(gup).toMatch(/^Usage: gup \[options\] \[command\]\n/);
+    expect(gup).toMatch(/^Options:$/m);
+    expect(gup).toMatch(/^Commands:$/m);
+    expect(gup).toMatch(/-V, --version\s+output the version number/);
+    expect(gup).toMatch(/-h, --help\s+display help for command/);
+    expect(helpOf("gup log")).toMatch(/help \[command\]\s+display help for command/);
+  });
+
+  it("describes gup and its commands in English, operands and values included", () => {
+    const update = helpOf("gup update");
+
+    expect(helpOf("gup")).toContain("Unified update manager. `gup` opens an interactive menu;");
+    expect(update).toMatch(/^Usage: gup update \[options\] \[targets\.\.\.\]\n/);
+    expect(update).toContain("Direct update (no menu). Targets in provider:packageId format.");
+    expect(update).toMatch(/-a, --all\s+Update everything/);
+    expect(update).toMatch(/--timeout <seconds>\s+Timeout per install, in seconds/);
+    expect(helpOf("gup list")).toMatch(/--json\s+Raw JSON output/);
+    expect(helpOf("gup doctor")).toContain("Shows the providers detected, not installed");
   });
 });

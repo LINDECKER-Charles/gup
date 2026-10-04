@@ -1,5 +1,6 @@
 import type { HistoryReadStats } from "../history/reader.js";
 import type { HistoryEvent, UpdateEvent } from "../history/types.js";
+import { activeLocale, INTL_LOCALES } from "../i18n/locale.js";
 import type {
   FailureGroup,
   Insights,
@@ -245,7 +246,8 @@ function reportMeta({ insights, stats, context }: ReportModelInput): ReportMeta 
     gup: context.gup,
     platform: context.platform,
     timeZone: context.timeZone,
-    locale: "fr-FR",
+    // The active language's: the one the report's labels are rendered in.
+    locale: INTL_LOCALES[activeLocale()],
     period: {
       key: period.key,
       label: context.period.label,

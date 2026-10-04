@@ -44,13 +44,12 @@ import { runInherit } from "../../../src/core/runner.js";
 import { decodePayload } from "../../../src/core/pty/trampoline-payload.js";
 import { inScreenLauncher } from "../../../src/ui/app/in-screen-launcher.js";
 import type { UiPreferences } from "../../../src/ui/app/ui-preferences.js";
-import { MANUAL_SKIP_MESSAGE } from "../../../src/core/update/finalize-outcome.js";
+import { INTERRUPT_MESSAGES } from "../../../src/core/update/finalize-outcome.js";
+import { RUN_HINTS, RUN_NOTICES } from "../../../src/ui/text/run-key-labels.js";
 import {
   ELEVATE_DIALOG,
   PANE_LABELS,
-  RETRY_DIALOG_TITLE,
-  RUN_HINTS,
-  RUN_NOTICES,
+  RETRY_DIALOG,
   RUN_NOTIFICATION,
   RUN_TITLES,
   STOP_DIALOG,
@@ -263,7 +262,7 @@ describe("run view", () => {
     await menu.press("s");
     expect(hoisted.terminate).toHaveBeenCalledOnce();
     await installsStarted(pty, 2);
-    expect(await shown(menu, MANUAL_SKIP_MESSAGE)).toMatch(/→ alpha /);
+    expect(await shown(menu, INTERRUPT_MESSAGES.manualSkip)).toMatch(/→ alpha /);
   });
 
   it("x asks first: Non keeps going, Oui interrupts the package and cancels the rest", async () => {
@@ -429,7 +428,7 @@ describe("run view", () => {
     const { menu, pty } = await launched({ packages: [pkg("alpha")], retryable: ["alpha"] });
     await installsStarted(pty, 1);
     pty.last().emitExit({ exitCode: 3 });
-    expect(await shown(menu, RETRY_DIALOG_TITLE)).toContain("Aucun — laisser les échecs");
+    expect(await shown(menu, RETRY_DIALOG.title)).toContain("Aucun — laisser les échecs");
     await menu.press("down", "enter");
 
     await installsStarted(pty, 2);

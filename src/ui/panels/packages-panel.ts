@@ -1,7 +1,8 @@
+import { isUpdatableNow } from "../../core/self-update.js";
 import type { OutdatedPackage, SelectedPackage } from "../../core/types.js";
 import type { NoteColumn } from "../app/ui-preferences.js";
 import type { PackageAction, PackageMarker } from "../app/view-definition.js";
-import { NO_SCAN_YET, VIEW_LABELS } from "../text/menu-labels.js";
+import { MENU_LABELS, VIEW_LABELS } from "../text/menu-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import {
   LAUNCH_NOTICES,
@@ -11,7 +12,7 @@ import {
 } from "../text/packages-labels.js";
 import { ListCursor } from "../tui/list-cursor.js";
 import type { KeyPress } from "../tui/screen-host.js";
-import { fillLine, fit, seg, type Line } from "../tui/styled-lines.js";
+import { fillLine, fit, seg, type Line, type Tone } from "../tui/styled-lines.js";
 import type { PackageList, PackageRow } from "./package-list.js";
 import { PAGE_STEP, placeholder, type Panel, type Viewport } from "./panel.js";
 import { selectionBar, type SelectionBarState } from "./selection-bar.js";
@@ -52,11 +53,6 @@ const CHECKBOX_WIDTH = 6;
 const MARK_WIDTH = 2;
 /** A version column's widest: longer versions are cut. */
 const VERSION_WIDTH = 14;
-/** A version column's narrowest: its heading ("Dernier") stays whole. */
-const MIN_VERSION_WIDTH = Math.max(
-  PACKAGE_COLUMNS.current.length,
-  PACKAGE_COLUMNS.latest.length,
-);
 const NOTE_WIDTH = 22;
 /** Below this width the note column is dropped. */
 const NOTE_MIN_VIEWPORT = 90;
@@ -103,7 +99,6 @@ interface Composition extends RowWindow {
  * rows.
  */
 export class PackagesPanel implements Panel {
-  readonly title = VIEW_LABELS.packages;
   readonly #handlers: PackagesHandlers;
   readonly #options: PackagesOptions;
   #list: PackageList | null = null;
@@ -113,6 +108,10 @@ export class PackagesPanel implements Panel {
   constructor(handlers: PackagesHandlers, options: PackagesOptions = {}) {
     this.#handlers = handlers;
     this.#options = options;
+  }
+
+  get title(): string {
+    return VIEW_LABELS.packages;
   }
 
   get isCapturingText(): boolean {
@@ -152,7 +151,8 @@ export class PackagesPanel implements Panel {
   render(viewport: Viewport): readonly Line[] {
     const list = this.#list;
     if (!list) {
-      return placeholder(this.isScanPending() ? PACKAGES_PLACEHOLDERS.scanning : NO_SCAN_YET);
+      const wait = this.isScanPending() ? PACKAGES_PLACEHOLDERS.scanning : MENU_LABELS.noScanYet;
+      return placeholder(wait);
     }
     if (list.total === 0 && list.rows.length === 0) {
       return placeholder(PACKAGES_PLACEHOLDERS.upToDate);
@@ -186,7 +186,7 @@ export class PackagesPanel implements Panel {
     const index = start + row - firstRow;
     if (row < firstRow || index >= end) return;
     list.moveTo(index);
-    list.toggleCurrent();
+    this.toggle(list);
   }
 
   scroll(step: number): void {
@@ -203,7 +203,7 @@ export class PackagesPanel implements Panel {
       pagedown: () => list.move(PAGE_STEP),
       home: () => list.moveTo(0),
       end: () => list.moveTo(list.rows.length - 1),
-      space: () => list.toggleCurrent(),
+      space: () => this.toggle(list),
       a: () => list.toggleAllVisible(),
       "/": () => (this.#isFiltering = true),
       escape: () => list.setFilter(""),
@@ -211,6 +211,19 @@ export class PackagesPanel implements Panel {
       enter: () => this.launch(list),
       r: () => this.#handlers.onRescan?.(),
     };
+  }
+
+  /**
+   * Check the row under the cursor; a package gup only updates once it has
+   * exited cannot be, and the notice says what to run then.
+   */
+  private toggle(list: PackageList): void {
+    const row = list.rows[list.cursor];
+    if (row?.kind === "package" && !isUpdatableNow(row.pkg)) {
+      this.#notice = LAUNCH_NOTICES.afterExit(row.pkg.updateAfterExit ?? "");
+      return;
+    }
+    list.toggleCurrent();
   }
 
   /** The checked packages, filtered-out ones included — or why not. */
@@ -301,7 +314,7 @@ export class PackagesPanel implements Panel {
     const note = isNoteShown ? NOTE_WIDTH : 0;
     const marks = markOf ? MARK_WIDTH : 0;
     const longest = list.longest;
-    const version = Math.min(VERSION_WIDTH, Math.max(MIN_VERSION_WIDTH, longest.version));
+    const version = Math.min(VERSION_WIDTH, Math.max(minVersionWidth(), longest.version));
     const versions = version * 2 + VERSION_SEPARATORS;
     const fixed = CHECKBOX_WIDTH + marks + versions + (note > 0 ? note + 1 : 0);
     // As wide as the longest name, so the versions follow the names on a wide terminal.
@@ -331,7 +344,7 @@ export class PackagesPanel implements Panel {
     }
     if (row.kind === "group") {
       const { checked, total } = list.groupState(row.providerId);
-      const box = checked === 0 ? "[ ]" : checked === total ? "[■]" : "[–]";
+      const box = groupBox(checked, total);
       return [
         seg(`${box} `, checked > 0 ? "success" : "muted"),
         seg(row.title, "strong"),
@@ -344,8 +357,20 @@ export class PackagesPanel implements Panel {
   }
 }
 
+/** A provider row's box: nothing to check, none, all, or some of its packages checked. */
+function groupBox(checked: number, total: number): string {
+  if (total === 0) return "   ";
+  if (checked === 0) return "[ ]";
+  return checked === total ? "[■]" : "[–]";
+}
+
 function blankLines(count: number): Line[] {
   return Array.from({ length: Math.max(0, count) }, () => []);
+}
+
+/** A version column's narrowest: its heading ("Latest", "Dernier") stays whole. */
+function minVersionWidth(): number {
+  return Math.max(PACKAGE_COLUMNS.current.length, PACKAGE_COLUMNS.latest.length);
 }
 
 /**
@@ -375,15 +400,27 @@ function packageLine(
   layout: Layout,
 ): Line {
   const { pkg, isChecked } = row;
+  const isCheckable = isUpdatableNow(pkg);
   return [
-    seg(isChecked ? "  [■] " : "  [ ] ", isChecked ? "success" : "muted"),
+    seg(packageBox(isCheckable, isChecked), isChecked ? "success" : "muted"),
     ...(row.mark !== undefined ? [seg(`${row.mark} `, "accent")] : []),
-    seg(fit(pkg.name ?? pkg.id, layout.name), isChecked ? "strong" : "plain"),
+    seg(fit(pkg.name ?? pkg.id, layout.name), nameTone(isCheckable, isChecked)),
     seg(` ${fit(pkg.current, layout.version)}`, "warning"),
     seg(" → ", "muted"),
     seg(fit(pkg.latest, layout.version), "success"),
     seg(layout.note > 0 ? ` ${fit(pkg.note ?? "", layout.note)}` : "", "muted"),
   ];
+}
+
+/** A package's box — none for one gup only updates once it has exited. */
+function packageBox(isCheckable: boolean, isChecked: boolean): string {
+  if (!isCheckable) return " ".repeat(CHECKBOX_WIDTH);
+  return isChecked ? "  [■] " : "  [ ] ";
+}
+
+function nameTone(isCheckable: boolean, isChecked: boolean): Tone {
+  if (!isCheckable) return "muted";
+  return isChecked ? "strong" : "plain";
 }
 
 /** Rows of the list to draw so that the cursor stays in view. */
