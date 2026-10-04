@@ -68,7 +68,7 @@ export type TickOutcome =
   | { readonly kind: "deferred" }
   | { readonly kind: "ran"; readonly records: ReadonlyMap<string, ScheduleRunRecord> };
 
-export const RUN_MESSAGES = {
+export const SCHEDULED_RUN_MESSAGES = {
   deadline: "durée maximale d'exécution atteinte",
   stopped: "interrompu (arrêt du planificateur)",
   offline: "aucun provider n'a pu être interrogé (hors ligne ?)",
@@ -152,7 +152,7 @@ export class ScheduledRun {
     this.#persist((state) => postpone(state, { postponed, before: at.before }));
     log.warn("scheduler.deferred", { postponed: postponed.length, failed: exhausted.length });
     if (exhausted.length === 0) return { kind: "deferred" };
-    const plan = everyTargetFailed(exhausted, RUN_MESSAGES.offline);
+    const plan = everyTargetFailed(exhausted, SCHEDULED_RUN_MESSAGES.offline);
     return this.#finish(exhausted, { plan, report: null, startedAt: at.now });
   }
 
@@ -188,7 +188,9 @@ export class ScheduledRun {
     const records = summarizeRun(due, {
       ...work,
       finishedAt: this.#deps.clock(),
-      cancelledMessage: this.#isStopping ? RUN_MESSAGES.stopped : RUN_MESSAGES.deadline,
+      cancelledMessage: this.#isStopping
+        ? SCHEDULED_RUN_MESSAGES.stopped
+        : SCHEDULED_RUN_MESSAGES.deadline,
     });
     const liveIds = new Set(this.#deps.schedules().map((schedule) => schedule.id));
     this.#persist((state) => withoutOrphans(recordRuns(state, records), liveIds));
@@ -287,7 +289,7 @@ function everyTargetFailed(runs: readonly ScheduleRun[], message: string): TickP
 function asStopped(report: UpdateReport): UpdateReport {
   const entries = report.entries.map((entry) =>
     entry.outcome.message === MANUAL_SKIP_MESSAGE
-      ? { ...entry, outcome: { ...entry.outcome, message: RUN_MESSAGES.stopped } }
+      ? { ...entry, outcome: { ...entry.outcome, message: SCHEDULED_RUN_MESSAGES.stopped } }
       : entry,
   );
   return buildReport(entries, report.cancelled);

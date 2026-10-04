@@ -4,7 +4,7 @@ import type {
   SchedulerState,
 } from "../../../src/core/scheduler/model/types.js";
 import {
-  RUN_MESSAGES,
+  SCHEDULED_RUN_MESSAGES,
   ScheduledRun,
   type ScheduledRunDeps,
   type SkippedTarget,
@@ -236,7 +236,7 @@ describe("ScheduledRun.tick", () => {
       lastAttemptAt: "2026-10-05T09:05:00.000Z",
       lastRun: {
         status: "failed",
-        targets: [{ target: "winget:Git.Git", status: "failed", message: RUN_MESSAGES.offline }],
+        targets: [{ target: "winget:Git.Git", status: "failed", message: SCHEDULED_RUN_MESSAGES.offline }],
       },
     });
     expect(h.state.current.schedules["a1b2c3d4"]?.deferrals).toBeUndefined();
@@ -255,7 +255,7 @@ describe("ScheduledRun.tick", () => {
       status: "partial",
       targets: [
         { target: "winget:Git.Git", status: "updated" },
-        { target: "npm-g:typescript", status: "skipped", message: RUN_MESSAGES.deadline },
+        { target: "npm-g:typescript", status: "skipped", message: SCHEDULED_RUN_MESSAGES.deadline },
       ],
     });
   });
@@ -275,8 +275,8 @@ describe("ScheduledRun.tick", () => {
     await h.run.tick();
     expect(h.interrupt).toHaveBeenCalled();
     expect(h.state.current.schedules["a1b2c3d4"]?.lastRun?.targets).toEqual([
-      { target: "winget:Git.Git", status: "skipped", message: RUN_MESSAGES.stopped },
-      { target: "npm-g:typescript", status: "skipped", message: RUN_MESSAGES.stopped },
+      { target: "winget:Git.Git", status: "skipped", message: SCHEDULED_RUN_MESSAGES.stopped },
+      { target: "npm-g:typescript", status: "skipped", message: SCHEDULED_RUN_MESSAGES.stopped },
     ]);
     expect(h.batch.released).toBe(1);
   });

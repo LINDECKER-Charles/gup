@@ -30,15 +30,15 @@ import {
  * shapes are stable, for scripts: field names in English, dates ISO 8601.
  */
 
-export interface ReportOptions {
+export interface ScheduleReportOptions {
   readonly json: boolean;
 }
 
 const COLUMN_GAP = "  ";
 
-export async function listCommand(
+export async function listSchedulesCommand(
   services: SchedulerServices,
-  options: ReportOptions,
+  options: ScheduleReportOptions,
   output: CommandOutput,
 ): Promise<number> {
   const schedules = services.repo.list();
@@ -63,7 +63,7 @@ export async function listCommand(
 
 export async function statusCommand(
   services: SchedulerServices,
-  options: ReportOptions,
+  options: ScheduleReportOptions,
   output: CommandOutput,
 ): Promise<number> {
   const report = await readTriggerReport(services);

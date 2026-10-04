@@ -344,7 +344,7 @@ frame). The view reloads the files when the view is shown and after each scan.
 **Port** (`schedules-port.ts`, type-only): `ScheduleBook` (cached snapshot,
 reload, markSeen, validate, create/replace/remove/enable/disable, names,
 clock), `TriggerControl` (summary, mechanism, needsConsent, repair) and
-`RunControl` (prepareRun, recordRun). `SchedulesController`
+`RunNowControl` (prepareRun, recordRun). `SchedulesController`
 (`commands/schedule/`) implements it over the services; every change saves
 first, then `reconcileTrigger` — the same path as `gup schedule`. A file that
 cannot be written saves nothing and says why; a schedule removed meanwhile

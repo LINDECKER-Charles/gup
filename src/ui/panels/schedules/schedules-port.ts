@@ -76,11 +76,11 @@ export interface TriggerControl {
 }
 
 /** "Run now" (amendment S-5): plan here, update through the menu's launcher, record here. */
-export interface RunControl {
+export interface RunNowControl {
   /** Scan the providers the schedule needs and plan its updates. */
   prepareRun(id: string): Promise<PreparedRun | { readonly error: string }>;
   /** Store what the launch did (null: there was nothing to update) as the last run. */
   recordRun(prepared: PreparedRun, report: UpdateReport | null): ScheduleRunRecord | null;
 }
 
-export type SchedulesPort = ScheduleBook & TriggerControl & RunControl;
+export type SchedulesPort = ScheduleBook & TriggerControl & RunNowControl;

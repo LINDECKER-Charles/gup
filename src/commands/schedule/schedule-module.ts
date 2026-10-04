@@ -13,7 +13,7 @@ import {
 import { triggerLine } from "../../ui/text/schedule/schedule-labels.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "../cli/cli-module.js";
 import { addCommand, disableCommand, enableCommand, removeCommand } from "./crud-commands.js";
-import { listCommand, statusCommand } from "./report-commands.js";
+import { listSchedulesCommand, statusCommand } from "./report-commands.js";
 import { runNowCommand } from "./run-now.js";
 import {
   CONSOLE_OUTPUT,
@@ -113,7 +113,9 @@ function registerReports(schedule: Command, { deps, run }: Registration): void {
     .description("Liste les planifications, leur prochaine et leur dernière exécution.")
     .option("--json", "Sortie JSON")
     .action((opts: { json?: boolean }) =>
-      run((services) => listCommand(services, { json: opts.json === true }, deps.output))(),
+      run((services) =>
+        listSchedulesCommand(services, { json: opts.json === true }, deps.output),
+      )(),
     );
   schedule
     .command("status")

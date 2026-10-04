@@ -6,7 +6,7 @@ import {
   enableCommand,
   removeCommand,
 } from "../../../src/commands/schedule/crud-commands.js";
-import { listCommand, statusCommand } from "../../../src/commands/schedule/report-commands.js";
+import { listSchedulesCommand, statusCommand } from "../../../src/commands/schedule/report-commands.js";
 import { runNowCommand } from "../../../src/commands/schedule/run-now.js";
 import type { AddOptions } from "../../../src/commands/schedule/schedule-args.js";
 import {
@@ -172,7 +172,7 @@ describe("gup schedule remove / enable / disable", () => {
 describe("gup schedule list", () => {
   it("explains how to start when there is nothing", async () => {
     const { services, output } = await setup();
-    expect(await listCommand(services, { json: false }, output)).toBe(0);
+    expect(await listSchedulesCommand(services, { json: false }, output)).toBe(0);
     expect(output.lines).toEqual([NO_SCHEDULE]);
   });
 
@@ -182,7 +182,7 @@ describe("gup schedule list", () => {
     const python = addCron("0 */6 * * *", { name: "Python", targets: ["npm-g:x"], disabled: true });
     await addCommand(services, python, output);
     output.lines.length = 0;
-    await listCommand(services, { json: false }, output);
+    await listSchedulesCommand(services, { json: false }, output);
     const ids = services.repo.list().map((schedule) => schedule.id);
     expect(output.lines).toEqual([
       "Déclencheur : actif · crontab de votre utilisateur · aucun passage encore",
@@ -196,7 +196,7 @@ describe("gup schedule list", () => {
     const { services, output } = await setup();
     await addCommand(services, add(), output);
     output.lines.length = 0;
-    await listCommand(services, { json: true }, output);
+    await listSchedulesCommand(services, { json: true }, output);
     const [schedule] = services.repo.list();
     expect(JSON.parse(output.lines.join("\n"))).toEqual({
       trigger: { installed: true, mechanism: "crontab", health: "active", lastTickAt: null },
