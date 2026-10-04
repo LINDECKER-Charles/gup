@@ -7,8 +7,8 @@ const MACHINE = ["C:\\Users\\alex", "C:\\Users\\alex\\AppData\\Local\\Temp", "D:
 describe("machinePathsIn", () => {
   it("finds the machine's paths whatever their separators or case", () => {
     const frame = [
-      "Fichier  c:/users/ALEX/AppData/Roaming/gup/config.json",
-      "export écrit — D:\\src\\gup\\report.html",
+      "File  c:/users/ALEX/AppData/Roaming/gup/config.json",
+      "export written — D:\\src\\gup\\report.html",
     ].join("\n");
     expect(machinePathsIn(frame, MACHINE)).toEqual(["C:\\Users\\alex", "D:\\src\\gup"]);
   });

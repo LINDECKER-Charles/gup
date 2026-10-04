@@ -47,7 +47,7 @@ const SCENES: readonly Scene[] = [
   },
   {
     id: "scanned",
-    title: "gup — Paquets",
+    title: "gup — Packages",
     alt: "The packages a scan found.",
     size: SCENE_SIZES.default,
     fixture: () => appFixture(),
