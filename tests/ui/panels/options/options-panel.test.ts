@@ -1,5 +1,3 @@
-import { mkdtemp } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { NODE_FILE_OPS, type FileOps } from "../../../../src/core/config/atomic-write.js";
@@ -25,6 +23,7 @@ import {
 import { CONFIG_STATE_LABELS } from "../../../../src/ui/text/settings/settings-labels.js";
 import { COLORS_UNAVAILABLE, CONTRAST_STATUS } from "../../../../src/ui/text/settings/theme-labels.js";
 import { seg } from "../../../../src/ui/tui/styled-lines.js";
+import { useTempDirs } from "../../../support/temp-dirs.js";
 import {
   key,
   optionsFixture,
@@ -33,6 +32,8 @@ import {
   VIEW,
   type FixtureOptions,
 } from "./options-fixture.js";
+
+const tempDir = useTempDirs();
 
 const INITIAL_TIMEOUT_S = getInstallTimeoutSeconds();
 afterEach(() => setInstallTimeoutSeconds(INITIAL_TIMEOUT_S));
@@ -232,7 +233,7 @@ describe("OptionsPanel saving", () => {
         NODE_FILE_OPS.renameSync(...args);
       },
     };
-    const dir = await mkdtemp(join(tmpdir(), "gup-options-"));
+    const dir = await tempDir("gup-options-");
     return new ConfigStore({ file: join(dir, "config.json"), fileOps });
   }
 

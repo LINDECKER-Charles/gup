@@ -1,5 +1,3 @@
-import { mkdtemp } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfigStore } from "../../../../src/core/config/store.js";
@@ -17,6 +15,7 @@ import {
   type ResetScope,
 } from "../../../../src/ui/text/settings/options-labels.js";
 import { CONFIG_STATE_LABELS } from "../../../../src/ui/text/settings/settings-labels.js";
+import { useTempDirs } from "../../../support/temp-dirs.js";
 import {
   key,
   optionsFixture,
@@ -25,6 +24,8 @@ import {
   VIEW,
   type FixtureOptions,
 } from "./options-fixture.js";
+
+const tempDir = useTempDirs();
 
 const INITIAL_TIMEOUT_S = getInstallTimeoutSeconds();
 afterEach(() => setInstallTimeoutSeconds(INITIAL_TIMEOUT_S));
@@ -35,7 +36,7 @@ function setup(options: FixtureOptions = {}) {
 }
 
 async function fileStore(): Promise<{ store: ConfigStore; file: string }> {
-  const file = join(await mkdtemp(join(tmpdir(), "gup-options-file-")), "config.json");
+  const file = join(await tempDir("gup-options-file-"), "config.json");
   return { store: new ConfigStore({ file }), file };
 }
 

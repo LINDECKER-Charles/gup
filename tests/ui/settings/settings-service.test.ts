@@ -1,16 +1,18 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FileOps } from "../../../src/core/config/atomic-write.js";
 import { NODE_FILE_OPS } from "../../../src/core/config/atomic-write.js";
 import { ConfigStore, ConfigWriteError } from "../../../src/core/config/store.js";
 import { SettingsService } from "../../../src/ui/settings/settings-service.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 let file: string;
 
 beforeEach(async () => {
-  file = join(await mkdtemp(join(tmpdir(), "gup-settings-")), "config.json");
+  file = join(await tempDir("gup-settings-"), "config.json");
 });
 
 const onDisk = async (): Promise<{ sections: Record<string, unknown> }> =>

@@ -1,16 +1,18 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { ConfigStore } from "../../../src/core/config/store.js";
 import { DEFAULT_UI_PREFERENCES } from "../../../src/ui/app/ui-preferences.js";
 import { INTERFACE_SECTION } from "../../../src/ui/settings/interface-section.js";
 import { THEME_SECTION } from "../../../src/ui/settings/theme-section.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 let file: string;
 
 beforeEach(async () => {
-  file = join(await mkdtemp(join(tmpdir(), "gup-ui-sections-")), "config.json");
+  file = join(await tempDir("gup-ui-sections-"), "config.json");
 });
 
 async function storeWith(sections: unknown): Promise<ConfigStore> {
