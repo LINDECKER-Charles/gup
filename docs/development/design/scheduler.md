@@ -108,7 +108,10 @@ pipeline's `PlannedUpdate` / `UpdatePlan`.
 (`scheduleIssues`: its name and its recurrence, the hourly minimum included):
 one `schedules.json` edited by hand past the editor's rules is never run,
 only logged (`scheduler.schedule-invalid`, warn) at every tick; a target's
-own problems still skip just that target at run time (`planTick`). Batch: `BatchLock.tryAcquire(location, "scheduled")` — the
+own problems still skip just that target at run time (`planTick`). The
+one-year horizon is the editor's and the CLI's alone (`validateDraft`): seen
+from the tick that runs it, a 29 February schedule's next occurrence is four
+years away. Batch: `BatchLock.tryAcquire(location, "scheduled")` — the
 foundation's OS-released lock (F-13, S-2), never waited for: busy → nothing
 consumed. Missed occurrences recorded. Due ones consumed **before any work**
 (crash safety), then `TargetResolver`: detect and scan only the needed

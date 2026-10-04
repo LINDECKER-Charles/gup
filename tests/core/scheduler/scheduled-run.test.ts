@@ -169,6 +169,15 @@ describe("ScheduledRun.tick", () => {
     expect(h.state.current.lastTickAt).toBe(TICK_AT.toISOString());
   });
 
+  it("runs a leap-day schedule on its day, though its next occurrence is four years away", async () => {
+    const leapDay = schedule({ recurrence: { kind: "cron", expression: "0 9 29 2 *" } });
+    const h = harness({ schedules: [leapDay] });
+    h.clock.now = new Date("2028-02-29T09:05:00Z");
+
+    expect(await h.run.tick()).toMatchObject({ kind: "ran" });
+    expect(h.requests.flat().map((request) => request.packageId)).toEqual(["Git.Git"]);
+  });
+
   it("writes the heartbeat but consumes nothing when another run holds the batch", async () => {
     const h = harness({ busy: true });
     expect(await h.run.tick()).toEqual({

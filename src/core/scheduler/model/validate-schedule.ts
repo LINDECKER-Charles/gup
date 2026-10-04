@@ -61,6 +61,9 @@ export function validateDraft(
   context: ValidationContext,
 ): readonly ValidationIssue[] {
   const issues = [...scheduleIssues(draft, context.now)];
+  const isRunnable = !issues.some((issue) => issue.field === "recurrence");
+  const horizon = isRunnable ? horizonProblem(draft.recurrence, context.now) : null;
+  if (horizon) issues.push({ field: "recurrence", message: horizon });
   issues.push(...targetIssues(draft.targets, context.providers));
   if (context.existingCount >= MAX_SCHEDULES) {
     issues.push({ field: "schedules", message: `${MAX_SCHEDULES} planifications au plus` });
@@ -74,6 +77,10 @@ export function validateDraft(
  * every schedule it reads, since a hand-edited `schedules.json` gets past
  * the editor and the CLI; a target's own problem (a provider unknown here,
  * one that needs an administrator) only skips that target at run time.
+ *
+ * The one-year horizon is not part of it: only a new or edited schedule must
+ * fire within a year. Seen from the tick that runs it, a schedule's next
+ * occurrence may lie years ahead — 29 February's comes back in four.
  */
 export function scheduleIssues(
   schedule: Pick<ScheduleDraft, "name" | "recurrence">,
@@ -112,18 +119,24 @@ function nameProblem(name: string): string | null {
   return null;
 }
 
-/** Why `recurrence` cannot drive a schedule from `now` on, or null. */
+/** Why `recurrence` cannot drive a schedule, or null: its shape, its syntax, the hourly minimum. */
 function recurrenceProblem(recurrence: Recurrence, now: Date): string | null {
   const shape = shapeProblem(recurrence);
   if (shape) return shape;
   const parsed = CronExpression.tryParse(toCron(recurrence));
   if (!parsed.ok) return parsed.reason;
-  const next = parsed.cron.nextRun(now);
-  if (next === null || next.getTime() - now.getTime() > MAX_HORIZON_DAYS * DAY_MS) {
-    return "cette expression ne se déclenche pas dans l'année à venir";
-  }
   if (parsed.cron.minGapMinutes(now, MIN_INTERVAL_SAMPLE) < MIN_INTERVAL_MINUTES) {
     return TOO_FREQUENT;
+  }
+  return null;
+}
+
+/** Why a runnable `recurrence` set at `now` would not fire within a year, or null. */
+function horizonProblem(recurrence: Recurrence, now: Date): string | null {
+  const parsed = CronExpression.tryParse(toCron(recurrence));
+  const next = parsed.ok ? parsed.cron.nextRun(now) : null;
+  if (next === null || next.getTime() - now.getTime() > MAX_HORIZON_DAYS * DAY_MS) {
+    return "cette expression ne se déclenche pas dans l'année à venir";
   }
   return null;
 }
