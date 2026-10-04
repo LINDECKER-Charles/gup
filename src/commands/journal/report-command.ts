@@ -10,7 +10,7 @@ import { settingsService } from "../../ui/settings/settings-service.js";
 import { resolveGlyphMode, type GlyphPreference } from "../../ui/theme/glyphs.js";
 import { ERROR_LABELS } from "../../ui/text/cli-labels.js";
 import { periodLabel } from "../../ui/text/journal/activity-labels.js";
-import { LOG_MESSAGES } from "../../ui/text/journal/log-labels.js";
+import { LOG_MESSAGES, VALUE_PLACEHOLDERS as VALUE } from "../../ui/text/journal/log-labels.js";
 import { REPORT_COMMAND_LABELS, REPORT_MESSAGES } from "../../ui/text/journal/report-labels.js";
 import {
   exportHistory,
@@ -27,7 +27,7 @@ import {
  * default: written to the reports directory and opened in the browser),
  * terminal charts (`text`), a JSON document or a CSV of the update attempts.
  * Data formats go to standard output unless `--out` names a file; data goes
- * to stdout and notices to stderr, so `gup report -f csv > maj.csv` stays
+ * to stdout and notices to stderr, so `gup report -f csv > updates.csv` stays
  * clean. Two settings apply when no option says otherwise: whether the HTML
  * report opens, and the symbols the text charts draw with.
  */
@@ -74,16 +74,16 @@ export function registerReportCommand(program: Command): void {
     .command("report")
     .description(REPORT_COMMAND_LABELS.report)
     .option("-f, --format <format>", REPORT_COMMAND_LABELS.format)
-    .option("-s, --since <période>", REPORT_COMMAND_LABELS.since)
+    .option(`-s, --since ${VALUE.period}`, REPORT_COMMAND_LABELS.since)
     .option("--until <date>", REPORT_COMMAND_LABELS.until)
-    .option("-o, --out <fichier>", REPORT_COMMAND_LABELS.out)
+    .option(`-o, --out ${VALUE.file}`, REPORT_COMMAND_LABELS.out)
     // Both forms: a lone `--no-open` would make commander default the value
     // to true; with `--open` declared too it stays undefined when neither is
     // given, so the setting can decide.
     .option("--open", REPORT_COMMAND_LABELS.open)
     .option("--no-open", REPORT_COMMAND_LABELS.noOpen)
     .option("--force", REPORT_COMMAND_LABELS.force)
-    .option("--delimiter <séparateur>", REPORT_COMMAND_LABELS.delimiter)
+    .option(`--delimiter ${VALUE.separator}`, REPORT_COMMAND_LABELS.delimiter)
     .action(async (options: ReportOptions) => process.exit(await runReport(options)));
 }
 
