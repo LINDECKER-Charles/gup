@@ -110,6 +110,14 @@ export const RUN_HINTS = {
   },
 } as const;
 
+/** The keys of an update on the plain terminal, printed as the batch starts. */
+export const CONSOLE_KEYS = {
+  skip: "Ctrl+C : passer l'install bloquée",
+  stopAll: "Ctrl+C ×2 : tout arrêter",
+  timeout: (seconds: number): string =>
+    seconds > 0 ? `timeout auto ${seconds}s` : "timeout auto désactivé",
+} as const;
+
 export const RUN_NOTICES = {
   quit: "Mise à jour en cours — x pour l'arrêter.",
   skipped: "Paquet en cours ignoré.",
