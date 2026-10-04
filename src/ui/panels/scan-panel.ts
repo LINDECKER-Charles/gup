@@ -48,10 +48,22 @@ const SPINNER = STATUS_GLYPHS.running;
 const DONE = `${STATUS_GLYPHS.success} `;
 const FAILED = `${STATUS_GLYPHS.failed} `;
 const BAR_WIDTH = 30;
+/** What comes before the name: "  ✔ ". */
+const MARK_WIDTH = 4;
+/** The name and result columns on a wide panel, their trailing blank included. */
 const NAME_WIDTH = 30;
 const RESULT_WIDTH = 34;
+/** Narrowest they get: a provider name stays recognisable, "12 mise(s) à jour" whole. */
+const MIN_NAME_WIDTH = 12;
+const MIN_RESULT_WIDTH = 18;
 /** Right-aligned duration column: "2 min 05 s" plus a leading gap. */
 const TIME_WIDTH = 11;
+
+/** Widths of the name and result columns, each ending with a blank. */
+interface Columns {
+  readonly name: number;
+  readonly result: number;
+}
 
 /**
  * Live progress of a scan, then its result per provider: what is running,
@@ -124,7 +136,8 @@ export class ScanPanel implements Panel, ScanEvents {
       this.#offset,
       this.#offset + viewport.height - head.length,
     );
-    return [...head, ...rows.map(progressLine)];
+    const columns = columnsFor(viewport.width);
+    return [...head, ...rows.map((row) => progressLine(row, columns))];
   }
 
   press(key: KeyPress): void {
@@ -195,23 +208,39 @@ export class ScanPanel implements Panel, ScanEvents {
   }
 }
 
-function progressLine({ name, outcome }: Progress): Line {
-  if (!outcome)
-    return [seg("  ⠿ ", "accent"), seg(fit(name, NAME_WIDTH)), seg("en cours…", "muted")];
+/**
+ * The columns `width` holds with the duration in view: the result shrinks
+ * first, then the name, each down to its minimum — narrower than that, the
+ * row runs past the panel.
+ */
+function columnsFor(width: number): Columns {
+  const room = width - MARK_WIDTH - TIME_WIDTH;
+  const result = Math.min(RESULT_WIDTH, Math.max(MIN_RESULT_WIDTH, room - NAME_WIDTH));
+  return { name: Math.min(NAME_WIDTH, Math.max(MIN_NAME_WIDTH, room - result)), result };
+}
+
+function progressLine({ name, outcome }: Progress, columns: Columns): Line {
+  const nameCell = seg(cell(name, columns.name));
+  if (!outcome) return [seg("  ⠿ ", "accent"), nameCell, seg("en cours…", "muted")];
   const time = seg(formatDuration(outcome.ms).padStart(TIME_WIDTH), "muted");
   if (outcome.error) {
     return [
       seg(`  ${FAILED}`, "danger"),
-      seg(fit(name, NAME_WIDTH)),
-      seg(fit(outcome.error, RESULT_WIDTH), "danger"),
+      nameCell,
+      seg(cell(outcome.error, columns.result), "danger"),
       time,
     ];
   }
   const result = outcome.updates > 0 ? `${outcome.updates} mise(s) à jour` : "à jour";
   return [
     seg(`  ${DONE}`, "success"),
-    seg(fit(name, NAME_WIDTH)),
-    seg(fit(result, RESULT_WIDTH), outcome.updates > 0 ? "warning" : "muted"),
+    nameCell,
+    seg(cell(result, columns.result), outcome.updates > 0 ? "warning" : "muted"),
     time,
   ];
+}
+
+/** `text` cut to `width` columns with one blank kept at the end, so cells never touch. */
+function cell(text: string, width: number): string {
+  return `${fit(text, width - 1)} `;
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { SIDEBAR_WIDTH } from "../../../src/ui/app/sidebar.js";
 import { ScanPanel } from "../../../src/ui/panels/scan-panel.js";
 import type { KeyPress } from "../../../src/ui/tui/screen-host.js";
+import { panelFrame } from "../../../src/ui/tui/text-panel.js";
 
 const key = (name: string): KeyPress => ({ name, sequence: name, ctrl: false });
 const text = (lines: readonly (readonly { text: string }[])[]) =>
@@ -58,6 +60,30 @@ describe("ScanPanel", () => {
     const reason = "la détection des providers a dépassé son délai (30 s)";
     scan.failed(reason);
     expect(summaryOf(scan).join(" ")).toBe(`✖ Scan interrompu : ${reason}`);
+  });
+
+  it("keeps every provider's duration inside the panel on an 80-column terminal", () => {
+    const width = 80 - SIDEBAR_WIDTH - panelFrame("comfortable").cols;
+    const scan = new ScanPanel(vi.fn());
+    scan.detecting();
+    scan.planned(3);
+    scan.finished("ProjectDiscovery tool manager", { updates: 12, ms: 65_000 });
+    scan.finished("Azure CLI", { updates: 0, ms: 900, error: "az upgrade a échoué : code 1" });
+    scan.finished("Winget", { updates: 0, ms: 600 });
+    scan.started("Scoop");
+    const rows = text(scan.render({ width, height: 20 }))
+      .split("\n")
+      .filter((line) => /[✔✖⠿] /.test(line));
+    expect(rows).toHaveLength(4);
+    expect(rows.every((row) => row.length <= width)).toBe(true);
+    expect(rows.map((row) => row.trimEnd().split(/ {2,}/).at(-1))).toEqual([
+      "en cours…",
+      "0,9 s",
+      "1 min 05 s",
+      "0,6 s",
+    ]);
+    // The name is cut before the result, and the result before the duration.
+    expect(rows[2]).toMatch(/ ProjectDiscover… 12 mise\(s\) à jour +1 min 05 s$/);
   });
 
   it("rescans on r, but not while a scan runs", () => {
