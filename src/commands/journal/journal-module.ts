@@ -1,6 +1,5 @@
 import chalk from "chalk";
 import type { LogThreshold } from "../../core/log/log.js";
-import { redactText } from "../../core/log/redact.js";
 import { parseThreshold } from "../../core/log/types.js";
 import {
   LOG_DIAGNOSTIC_LABELS,
@@ -65,5 +64,5 @@ export function logDiagnostic(session: LogSession | null): DiagnosticLine {
   const failure = backend?.failure() ?? null;
   if (failure !== null) return line(`${level} · ${LOG_DIAGNOSTIC_LABELS.failed(failure)}`, "warn");
   if (dir === null) return line(`${level} · ${LOG_DIAGNOSTIC_LABELS.unavailable}`, "warn");
-  return line(`${level} · ${redactText(dir)}`, "ok");
+  return line(`${level} · ${dir}`, "ok");
 }

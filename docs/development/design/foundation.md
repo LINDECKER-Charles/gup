@@ -148,7 +148,9 @@ A feature plugs into the command line with a `CliModule` (`register`, `triggerFo
 `beforeAction`, `diagnostics`, `onCrash`, `runsInElevatedChild`) and one line in `CLI_MODULES`
 (sorted by id). `installStartup()` records the trigger, then runs every `beforeAction` in
 `MODULE_ORDER` (logging 10, settings 20, scheduler 50). `gup doctor`'s "Système" section is
-made of the modules' `diagnostics()`, each capped at 5 s. `canPrompt()` is false under
+made of the modules' `diagnostics()`, each capped at 5 s; doctor prints their values through
+the log's `redactText` (home → `~`), since bug reports paste that output, so a module returns
+plain paths. `canPrompt()` is false under
 `GUP_NONINTERACTIVE=1` (scheduled runs).
 
 ### 3.8 Appearance and glyphs (`src/ui/theme/`, `src/ui/tui/`)

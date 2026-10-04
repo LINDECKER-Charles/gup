@@ -1,3 +1,5 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -148,6 +150,17 @@ describe("doctorCommand: Système", () => {
       `  ▲ ${"Déclencheur".padEnd(24)} absent`,
       "",
     ]);
+  });
+
+  it("shortens the home directory in every module's value, as the log does", async () => {
+    const file = join(homedir(), "AppData", "Roaming", "gup", "config.json");
+    const settings = reporting("settings", async () => [
+      { label: "Configuration", value: `${file} — enregistré`, status: "ok" },
+    ]);
+    await doctorCommand([settings]);
+    const shortened = join("~", "AppData", "Roaming", "gup", "config.json");
+    expect(printed()).toContain(`${shortened} — enregistré`);
+    expect(printed()).not.toContain(homedir());
   });
 
   it("reports a module whose diagnostics fail, and keeps the others", async () => {

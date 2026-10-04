@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import { redactText } from "../core/log/redact.js";
 import { readProviderStatus } from "../core/platform/provider-status.js";
 import { renderProvidersStatus } from "../ui/table.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli/cli-module.js";
@@ -7,7 +8,9 @@ import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli/cli-mod
  * `gup doctor`: which providers this machine has, which it lacks (with how to
  * install them), which are foreign to this OS, then a "Système" section where
  * each CLI module reports its own state (embedded terminal, scheduling,
- * settings, journal…).
+ * settings, journal…). The bug report form asks for this output, so the
+ * section's values are redacted like the log (home directory → `~`): every
+ * module's paths read the same, and no user name is pasted.
  *
  * Detection goes through readProviderStatus(): eight probes at a time, each
  * capped, and providers foreign to this OS never probed — one wedged
@@ -58,7 +61,8 @@ async function boundedDiagnostics(cliModule: CliModule): Promise<readonly Diagno
 
 function renderSystem(lines: readonly DiagnosticLine[]): string {
   const rows = lines.map(
-    ({ label, value, status }) => `  ${STATUS_MARKS[status]} ${label.padEnd(LABEL_WIDTH)} ${value}`,
+    ({ label, value, status }) =>
+      `  ${STATUS_MARKS[status]} ${label.padEnd(LABEL_WIDTH)} ${redactText(value)}`,
   );
   const heading = [chalk.bold("  Système"), chalk.dim(`  ${"─".repeat(RULE_WIDTH)}`)];
   return ["", ...heading, ...rows].join("\n");
