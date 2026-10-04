@@ -19,9 +19,11 @@ const sha256 = (text: string) => createHash("sha256").update(text, "utf8").diges
 
 function inlineBlocks(html: string) {
   const style = /<style>([\s\S]*?)<\/style>/.exec(html)?.[1] ?? "";
-  const scripts = [...html.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/g)];
+  // As lenient as a browser (any case, any whitespace, attributes on the end
+  // tag): a script block this missed would escape the CSP checks below.
+  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script(?:\s[^>]*)?>/gi)];
   const json = (id: string) => scripts.find((match) => match[0].includes(`id="${id}"`))?.[1] ?? "";
-  const code = scripts.filter((match) => !match[0].startsWith("<script type=")).map((match) => match[1] ?? "");
+  const code = scripts.filter((match) => !/^<script\s+type=/i.test(match[0])).map((match) => match[1] ?? "");
   return { style, code, data: json("gup-report-data"), labels: json("gup-report-labels") };
 }
 
