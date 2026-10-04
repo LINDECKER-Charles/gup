@@ -74,7 +74,7 @@ describe("outside launcher", () => {
     const menu = await bootMenu({ scans: [WINGET] });
     await menu.waitForText("Git.Git");
     await menu.press("down", "space", "enter");
-    expect(await menu.frame()).toContain("1 paquet(s) vont être mis à jour");
+    expect(await menu.frame()).toContain("1 paquet va être mis à jour");
     await menu.press("o");
     const ended = await menu.exit;
     if (ended.kind !== "outside") throw new Error("expected an outside update");
@@ -115,7 +115,7 @@ describe("outside launcher", () => {
     const menu = await bootMenu({ scans: [WINGET], launcher: launcher.factory });
     await menu.waitForText("Git.Git");
     await expect(outsideLauncher(launcher.contexts[0]!).launch([])).resolves.toBeNull();
-    expect(await menu.frame()).not.toContain("vont être mis à jour");
+    expect(await menu.frame()).not.toContain("être mis à jour :");
   });
 
   it("neither asks nor leaves the screen while a scan of the menu runs", async () => {
@@ -130,7 +130,7 @@ describe("outside launcher", () => {
 
     await expect(outsideLauncher(context).launch(selection)).resolves.toBeNull();
 
-    expect(await menu.frame()).not.toContain("vont être mis à jour");
+    expect(await menu.frame()).not.toContain("être mis à jour :");
     const ended = await Promise.race([menu.exit, Promise.resolve("still open")]);
     expect(ended).toBe("still open");
   });

@@ -251,7 +251,7 @@ describe("the Planification list", () => {
     const { menu, port } = await menuWith({ schedules: [storedSchedule()], onPlanification: true });
     port.preparation = withGitOutdated;
     await menu.press("x");
-    const asked = await eventually(menu, "1 paquet(s) vont être mis à jour");
+    const asked = await eventually(menu, "1 paquet va être mis à jour");
     expect(asked).toContain("• Git 1.0.0 → 2.0.0");
     expect(asked).not.toContain("Exécuter « Outils dev » maintenant ?");
     await menu.press("o");

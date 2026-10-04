@@ -482,8 +482,8 @@ describe("updateCommand: admin batch elevation", () => {
   });
 
   it.each([
-    ["win32", "1 paquet(s) nécessitent les droits administrateur. Ouvrir une invite UAC pour les traiter en bloc ?"],
-    ["darwin", "1 paquet(s) nécessitent les droits administrateur : sudo demandera votre mot de passe. Les traiter en bloc ?"],
+    ["win32", "1 paquet nécessite les droits administrateur. Ouvrir une invite UAC pour le traiter ?"],
+    ["darwin", "1 paquet nécessite les droits administrateur : sudo demandera votre mot de passe dans le terminal. Le traiter ?"],
   ] as const)("names the %s elevation mechanism in the batch question", async (platform, question) => {
     const adminPkg = { id: "gettext", current: "1", latest: "2", requiresAdmin: true };
     scanWithProgressMock.mockResolvedValueOnce({

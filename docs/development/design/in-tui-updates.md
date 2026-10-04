@@ -283,7 +283,7 @@ and `ui/app` holds 7.
    Windows, paid while the user browses, not at the confirmation.
 2. **Launch** (refused while another one is starting or running): the detection's answer, then
    the confirmation (when `confirmBeforeUpdate`): the packages (admin ones tagged), then
-   `n paquet(s) nécessitent les droits administrateur : une invite UAC s'ouvrira en fin de lot.`
+   `n paquets nécessitent les droits administrateur : une invite UAC s'ouvrira en fin de lot.`
    (or the `sudo` sentence), then, when the embedded terminal is unavailable,
    `Terminal intégré indisponible (<raison>) : la mise à jour s'exécutera dans le terminal, hors
    de l'interface.`

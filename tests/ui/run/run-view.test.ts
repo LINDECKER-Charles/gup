@@ -135,7 +135,7 @@ async function launched(options: RunMenuOptions = {}): Promise<RunMenu> {
   });
   await shown(menu, (options.packages ?? PACKAGES)[0]!.id);
   await menu.press("a", "enter");
-  await shown(menu, "vont être mis à jour");
+  await shown(menu, "être mis à jour :");
   await menu.press("o");
   return { menu, pty };
 }
@@ -271,7 +271,7 @@ describe("run view", () => {
     await installsStarted(pty, 1);
     await menu.press("x");
     const asking = await menu.frame();
-    expect(asking).toContain("les 2 paquet(s) restant(s)");
+    expect(asking).toContain("les 2 paquets restants");
     expect(hintBar(asking)).toBe(DIALOG_HINTS.confirm);
     await menu.press("n");
     expect(hoisted.terminate).not.toHaveBeenCalled();

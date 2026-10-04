@@ -33,7 +33,7 @@ export async function launchSix(stage: Stage): Promise<void> {
   await stage.press("down", "space", "down", "space");
   await stage.waitForText("6 sur 12 coché(s)");
   await stage.press("enter");
-  await stage.waitForText("vont être mis à jour");
+  await stage.waitForText("être mis à jour :");
 }
 
 /** {@link launchSix}, confirmed: the run view takes the screen. */

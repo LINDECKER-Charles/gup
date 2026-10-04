@@ -185,7 +185,7 @@ in the app's run view (or Ctrl+C in a terminal) — the batch goes on. The per-i
 
 ### A package I expected is missing
 
-- **Fast mode or a filter is on.** The title bar says `mode rapide` or `n provider(s) filtrés`:
+- **Fast mode or a filter is on.** The title bar says `mode rapide` or `n provider(s) filtré(s)`:
   Options › **Mode rapide** and **Filtre providers**, then `r`.
 - **The provider cannot update it automatically.** Items only a GUI can update (Toolbox-managed
   JetBrains IDEs, some App Installer packages) are left out on purpose.

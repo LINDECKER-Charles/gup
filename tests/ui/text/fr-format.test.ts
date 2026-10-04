@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  counted,
   formatClock,
   formatCount,
   formatDate,
@@ -23,6 +24,12 @@ describe("French numbers", () => {
     expect(formatDecimal(6.14, 1)).toBe("6,1");
     expect(formatDecimal(2, 2)).toBe("2,00");
     expect(formatPercent(0.97)).toBe("97 %");
+  });
+
+  it("agrees the words with the count: 0 and 1 take the singular", () => {
+    expect(counted(0, "paquet va", "paquets vont")).toBe("0 paquet va");
+    expect(counted(1, "paquet va", "paquets vont")).toBe("1 paquet va");
+    expect(counted(1284, "paquet va", "paquets vont")).toBe("1 284 paquets vont");
   });
 
   it("never emits a narrow or non-breaking space", () => {

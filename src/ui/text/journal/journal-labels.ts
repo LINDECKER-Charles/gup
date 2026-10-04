@@ -1,6 +1,6 @@
 import type { RunTrigger } from "../../../core/state/run-context.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
-import { counted } from "./activity-labels.js";
+import { counted } from "../fr-format.js";
 import type { LOG_SOURCE_LABELS } from "./log-labels.js";
 
 /**

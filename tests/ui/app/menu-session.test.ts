@@ -81,7 +81,7 @@ describe("MenuSession", () => {
   it("updates the checked packages once confirmed, outside the screen", async () => {
     const menu = await scanned();
     await menu.press("down", "down", "space", "enter");
-    expect(await menu.frame()).toContain("1 paquet(s) vont être mis à jour");
+    expect(await menu.frame()).toContain("1 paquet va être mis à jour");
     await menu.press("o");
     const ended = await menu.exit;
     expect(ended.kind).toBe("outside");
@@ -95,7 +95,7 @@ describe("MenuSession", () => {
     const menu = await scanned();
     await menu.press("down", "enter", "n");
     const text = await menu.frame();
-    expect(text).not.toContain("vont être mis à jour");
+    expect(text).not.toContain("être mis à jour :");
     expect(text).toContain("┏━ Paquets");
     expect(menu.controller.updateOutside).not.toHaveBeenCalled();
   });

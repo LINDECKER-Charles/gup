@@ -125,7 +125,7 @@ function holdTheElevatedBatch(): () => void {
 /** alpha installs (typing, stop dialog), beta fails, then the UAC step for nodejs. */
 async function walkTheRun(audit: Audit, pty: FakePty): Promise<void> {
   const { menu } = audit;
-  await captured(audit, "confirmation of an in-menu update", "vont être mis à jour");
+  await captured(audit, "confirmation of an in-menu update", "être mis à jour :");
   await menu.press("o");
   await installsStarted(pty, 1);
   pty.last().emitData(`${INSTALLER_OUTPUT}\r\n`);

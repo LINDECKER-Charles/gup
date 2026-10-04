@@ -1,4 +1,5 @@
 import type { OutdatedPackage } from "../../core/types.js";
+import { counted } from "./fr-format.js";
 
 /**
  * The interactive menu's own words (French, the language of the interface):
@@ -47,13 +48,13 @@ export function updateCountFact(count: number): string {
 
 export function scanModeFact(isFast: boolean, filteredProviders: number): string {
   const filter =
-    filteredProviders === 0 ? "tous les providers" : `${filteredProviders} provider(s) filtrés`;
+    filteredProviders === 0 ? "tous les providers" : `${filteredProviders} provider(s) filtré(s)`;
   return `${isFast ? "mode rapide" : "mode normal"} · ${filter}`;
 }
 
 export const CONFIRM_UPDATE = {
   title: "Mettre à jour",
-  heading: (count: number) => `${count} paquet(s) vont être mis à jour :`,
+  heading: (count: number) => `${counted(count, "paquet va", "paquets vont")} être mis à jour :`,
   item: (pkg: Pick<OutdatedPackage, "id" | "name" | "current" | "latest">) =>
     `• ${pkg.name ?? pkg.id}  ${pkg.current} → ${pkg.latest}`,
   more: (count: number) => `… et ${count} autre(s)`,

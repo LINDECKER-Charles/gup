@@ -100,7 +100,7 @@ describe("in-screen launcher", () => {
       packages: [pkg("Git.Git"), pkg("nodejs", { requiresAdmin: true })],
     });
     await menu.press("a", "enter");
-    const confirmation = await shown(menu, "2 paquet(s) vont être mis à jour");
+    const confirmation = await shown(menu, "2 paquets vont être mis à jour");
     expect(confirmation).toContain("• nodejs 1.0.0 → 2.0.0 (admin)");
     expect(confirmation).toContain("une invite UAC");
     await menu.press("o");
@@ -113,7 +113,7 @@ describe("in-screen launcher", () => {
   it("updates outside the screen when the embedded terminal is unavailable, saying why", async () => {
     const { menu, runUpdates } = await menuWith({ support: DISABLED });
     await menu.press("a", "enter");
-    const confirmation = await shown(menu, "vont être mis à jour");
+    const confirmation = await shown(menu, "être mis à jour :");
     expect(confirmation).toContain(`Terminal intégré indisponible (${PTY_LABELS.disabled})`);
     await menu.press("o");
 
@@ -147,7 +147,7 @@ describe("in-screen launcher", () => {
     const { menu, runUpdates } = await menuWith({ support: () => pending });
     await menu.press("a", "enter", "enter");
     detected(AVAILABLE);
-    await shown(menu, "vont être mis à jour");
+    await shown(menu, "être mis à jour :");
     await menu.press("o");
     await shown(menu, RUN_TITLES.done);
     expect(runUpdates).toHaveBeenCalledOnce();
@@ -160,7 +160,7 @@ describe("in-screen launcher", () => {
     await menu.press("a", "enter");
     expect(hintBar(await menu.frame())).toContain(PANEL_HINTS_TAIL);
     detected(AVAILABLE);
-    const confirmation = await shown(menu, "vont être mis à jour");
+    const confirmation = await shown(menu, "être mis à jour :");
     expect(hintBar(confirmation)).toBe(DIALOG_HINTS.confirm);
     await menu.press("n");
     expect(hintBar(await shown(menu, "┏━ Paquets"))).toContain(PANEL_HINTS_TAIL);

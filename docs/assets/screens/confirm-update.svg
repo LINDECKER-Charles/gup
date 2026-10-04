@@ -86,7 +86,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4" x="47.2" y="174.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Journal </text>
 <text class="c0" x="109.6" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c4" x="125.2" y="174.0" textLength="265.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">6 paquet(s) vont être mis à jour :</text>
+<text class="c4" x="125.2" y="174.0" textLength="249.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">6 paquets vont être mis à jour :</text>
 <text class="c0" x="694.6" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c7" x="702.4" y="174.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.0        </text>
 <text class="c0" x="788.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -137,12 +137,12 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="788.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c4" x="125.2" y="327.0" textLength="514.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1 paquet(s) nécessitent les droits administrateur : une invite UAC</text>
+<text class="c4" x="125.2" y="327.0" textLength="553.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1 paquet nécessite les droits administrateur : une invite UAC s'ouvrira</text>
 <text class="c0" x="694.6" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="788.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="109.6" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
-<text class="c4" x="125.2" y="344.0" textLength="187.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">s'ouvrira en fin de lot.</text>
+<text class="c4" x="125.2" y="344.0" textLength="109.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">en fin de lot.</text>
 <text class="c0" x="694.6" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c7" x="702.4" y="344.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.0        </text>
 <text class="c0" x="788.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>

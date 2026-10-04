@@ -1,6 +1,6 @@
 import type { Cadence } from "../../../core/insights/types.js";
 import type { Period, PeriodUnit } from "../../../core/time/period.js";
-import { formatCount, formatDate } from "../fr-format.js";
+import { counted, formatDate } from "../fr-format.js";
 
 /**
  * The words of the activity insights (French, the language of the
@@ -88,11 +88,6 @@ export const CADENCE_DESCRIPTIONS: Readonly<Record<Cadence, string>> = {
 /** The typical interval: "~14 j", or "—" without one. */
 export function intervalLabel(days: number | null): string {
   return days === null ? NO_DATA : `~${Math.max(1, Math.round(days))} j`;
-}
-
-/** "1 284 mises à jour": French plural, 0 and 1 take the singular. */
-export function counted(count: number, one: string, many: string): string {
-  return `${formatCount(count)} ${count <= 1 ? one : many}`;
 }
 
 /** The headline numbers of a period. */

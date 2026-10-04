@@ -85,7 +85,7 @@ describe.skipIf(!support.isAvailable)("an update run inside the menu, on a real 
       });
       await shown(menu, "alpha");
       await menu.press("a", "enter");
-      await shown(menu, "vont être mis à jour");
+      await shown(menu, "être mis à jour :");
       await menu.press("o");
 
       await shown(menu, "Continuer ?");

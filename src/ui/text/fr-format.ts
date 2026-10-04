@@ -31,6 +31,14 @@ export function formatCount(n: number): string {
   return plain(COUNT.format(n));
 }
 
+/**
+ * "1 284 mises à jour", "1 paquet va": the count, then the words agreeing
+ * with it — French plural, 0 and 1 take the singular.
+ */
+export function counted(count: number, one: string, many: string): string {
+  return `${formatCount(count)} ${count <= 1 ? one : many}`;
+}
+
 /** `(6.14, 1)` → "6,1": exactly `digits` decimals, rounded. */
 export function formatDecimal(value: number, digits: number): string {
   const format = new Intl.NumberFormat("fr-FR", {

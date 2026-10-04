@@ -103,7 +103,7 @@ function slowProviders(ms: number): AppFixture {
 const RUN_RIPGREP: Scene["play"] = async (stage) => {
   await stage.waitForText(SCANNED);
   await stage.press("down", "space", "enter");
-  await stage.waitForText("vont être mis à jour");
+  await stage.waitForText("être mis à jour :");
   await stage.press("o");
   await stage.waitForText(INSTALL_OUTPUT);
   await stage.tick();

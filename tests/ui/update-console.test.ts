@@ -100,7 +100,7 @@ describe("consolePorts", () => {
     expect(printed()).toBe(chalk.bold("\n→ Admin (1)\n") + chalk.dim("  choco:nodejs\n"));
     expect(confirmMock).toHaveBeenCalledWith({
       message:
-        "1 paquet(s) nécessitent les droits administrateur. Ouvrir une invite UAC pour les traiter en bloc ?",
+        "1 paquet nécessite les droits administrateur. Ouvrir une invite UAC pour le traiter ?",
       default: true,
     });
   });

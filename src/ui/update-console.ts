@@ -22,7 +22,12 @@ import {
   retryChoices,
   type RetryAnswer,
 } from "./retry-choices.js";
-import { RUN_WAITING, waitingMessage } from "./text/run-labels.js";
+import {
+  ELEVATE_DIALOG,
+  elevationKindOf,
+  RUN_WAITING,
+  waitingMessage,
+} from "./text/run-labels.js";
 
 /**
  * The update pipeline on a plain terminal: `gup update`, and the menu when it
@@ -125,10 +130,7 @@ function retryHeader(item: PlannedUpdate, retry: RetryStrategyId, request: Retry
 
 /** Windows elevates through a UAC prompt; elsewhere sudo asks in this terminal. */
 function elevationQuestion(count: number): string {
-  const need = `${count} paquet(s) nécessitent les droits administrateur`;
-  return process.platform === "win32"
-    ? `${need}. Ouvrir une invite UAC pour les traiter en bloc ?`
-    : `${need} : sudo demandera votre mot de passe. Les traiter en bloc ?`;
+  return ELEVATE_DIALOG.text[elevationKindOf(process.platform)](count);
 }
 
 /** The end-of-run summary: successes (with their advisories), skips, failures. */

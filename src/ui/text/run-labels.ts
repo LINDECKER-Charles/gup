@@ -1,5 +1,5 @@
 import type { BatchHolder } from "../../core/update/update-extensions.js";
-import { formatRelative } from "./fr-format.js";
+import { counted, formatRelative } from "./fr-format.js";
 
 /**
  * The words of updates (French, the language of the interface): the run
@@ -79,7 +79,8 @@ export const PANE_LABELS = {
   noOutput: "Aucune sortie pour ce paquet.",
   approveUac: "Validez l'invite UAC.",
   adminElsewhere: (count: number): string =>
-    `${count} paquet(s) s'installent dans la fenêtre administrateur ; gup reprend à sa fermeture.`,
+    `${counted(count, "paquet s'installe", "paquets s'installent")} dans la fenêtre ` +
+    "administrateur ; gup reprend à sa fermeture.",
 } as const;
 
 export const RUN_HINTS = {
@@ -128,19 +129,30 @@ export const RUN_NOTICES = {
 
 export const STOP_DIALOG = {
   title: "Tout arrêter ?",
-  text: (remaining: number): string =>
-    `Le paquet en cours est interrompu et les ${remaining} paquet(s) restant(s) sont annulés.`,
+  text: (remaining: number): string => {
+    if (remaining === 0) return "Le paquet en cours est interrompu.";
+    const rest =
+      remaining === 1
+        ? "le paquet restant est annulé"
+        : `les ${remaining} paquets restants sont annulés`;
+    return `Le paquet en cours est interrompu et ${rest}.`;
+  },
 } as const;
+
+/** "2 paquets nécessitent les droits administrateur": the opening of every admin message. */
+function adminNeed(count: number): string {
+  return `${counted(count, "paquet nécessite", "paquets nécessitent")} les droits administrateur`;
+}
 
 export const ELEVATE_DIALOG = {
   title: "Droits administrateur",
   text: {
     uac: (count: number): string =>
-      `${count} paquet(s) nécessitent les droits administrateur. ` +
-      "Ouvrir une invite UAC pour les traiter en bloc ?",
+      `${adminNeed(count)}. Ouvrir une invite UAC pour ` +
+      `${count <= 1 ? "le traiter" : "les traiter en bloc"} ?`,
     sudo: (count: number): string =>
-      `${count} paquet(s) nécessitent les droits administrateur : sudo demandera votre mot ` +
-      "de passe dans le terminal. Les traiter en bloc ?",
+      `${adminNeed(count)} : sudo demandera votre mot de passe dans le terminal. ` +
+      `${count <= 1 ? "Le traiter" : "Les traiter en bloc"} ?`,
   } satisfies Record<ElevationKind, (count: number) => string>,
 } as const;
 
@@ -150,12 +162,8 @@ export const RETRY_DIALOG_TITLE = "Échecs récupérables";
 export const CONFIRM_EXTRA = {
   adminTag: "(admin)",
   admin: {
-    uac: (count: number): string =>
-      `${count} paquet(s) nécessitent les droits administrateur : ` +
-      "une invite UAC s'ouvrira en fin de lot.",
-    sudo: (count: number): string =>
-      `${count} paquet(s) nécessitent les droits administrateur : ` +
-      "sudo demandera votre mot de passe.",
+    uac: (count: number): string => `${adminNeed(count)} : une invite UAC s'ouvrira en fin de lot.`,
+    sudo: (count: number): string => `${adminNeed(count)} : sudo demandera votre mot de passe.`,
   } satisfies Record<ElevationKind, (count: number) => string>,
   fallback: (reason: string): string =>
     `Terminal intégré indisponible (${reason}) : la mise à jour s'exécutera dans le terminal, ` +

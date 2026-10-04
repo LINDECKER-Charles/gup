@@ -88,7 +88,7 @@ async function walkTheViews({ menu, capture }: Audit): Promise<void> {
   await menu.press("/", "g", "i", "t");
   await capture("Paquets, filter typed", "/ git");
   await menu.press("enter", "enter");
-  await capture("update confirmation", "vont être mis à jour");
+  await capture("update confirmation", "être mis à jour :");
   await menu.press("n", "tab", "up");
   await capture("Scan results with a failure", "délai dépassé");
   await menu.press("down", "down");
