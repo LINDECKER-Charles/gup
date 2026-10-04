@@ -73,3 +73,30 @@ export function workerSandboxEnv(
 
 /** Every variable `sharedTestEnv` sets: the fake system carries them into simulated envs. */
 export const SHARED_ENV_KEYS: readonly string[] = Object.keys(sharedTestEnv(""));
+
+/**
+ * The run's opt-ins, which the suites read themselves (tests/support/e2e/scope.ts and
+ * artifacts.ts, the mutating integration suites).
+ */
+const RUN_SWITCHES: readonly string[] = [
+  "GUP_E2E",
+  "GUP_E2E_SCOPE",
+  "GUP_MUTATE",
+  "GUP_E2E_ARTIFACTS",
+];
+
+const GUP_VARIABLE = /^GUP_/i;
+/** Honoured by every terminal library, and often set in a developer's shell profile. */
+const COLOUR_SWITCHES = /^(?:NO_COLOR|FORCE_COLOR)$/i;
+
+/**
+ * Whether a worker drops the inherited variable `name` before any test: gup's own variables
+ * (but the shared env's and the run's opt-ins) and the colour switches change what gup does or
+ * draws, and no suite may depend on the developer's shell — a `NO_COLOR=1` profile turned three
+ * theme suites red. A test that needs one sets it itself (`vi.stubEnv`).
+ */
+export function isDroppedFromShell(name: string): boolean {
+  if (COLOUR_SWITCHES.test(name)) return true;
+  const isKept = SHARED_ENV_KEYS.includes(name) || RUN_SWITCHES.includes(name);
+  return GUP_VARIABLE.test(name) && !isKept;
+}
