@@ -2,7 +2,7 @@ import { stripVTControlCharacters } from "node:util";
 import type { LogLevel } from "../core/log/log.js";
 import type { LogData, LogRecord, LogValue } from "../core/log/types.js";
 import { lineToAnsi } from "./charts/ansi-lines.js";
-import { formatDuration } from "./text/format.js";
+import { formatDateTime, formatDuration } from "./text/format.js";
 import {
   COMMAND_END_LABELS,
   ELEVATED_MARK,
@@ -12,10 +12,10 @@ import {
 import { fit, seg, type Line, type Segment, type Tone } from "./tui/styled-lines.js";
 
 /**
- * One debug log record as one readable line — `03/10 14:22:23.512  INFO
- * cmd.end  [winget] exit 0 · 18,4 s` — for `gup log` and the journal view's
- * Debug tab. Known events get a summary written for a human; any other one
- * lists its data as `key=value` pairs.
+ * One debug log record as one readable line — `Oct 03 14:22:23.512  INFO
+ * cmd.end  [winget] exit 0 · 18.4 s` — for `gup log` and the journal view's
+ * Debug tab, in the interface's language. Known events get a summary written
+ * for a human; any other one lists its data as `key=value` pairs.
  */
 
 const LEVEL_WIDTH = 6;
@@ -159,11 +159,13 @@ function text(value: LogValue | undefined): string {
   return typeof value === "object" ? JSON.stringify(value) : String(value);
 }
 
-/** `03/10 14:22:05.112`: a record's instant in local time, as its line shows it. */
+/**
+ * A record's instant in local time, as its line shows it: the interface's
+ * day and minute (`Oct 03 14:22`, `03/10 14:22`), then the seconds and
+ * milliseconds (`:05.112`).
+ */
 export function recordTime(ts: string): string {
   const date = new Date(ts);
   const pad = (value: number, size = 2) => String(value).padStart(size, "0");
-  const day = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
-  const time = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-  return `${day} ${time}.${pad(date.getMilliseconds(), 3)}`;
+  return `${formatDateTime(date)}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
 }
