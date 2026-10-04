@@ -140,6 +140,7 @@ export default {
       "El mismo ejecutable en Windows, macOS y Linux: el mismo contrato de provider, el " +
       "mismo JSON. Lo que cambia es la capa del sistema que gup puede controlar.",
     delegated: "delegación",
+    supported: "Providers compatibles",
     everywhere: "Igual en todas partes",
     allProviders: "Los {providers} providers, por dominio",
     catalogLink: "Ver el catálogo completo de providers",

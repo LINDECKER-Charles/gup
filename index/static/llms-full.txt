@@ -121,13 +121,20 @@ databases are the only reliable ownership signal, so `gup` probes `dpkg -S` /
 `rpm -qf` and delegates that one package's upgrade to `apt` or `dnf`. There is
 no distro-wide provider on a native Linux host: `apt`, `dnf`, `pacman`,
 `flatpak` and `nix` as full providers exist only through the WSL bridge, and
-their availability check is gated on `process.platform === "win32"`.
+they are declared Windows-only (`readonly platforms = PLATFORMS.windows;`).
 
 Everything above the OS layer is platform-independent: npm/pnpm/yarn/bun
 globals, pip/pipx/uv/conda, cargo, rustup, gem, composer, dotnet tools, the
 cloud/IaC/Kubernetes CLIs, VS Code and Cursor extensions, JetBrains plugins,
-pwsh modules, asdf/mise. A provider that cannot exist on the current platform
-reports itself unavailable and never appears in a scan.
+pwsh modules, asdf/mise.
+
+Of the @@PROVIDERS@@ providers, @@PROVIDERS_WINDOWS@@ run on Windows,
+@@PROVIDERS_MACOS@@ on macOS and @@PROVIDERS_LINUX@@ on Linux. An OS-specific
+provider declares the systems it supports (`PLATFORMS.windows`,
+`PLATFORMS.macos` or `PLATFORMS.notWindows`); on any other system the registry
+never probes, scans or updates it, and the Providers view and `gup doctor` list
+it greyed out, as incompatible with the current OS. These per-system counts are
+read from those declarations at build time.
 
 ## Architecture
 

@@ -6,15 +6,18 @@
  * ACCURACY NOTE — checked against the registry, only one OS-level provider
  * runs natively on Linux:
  *
- *   - `brew` (src/providers/os/brew.ts) is deliberately not darwin-gated, so
+ *   - `brew` (src/providers/os/brew.ts) declares `PLATFORMS.notWindows`, so
  *     it covers Linuxbrew; it only excludes win32.
  *   - `apt` and `dnf` are `InstallSource` delegation targets
  *     (src/core/install-source.ts), not providers: they upgrade one detected
  *     binary whose owner `dpkg -S` / `rpm -qf` resolved. gup never runs a
  *     distro-wide upgrade on a native Linux host — hence `isDelegated`.
- *   - pacman, Flatpak and Nix exist only as `wsl-*` providers, gated on
- *     `process.platform === "win32"` (src/core/wsl.ts): they belong to the
- *     Windows card's WSL bridge, never to the Linux card.
+ *   - pacman, Flatpak and Nix exist only as `wsl-*` providers, declared
+ *     `PLATFORMS.windows`: they belong to the Windows card's WSL bridge, never
+ *     to the Linux card.
+ *
+ * How many providers each system supports is not here: it is derived from
+ * those declarations (`providersBySystem` in facts.js).
  */
 
 const manager = (name) => Object.freeze({ name, isDelegated: false });

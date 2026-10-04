@@ -125,6 +125,7 @@ export default {
       "Windows、macOS 和 Linux 上运行的是同一个可执行文件——相同的 provider 契约，相同的 " +
       "JSON。变化的只是 gup 能驱动的操作系统层。",
     delegated: "委托",
+    supported: "支持的 provider",
     everywhere: "各平台一致",
     allProviders: "全部 {providers} 个 provider，按领域分类",
     catalogLink: "浏览完整的 provider 目录",

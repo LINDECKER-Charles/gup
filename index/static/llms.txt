@@ -12,8 +12,9 @@
 > MIT, version @@VERSION@@, Node.js >= @@NODE@@. Windows, macOS and Linux.
 
 Values in this file are generated from the repository at build time
-(package.json version, the ALL_PROVIDERS count in src/core/registry.ts), so
-they cannot drift from the shipped CLI. Last content change: @@MODIFIED@@.
+(package.json version, the ALL_PROVIDERS count in src/core/registry.ts and the
+platforms each registered provider declares), so they cannot drift from the
+shipped CLI. Last content change: @@MODIFIED@@.
 
 ## Install
 
@@ -66,8 +67,11 @@ gup update --all -y       # CI-safe: everything, no prompt
   on the three systems: npm/pnpm/yarn/bun globals, pip/pipx/uv/conda, cargo,
   rustup, gem, composer, dotnet tools, the cloud/IaC/K8s CLIs, VS Code and
   Cursor extensions, JetBrains plugins, pwsh modules, asdf/mise.
-- Providers that cannot exist on a platform report themselves unavailable and
-  never appear in a scan. `gup doctor` shows what was actually detected.
+- Of the @@PROVIDERS@@ providers, @@PROVIDERS_WINDOWS@@ run on Windows,
+  @@PROVIDERS_MACOS@@ on macOS and @@PROVIDERS_LINUX@@ on Linux. An OS-specific
+  provider declares the systems it supports; elsewhere gup never probes, scans
+  or updates it, and the Providers view and `gup doctor` list it greyed out as
+  incompatible. `gup doctor` shows what was actually detected.
 
 ## What gup is NOT
 

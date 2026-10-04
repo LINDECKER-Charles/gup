@@ -24,6 +24,34 @@
   font-size: 22px;
   font-weight: 600;
 }
+/* Label then value, never "<n> providers": no counted noun to agree with. */
+.os-count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding-block: 10px;
+  border-block: 1px solid var(--line-faint);
+}
+.os-count dt {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-case);
+  color: var(--fg-dim);
+}
+.os-count dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--fg-dim);
+}
+.os-count-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--fg);
+}
 .os-managers {
   display: grid;
   gap: 6px;

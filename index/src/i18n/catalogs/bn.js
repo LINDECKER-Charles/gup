@@ -133,6 +133,7 @@ export default {
       "Windows, macOS ও Linux-এ একই এক্সিকিউটেবল — একই provider চুক্তি, একই JSON। বদলায় শুধু " +
       "OS-এর সেই স্তর, যা gup চালাতে পারে।",
     delegated: "হস্তান্তর",
+    supported: "সমর্থিত providers",
     everywhere: "সব জায়গায় একই",
     allProviders: "সব {providers}টি provider, ডোমেইন অনুযায়ী",
     catalogLink: "পুরো provider ক্যাটালগ দেখুন",

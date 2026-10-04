@@ -135,6 +135,7 @@ export default {
       "Windows, macOS और Linux पर एक ही एक्ज़िक्यूटेबल — वही provider अनुबंध, वही JSON। " +
       "बदलती है तो सिर्फ़ OS की वह परत, जिसे gup चला सकता है।",
     delegated: "सौंपा गया",
+    supported: "समर्थित providers",
     everywhere: "हर जगह एक जैसा",
     allProviders: "सभी {providers} providers, डोमेन के अनुसार",
     catalogLink: "पूरा provider कैटलॉग देखें",

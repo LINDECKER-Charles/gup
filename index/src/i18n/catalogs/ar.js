@@ -174,6 +174,7 @@ export default {
       "الملف التنفيذي نفسه على Windows وmacOS وLinux — عقد provider نفسه، وJSON نفسه. ما " +
       "يتغيّر هو طبقة نظام التشغيل التي يستطيع gup التحكم فيها.",
     delegated: "تفويض",
+    supported: "وحدات provider المدعومة",
     everywhere: "متطابق في كل مكان",
     allProviders: "جميع وحدات provider البالغ عددها {providers}، مصنّفة حسب المجال",
     catalogLink: "تصفّح الكتالوج الكامل لوحدات provider",

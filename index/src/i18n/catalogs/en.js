@@ -142,6 +142,7 @@ export default {
       "The same executable on Windows, macOS and Linux — same provider contract, same JSON. " +
       "What changes is the OS layer gup can drive.",
     delegated: "delegation",
+    supported: "Supported providers",
     everywhere: "Same everywhere",
     allProviders: "All {providers} providers, by domain",
     catalogLink: "Browse the full provider catalog",
