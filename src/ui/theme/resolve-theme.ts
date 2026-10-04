@@ -4,6 +4,7 @@ import { isSameRgb, mix, parseHex, type Rgb } from "./color/rgb.js";
 import { unreportedColors } from "./color/unreported-palette.js";
 import { BUILTIN_PALETTES } from "./builtin-themes.js";
 import {
+  adjustedRoles,
   enforceContrast,
   minTextRatio,
   quantizeToXterm256,
@@ -136,7 +137,7 @@ export function themeAvailability(input: ResolveInput): ThemeAvailability[] {
       ...(isUnpaintable && { reason: "depth-16" as const }),
       minTextRatio: report.minTextRatio,
       mode,
-      isCorrected: report.corrections.length > 0,
+      isCorrected: adjustedRoles(report.corrections).length > 0,
     };
   });
 }

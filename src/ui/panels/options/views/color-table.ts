@@ -1,12 +1,8 @@
 import type { HexColor } from "../../../../core/config/field-reader.js";
 import type { CustomColors } from "../../../settings/theme-section.js";
 import { toHex, worstRatio } from "../../../theme/color/rgb.js";
-import type { Correction } from "../../../theme/enforce-contrast.js";
-import {
-  CUSTOMIZABLE_TOKENS,
-  type ColorToken,
-  type CustomizableToken,
-} from "../../../theme/palette.js";
+import { adjustedRoles } from "../../../theme/enforce-contrast.js";
+import { CUSTOMIZABLE_TOKENS, type CustomizableToken } from "../../../theme/palette.js";
 import type { ResolvedTheme } from "../../../theme/resolve-theme.js";
 import {
   COLOR_EDITOR,
@@ -139,23 +135,9 @@ function ratioCell({ token, theme }: RoleCell): Segment {
   return seg(fit(`${formatRatioValue(correction.before)} → ${ratio} ⚠`, RATIO_WIDTH), "warning");
 }
 
-function isCustomizable(token: ColorToken): token is CustomizableToken {
-  return (CUSTOMIZABLE_TOKENS as readonly ColorToken[]).includes(token);
-}
-
-/** A correction of a colour the user can tune. */
-export type RoleCorrection = Correction & { readonly token: CustomizableToken };
-
-/** The tunable roles whose colour had to be moved to stay readable. */
-export function adjustedRoles(theme: ResolvedTheme): RoleCorrection[] {
-  return theme.report.corrections.filter((correction): correction is RoleCorrection =>
-    isCustomizable(correction.token),
-  );
-}
-
 /** The warning under the table when some colours had to be adjusted. */
 export function adjustedWarning(theme: ResolvedTheme, width: number): Line[] {
-  const count = adjustedRoles(theme).length;
+  const count = adjustedRoles(theme.report.corrections).length;
   if (count === 0) return [];
   const text = COLOR_EDITOR.corrected(count, theme.report.level);
   return [[], ...wrap(text, Math.max(1, width)).map((part): Line => [seg(part, "warning")])];

@@ -1,6 +1,7 @@
 import type { CustomColors, ThemeSettings } from "../../../settings/theme-section.js";
 import { fromOklch, toOklch, type Oklch } from "../../../theme/color/oklch.js";
 import { BLACK, parseHex, toHex, type Rgb } from "../../../theme/color/rgb.js";
+import { adjustedRoles } from "../../../theme/enforce-contrast.js";
 import {
   CUSTOMIZABLE_TOKENS,
   type CustomizableToken,
@@ -11,7 +12,7 @@ import type { KeyPress } from "../../../tui/screen-host.js";
 import { seg, wrap, type Line } from "../../../tui/styled-lines.js";
 import type { Viewport } from "../../panel.js";
 import type { OptionsControls, OptionsHost, OptionsView } from "../option-row.js";
-import { adjustedRoles, adjustedWarning, colorTableLines } from "./color-table.js";
+import { adjustedWarning, colorTableLines } from "./color-table.js";
 
 export interface ColorEditorDeps {
   readonly controls: OptionsControls;
@@ -175,7 +176,8 @@ export class ColorEditor implements OptionsView {
   /** `a`: every adjusted role keeps the colour it is painted with. */
   private keepAdjusted(): void {
     this.commitDraft();
-    const adjusted = adjustedRoles(this.#deps.host.appearance.resolved()).map(
+    const { corrections } = this.#deps.host.appearance.resolved().report;
+    const adjusted = adjustedRoles(corrections).map(
       (correction) => [correction.token, toHex(correction.applied)] as const,
     );
     if (adjusted.length === 0) return;

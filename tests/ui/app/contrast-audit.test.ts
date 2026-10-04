@@ -136,7 +136,7 @@ async function walkTheColours(audit: Audit): Promise<void> {
   for (let i = 0; i < "#RRGGBB".length; i++) menu.screen.mockInput.pressBackspace();
   await menu.screen.mockInput.typeText(hexOf(audit.ground()));
   await menu.press("enter");
-  await capture("colour editor, an unreadable accent adjusted", "ajustée(s) automatiquement");
+  await capture("colour editor, an unreadable accent adjusted", "automatiquement pour rester lisible");
   await escape(menu);
 }
 

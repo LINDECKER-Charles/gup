@@ -37,10 +37,12 @@ describe("contrastStatus", () => {
     expect(statusOf({})).toEqual({ text: CONTRAST_STATUS.pass("AA", 6.14), tone: "success" });
   });
 
-  it("counts the colours it had to adjust", () => {
+  it("counts the colours it had to adjust, the ones a user tunes", () => {
     const status = statusOf({ custom: { dark: { accent: "#0B0D13" } } });
     expect(status.tone).toBe("warning");
-    expect(status.text).toMatch(/^⚠ \d+ couleur\(s\) ajustée\(s\) · min\. \d+,\d:1$/);
+    expect(status.text).toMatch(/^⚠ 1 couleur ajustée · min\. \d+,\d:1$/);
+    const two = statusOf({ custom: { dark: { accent: "#0B0D13", success: "#0B0D13" } } });
+    expect(two.text).toMatch(/^⚠ 2 couleurs ajustées · /);
   });
 
   it("says when the contrast cannot be checked, or is still being detected", () => {

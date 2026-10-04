@@ -58,9 +58,12 @@ one every other screenshot of these docs shows):
 ## Choosing a theme
 
 In **Options**, the *Thème* row shows the theme in use and, as its hint, how
-readable it is on your terminal: `✔ AA · contraste min. 6,1:1`, `⚠ 2 couleur(s)
-ajustée(s) · min. 4,6:1`, or `? palette du terminal inconnue — contraste non
-vérifiable`. `entrée` opens the theme picker:
+readable it is on your terminal: `✔ AA · contraste min. 6,1:1`, `⚠ 2 couleurs
+ajustées · min. 4,6:1`, or `? palette du terminal inconnue — contraste non
+vérifiable`. The count is of the colours you can set in the colour editor —
+the same number the picker and the editor give; the colours drawn from them
+(the title bar's fill, the text on it, the focus border) follow without being
+counted again. `entrée` opens the theme picker:
 
 ![Options, theme picker: every built-in theme with its lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
 
@@ -108,8 +111,8 @@ belong to that theme: an accent tuned for `dark` does not change `light`.
 A colour you type is saved at once; nudges with the arrows and `+` `-` are
 saved when you move to another role or leave the editor. **However you set
 them, what is painted stays readable**: the setting keeps your choice, the screen
-shows the adjusted colour, and the editor tells you so (`⚠ 1 couleur(s)
-ajustée(s) automatiquement pour rester lisible (AA)`).
+shows the adjusted colour, and the editor tells you so (`⚠ 1 couleur ajustée
+automatiquement pour rester lisible (AA)`).
 
 The editor is unavailable — and the row says why — when there is nothing to
 tune: `monochrome`, `NO_COLOR`, a 16-colour terminal, or the `terminal` theme
