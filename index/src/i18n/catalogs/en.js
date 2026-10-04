@@ -268,7 +268,9 @@ export default {
         q: "How do I install gup?",
         a:
           "`{installCommand}`, then `gup doctor` to see which providers are detected. " +
-          "Requires Node.js {nodeEngine} or later.",
+          "Requires Node.js {nodeEngine} or later. `--allow-scripts=node-pty` approves the " +
+          "install scripts of node-pty, which powers the embedded terminal: without it, npm 11 " +
+          "warns and npm 12 skips them.",
       },
       ci: {
         q: "Can I use gup in CI?",

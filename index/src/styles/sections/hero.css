@@ -88,7 +88,11 @@
   color: var(--fg-dim);
 }
 
-/* The install command box, shared with the install section. */
+/* The install command box, shared with the install section. The line asks
+   for the command's full one-line width, so the copy button wraps under it
+   before the command does; only a box narrower than the command wraps it,
+   between words (`.code-word`), the `$` staying on the first line. The scroll
+   is a last resort, for a single word wider than the box. */
 .cmd {
   display: flex;
   flex-wrap: wrap;
@@ -97,10 +101,12 @@
   max-inline-size: 100%;
 }
 .cmd-line {
-  display: flex;
-  flex: 1 1 340px;
-  align-items: center;
-  gap: 12px;
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  align-content: center;
+  column-gap: 12px;
   min-inline-size: 0;
   padding: 10px 16px;
   border: 1px solid var(--line-strong);
@@ -113,7 +119,6 @@
 .cmd-line code {
   font-size: inherit;
   color: var(--fg);
-  white-space: nowrap;
   user-select: all;
 }
 .cmd-prompt {

@@ -3,16 +3,16 @@
  * substitution itself.
  *
  * llms.txt, llms-full.txt, robots.txt and site.webmanifest state the same
- * handful of facts as the page: the published version, the provider count
- * (in total and per system), the minimum Node, when the site last changed,
- * and which languages it is available in. They are written once, here, from
- * src/data/facts.js (itself generated from the repository), the locale
- * registry and the English catalog — never retyped by hand.
+ * handful of facts as the page: the published version, the install command,
+ * the provider count (in total and per system), the minimum Node, when the
+ * site last changed, and which languages it is available in. They are written
+ * once, here, from src/data/facts.js (itself generated from the repository),
+ * the locale registry and the English catalog — never retyped by hand.
  * scripts/stamp-static.mjs applies them to the built copies.
  */
 import { CATALOGS } from "../build/i18n/load-catalogs.mjs";
 import { LINKS } from "../src/data/links.js";
-import { facts, providersByDomain, providersBySystem } from "../src/data/facts.js";
+import { facts, installCommand, providersByDomain, providersBySystem } from "../src/data/facts.js";
 import { LOCALES } from "../src/i18n/locales.js";
 import { localeHref } from "../src/i18n/locale-href.js";
 
@@ -45,6 +45,7 @@ export function buildTokens(modifiedIso) {
     "@@PROVIDERS_LINUX@@": String(providersBySystem.linux),
     "@@VERSION@@": facts.version,
     "@@PACKAGE@@": facts.packageName,
+    "@@INSTALL_COMMAND@@": installCommand,
     "@@NODE@@": facts.nodeEngine,
     "@@NODE_MAJOR@@": String(facts.nodeMajor),
     "@@MODIFIED@@": modifiedIso,

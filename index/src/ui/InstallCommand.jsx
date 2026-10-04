@@ -1,9 +1,11 @@
 /**
  * The `$ npm install -g …` box with its copy button, shared by the hero and
- * the install section. The command scrolls inside its own box on narrow
- * screens — never the page — and stays left-to-right in every locale.
+ * the install section. The command stays left-to-right in every locale and on
+ * one line wherever it fits; a narrower box wraps it between its words, so
+ * every flag stays in sight without scrolling.
  */
 import { installCommand } from "../data/facts.js";
+import { CodeWords } from "./CodeWords.jsx";
 import { CopyButton } from "./CopyButton.jsx";
 
 export function InstallCommand() {
@@ -14,7 +16,7 @@ export function InstallCommand() {
           $
         </span>
         <code dir="ltr" translate="no">
-          {installCommand}
+          <CodeWords text={installCommand} />
         </code>
       </p>
       <CopyButton />

@@ -22,7 +22,7 @@ npm run og          # re-render the social cards (committed PNGs)
 
 ```mermaid
 flowchart LR
-  F["root package.json<br/>src/core/registry.ts<br/>registered providers"] -->|scripts/sync-facts.mjs| FA["src/data/facts.js"]
+  F["root package.json<br/>README.md<br/>src/core/registry.ts<br/>registered providers"] -->|scripts/sync-facts.mjs| FA["src/data/facts.js"]
   C["src/i18n/catalogs/&lt;id&gt;.js"] --> R["build/i18n/resolve-messages.mjs"]
   FA --> P["build/page-context.mjs<br/>one PageContext per locale"]
   R --> P
@@ -41,7 +41,13 @@ flowchart LR
   a stale number. The reader walks `ALL_PROVIDERS`, never the filesystem (unregistered provider
   files do not count), takes each provider's one-line `readonly platforms = PLATFORMS.<set>;`
   declaration (none: every system), and fails the build on a set or a declaration form it
-  cannot read rather than counting the provider everywhere.
+  cannot read rather than counting the provider everywhere. The install command is the
+  README's, verbatim and flags included: the first line of the fenced block under its
+  `## Install` heading (`build/facts/read-install-command.mjs`), which must start with
+  `npm install -g <package name>` or the build fails. Every place the site gives the command —
+  hero, install section, FAQ, llms texts, 404, and the social cards when `npm run og`
+  re-renders them — reads it from there, and wraps it between words only
+  (`src/ui/CodeWords.jsx`), never after a flag's hyphen.
 - **Messages are resolved at build time.** Placeholders, plural forms (`Intl.PluralRules`) and
   markup validation run in Node. Each page embeds its resolved messages in a
   `<script id="gup-boot" type="application/json">` block and the client hydrates from exactly
@@ -254,9 +260,9 @@ reads "code of conduct" and "support" or "help".
 |---|---|
 | `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda, Arabic punctuation), Arabic count agreement. |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
-| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, every non-Latin script rendering its sans, display and mono faces from its own fonts, the terminal demo held to the CLI's sources (see "The terminal demo"), every `gup` command and flag the page, its examples and the two llms texts cite registered by the CLI's commander declarations (flags of the tools gup drives, such as Homebrew's `--greedy`, are named in the test), every provider id llms.txt lists under a category named after a domain (`Cloud CLIs`, `Dev CLIs`…) belonging to that domain, and the English hero lead and social description saying updates run in the embedded terminal, never "without ever leaving" the interface (the UAC window and the no-PTY fallback are exceptions). |
-| `tests/facts/*` | The registry reader: registered providers only, per-system counts from the `platforms` declarations, refusal of an unknown set, an unreadable declaration or a count mismatch. |
-| `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no letter-spacing on Arabic, Indic or Han text, no-JS and reduced-motion rendering, overflow at 1440/820/390 px. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, language menu names on the right, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu (each name tagged with its own language, all starting on one edge). |
+| `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, every non-Latin script rendering its sans, display and mono faces from its own fonts, the terminal demo held to the CLI's sources (see "The terminal demo"), every `gup` command and flag the page, its examples and the two llms texts cite registered by the CLI's commander declarations (flags of the tools gup drives, such as Homebrew's `--greedy` and npm's `--allow-scripts`, are named in the test), every provider id llms.txt lists under a category named after a domain (`Cloud CLIs`, `Dev CLIs`…) belonging to that domain, and the English hero lead and social description saying updates run in the embedded terminal, never "without ever leaving" the interface (the UAC window and the no-PTY fallback are exceptions). |
+| `tests/facts/*` | The registry reader: registered providers only, per-system counts from the `platforms` declarations, refusal of an unknown set, an unreadable declaration or a count mismatch. The README reader: the command under `## Install`, flags kept, LF or CRLF, refusal of a missing command or of one that does not install the package. |
+| `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, CSP, clean console (hydration and CSP errors included), heading outline, skip link, no letter-spacing on Arabic, Indic or Han text, no-JS and reduced-motion rendering, overflow at 1440/820/390 px, and at each width the install command whole in both its boxes — unscrolled, inside its card. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, language menu names on the right, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu (each name tagged with its own language, all starting on one edge). |
 | `npm run lhci` | Lighthouse mobile ≥ 0.95 on performance (best of 3), accessibility, best practices and SEO (median of 3). |
 
 Budgets: HTML ≤ 30 KB gzipped per locale, JavaScript ≤ 62 KB, CSS ≤ 12 KB, preloaded fonts

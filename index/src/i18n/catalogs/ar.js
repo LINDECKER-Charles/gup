@@ -297,7 +297,9 @@ export default {
         q: "كيف أثبّت gup؟",
         a:
           "نفّذ `{installCommand}`، ثم `gup doctor` لمعرفة وحدات provider المكتشَفة. يتطلب " +
-          "Node.js {nodeEngine} أو أحدث.",
+          "Node.js {nodeEngine} أو أحدث. يسمح `--allow-scripts=node-pty` بتشغيل سكربتات " +
+          "تثبيت node-pty، الذي تعمل به الطرفية المدمجة؛ ومن دونه يُصدر npm 11 تحذيرًا، " +
+          "ويتخطى npm 12 هذه السكربتات.",
       },
       ci: {
         q: "هل يمكن استخدام gup في CI؟",

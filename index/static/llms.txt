@@ -12,18 +12,22 @@
 > MIT, version @@VERSION@@, Node.js >= @@NODE@@. Windows, macOS and Linux.
 
 Values in this file are generated from the repository at build time
-(package.json version, the ALL_PROVIDERS count in src/core/registry.ts and the
-platforms each registered provider declares), so they cannot drift from the
-shipped CLI. Last content change: @@MODIFIED@@.
+(package.json version, the README's install command, the ALL_PROVIDERS count in
+src/core/registry.ts and the platforms each registered provider declares), so
+they cannot drift from the shipped CLI. Last content change: @@MODIFIED@@.
 
 ## Install
 
 ```
-npm install -g @@PACKAGE@@
+@@INSTALL_COMMAND@@
 gup doctor                # detected providers + install hints for the rest
 gup list --fast           # outdated packages, skipping the slow providers
 gup update --all -y       # CI-safe: everything, no prompt
 ```
+
+`--allow-scripts=node-pty` approves the install scripts of node-pty, the
+optional native dependency behind the embedded terminal pane: without it, npm 11
+warns and npm 12 skips them.
 
 ## Key facts
 
