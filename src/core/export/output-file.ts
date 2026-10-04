@@ -1,5 +1,6 @@
 import { lstat, mkdir, readdir, unlink, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { localized } from "../i18n/localized.js";
 import { stateDir } from "../state/app-dirs.js";
 
 /**
@@ -26,6 +27,20 @@ const FILE_MODE = 0o600;
 const OUTPUT_NAME =
   /^gup-(report|history|diagnostic)-\d{8}-\d{6}(?:-\d)?\.(?:html|json|csv|txt|zip)$/;
 
+/** Why an export could not be written, as the user reads it: the commands print the message. */
+const OUTPUT_ERRORS = localized({
+  en: {
+    exists: (path: string) => `${path} already exists`,
+    noReportsDir: "no reports directory on this platform",
+    tooManyExports: (name: string) => `${name}: too many exports in the same second`,
+  },
+  fr: {
+    exists: (path) => `${path} existe déjà`,
+    noReportsDir: "aucun dossier de rapports sur cette plateforme",
+    tooManyExports: (name) => `${name} : trop d'exports dans la même seconde`,
+  },
+});
+
 export interface OutputRequest {
   readonly kind: OutputKind;
   readonly extension: OutputExtension;
@@ -40,7 +55,7 @@ export interface OutputRequest {
 /** `--out` names a file that exists, and `--force` was not given. */
 export class OutputExistsError extends Error {
   constructor(readonly path: string) {
-    super(`${path} existe déjà`);
+    super(OUTPUT_ERRORS.exists(path));
     this.name = "OutputExistsError";
   }
 }
@@ -49,7 +64,7 @@ export class OutputExistsError extends Error {
 export async function writeOutputFile(request: OutputRequest): Promise<string> {
   if (request.out !== undefined) return writeExplicit(request.out, request);
   const dir = stateDir("reports");
-  if (dir === null) throw new Error("aucun dossier de rapports sur cette plateforme");
+  if (dir === null) throw new Error(OUTPUT_ERRORS.noReportsDir);
   await mkdir(dir, { recursive: true, mode: DIR_MODE });
   const path = await writeDated(dir, request);
   await pruneKind(dir, request.kind);
@@ -89,7 +104,7 @@ async function writeDated(dir: string, request: OutputRequest): Promise<string> 
       if (!isCode(error, "EEXIST")) throw error;
     }
   }
-  throw new Error(`${name} : trop d'exports dans la même seconde`);
+  throw new Error(OUTPUT_ERRORS.tooManyExports(name));
 }
 
 /**

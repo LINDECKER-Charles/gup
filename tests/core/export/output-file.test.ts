@@ -8,6 +8,7 @@ import {
   RETAINED_PER_KIND,
   writeOutputFile,
 } from "../../../src/core/export/output-file.js";
+import { useLocale } from "../../support/locale.js";
 
 let dir: string;
 const savedReportDir = process.env["GUP_REPORT_DIR"];
@@ -70,6 +71,19 @@ describe("writeOutputFile", () => {
     expect(names).not.toContain("gup-diagnostic-20261001-000000.zip");
     expect(names).toContain("gup-history-20261003-142205.csv");
     expect(names).toContain("gup-diagnostic-notes.txt");
+  });
+});
+
+describe("writeOutputFile in English", () => {
+  useLocale("en");
+
+  it("says in English that --out names a file that exists", async () => {
+    const out = join(dir, "mine.zip");
+    writeFileSync(out, "precious");
+
+    await expect(writeOutputFile({ kind: "diagnostic", extension: "zip", content: "new", out })).rejects.toThrow(
+      `${out} already exists`,
+    );
   });
 });
 
