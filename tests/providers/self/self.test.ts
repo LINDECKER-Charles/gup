@@ -3,6 +3,7 @@ import { SelfProvider } from "../../../src/providers/self.js";
 import { system } from "../../support/system/fake-system.js";
 import { githubLatest, npmLatestRoute, pypiRoute } from "../../support/system/releases.js";
 import { installArgvs, installs, probeArgvs } from "../../support/system/trace.js";
+import type { SimPlatform } from "../../support/system/types.js";
 import {
   CHOCO_MACHINE,
   PIP_SELF_UPGRADE,
@@ -76,6 +77,18 @@ describe("SelfProvider.listOutdated", () => {
       });
       await expect(new SelfProvider().listOutdated()).resolves.toEqual([]);
     }
+  });
+});
+
+describe("SelfProvider targets per platform", () => {
+  it.each<[SimPlatform, Readonly<Record<string, string>>]>([
+    ["linux", { winget: "/usr/local/bin/winget", scoop: "/usr/local/bin/scoop", choco: "/usr/local/bin/choco" }],
+    ["win32", { brew: "C:\\tools\\brew.cmd" }],
+  ])("ignores the package managers foreign to %s, whatever answers on PATH", async (platform, bin) => {
+    await system.load({ platform, bin });
+    await expect(new SelfProvider().isAvailable()).resolves.toBe(false);
+    await expect(new SelfProvider().listOutdated()).resolves.toEqual([]);
+    expect(probeArgvs()).toEqual([]);
   });
 });
 

@@ -62,10 +62,11 @@ Deliberate choices:
   Windows through Git Bash or a manual install, and their detection decides.
 - `pyenv` / `pyenv-win` and `nvm` / `nvm-windows` share a binary name; the
   sets give each binary to exactly one provider per OS.
-- The `self` meta-provider filters its targets with the same predicate (the
-  `self:brew` target uses `PLATFORMS.notWindows`, like `brew`). Its `winget`,
-  `scoop` and `choco` self-update targets are not restricted yet: on macOS and
-  Linux they still look for those binaries on the `PATH`.
+- The `self` meta-provider filters its targets with the same predicate and
+  the same sets as the matching providers: `self:brew` uses
+  `PLATFORMS.notWindows`; `self:winget`, `self:scoop` and `self:choco` use
+  `PLATFORMS.windows`, so a shim of those names on a macOS/Linux `PATH` is
+  never asked for its version.
 
 The lists are frozen by `tests/core/platform/provider-platforms.test.ts`:
 changing a set means changing that test on purpose. Adding a provider: see

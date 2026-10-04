@@ -227,6 +227,9 @@ const TARGETS: SelfTarget[] = [
     id: "winget",
     displayName: "Winget",
     binary: "winget",
+    // Windows package managers, like their providers: a POSIX shim of the
+    // same name is never asked for its version.
+    platforms: PLATFORMS.windows,
     manual: true,
     manualMessage:
       "Mise à jour via le Microsoft Store (App Installer) ou https://github.com/microsoft/winget-cli/releases",
@@ -248,6 +251,7 @@ const TARGETS: SelfTarget[] = [
     id: "scoop",
     displayName: "Scoop",
     binary: "scoop",
+    platforms: PLATFORMS.windows,
     current: async () => {
       const out = await runStdout("scoop", ["--version"]);
       const after = out.split(/Current Scoop version:/i)[1] ?? out;
@@ -266,6 +270,7 @@ const TARGETS: SelfTarget[] = [
     id: "choco",
     displayName: "Chocolatey",
     binary: "choco",
+    platforms: PLATFORMS.windows,
     current: async () => parseFirstSemver(await runStdout("choco", ["--version"])),
     latest: async () => fetchGitHubReleaseLatest("chocolatey/choco"),
     update: async () => {
