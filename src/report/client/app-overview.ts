@@ -101,9 +101,12 @@ function activityCard() {
   const range = periodRange();
   const earliest = mondayOf(range.end) - (OVERVIEW_WEEKS - 1) * 7;
   const recent = { start: Math.max(range.start, earliest), end: range.end };
+  const intro = recent.start > range.start
+    ? "overview.activityIntroRecent"
+    : "overview.activityIntro";
   const describe = (index) => [fmtLongDay(index), daySummary(index)];
   return card(t("overview.activity"), [
-    h("p", { class: "card-intro" }, t("overview.activityIntro")),
+    h("p", { class: "card-intro" }, t(intro)),
     heatGrid(recent, (cell, index) => {
       cell.classList.add("cell-link");
       withTooltip(cell, () => describe(index));
