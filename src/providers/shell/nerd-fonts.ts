@@ -20,20 +20,19 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 /**
  * Nerd Fonts (https://github.com/ryanoasis/nerd-fonts).
  *
- * Stratégie 100 % user-scope :
- *  - Détection : scan `%LOCALAPPDATA%\Microsoft\Windows\Fonts` pour les TTF/OTF
- *    contenant "NerdFont" → groupage par famille (zip d'origine).
- *  - Source de vérité version : lockfile `%LOCALAPPDATA%\gup\nerd-fonts.json`
- *    (`{ "<zipName>": "<tag>" }`). Sans entrée, on affiche "?" et la famille
- *    est considérée comme à mettre à jour (re-pin sur la release courante).
- *  - Latest : tag de la release la plus récente de `ryanoasis/nerd-fonts`.
- *  - Update : télécharge `<zipName>.zip` de la release, extrait, copie
- *    `*NerdFont*.ttf/.otf` dans le dossier fonts utilisateur, enregistre
- *    chaque police dans HKCU. Met à jour le lockfile.
+ * A 100 % user-scope strategy:
+ *  - Detection: scan `%LOCALAPPDATA%\Microsoft\Windows\Fonts` for the TTF/OTF
+ *    files containing "NerdFont" → grouped by family (the original zip).
+ *  - Version source of truth: the lockfile `%LOCALAPPDATA%\gup\nerd-fonts.json`
+ *    (`{ "<zipName>": "<tag>" }`). Without an entry, "?" is shown and the
+ *    family counts as outdated (re-pinned on the current release).
+ *  - Latest: the tag of the newest `ryanoasis/nerd-fonts` release.
+ *  - Update: downloads the release's `<zipName>.zip`, extracts it, copies
+ *    `*NerdFont*.ttf/.otf` into the user fonts folder, registers each font
+ *    in HKCU, and updates the lockfile.
  *
- * Bootstrap : `gup update nerd-fonts:<zipName>` fonctionne même si aucune
- * police n'est installée, donc l'utilisateur peut installer p.ex. FiraCode
- * sans étape préalable.
+ * Bootstrap: `gup update nerd-fonts:<zipName>` works even when no font is
+ * installed, so the user can install, say, FiraCode with no prior step.
  */
 export class NerdFontsProvider implements Provider {
   readonly id = "nerd-fonts";
@@ -206,7 +205,7 @@ async function copyFontsToUserDir(
     const fileName = entry.entryName.split(/[\\/]/).pop()!;
     const tmpFile = join(tmpRoot, fileName);
     await writeFile(tmpFile, entry.getData());
-    // Destination sous `%LOCALAPPDATA%` : chemin Windows, cf. plus bas.
+    // Destination under `%LOCALAPPDATA%`: a Windows path, see below.
     const dest = winPath.join(userDir, fileName);
     await copyFile(tmpFile, dest);
     installed.push(dest);
@@ -223,10 +222,9 @@ async function pinFamilyVersion(packageId: string, latest: string): Promise<void
 // ---------------------------------------------------------------------------
 // helpers
 
-// Ces trois chemins sont ancrés sur `%LOCALAPPDATA%` : ce sont des chemins
-// Windows, quel que soit l'hôte qui exécute le code (les tests mockent
-// `process.platform`). D'où `winPath.join` et non `join`, dont le séparateur
-// suit l'hôte.
+// These three paths are anchored on `%LOCALAPPDATA%`: they are Windows paths
+// whatever host runs the code (the tests mock `process.platform`). Hence
+// `winPath.join` and not `join`, whose separator follows the host.
 function userFontsDir(): string {
   const local = process.env["LOCALAPPDATA"] ?? "";
   return local ? winPath.join(local, "Microsoft", "Windows", "Fonts") : "";
@@ -242,8 +240,8 @@ function lockfilePath(): string {
 }
 
 /**
- * Mapping prefix-fichier → nom de zip d'origine pour les familles dont le
- * nom de police ne matche pas le nom d'archive. Étendre au besoin.
+ * File prefix → original zip name, for the families whose font name does
+ * not match the archive name. Extend as needed.
  */
 const FAMILY_ALIASES: Record<string, string> = {
   CaskaydiaCove: "CascadiaCode",
@@ -314,18 +312,18 @@ async function writeLockfile(data: Record<string, string>): Promise<void> {
 }
 
 /**
- * Restreint au sous-ensemble de caractères qu'on s'attend à voir dans un nom
- * d'asset Nerd Fonts (`FiraCode`, `0xProto`, `Go-Mono`, `iA-Writer`…). Empêche
- * toute injection dans l'URL ou le chemin du fichier zip téléchargé.
+ * Restricted to the characters a Nerd Fonts asset name is expected to hold
+ * (`FiraCode`, `0xProto`, `Go-Mono`, `iA-Writer`…). Prevents any injection
+ * into the URL or the path of the downloaded zip file.
  */
 function isSafeFamilyName(name: string): boolean {
   return /^[A-Za-z0-9][A-Za-z0-9_.+-]{0,63}$/.test(name);
 }
 
 /**
- * Enregistre chaque police dans `HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts`.
- * Win11/10 reconnaît automatiquement ces entrées comme polices per-user — pas
- * besoin de UAC ni d'écrire dans `HKLM`.
+ * Registers each font under `HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts`.
+ * Windows 10/11 recognise these entries as per-user fonts on their own — no
+ * UAC needed, nor any write to `HKLM`.
  */
 const FONTS_KEY_PARENT = String.raw`HKCU:\Software\Microsoft\Windows NT\CurrentVersion`;
 const FONTS_KEY = `${FONTS_KEY_PARENT}\\Fonts`;

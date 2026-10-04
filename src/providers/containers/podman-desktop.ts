@@ -66,8 +66,8 @@ export class PodmanDesktopProvider implements Provider {
 
 function podmanDesktopExe(): string | null {
   const local = process.env["LOCALAPPDATA"] ?? "";
-  // `winPath.join` : ces chemins restent des chemins Windows quelle que soit
-  // la machine qui exécute le code (les tests simulent win32 depuis POSIX).
+  // `winPath.join`: these stay Windows paths whatever machine runs the code
+  // (the tests simulate win32 from POSIX).
   const candidates = [
     local && winPath.join(local, "Programs", "podman-desktop", "Podman Desktop.exe"),
     process.env["ProgramFiles"]

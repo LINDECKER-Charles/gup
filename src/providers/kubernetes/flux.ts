@@ -14,9 +14,9 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class FluxProvider implements Provider {
   readonly id = "flux";
   readonly displayName = "Flux CLI";
-  // Attention : la formule homebrew-core `flux` est le langage de requête
-  // d'InfluxData, pas FluxCD. Le CLI GitOps ne vit que dans fluxcd/tap, d'où
-  // le nom pleinement qualifié partout ci-dessous.
+  // Careful: the homebrew-core `flux` formula is InfluxData's query language,
+  // not FluxCD. The GitOps CLI only lives in fluxcd/tap, hence the fully
+  // qualified name everywhere below.
   readonly installHint = pickInstallHint({
     win32: "winget install FluxCD.Flux",
     fallback: "brew install fluxcd/tap/flux",

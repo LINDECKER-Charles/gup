@@ -14,8 +14,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class YarnGlobalProvider implements Provider {
   readonly id = "yarn-g";
   readonly displayName = "yarn (global)";
-  // La formule Homebrew `yarn` est toujours Yarn classic (1.x), soit exactement
-  // le périmètre de ce provider.
+  // The Homebrew `yarn` formula is still Yarn classic (1.x), exactly this
+  // provider's scope.
   readonly installHint = pickInstallHint({
     win32: "npm install -g yarn  (or corepack enable)",
     fallback: "brew install yarn  (ou corepack enable)",

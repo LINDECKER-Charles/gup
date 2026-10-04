@@ -59,7 +59,7 @@ export class TeaProvider implements Provider {
       binary: "tea",
       packageIds: {
         scoop: "tea",
-        // Formule homebrew-core `tea` = le CLI Gitea (gitea.com/gitea/tea).
+        // The homebrew-core `tea` formula is the Gitea CLI (gitea.com/gitea/tea).
         brew: "tea",
       },
       manualMessage:

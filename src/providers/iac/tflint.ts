@@ -15,8 +15,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class TFLintProvider implements Provider {
   readonly id = "tflint";
   readonly displayName = "TFLint";
-  // Pas de formule "tflint" dans homebrew-core : on renvoie vers la doc
-  // amont plutôt que d'annoncer une commande brew qui n'existe pas.
+  // No "tflint" formula in homebrew-core: point to the upstream docs rather
+  // than announce a brew command that does not exist.
   readonly installHint = pickInstallHint({
     win32: "winget install TerraformLinters.tflint",
     fallback: "https://github.com/terraform-linters/tflint#installation",
@@ -58,10 +58,10 @@ export class TFLintProvider implements Provider {
         scoop: "tflint",
         choco: "tflint",
         winget: "TerraformLinters.tflint",
-        // Volontairement pas de `brew`: aucune formule "tflint" n'existe dans
-        // homebrew-core et le tap amont n'a pas pu être vérifié. Un id faux
-        // ferait upgrader autre chose ; sans id on retombe sur le message
-        // manuel, ce qui est le comportement sûr.
+        // Deliberately no `brew`: no "tflint" formula exists in homebrew-core
+        // and the upstream tap could not be verified. A wrong id would upgrade
+        // something else; without an id the manual message applies, which is
+        // the safe behaviour.
       },
       manualMessage:
         "Télécharger https://github.com/terraform-linters/tflint/releases et remplacer tflint.exe",

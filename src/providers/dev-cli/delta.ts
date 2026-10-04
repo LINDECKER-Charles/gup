@@ -14,7 +14,7 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class DeltaProvider implements Provider {
   readonly id = "delta";
   readonly displayName = "git-delta";
-  // Le binaire s'appelle `delta`, la formule Homebrew `git-delta`.
+  // The binary is called `delta`, the Homebrew formula `git-delta`.
   readonly installHint = pickInstallHint({
     win32: "winget install dandavison.delta",
     fallback: "brew install git-delta",

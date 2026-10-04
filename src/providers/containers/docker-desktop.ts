@@ -69,9 +69,9 @@ export class DockerDesktopProvider implements Provider {
 }
 
 function dockerDesktopExe(): string | null {
-  // `winPath.join` plutôt que `join` : ces chemins sont des chemins Windows
-  // quelle que soit la machine qui exécute le code, et les tests simulent
-  // win32 depuis un hôte POSIX où `join` produirait des slashes.
+  // `winPath.join` rather than `join`: these are Windows paths whatever
+  // machine runs the code, and the tests simulate win32 from a POSIX host,
+  // where `join` would produce forward slashes.
   const candidates = [
     process.env["ProgramFiles"]
       ? winPath.join(

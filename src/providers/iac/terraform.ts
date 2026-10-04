@@ -24,8 +24,8 @@ interface HashicorpReleaseJson {
 export class TerraformProvider implements Provider {
   readonly id = "terraform";
   readonly displayName = "Terraform";
-  // Les outils HashiCorp ont quitté homebrew-core : ils ne vivent plus que
-  // dans le tap hashicorp/tap, d'où le `brew tap` explicite dans le hint.
+  // HashiCorp tools left homebrew-core: they now live only in the
+  // hashicorp/tap tap, hence the explicit `brew tap` in the hint.
   readonly installHint = pickInstallHint({
     win32: "winget install HashiCorp.Terraform",
     fallback: "brew tap hashicorp/tap && brew install terraform",
@@ -72,8 +72,8 @@ export class TerraformProvider implements Provider {
         scoop: "terraform",
         choco: "terraform",
         winget: "HashiCorp.Terraform",
-        // Formule du tap hashicorp/tap : une fois installée, le nom court
-        // suffit à `brew upgrade`.
+        // Formula from the hashicorp/tap tap: once installed, the short name
+        // is enough for `brew upgrade`.
         brew: "terraform",
       },
       manualMessage:

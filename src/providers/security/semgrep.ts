@@ -20,9 +20,9 @@ interface PypiJson {
 export class SemgrepProvider implements Provider {
   readonly id = "semgrep";
   readonly displayName = "Semgrep";
-  // Hors Windows, `pip install` vise le plus souvent un Python « externally
-  // managed » (PEP 668) qui refuse l'install : la formule Homebrew est la voie
-  // qui marche du premier coup.
+  // Outside Windows, `pip install` usually targets an "externally managed"
+  // Python (PEP 668) that refuses the install: the Homebrew formula is the
+  // route that works the first time.
   readonly installHint = pickInstallHint({
     win32: "pip install semgrep",
     fallback: "brew install semgrep",
@@ -99,9 +99,9 @@ async function fetchPypiLatest(pkg: string): Promise<string | null> {
 async function pythonForSemgrep(): Promise<string | null> {
   const bin = await whichFirst("semgrep");
   if (!bin) return null;
-  // Le layout ciblé décide de la saveur de chemin, pas le séparateur de l'hôte :
-  // `C:\…\Scripts\semgrep.exe` reste un chemin Windows même analysé depuis un
-  // runner POSIX (cas des tests qui mockent `process.platform`).
+  // The targeted layout decides the path flavour, not the host's separator:
+  // `C:\…\Scripts\semgrep.exe` stays a Windows path even when parsed on a
+  // POSIX runner (the tests that mock `process.platform`).
   const isWindows = process.platform === "win32";
   const p = isWindows ? winPath : posixPath;
   const sameDir = p.dirname(bin);

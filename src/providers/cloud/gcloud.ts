@@ -18,8 +18,8 @@ interface GcloudComponentJson {
 export class GcloudProvider implements Provider {
   readonly id = "gcloud";
   readonly displayName = "gcloud components";
-  // Le SDK est distribué en cask (l'ancien token `google-cloud-sdk` a été
-  // renommé `gcloud-cli`), jamais en formule.
+  // The SDK ships as a cask (the old `google-cloud-sdk` token was renamed
+  // `gcloud-cli`), never as a formula.
   readonly installHint = pickInstallHint({
     win32: "https://cloud.google.com/sdk/docs/install",
     fallback: "brew install --cask gcloud-cli",

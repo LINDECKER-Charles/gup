@@ -14,8 +14,8 @@ import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.
 export class WindsurfExtProvider implements Provider {
   readonly id = "windsurf-ext";
   readonly displayName = "Windsurf extensions";
-  // Pas de cask Homebrew connu pour Windsurf : on garde l'URL amont et on
-  // rappelle la palette, seule à poser le binaire `windsurf` dans le PATH.
+  // No known Homebrew cask for Windsurf: keep the upstream URL and point to
+  // the palette, the only thing that puts the `windsurf` binary on the PATH.
   readonly installHint = pickInstallHint({
     win32: "https://codeium.com/windsurf",
     darwin:
