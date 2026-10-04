@@ -64,6 +64,8 @@ const ROW_LEAD = CURSOR.length + MARGIN.length;
 const GAP = 1;
 /** Narrowest the name and the recurrence get on a panel too narrow for them. */
 const MIN_TEXT_WIDTH = 8;
+/** The last run told by its mark alone (`✔`, `◐`, `✖`, `—`): the details give its words. */
+const LAST_MARK_WIDTH = 1;
 const PROVIDER_WIDTH = 14;
 const PACKAGE_WIDTH = 20;
 
@@ -117,21 +119,24 @@ function healthTone(health: TriggerHealth): Tone {
 
 /**
  * Each column as wide as what it holds (its title at least). When they do
- * not all fit, the count and the next run go — the details under the table
- * give the next run — and then the widest column shrinks first, so a long
- * recurrence is not cut while the last run keeps room it does not use.
+ * not all fit, the count and the next run go, then the last run keeps only
+ * its mark — the details under the table give both in full — and only then
+ * does the wider of the name and the recurrence shrink: on an 80-column
+ * terminal a recurrence keeps its time (`le 15 de chaque mois à 09:00`).
  */
 function columnsFor(context: ListRenderContext): Columns {
   const natural = naturalWidths(context);
   const full: Columns = { ...natural, count: LIST_HEADERS.targets.length };
   if (tableWidth(full) <= context.width) return full;
-  const room = context.width - ROW_LEAD - 2 * GAP;
-  const [name = 0, recurrence = 0, last = 0] = shrinkWidest(
-    [natural.name, natural.recurrence, natural.last],
-    [MIN_TEXT_WIDTH, MIN_TEXT_WIDTH, LIST_HEADERS.last.length],
+  const narrow: Columns = { ...natural, count: 0, next: 0 };
+  if (tableWidth(narrow) <= context.width) return narrow;
+  const room = context.width - ROW_LEAD - 2 * GAP - LAST_MARK_WIDTH;
+  const [name = 0, recurrence = 0] = shrinkWidest(
+    [natural.name, natural.recurrence],
+    [MIN_TEXT_WIDTH, MIN_TEXT_WIDTH],
     room,
   );
-  return { name, recurrence, count: 0, next: 0, last };
+  return { name, recurrence, count: 0, next: 0, last: LAST_MARK_WIDTH };
 }
 
 /** The width each text column needs to show every schedule whole. */
@@ -183,9 +188,15 @@ function headerLine(columns: Columns): Line {
     fit(LIST_HEADERS.recurrence, columns.recurrence),
     ...(columns.count > 0 ? [LIST_HEADERS.targets.padStart(columns.count)] : []),
     ...(columns.next > 0 ? [fit(LIST_HEADERS.next, columns.next)] : []),
-    LIST_HEADERS.last,
+    // A column of marks has no room for its title.
+    ...(columns.last > LAST_MARK_WIDTH ? [LIST_HEADERS.last] : []),
   ];
   return [seg(cells.join(" "), "muted")];
+}
+
+/** The last run in its column: its words, or its mark alone in a column of marks. */
+function lastRunCell(label: string, width: number): string {
+  return width > LAST_MARK_WIDTH ? fit(label, width) : ([...label][0] ?? "");
 }
 
 function rowLine(
@@ -204,7 +215,7 @@ function rowLine(
     seg(`${fit(recurrenceLabel(schedule.recurrence), columns.recurrence)} `),
     ...(columns.count > 0 ? [seg(`${count} `, "muted")] : []),
     ...(columns.next > 0 ? [seg(`${fit(nextRun(schedule, context.now), columns.next)} `)] : []),
-    seg(fit(runStatusLabel(lastRun), columns.last), lastTone),
+    seg(lastRunCell(runStatusLabel(lastRun), columns.last), lastTone),
   ];
 }
 

@@ -154,8 +154,11 @@ The first line is the trigger's state, as in
 table, the schedule under the cursor: its next run, then what its last run
 did package by package — or, if it never ran, the packages it covers. Each
 column is as wide as what it holds. The package count and next-run columns
-appear when the whole table fits — on a 120-column terminal, usually; when
-even the rest does not, the widest column is cut first.
+appear when the whole table fits — on a 120-column terminal, usually. When
+even the rest does not, the last run keeps only its mark (`✔`, `◐`, `✖`,
+`—`), its words staying in the details, and only then is the wider of the
+name and the recurrence cut: on an 80-column terminal a recurrence keeps its
+time.
 
 | Key | In the list |
 |---|---|
