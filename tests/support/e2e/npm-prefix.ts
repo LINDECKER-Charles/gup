@@ -32,9 +32,7 @@ export async function latestVersion(sandbox: Sandbox, name: string): Promise<str
 
 /** The version of `name` installed in the sandbox's prefix, or null. */
 export async function installedVersion(sandbox: Sandbox, name: string): Promise<string | null> {
-  // Windows keeps global packages in <prefix>/node_modules, POSIX in <prefix>/lib/node_modules.
-  const lib = process.platform === "win32" ? [] : ["lib"];
-  const manifest = join(sandbox.dirs.npmPrefix, ...lib, "node_modules", name, "package.json");
+  const manifest = join(sandbox.dirs.npmGlobalRoot, name, "package.json");
   try {
     const parsed = JSON.parse(await readFile(manifest, "utf8")) as { version?: unknown };
     return typeof parsed.version === "string" ? parsed.version : null;

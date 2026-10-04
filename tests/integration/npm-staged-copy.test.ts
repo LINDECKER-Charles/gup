@@ -104,8 +104,8 @@ async function startRegistry(oldTarball: Buffer): Promise<LocalRegistry> {
 /** Where the sandbox's prefix keeps global packages and their commands. */
 function prefixDirs(): { root: string; bin: string } {
   const prefix = sandbox.dirs.npmPrefix;
-  if (process.platform === "win32") return { root: join(prefix, "node_modules"), bin: prefix };
-  return { root: join(prefix, "lib", "node_modules"), bin: join(prefix, "bin") };
+  const bin = process.platform === "win32" ? prefix : join(prefix, "bin");
+  return { root: sandbox.dirs.npmGlobalRoot, bin };
 }
 
 async function installedVersion(): Promise<string | null> {

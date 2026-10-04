@@ -24,6 +24,8 @@ export interface SandboxDirs {
   readonly scheduler: string;
   /** `npm_config_prefix`: where `npm i -g` installs and what `npm outdated -g` reads. */
   readonly npmPrefix: string;
+  /** What `npm root -g` prints for that prefix: where the global packages live. */
+  readonly npmGlobalRoot: string;
   readonly npmCache: string;
 }
 
@@ -56,15 +58,26 @@ export async function createSandbox(label: string): Promise<Sandbox> {
     reports: join(root, "reports"),
     scheduler: join(root, "scheduler"),
     npmPrefix: join(root, "npm"),
+    npmGlobalRoot: npmGlobalRoot(join(root, "npm")),
     npmCache: join(root, "npm-cache"),
   };
-  await mkdir(dirs.npmPrefix, { recursive: true });
+  // The global root, not only the prefix: on POSIX `npm outdated -g` fails
+  // with ENOENT on a prefix that has no `lib/` yet, which every prefix npm
+  // has installed into (any real one) has.
+  await mkdir(dirs.npmGlobalRoot, { recursive: true });
   return {
     root,
     dirs,
     env: { ...inheritedEnv(), ...sandboxVariables(dirs) },
     dispose: () => rm(root, { recursive: true, force: true, maxRetries: 3 }),
   };
+}
+
+/** Windows keeps global packages in <prefix>/node_modules, POSIX in <prefix>/lib/node_modules. */
+function npmGlobalRoot(prefix: string): string {
+  return process.platform === "win32"
+    ? join(prefix, "node_modules")
+    : join(prefix, "lib", "node_modules");
 }
 
 /**
