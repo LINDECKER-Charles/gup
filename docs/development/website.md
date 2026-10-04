@@ -242,8 +242,7 @@ gone (the `nerd-fonts` provider downloads release archives).
 Budgets: HTML ≤ 30 KB gzipped per locale, JavaScript ≤ 62 KB, CSS ≤ 12 KB, preloaded fonts
 ≤ 3 files / 75 KB on Latin pages and a single Geist Mono file elsewhere.
 
-`tests/rules/` is not named `tests/design/` because the repository's `.gitignore` ignores every
-`design` directory.
+`tests/rules/` holds the tests the website spec files under `tests/design/`.
 
 Code limits follow the repository rules (functions ≤ 30 lines, ≤ 3 parameters, lines ≤ 100
 characters, files ≤ 300 lines). Catalogs are the one exception to the file length: they are flat
