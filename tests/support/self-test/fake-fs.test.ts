@@ -118,10 +118,12 @@ describe("fake fs: reads", () => {
       },
     });
 
+    // Reads before stats: CodeQL's js/file-system-race flags a stat-then-read
+    // of one path, and cannot tell this in-memory tree from a real disk.
     await expect(realpath("/opt/homebrew/bin/kubectl")).resolves.toBe(CELLAR_KUBECTL);
+    await expect(readFile("/opt/homebrew/bin/kubectl", "utf8")).resolves.toBe("#!");
     expect((await stat("/opt/homebrew/bin/kubectl")).isFile()).toBe(true);
     expect((await lstat("/opt/homebrew/bin/kubectl")).isSymbolicLink()).toBe(true);
-    await expect(readFile("/opt/homebrew/bin/kubectl", "utf8")).resolves.toBe("#!");
   });
 
   it("follows a symlinked directory in the middle of a path", async () => {
@@ -277,9 +279,10 @@ describe("fake fs: faults and limits", () => {
     await system.load({ platform: "linux", fs: { "/d/f": { kind: "file" } } });
     system.inject({ on: "fs", path: "/d/f", mode: "eacces" });
 
-    expect(existsSync("/d/f")).toBe(true);
+    // Existence last, for the same js/file-system-race reason as above.
     await expect(readFile("/d/f")).rejects.toMatchObject({ code: "EACCES" });
     await expect(writeFile("/d/f", "x")).rejects.toMatchObject({ code: "EACCES" });
+    expect(existsSync("/d/f")).toBe(true);
   });
 
   it("lets every undeclared path exist, empty, on a permissive machine", async () => {
