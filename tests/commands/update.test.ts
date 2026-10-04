@@ -46,6 +46,7 @@ vi.mock("../../src/core/elevation.js", () => ({
 import { updateCommand } from "../../src/commands/update.js";
 import { PLATFORMS } from "../../src/core/platform/platforms.js";
 import { ALL_PROVIDERS } from "../../src/core/registry.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
@@ -96,7 +97,6 @@ describe("updateCommand: --targets", () => {
   });
 
   it("never suggests a provider that does not run on this platform", async () => {
-    const originalPlatform = process.platform;
     ALL_PROVIDERS.push({
       id: "brew-cask",
       displayName: "Homebrew (casks)",
@@ -106,12 +106,12 @@ describe("updateCommand: --targets", () => {
       update: async (id) => ({ id, success: true }),
       updateAll: async () => [],
     });
-    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    setPlatform("win32");
     try {
       expect(await updateCommand({ targets: ["brew-cask"] })).toBe(2);
     } finally {
       ALL_PROVIDERS.length = 0;
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
     const message = String(stderrSpy.mock.calls[0]![0]);
     expect(message).toMatch(/Format invalide/);
@@ -119,15 +119,14 @@ describe("updateCommand: --targets", () => {
   });
 
   it("returns 2 without updating when the provider does not run on this platform", async () => {
-    const originalPlatform = process.platform;
     const p = { ...mkProvider({ id: "brew-cask" }), platforms: PLATFORMS.macos };
     getProviderMock.mockReturnValue(p);
-    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    setPlatform("win32");
     try {
       const code = await updateCommand({ targets: ["brew-cask:firefox"] });
       expect(code).toBe(2);
     } finally {
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
     expect(stderrSpy.mock.calls[0]![0]).toBe(
       "Provider brew-cask indisponible sur Windows (macOS uniquement)\n",
@@ -486,7 +485,6 @@ describe("updateCommand: admin batch elevation", () => {
     ["win32", "1 paquet(s) nécessitent les droits administrateur. Ouvrir une invite UAC pour les traiter en bloc ?"],
     ["darwin", "1 paquet(s) nécessitent les droits administrateur : sudo demandera votre mot de passe. Les traiter en bloc ?"],
   ] as const)("names the %s elevation mechanism in the batch question", async (platform, question) => {
-    const originalPlatform = process.platform;
     const adminPkg = { id: "gettext", current: "1", latest: "2", requiresAdmin: true };
     scanWithProgressMock.mockResolvedValueOnce({
       results: [{ providerId: "macports", available: true, packages: [adminPkg] }],
@@ -495,11 +493,11 @@ describe("updateCommand: admin batch elevation", () => {
     promptPackageSelectionMock.mockResolvedValueOnce([{ providerId: "macports", pkg: adminPkg }]);
     getProviderMock.mockReturnValue(mkProvider({ id: "macports" }));
     confirmMock.mockResolvedValueOnce(false);
-    Object.defineProperty(process, "platform", { value: platform, configurable: true });
+    setPlatform(platform);
     try {
       await updateCommand({});
     } finally {
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
     expect(confirmMock.mock.calls[0]![0]).toEqual({ message: question, default: true });
   });
@@ -527,15 +525,14 @@ describe("updateCommand: --provider ids gup cannot act on", () => {
   const stderrText = (): string => stderrSpy.mock.calls.map((call) => String(call[0])).join("");
 
   it("warns about a provider foreign to this OS before scanning", async () => {
-    const originalPlatform = process.platform;
     const brewCask = { ...mkProvider({ id: "brew-cask" }), platforms: PLATFORMS.macos };
     getProviderMock.mockReturnValue(brewCask);
     scanWithProgressMock.mockResolvedValueOnce({ results: [], detectedCount: 0 });
-    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    setPlatform("win32");
     try {
       expect(await updateCommand({ only: ["brew-cask"], all: true })).toBe(0);
     } finally {
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
     expect(stderrText()).toContain(
       "Provider brew-cask indisponible sur Windows (macOS uniquement) — ignoré.",
