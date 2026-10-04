@@ -29,6 +29,7 @@ import { runUpdates } from "../../src/core/update/update-pipeline.js";
 import type { PlannedUpdate } from "../../src/core/update/update-ports.js";
 import { consolePorts, printReport } from "../../src/ui/update-console.js";
 import { RUN_WAITING, waitingMessage } from "../../src/ui/text/run-labels.js";
+import { restorePlatform, setPlatform } from "../support/platform.js";
 
 let stdout: ReturnType<typeof vi.spyOn>;
 const printed = (): string => stdout.mock.calls.map((call: unknown[]) => String(call[0])).join("");
@@ -87,15 +88,14 @@ describe("consolePorts", () => {
   it("announces the admin batch before asking, and asks with the platform's wording", async () => {
     fakeProvider("choco", "Chocolatey");
     confirmMock.mockResolvedValueOnce(true);
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+    setPlatform("win32");
     try {
       await runUpdates(
         [{ providerId: "choco", packageId: "nodejs", pkg: scanned("nodejs", true) }],
         consolePorts({ gate: open }),
       );
     } finally {
-      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+      restorePlatform();
     }
     expect(printed()).toBe(chalk.bold("\n→ Admin (1)\n") + chalk.dim("  choco:nodejs\n"));
     expect(confirmMock).toHaveBeenCalledWith({
