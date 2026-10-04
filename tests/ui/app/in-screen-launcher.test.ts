@@ -6,7 +6,7 @@ import type { UpdatePorts, UpdateRequest } from "../../../src/core/update/update
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import { inScreenLauncher } from "../../../src/ui/app/in-screen-launcher.js";
 import type { UiPreferences } from "../../../src/ui/app/ui-preferences.js";
-import { DIALOG_HINTS, PANEL_HINTS_TAIL } from "../../../src/ui/text/menu-labels.js";
+import { DIALOG_HINTS, MENU_LABELS } from "../../../src/ui/text/menu-labels.js";
 import { LAUNCH_ERROR, RUN_TITLES } from "../../../src/ui/text/run-labels.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
@@ -158,12 +158,12 @@ describe("in-screen launcher", () => {
     const pending = new Promise<EmbeddedTerminalSupport>((resolve) => (detected = resolve));
     const { menu } = await menuWith({ support: () => pending });
     await menu.press("a", "enter");
-    expect(hintBar(await menu.frame())).toContain(PANEL_HINTS_TAIL);
+    expect(hintBar(await menu.frame())).toContain(MENU_LABELS.panelHintsTail);
     detected(AVAILABLE);
     const confirmation = await shown(menu, "être mis à jour :");
     expect(hintBar(confirmation)).toBe(DIALOG_HINTS.confirm);
     await menu.press("n");
-    expect(hintBar(await shown(menu, "┏━ Paquets"))).toContain(PANEL_HINTS_TAIL);
+    expect(hintBar(await shown(menu, "┏━ Paquets"))).toContain(MENU_LABELS.panelHintsTail);
   });
 
   it("says the update broke and gives the menu back", async () => {

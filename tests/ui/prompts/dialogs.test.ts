@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { LOCALES } from "../../../src/core/i18n/locale.js";
 import { confirm } from "../../../src/ui/prompts/confirm.js";
 import { select } from "../../../src/ui/prompts/select.js";
 import { DIALOG_HINTS } from "../../../src/ui/text/menu-labels.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
+import { useLocale } from "../../support/locale.js";
 import { createTestHost, frame, press } from "../../support/tui/test-host.js";
 
 afterEach(() => {
@@ -47,6 +49,48 @@ describe("confirm", () => {
     const answer = confirm({ message: "Continuer ?" }, host);
     await press(await next(), "ctrl+c");
     await expect(answer).rejects.toBeInstanceOf(PromptCancelledError);
+  });
+});
+
+describe("confirm in English", () => {
+  useLocale("en");
+
+  it("names its buttons and keys in English, and leaves the answer in English", async () => {
+    const write = quiet();
+    const { host, next } = createTestHost();
+    const answer = confirm({ message: "Continue?", default: false }, host);
+    const screen = await next();
+    const shown = await frame(screen);
+    expect(shown).toContain(" Yes ");
+    expect(shown).toContain(" No ");
+    expect(shown.trimEnd().split("\n").at(-1)?.trim()).toBe(
+      "←→ choose · y yes · n no · enter confirm · esc cancel",
+    );
+    await press(screen, "y");
+    await expect(answer).resolves.toBe(true);
+    expect(write).toHaveBeenCalledWith(expect.stringContaining("Continue? "));
+    expect(write).toHaveBeenCalledWith(expect.stringContaining("· yes"));
+  });
+});
+
+/** The answer keys do not depend on the language: `y` (yes) or `o` (oui), `n` (no, non). */
+describe.each(LOCALES)("confirm's keys in %s", (locale) => {
+  useLocale(locale);
+
+  it.each(["y", "o"])("answers yes to %s", async (key) => {
+    quiet();
+    const { host, next } = createTestHost();
+    const answer = confirm({ message: "?", default: false }, host);
+    await press(await next(), key);
+    await expect(answer).resolves.toBe(true);
+  });
+
+  it("answers no to n", async () => {
+    quiet();
+    const { host, next } = createTestHost();
+    const answer = confirm({ message: "?" }, host);
+    await press(await next(), "n");
+    await expect(answer).resolves.toBe(false);
   });
 });
 

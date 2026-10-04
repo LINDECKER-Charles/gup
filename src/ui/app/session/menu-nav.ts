@@ -10,7 +10,7 @@ const OPEN_KEYS: ReadonlySet<string> = new Set(["return", "enter", "space"]);
 /**
  * Which side of the menu has the keyboard — the sidebar or the view on
  * screen — and where the sidebar's cursor stands. Moving the cursor brings
- * the view under it to the front; opening "Quitter" ends the session.
+ * the view under it to the front; opening "Quit" ends the session.
  */
 export class MenuNav {
   readonly #views: ViewRegistry;

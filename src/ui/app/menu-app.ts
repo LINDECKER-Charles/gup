@@ -2,6 +2,7 @@ import { createInterface } from "node:readline/promises";
 import chalk from "chalk";
 import { withoutUpdated, type MenuState } from "../../commands/menu-state.js";
 import type { UpdateReport } from "../../core/update/update-report.js";
+import { MENU_LABELS } from "../text/menu-labels.js";
 import { screenHost, type ScreenHost } from "../tui/screen-host.js";
 import { MenuSession, type MenuController } from "./session/menu-session.js";
 import { uiPreferences } from "./ui-preferences.js";
@@ -74,7 +75,7 @@ export class MenuApp {
 async function waitForEnter(): Promise<void> {
   const prompt = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    await prompt.question(chalk.dim("\n  Entrée pour revenir à gup… "));
+    await prompt.question(chalk.dim(`\n  ${MENU_LABELS.backToMenu} `));
   } finally {
     prompt.close();
   }

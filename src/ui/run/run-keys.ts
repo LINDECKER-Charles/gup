@@ -1,4 +1,5 @@
-import { RUN_HINTS, type ElevationKind } from "../text/run-labels.js";
+import { RUN_HINTS } from "../text/run-key-labels.js";
+import type { ElevationKind } from "../text/run-labels.js";
 import type { KeyPress } from "../tui/screen-host.js";
 import type { RunPhase } from "./run-model.js";
 

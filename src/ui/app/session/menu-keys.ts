@@ -1,5 +1,5 @@
 import type { KeyEvent } from "@opentui/core";
-import { PANEL_HINTS_TAIL, SIDEBAR_HINTS } from "../../text/menu-labels.js";
+import { MENU_LABELS } from "../../text/menu-labels.js";
 import type { DialogLayer } from "../../tui/dialog.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import type { Takeover } from "../view-definition.js";
@@ -50,8 +50,8 @@ export class MenuKeys {
     const { dialogs, views, nav } = this.#targets;
     const panel = views.panel;
     if (dialogs.isOpen) return [dialogs.hints(), ""];
-    if (nav.isSidebarFocused || !panel) return [SIDEBAR_HINTS, ""];
-    return [panel.hints(), panel.isCapturingText ? "" : PANEL_HINTS_TAIL];
+    if (nav.isSidebarFocused || !panel) return [MENU_LABELS.sidebarHints, ""];
+    return [panel.hints(), panel.isCapturingText ? "" : MENU_LABELS.panelHintsTail];
   }
 
   /** Who hears `key` before the menu: the screen (Ctrl+C), an open dialog, a takeover. */

@@ -44,11 +44,10 @@ import { inScreenLauncher } from "../../../src/ui/app/in-screen-launcher.js";
 import type { SettingsService } from "../../../src/ui/settings/settings-service.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
 import { EXPORT_LABELS } from "../../../src/ui/text/journal/journal-labels.js";
+import { RUN_HINTS, RUN_NOTICES } from "../../../src/ui/text/run-key-labels.js";
 import {
   ELEVATE_DIALOG,
   PANE_LABELS,
-  RUN_HINTS,
-  RUN_NOTICES,
   RUN_TITLES,
   STOP_DIALOG,
 } from "../../../src/ui/text/run-labels.js";

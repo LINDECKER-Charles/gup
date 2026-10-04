@@ -1,12 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import manifest from "../../../package.json" with { type: "json" };
 import { JOURNAL_LABELS } from "../../../src/ui/text/journal/journal-labels.js";
-import {
-  PANEL_HINTS_TAIL,
-  QUIT_LABEL,
-  updateCountFact,
-  VIEW_LABELS,
-} from "../../../src/ui/text/menu-labels.js";
+import { MENU_LABELS, updateCountFact, VIEW_LABELS } from "../../../src/ui/text/menu-labels.js";
 import { PACKAGES_PLACEHOLDERS } from "../../../src/ui/text/packages-labels.js";
 import { PROVIDERS_PANEL_LABELS } from "../../../src/ui/text/providers-labels.js";
 import {
@@ -109,7 +104,7 @@ describe.skipIf(!terminal.isAvailable)("the menu in a real terminal", () => {
       expect(screen.text).toContain(`▌ ${view.title}`);
     }
     await menu.press("down");
-    await menu.waitForText(`› ${QUIT_LABEL}`);
+    await menu.waitForText(`› ${MENU_LABELS.quit}`);
     await menu.press("enter");
     expect(await menu.exited()).toBe(0);
     expect((await menu.screen()).buffer).toBe("normal");
@@ -136,7 +131,7 @@ describe.skipIf(!terminal.isAvailable)("the menu in a real terminal", () => {
     menu.resize(SMALL.cols, SMALL.rows);
     const screen = await waitForFrame(menu, SMALL);
     // The key hints moved to the new last row.
-    expect(screen.lines[SMALL.rows - 1]).toContain(PANEL_HINTS_TAIL);
+    expect(screen.lines[SMALL.rows - 1]).toContain(MENU_LABELS.panelHintsTail);
   });
 
   // Runs last: every session above has ended (afterEach). On Windows a

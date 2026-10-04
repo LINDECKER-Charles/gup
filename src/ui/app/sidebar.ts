@@ -1,9 +1,9 @@
-import { QUIT_LABEL } from "../text/menu-labels.js";
+import { MENU_LABELS } from "../text/menu-labels.js";
 import type { Density } from "../theme/appearance.js";
 import { fillLine, fit, seg, type Line, type Tone } from "../tui/styled-lines.js";
 import type { SidebarBadge, ViewDefinition, ViewId } from "./view-definition.js";
 
-/** "Quitter": the one entry that is not a view, always last. */
+/** "Quit": the one entry that is not a view, always last. */
 export const QUIT = "quit";
 
 export interface SidebarEntry {
@@ -31,15 +31,18 @@ export interface SidebarState {
 /** Outer width of the sidebar box, border included. */
 export const SIDEBAR_WIDTH = 26;
 const LABEL_WIDTH = 18;
-/** "Quitter" comes after the last view group. */
+/** "Quit" comes after the last view group. */
 const QUIT_GROUP = 2;
 
-/** The registered views, by group then order, then "Quitter". */
+/**
+ * The registered views, by group then order, then "Quit": built with the
+ * session, so in the language the run speaks.
+ */
 export function sidebarEntries(views: readonly ViewDefinition[]): SidebarEntry[] {
   const sorted = [...views].sort((a, b) => a.group - b.group || a.order - b.order);
   return [
     ...sorted.map(({ id, label, group }) => ({ id, label, group })),
-    { id: QUIT, label: QUIT_LABEL, group: QUIT_GROUP },
+    { id: QUIT, label: MENU_LABELS.quit, group: QUIT_GROUP },
   ];
 }
 

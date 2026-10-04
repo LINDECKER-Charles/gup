@@ -3,6 +3,7 @@ import type { CliRenderer, KeyEvent } from "@opentui/core";
 import { log } from "../../core/log/log.js";
 import { setFullScreen } from "../../core/process/output-router.js";
 import { skipCurrent } from "../../core/runner.js";
+import { SCREEN_ERRORS } from "../text/menu-labels.js";
 import type { Appearance, AppearanceFactory } from "../theme/appearance.js";
 import { legacyAppearance } from "../theme/legacy-appearance.js";
 import { loadTui, type Tui } from "./load-tui.js";
@@ -223,9 +224,7 @@ export function canPrompt(): boolean {
  * OpenTUI 0.5.14). The alternate screen leaves no position to get wrong.
  */
 export const screenHost = createScreenHost(async (tui) => {
-  if (!canPrompt()) {
-    throw new Error("cette action demande un terminal interactif (stdin/stdout TTY)");
-  }
+  if (!canPrompt()) throw new Error(SCREEN_ERRORS.notATerminal);
   return tui.createCliRenderer({
     screenMode: "alternate-screen",
     exitOnCtrlC: false,

@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { PlannedUpdate } from "../../../src/core/update/update-ports.js";
 import {
+  runFacts,
   statusLines,
   wantedStatusRows,
   type StatusView,
 } from "../../../src/ui/run/run-lines.js";
 import { RunModel } from "../../../src/ui/run/run-model.js";
-import { RUN_MESSAGES, RUN_NOTICES } from "../../../src/ui/text/run-labels.js";
+import { RUN_NOTICES } from "../../../src/ui/text/run-key-labels.js";
+import { RUN_MESSAGES } from "../../../src/ui/text/run-labels.js";
 import { STATUS_GLYPHS } from "../../../src/ui/theme/glyphs.js";
 import type { Line } from "../../../src/ui/tui/styled-lines.js";
 import { outcome, pkg } from "../../support/builders.js";
+import { useLocale } from "../../support/locale.js";
 
 const WIDTH = 80;
 
@@ -172,6 +175,33 @@ describe("statusLines", () => {
     const [header] = text(statusLines(model, view({ now, width: 100 })).lines);
     expect(header).toMatch(
       /^│ Une mise à jour planifiée est en cours \(commencée il y a 4 min\) — attente… +00:00$/,
+    );
+  });
+});
+
+describe("the run's status in English", () => {
+  useLocale("en");
+
+  it("sums the run up, each count agreeing with its number", () => {
+    const { model, direct } = run(["a", "b", "c"]);
+    model.finished({ item: direct[0]!, outcome: outcome("a") });
+    for (const item of direct.slice(1)) {
+      model.finished({ item, outcome: outcome(item.packageId, { success: false }) });
+    }
+    model.markDone();
+    const [header] = text(statusLines(model, view()).lines);
+    expect(header).toMatch(/^√ 1 updated {3}→ 0 skipped {3}× 2 failed +in 00:00$/);
+    expect(runFacts(model)).toEqual(["Update finished", "3 packages", "00:00"]);
+  });
+
+  it("says who holds the update batch while the run waits", () => {
+    const { model } = run(["a"]);
+    const startedAt = new Date(2026, 9, 3, 8, 0).toISOString();
+    model.waiting({ kind: "scheduled", pid: 7, startedAt });
+    const now = new Date(2026, 9, 3, 8, 4).getTime();
+    const [header] = text(statusLines(model, view({ now, width: 100 })).lines);
+    expect(header).toMatch(
+      /^│ A scheduled update is running \(started 4 min ago\) — waiting… +00:00$/,
     );
   });
 });

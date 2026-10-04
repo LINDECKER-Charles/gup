@@ -7,7 +7,7 @@ import type {
 import { describeRetryables, retryChoices, type RetryAnswer } from "../retry-choices.js";
 import {
   ELEVATE_DIALOG,
-  RETRY_DIALOG_TITLE,
+  RETRY_DIALOG,
   STOP_DIALOG,
   type ElevationKind,
 } from "../text/run-labels.js";
@@ -58,7 +58,7 @@ export class RunDialogs implements UpdateDecisions {
   async chooseRetry(request: RetryRequest): Promise<RetryStrategyId | null> {
     const answer = await this.ask<RetryAnswer | undefined>(undefined, () =>
       this.#dialogs.choose<RetryAnswer>({
-        title: RETRY_DIALOG_TITLE,
+        title: RETRY_DIALOG.title,
         text: [describeRetryables(request.failures)],
         choices: retryChoices(request.strategies),
         default: "none",
@@ -67,7 +67,7 @@ export class RunDialogs implements UpdateDecisions {
     return answer === undefined || answer === "none" ? null : answer;
   }
 
-  /** "Tout arrêter ?" — `remaining` packages would be cancelled. Defaults to no. */
+  /** "Stop all?" — `remaining` packages would be cancelled. Defaults to no. */
   confirmStop(remaining: number): Promise<boolean> {
     return this.exclusive(() =>
       this.#dialogs.confirm({

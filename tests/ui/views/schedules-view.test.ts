@@ -4,7 +4,7 @@ import type { Schedule } from "../../../src/core/scheduler/model/types.js";
 import type { SelectedPackage } from "../../../src/core/types.js";
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
-import { PANEL_HINTS_TAIL, QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
+import { MENU_LABELS, QUIT_DIALOG } from "../../../src/ui/text/menu-labels.js";
 import {
   EMPTY_SCHEDULES,
   LEAVE_NEW_DIALOG,
@@ -191,7 +191,7 @@ describe("p in Paquets", () => {
     await check(menu, 3);
     const bar = hintBar(await menu.frame());
     expect(bar).toBe(
-      `espace cocher · / filtrer · ${SCHEDULE_ACTION.hint} · … · ${PANEL_HINTS_TAIL}`,
+      `espace cocher · / filtrer · ${SCHEDULE_ACTION.hint} · … · ${MENU_LABELS.panelHintsTail}`,
     );
     expect(await menu.frame()).toContain("Entrée  Mettre à jour (1)");
   });
@@ -387,12 +387,13 @@ describe("the Planification list", () => {
       size: { cols: 80, rows: 24 },
     });
     const list = hintBar(await settled(menu));
-    for (const hint of ["entrée modifier", "x exécuter", "suppr supprimer", PANEL_HINTS_TAIL]) {
+    const tail = MENU_LABELS.panelHintsTail;
+    for (const hint of ["entrée modifier", "x exécuter", "suppr supprimer", tail]) {
       expect(list).toContain(hint);
     }
     await menu.press("enter");
     const editor = hintBar(await menu.waitForText("Modifier « Outils dev »"));
-    for (const hint of ["Ctrl+S enregistrer", "entrée modifier", "échap annuler", PANEL_HINTS_TAIL]) {
+    for (const hint of ["Ctrl+S enregistrer", "entrée modifier", "échap annuler", tail]) {
       expect(editor).toContain(hint);
     }
   });
