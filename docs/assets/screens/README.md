@@ -118,6 +118,12 @@ to add one.
 
 ![Options, colour editor: each colour role with the chosen and displayed colour, its contrast ratio and a sample; a custom accent too dark to read raised from 1.4:1 to 4.5:1, with a warning.](options-colors.svg)
 
+### options-journal
+
+**gup — Options** · 100 × 28
+
+![Options, JOURNAL section: the debug log's level under the cursor, the period the Journal opens on and whether the HTML report opens in the browser; the file row reads désactivé, as screenshots use no settings file.](options-journal.svg)
+
 ## Themes
 
 ### theme-dark

@@ -239,10 +239,11 @@ The notes of §7 applied, against the integration tip after wave 3a (`int/wave-3
   guarded like the runner, each with its own process-free list (`openerFor`, `systemRootOf`);
   `guardedModule(load, kind)` is the `vi.mock` body. A last check refuses a frame showing the
   rendering machine's home, temp directory or checkout.
-- **Scenes**: 23, in six gallery sections (`SceneGroup`): the menu (`scan-progress`,
+- **Scenes**: 24, in six gallery sections (`SceneGroup`): the menu (`scan-progress`,
   `packages-select`, `confirm-update`, `providers-os`), updates (`update-running`,
   `update-retry`, `update-summary`), Planification (`schedules`, `schedule-edit`), the
-  Journal's four tabs, Options (`options-themes`, `options-colors`) and eight themes.
+  Journal's four tabs, Options (`options-themes`, `options-colors`, and `options-journal`,
+  added by the review of this branch) and eight themes.
   `providers` and `options` are retired (§7.1).
 - **The gallery page** has a contents list, a section per group and, last, the HTML report's
   picture: `npm run screenshots:report` writes the fixture history in a throw-away directory,

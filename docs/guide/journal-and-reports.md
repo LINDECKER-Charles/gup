@@ -371,6 +371,8 @@ The **JOURNAL** section of the Options view (`gup`, then Options) keeps three se
 change is saved at once in the [settings file](configuration.md), and `Réinitialiser… › Tout`
 puts them back to their defaults.
 
+![Options, JOURNAL section: the debug log's level under the cursor, the period the Journal opens on and whether the HTML report opens in the browser; the file row reads désactivé, as screenshots use no settings file.](../assets/screens/options-journal.svg)
+
 | Row | Values | Default | Effect | In `config.json` |
 |---|---|---|---|---|
 | **Journal de debug** | `OFF`, `erreurs`, `avert.`, `info`, `debug`, `trace` | `info` | what the [debug log](#levels) records; applies at once, unless `--log-level` or `GUP_LOG_LEVEL` decide | `log.level`: `off`, `error`, `warn`, `info`, `debug`, `trace` |

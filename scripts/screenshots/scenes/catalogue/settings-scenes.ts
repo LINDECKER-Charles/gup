@@ -1,4 +1,5 @@
 import { VIEW_LABELS } from "../../../../src/ui/text/menu-labels.js";
+import { JOURNAL_OPTION_HINTS } from "../../../../src/ui/text/settings/journal-options-labels.js";
 import {
   COLOR_EDITOR,
   PREVIEW_FACT,
@@ -14,20 +15,31 @@ const TITLE = `gup — ${VIEW_LABELS.options}`;
 /** Rows of the Options list from the top: Mode rapide, Timeout, Filtre, Thème, Couleurs. */
 const THEME_ROW = 3;
 const COLORS_ROW = 4;
+/** Journal de debug, JOURNAL's first row: after SCAN (3 rows), APPARENCE (5) and CONFORT (10). */
+const LOG_LEVEL_ROW = 18;
 /** The theme the picker previews in the screenshot: the whole app repainted with it. */
 const PREVIEWED: ThemeId = "dracula";
 /** An accent too dark to read on the terminal's background: gup adjusts it, and says so. */
 const UNREADABLE_CUSTOMS = { terminal: { accent: "#1f4e5a" } } as const;
 
-/** Options, then Entrée on the row `row` lines from the top. */
-async function openOptionRow(stage: Stage, row: number): Promise<void> {
+/** Options, with the cursor on the row `row` lines from the top. */
+async function moveToOptionRow(stage: Stage, row: number): Promise<void> {
   await stage.waitForText(SCAN_DONE);
   await stage.open("options");
   await stage.waitForText("Mode rapide");
-  await stage.press(...Array.from({ length: row }, () => "down"), "enter");
+  await stage.press(...Array.from({ length: row }, () => "down"));
 }
 
-/** Options: the theme picker previewing a theme, and the colour editor's contrast check. */
+/** Options, then Entrée on the row `row` lines from the top. */
+async function openOptionRow(stage: Stage, row: number): Promise<void> {
+  await moveToOptionRow(stage, row);
+  await stage.press("enter");
+}
+
+/**
+ * Options: the theme picker previewing a theme, the colour editor's contrast
+ * check, and the JOURNAL section.
+ */
 export const SETTINGS_GROUP: SceneGroup = {
   title: "Options",
   scenes: [
@@ -60,6 +72,20 @@ export const SETTINGS_GROUP: SceneGroup = {
       play: async (stage) => {
         await openOptionRow(stage, COLORS_ROW);
         await stage.waitForText(COLOR_EDITOR.base(THEME_LABELS.terminal));
+      },
+    },
+    {
+      id: "options-journal",
+      title: TITLE,
+      alt:
+        "Options, JOURNAL section: the debug log's level under the cursor, the period the " +
+        "Journal opens on and whether the HTML report opens in the browser; the file row " +
+        "reads désactivé, as screenshots use no settings file.",
+      size: SCENE_SIZES.default,
+      fixture: () => appFixture(),
+      play: async (stage) => {
+        await moveToOptionRow(stage, LOG_LEVEL_ROW);
+        await stage.waitForText(JOURNAL_OPTION_HINTS.logLevel);
       },
     },
   ],
