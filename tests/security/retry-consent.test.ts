@@ -10,16 +10,16 @@ const { providers, selectMock } = vi.hoisted(() => ({
   providers: new Map<string, unknown>(),
   selectMock: vi.fn(),
 }));
-vi.mock("../../../src/core/registry.js", () => ({
+vi.mock("../../src/core/registry.js", () => ({
   getProvider: (id: string) => providers.get(id),
   ALL_PROVIDERS: [],
 }));
-vi.mock("../../../src/core/history/store.js", () => ({ recordUpdate: vi.fn() }));
-vi.mock("../../../src/ui/prompts/select.js", () => ({ select: selectMock }));
-vi.mock("../../../src/ui/prompts/confirm.js", () => ({ confirm: vi.fn(async () => true) }));
+vi.mock("../../src/core/history/store.js", () => ({ recordUpdate: vi.fn() }));
+vi.mock("../../src/ui/prompts/select.js", () => ({ select: selectMock }));
+vi.mock("../../src/ui/prompts/confirm.js", () => ({ confirm: vi.fn(async () => true) }));
 
-import { runUpdates } from "../../../src/core/update/update-pipeline.js";
-import { consolePorts } from "../../../src/ui/update-console.js";
+import { runUpdates } from "../../src/core/update/update-pipeline.js";
+import { consolePorts } from "../../src/ui/update-console.js";
 
 const open = { isAbortRequested: () => false };
 
