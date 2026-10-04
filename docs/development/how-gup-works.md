@@ -913,7 +913,7 @@ update path appears. Until 0.5.0 they existed as unregistered code in `src/provi
 ## 15. Security
 
 The threat model, its mitigations and the tests that pin them are in
-[`SECURITY.md`](../../SECURITY.md#threat-model); the architectural chokepoints are listed in
+[`SECURITY.md`](../../.github/SECURITY.md#threat-model); the architectural chokepoints are listed in
 [`architecture.md` §13](architecture.md#13-security).
 
 ### Tooling
@@ -1003,7 +1003,7 @@ security             # composite: audit + lint security + tests security
 
 ## 18. Extending `gup` — adding a provider in practice
 
-See [`CONTRIBUTING.md`](../../CONTRIBUTING.md#2-provider-addition-workflow). Typical workflow:
+See [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md#2-provider-addition-workflow). Typical workflow:
 
 ```powershell
 # 1. Copy the template

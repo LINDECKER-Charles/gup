@@ -4,7 +4,7 @@ Technical view of `gup`. Audience: contributors, maintainers, security review.
 
 > The provider list and status: [`providers-catalog.md`](../guide/providers-catalog.md).
 > The end-to-end walkthrough, command by command: [`how-gup-works.md`](how-gup-works.md).
-> Adding a provider: [`CONTRIBUTING.md`](../../CONTRIBUTING.md). How each layer is tested:
+> Adding a provider: [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md). How each layer is tested:
 > [`testing.md`](testing.md). Why things are the way they are, area by area: the
 > [design records](design/README.md).
 
@@ -239,7 +239,7 @@ flowchart TD
 - `isAvailable()` never does network I/O: a PATH lookup (resolved in-process, never by spawning
   `where` or `which`), a file check, or a bounded probe.
 - The anatomy of a provider, with the sequence of a scan and an update:
-  [`CONTRIBUTING.md` § Provider anatomy](../../CONTRIBUTING.md#3-provider-anatomy).
+  [`CONTRIBUTING.md` § Provider anatomy](../../.github/CONTRIBUTING.md#3-provider-anatomy).
 
 ---
 
@@ -661,7 +661,7 @@ the ports between features (the Journal's schedule names, its Options rows).
 ## 13. Security
 
 The threat model, the mitigations and the tests that pin them are in
-[`SECURITY.md`](../../SECURITY.md#threat-model). The architectural chokepoints it relies on:
+[`SECURITY.md`](../../.github/SECURITY.md#threat-model). The architectural chokepoints it relies on:
 
 | Chokepoint | Where | Pinned by |
 |---|---|---|
@@ -724,7 +724,7 @@ src/
     └── scan-progress.ts · update-console.ts · select.ts · table.ts · skip-controller.ts · retry-choices.ts · log-line.ts
 ```
 
-A folder holds at most 10 files ([`CONTRIBUTING.md` § Code style](../../CONTRIBUTING.md#7-code-style)):
+A folder holds at most 10 files ([`CONTRIBUTING.md` § Code style](../../.github/CONTRIBUTING.md#7-code-style)):
 a full folder grows a sub-folder by domain. `src/core/registry.ts` (length) and
 `src/providers/<domain>/` (file count) are the two named exceptions.
 

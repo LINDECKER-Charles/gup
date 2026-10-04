@@ -208,7 +208,7 @@ through internals checked against the pinned version — another version is
 reported unavailable rather than used. On macOS, gup makes node-pty's
 `spawn-helper` executable only when the file belongs to you. Without node-pty,
 updates run in your terminal as before. Installing it reviews one install
-script: see [installation](docs/guide/installation.md#npm-11-and-install-scripts).
+script: see [installation](../docs/guide/installation.md#npm-11-and-install-scripts).
 
 ### 8. Local data
 

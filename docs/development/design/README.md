@@ -15,7 +15,7 @@ and the code — win.**
 |---|---|
 | [`architecture.md`](../architecture.md) | Layers, data model, scan, update pipeline, interactive app, process seams, local state, scheduling, settings, composition — with the diagrams |
 | [`how-gup-works.md`](../how-gup-works.md) | The end-to-end walkthrough, command by command, and the provider contract in detail |
-| [`SECURITY.md`](../../../SECURITY.md#threat-model) | The threat model, its mitigations and the tests that pin them |
+| [`SECURITY.md`](../../../.github/SECURITY.md#threat-model) | The threat model, its mitigations and the tests that pin them |
 | [`testing.md`](../testing.md) | The test strategy, how to run each layer, CI |
 | [`docs/guide/`](../../guide/) | What each feature does, for users |
 

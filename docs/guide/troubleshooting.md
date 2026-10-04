@@ -288,6 +288,6 @@ the log directory; the Options view's **Fichier** row shows the settings file (`
    share it**: known secret shapes are masked and your home directory becomes `~`, but a secret in
    a format gup does not know can slip through.
 4. Attach it to the [bug report](https://github.com/LINDECKER-Charles/gup/issues/new?template=bug_report.yml).
-   [SUPPORT.md](../../SUPPORT.md#what-to-include) lists the rest of what helps.
+   [SUPPORT.md](../../.github/SUPPORT.md#what-to-include) lists the rest of what helps.
 
-A security problem is never a public issue: [SECURITY.md](../../SECURITY.md#reporting-a-vulnerability).
+A security problem is never a public issue: [SECURITY.md](../../.github/SECURITY.md#reporting-a-vulnerability).

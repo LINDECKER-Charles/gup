@@ -34,7 +34,7 @@ flowchart LR
 ## 1. Pre-flight
 
 - `main` is green: the eight required checks listed in
-  [CONTRIBUTING.md § Pull request flow](../../CONTRIBUTING.md#9-pull-request-flow)
+  [CONTRIBUTING.md § Pull request flow](../../.github/CONTRIBUTING.md#9-pull-request-flow)
   passed on its last commit.
 - Open Dependabot pull requests are processed: merged when green and relevant,
   closed with a reason otherwise. A release never ships with a known

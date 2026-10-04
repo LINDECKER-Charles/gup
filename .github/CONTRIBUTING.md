@@ -9,7 +9,7 @@ Thanks for contributing. The typical contribution is **adding a provider** — a
 
 By participating in this project — issues, pull requests, reviews — you agree to abide by its [Code of Conduct](CODE_OF_CONDUCT.md).
 
-> Before diving in: read [`docs/development/architecture.md`](docs/development/architecture.md) for context (lifecycle, runner, parallel scan, data model).
+> Before diving in: read [`docs/development/architecture.md`](../docs/development/architecture.md) for context (lifecycle, runner, parallel scan, data model).
 >
 > Looking for help rather than contributing code? See [SUPPORT.md](SUPPORT.md). How the project is run and who decides what: [GOVERNANCE.md](GOVERNANCE.md).
 
@@ -39,8 +39,8 @@ By participating in this project — issues, pull requests, reviews — you agre
 | Report a bug | The [*Bug report*](https://github.com/LINDECKER-Charles/gup/issues/new?template=bug_report.yml) form — see [§ 11](#11-reporting-a-bug) for what helps most |
 | Request a provider | The [*New provider*](https://github.com/LINDECKER-Charles/gup/issues/new?template=provider_request.yml) form: the commands to list and update the packages of that source |
 | Add a provider | [§ 2](#2-provider-addition-workflow): usually one file, one registry line and its tests |
-| Improve the documentation | [`docs/`](docs/README.md), in English — see [§ 10](#10-documentation) |
-| Improve the landing page or its translations | [`index/`](index/), a static Vite + React site (`cd index && npm ci && npm run build`, then `npm run verify`, which drives Playwright's Chromium); commit scope `landing` |
+| Improve the documentation | [`docs/`](../docs/README.md), in English — see [§ 10](#10-documentation) |
+| Improve the landing page or its translations | [`index/`](../index/), a static Vite + React site (`cd index && npm ci && npm run build`, then `npm run verify`, which drives Playwright's Chromium); commit scope `landing` |
 | Triage | Reproduce open bugs on your platform, ask for missing details, point duplicates to the original issue |
 
 A change of behaviour starts as a [*Feature request*](https://github.com/LINDECKER-Charles/gup/issues/new?template=feature_request.yml) — why is in [GOVERNANCE.md § How decisions are made](GOVERNANCE.md#how-decisions-are-made).
@@ -70,7 +70,7 @@ Install Node through a version manager rather than over your system Node, so thi
 | Windows, macOS | uses the prebuilt binary it ships; npm 11 prints an `install-scripts` warning for it, which is expected | — |
 | Linux | compiles it with node-gyp: needs Python 3 and a C/C++ toolchain (`build-essential`, or your distribution's equivalent). If the build fails, npm skips the optional dependency and the install still succeeds | the menu updates outside the screen, and the real-PTY integration and end-to-end suites skip on Linux (they fail on Windows and macOS, where node-pty must load) |
 
-`GUP_PTY=off` turns the embedded terminal off for a run, to test the fallback. Why the install scripts are there and what users see: [installation.md § npm 11 and install scripts](docs/guide/installation.md#npm-11-and-install-scripts).
+`GUP_PTY=off` turns the embedded terminal off for a run, to test the fallback. Why the install scripts are there and what users see: [installation.md § npm 11 and install scripts](../docs/guide/installation.md#npm-11-and-install-scripts).
 
 ### Deliberate version pins
 
@@ -106,7 +106,7 @@ flowchart TD
 
 ### 2.1 Pick the category
 
-The file goes into `src/providers/<category>/`. Existing categories: `os/`, `wsl/`, `node/`, `python/`, `rust/`, `dotnet-php/`, `jvm/`, `lang-other/`, `toolchain/`, `cloud/`, `iac/`, `kubernetes/`, `containers/`, `security/`, `dev-cli/`, `ide/`, `editor-plugins/`, `embedded-mobile/`, `shell/`. See [`docs/development/architecture.md`](docs/development/architecture.md#14-tree-layout) for the full map.
+The file goes into `src/providers/<category>/`. Existing categories: `os/`, `wsl/`, `node/`, `python/`, `rust/`, `dotnet-php/`, `jvm/`, `lang-other/`, `toolchain/`, `cloud/`, `iac/`, `kubernetes/`, `containers/`, `security/`, `dev-cli/`, `ide/`, `editor-plugins/`, `embedded-mobile/`, `shell/`. See [`docs/development/architecture.md`](../docs/development/architecture.md#14-tree-layout) for the full map.
 
 Only create a new category if **3+ providers** would logically fall into it — otherwise drop the file into `lang-other/` or `dev-cli/`.
 
@@ -152,7 +152,7 @@ inject, and the platform simulation runs the case on every other OS the provider
 non-trivial parser or a multi-step update also gets a knowledge test
 (`tests/providers/<domain>/<your-id>.test.ts`), ideally on output recorded from the real tool
 (`npm run fixtures:record -- --provider <your-id>`). How and why:
-[`docs/development/testing.md`](docs/development/testing.md#4-where-does-my-test-go).
+[`docs/development/testing.md`](../docs/development/testing.md#4-where-does-my-test-go).
 
 ---
 
@@ -193,7 +193,7 @@ sequenceDiagram
     P-->>Pipeline: UpdateOutcome
 ```
 
-Your provider never knows where its install runs: `runInherit` gives it the user's terminal (`gup update`), a pane of the embedded terminal (the interactive app) or a pipe to the debug log (a scheduled run). The pipeline records the outcome, batches `requiresAdmin` rows behind one elevation prompt and offers retries — see [architecture.md § Update pipeline](docs/development/architecture.md#6-update-pipeline).
+Your provider never knows where its install runs: `runInherit` gives it the user's terminal (`gup update`), a pane of the embedded terminal (the interactive app) or a pipe to the debug log (a scheduled run). The pipeline records the outcome, batches `requiresAdmin` rows behind one elevation prompt and offers retries — see [architecture.md § Update pipeline](../docs/development/architecture.md#6-update-pipeline).
 
 ### Signature
 
@@ -284,7 +284,7 @@ Inherit the pattern in `src/providers/wsl/` — the helper `core/wsl.ts` bridges
 
 ### 5.3 "Manual-only" providers
 
-If **every** update requires a GUI action (e.g. JetBrains plugins, Eclipse Marketplace features), do **not** write the provider: every row would be `manual: true`, which `scanAll` drops, so the code would only cost scan time and maintenance. List the source as a candidate (⬜) in [`docs/guide/providers-catalog.md`](docs/guide/providers-catalog.md) instead, saying why — see the comment among the IDE imports of `src/core/registry.ts`.
+If **every** update requires a GUI action (e.g. JetBrains plugins, Eclipse Marketplace features), do **not** write the provider: every row would be `manual: true`, which `scanAll` drops, so the code would only cost scan time and maintenance. List the source as a candidate (⬜) in [`docs/guide/providers-catalog.md`](../docs/guide/providers-catalog.md) instead, saying why — see the comment among the IDE imports of `src/core/registry.ts`.
 
 ### 5.4 Providers sharing a binary with another
 
@@ -307,12 +307,12 @@ npm run security              # audit-ci + lint:security + test:security
 npm run screenshots:check     # after a change to the interactive app: are the docs' screenshots current?
 ```
 
-A change to what the interactive app draws — a label, a key hint, a layout — changes the generated screenshots in `docs/assets/screens/`: run `npm run screenshots` and commit the result with the change. CI's **Screenshots up to date** step fails otherwise ([documentation.md § Screenshots](docs/development/documentation.md#screenshots)).
+A change to what the interactive app draws — a label, a key hint, a layout — changes the generated screenshots in `docs/assets/screens/`: run `npm run screenshots` and commit the result with the change. CI's **Screenshots up to date** step fails otherwise ([documentation.md § Screenshots](../docs/development/documentation.md#screenshots)).
 
 On Windows, `check.cmd` runs all of them and prints one summary (`check.cmd -E2E full` adds the
 real tools of your machine, read-only). The tests need Node ≥ 26.9. Where a new test goes, how to
 run one layer, the end-to-end suites, CI and the manual checklists:
-[`docs/development/testing.md`](docs/development/testing.md).
+[`docs/development/testing.md`](../docs/development/testing.md).
 
 Cross-platform CI: **Windows** + **macOS** + **Ubuntu**, Node **26**. Every PR that adds a provider must pass all three.
 
@@ -323,7 +323,7 @@ Because the matrix now runs on three OSes, a provider must never build a path wi
 There is no percentage to reach. A behaviour ships with the test that would fail if it broke;
 the modules where an untested branch can do harm (the runner, install-source, elevation, the
 update pipeline, the scheduler, log redaction…) have coverage floors that CI enforces
-([`testing.md` §8](docs/development/testing.md#8-coverage)).
+([`testing.md` §8](../docs/development/testing.md#8-coverage)).
 
 ---
 
@@ -338,7 +338,7 @@ update pipeline, the scheduler, log redaction…) have coverage floors that CI e
 
 **English** for code, identifiers, comments, JSDoc, configuration comments, documentation (including release notes) and commit messages: contributors and bug reports arrive in English, and a half-French code base forces every reader to switch languages mid-file.
 
-**French** for every string the user sees at runtime: CLI output, install hints, menu labels, dialogs. That is the language of the interface, not an oversight — see the note in the [CLI reference](docs/guide/cli-reference.md).
+**French** for every string the user sees at runtime: CLI output, install hints, menu labels, dialogs. That is the language of the interface, not an oversight — see the note in the [CLI reference](../docs/guide/cli-reference.md).
 
 ### Size and complexity limits
 
@@ -431,8 +431,8 @@ The scope says where the change lives. It is **required** whenever the changed f
 | `.github/workflows/<name>.yml` | `ci(<name>)` | `ci(security): …` |
 | `.github/dependabot.yml` | `ci(dependabot)` | `ci(dependabot): …` |
 | `index/**` (landing page) | `type(landing)` | `feat(landing): …` |
-| `SUPPORT.md`, `GOVERNANCE.md`, `.github/ISSUE_TEMPLATE/**`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/CODEOWNERS` | `docs(community)` | `docs(community): …` |
-| `docs/**`, `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`, `CITATION.cff` | `docs`, optionally with the topic as scope | `docs(changelog): …` |
+| `.github/SUPPORT.md`, `.github/GOVERNANCE.md`, `.github/ISSUE_TEMPLATE/**`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/CODEOWNERS` | `docs(community)` | `docs(community): …` |
+| `docs/**`, `README.md`, `.github/CONTRIBUTING.md`, `.github/SECURITY.md`, `CHANGELOG.md`, `CITATION.cff` | `docs`, optionally with the topic as scope | `docs(changelog): …` |
 | `package.json`, `package-lock.json`, `tsconfig*.json`, `tsup.config.ts` | `build(deps)`; Dependabot bumps use `chore(deps)` / `chore(deps-dev)` | `build(deps): …` |
 | `eslint.config*.js`, `vitest.config.ts`, `audit-ci.json`, `.semgrep.yml`, `.gitleaks.toml` | `build(lint)` | `build(lint): …` |
 | `scripts/**`, `check.cmd`, `.gitignore`, `.gitattributes` | `chore`, no scope | `chore: …` |
@@ -462,7 +462,7 @@ flowchart TD
 
 1. **Keep a pull request to one subject.** Two unrelated fixes are two pull requests.
 2. **Fill in the template**: what and why, the linked issue (`Closes #123`), the checklist, what you tested by hand.
-3. **Add a changelog fragment** as `docs/changelog/unreleased/<branch-slug>.md`, where `<branch-slug>` is your branch name without its type (`fix/winget-pinned-packages` → `winget-pinned-packages.md`). Use the headings and the bullet shape described in the [changelog guide](docs/changelog/README.md#how-to-read-an-entry); fragments are folded into `unreleased.md` before a release, so parallel pull requests never edit the same file.
+3. **Add a changelog fragment** as `docs/changelog/unreleased/<branch-slug>.md`, where `<branch-slug>` is your branch name without its type (`fix/winget-pinned-packages` → `winget-pinned-packages.md`). Use the headings and the bullet shape described in the [changelog guide](../docs/changelog/README.md#how-to-read-an-entry); fragments are folded into `unreleased.md` before a release, so parallel pull requests never edit the same file.
 4. **Required checks.** The `main` ruleset blocks the merge until these eight checks pass:
 
    | Check | Workflow | What it runs |
@@ -485,14 +485,14 @@ flowchart TD
 ## 10. Documentation
 
 - Documentation is **English**. French UI labels are quoted verbatim, in **bold**, with an English gloss on first use: "**Paquets** (packages)".
-- Users' pages go to `docs/guide/`, contributors' pages to `docs/development/`; the [documentation index](docs/README.md) lists every page and must list a new one.
+- Users' pages go to `docs/guide/`, contributors' pages to `docs/development/`; the [documentation index](../docs/README.md) lists every page and must list a new one.
 - **Mermaid** diagrams are welcome in `docs/` and in this file when they explain a mechanism: stable diagram types only (`flowchart`, `sequenceDiagram`, `stateDiagram-v2`, `classDiagram`, `gitGraph`), about 20 nodes at most, no custom colours. Check that they render in the pull request's rich diff.
 - **`README.md` is also the npm page**, and npm renders neither Mermaid nor relative image paths: no diagrams there, and images by absolute `raw.githubusercontent.com` URL.
-- **Screenshots are generated**, never captured by hand: `npm run screenshots` renders the real views on fixture data into `docs/assets/screens/`. A UI change commits them regenerated; a new view gets a scene ([how](docs/development/documentation.md#adding-a-scene)).
-- A behaviour change updates the page that documents it in the same pull request; a new provider updates the [providers catalog](docs/guide/providers-catalog.md) and the provider count in the README.
-- A change that adds an extension point, a process, a file gup writes or a security-relevant behaviour also updates [`architecture.md`](docs/development/architecture.md) (and [`SECURITY.md`](SECURITY.md) when it changes the threat model), and gets a [design record](docs/development/design/README.md#adding-a-record).
+- **Screenshots are generated**, never captured by hand: `npm run screenshots` renders the real views on fixture data into `docs/assets/screens/`. A UI change commits them regenerated; a new view gets a scene ([how](../docs/development/documentation.md#adding-a-scene)).
+- A behaviour change updates the page that documents it in the same pull request; a new provider updates the [providers catalog](../docs/guide/providers-catalog.md) and the provider count in the README.
+- A change that adds an extension point, a process, a file gup writes or a security-relevant behaviour also updates [`architecture.md`](../docs/development/architecture.md) (and [`SECURITY.md`](SECURITY.md) when it changes the threat model), and gets a [design record](../docs/development/design/README.md#adding-a-record).
 
-The full conventions — where a page goes, the Mermaid rules, the screenshot pipeline, link checking: [`docs/development/documentation.md`](docs/development/documentation.md).
+The full conventions — where a page goes, the Mermaid rules, the screenshot pipeline, link checking: [`docs/development/documentation.md`](../docs/development/documentation.md).
 
 ---
 

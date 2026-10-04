@@ -25,14 +25,14 @@ or by request. Nobody needs a role to send a pull request.
 
 - **Proposals go through issues.** A feature request or a new provider starts
   as an issue so that the scope question is settled before code is written.
-- **Scope** follows [docs/guide/scope.md](docs/guide/scope.md). A request
+- **Scope** follows [docs/guide/scope.md](../docs/guide/scope.md). A request
   outside it is closed with a link to the reasoning; changing the scope itself
   is a pull request to that page, discussed like any other change.
 - **Architecture decisions** are recorded in
-  [docs/development/architecture.md § Notable decisions](docs/development/architecture.md#notable-decisions),
+  [docs/development/architecture.md § Notable decisions](../docs/development/architecture.md#notable-decisions),
   so the *why* outlives the pull request that introduced it.
 - **Breaking changes** are announced in the release notes
-  ([docs/releases/](docs/releases/README.md)). While `gup` is in `0.x`, a minor
+  ([docs/releases/](../docs/releases/README.md)). While `gup` is in `0.x`, a minor
   version may break compatibility; the notes always say what breaks and how to
   upgrade.
 
@@ -45,7 +45,7 @@ or by request. Nobody needs a role to send a pull request.
   `@opentui/core`, whose renderer loads through `node:ffi`, and the optional
   `node-pty`); every deliberate version pin and its reason is listed in
   [CONTRIBUTING.md § Deliberate version pins](CONTRIBUTING.md#deliberate-version-pins).
-- **Releases** follow [docs/development/releasing.md](docs/development/releasing.md).
+- **Releases** follow [docs/development/releasing.md](../docs/development/releasing.md).
   Only a maintainer tags and publishes.
 - **Security reports** are handled privately, as described in
   [SECURITY.md](SECURITY.md).

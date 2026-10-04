@@ -5,7 +5,7 @@ point that two or more 0.5.0 features need, so the feature branches (in-app upda
 options, journal and HTML report, scheduled updates, OS-incompatible providers, multi-select)
 can work in parallel without editing the same files. This note was the contract those branches
 coded against; the current picture is in [`architecture.md`](../architecture.md),
-[`how-gup-works.md`](../how-gup-works.md) and [`SECURITY.md`](../../../SECURITY.md), which win
+[`how-gup-works.md`](../how-gup-works.md) and [`SECURITY.md`](../../../.github/SECURITY.md), which win
 where they differ ([about these records](README.md)).
 
 Read the code for the exact signatures: every contract below lives in one file, named here.
