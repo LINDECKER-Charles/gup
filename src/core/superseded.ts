@@ -23,6 +23,7 @@ const SUPERSESSIONS: readonly Supersession[] = [
   {
     providerId: "winget",
     packages:
+      // eslint-disable-next-line security/detect-unsafe-regex -- anchored, no nested repetition: literals around one optional four-digit year
       /^Microsoft\.VisualStudio\.(?:\d{4}\.)?(?:Community|Professional|Enterprise|BuildTools)(?:\.Preview)?$/,
     keeper: "visual-studio",
     isCovered: (keeper) => keeper.available && keeper.error === undefined,
