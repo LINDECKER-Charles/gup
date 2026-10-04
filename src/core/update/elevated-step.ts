@@ -1,12 +1,20 @@
 import { runElevatedBatch } from "../elevation.js";
 import { recordUpdate } from "../history/store.js";
+import { localized } from "../i18n/localized.js";
 import type { UpdateOutcome } from "../types.js";
 import { discardPendingInterrupt } from "./finalize-outcome.js";
 import type { OutcomeEntry, PlannedUpdate, UpdatePorts } from "./update-ports.js";
 import { entryOf } from "./update-report.js";
 
-/** What the packages left out get when the user declines the prompt. */
-const DECLINED_ELEVATION_MESSAGE = "Élévation refusée par l'utilisateur";
+const ELEVATION_LABELS = localized({
+  en: {
+    /** What the packages left out get when the user declines the prompt. */
+    declined: "Elevation declined by the user",
+  },
+  fr: {
+    declined: "Élévation refusée par l'utilisateur",
+  },
+});
 
 /**
  * Every package that needs administrator rights, behind one prompt: one UAC
@@ -25,7 +33,7 @@ export async function runElevatedStep(
 ): Promise<OutcomeEntry[]> {
   if (items.length === 0) return [];
   if (!(await ports.decisions.confirmElevation(items.length))) {
-    const message = ports.decisions.declinedElevation ?? DECLINED_ELEVATION_MESSAGE;
+    const message = ports.decisions.declinedElevation ?? ELEVATION_LABELS.declined;
     const declined = items.map((item) => declinedOutcome(item, message));
     return settle(items, declined, { isElevated: false, ports });
   }
@@ -48,7 +56,7 @@ function settle(
   context: { readonly isElevated: boolean; readonly ports: UpdatePorts },
 ): OutcomeEntry[] {
   return items.map((item, index) => {
-    const outcome = outcomes[index] ?? declinedOutcome(item, DECLINED_ELEVATION_MESSAGE);
+    const outcome = outcomes[index] ?? declinedOutcome(item, ELEVATION_LABELS.declined);
     recordUpdate({
       providerId: item.providerId,
       outcome,

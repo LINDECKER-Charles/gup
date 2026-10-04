@@ -1,3 +1,4 @@
+import { localized } from "../i18n/localized.js";
 import { lookupProvider } from "../platform/lookup-provider.js";
 import { getProvider } from "../registry.js";
 import { applyOptionsOf, applyUpdate } from "./apply-update.js";
@@ -30,14 +31,22 @@ export const AUTO_DECISIONS: UpdateDecisions = {
   chooseRetry: async () => null,
 };
 
+const HEADLESS_LABELS = localized({
+  en: { declinedElevation: "Administrator rights required: not available unattended" },
+  fr: { declinedElevation: "Droits administrateur requis : non disponible sans surveillance" },
+});
+
 /**
  * Scheduled runs: nobody is there to answer a UAC or sudo prompt, to consent
- * to a retry, nor to answer an installer's own question.
+ * to a retry, nor to answer an installer's own question. The message is read
+ * when a run declines, in the language startup chose.
  */
 export const HEADLESS_DECISIONS: UpdateDecisions = {
   confirmElevation: async () => false,
   chooseRetry: async () => null,
-  declinedElevation: "Droits administrateur requis : non disponible sans surveillance",
+  get declinedElevation() {
+    return HEADLESS_LABELS.declinedElevation;
+  },
   unattended: true,
 };
 

@@ -1,11 +1,20 @@
+import { localized } from "../i18n/localized.js";
+
 /**
  * Turns a child's output chunks into whole lines for a log, within a byte
  * budget: an installer that prints megabytes of progress must not fill the
  * disk. Pure: no I/O, the caller decides where lines go.
  */
 
-/** The single line emitted when the budget runs out; everything after it is dropped. */
-export const TRUNCATED_OUTPUT_LINE = "… sortie tronquée";
+export const OUTPUT_LABELS = localized({
+  en: {
+    /** The single line emitted when the budget runs out; everything after it is dropped. */
+    truncated: "… output truncated",
+  },
+  fr: {
+    truncated: "… sortie tronquée",
+  },
+});
 
 export interface LineSplitterOptions {
   /** UTF-8 bytes the emitted lines may use, line breaks included. */
@@ -54,7 +63,7 @@ export class LineSplitter {
     const cost = Buffer.byteLength(line) + LINE_BREAK_BYTES;
     if (this.#usedBytes + cost > this.#options.capBytes) {
       this.#isTruncated = true;
-      this.#options.onLine(TRUNCATED_OUTPUT_LINE);
+      this.#options.onLine(OUTPUT_LABELS.truncated);
       return;
     }
     this.#usedBytes += cost;

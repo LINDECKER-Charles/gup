@@ -111,7 +111,7 @@ describe("adminBatchCommand", () => {
 
   it("emits a Format invalide outcome for a target missing the separator", async () => {
     const file = await mkInputFile();
-    await writeFile(file, JSON.stringify({ version: 1, targets: ["malformed"] }), {
+    await writeFile(file, JSON.stringify({ version: 1, targets: ["malformed"], locale: SUITE_LOCALE }), {
       encoding: "utf8",
       flag: "wx",
     });
@@ -128,7 +128,7 @@ describe("adminBatchCommand", () => {
 
   it("emits a Provider inconnu outcome when getProvider returns undefined", async () => {
     const file = await mkInputFile();
-    await writeFile(file, JSON.stringify({ version: 1, targets: ["ghost:x"] }), {
+    await writeFile(file, JSON.stringify({ version: 1, targets: ["ghost:x"], locale: SUITE_LOCALE }), {
       encoding: "utf8",
       flag: "wx",
     });
@@ -145,7 +145,7 @@ describe("adminBatchCommand", () => {
 
   it("refuses a target whose provider does not run on this platform", async () => {
     const file = await mkInputFile();
-    await writeFile(file, JSON.stringify({ version: 1, targets: ["brew-cask:firefox"] }), {
+    await writeFile(file, JSON.stringify({ version: 1, targets: ["brew-cask:firefox"], locale: SUITE_LOCALE }), {
       encoding: "utf8",
       flag: "wx",
     });
@@ -178,7 +178,10 @@ describe("adminBatchCommand", () => {
   it("re-checks every target as the CLI does: no option, no control character, no empty id", async () => {
     const file = await mkInputFile();
     const targets = ["choco:--source=http://attacker.invalid", "choco:-y", "choco:git\u001b[2J", "choco:", "choco:git"];
-    await writeFile(file, JSON.stringify({ version: 1, targets }), { encoding: "utf8", flag: "wx" });
+    await writeFile(file, JSON.stringify({ version: 1, targets, locale: SUITE_LOCALE }), {
+      encoding: "utf8",
+      flag: "wx",
+    });
     const provider = {
       id: "choco",
       displayName: "Chocolatey",

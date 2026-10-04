@@ -12,10 +12,11 @@ vi.mock("../../../src/core/runner.js", () => ({
 import {
   discardPendingInterrupt,
   finalizeOutcome,
+  INTERRUPT_MESSAGES,
   isManualSkip,
-  MANUAL_SKIP_MESSAGE,
   skippedAs,
 } from "../../../src/core/update/finalize-outcome.js";
+import { useLocale } from "../../support/locale.js";
 
 beforeEach(() => {
   consumeMock.mockReset();
@@ -43,7 +44,7 @@ describe("finalizeOutcome", () => {
     const out = finalizeOutcome({ id: "x", success: false, retryable: true });
     expect(out).toMatchObject({ skipped: true, retryable: false });
     expect(out.message).toBe("ignorée par l'utilisateur");
-    expect(MANUAL_SKIP_MESSAGE).toBe(out.message);
+    expect(INTERRUPT_MESSAGES.manualSkip).toBe(out.message);
   });
 
   // npm-g moves back the copy a killed npm left aside: the user must read it
@@ -80,6 +81,21 @@ describe("isManualSkip / skippedAs", () => {
     expect(isManualSkip(skipped)).toBe(true);
     expect(isManualSkip({ ...skipped, message: "timeout" })).toBe(false);
     expect(skippedAs(skipped, "interrompu").message).toBe("interrompu — copie restaurée");
+  });
+
+  describe("in English", () => {
+    useLocale("en");
+
+    it("words the timeout and the user's skip in English, and still recognises the skip", () => {
+      consumeMock.mockReturnValueOnce({ timedOut: true, aborted: false });
+      expect(finalizeOutcome({ id: "x", success: false }).message).toBe(
+        "timeout (1200s) — install skipped",
+      );
+      consumeMock.mockReturnValueOnce({ timedOut: false, aborted: true });
+      const skipped = finalizeOutcome({ id: "x", success: false, recovery: "copy restored" });
+      expect(skipped.message).toBe("skipped by the user — copy restored");
+      expect(isManualSkip(skipped)).toBe(true);
+    });
   });
 });
 
