@@ -44,7 +44,7 @@ export const OPTION_HINTS = {
   timeout: "une install bloquée au-delà est ignorée",
   filter: "limiter le scan",
   contrast: "AA 4,5:1 · AAA 7:1",
-  glyphs: "ASCII si des □ s'affichent",
+  glyphs: "ASCII si des □ ou des ? s'affichent",
   density: "Compacte : plus de lignes",
   launchView: "vue ouverte au démarrage",
   scanOnLaunch: "sinon, r pour scanner",
