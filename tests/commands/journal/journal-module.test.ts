@@ -198,8 +198,18 @@ describe("the log.level setting", () => {
     log.info("scan.start");
     settings.update("log", { level: "off" });
     log.error("session.crash");
-    expect(events()).toEqual(["session.start", "scan.start"]);
+    expect(events()).toEqual(["session.start", "scan.start", "log.threshold"]);
+    expect(written().at(-1)?.data).toEqual({ threshold: "off", source: "setting" });
     expect(updateObservers()).toHaveLength(1);
+  });
+
+  it("records a level turned down before it goes quiet", async () => {
+    const { module, settings } = withLogSetting("debug");
+    await runModule(module, "update");
+    settings.update("log", { level: "error" });
+    log.warn("scan.provider");
+    expect(events()).toEqual(["session.start", "log.threshold"]);
+    expect(currentLogLevel()).toEqual({ threshold: "error", source: "setting" });
   });
 
   it("does not move a level the flag set", async () => {

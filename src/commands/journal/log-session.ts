@@ -154,7 +154,8 @@ function open(decision: Decision, settings: LogSettings): void {
 /**
  * The setting changed: decide again. A threshold the flag or the environment
  * set does not move. A log that was off starts now, with its `session.start`;
- * one turned off stays open and records nothing more.
+ * one turned down (off included) records the change, then stays open and
+ * records only what the new level lets through.
  */
 function follow(decision: Decision): void {
   const current = session;
@@ -166,9 +167,21 @@ function follow(decision: Decision): void {
     open(decision, next);
     return;
   }
-  current.backend.setThreshold(next.threshold);
   session = { ...current, settings: next };
-  log.info("log.threshold", { threshold: next.threshold, source: next.source });
+  changeThreshold(current.backend, next);
+}
+
+/**
+ * Move the backend to `next`'s threshold, recording `log.threshold` under the
+ * louder of the old and the new one: a log turned down still says why it
+ * went quiet.
+ */
+function changeThreshold(backend: SinkLogBackend, next: LogSettings): void {
+  const data = { threshold: next.threshold, source: next.source };
+  const isRecordedBefore = backend.isEnabled("info");
+  if (isRecordedBefore) log.info("log.threshold", data);
+  backend.setThreshold(next.threshold);
+  if (!isRecordedBefore) log.info("log.threshold", data);
 }
 
 function sinkOf(kind: LogSinkKind, dir: string | null): LogSink | null {
