@@ -31,6 +31,7 @@ export type StagedCopyFate =
 const NONE: StagedCopyFate = { kind: "none" };
 
 /** A registry package name, scoped or not: never a path that leaves `root`. */
+// eslint-disable-next-line security/detect-unsafe-regex -- anchored, no nested quantifier; the optional scope ends at a literal '/', so matching is linear
 const PACKAGE_NAME = /^(?:@[a-z0-9][\w.~-]*\/)?[a-z0-9][\w.~-]*$/i;
 
 /** npm's suffix: the first 8 alphanumerics of the base64 SHA-1 of the path. */
@@ -96,6 +97,7 @@ function npmPathHash(target: string): string {
 
 async function listOrEmpty(dir: string): Promise<string[]> {
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- read-only listing of npm's global node_modules (or its bin dir), resolved from `npm root -g`: the user's own prefix, same trust boundary as the process
     return await readdir(dir);
   } catch {
     return [];
@@ -104,6 +106,7 @@ async function listOrEmpty(dir: string): Promise<string[]> {
 
 async function isMissingOrEmpty(dir: string): Promise<boolean> {
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- read-only probe of a package directory under the user's own global npm root
     return (await readdir(dir)).length === 0;
   } catch (error) {
     return (error as NodeJS.ErrnoException).code === "ENOENT";
@@ -113,6 +116,7 @@ async function isMissingOrEmpty(dir: string): Promise<boolean> {
 /** Rename `staged` onto `target`, once the empty directory npm created there is gone. */
 async function moveBack(staged: string, target: string): Promise<void> {
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- removes only the empty directory npm left at the package's own path under the user's global root; rmdir refuses a non-empty directory
     await rmdir(target);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
@@ -127,6 +131,7 @@ async function moveBack(staged: string, target: string): Promise<void> {
 async function renameWithRetry(from: string, to: string): Promise<void> {
   for (let attempt = 1; ; attempt++) {
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- moves npm's staged copy back to its original path, both inside the user's own global npm prefix
       await rename(from, to);
       return;
     } catch (error) {
@@ -167,6 +172,7 @@ function commandShims(binDir: string, name: string, path: PathApi): string[] {
 async function commandNames(packageDir: string, path: PathApi): Promise<string[]> {
   let manifest: { name?: unknown; bin?: unknown };
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- read-only read of the restored package's own package.json under the user's global npm root
     manifest = JSON.parse(await readFile(path.join(packageDir, "package.json"), "utf8")) as {
       name?: unknown;
       bin?: unknown;
@@ -181,6 +187,7 @@ async function commandNames(packageDir: string, path: PathApi): Promise<string[]
 
 async function isAbsent(path: string): Promise<boolean> {
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- read-only existence probe of a command shim in the user's own npm bin dir
     await lstat(path);
     return false;
   } catch (error) {

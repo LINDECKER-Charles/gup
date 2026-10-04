@@ -31,6 +31,7 @@ export function localizeCommander(program: Command): void {
 type Rewrite = readonly [RegExp, (match: RegExpExecArray) => string];
 
 const ENGLISH_PREFIX = /^error: /;
+// eslint-disable-next-line security/detect-unsafe-regex -- anchored, no nested repetition; the input is commander's own one-line message, not user data
 const SUGGESTION = /^\(Did you mean (one of )?(.+)\?\)$/;
 // The messages of commander 15's `unknownOption`, `unknownCommand`,
 // `missingArgument`, `optionMissingArgument` and `_excessArguments`.
@@ -40,6 +41,7 @@ const REWRITES: readonly Rewrite[] = [
   [/^error: missing required argument (.+)$/, ([, name = ""]) => ERRORS.missingArgument(name)],
   [/^error: option (.+) argument missing$/, ([, flags = ""]) => ERRORS.optionMissingValue(flags)],
   [
+    // eslint-disable-next-line security/detect-unsafe-regex -- anchored, no nested repetition; matched against commander's own message
     /^error: too many arguments(?: for (\S+))?\. Expected (\d+) arguments? but got (\d+): (.*)\.$/,
     ([, command, expected = "", received = "", operands = ""]) =>
       ERRORS.tooManyArguments({
