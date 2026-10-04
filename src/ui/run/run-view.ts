@@ -61,7 +61,8 @@ export interface RunViewDeps {
  * The run view: the full-body screen of an update running inside gup. A
  * status list (one row per package, overall progress) above one live
  * terminal pane — the package in flight — then the results, with the keys
- * other views add to them, until the user goes back to Paquets. It hands the
+ * other views add to them, until the user leaves them — where the menu goes
+ * then (Paquets, Planification, a rescan) is the session's call. It hands the
  * pipeline its ports (observer, dialogs, abort gate) and the PTY sink its
  * panes; it never starts a process itself.
  */

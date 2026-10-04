@@ -165,7 +165,8 @@ export const CONFIRM_EXTRA = {
 export const LAUNCH_ERROR = {
   title: "Mise à jour",
   text: (message: string): string => `La mise à jour s'est interrompue : ${message}`,
-  back: "Retour aux paquets",
+  /** "Retour" alone, as on the results: a run-now goes back to Planification. */
+  back: "Retour",
 } as const;
 
 /** The terminal notification at the end of a long run. */

@@ -180,6 +180,32 @@ describe("in-screen launcher", () => {
     expect(back).toContain("Git.Git");
   });
 
+  it("gives a broken run-now back to Planification, without promising Paquets", async () => {
+    const schedules = contextView();
+    const menu = await bootMenu({
+      views: [schedules.view, optionsView()],
+      initialView: "schedules",
+      scanOnStart: false,
+      preferences: { confirmBeforeUpdate: false },
+      launcher: inScreenLauncher({
+        loadSupport: async () => AVAILABLE,
+        runUpdates: async () => {
+          throw new Error("plus de place sur le disque");
+        },
+      }),
+    });
+    await shown(menu, "planifications");
+    const selection = [{ providerId: "winget", pkg: pkg("Git.Git") }];
+    const launch = schedules.context().updates.launch(selection, { returnTo: "schedules" });
+
+    const failure = await shown(menu, LAUNCH_ERROR.title);
+    expect(failure).toContain(LAUNCH_ERROR.back);
+    expect(failure).not.toContain("aux paquets");
+    await menu.press("enter");
+    await expect(launch).resolves.toBeNull();
+    expect(await shown(menu, "┏━ Planification")).toContain("planifications");
+  });
+
   it("carries a schedule's run-now to the history and goes back where it came from", async () => {
     const schedules = contextView();
     const runUpdates = vi.fn(updatesEverything);
