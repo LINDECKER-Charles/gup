@@ -1,5 +1,6 @@
 import { closeSync, constants, fstatSync, openSync, readFileSync, renameSync } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
+import { localized } from "../i18n/localized.js";
 import { isJsonObject, isSafeKey } from "./field-reader.js";
 import type { JsonValue } from "./section.js";
 
@@ -29,13 +30,45 @@ export interface ConfigDocument {
   readonly sections: Readonly<Record<string, JsonValue>>;
 }
 
+/** Why a readable file is not a settings document. */
+export type CorruptReason =
+  | "not-a-file"
+  | "too-large"
+  | "invalid-json"
+  | "not-an-object"
+  | "invalid-version"
+  | "invalid-sections";
+
+/**
+ * Each reason in words, read when a problem is shown: a file is classified
+ * at startup, before the language is chosen.
+ */
+export const CORRUPT_REASONS = localized<Readonly<Record<CorruptReason, string>>>({
+  en: {
+    "not-a-file": "not a file",
+    "too-large": "file too large",
+    "invalid-json": "invalid JSON",
+    "not-an-object": "expected a JSON object",
+    "invalid-version": "invalid version field",
+    "invalid-sections": "invalid sections field",
+  },
+  fr: {
+    "not-a-file": "pas un fichier",
+    "too-large": "fichier trop volumineux",
+    "invalid-json": "JSON invalide",
+    "not-an-object": "objet JSON attendu",
+    "invalid-version": "champ version invalide",
+    "invalid-sections": "champ sections invalide",
+  },
+});
+
 export type ConfigFileRead =
   | { readonly kind: "missing" }
   | { readonly kind: "loaded"; readonly document: ConfigDocument }
   /** Exists but cannot be read (permissions): never backed up, never overwritten. */
   | { readonly kind: "unreadable"; readonly reason: string }
   /** Readable but not a settings document: to be moved aside. */
-  | { readonly kind: "corrupt"; readonly reason: string };
+  | { readonly kind: "corrupt"; readonly reason: CorruptReason };
 
 export function emptyDocument(): ConfigDocument {
   return { version: ENVELOPE_VERSION, sections: {} };
@@ -66,8 +99,8 @@ export function readConfigFile(
  */
 function readOpenFile(fd: number, maxBytes: number): ConfigFileRead {
   const stats = fstatSync(fd);
-  if (!stats.isFile()) return { kind: "corrupt", reason: "pas un fichier" };
-  if (stats.size > maxBytes) return { kind: "corrupt", reason: "fichier trop volumineux" };
+  if (!stats.isFile()) return { kind: "corrupt", reason: "not-a-file" };
+  if (stats.size > maxBytes) return { kind: "corrupt", reason: "too-large" };
   return parseDocument(readFileSync(fd, "utf8"));
 }
 
@@ -76,15 +109,15 @@ function parseDocument(text: string): ConfigFileRead {
   try {
     raw = JSON.parse(text.startsWith(BYTE_ORDER_MARK) ? text.slice(1) : text);
   } catch {
-    return { kind: "corrupt", reason: "JSON invalide" };
+    return { kind: "corrupt", reason: "invalid-json" };
   }
-  if (!isJsonObject(raw)) return { kind: "corrupt", reason: "objet JSON attendu" };
+  if (!isJsonObject(raw)) return { kind: "corrupt", reason: "not-an-object" };
   const { version, sections } = raw;
   if (!Number.isInteger(version) || (version as number) < 1) {
-    return { kind: "corrupt", reason: "champ version invalide" };
+    return { kind: "corrupt", reason: "invalid-version" };
   }
   if (sections !== undefined && !isJsonObject(sections)) {
-    return { kind: "corrupt", reason: "champ sections invalide" };
+    return { kind: "corrupt", reason: "invalid-sections" };
   }
   const document = { version: version as number, sections: ownSections(sections) };
   return { kind: "loaded", document };

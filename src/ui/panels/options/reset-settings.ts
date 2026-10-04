@@ -5,10 +5,10 @@ import type { OptionsHost } from "./option-row.js";
 
 /**
  * Put a group of settings back to their defaults, the way the Options view
- * groups them: Apparence (theme, colours, contrast, symbols, density),
- * Confort (the rest of the `interface` section), Scan & installation (fast
- * mode, filter, timeout — applied to the session at once too); Tout adds the
- * sections other features put on the page (the journal settings). Every step
+ * groups them: appearance (theme, colours, contrast, symbols, density),
+ * comfort (the rest of the `interface` section, language included), scan
+ * (fast mode, filter, timeout — applied to the session at once too); all adds
+ * the sections other features put on the page (the journal settings). Every step
  * runs even when one cannot be persisted; the first failure is rethrown at
  * the end, the values staying in effect for the session.
  */

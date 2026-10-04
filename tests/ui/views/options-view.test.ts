@@ -16,12 +16,12 @@ import { staticProbe } from "../../../src/ui/theme/runtime/terminal-probe.js";
 import { ThemedAppearance } from "../../../src/ui/theme/runtime/themed-appearance.js";
 import { DIALOG_HINTS, TIMEOUT_DIALOG } from "../../../src/ui/text/menu-labels.js";
 import { OPTIONS_NOTICES, SORT_VALUES } from "../../../src/ui/text/settings/options-labels.js";
+import { COLOR_EDITOR } from "../../../src/ui/text/settings/color-editor-labels.js";
 import { CONFIG_STATE_LABELS } from "../../../src/ui/text/settings/settings-labels.js";
 import {
-  COLOR_EDITOR,
   CONTRAST_STATUS,
-  PREVIEW_FACT,
   THEME_LABELS,
+  THEME_PICKER,
 } from "../../../src/ui/text/settings/theme-labels.js";
 import { configureScreens } from "../../../src/ui/tui/screen-host.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
@@ -104,10 +104,10 @@ describe("Options view in the menu", () => {
     const { menu, settings } = await themedMenu();
     expect(screenBackground(menu.screen.captureSpans())).toEqual(DARK_BACKGROUND);
     await menu.press("down", "down", "down", "enter", "down");
-    const previewed = await spansWhen(menu, (text) => text.includes(PREVIEW_FACT));
+    const previewed = await spansWhen(menu, (text) => text.includes(THEME_PICKER.previewFact));
     expect(screenBackground(previewed)).toEqual(LIGHT_BACKGROUND);
     await pressEscape(menu);
-    const restored = await spansWhen(menu, (text) => !text.includes(PREVIEW_FACT));
+    const restored = await spansWhen(menu, (text) => !text.includes(THEME_PICKER.previewFact));
     expect(screenBackground(restored)).toEqual(DARK_BACKGROUND);
     expect(settings.get("theme").id).toBe("dark");
   });
@@ -118,7 +118,7 @@ describe("Options view in the menu", () => {
     const applied = await spansWhen(menu, (text) => text.includes("[Clair (gup)]"));
     expect(settings.get("theme").id).toBe("light");
     expect(screenBackground(applied)).toEqual(LIGHT_BACKGROUND);
-    expect(await menu.frame()).not.toContain(PREVIEW_FACT);
+    expect(await menu.frame()).not.toContain(THEME_PICKER.previewFact);
   });
 
   it("switches the symbol set at once", async () => {
@@ -174,7 +174,7 @@ describe("Options in an 80 × 24 terminal", () => {
     const { menu } = await themedMenu({ size: { cols: 80, rows: 24 } });
     await menu.press("down", "down", "down", "enter", "down");
     await menu.screen.waitForFrame((frame) => frame.includes("Contraste minimal 4,8:1"));
-    expect((await menu.frame()).split("\n")[0]).toContain(PREVIEW_FACT);
+    expect((await menu.frame()).split("\n")[0]).toContain(THEME_PICKER.previewFact);
   });
 });
 

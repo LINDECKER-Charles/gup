@@ -14,9 +14,9 @@ import type { OptionRow, OptionsControls, OptionsHost, SectionFactory } from "./
 import { resetSettings, touchesScan } from "./reset-settings.js";
 
 /**
- * FICHIER: reset a group of settings (chosen, then confirmed, "Non" by
- * default), and the settings file — its state and where it lives, the path
- * copied to the clipboard with `c` (or Entrée on its row).
+ * FILE: reset a group of settings (chosen, then confirmed, "No" by default),
+ * and the settings file — its state and where it lives, the path copied to
+ * the clipboard with `c` (or Enter on its row).
  */
 export const fileSection: SectionFactory = (controls, host) => {
   const copyPath = (): void => copyFilePath(controls, host);

@@ -76,9 +76,15 @@ export interface InterfaceRowSpec<T> {
   apply?(value: T, host: OptionsHost): void;
 }
 
-export function interfaceRow<T>(spec: InterfaceRowSpec<T>): RowBuilder {
-  return (controls, host) =>
-    choiceRow({
+/**
+ * The row of `specOf()`, asked for when the section is built: a section may
+ * declare its rows in a module-level table, and its labels are then read in
+ * the language the run speaks, not in the one active while modules load.
+ */
+export function interfaceRow<T>(specOf: () => InterfaceRowSpec<T>): RowBuilder {
+  return (controls, host) => {
+    const spec = specOf();
+    return choiceRow({
       id: spec.id,
       label: spec.label,
       choices: spec.choices,
@@ -89,4 +95,5 @@ export function interfaceRow<T>(spec: InterfaceRowSpec<T>): RowBuilder {
         spec.apply?.(value, host);
       },
     });
+  };
 }
