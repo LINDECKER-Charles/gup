@@ -137,7 +137,7 @@ export const ISSUE_SUBJECTS: Readonly<Record<string, string>> = {
   schedules: "planifications",
 };
 
-/** "✖ brew:git : Provider inconnu: brew", "✖ nom : nom requis". */
+/** "× brew:git : Provider inconnu: brew", "× nom : nom requis". */
 export function issueLine(subject: string, message: string): string {
   return `${STATUS_GLYPHS.failed} ${subject} : ${message}`;
 }

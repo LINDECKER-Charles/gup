@@ -38,12 +38,12 @@ describe("recurrenceLabel", () => {
 describe("runStatusLabel", () => {
   it("summarises a run in a few characters", () => {
     expect(runStatusLabel(undefined)).toBe("—");
-    expect(runStatusLabel(record(["updated", "updated", "no-update"], "success"))).toBe("✔ 2 mis à jour");
-    expect(runStatusLabel(record(["no-update"], "up-to-date"))).toBe("✔ à jour");
-    expect(runStatusLabel(record(["updated", "failed", "failed"], "partial"))).toBe("◐ 1/3 — 2 échecs");
-    expect(runStatusLabel(record(["updated", "skipped"], "partial"))).toBe("◐ 1/2 — 1 ignorée");
-    expect(runStatusLabel(record(["failed"], "failed"))).toBe("✖ 1 échec");
-    expect(runStatusLabel(record(["skipped"], "skipped"))).toBe("↷ ignorée");
+    expect(runStatusLabel(record(["updated", "updated", "no-update"], "success"))).toBe("√ 2 mis à jour");
+    expect(runStatusLabel(record(["no-update"], "up-to-date"))).toBe("√ à jour");
+    expect(runStatusLabel(record(["updated", "failed", "failed"], "partial"))).toBe("± 1/3 — 2 échecs");
+    expect(runStatusLabel(record(["updated", "skipped"], "partial"))).toBe("± 1/2 — 1 ignorée");
+    expect(runStatusLabel(record(["failed"], "failed"))).toBe("× 1 échec");
+    expect(runStatusLabel(record(["skipped"], "skipped"))).toBe("→ ignorée");
     expect(runStatusLabel(record([], "missed"))).toBe("– manquée");
   });
 });
@@ -74,7 +74,7 @@ describe("triggerLine", () => {
       "Déclencheur : non installé — i pour l'installer",
     );
     expect(triggerLine({ kind: "stale", since: new Date("2026-10-05T08:00:00Z") }, context)).toBe(
-      "⚠ Aucun passage depuis 2 h 00 — i pour réparer",
+      "‼ Aucun passage depuis 2 h 00 — i pour réparer",
     );
     expect(triggerLine({ kind: "outdated" }, context)).toBe(
       "Déclencheur : chemin de gup obsolète — i pour réparer",

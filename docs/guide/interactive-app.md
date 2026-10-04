@@ -99,7 +99,7 @@ the cursor**: with nothing checked it updates nothing and says how to check
 (`Scan en cours — la mise à jour sera possible à la fin du scan.`). To update everything: `a`,
 then Entrée.
 
-`◷` marks a package an enabled schedule already covers. The order inside each provider follows
+`∞` marks a package an enabled schedule already covers. The order inside each provider follows
 Options › **Tri des paquets** (by name, or biggest version jump first).
 
 ## Updating
@@ -134,9 +134,9 @@ The run view takes the whole body of the screen until you leave the results:
 
 ![In-app update: three packages done, PowerToys downloading with winget's progress bar in the embedded terminal pane below, 7-Zip queued and nodejs-lts waiting for the administrator step.](../assets/screens/update-running.svg)
 
-- **One row per package**, in the order they run: `·` waiting, a spinner while it installs, `✔`
-  updated, `↷` skipped, `✖` failed, `⊘` cancelled. A row shows its provider, its versions, its
-  duration, `admin` for a package of the elevated batch and `↻ retry --force` on a retry; a line
+- **One row per package**, in the order they run: `·` waiting, a spinner while it installs, `√`
+  updated, `→` skipped, `×` failed, `▪` cancelled. A row shows its provider, its versions, its
+  duration, `admin` for a package of the elevated batch and `retry --force` on a retry; a line
   under it gives the installer's message when there is one. The header counts them and shows the
   run's clock.
 - **The terminal pane** below shows the package being installed: its real output, progress bars
@@ -170,7 +170,7 @@ them the keyboard — the pane's border turns heavy and reads
 package.
 
 When an installer has been silent for a few seconds on a line that looks like a question, gup says
-so under its row: `⌨ Le programme attend peut-être une réponse — t pour écrire dans le terminal.`
+so under its row: `‼ Le programme attend peut-être une réponse — t pour écrire dans le terminal.`
 gup never types an answer itself, and never takes the keyboard from you. While any dialog is open,
 the pane takes no key at all: a key meant for the dialog never reaches an installer.
 
@@ -190,8 +190,8 @@ Packages that need administrator rights run last, in one batch behind one prompt
 When failures can be retried (an installer hash mismatch, a changed installer technology…), a
 dialog offers the strategies once every package ran, least aggressive first — the same ones as
 `gup update` ([what each one risks](cli-reference.md#retrying-failed-updates)). A chosen strategy
-replays the failures in the run view, tagged `↻ <strategy>`. Nothing is retried after you stopped
-the run.
+replays the failures in the run view, tagged with the strategy (`retry --force`). Nothing is
+retried after you stopped the run.
 
 ![End of an in-app update: five packages updated, PowerToys failed, and gup offers to retry it with a stronger strategy, the safe one first, or to leave the failure.](../assets/screens/update-retry.svg)
 

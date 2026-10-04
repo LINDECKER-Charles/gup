@@ -119,7 +119,7 @@ describe("schedulesView in the menu", () => {
       ],
     });
     const frame = await menu.frame();
-    expect(frame).toMatch(/\[ \] ◷ Git /);
+    expect(frame).toMatch(/\[ \] ∞ Git /);
     expect(frame).toMatch(/\[ \] {3}Mozilla\.Firefox/);
   });
 });
@@ -149,7 +149,7 @@ describe("p in Paquets", () => {
       { providerId: "winget", packageId: "Git.Git", label: "Git" },
       { providerId: "winget", packageId: "Mozilla.Firefox" },
     ]);
-    expect(saved).toContain("✔ Planification « Git.Git +1 » créée — chaque jour à 09:00");
+    expect(saved).toContain("√ Planification « Git.Git +1 » créée — chaque jour à 09:00");
     expect(saved).toContain("déclencheur système installé");
   });
 
@@ -285,7 +285,7 @@ describe("the Planification list", () => {
       },
     ]);
     expect(port.recorded.map((entry) => entry.report)).toEqual([report]);
-    expect(done).toContain("Exécution terminée : ✔ 1 mis à jour");
+    expect(done).toContain("Exécution terminée : √ 1 mis à jour");
   });
 
   it("records a run with nothing outdated without launching anything", async () => {
@@ -293,7 +293,7 @@ describe("the Planification list", () => {
     const launcher: LauncherFactory = () => ({ isRunning: false, launch });
     const { menu, port } = await menuWith({ schedules: [storedSchedule()], launcher, onPlanification: true });
     await menu.press("x");
-    expect(await settled(menu)).toContain("Exécution terminée : ✔ à jour");
+    expect(await settled(menu)).toContain("Exécution terminée : √ à jour");
     expect(launch).not.toHaveBeenCalled();
     expect(port.recorded.map((entry) => entry.report)).toEqual([null]);
   });
@@ -441,14 +441,14 @@ describe("the schedule editor", () => {
     await menu.press("enter");
     expect(await menu.frame()).toContain("Paquets (2)");
     await ctrlS(menu);
-    expect(await settled(menu)).toContain("✔ Planification « Outils dev » enregistrée");
+    expect(await settled(menu)).toContain("√ Planification « Outils dev » enregistrée");
     expect(port.calls).toEqual(["replace a1b2c3d4"]);
   });
 
   it("refuses to save while a field has a problem", async () => {
     const { menu, port } = await editing();
     await menu.press("down", "down", "enter", "BACKSPACE", "BACKSPACE", "9", "9", "enter");
-    expect(await menu.frame()).toContain("✖ heure invalide (HH:MM attendu)");
+    expect(await menu.frame()).toContain("× heure invalide (HH:MM attendu)");
     await ctrlS(menu);
     expect(await settled(menu)).toContain("Corrigez les champs signalés avant d'enregistrer.");
     expect(port.calls).toEqual([]);

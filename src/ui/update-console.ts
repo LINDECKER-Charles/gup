@@ -125,7 +125,7 @@ function providerHeader(item: PlannedUpdate, plan: UpdatePlan): string {
 function retryHeader(item: PlannedUpdate, retry: RetryStrategyId, request: RetryRequest): string {
   const label = RETRY_TIERS.find((tier) => tier.id === retry)?.historyLabel ?? retry;
   const count = request.failures.filter((f) => f.providerId === item.providerId).length;
-  return `\n${chalk.bold(`  ↻ ${item.providerName} (${label})`)} ${chalk.dim(`(${count})`)}\n`;
+  return `\n${chalk.bold(`  → ${item.providerName} (${label})`)} ${chalk.dim(`(${count})`)}\n`;
 }
 
 /** Windows elevates through a UAC prompt; elsewhere sudo asks in this terminal. */

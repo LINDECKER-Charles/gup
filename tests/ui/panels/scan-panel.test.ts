@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { SIDEBAR_WIDTH } from "../../../src/ui/app/sidebar.js";
 import { ScanPanel } from "../../../src/ui/panels/scan-panel.js";
+import { STATUS_GLYPHS } from "../../../src/ui/theme/glyphs.js";
 import type { KeyPress } from "../../../src/ui/tui/screen-host.js";
 import { panelFrame } from "../../../src/ui/tui/text-panel.js";
 
@@ -55,11 +56,11 @@ describe("ScanPanel", () => {
     const summary = summaryOf(scan);
     expect(summary.length).toBeGreaterThan(1);
     expect(summary.every((line) => line.length <= narrow.width)).toBe(true);
-    expect(summary.join(" ")).toBe("✔ Scan terminé en 1,2 s — 12 provider(s), 0 mise(s) à jour");
+    expect(summary.join(" ")).toBe("√ Scan terminé en 1,2 s — 12 provider(s), 0 mise(s) à jour");
 
     const reason = "la détection des providers a dépassé son délai (30 s)";
     scan.failed(reason);
-    expect(summaryOf(scan).join(" ")).toBe(`✖ Scan interrompu : ${reason}`);
+    expect(summaryOf(scan).join(" ")).toBe(`× Scan interrompu : ${reason}`);
   });
 
   it("keeps every provider's duration inside the panel on an 80-column terminal", () => {
@@ -73,7 +74,7 @@ describe("ScanPanel", () => {
     scan.started("Scoop");
     const rows = text(scan.render({ width, height: 20 }))
       .split("\n")
-      .filter((line) => /[✔✖⠿] /.test(line));
+      .filter((line) => /^ {2}\S /.test(line));
     expect(rows).toHaveLength(4);
     expect(rows.every((row) => row.length <= width)).toBe(true);
     expect(rows.map((row) => row.trimEnd().split(/ {2,}/).at(-1))).toEqual([
@@ -84,6 +85,26 @@ describe("ScanPanel", () => {
     ]);
     // The name is cut before the result, and the result before the duration.
     expect(rows[2]).toMatch(/ ProjectDiscover… 12 mise\(s\) à jour +1 min 05 s$/);
+  });
+
+  it("turns the spinner on every tick, on the headline and on each running provider", () => {
+    const scan = new ScanPanel(vi.fn());
+    scan.detecting();
+    scan.planned(2);
+    scan.started("Winget");
+    scan.started("Scoop");
+    const marks = () =>
+      text(scan.render(VIEW))
+        .split("\n")
+        .filter((line) => / scan |en cours/.test(line))
+        .map((line) => line.trim().charAt(0));
+    const seen = STATUS_GLYPHS.running.map(() => {
+      const frame = marks();
+      scan.tick();
+      return frame;
+    });
+    expect(seen).toEqual(STATUS_GLYPHS.running.map((glyph) => [glyph, glyph, glyph]));
+    expect(marks()).toEqual(seen[0]);
   });
 
   it("rescans on r, but not while a scan runs", () => {

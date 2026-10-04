@@ -131,7 +131,7 @@ describe("legacy appearance", () => {
         const chrome = new Chrome(screen);
         chrome.setHints("↑↓ naviguer · entrée ouvrir");
         new TextPanel(screen, chrome.body, { id: "p", title: "Paquets › tri" }).show([
-          [seg("▌ ", "accent"), seg("✔ à jour"), seg(" ◐ █░", "muted")],
+          [seg("▌ ", "accent"), seg("√ à jour"), seg(" │ █░", "muted")],
         ]);
       },
       async (setup) => {

@@ -260,7 +260,7 @@ describe("OptionsPanel saving", () => {
     expect(state.fast).toBe(true);
     expect(settings.get("scan").fast).toBe(true);
     const first = text(panel.render(VIEW)).split("\n")[0];
-    expect(first).toContain("⚠ Réglage non enregistré");
+    expect(first).toContain("‼ Réglage non enregistré");
     expect(first).toContain("ENOSPC");
     press(panel, "enter");
     expect(text(panel.render(VIEW))).not.toContain("non enregistré");

@@ -122,7 +122,7 @@ describe("trendLine", () => {
   it("draws the outdated count of each day, carried over days without a full scan", () => {
     const line = trendLine(insights(ACTIVITY), context(80));
 
-    expect(text(line)).toBe("Paquets en retard (scans complets)  ██▃  max 23 · actuel 7");
+    expect(text(line)).toBe("Paquets en retard (scans complets)  ██▄  max 23 · actuel 7");
   });
 
   it("shortens its title on a narrow panel and shows a dash without data", () => {

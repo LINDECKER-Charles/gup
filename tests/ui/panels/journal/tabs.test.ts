@@ -36,10 +36,10 @@ describe("Événements", () => {
 
     const lines = screen();
     expect(lines[1]).toBe(`${EVENT_LABELS.type("tous")} · 7 événements`);
-    expect(lines[2]).toMatch(/^› 03\/10 00:00 {2}⟳ scan {4}1 provider · 7 en retard +1,0 s$/);
-    expect(lines.join("\n")).toMatch(/✖ échec +choco +nodejs/);
-    expect(lines.join("\n")).toMatch(/↷ ignorée +winget +Spotify\.Spotify/);
-    expect(lines.join("\n")).toMatch(/✔ réussie +winget +Google\.Chrome +129\.0 → 130\.0/);
+    expect(lines[2]).toMatch(/^› 03\/10 00:00 {2}◌ scan {4}1 provider · 7 en retard +1,0 s$/);
+    expect(lines.join("\n")).toMatch(/× échec +choco +nodejs/);
+    expect(lines.join("\n")).toMatch(/→ ignorée +winget +Spotify\.Spotify/);
+    expect(lines.join("\n")).toMatch(/√ réussie +winget +Google\.Chrome +129\.0 → 130\.0/);
   });
 
   it("cycles the type shown with f", async () => {
@@ -74,7 +74,7 @@ describe("Événements", () => {
 
     const detail = screen().join("\n");
     expect(screen()[1]).toBe("Mise à jour · choco · nodejs");
-    expect(detail).toMatch(/Statut +✖ échec/);
+    expect(detail).toMatch(/Statut +× échec/);
     expect(detail).toContain("exit code 1603\n  see the log");
     expect(journal.hints()).toBe(JOURNAL_HINTS.detail);
     press("2");
@@ -164,8 +164,8 @@ describe("provider names", () => {
   it("names providers in Événements' rows and details, and filters on those names", async () => {
     const { press, screen } = await journalOn("3", journalData(), named);
 
-    expect(screen().join("\n")).toMatch(/✖ échec +Chocolatey +nodejs/);
-    expect(screen().join("\n")).toMatch(/✔ réussie +npm \(global\) +typescript/);
+    expect(screen().join("\n")).toMatch(/× échec +Chocolatey +nodejs/);
+    expect(screen().join("\n")).toMatch(/√ réussie +npm \(global\) +typescript/);
     expect(screen().join("\n")).not.toMatch(/ choco | npm-g /);
     press("/", ...[..."chocolatey"], "return");
     expect(screen()[1]).toContain("1 événement");

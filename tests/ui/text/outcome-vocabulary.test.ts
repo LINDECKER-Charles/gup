@@ -51,7 +51,7 @@ describe("the words of an update's outcome", () => {
       finishedAt: "2026-10-05T08:01:00.000Z",
       targets: statuses.map((target) => ({ target: `a:${target}`, status: target })),
     });
-    expect(runStatusLabel(run(["updated", "skipped"], "partial"))).toBe("◐ 1/2 — 1 ignorée");
-    expect(runStatusLabel(run(["updated", "failed", "failed"], "partial"))).toBe("◐ 1/3 — 2 échecs");
+    expect(runStatusLabel(run(["updated", "skipped"], "partial"))).toBe("± 1/2 — 1 ignorée");
+    expect(runStatusLabel(run(["updated", "failed", "failed"], "partial"))).toBe("± 1/3 — 2 échecs");
   });
 });

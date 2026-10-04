@@ -4,9 +4,10 @@ import {
   setUiPreferencesSource,
 } from "../../../src/ui/app/ui-preferences.js";
 import { withScanScreen } from "../../../src/ui/prompts/scan-screen.js";
+import { STATUS_GLYPHS } from "../../../src/ui/theme/glyphs.js";
 import { createTestHost, frame } from "../../support/tui/test-host.js";
 
-const SPINNER = /[◐◓◑◒] {2}détection/;
+const SPINNER = new RegExp(`[${STATUS_GLYPHS.running.join("")}] {2}détection`);
 const FRAMES_APART_MS = 350;
 
 afterEach(() => {

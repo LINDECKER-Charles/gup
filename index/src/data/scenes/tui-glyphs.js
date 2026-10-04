@@ -5,15 +5,15 @@
  * by tests/rules/scenes-truth.test.mjs.
  */
 export const TUI_GLYPHS = Object.freeze({
-  /** Keyed like STATUS_GLYPHS; `running` is the spinner's first frame. */
+  /** Keyed like STATUS_GLYPHS; `running` is a slanted frame of the spinner, turning in a still. */
   status: Object.freeze({
-    success: "✔",
-    failed: "✖",
-    skipped: "↷",
-    cancelled: "⊘",
+    success: "√",
+    failed: "×",
+    skipped: "→",
+    cancelled: "▪",
     pending: "·",
-    running: "◐",
-    scheduled: "◷",
+    running: "╱",
+    scheduled: "∞",
   }),
   /** A package's box, and a provider row's box for all, some or none of its packages. */
   box: Object.freeze({ checked: "[■]", partial: "[–]", unchecked: "[ ]" }),

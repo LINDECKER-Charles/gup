@@ -70,7 +70,7 @@ describe("gup schedule add", () => {
     const { services, output, trigger } = await setup();
     expect(await addCommand(services, add(), output)).toBe(0);
     expect(output.lines).toEqual([
-      expect.stringMatching(/^✔ Planification [0-9a-f]{8} « Outils dev » créée — chaque lundi à 09:00$/),
+      expect.stringMatching(/^√ Planification [0-9a-f]{8} « Outils dev » créée — chaque lundi à 09:00$/),
       "  prochaines exécutions : lun. 5 oct. 09:00 · lun. 12 oct. 09:00 · lun. 19 oct. 09:00",
       `  ${WINGET_UAC_NOTE}`,
       INSTALLED,
@@ -85,7 +85,7 @@ describe("gup schedule add", () => {
     expect(await addCommand(services, add({ disabled: true }), output)).toBe(0);
     const id = firstId(services);
     expect(output.lines.slice(0, 2)).toEqual([
-      `✔ Planification ${id} « Outils dev » créée — chaque lundi à 09:00 (désactivée)`,
+      `√ Planification ${id} « Outils dev » créée — chaque lundi à 09:00 (désactivée)`,
       `  désactivée — « gup schedule enable ${id} » pour l'activer`,
     ]);
     expect(trigger.calls).toEqual([]);
@@ -111,7 +111,7 @@ describe("gup schedule add", () => {
     const registry = { ...services, providers: REGISTRY_PROVIDER_FACTS };
     expect(await addCommand(registry, add({ targets: ["brew:git"] }), output)).toBe(2);
     expect(output.errors).toEqual([
-      "✖ brew:git : Provider brew indisponible sur Windows (macOS/Linux uniquement)",
+      "× brew:git : Provider brew indisponible sur Windows (macOS/Linux uniquement)",
     ]);
     expect(services.repo.list()).toEqual([]);
   });
@@ -121,8 +121,8 @@ describe("gup schedule add", () => {
     const options = addCron("*/10 * * * *", { targets: ["choco:vlc"] });
     expect(await addCommand(services, options, output)).toBe(2);
     expect(output.errors).toEqual([
-      "✖ fréquence : Fréquence trop élevée — au plus une exécution par heure",
-      "✖ choco:vlc : « Chocolatey » demande sudo/admin à chaque mise à jour : non planifiable",
+      "× fréquence : Fréquence trop élevée — au plus une exécution par heure",
+      "× choco:vlc : « Chocolatey » demande sudo/admin à chaque mise à jour : non planifiable",
     ]);
   });
 
@@ -132,7 +132,7 @@ describe("gup schedule add", () => {
     expect(await addCommand(services, add(), output)).toBe(1);
     expect(services.repo.list()).toHaveLength(1);
     expect(output.errors).toEqual([
-      "  ⚠ Le déclencheur système n'a pas pu être modifié : Accès refusé",
+      "  ‼ Le déclencheur système n'a pas pu être modifié : Accès refusé",
       "    Réessayez : gup schedule install",
     ]);
   });
@@ -335,7 +335,7 @@ describe("gup schedule run-now", () => {
     expect(requests.map((r) => [r.providerId, r.packageId, r.scheduleId])).toEqual([["winget", "Git.Git", id]]);
     expect(output.lines).toEqual([
       `Exécution de ${id} « Outils dev » — scan : Winget, npm (global)…`,
-      "Résultat : ✔ 1 mis à jour",
+      "Résultat : √ 1 mis à jour",
       "  Winget  Git.Git  2.46.0 → 2.47.0",
       "  npm (global)  typescript  aucune mise à jour",
     ]);

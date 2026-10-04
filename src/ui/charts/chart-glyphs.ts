@@ -6,6 +6,10 @@ import type { GlyphMode } from "../theme/glyphs.js";
  * never decide it. ASCII sets are their own, not a translation of the
  * Unicode ones — `toAscii` maps every block to `#`, which would flatten a
  * heatmap or a sparkline into one level.
+ *
+ * The Unicode set keeps to the blocks Consolas draws (see `glyphs.ts`): the
+ * shades, the full block and the half blocks — not the eighths ▁…▇ and
+ * ▏…▉, which the Windows console host showed as boxed question marks.
  */
 
 export interface ChartGlyphs {
@@ -13,8 +17,11 @@ export interface ChartGlyphs {
   readonly heat: readonly [string, string, string, string, string];
   /** A whole bar cell. */
   readonly full: string;
-  /** Partial cells by eighths: index 1 = ⅛ … 7 = ⅞; empty when the set has whole cells only. */
-  readonly eighths: readonly string[];
+  /**
+   * The fills that end a bar inside a cell, `partials[i]` covering i / length
+   * of it (index 0 fills nothing); empty when bars round to whole cells.
+   */
+  readonly partials: readonly string[];
   /** Sparkline levels, lowest first. */
   readonly spark: readonly string[];
 }
@@ -22,14 +29,14 @@ export interface ChartGlyphs {
 const UNICODE: ChartGlyphs = {
   heat: ["·", "░", "▒", "▓", "█"],
   full: "█",
-  eighths: ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉"],
-  spark: ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"],
+  partials: ["", "▌"],
+  spark: ["_", "▄", "█"],
 };
 
 const ASCII: ChartGlyphs = {
   heat: [".", ":", "+", "*", "#"],
   full: "#",
-  eighths: [],
+  partials: [],
   spark: ["_", ".", "-", "~", "=", "^"],
 };
 

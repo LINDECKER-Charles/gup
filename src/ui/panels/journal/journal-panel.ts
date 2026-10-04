@@ -36,8 +36,8 @@ import { RecurrenceTab } from "./recurrence-tab.js";
  * period, `r` reloads, `o` writes the HTML report of the period (opened in
  * the browser when the setting says so), `e` exports. The period is the
  * `journal.period` setting until `p` picks one. A load never blanks the
- * screen: the previous data stays until the new one arrives (the title shows
- * ↻), and a load overtaken by a newer one is dropped.
+ * screen: the previous data stays until the new one arrives (the title ends
+ * with …), and a load overtaken by a newer one is dropped.
  */
 
 export interface JournalPanelDeps {

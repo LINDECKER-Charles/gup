@@ -2,6 +2,7 @@ import type { HexColor } from "../../../../core/config/field-reader.js";
 import type { CustomColors } from "../../../settings/theme-section.js";
 import { toHex, worstRatio } from "../../../theme/color/rgb.js";
 import { adjustedRoles } from "../../../theme/enforce-contrast.js";
+import { STATUS_GLYPHS } from "../../../theme/glyphs.js";
 import { CUSTOMIZABLE_TOKENS, type CustomizableToken } from "../../../theme/palette.js";
 import type { ResolvedTheme } from "../../../theme/resolve-theme.js";
 import {
@@ -24,7 +25,7 @@ import { clipLine } from "../settings-list.js";
 /**
  * The colour editor's table, as lines: one row per tunable role — the colour
  * chosen (or "(thème)"), the colour painted, its contrast on the grounds
- * (`2,1 → 4,6:1 ⚠` when an unreadable choice was moved), a sample painted
+ * (`2,1 → 4,6:1 ‼` when an unreadable choice was moved), a sample painted
  * with it — and the warning under it when colours had to be adjusted.
  *
  * On a narrow panel the painted colour's column is left out: the contrast
@@ -57,7 +58,7 @@ const GUTTER = "  ";
 const ROLE_WIDTH = 17;
 const HEX_WIDTH = 9;
 const RATIO_WIDTH = 16;
-/** The widest ratio, 21:1: a shorter one is padded to it, so every ✔ stands in one column. */
+/** The widest ratio, 21:1: a shorter one is padded to it, so every √ stands in one column. */
 const RATIO_TEXT_WIDTH = formatRatio(21).length;
 const GROUNDS: ReadonlySet<CustomizableToken> = new Set(["background", "highlight"]);
 const SAMPLE_TONE: Readonly<Record<CustomizableToken, Tone>> = {
@@ -122,7 +123,7 @@ export function colorTableLines(table: ColorTable, width: number): Line[] {
   return [clipLine([seg(`${GUTTER}${headings.join("")}`, "muted")], width), ...rows];
 }
 
-/** Grounds: "—" (or "ajusté ⚠"); text roles: their worst ratio, or before → after. */
+/** Grounds: "—" (or "ajusté ‼"); text roles: their worst ratio, or before → after. */
 function ratioCell({ token, theme }: RoleCell): Segment {
   const correction = theme.report.corrections.find((candidate) => candidate.token === token);
   if (GROUNDS.has(token)) {
@@ -133,8 +134,12 @@ function ratioCell({ token, theme }: RoleCell): Segment {
   const { palette } = theme;
   if (!palette) return seg(fit(COLOR_EDITOR.ground, RATIO_WIDTH), "muted");
   const ratio = formatRatio(worstRatio(palette[token], [palette.background, palette.highlight]));
-  if (!correction) return seg(fit(`${ratio.padEnd(RATIO_TEXT_WIDTH)} ✔`, RATIO_WIDTH), "success");
-  return seg(fit(`${formatRatioValue(correction.before)} → ${ratio} ⚠`, RATIO_WIDTH), "warning");
+  const { success, warning } = STATUS_GLYPHS;
+  if (!correction) {
+    return seg(fit(`${ratio.padEnd(RATIO_TEXT_WIDTH)} ${success}`, RATIO_WIDTH), "success");
+  }
+  const moved = `${formatRatioValue(correction.before)} → ${ratio} ${warning}`;
+  return seg(fit(moved, RATIO_WIDTH), "warning");
 }
 
 /** The warning under the table when some colours had to be adjusted. */

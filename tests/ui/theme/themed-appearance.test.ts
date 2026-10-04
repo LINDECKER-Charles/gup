@@ -268,7 +268,7 @@ describe("ThemedAppearance: live changes", () => {
     expect(appearance.resolved.effective).toBe("light");
     expect(appearance.density).toBe("compact");
     expect(appearance.glyphMode).toBe("ascii");
-    expect(appearance.glyphs("✔ › à jour")).toBe("+ > à jour");
+    expect(appearance.glyphs("√ › à jour")).toBe("+ > à jour");
     expect(appearance.border(true).customChars).toBeDefined();
   });
 

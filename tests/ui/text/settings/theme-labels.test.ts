@@ -42,9 +42,9 @@ describe("contrastStatus", () => {
   it("counts the colours it had to adjust, the ones a user tunes", () => {
     const status = statusOf({ custom: { dark: { accent: "#0B0D13" } } });
     expect(status.tone).toBe("warning");
-    expect(status.text).toMatch(/^⚠ 1 couleur ajustée · min\. \d+,\d:1$/);
+    expect(status.text).toMatch(/^‼ 1 couleur ajustée · min\. \d+,\d:1$/);
     const two = statusOf({ custom: { dark: { accent: "#0B0D13", success: "#0B0D13" } } });
-    expect(two.text).toMatch(/^⚠ 2 couleurs ajustées · /);
+    expect(two.text).toMatch(/^‼ 2 couleurs ajustées · /);
   });
 
   it("says when the contrast cannot be checked, or is still being detected", () => {
@@ -67,10 +67,10 @@ describe("adjusted colours, staying readable", () => {
     expect(THEME_PICKER.corrections(1)).toBe("1 couleur ajustée pour rester lisible");
     expect(THEME_PICKER.corrections(2)).toBe("2 couleurs ajustées pour rester lisibles");
     expect(COLOR_EDITOR.corrected(1, "AA")).toMatch(
-      /^⚠ 1 couleur ajustée automatiquement pour rester lisible \(AA\)\. /,
+      /^‼ 1 couleur ajustée automatiquement pour rester lisible \(AA\)\. /,
     );
     expect(COLOR_EDITOR.corrected(3, "AAA")).toMatch(
-      /^⚠ 3 couleurs ajustées automatiquement pour rester lisibles \(AAA\)\. /,
+      /^‼ 3 couleurs ajustées automatiquement pour rester lisibles \(AAA\)\. /,
     );
   });
 });

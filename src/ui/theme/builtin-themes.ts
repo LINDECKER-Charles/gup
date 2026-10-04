@@ -9,7 +9,7 @@ import type { BasePalette, RgbThemeId } from "./palette.js";
  * - `dark` / `light` derive from the landing site's brand tokens (navy, violet,
  *   amber, green, red).
  * - `colorblind` is built on Okabe-Ito: success sky blue, danger orange,
- *   warning yellow, accent reddish purple — never red against green; the ✔ ✖
+ *   warning yellow, accent reddish purple — never red against green; the √ ×
  *   glyphs carry the meaning too.
  * - `dracula` and `github-light` are AA-adjusted variants: a few colours
  *   differ from the canonical palettes (Dracula's muted, accent, danger and

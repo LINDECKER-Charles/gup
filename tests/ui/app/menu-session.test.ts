@@ -15,7 +15,7 @@ import {
 } from "../../../src/ui/text/menu-labels.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
-import { toAscii } from "../../../src/ui/theme/glyphs.js";
+import { STATUS_GLYPHS, toAscii } from "../../../src/ui/theme/glyphs.js";
 import { legacyAppearance } from "../../../src/ui/theme/legacy-appearance.js";
 import { providersView } from "../../../src/ui/views/providers-view.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
@@ -344,7 +344,7 @@ describe("MenuSession preferences", () => {
     events.detecting();
     return new Promise<void>(() => {});
   });
-  const SPINNER = /[◐◓◑◒] {2}détection/;
+  const SPINNER = new RegExp(`[${STATUS_GLYPHS.running.join("")}] {2}détection`);
 
   async function spinnerFrames(animations: boolean): Promise<string[]> {
     const menu = await bootMenu({ controller: { scan: endlessScan }, preferences: { animations } });

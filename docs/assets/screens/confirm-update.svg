@@ -61,7 +61,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="123.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
-<text class="c0" x="296.8" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
+<text class="c0" x="296.8" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
 <text class="c4" x="312.4" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ripgrep           </text>
 <text class="c6" x="452.8" y="123.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 14.1.1 </text>
 <text class="c5" x="515.2" y="123.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
@@ -71,7 +71,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="140.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
-<text class="c0" x="296.8" y="140.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
+<text class="c0" x="296.8" y="140.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
 <text class="c4" x="312.4" y="140.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">bat               </text>
 <text class="c6" x="452.8" y="140.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.25.0 </text>
 <text class="c5" x="515.2" y="140.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>

@@ -157,7 +157,7 @@ describe("SchedulesPanel, list", () => {
     const lines = render({ width: 50, height: 24 });
     expect(lines[2]).toMatch(/^ {4}Nom +Fréquence$/);
     expect(lines[3]).toMatch(/^› ● Outils dev +chaque lundi à 09:00 +—$/);
-    expect(lines[4]).toMatch(/^ {2}● Mensuel +le 15 de chaque mois à 09:00 +✖$/);
+    expect(lines[4]).toMatch(/^ {2}● Mensuel +le 15 de chaque mois à 09:00 +×$/);
     expect(lines[5]).toMatch(/^ {2}● Fin de mois le dernier jour du mois à 09:00 —$/);
     expect(lines.slice(2, 6).every((line) => line.length <= 50)).toBe(true);
   });
@@ -209,9 +209,9 @@ describe("SchedulesPanel, list", () => {
     panel.setTrigger(active);
     expect(render().slice(6)).toEqual([
       "Dernière exécution · Outils dev · il y a 1 h · 2 min 14 s · rattrapage",
-      "  ✔ Winget         Git.Git              2.46.0 → 2.47.0",
+      "  √ Winget         Git.Git              2.46.0 → 2.47.0",
       "  = npm (global)   pnpm                 aucune mise à jour",
-      "  ↷ Chocolatey     vlc                  ignorée — droits administrateur requis",
+      "  → Chocolatey     vlc                  ignorée — droits administrateur requis",
     ]);
   });
 
@@ -257,8 +257,8 @@ describe("SchedulesPanel, list", () => {
   it("shows a notice until the next key", () => {
     const { panel, render, press } = setup();
     panel.setTrigger(active);
-    panel.setNotice([[{ text: "✔ enregistrée", tone: "success" }]]);
-    expect(render()[0]).toBe("✔ enregistrée");
+    panel.setNotice([[{ text: "√ enregistrée", tone: "success" }]]);
+    expect(render()[0]).toBe("√ enregistrée");
     press(key("down"));
     expect(render()[0]).toMatch(/^Déclencheur/);
   });
@@ -333,7 +333,7 @@ describe("SchedulesPanel, editor", () => {
     press(key("escape"));
     press(key("return"));
     for (const character of "*/20 * * * *") press(key(character === " " ? "space" : character, character));
-    expect(render()).toContain("  ✖ Fréquence trop élevée — au plus une exécution par heure");
+    expect(render()).toContain("  × Fréquence trop élevée — au plus une exécution par heure");
   });
 
   it("draws Enregistrer muted while something prevents saving", () => {
@@ -344,7 +344,7 @@ describe("SchedulesPanel, editor", () => {
     panel.editor?.addTarget({ providerId: "choco", packageId: "vlc" });
     expect(saveTone()).toBe("muted");
     expect(render()).toContainEqual(
-      expect.stringContaining("✖ « Chocolatey » demande sudo/admin à chaque mise à jour"),
+      expect.stringContaining("× « Chocolatey » demande sudo/admin à chaque mise à jour"),
     );
   });
 

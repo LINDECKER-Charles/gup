@@ -79,7 +79,7 @@ reasoning behind the exclusion: [`scope.md`](../guide/scope.md).
 | **manual** | Flag on an `OutdatedPackage`: no command can update it. Filtered out by `scanAll` → never shown, never updated. |
 | **requiresAdmin** | Flag on an `OutdatedPackage`: its update needs UAC or `sudo`. The pipeline runs every such package in one elevated batch, behind one prompt. |
 | **aggregate** | Flag on an `OutdatedPackage` whose update acts on the whole provider ("all plugins"): never a scheduling target. |
-| **skipped** | Flag on an `UpdateOutcome`: the update was abandoned on purpose (the user skipped it, a timeout, missing rights, a GUI-only tool). Shown `↷`, distinct from a failure `✖`. |
+| **skipped** | Flag on an `UpdateOutcome`: the update was abandoned on purpose (the user skipped it, a timeout, missing rights, a GUI-only tool). Shown `→`, distinct from a failure `×`. |
 | **retryable** | Flag on an `UpdateOutcome`: the failure might pass with a more aggressive strategy (`--force`, `--uninstall-previous`, two-step reinstall). Triggers the retry offer. |
 | **Install sink** | Where an install's terminal I/O goes: the user's terminal, a pane of the embedded terminal, or a pipe to the debug log. Providers never know which. |
 | **Batch lock** | One update batch at a time per user, across processes (the menu, `gup update`, a scheduled tick). |
@@ -452,7 +452,7 @@ Two orthogonal concepts:
   but I already know no automatic command will work". `scanAll` **filters them out** — the user
   never sees them. A source whose items would **all** be `manual` gets no provider at all (§14.4).
 - **`skipped: true`** is set on an `UpdateOutcome`: "I tried, and stopped on purpose". The user
-  sees `↷` (`SKIP` in console output), distinct from `✖` (`FAIL`).
+  sees `→` (`SKIP` in console output), distinct from `×` (`FAIL`).
 
 ### 5.6 `platforms` — where a provider exists
 
@@ -1061,7 +1061,7 @@ Conventions:
 | `OutdatedPackage.requiresAdmin` | `boolean?` | output of `listOutdated` | → the single elevated batch |
 | `OutdatedPackage.aggregate` | `boolean?` | output of `listOutdated` | never a scheduling target |
 | `UpdateOutcome.success` | `boolean` | output of `update` | `false` ↔ failure OR skip |
-| `UpdateOutcome.skipped` | `boolean?` | output of `update` | requires `success: false`; `↷`, never retried |
+| `UpdateOutcome.skipped` | `boolean?` | output of `update` | requires `success: false`; `→`, never retried |
 | `UpdateOutcome.retryable` | `boolean?` | output of `update` | requires `success: false`; triggers the retry offer |
 | `UpdateOptions.force` | `boolean?` | input of `update` | never set by default, opt-in user only |
 | `UpdateOptions.uninstallPrevious` | `boolean?` | input of `update` | destructive, opt-in user only |

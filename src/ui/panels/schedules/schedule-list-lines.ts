@@ -64,7 +64,7 @@ const ROW_LEAD = CURSOR.length + MARGIN.length;
 const GAP = 1;
 /** Narrowest the name and the recurrence get on a panel too narrow for them. */
 const MIN_TEXT_WIDTH = 8;
-/** The last run told by its mark alone (`✔`, `◐`, `✖`, `—`): the details give its words. */
+/** The last run told by its mark alone (`√`, `±`, `×`, `—`): the details give its words. */
 const LAST_MARK_WIDTH = 1;
 const PROVIDER_WIDTH = 14;
 const PACKAGE_WIDTH = 20;

@@ -31,8 +31,8 @@ describe("theme picker", () => {
     const { panel } = openPicker();
     expect(panel.title).toBe(`Options › ${THEME_PICKER.title}`);
     const lines = panel.render(VIEW);
-    expect(text([lineWith(lines, THEME_LABELS.dark)])).toMatch(/^› Sombre \(gup\)\s+✔ 6,1/);
-    expect(text([lineWith(lines, THEME_LABELS["high-contrast"])])).toContain("✔ 7,8");
+    expect(text([lineWith(lines, THEME_LABELS.dark)])).toMatch(/^› Sombre \(gup\)\s+√ 6,1/);
+    expect(text([lineWith(lines, THEME_LABELS["high-contrast"])])).toContain("√ 7,8");
     expect(text([lineWith(lines, THEME_LABELS.terminal)])).toContain("? —");
     expect(text(lines)).toContain(THEME_PICKER.report(6.14, "AA"));
   });

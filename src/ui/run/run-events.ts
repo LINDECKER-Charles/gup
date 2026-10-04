@@ -5,7 +5,7 @@ import type {
   PlannedUpdate,
   UpdateObserver,
 } from "../../core/update/update-ports.js";
-import { PANE_LABELS, RUN_TAGS, type ElevationKind } from "../text/run-labels.js";
+import { PANE_LABELS, type ElevationKind } from "../text/run-labels.js";
 import { labelOf, retryLabelOf, type RunModel } from "./run-model.js";
 import { ELEVATED_PANE_KEY, type TerminalPanes } from "./terminal/terminal-panes.js";
 
@@ -50,7 +50,7 @@ function started(target: RunEventTarget, { item, retry }: Attempt): void {
   model.started({ item, ...(retry !== undefined && { retry }) });
   target.onStarted();
   panes.open(item.key, PANE_LABELS.title(item.providerName, labelOf(item)));
-  if (retry !== undefined) panes.current().note(RUN_TAGS.retry(retryLabelOf(retry)));
+  if (retry !== undefined) panes.current().note(retryLabelOf(retry));
 }
 
 function finished({ model, panes }: RunEventTarget, result: AttemptResult): void {

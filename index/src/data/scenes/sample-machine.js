@@ -12,7 +12,7 @@
  * @property {string} from
  * @property {string} to
  * @property {boolean} isChecked
- * @property {boolean} [isScheduled]  Covered by an enabled schedule: Paquets marks it `◷`.
+ * @property {boolean} [isScheduled]  Covered by an enabled schedule: Paquets marks it `∞`.
  *
  * @typedef {{ provider: string, packages: readonly SamplePackage[] }} SampleGroup
  */

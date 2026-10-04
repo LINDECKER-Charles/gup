@@ -48,7 +48,7 @@ const SPINNER = STATUS_GLYPHS.running;
 const DONE = `${STATUS_GLYPHS.success} `;
 const FAILED = `${STATUS_GLYPHS.failed} `;
 const BAR_WIDTH = 30;
-/** What comes before the name: "  ✔ ". */
+/** What comes before the name: "  √ ". */
 const MARK_WIDTH = 4;
 /** The name and result columns on a wide panel, their trailing blank included. */
 const NAME_WIDTH = 30;
@@ -137,7 +137,8 @@ export class ScanPanel implements Panel, ScanEvents {
       this.#offset + viewport.height - head.length,
     );
     const columns = columnsFor(viewport.width);
-    return [...head, ...rows.map((row) => progressLine(row, columns))];
+    const spinner = this.spinner();
+    return [...head, ...rows.map((row) => progressLine(row, columns, spinner))];
   }
 
   press(key: KeyPress): void {
@@ -219,9 +220,10 @@ function columnsFor(width: number): Columns {
   return { name: Math.min(NAME_WIDTH, Math.max(MIN_NAME_WIDTH, room - result)), result };
 }
 
-function progressLine({ name, outcome }: Progress, columns: Columns): Line {
+/** A provider's row: the spinner while it runs, then its outcome and time. */
+function progressLine({ name, outcome }: Progress, columns: Columns, spinner: string): Line {
   const nameCell = seg(cell(name, columns.name));
-  if (!outcome) return [seg("  ⠿ ", "accent"), nameCell, seg("en cours…", "muted")];
+  if (!outcome) return [seg(`  ${spinner} `, "accent"), nameCell, seg("en cours…", "muted")];
   const time = seg(formatDuration(outcome.ms).padStart(TIME_WIDTH), "muted");
   if (outcome.error) {
     return [

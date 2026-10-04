@@ -126,7 +126,7 @@ describe("consolePorts", () => {
       "\n  2 échec(s) récupérable(s) (Winget: 2) — typiquement hash d'installeur, " +
         "manifest locale, ou changement de technologie d'installation.\n",
     );
-    const retryHeader = `\n${chalk.bold("  ↻ Winget (retry --force)")} ${chalk.dim("(2)")}\n`;
+    const retryHeader = `\n${chalk.bold("  → Winget (retry --force)")} ${chalk.dim("(2)")}\n`;
     expect(printed()).toBe(chalk.bold("\n→ Winget (2)\n") + announce + retryHeader + announce);
     expect(selectMock.mock.calls[0]![0]).toMatchObject({ message: "Stratégie de réessai" });
   });

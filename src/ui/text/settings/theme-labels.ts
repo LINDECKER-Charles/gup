@@ -1,4 +1,5 @@
 import { adjustedRoles } from "../../theme/enforce-contrast.js";
+import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import type { PaintMode, ResolvedTheme } from "../../theme/resolve-theme.js";
 import type { ContrastLevel, CustomizableToken, ThemeId } from "../../theme/palette.js";
 import type { Tone } from "../../tui/styled-lines.js";
@@ -81,9 +82,9 @@ export function formatRatio(ratio: number): string {
 
 export const CONTRAST_STATUS = {
   pass: (level: ContrastLevel, ratio: number) =>
-    `✔ ${level} · contraste min. ${formatRatio(ratio)}`,
+    `${STATUS_GLYPHS.success} ${level} · contraste min. ${formatRatio(ratio)}`,
   corrected: (count: number, ratio: number) =>
-    `⚠ ${adjustedColors(count)} · min. ${formatRatio(ratio)}`,
+    `${STATUS_GLYPHS.warning} ${adjustedColors(count)} · min. ${formatRatio(ratio)}`,
   approximated: (ratio: number) =>
     `couleurs approchées (terminal 256 couleurs) · min. ${formatRatio(ratio)}`,
   unverified: "? palette du terminal inconnue — contraste non vérifiable",
@@ -122,7 +123,7 @@ export const THEME_PICKER = {
   previewHeading: "Aperçu",
   hints: "↑↓ essayer · entrée appliquer · échap annuler",
   report: (ratio: number, level: ContrastLevel) =>
-    `Contraste minimal ${formatRatio(ratio)} — ${level} ✔`,
+    `Contraste minimal ${formatRatio(ratio)} — ${level} ${STATUS_GLYPHS.success}`,
   corrections: (count: number) => adjustedToStayReadable(count),
   modeNotes: {
     rgb: "Fond peint par gup (la transparence du terminal n'est pas conservée).",
@@ -141,9 +142,9 @@ export const THEME_SAMPLE = {
     { name: "Git.Git", current: "2.51.0", latest: "2.52.0" },
     { name: "7zip.7zip", current: "25.00", latest: "25.01" },
   ],
-  success: "✔ succès",
-  warning: "⚠ attention",
-  danger: "✖ erreur",
+  success: `${STATUS_GLYPHS.success} succès`,
+  warning: `${STATUS_GLYPHS.warning} attention`,
+  danger: `${STATUS_GLYPHS.failed} erreur`,
   muted: "texte secondaire",
   disabled: "– indisponible",
   title: "gup · barre de titre",
@@ -166,15 +167,15 @@ export const COLOR_EDITOR = {
   },
   themeValue: "(thème)",
   ground: "—",
-  groundCorrected: "ajusté ⚠",
+  groundCorrected: `ajusté ${STATUS_GLYPHS.warning}`,
   corrected: (count: number, level: ContrastLevel) =>
-    `⚠ ${adjustedToStayReadable(count, "automatiquement ")} (${level}). ` +
+    `${STATUS_GLYPHS.warning} ${adjustedToStayReadable(count, "automatiquement ")} (${level}). ` +
     "a : garder la valeur ajustée.",
   samples: {
     accent: "› sélection",
-    success: "✔ à jour",
+    success: `${STATUS_GLYPHS.success} à jour`,
     warning: "2.51.0",
-    danger: "✖ échec",
+    danger: `${STATUS_GLYPHS.failed} échec`,
     text: "Git.Git",
     muted: "note",
     background: "fond de référence",

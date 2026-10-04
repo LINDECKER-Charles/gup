@@ -98,6 +98,12 @@ but it has limits:
 
 Boxes, question marks or misaligned borders mean your font or console cannot draw a symbol.
 
+gup only draws symbols that both Consolas — the Windows console host's default font — and
+Cascadia Mono, Windows Terminal's, contain: box drawing, shade and half blocks, `√ × ‼ → ▪ ± ∞ ◌`
+and the spinner `│ ╱ ─ ╲`. The console host cannot borrow a missing symbol from another font,
+so with an older font such as Lucida Console the rounded and heavy panel corners show as boxes:
+pick Consolas or Cascadia Mono in the window's *Properties › Font*.
+
 **Fix.** Options › **Symboles** › `ascii`, or `GUP_ASCII=1` for a run: every symbol switches to a
 one-column ASCII stand-in, and layouts do not move. gup switches by itself on `TERM=linux`,
 `TERM=dumb`, and on macOS/Linux without a UTF-8 locale (`LANG=en_US.UTF-8` fixes the latter).
@@ -109,7 +115,7 @@ one-column ASCII stand-in, and layouts do not move. gup switches by itself on `T
   default `terminal` theme uses your terminal's own colours unverified. Pick an RGB theme in
   Options › **Thème** (`dark`, `light`, `high-contrast`…): their contrast is guaranteed.
 - **A colour you set is not the one shown.** It was too pale or too dark to read and was moved to
-  the closest readable one; the colour editor says `avant → après ⚠`.
+  the closest readable one; the colour editor says `avant → après ‼`.
 - **Installer output in the update pane is white on a light terminal.** A known issue of the
   embedded terminal — see [themes-and-accessibility.md](themes-and-accessibility.md#the-embedded-terminal):
   use a dark terminal profile while updating, or `GUP_PTY=off`.
@@ -148,7 +154,7 @@ running — find it (Task Manager, `ps aux | grep gup`) and let it finish or clo
 ### Administrator packages were skipped
 
 ```text
-↷ nodejs-lts   Élévation refusée par l'utilisateur
+→ nodejs-lts   Élévation refusée par l'utilisateur
 ```
 
 **Why.** Packages that need administrator rights run in one batch behind one UAC prompt (Windows)

@@ -26,5 +26,5 @@ export function withDialog<T>(
  * gone, so the session still reads as a log of what was decided.
  */
 export function printAnswer(question: string, answer: string): void {
-  process.stdout.write(`${chalk.green("◇")}  ${question} ${chalk.dim(`· ${answer}`)}\n`);
+  process.stdout.write(`${chalk.green("◊")}  ${question} ${chalk.dim(`· ${answer}`)}\n`);
 }

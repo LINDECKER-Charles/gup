@@ -13,7 +13,7 @@ import type { LOG_SOURCE_LABELS } from "./log-labels.js";
 export const JOURNAL_LABELS = {
   view: "Journal",
   title: (period: string) => `Journal · ${period}`,
-  reloading: " ↻",
+  reloading: " …",
   loading: "chargement du journal…",
   unreadable: (reason: string) => `Journal illisible : ${reason}`,
   recordingOff:

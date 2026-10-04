@@ -1,10 +1,7 @@
 /**
  * The arithmetic behind the charts, pure: which intensity a value gets, how
- * many eighths of a cell a bar fills, how a long series fits a short width.
+ * many steps of its width a bar fills, how a long series fits a short width.
  */
-
-/** A bar cell splits into eighths (the Unicode eighth blocks ▏…▉). */
-export const EIGHTHS_PER_CELL = 8;
 
 /**
  * Maps a value to a level `0..levels-1` by the quantiles of the distinct
@@ -31,11 +28,10 @@ export function quantileLevels(
   };
 }
 
-/** Eighths of a cell a bar of `value` fills over `cells` cells (one at least when non-zero). */
-export function barEighths(value: number, max: number, cells: number): number {
-  if (value <= 0 || max <= 0 || cells <= 0) return 0;
-  const total = cells * EIGHTHS_PER_CELL;
-  return Math.min(total, Math.max(1, Math.round((value / max) * total)));
+/** Steps out of `steps` a bar of `value` against `max` fills (one at least when non-zero). */
+export function barSteps(value: number, max: number, steps: number): number {
+  if (value <= 0 || max <= 0 || steps <= 0) return 0;
+  return Math.min(steps, Math.max(1, Math.round((value / max) * steps)));
 }
 
 /** `values` fitted to `width` points: unchanged when they fit, else the mean of each bucket. */

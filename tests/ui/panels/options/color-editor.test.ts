@@ -39,7 +39,7 @@ describe("colour editor", () => {
     const lines = panel.render(VIEW);
     expect(text(lines)).toContain(COLOR_EDITOR.base("Sombre (gup)"));
     const accent = text([lineWith(lines, "Accent")]);
-    expect(accent).toMatch(/^› Accent\s+\(thème\)\s+#9FA5FF\s+6,\d:1\s+✔/);
+    expect(accent).toMatch(/^› Accent\s+\(thème\)\s+#9FA5FF\s+6,\d:1\s+√/);
     expect(text([lineWith(lines, "Fond ")])).toContain(COLOR_EDITOR.samples.background);
   });
 
@@ -65,7 +65,7 @@ describe("colour editor", () => {
     const lines = editor.panel.render(VIEW);
     const accent = text([lineWith(lines, "Accent")]);
     expect(accent).toContain(DARK_BACKGROUND);
-    expect(accent).toMatch(/1,0 → \d+,\d:1 ⚠/);
+    expect(accent).toMatch(/1,0 → \d+,\d:1 ‼/);
     expect(text(lines)).toContain(COLOR_EDITOR.corrected(1, "AA"));
     editor.panel.press(key("a"));
     const kept = editor.settings.get("theme").custom.dark?.accent;
@@ -75,7 +75,7 @@ describe("colour editor", () => {
       wcag.parseHexColor(DARK_BACKGROUND),
     );
     expect(ratio).toBeGreaterThanOrEqual(wcag.WCAG_MIN_CONTRAST.text);
-    expect(text([lineWith(editor.panel.render(VIEW), "Accent")])).toMatch(/✔/);
+    expect(text([lineWith(editor.panel.render(VIEW), "Accent")])).toMatch(/√/);
   });
 
   it("counts the adjusted colours as the Thème row and the picker do: the ones a user tunes", () => {
@@ -83,7 +83,7 @@ describe("colour editor", () => {
     const custom = { accent: DARK_BACKGROUND, success: DARK_BACKGROUND };
     fixture.settings.update("theme", { id: "dark", custom: { dark: custom } });
     const panel = new OptionsPanel([appearanceSection], fixture.host);
-    expect(text([lineWith(panel.render(VIEW), "Thème")])).toMatch(/⚠ 2 couleurs ajustées · min\./);
+    expect(text([lineWith(panel.render(VIEW), "Thème")])).toMatch(/‼ 2 couleurs ajustées · min\./);
     panel.press(key("enter"));
     expect(text(panel.render(VIEW))).toContain(THEME_PICKER.corrections(2));
     panel.press(key("escape"));
@@ -96,18 +96,18 @@ describe("colour editor", () => {
     await typeColor(editor, DARK_BACKGROUND);
     const narrow = editor.panel.render({ width: 50, height: 20 });
     expect(text(narrow)).not.toContain(COLOR_EDITOR.columns.shown);
-    expect(text([lineWith(narrow, "Accent")])).toMatch(/1,0 → \d+,\d:1 ⚠/);
+    expect(text([lineWith(narrow, "Accent")])).toMatch(/1,0 → \d+,\d:1 ‼/);
     expect(text(editor.panel.render(VIEW))).toContain(COLOR_EDITOR.columns.shown);
   });
 
-  it("keeps the ✔ of the Contraste column in one column, a ratio of 10:1 or more included", () => {
+  it("keeps the √ of the Contraste column in one column, a ratio of 10:1 or more included", () => {
     const { panel } = openEditor();
     const rows = text(panel.render(VIEW))
       .split("\n")
-      .filter((line) => /\d,\d:1 +✔/.test(line));
+      .filter((line) => /\d,\d:1 +√/.test(line));
     expect(rows.some((line) => /\d\d,\d:1/.test(line))).toBe(true);
     expect(rows.some((line) => /[^\d]\d,\d:1/.test(line))).toBe(true);
-    expect(new Set(rows.map((line) => line.indexOf("✔"))).size).toBe(1);
+    expect(new Set(rows.map((line) => line.indexOf("√"))).size).toBe(1);
   });
 
   it("gives a role back to the theme with Suppr", async () => {

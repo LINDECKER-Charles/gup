@@ -1,15 +1,25 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { BorderChars } from "@opentui/core";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { chartGlyphs } from "../../../src/ui/charts/chart-glyphs.js";
 import {
   ASCII_BORDER_CHARS,
   resolveGlyphMode,
   STATUS_GLYPHS,
   toAscii,
 } from "../../../src/ui/theme/glyphs.js";
+import { SAFE_TERMINAL_GLYPHS } from "../../support/tui/safe-terminal-glyphs.js";
 
-const UI_ROOT = join(import.meta.dirname, "../../../src/ui");
+const SRC_ROOT = join(import.meta.dirname, "../../../src");
+const UI_ROOT = join(SRC_ROOT, "ui");
+/** The HTML report: a browser draws it, falling back to another font for a missing symbol. */
+const BROWSER_ROOT = join(SRC_ROOT, "report");
+/** The ASCII map translates symbols gup may receive, drawable or not. */
+const GLYPH_TABLE = join(UI_ROOT, "theme", "glyphs.ts");
+/** Written at the head of exported files and stripped when reading them, never drawn. */
+const BYTE_ORDER_MARK = "\uFEFF";
 /** A symbol that needs a stand-in: not ASCII, not a letter or an accent (F-8). */
 const SYMBOL = /[^\p{L}\p{M}\x00-\x7F]/u;
 const isAscii = (text: string): boolean => [...text].every((c) => c.charCodeAt(0) <= 0x7f);
@@ -21,6 +31,12 @@ function sourceFiles(dir: string): string[] {
     return entry.name.endsWith(".ts") ? [path] : [];
   });
 }
+
+/** The symbols of `text` that a console font may not draw. */
+const unsafeSymbols = (text: string): string[] =>
+  [...text].filter((char) => SYMBOL.test(char) && !SAFE_TERMINAL_GLYPHS.has(char));
+const codePoint = (char: string): string =>
+  `U+${char.codePointAt(0)?.toString(16).toUpperCase().padStart(4, "0")}`;
 
 /** Text of every string and template literal of a file — comments excluded. */
 function literalsOf(file: string): string[] {
@@ -46,7 +62,7 @@ describe("toAscii", () => {
   });
 
   it("keeps the width of a line and leaves French text alone", () => {
-    const line = "▌ Paquets  ✔ à jour · ↑↓ naviguer — « échap » …";
+    const line = "▌ Paquets  √ à jour · ↑↓ naviguer — « échap » …";
     const ascii = toAscii(line);
     expect(ascii).toHaveLength(line.length);
     expect(ascii).toBe('| Paquets  + à jour . ^v naviguer - " échap " .');
@@ -64,6 +80,38 @@ describe("toAscii", () => {
       }
     }
     expect([...missing]).toEqual([]);
+  });
+});
+
+describe("Unicode glyphs", () => {
+  it("draws every status mark and spinner frame with a symbol the console fonts have", () => {
+    expect(unsafeSymbols(Object.values(STATUS_GLYPHS).flat().join(""))).toEqual([]);
+  });
+
+  it("turns the spinner through distinct frames, in ASCII too", () => {
+    const frames = STATUS_GLYPHS.running;
+    expect(new Set(frames).size).toBe(frames.length);
+    expect(frames.map(toAscii)).toEqual(["|", "/", "-", "\\"]);
+  });
+
+  it("draws charts and borders with such symbols", () => {
+    const { heat, full, partials, spark } = chartGlyphs("unicode");
+    const borders = Object.values(BorderChars).flatMap((chars) => Object.values(chars));
+    expect(unsafeSymbols([...heat, full, ...partials, ...spark, ...borders].join(""))).toEqual([]);
+  });
+
+  it("keeps every string literal drawn in a terminal to such symbols", () => {
+    const unsafe = new Set<string>();
+    const files = sourceFiles(SRC_ROOT).filter(
+      (file) => !file.startsWith(BROWSER_ROOT) && file !== GLYPH_TABLE,
+    );
+    for (const file of files) {
+      const symbols = unsafeSymbols(literalsOf(file).join("")).filter((c) => c !== BYTE_ORDER_MARK);
+      for (const char of symbols) {
+        unsafe.add(`${char} (${codePoint(char)}) in ${relative(SRC_ROOT, file)}`);
+      }
+    }
+    expect([...unsafe]).toEqual([]);
   });
 });
 

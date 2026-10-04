@@ -58,7 +58,7 @@ one every other screenshot of these docs shows):
 ## Choosing a theme
 
 In **Options**, the *Thème* row shows the theme in use and, as its hint, how
-readable it is on your terminal: `✔ AA · contraste min. 6,1:1`, `⚠ 2 couleurs
+readable it is on your terminal: `√ AA · contraste min. 6,1:1`, `‼ 2 couleurs
 ajustées · min. 4,6:1`, or `? palette du terminal inconnue — contraste non
 vérifiable`. The count is of the colours you can set in the colour editor —
 the same number the picker and the editor give; the colours drawn from them
@@ -69,10 +69,10 @@ counted again. `entrée` opens the theme picker:
 
 | Mark | Meaning |
 |---|---|
-| `✔ 6,1` | readable as is; its lowest text contrast is 6.1:1 |
-| `⚠ 4,6` | some colours had to be adjusted to reach the level; lowest contrast after adjustment |
+| `√ 6,1` | readable as is; its lowest text contrast is 6.1:1 |
+| `‼ 4,6` | some colours had to be adjusted to reach the level; lowest contrast after adjustment |
 | `? —` | your terminal did not report its palette: contrast cannot be checked |
-| `✔ —` | monochrome: your terminal's own text and background |
+| `√ —` | monochrome: your terminal's own text and background |
 | `–` (greyed) | this terminal cannot paint it (16 colours) — it cannot be applied |
 
 - Moving the cursor **paints the whole app** with the theme under it — the
@@ -95,7 +95,7 @@ belong to that theme: an accent tuned for `dark` does not change `light`.
 |---|---|
 | Choisie | your colour, or `(thème)` when the role follows the theme |
 | Affichée | the colour actually painted |
-| Contraste | its lowest ratio on the background and the selected row — or `2,1 → 4,6:1 ⚠` when your colour was too pale or too dark to read and was moved to the closest readable one |
+| Contraste | its lowest ratio on the background and the selected row — or `2,1 → 4,6:1 ‼` when your colour was too pale or too dark to read and was moved to the closest readable one |
 | Aperçu | the role painted as it is |
 
 | Key | Effect |
@@ -111,7 +111,7 @@ belong to that theme: an accent tuned for `dark` does not change `light`.
 A colour you type is saved at once; nudges with the arrows and `+` `-` are
 saved when you move to another role or leave the editor. **However you set
 them, what is painted stays readable**: the setting keeps your choice, the screen
-shows the adjusted colour, and the editor tells you so (`⚠ 1 couleur ajustée
+shows the adjusted colour, and the editor tells you so (`‼ 1 couleur ajustée
 automatiquement pour rester lisible (AA)`).
 
 The editor is unavailable — and the row says why — when there is nothing to
@@ -147,8 +147,8 @@ once per run):
   | nothing at all, outside Windows | — | nothing: the usual slots, unverified |
 
   That is at AA; at AAA more of them may fall back to your text colour. A
-  colour drawn in your text colour keeps its meaning through its symbol (`✔`,
-  `✖`, `⚠`). If you changed your console's colours, `gup` paints with yours,
+  colour drawn in your text colour keeps its meaning through its symbol (`√`,
+  `×`, `‼`). If you changed your console's colours, `gup` paints with yours,
   unverified: pick an RGB theme for ratios guaranteed whatever the terminal.
 
 Which terminals answer is not recorded here yet: the manual verification passes
@@ -189,7 +189,7 @@ Checked on every pair `gup` paints:
 - The panel that has the keyboard has a **heavy** border, the others a rounded
   one (in ASCII, `*=|` against `+-|`): focus never depends on colour (WCAG
   1.4.1).
-- Statuses carry a symbol as well as a colour: `✔` success, `✖` failure, `⚠`
+- Statuses carry a symbol as well as a colour: `√` success, `×` failure, `‼`
   warning, `–` not available on this OS.
 - Symbols that a font or console cannot draw switch to one-column ASCII
   stand-ins (`interface.glyphs`, automatic on the Linux console, `TERM=dumb`,

@@ -202,7 +202,7 @@ classDiagram
 - `aggregate: true` — updating the row acts on the whole provider ("all plugins", a refresh
   marker): never a scheduling target.
 - `slow: true` — the scan does HTTP per package or a filesystem walk; `--fast` skips it.
-- `skipped: true` on an outcome is not a failure: shown `↷`, counted apart, never retried.
+- `skipped: true` on an outcome is not a failure: shown `→`, counted apart, never retried.
 - `retryable: true` lets the retry pass offer `force` / `uninstallPrevious` / `reinstall`;
   `unattended` is set by scheduled runs (winget then runs with `--disable-interactivity`).
 - `recovery` on an outcome says what the provider undid after an attempt that did not finish
@@ -378,7 +378,7 @@ stateDiagram-v2
 
 - **Views** are `ViewDefinition`s registered in `commands/menu-views.ts`: Scan, Paquets,
   Planification (group 0), Providers, Journal, Options (group 1). A view contributes package
-  actions (`p planifier`), package marks (`◷`), title-bar facts, sidebar badges and actions on the
+  actions (`p planifier`), package marks (`∞`), title-bar facts, sidebar badges and actions on the
   run results (`o rapport HTML`) without touching the session.
 - **Key routing** (`ui/app/session/menu-keys.ts`): Ctrl+C (the screen's) → the open dialog → the
   takeover → the focused panel when it captures text or claims the key → global keys (`q`, Tab,

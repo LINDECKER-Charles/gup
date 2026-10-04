@@ -54,7 +54,7 @@ describe("JournalPanel", () => {
 
     expect(text(journal.render(WIDE))).toContain(`  ${JOURNAL_LABELS.loading}`);
     journal.onShow();
-    expect(journal.title).toBe("Journal · 12 derniers mois ↻");
+    expect(journal.title).toBe("Journal · 12 derniers mois …");
     await settle();
 
     expect(source.load).toHaveBeenCalledWith(expect.objectContaining({ key: "12m" }));
@@ -83,7 +83,7 @@ describe("JournalPanel", () => {
     journal.press(key("p"));
 
     expect(source.load).toHaveBeenLastCalledWith(expect.objectContaining({ key: "all" }));
-    expect(journal.title).toBe("Journal · tout l'historique ↻");
+    expect(journal.title).toBe("Journal · tout l'historique …");
     expect(text(journal.render(WIDE)).join("\n")).toContain("3 mises à jour");
   });
 

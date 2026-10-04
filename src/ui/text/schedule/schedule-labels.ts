@@ -34,7 +34,7 @@ export const MECHANISM_LABELS: Readonly<Record<Mechanism, string>> = {
 };
 
 export const NEVER_RAN = "—";
-export const WARNING_MARK = "⚠";
+export const WARNING_MARK = STATUS_GLYPHS.warning;
 export const DISABLED_NEXT_RUN = "désactivée";
 const FIRST_OF_MONTH = 1;
 
@@ -62,7 +62,7 @@ function monthDayLabel(day: number | "last"): string {
   return `le ${day === FIRST_OF_MONTH ? "1er" : day} de chaque mois`;
 }
 
-/** The last run in a few characters: "✔ 2 mis à jour", "◐ 1/3 — 2 échecs", "—". */
+/** The last run in a few characters: "√ 2 mis à jour", "± 1/3 — 2 échecs", "—". */
 export function runStatusLabel(record: ScheduleRunRecord | undefined): string {
   if (!record) return NEVER_RAN;
   const count = (status: TargetResult["status"]): number =>
@@ -92,7 +92,7 @@ function partialLabel(updated: number, problems: { failed: number; skipped: numb
     problems.failed > 0
       ? RUN_SUMMARY.failed(problems.failed)
       : RUN_SUMMARY.skipped(problems.skipped);
-  return `${STATUS_GLYPHS.running[0]} ${updated}/${total} — ${detail}`;
+  return `${STATUS_GLYPHS.partial} ${updated}/${total} — ${detail}`;
 }
 
 /** One target of a run: "2.46.0 → 2.47.0", "aucune mise à jour", "échec — 1603". */

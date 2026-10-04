@@ -1,7 +1,7 @@
 /**
  * Paquets as the TUI draws it (src/ui/panels/packages-panel.ts): the sidebar,
  * then the package table grouped by provider — a box per provider for all,
- * some or none of its packages, a box per package, the `◷` of a scheduled
+ * some or none of its packages, a box per package, the `∞` of a scheduled
  * one — and the selection bar with its launch button.
  *
  * @typedef {import("../../data/scenes/app-scene.js").PackagesScene} PackagesScene

@@ -46,7 +46,7 @@ The settings are grouped in sections, one row per setting: `Label   [value]   hi
   you move to another colour or leave it).
 - When a change cannot be saved (locked file, read-only section), it stays in
   effect until `gup` exits and a line above the list says why:
-  `⚠ Réglage non enregistré — <raison>`. The next save that works clears it.
+  `‼ Réglage non enregistré — <raison>`. The next save that works clears it.
 - **Réinitialiser…** puts a group back to its defaults, after a confirmation that
   answers *Non* by default: *Apparence* (theme, colours, contrast, symbols,
   density), *Confort* (the rest of the comfort rows, mouse included), *Scan &

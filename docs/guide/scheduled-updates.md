@@ -12,7 +12,7 @@ gup schedule list
 ```
 
 ```text
-✔ Planification a1b2c3d4 « Outils dev » créée — chaque lundi à 09:00
+√ Planification a1b2c3d4 « Outils dev » créée — chaque lundi à 09:00
   prochaines exécutions : lun. 5 oct. 09:00 · lun. 12 oct. 09:00 · lun. 19 oct. 09:00
   déclencheur système installé (Planificateur de tâches Windows · vérification toutes les 15 min)
 ```
@@ -155,7 +155,7 @@ table, the schedule under the cursor: its next run, then what its last run
 did package by package — or, if it never ran, the packages it covers. Each
 column is as wide as what it holds. The package count and next-run columns
 appear when the whole table fits — on a 120-column terminal, usually. When
-even the rest does not, the last run keeps only its mark (`✔`, `◐`, `✖`,
+even the rest does not, the last run keeps only its mark (`√`, `±`, `×`,
 `—`), its words staying in the details, and only then is the wider of the
 name and the recurrence cut: on an 80-column terminal a recurrence keeps its
 time.
@@ -187,7 +187,7 @@ packages first.
   register, for whom and how to remove it, and registers nothing unless you
   answer *Oui*.
 
-In Paquets, `◷` marks the packages an enabled schedule covers. The sidebar
+In Paquets, `∞` marks the packages an enabled schedule covers. The sidebar
 shows how many schedules are enabled — or `!` when a scheduled run failed
 since you last opened Planification — and the title bar counts the runs you
 have not seen yet (`planif. : 2 exécution(s) · 1 échec`).
@@ -207,7 +207,7 @@ have not seen yet (`planif. : 2 exécution(s) · 1 échec`).
 | Paquets | `suppr` or `d` removes the package under the cursor; *+ Ajouter un paquet…* takes a `provider:paquet` id |
 
 The line under the fields shows the cron expression and the next three runs,
-recomputed at every keystroke, or why the recurrence is refused (`✖ Fréquence
+recomputed at every keystroke, or why the recurrence is refused (`× Fréquence
 trop élevée — au plus une exécution par heure`). Each problem shows under its
 field and *Enregistrer* stays muted until there is none. `Ctrl+S` saves from
 anywhere, `échap` leaves (asking first when something changed, and always
@@ -289,7 +289,7 @@ only in a shell is not seen by it (gup warns when that happens).
 |---|---|
 | `Déclencheur : actif · … · dernier passage il y a 4 min` | all good |
 | `Déclencheur : non installé — gup schedule install pour l'installer` | a schedule is enabled but nothing is registered (removed by hand, registration failed): run `gup schedule install` |
-| `⚠ Aucun passage depuis 2 h 05 — gup schedule install pour réparer` | registered, but no tick ran for 45 minutes: the OS no longer starts it (node removed, task disabled, security software). `gup schedule install`, then `gup schedule status` |
+| `‼ Aucun passage depuis 2 h 05 — gup schedule install pour réparer` | registered, but no tick ran for 45 minutes: the OS no longer starts it (node removed, task disabled, security software). `gup schedule install`, then `gup schedule status` |
 | `Déclencheur : chemin de gup obsolète — …` | registered for an older path of this gup; repaired automatically at the next start, or by `gup schedule install` |
 | `planification enregistrée pour une autre installation de gup : <path> — …` | another gup installation owns the trigger; it runs these schedules. `gup schedule install` to switch to this one |
 | `Déclencheur désactivé dans Réglages Système › Général › Ouverture — …` | macOS: re-enable gup's background item there, or run `gup schedule install` |

@@ -42,7 +42,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4 b" x="47.2" y="89.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scan              </text>
 <text class="c3" x="211.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c0" x="234.4" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◐</text>
+<text class="c0" x="234.4" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c4 b" x="242.2" y="89.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  scan 9/14  </text>
 <text class="c5" x="343.6" y="89.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">███████████████████</text>
 <text class="c6" x="491.8" y="89.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░░░░░░░░░</text>
@@ -57,14 +57,14 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c6" x="187.6" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3</text>
 <text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c0" x="234.4" y="123.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ⠿ </text>
+<text class="c0" x="234.4" y="123.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  │ </text>
 <text class="c4" x="265.6" y="123.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">PowerShell modules            </text>
 <text class="c6" x="499.6" y="123.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">en cours…</text>
 <text class="c0" x="788.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c0" x="234.4" y="140.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ⠿ </text>
+<text class="c0" x="234.4" y="140.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  │ </text>
 <text class="c4" x="265.6" y="140.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">VS Code extensions            </text>
 <text class="c6" x="499.6" y="140.0" textLength="70.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">en cours…</text>
 <text class="c0" x="788.2" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -72,7 +72,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="47.2" y="157.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Providers         </text>
 <text class="c3" x="211.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c7" x="234.4" y="157.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✖ </text>
+<text class="c7" x="234.4" y="157.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  × </text>
 <text class="c4" x="265.6" y="157.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scoop                         </text>
 <text class="c7" x="499.6" y="157.0" textLength="195.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">scoop status a échoué (… </text>
 <text class="c6" x="694.6" y="157.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      0,8 s</text>
@@ -81,7 +81,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="47.2" y="174.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Journal           </text>
 <text class="c3" x="211.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="174.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✔ </text>
+<text class="c5" x="234.4" y="174.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  √ </text>
 <text class="c4" x="265.6" y="174.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Cargo (Rust)                  </text>
 <text class="c8" x="499.6" y="174.0" textLength="195.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">2 mise(s) à jour         </text>
 <text class="c6" x="694.6" y="174.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      1,8 s</text>
@@ -90,7 +90,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
 <text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="191.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✔ </text>
+<text class="c5" x="234.4" y="191.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  √ </text>
 <text class="c4" x="265.6" y="191.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Chocolatey                    </text>
 <text class="c8" x="499.6" y="191.0" textLength="195.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1 mise(s) à jour         </text>
 <text class="c6" x="694.6" y="191.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      4,0 s</text>
@@ -98,7 +98,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="208.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✔ </text>
+<text class="c5" x="234.4" y="208.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  √ </text>
 <text class="c4" x="265.6" y="208.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm (global)                  </text>
 <text class="c8" x="499.6" y="208.0" textLength="195.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3 mise(s) à jour         </text>
 <text class="c6" x="694.6" y="208.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      1,2 s</text>
@@ -107,7 +107,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c6" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quitter           </text>
 <text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="225.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✔ </text>
+<text class="c5" x="234.4" y="225.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  √ </text>
 <text class="c4" x="265.6" y="225.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pipx                          </text>
 <text class="c8" x="499.6" y="225.0" textLength="195.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">2 mise(s) à jour         </text>
 <text class="c6" x="694.6" y="225.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      2,4 s</text>
@@ -115,7 +115,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="242.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✔ </text>
+<text class="c5" x="234.4" y="242.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  √ </text>
 <text class="c4" x="265.6" y="242.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Winget                        </text>
 <text class="c8" x="499.6" y="242.0" textLength="195.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">4 mise(s) à jour         </text>
 <text class="c6" x="694.6" y="242.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">      3,1 s</text>
@@ -123,21 +123,21 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="259.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✔ </text>
+<text class="c5" x="234.4" y="259.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  √ </text>
 <text class="c4" x="265.6" y="259.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">gcloud components             </text>
 <text class="c6" x="499.6" y="259.0" textLength="280.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">à jour                         2,2 s</text>
 <text class="c0" x="788.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="276.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✔ </text>
+<text class="c5" x="234.4" y="276.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  √ </text>
 <text class="c4" x="265.6" y="276.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Helm                          </text>
 <text class="c6" x="499.6" y="276.0" textLength="280.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">à jour                         0,9 s</text>
 <text class="c0" x="788.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c5" x="234.4" y="293.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  ✔ </text>
+<text class="c5" x="234.4" y="293.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  √ </text>
 <text class="c4" x="265.6" y="293.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Rustup (toolchains)           </text>
 <text class="c6" x="499.6" y="293.0" textLength="280.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">à jour                         0,6 s</text>
 <text class="c0" x="788.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>

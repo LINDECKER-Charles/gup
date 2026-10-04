@@ -34,7 +34,7 @@ interface Draft {
 /**
  * The colours of the saved theme, role by role: what the user chose, what is
  * painted, its contrast — and, when the choice was unreadable, the colour it
- * was moved to (`2,1 → 4,6:1 ⚠`). The choice is kept as typed until `a`
+ * was moved to (`2,1 → 4,6:1 ‼`). The choice is kept as typed until `a`
  * stores the adjusted value. Hue and lightness nudges preview on the whole
  * app and are saved when the user changes role or leaves, never on every key.
  */

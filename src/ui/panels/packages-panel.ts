@@ -2,6 +2,7 @@ import type { OutdatedPackage, SelectedPackage } from "../../core/types.js";
 import type { NoteColumn } from "../app/ui-preferences.js";
 import type { PackageAction, PackageMarker } from "../app/view-definition.js";
 import { NO_SCAN_YET, VIEW_LABELS } from "../text/menu-labels.js";
+import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import {
   LAUNCH_NOTICES,
   PACKAGE_COLUMNS,
@@ -325,7 +326,8 @@ export class PackagesPanel implements Panel {
   private rowLine(row: PackageRow, layout: Layout): Line {
     const list = this.#list as PackageList;
     if (row.kind === "failure") {
-      return [seg("✖ ", "danger"), seg(row.title, "strong"), seg(`  ${row.error}`, "danger")];
+      const mark = seg(`${STATUS_GLYPHS.failed} `, "danger");
+      return [mark, seg(row.title, "strong"), seg(`  ${row.error}`, "danger")];
     }
     if (row.kind === "group") {
       const { checked, total } = list.groupState(row.providerId);

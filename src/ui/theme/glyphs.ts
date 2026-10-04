@@ -9,6 +9,14 @@ import type { BorderCharacters } from "@opentui/core";
  * become styled text, so no layout code knows about it. Every stand-in is
  * exactly one character wide: a translated line has the width of the
  * original, and nothing shifts.
+ *
+ * The Unicode symbols are limited to what both Consolas and Cascadia Mono
+ * draw: the Windows console host has no font fallback, so a symbol missing
+ * from its font (Consolas by default) shows as a boxed question mark — ◐◓◑◒
+ * did, and the scan spinner looked frozen. Box drawing, the shade and half
+ * blocks, basic arrows and shapes are safe; ✔ ✖ ⚠, Braille, the eighth
+ * blocks and most of the Geometric Shapes and Dingbats blocks are not. The
+ * glyph tests hold every symbol gup draws to that repertoire.
  */
 
 export type GlyphMode = "unicode" | "ascii";
@@ -16,14 +24,18 @@ export type GlyphPreference = "auto" | GlyphMode;
 
 /** Status marks shared by every view (scan, run, journal, schedules, providers). */
 export const STATUS_GLYPHS = Object.freeze({
-  success: "✔",
-  failed: "✖",
-  skipped: "↷",
-  cancelled: "⊘",
+  success: "√",
+  failed: "×",
+  warning: "‼",
+  skipped: "→",
+  cancelled: "▪",
+  /** A run that updated some of its packages and failed others. */
+  partial: "±",
   pending: "·",
-  running: Object.freeze(["◐", "◓", "◑", "◒"]),
-  scan: "⟳",
-  scheduled: "◷",
+  /** A line turning a quarter per frame; `| / - \` in ASCII. */
+  running: Object.freeze(["│", "╱", "─", "╲"]),
+  scan: "◌",
+  scheduled: "∞",
   incompatible: "–",
   enabled: "●",
   disabled: "○",
@@ -77,6 +89,10 @@ const ASCII_OF: Readonly<Record<string, string>> = Object.freeze({
   "▾": "v",
   "▼": "v",
   // Status marks
+  "√": "+",
+  "‼": "!",
+  "±": "~",
+  "∞": "*",
   "✔": "+",
   "✓": "+",
   "✖": "x",
@@ -87,6 +103,9 @@ const ASCII_OF: Readonly<Record<string, string>> = Object.freeze({
   "○": "o",
   "◍": "o",
   "◇": "o",
+  "◊": "o",
+  "◌": "@",
+  "▪": "/",
   "◐": "|",
   "◓": "/",
   "◑": "-",
@@ -154,6 +173,8 @@ const ASCII_OF: Readonly<Record<string, string>> = Object.freeze({
   "┴": "+",
   "┼": "+",
   "┷": "+",
+  "╱": "/",
+  "╲": "\\",
 });
 
 /** Box borders in ASCII mode: idle `+-|`, focused `*=|` — focus still reads without colour. */

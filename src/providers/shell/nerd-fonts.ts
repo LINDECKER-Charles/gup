@@ -179,7 +179,7 @@ async function installFamily(req: InstallRequest): Promise<UpdateOutcome> {
     }
     await pinFamilyVersion(packageId, latest);
     const count = installed.length;
-    installConsole.log(`  ✓ ${count} fichier(s) installé(s) dans ${userDir}`);
+    installConsole.log(`  √ ${count} fichier(s) installé(s) dans ${userDir}`);
     return { id: packageId, success: true };
   } catch (err) {
     return failed(packageId, err instanceof Error ? err.message : String(err));

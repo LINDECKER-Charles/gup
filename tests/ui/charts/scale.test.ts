@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { barText } from "../../../src/ui/charts/bar-chart.js";
 import { chartGlyphs } from "../../../src/ui/charts/chart-glyphs.js";
-import { barEighths, quantileLevels, resample } from "../../../src/ui/charts/scale.js";
+import { barSteps, quantileLevels, resample } from "../../../src/ui/charts/scale.js";
 import { sparkline } from "../../../src/ui/charts/sparkline.js";
 
 const UNICODE = chartGlyphs("unicode");
@@ -32,16 +32,17 @@ describe("quantileLevels", () => {
 });
 
 describe("bars", () => {
-  it("fills eighths of a cell, at least one for any value", () => {
-    expect(barEighths(1, 2, 4)).toBe(16);
-    expect(barEighths(1, 1000, 4)).toBe(1);
-    expect(barEighths(0, 10, 4)).toBe(0);
+  it("fills its share of the steps, at least one for any value", () => {
+    expect(barSteps(1, 2, 32)).toBe(16);
+    expect(barSteps(1, 1000, 32)).toBe(1);
+    expect(barSteps(0, 10, 32)).toBe(0);
   });
 
-  it("draws whole blocks then the eighth block that ends the bar, padded to its width", () => {
+  it("draws whole blocks then the half block that ends the bar, padded to its width", () => {
     expect(barText({ value: 24, max: 24, cells: 5 }, UNICODE)).toBe("█████");
-    expect(barText({ value: 9, max: 24, cells: 5 }, UNICODE)).toBe("█▉   ");
-    expect(barText({ value: 1, max: 100, cells: 5 }, UNICODE)).toBe("▏    ");
+    expect(barText({ value: 7, max: 24, cells: 5 }, UNICODE)).toBe("█▌   ");
+    expect(barText({ value: 9, max: 24, cells: 5 }, UNICODE)).toBe("██   ");
+    expect(barText({ value: 1, max: 100, cells: 5 }, UNICODE)).toBe("▌    ");
     expect(barText({ value: 0, max: 24, cells: 3 }, UNICODE)).toBe("   ");
   });
 
@@ -53,12 +54,12 @@ describe("bars", () => {
 
 describe("sparkline", () => {
   it("draws one level per point, from zero to the series' maximum", () => {
-    expect(sparkline([0, 7, 14], 10, UNICODE)).toBe("▁▅█");
+    expect(sparkline([0, 7, 14], 10, UNICODE)).toBe("_▄█");
     expect(sparkline([0, 7, 14], 10, ASCII)).toBe("_~^");
   });
 
   it("draws a flat series of zeros at the lowest level", () => {
-    expect(sparkline([0, 0, 0], 10, UNICODE)).toBe("▁▁▁");
+    expect(sparkline([0, 0, 0], 10, UNICODE)).toBe("___");
   });
 
   it("resamples a long series to the width by bucket means", () => {

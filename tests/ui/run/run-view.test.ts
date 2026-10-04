@@ -217,8 +217,8 @@ describe("run view", () => {
     pty.last().emitExit({ exitCode: 0 });
 
     const results = await shown(menu, RUN_TITLES.done);
-    expect(results).toMatch(/✔ 2 mis à jour {3}↷ 0 ignorée {3}✖ 1 échec/);
-    expect(results).toMatch(/› ✖ beta /);
+    expect(results).toMatch(/√ 2 mis à jour {3}→ 0 ignorée {3}× 1 échec/);
+    expect(results).toMatch(/› × beta /);
     expect(results).toContain(PANE_LABELS.output("essai · beta"));
     await menu.press("enter");
     const back = await shown(menu, "┏━ Paquets");
@@ -263,7 +263,7 @@ describe("run view", () => {
     await menu.press("s");
     expect(hoisted.terminate).toHaveBeenCalledOnce();
     await installsStarted(pty, 2);
-    expect(await shown(menu, MANUAL_SKIP_MESSAGE)).toMatch(/↷ alpha /);
+    expect(await shown(menu, MANUAL_SKIP_MESSAGE)).toMatch(/→ alpha /);
   });
 
   it("x asks first: Non keeps going, Oui interrupts the package and cancels the rest", async () => {
@@ -281,7 +281,7 @@ describe("run view", () => {
     const results = await shown(menu, RUN_TITLES.done);
     expect(hoisted.terminate).toHaveBeenCalledOnce();
     expect(pty.spawned).toHaveLength(1);
-    expect(results).toMatch(/⊘ 2 annulées/);
+    expect(results).toMatch(/▪ 2 annulées/);
   });
 
   it("Ctrl+C skips the install in flight without leaving gup", async () => {
@@ -301,7 +301,7 @@ describe("run view", () => {
     await menu.press("ctrl+c");
     const results = await shown(menu, RUN_TITLES.done);
     expect(pty.spawned).toHaveLength(2);
-    expect(results).toMatch(/↷ 2 ignorées {3}✖ 0 échec {3}⊘ 1 annulée/);
+    expect(results).toMatch(/→ 2 ignorées {3}× 0 échec {3}▪ 1 annulée/);
   });
 
   it("leaves the results on Ctrl+C, the notices of the run gone", async () => {
@@ -309,7 +309,7 @@ describe("run view", () => {
     await installsStarted(pty, 1);
     await menu.press("ctrl+c");
     const results = await shown(menu, RUN_TITLES.done);
-    expect(results).toMatch(/↷ alpha /);
+    expect(results).toMatch(/→ alpha /);
     expect(results).not.toContain(RUN_NOTICES.ctrlCFirst);
     await menu.press("ctrl+c");
     expect(await shown(menu, "┏━ Paquets")).toContain("alpha");
@@ -398,7 +398,7 @@ describe("run view", () => {
     expect(hoisted.terminate).not.toHaveBeenCalled();
 
     finishBatch();
-    expect(await shown(menu, RUN_TITLES.done)).toMatch(/✔ nodejs .* admin/);
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/√ nodejs .* admin/);
   });
 
   it("runs the sudo step in the pane on macOS and Linux: one password, typed there", async () => {
@@ -422,7 +422,7 @@ describe("run view", () => {
     await menu.press("t", "s", "e", "c", "enter");
     expect(typed(pty)).toBe("sec\r");
     pty.last().emitExit({ exitCode: 0 });
-    expect(await shown(menu, RUN_TITLES.done)).toMatch(/✔ nodejs /);
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/√ nodejs /);
   });
 
   it("offers a retry strategy for recoverable failures and replays them in the view", async () => {
@@ -434,9 +434,9 @@ describe("run view", () => {
 
     await installsStarted(pty, 2);
     expect(decodePayload(pty.spawned[1]!.args[1]!).args).toEqual(["alpha", "--force"]);
-    expect(await shown(menu, "↻ retry --force")).toMatch(/◐|◓|◑|◒/);
+    expect(await shown(menu, "retry --force")).toMatch(/[│╱─╲] alpha /);
     pty.last().emitExit({ exitCode: 0 });
-    expect(await shown(menu, RUN_TITLES.done)).toMatch(/✔ alpha .*↻ retry --force/);
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/√ alpha .* retry --force/);
   });
 
   it("says when another gup run holds the update batch, and gives up on x", async () => {
@@ -454,7 +454,7 @@ describe("run view", () => {
     expect(waiting).toContain(RUN_HINTS.waiting);
     expect(statusListRows(waiting, RUN_TITLES.running)).toBe(LIST_TOP_ROWS + PACKAGES.length);
     await menu.press("x", "o");
-    expect(await shown(menu, RUN_TITLES.done)).toMatch(/⊘ 3 annulées/);
+    expect(await shown(menu, RUN_TITLES.done)).toMatch(/▪ 3 annulées/);
     expect(pty.spawned).toHaveLength(0);
   });
 

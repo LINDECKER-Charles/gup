@@ -236,10 +236,10 @@ export class YourProvider implements Provider {
 ```mermaid
 flowchart LR
     Update[update returns] --> Success{success?}
-    Success -->|true| OK["✔ updated"]
-    Success -->|false + skipped| SKIP["↷ skipped<br/>manual action"]
-    Success -->|false + retryable| RETRY["✖ failed<br/>+ retry offer"]
-    Success -->|false| FAIL["✖ failed"]
+    Success -->|true| OK["√ updated"]
+    Success -->|false + skipped| SKIP["→ skipped<br/>manual action"]
+    Success -->|false + retryable| RETRY["× failed<br/>+ retry offer"]
+    Success -->|false| FAIL["× failed"]
 ```
 
 - `success: true` → success.

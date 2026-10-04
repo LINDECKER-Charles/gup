@@ -1,7 +1,7 @@
 import type { NoteColumn, PackageSort } from "../../app/ui-preferences.js";
 import type { ViewId } from "../../app/view-definition.js";
 import type { Density } from "../../theme/appearance.js";
-import type { GlyphPreference } from "../../theme/glyphs.js";
+import { STATUS_GLYPHS, type GlyphPreference } from "../../theme/glyphs.js";
 
 /**
  * The Options view's words (French, the language of the interface): section
@@ -117,7 +117,7 @@ export const OPTIONS_HINTS = {
 } as const;
 
 export const OPTIONS_NOTICES = {
-  notSaved: (reason: string) => `⚠ Réglage non enregistré — ${reason}`,
+  notSaved: (reason: string) => `${STATUS_GLYPHS.warning} Réglage non enregistré — ${reason}`,
   rescan: "Réglages modifiés — r pour rescanner avec ces réglages.",
   copied: "Chemin copié.",
   copyFailed: "Copie impossible : ce terminal ne prend pas en charge OSC 52.",

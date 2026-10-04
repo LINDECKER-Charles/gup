@@ -1,6 +1,6 @@
 /**
  * The run view as the TUI draws it (src/ui/run/): a takeover with no sidebar,
- * the status list — progress bar, done/total, the ✔ ↷ ✖ counters, the clock,
+ * the status list — progress bar, done/total, the √ → × counters, the clock,
  * one row per package — over the embedded terminal pane that shows the
  * installer's own output, titled with the provider and the package.
  *

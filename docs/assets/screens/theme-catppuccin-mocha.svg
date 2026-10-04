@@ -93,7 +93,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c6" x="250.0" y="123.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
-<text class="c0" x="296.8" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
+<text class="c0" x="296.8" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
 <text class="c4" x="312.4" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ripgrep           </text>
 <text class="c8" x="452.8" y="123.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 14.1.1 </text>
 <text class="c6" x="515.2" y="123.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
@@ -103,7 +103,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c6" x="250.0" y="140.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
-<text class="c0" x="296.8" y="140.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
+<text class="c0" x="296.8" y="140.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
 <text class="c4" x="312.4" y="140.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">bat               </text>
 <text class="c8" x="452.8" y="140.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.25.0 </text>
 <text class="c6" x="515.2" y="140.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
@@ -139,7 +139,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c6" x="250.0" y="208.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
-<text class="c0" x="296.8" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
+<text class="c0" x="296.8" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
 <text class="c4" x="312.4" y="208.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">typescript        </text>
 <text class="c8" x="452.8" y="208.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 6.0.2  </text>
 <text class="c6" x="515.2" y="208.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
@@ -150,7 +150,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c9" x="250.0" y="225.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [■] </text>
-<text class="c0" x="296.8" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
+<text class="c0" x="296.8" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
 <text class="c7 b" x="312.4" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pnpm              </text>
 <text class="c8" x="452.8" y="225.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.17.0</text>
 <text class="c6" x="515.2" y="225.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
@@ -177,7 +177,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c5" x="218.8" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c0" x="234.4" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› </text>
 <text class="c6" x="250.0" y="276.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
-<text class="c0" x="296.8" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
+<text class="c0" x="296.8" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
 <text class="c4" x="312.4" y="276.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ruff              </text>
 <text class="c8" x="452.8" y="276.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.13.0 </text>
 <text class="c6" x="515.2" y="276.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
@@ -195,7 +195,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
-<text class="c10" x="250.0" y="310.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✖ </text>
+<text class="c10" x="250.0" y="310.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">× </text>
 <text class="c7 b" x="265.6" y="310.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scoop</text>
 <text class="c10" x="304.6" y="310.0" textLength="249.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  scoop status a échoué (code 1)</text>
 <text class="c5" x="788.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -210,7 +210,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="211.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c5" x="218.8" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c9" x="250.0" y="344.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [■] </text>
-<text class="c0" x="296.8" y="344.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">◷ </text>
+<text class="c0" x="296.8" y="344.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
 <text class="c7 b" x="312.4" y="344.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Git               </text>
 <text class="c8" x="452.8" y="344.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 2.51.0 </text>
 <text class="c6" x="515.2" y="344.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>

@@ -44,7 +44,6 @@ export const RUN_SUMMARY = {
 export const RUN_TAGS = {
   admin: "admin",
   elevating: { uac: "fenêtre admin…", sudo: "sudo…" } satisfies Record<ElevationKind, string>,
-  retry: (label: string): string => `↻ ${label}`,
 } as const;
 
 export const RUN_MESSAGES = {
@@ -131,7 +130,7 @@ export const RUN_NOTICES = {
   ctrlCFirst: "Paquet en cours ignoré — Ctrl+C ×2 pour tout arrêter.",
   ctrlCDouble: "Arrêt demandé — les paquets restants sont annulés.",
   stopAfterStep: "Arrêt demandé — gup s'arrêtera après l'étape administrateur.",
-  prompt: "⌨ Le programme attend peut-être une réponse — t pour écrire dans le terminal.",
+  prompt: "Le programme attend peut-être une réponse — t pour écrire dans le terminal.",
   typeIdle: "Aucun programme en cours.",
   /** `t` during the UAC step: the elevated installers run in a window of their own. */
   typeElsewhere:

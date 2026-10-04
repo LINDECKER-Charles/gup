@@ -274,7 +274,7 @@ An install can hang: a stalled download, the Windows Installer mutex, an install
   **1200 s (20 min)**. Change it with `--timeout <secondes>`, the `GUP_INSTALL_TIMEOUT` environment
   variable, or Options › **Timeout install** — in that order of precedence. `0` disables it.
 
-Both levers produce a skip (`↷ ignorée par l'utilisateur`), not a failure: the summary counts them
+Both levers produce a skip (`→ ignorée par l'utilisateur`), not a failure: the summary counts them
 apart, and they are never offered for retry — you skipped them on purpose.
 
 A skip kills the installer's whole process tree, and gup reports it only once nothing of it is

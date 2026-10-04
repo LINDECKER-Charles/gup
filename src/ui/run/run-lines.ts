@@ -243,7 +243,8 @@ function block(rows: Rows, item: RunItem, index: number): Line[] {
   const indent = view.cursor === null ? "" : NO_CURSOR;
   if (message) lines.push([seg(`${indent}  └ ${message}`, "muted")]);
   if (view.promptHint && index === rows.current) {
-    lines.push([seg(`${indent}  ${view.promptHint}`, "warning", "highlight")]);
+    const hint = `${indent}  ${STATUS_GLYPHS.warning} ${view.promptHint}`;
+    lines.push([seg(hint, "warning", "highlight")]);
   }
   return lines;
 }
@@ -274,7 +275,7 @@ function rightColumns(model: RunModel, item: RunItem, elevation: ElevationKind):
 }
 
 function tagOf(item: RunItem, elevation: ElevationKind): string | null {
-  if (item.retry) return RUN_TAGS.retry(retryLabelOf(item.retry));
+  if (item.retry) return retryLabelOf(item.retry);
   if (item.state === "elevating") return RUN_TAGS.elevating[elevation];
   return item.isAdmin ? RUN_TAGS.admin : null;
 }

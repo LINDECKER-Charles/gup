@@ -65,7 +65,7 @@ describe("journal view", () => {
 
     const frame = await menu.waitForText("moins . : + * # plus");
 
-    expect(frame).not.toMatch(/[░▒▓█▌·→✔✖]/);
+    expect(frame).not.toMatch(/[░▒▓█▌·→√×]/);
     expect(frame).toContain("|1 Activit");
   });
 

@@ -1,4 +1,5 @@
 import { adjustedRoles } from "../../../theme/enforce-contrast.js";
+import { STATUS_GLYPHS } from "../../../theme/glyphs.js";
 import { THEME_IDS, type ThemeId } from "../../../theme/palette.js";
 import type { ResolvedTheme, ThemeAvailability } from "../../../theme/resolve-theme.js";
 import {
@@ -30,7 +31,7 @@ export interface ThemePickerDeps {
 }
 
 const LABEL_WIDTH = 22;
-/** Gutter, label, a space and the mark ("✔ 6,1"). */
+/** Gutter, label, a space and the mark ("√ 6,1"). */
 const LIST_WIDTH = 31;
 const COLUMN_SEPARATOR = " │ ";
 /** Narrower than this, the preview goes under the list. */
@@ -172,13 +173,15 @@ function separated(blocks: readonly Line[][]): Line[] {
     .flatMap((block, index) => (index === 0 ? block : [[], ...block]));
 }
 
-/** "✔ 6,1" (corrected: "⚠ 4,5"), "? —" when the contrast cannot be computed, "–" unavailable. */
+/** "√ 6,1" (corrected: "‼ 4,5"), "? —" when the contrast cannot be computed, "–" unavailable. */
 function markOf(entry: ThemeAvailability): Segment {
   if (!entry.isAvailable) return seg("–", "disabled");
-  if (entry.mode === "monochrome") return seg("✔ —", "success");
+  const { success, warning } = STATUS_GLYPHS;
+  if (entry.mode === "monochrome") return seg(`${success} —`, "success");
   if (entry.minTextRatio === null) return seg("? —", "warning");
   const ratio = formatRatioValue(entry.minTextRatio);
-  return entry.isCorrected ? seg(`⚠ ${ratio}`, "warning") : seg(`✔ ${ratio}`, "success");
+  if (entry.isCorrected) return seg(`${warning} ${ratio}`, "warning");
+  return seg(`${success} ${ratio}`, "success");
 }
 
 function reportLines(theme: ResolvedTheme, width: number): Line[] {

@@ -37,7 +37,7 @@ describe("renderTextReport", () => {
     expect(text).toContain("4 mises à jour · 67 % réussies · 2 paquets · 2 échecs");
     expect(text).toContain(`${TEXT_REPORT_LABELS.topPackages}\n`);
     expect(text).toMatch(/ {2}Google\.Chrome +winget +█+ +3 +~7 j hebdo\./);
-    expect(text).toMatch(/ {2}typescript +npm-g +[█▍]+ +1 +— une fois/);
+    expect(text).toMatch(/ {2}typescript +npm-g +[█▌]+ +1 +— une fois/);
     expect(text).toContain(`${TEXT_REPORT_LABELS.failures}\n  2× choco · nodejs — exit code 1603\n`);
   });
 
