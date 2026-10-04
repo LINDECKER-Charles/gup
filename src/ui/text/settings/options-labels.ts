@@ -233,7 +233,7 @@ export const RESET_DIALOG = localized({
     confirm: (scope: string) => `Reset "${scope}" to its defaults?`,
     scopes: {
       appearance: { label: "Appearance", description: "theme, colors, symbols, density" },
-      comfort: { label: "Behavior", description: "startup view, confirmations, sort, mouse…" },
+      comfort: { label: "Behavior", description: "language, startup view, confirmations, sort…" },
       scan: { label: "Scan & install", description: "fast mode, filter, timeout" },
       all: { label: "All", description: "every setting on this page" },
     } satisfies Readonly<Record<ResetScope, { label: string; description: string }>>,
@@ -243,7 +243,7 @@ export const RESET_DIALOG = localized({
     confirm: (scope) => `Remettre « ${scope} » aux valeurs par défaut ?`,
     scopes: {
       appearance: { label: "Apparence", description: "thème, couleurs, symboles, densité" },
-      comfort: { label: "Confort", description: "vue au lancement, confirmations, tri, souris…" },
+      comfort: { label: "Confort", description: "langue, vue au lancement, confirmations, tri…" },
       scan: { label: "Scan & installation", description: "mode rapide, filtre, timeout" },
       all: { label: "Tout", description: "tous les réglages de cette page" },
     },
