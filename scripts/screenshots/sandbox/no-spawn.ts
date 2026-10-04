@@ -7,7 +7,7 @@ export const SPAWN_REFUSED = "screenshots must not spawn processes";
  * module exports is refused, including a function added after this list was
  * written — a new export must be reviewed here before a screenshot may call it.
  */
-export const PROCESS_FREE = {
+const PROCESS_FREE = {
   /** `src/core/runner.ts`: package managers, probes, the detached opener, tree kills. */
   runner: new Set([
     "getInstallTimeoutSeconds",
