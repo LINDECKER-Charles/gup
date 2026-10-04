@@ -1,5 +1,5 @@
 /**
- * Client package drawer: a native modal `<dialog>` (focus kept inside, Échap
+ * Client package drawer: a native modal `<dialog>` (focus kept inside, Escape
  * closes, the page behind is inert) with a package's figures, the versions
  * its successful updates installed and every attempt with its message. The
  * open package is part of the address (`?pkg=` on any page,
@@ -66,7 +66,7 @@ function drawerPackage(route) {
 function onDrawerClosed() {
   hideTooltip();
   state.drawerPackage = null;
-  // Closed by its button or Échap: the address forgets the package, and the
+  // Closed by its button or Escape: the address forgets the package, and the
   // route, once the page is drawn again, gives the focus back.
   if (drawerPackage(state.route) !== null) {
     leaveDrawerAddress();

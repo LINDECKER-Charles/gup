@@ -1,5 +1,5 @@
 /**
- * Client "Calendrier" page: one heatmap per year of the period, newest first.
+ * Client "Calendar" page: one heatmap per year of the period, newest first.
  * The days form an ARIA grid with a single tab stop (roving tabindex): the
  * arrows move by day and by week, Home/End reach the period's ends, Enter
  * opens the sessions of the focused day. The focused or hovered day is
@@ -47,7 +47,8 @@ function calendarCell(cell, index) {
   cell.setAttribute("role", "gridcell");
   cell.setAttribute("tabindex", "-1");
   cell.setAttribute("data-day", String(index));
-  cell.setAttribute("aria-label", fmtLongDay(index) + " : " + daySummary(index));
+  cell.setAttribute("aria-label",
+    t("calendar.dayLabel", { day: fmtLongDay(index), summary: daySummary(index) }));
   withTooltip(cell, () => [fmtLongDay(index), daySummary(index)]);
   on(cell, "focus", () => describeDay(index));
   on(cell, "click", () => openDay(index));

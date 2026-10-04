@@ -4,6 +4,7 @@ import type { HistoryEvent } from "../../../src/core/history/types.js";
 import type { ReportModel } from "../../../src/core/export/report-types.js";
 import { renderReportHtml } from "../../../src/report/render-report.js";
 import { scanEvent, updateEvent } from "../../support/history-fixtures.js";
+import { useLocale } from "../../support/locale.js";
 import { REPORT_NOW, realisticHistory, reportModelOf } from "./report-fixtures.js";
 
 /**
@@ -501,9 +502,47 @@ describe("report page: safety and comfort", () => {
   });
 });
 
-/** "vendredi 2 octobre 2026", as the page words a day (TZ=UTC in tests). */
-function longDay(day: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+describe("report page in English", () => {
+  useLocale("en");
+
+  it("writes its words, numbers and dates in English (en-US)", async () => {
+    const page = await openReport();
+    const generatedAt = new Intl.DateTimeFormat("en-US", {
+      timeZone: "UTC",
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(REPORT_NOW);
+
+    expect(page.window.document.documentElement.getAttribute("lang")).toBe("en");
+    expect(page.text(".hero-unit")).toBe("successful updates");
+    expect(page.text(".hero-sentence")).toContain(", gup updated 2 packages with a success rate of 75%.");
+    expect(page.text(".kpi .kpi-value")).toBe("75%");
+    expect(page.text("#generated")).toBe(
+      `Generated locally by gup 0.5.0 on ${generatedAt.replace(/\s+/g, " ")} (UTC).`,
+    );
+  });
+
+  it("counts with the English plural rules: 1 takes the singular, 0 the plural", async () => {
+    const page = await openReport(reportModelOf(EVENTS), "#/packages");
+
+    await search(page, "chrome");
+    expect(page.text("#packages-count")).toBe("1 package of 4");
+    await search(page, "no-such-package");
+    expect(page.text("#packages-count")).toBe("0 packages of 4");
+  });
+
+  it("names a day of the calendar in English", async () => {
+    const page = await openReport(reportModelOf(EVENTS), "#/calendar");
+
+    expect(page.$("[role='gridcell'][tabindex='0']")?.getAttribute("aria-label")).toBe(
+      `${longDay(dayOf(0.4), "en-US")}: 1 success, 1 scan`,
+    );
+  });
+});
+
+/** "vendredi 2 octobre 2026" ("Friday, October 2, 2026" in en-US), as the page words a day (TZ=UTC in tests). */
+function longDay(day: string, locale = "fr-FR"): string {
+  return new Intl.DateTimeFormat(locale, {
     timeZone: "UTC",
     weekday: "long",
     day: "numeric",

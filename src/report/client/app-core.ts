@@ -1,7 +1,10 @@
 /**
- * Client core of the HTML report: the decoded data, the French labels and
- * their plural forms, number/date/duration formatting in the report's time
- * zone, local-day arithmetic, and the DOM builders every page uses.
+ * Client core of the HTML report: the decoded data, the labels and their
+ * plural forms, number/date/duration formatting in the report's time zone,
+ * local-day arithmetic, and the DOM builders every page uses. The page
+ * embeds its labels in one language and names that language's Intl locale
+ * in its data (`meta.locale`): plurals, numbers, dates and sorting follow
+ * it, never the browser's own language.
  *
  * Plain ES2022 run in the browser, kept in a raw template so the source is
  * shipped byte for byte (its CSP hash is computed over this exact text): no
@@ -12,6 +15,7 @@ export const CORE_JS = String.raw`
 const MODEL = readJson(IDS.data);
 const LABELS = readJson(IDS.labels);
 const META = MODEL.meta;
+const LOCALE = META.locale;
 const DAY_MS = 86400000;
 const NOON_MS = 43200000;
 const PAGE_SIZE = 100;
@@ -20,11 +24,11 @@ const PAGES = {};
 const SVG_NS = document.querySelector("svg.defs").namespaceURI;
 const GENERATED_AT = Date.parse(META.generatedAt);
 const ZONE = usableZone(META.timeZone);
-const PLURALS = new Intl.PluralRules("fr-FR");
+const PLURALS = new Intl.PluralRules(LOCALE);
 const FORMATS = {
-  number: new Intl.NumberFormat("fr-FR"),
-  decimal: new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }),
-  percent: new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 0 }),
+  number: new Intl.NumberFormat(LOCALE),
+  decimal: new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 }),
+  percent: new Intl.NumberFormat(LOCALE, { style: "percent", maximumFractionDigits: 0 }),
   date: zoned({ dateStyle: "medium" }),
   dateTime: zoned({ dateStyle: "medium", timeStyle: "short" }),
   time: zoned({ timeStyle: "short" }),
@@ -34,7 +38,7 @@ const FORMATS = {
   shortDay: utc({ day: "numeric", month: "short" }),
   month: utc({ month: "short" }),
   monthYear: utc({ month: "short", year: "numeric" }),
-  relative: new Intl.RelativeTimeFormat("fr", { numeric: "auto" }),
+  relative: new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" }),
 };
 const RELATIVE_UNITS = [
   { unit: "minute", ms: 60000, below: 60 },
@@ -69,7 +73,7 @@ function readJson(id) {
 
 function usableZone(zone) {
   try {
-    new Intl.DateTimeFormat("fr-FR", { timeZone: zone }).format(0);
+    new Intl.DateTimeFormat(LOCALE, { timeZone: zone }).format(0);
     return zone;
   } catch {
     return undefined;
@@ -77,11 +81,11 @@ function usableZone(zone) {
 }
 
 function zoned(options) {
-  return new Intl.DateTimeFormat("fr-FR", Object.assign({ timeZone: ZONE }, options));
+  return new Intl.DateTimeFormat(LOCALE, Object.assign({ timeZone: ZONE }, options));
 }
 
 function utc(options) {
-  return new Intl.DateTimeFormat("fr-FR", Object.assign({ timeZone: "UTC" }, options));
+  return new Intl.DateTimeFormat(LOCALE, Object.assign({ timeZone: "UTC" }, options));
 }
 
 // ---- Data -----------------------------------------------------------------

@@ -5,6 +5,7 @@ import { escapeHtml } from "../../../src/report/html-shell.js";
 import { REPORT_LABELS } from "../../../src/report/report-labels.js";
 import { renderReportHtml } from "../../../src/report/render-report.js";
 import { updateEvent } from "../../support/history-fixtures.js";
+import { useLocale } from "../../support/locale.js";
 import { realisticHistory, reportModelOf } from "./report-fixtures.js";
 
 /**
@@ -93,6 +94,32 @@ describe("renderReportHtml", () => {
     const page = renderReportHtml({ ...report, meta: { ...report.meta, period: { ...report.meta.period, label: "<b>&" } } });
 
     expect(page).toContain("<title>gup — Rapport d&#39;activité (&lt;b&gt;&amp;)</title>");
+  });
+});
+
+describe("renderReportHtml in English", () => {
+  // Rendered while the file is collected, in the suites' language: the same report in French.
+  const french = renderReportHtml(reportModelOf([]));
+  useLocale("en");
+
+  it("writes its page, the labels it embeds and its data's Intl locale in English", () => {
+    const html = renderReportHtml(reportModelOf([]));
+    const { data, labels } = inlineBlocks(html);
+
+    expect(html).toMatch(/^<!doctype html>\n<html lang="en">/);
+    expect(html).toContain("<title>gup — Activity report (");
+    expect(html).toContain("<h1>Activity report</h1>");
+    expect(html).toContain('<a href="#/failures" data-nav="failures">Failures <span class="nav-count">');
+    expect(JSON.parse(labels)).toEqual(REPORT_LABELS);
+    expect(JSON.parse(labels).units.packages).toEqual({ one: "{n} package", other: "{n} packages" });
+    expect(JSON.parse(data).meta.locale).toBe("en-US");
+  });
+
+  it("runs the same script under the same policy as in French: the language is data", () => {
+    const html = renderReportHtml(reportModelOf([]));
+
+    expect(inlineBlocks(html).code).toEqual(inlineBlocks(french).code);
+    expect(policyOf(html)).toBe(policyOf(french));
   });
 });
 

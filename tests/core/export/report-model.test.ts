@@ -18,6 +18,7 @@ import {
 } from "../../../src/core/export/report-types.js";
 import { parsePeriod } from "../../../src/core/time/period.js";
 import { scanEvent, syntheticHistory, updateEvent } from "../../support/history-fixtures.js";
+import { useLocale } from "../../support/locale.js";
 
 const NOW = new Date("2026-10-03T12:00:00.000Z");
 const PERIOD = parsePeriod("12m", NOW)!;
@@ -201,5 +202,13 @@ describe("buildReportModel", () => {
     expect(report.updates[0]![UPDATE_ROW.at]).toBe(Date.parse(updates.at(-1)!.ts));
     expect(report.totals.attempts).toBe(updates.length);
     expect(Buffer.byteLength(JSON.stringify(report))).toBeLessThan(5 * 1024 * 1024);
+  });
+});
+
+describe("buildReportModel in English", () => {
+  useLocale("en");
+
+  it("names English's Intl locale, the one the client formats with", () => {
+    expect(model([]).meta.locale).toBe("en-US");
   });
 });

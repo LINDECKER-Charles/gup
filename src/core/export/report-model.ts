@@ -1,5 +1,6 @@
 import type { HistoryReadStats } from "../history/reader.js";
 import type { HistoryEvent, UpdateEvent } from "../history/types.js";
+import { activeLocale, type Locale } from "../i18n/locale.js";
 import type {
   FailureGroup,
   Insights,
@@ -16,6 +17,7 @@ import {
   UPDATE_FLAGS,
   type DayRow,
   type ReportFailure,
+  type ReportIntlLocale,
   type ReportMeta,
   type ReportModel,
   type ReportPackage,
@@ -42,6 +44,8 @@ const ELLIPSIS = "…";
 const KEY_SEPARATOR = "\u0000";
 /** UTF-16 high surrogates: the first half of a pair, never cut from its second. */
 const HIGH_SURROGATES = { first: 0xd800, last: 0xdbff } as const;
+/** The Intl locale a report written in each interface language formats with. */
+const INTL_LOCALES: Readonly<Record<Locale, ReportIntlLocale>> = { en: "en-US", fr: "fr-FR" };
 
 export interface ReportContext {
   readonly now: Date;
@@ -245,7 +249,8 @@ function reportMeta({ insights, stats, context }: ReportModelInput): ReportMeta 
     gup: context.gup,
     platform: context.platform,
     timeZone: context.timeZone,
-    locale: "fr-FR",
+    // The active language's: the one the report's labels are rendered in.
+    locale: INTL_LOCALES[activeLocale()],
     period: {
       key: period.key,
       label: context.period.label,
