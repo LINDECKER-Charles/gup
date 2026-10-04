@@ -56,9 +56,17 @@ interface ParsedFile {
   readonly ast: ts.SourceFile;
 }
 
-async function parsedTrees(trees: readonly string[]): Promise<ParsedFile[]> {
-  const roots = trees.map((tree) => sourceFiles(join(process.cwd(), tree)));
-  const files = (await Promise.all(roots)).flat();
+/**
+ * Parsing a tree takes seconds on a loaded CI runner — `src`, `tests` and
+ * `scripts` together came within a few milliseconds of Vitest's 5 s default
+ * on ubuntu, then past it. Each tree is parsed once per file and shared by
+ * the scans, and a scan gets a budget of its own.
+ */
+const TREE_SCAN_TIMEOUT_MS = 30_000;
+const parsedByTree = new Map<string, Promise<ParsedFile[]>>();
+
+async function parseTree(tree: string): Promise<ParsedFile[]> {
+  const files = await sourceFiles(join(process.cwd(), tree));
   return Promise.all(
     files.map(async (file) => {
       const content = await readFile(file, "utf8");
@@ -66,6 +74,15 @@ async function parsedTrees(trees: readonly string[]): Promise<ParsedFile[]> {
       return { rel: toPosixRel(file), ast };
     }),
   );
+}
+
+async function parsedTrees(trees: readonly string[]): Promise<ParsedFile[]> {
+  const parsed = trees.map((tree) => {
+    const cached = parsedByTree.get(tree) ?? parseTree(tree);
+    parsedByTree.set(tree, cached);
+    return cached;
+  });
+  return (await Promise.all(parsed)).flat();
 }
 
 function nodesOf(root: ts.Node): ts.Node[] {
@@ -153,21 +170,21 @@ describe("process chokepoints", () => {
       .filter((file) => namesNodePty(file) && !NODE_PTY_NAMERS.has(file.rel))
       .map((file) => file.rel);
     expect(offenders, "load node-pty through loadEmbeddedTerminal()").toEqual([]);
-  });
+  }, TREE_SCAN_TIMEOUT_MS);
 
   it("never imports node-pty directly from tests or tooling", async () => {
     const offenders = (await parsedTrees(["tests", "scripts"]))
       .filter((file) => moduleSpecifiers(file).some((specifier) => NODE_PTY.test(specifier)))
       .map((file) => file.rel);
     expect(offenders, "reach node-pty through detectEmbeddedTerminal() and PtyModule").toEqual([]);
-  });
+  }, TREE_SCAN_TIMEOUT_MS);
 
   it("spawns into a pseudo-terminal from PtySession only", async () => {
     const offenders = (await parsedTrees(["src"]))
       .filter((file) => receiversOf(file, "spawn").length > 0 && !PTY_SPAWNERS.has(file.rel))
       .map((file) => file.rel);
     expect(offenders, "start PTY children with PtySession.start()").toEqual([]);
-  });
+  }, TREE_SCAN_TIMEOUT_MS);
 
   it("never calls kill() on a node-pty handle, in src, tests or scripts", async () => {
     const offenders = (await parsedTrees(SCANNED_TREES))
@@ -178,7 +195,7 @@ describe("process chokepoints", () => {
           .map((receiver) => `${file.rel}: ${receiver}.kill()`),
       );
     expect(offenders, "kill through PtySession.kill() / ptyKill, never IPty.kill()").toEqual([]);
-  });
+  }, TREE_SCAN_TIMEOUT_MS);
 
   it("gives the node-pty handle type no kill() at all", () => {
     expectTypeOf<PtyHandle>().not.toHaveProperty("kill");
