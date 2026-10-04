@@ -5,7 +5,7 @@ import type { UpdateReport } from "../../../core/update/update-report.js";
 import type { Viewport } from "../../panels/panel.js";
 import type { ScanEvents } from "../../panels/scan-panel.js";
 import { ScanBus } from "../../scan-progress.js";
-import { providerCountFact, QUIT_DIALOG, SIDEBAR_TITLE } from "../../text/menu-labels.js";
+import { providerFacts, QUIT_DIALOG, SIDEBAR_TITLE } from "../../text/menu-labels.js";
 import { Chrome, CHROME_ROWS } from "../../tui/chrome.js";
 import { DialogLayer } from "../../tui/dialog.js";
 import { repaintNextTurn } from "../../tui/repaint-next-turn.js";
@@ -330,8 +330,8 @@ export class MenuSession {
     this.#main.setFocused(!this.#nav.isSidebarFocused);
     this.#sidebar.setFocused(this.#nav.isSidebarFocused);
     this.drawSidebar();
-    const { detectedCount } = this.#deps.state;
-    this.#chrome.setFacts([providerCountFact(detectedCount), ...this.#views.facts()]);
+    const { detectedCount, filter } = this.#deps.state;
+    this.#chrome.setFacts([...providerFacts(detectedCount, filter.length), ...this.#views.facts()]);
     this.#chrome.setHints(...this.#keys.hints());
   }
 

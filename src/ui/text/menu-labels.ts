@@ -40,8 +40,17 @@ export const DIALOG_HINTS = {
 /** What Scan and Paquets say when the session has not scanned yet and no scan runs. */
 export const NO_SCAN_YET = "Aucun scan pour l'instant — r pour scanner.";
 
-export function providerCountFact(count: number): string {
-  return `${count} provider(s)`;
+/**
+ * The providers in the title bar: how many the last scan detected on this
+ * machine, then how many the filter keeps — "27 détectés · 1 filtré".
+ * Nothing is said of detection before the first scan.
+ */
+export function providerFacts(detected: number, filtered: number): string[] {
+  const parts = [
+    ...(detected > 0 ? [counted(detected, "détecté", "détectés")] : []),
+    ...(filtered > 0 ? [counted(filtered, "filtré", "filtrés")] : []),
+  ];
+  return parts.length > 0 ? [parts.join(" · ")] : [];
 }
 
 /** "à jour" only when every provider scanned: one that failed may hide updates. */
@@ -50,10 +59,8 @@ export function updateCountFact(count: number, failedScans = 0): string {
   return failedScans > 0 ? `${failedScans} scan(s) en échec` : "à jour";
 }
 
-export function scanModeFact(isFast: boolean, filteredProviders: number): string {
-  const filter =
-    filteredProviders === 0 ? "tous les providers" : `${filteredProviders} provider(s) filtré(s)`;
-  return `${isFast ? "mode rapide" : "mode normal"} · ${filter}`;
+export function scanModeFact(isFast: boolean): string {
+  return isFast ? "mode rapide" : "mode normal";
 }
 
 export const CONFIRM_UPDATE = {

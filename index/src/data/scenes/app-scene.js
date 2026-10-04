@@ -37,9 +37,9 @@ export const APP_SCENE = Object.freeze({
   kind: "packages",
   lang: "fr",
   facts: [
-    `${SAMPLE_MACHINE.detected} provider(s)`,
+    `${SAMPLE_MACHINE.detected} détectés`,
     `${updates} mise(s) à jour`,
-    "mode normal · tous les providers",
+    "mode normal",
   ],
   sidebarTitle: "Menu",
   sidebar: [

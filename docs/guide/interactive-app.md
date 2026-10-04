@@ -73,7 +73,9 @@ fails or hangs only costs its own row. When the scan ends, **Paquets** comes to 
 rescans from either view.
 
 What is scanned follows Options › **Mode rapide** (fast mode: skip the slow providers) and
-**Filtre providers** (provider filter), shown in the title bar.
+**Filtre providers** (provider filter), shown in the title bar: `27 détectés · 2 filtrés` reads
+27 providers detected on this machine by the last scan, 2 of them kept by the filter — and
+`mode rapide` or `mode normal`.
 
 ## Paquets: pick what to update
 
