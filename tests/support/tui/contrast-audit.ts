@@ -73,7 +73,7 @@ const CAMPBELL_DARK = { palette: CAMPBELL, mode: "dark" } as const;
 const BASIC_LIGHT = { palette: TERMINAL_APP_BASIC, mode: "light" } as const;
 
 /** Every theme the audit holds the menu to, on the terminals it is held on. */
-export const AUDITED: readonly Audited[] = [
+const AUDITED: readonly Audited[] = [
   ...RGB_THEME_IDS.map(
     (theme): Audited => ({ label: theme, theme, terminal: UNKNOWN, ground: [0, 0, 0] }),
   ),
@@ -143,7 +143,6 @@ export interface AuditOptions extends Omit<MenuDriverOptions, "views" | "createA
 
 export interface Audit {
   readonly menu: MenuDriver;
-  readonly settings: SettingsService;
   /** What shows through an unpainted cell, once the theme resolved. */
   ground(): wcag.Rgb;
   /** Keep the frame under `state`, once it shows `shows`. */
@@ -230,13 +229,14 @@ export async function auditMenu(audited: Audited, options: AuditOptions): Promis
   };
   return {
     menu,
-    settings,
     ground: () => painted.ground,
     capture: async (state, shows) => {
       await menu.waitForText(shows);
       frames.push([state, menu.screen.captureSpans()]);
     },
     violations: () =>
-      frames.flatMap(([state, frame]) => problemsOf(frame).map((problem) => `${state}: ${problem}`)),
+      frames.flatMap(([state, frame]) =>
+        problemsOf(frame).map((problem) => `${state}: ${problem}`),
+      ),
   };
 }
