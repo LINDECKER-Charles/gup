@@ -215,4 +215,13 @@ describe("Debug", () => {
 
     expect(screen().join("\n")).toContain("Activez-le dans Options › Journal de debug.");
   });
+
+  it("wraps the off hint in the panel an 80-column terminal leaves", async () => {
+    const data = journalData(undefined, { log: { threshold: "off", source: "env" } });
+    const { journal } = await journalOn("4", data);
+
+    const lines = text(journal.render({ width: 50, height: 22 }));
+    for (const line of lines) expect(line.length).toBeLessThanOrEqual(50);
+    expect(lines.join(" ")).toContain(DEBUG_LABELS.offHint.env);
+  });
 });
