@@ -48,3 +48,7 @@
   quality gates add `verify`'s check of each prerendered demo's `lang`, and the translation record
   drops the Chinese caption's "目前" (for now), which the copy no longer has
   (`docs(website): show the terminal demo in the page's language`)
+- **community:** `SUPPORT.md` says the interface speaks English, and French with
+  `gup language fr`, where it said French; the pull request template asks for user-facing strings
+  in both languages, through `localize()` or a `localized()` catalog read when shown, where it
+  asked for French ones (`docs(community): say the interface speaks English and French`)
