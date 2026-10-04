@@ -42,3 +42,35 @@ describe("PnpmGlobalProvider.listOutdated", () => {
     ]);
   });
 });
+
+describe("PnpmGlobalProvider updating pnpm itself", () => {
+  // pnpm 12 lists itself as a global package after `pnpm self-update`, and
+  // answers `pnpm add -g pnpm@latest` with ERR_PNPM_GLOBAL_PNPM_INSTALL.
+  it("updates pnpm with its own command", async () => {
+    await system.load(pnpmMachine("{}"));
+    await expect(new PnpmGlobalProvider().update("pnpm")).resolves.toEqual({
+      id: "pnpm",
+      success: true,
+    });
+    expect(system.trace.spawns.filter((s) => s.mode === "inherit").map((s) => s.argv)).toEqual([
+      ["pnpm", "self-update"],
+    ]);
+  });
+
+  it("updates the other packages in one batch, then pnpm itself", async () => {
+    await system.load(pnpmMachine("{}"));
+    system.answerInstall({ exitCode: 1 }, { exitCode: 0 });
+    const packages = [
+      { id: "pnpm", current: "12.6.0", latest: "12.9.1" },
+      { id: "zx", current: "8.1.8", latest: "8.2.0" },
+    ];
+    await expect(new PnpmGlobalProvider().updateAll(packages)).resolves.toEqual([
+      { id: "pnpm", success: true },
+      { id: "zx", success: false },
+    ]);
+    expect(system.trace.spawns.filter((s) => s.mode === "inherit").map((s) => s.argv)).toEqual([
+      ["pnpm", "add", "-g", "zx@latest"],
+      ["pnpm", "self-update"],
+    ]);
+  });
+});
