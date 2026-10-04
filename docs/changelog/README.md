@@ -9,7 +9,8 @@ narrative of each release, see
 
 | Version | Published | Commits | In one sentence |
 |---|---|---:|---|
-| [Unreleased](unreleased.md) | `main` after 0.5.0 | 2 | The install guides and the 0.5.0 release notes cover npm 12, which skips node-pty's install scripts on a plain global install. |
+| [Unreleased](unreleased.md) | `main` after 0.5.1 | 0 | Nothing yet. |
+| [`0.5.1`](0.5.1.md) | not yet published | 85 | 0.5.1 makes gup speak English by default and French on demand (`gup language fr`), leaves gup's own update on Windows for after it exits, fixes pip, composer, pnpm and winget updates that reported a success they were not, and tidies the repository root. |
 | [`0.5.0`](0.5.0.md) | 2026-10-04 | 541 | 0.5.0 runs updates inside the interactive app in an embedded terminal, picks packages by checking them, reads the history back as a debug log, an activity journal and an HTML report, updates chosen packages on a schedule, holds every text of ten themes to WCAG AA, greys out the providers of other systems, translates the landing site into eight languages and runs the provider tests as contracts on a fake machine; as the first version published since 0.3.2, it also ships 0.4.0. |
 | [`0.4.0`](0.4.0.md) | never published | 38 | 0.4.0 fixes the terminal freezes seen on Windows, rebuilds the interactive UI on OpenTUI in place of `@inquirer/prompts` and `ora`, and moves the runtime floor to Node >= 26.9.0. |
 | [`0.3.2`](0.3.2.md) | 2026-08-09 | 15 | Version 0.3.2 adds 19 providers (MSYS2, Cygwin, Npackd, Fink, pkgin, Nix, pkgx, nvm, pyenv, swiftly, mint, vcpkg, Visual Studio, Git for Windows, .NET SDK, NuGet, PSResourceGet, Sparkle, xcodes), taking the registry from 134 to 153 entries. |
