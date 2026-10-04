@@ -218,13 +218,16 @@ update pipeline asks). While the focused panel captures text it takes `q` and Ta
 drops `tab menu · q quitter` (and the picker its `q annuler`).
 
 `UpdateLauncher.launch(packages, { scheduleId?, returnTo? })` resolves with the report of an
-update run inside the screen, or `null` (declined, or run outside). The foundation's
+update run inside the screen, or `null` (declined, refused while a scan of the session runs, or
+run outside). The foundation's
 `outsideLauncher` confirms (when `confirmBeforeUpdate`), then ends the session with
 `{ kind: "outside", run, returnTo }`; `MenuApp` runs it on the plain terminal, waits for Entrée,
 then either drops the updated packages (`withoutUpdated`) and reopens on `returnTo` (default
 Paquets), or rescans (`rescanAfterUpdate`). An in-screen launcher gets a `LauncherContext`
-(`takeOver`, `exit`, `afterUpdate(report, returnTo)`, …) and falls back by delegating to
-`outsideLauncher`.
+(`takeOver`, `exit`, `afterUpdate(report, returnTo)`, `isScanning()`, …) and falls back by
+delegating to `outsideLauncher`. Both launchers start nothing while `isScanning()` (package
+managers are busy with the scan); their callers say why first — Paquets' notice, Planification's
+run-now.
 
 `UiPreferences` (`launchView`, `scanOnLaunch`, `confirmBeforeUpdate`, `rescanAfterUpdate`,
 `packageSort`, `noteColumn`, `animations`, `notifyOnDone`, `showIncompatibleProviders`, `scan`)

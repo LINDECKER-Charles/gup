@@ -117,6 +117,23 @@ describe("outside launcher", () => {
     await expect(outsideLauncher(launcher.contexts[0]!).launch([])).resolves.toBeNull();
     expect(await menu.frame()).not.toContain("vont être mis à jour");
   });
+
+  it("neither asks nor leaves the screen while a scan of the menu runs", async () => {
+    const launcher = capturingLauncher();
+    const menu = await bootMenu({
+      launcher: launcher.factory,
+      controller: { scan: () => new Promise<void>(() => {}) },
+    });
+    const context = launcher.contexts[0]!;
+    await vi.waitFor(() => expect(context.isScanning()).toBe(true));
+    const selection = [{ providerId: "winget", pkg: pkg("Git.Git") }];
+
+    await expect(outsideLauncher(context).launch(selection)).resolves.toBeNull();
+
+    expect(await menu.frame()).not.toContain("vont être mis à jour");
+    const ended = await Promise.race([menu.exit, Promise.resolve("still open")]);
+    expect(ended).toBe("still open");
+  });
 });
 
 describe("after an update inside the screen", () => {

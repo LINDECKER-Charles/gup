@@ -4,7 +4,10 @@ import type { Schedule, SchedulerState } from "../../../src/core/scheduler/model
 import type { SelectedPackage } from "../../../src/core/types.js";
 import { buildReport, type UpdateReport } from "../../../src/core/update/update-report.js";
 import type { LaunchRequest, LauncherFactory } from "../../../src/ui/app/update-launcher.js";
-import { SCHEDULE_ACTION } from "../../../src/ui/text/schedule/schedule-menu-labels.js";
+import {
+  SCHEDULE_ACTION,
+  SCHEDULE_NOTICES,
+} from "../../../src/ui/text/schedule/schedule-menu-labels.js";
 import { schedulesView } from "../../../src/ui/views/schedules-view.js";
 import { outcome, pkg, scan } from "../../support/builders.js";
 import { bootMenu, defaultViews, type MenuDriver } from "../../support/tui/menu-driver.js";
@@ -232,6 +235,27 @@ describe("the Planification list", () => {
     port.preparation = withGitOutdated;
     await menu.press("x", "enter");
     expect(await menu.exit).toMatchObject({ kind: "outside", returnTo: "schedules" });
+    expect(port.recorded).toEqual([]);
+  });
+
+  it("starts no run while a scan of the menu runs, and says why", async () => {
+    const port = new FakeSchedulesPort();
+    port.schedules = [storedSchedule()];
+    port.preparation = withGitOutdated;
+    const launch = vi.fn<() => Promise<UpdateReport | null>>(async () => null);
+    const menu = await bootMenu({
+      views: [...defaultViews(), schedulesView(port)],
+      size: { cols: 120, rows: 32 },
+      initialView: "schedules",
+      controller: { scan: () => new Promise<void>(() => {}) },
+      launcher: () => ({ isRunning: false, launch }),
+    });
+    await menu.waitForText("Outils dev");
+    await menu.press("x");
+    const frame = await settled(menu);
+    expect(frame).toContain(SCHEDULE_NOTICES.scanRunning);
+    expect(frame).not.toContain("Exécuter « Outils dev » maintenant ?");
+    expect(launch).not.toHaveBeenCalled();
     expect(port.recorded).toEqual([]);
   });
 

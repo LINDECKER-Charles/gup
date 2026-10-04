@@ -15,11 +15,16 @@ import {
   type UiPreferences,
 } from "../../../src/ui/app/ui-preferences.js";
 import { setLauncherFactory, type LauncherFactory } from "../../../src/ui/app/update-launcher.js";
-import type { ViewDefinition, ViewId } from "../../../src/ui/app/view-definition.js";
+import type {
+  ViewContext,
+  ViewDefinition,
+  ViewId,
+} from "../../../src/ui/app/view-definition.js";
 import type { AppearanceFactory } from "../../../src/ui/theme/appearance.js";
 import { optionsView } from "../../../src/ui/views/options-view.js";
 import { packagesView } from "../../../src/ui/views/packages-view.js";
 import { providersView } from "../../../src/ui/views/providers-view.js";
+import { seg } from "../../../src/ui/tui/styled-lines.js";
 import { scanView } from "../../../src/ui/views/scan-view.js";
 import { createTestHost, frame, press } from "./test-host.js";
 
@@ -82,6 +87,40 @@ const NO_PROVIDERS: ProviderStatusReport = {
 /** The foundation's views, the Providers one reading `report`. */
 export function defaultViews(report: ProviderStatusReport = NO_PROVIDERS): ViewDefinition[] {
   return [optionsView(), packagesView(), providersView({ status: async () => report }), scanView()];
+}
+
+/**
+ * A Planification stand-in that shows "planifications" and hands the test
+ * the ViewContext it was built with: what a test needs to drive the menu's
+ * launcher as a view does.
+ */
+export function contextView(): { readonly view: ViewDefinition; context(): ViewContext } {
+  let captured: ViewContext | null = null;
+  const view: ViewDefinition = {
+    id: "schedules",
+    label: "Planification",
+    order: 30,
+    group: 0,
+    create: (context) => {
+      captured = context;
+      return {
+        title: "Planification",
+        isCapturingText: false,
+        hints: () => "",
+        render: () => [[seg("planifications")]],
+        press: () => {},
+        click: () => {},
+        scroll: () => {},
+      };
+    },
+  };
+  return {
+    view,
+    context: () => {
+      if (!captured) throw new Error("the menu has not built the view yet");
+      return captured;
+    },
+  };
 }
 
 /** A controller whose scan reports one finished provider per scan result and stores them. */

@@ -195,6 +195,7 @@ export const SCHEDULE_NOTICES = {
   scanning: (providers: readonly string[]) => `Scan de ${providers.join(", ")}…`,
   ran: (status: string) => `Exécution terminée : ${status}`,
   busy: "Une exécution de planification est déjà en cours.",
+  scanRunning: "Scan en cours — l'exécution sera possible à la fin du scan.",
   notSaved: (message: string) =>
     `${STATUS_GLYPHS.failed} Planifications non enregistrées : ${message}`,
   vanished: "Cette planification n'existe plus (supprimée depuis un autre terminal).",

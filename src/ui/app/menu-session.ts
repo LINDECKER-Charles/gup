@@ -180,6 +180,7 @@ export class MenuSession {
       state: this.#deps.state,
       controller: this.#deps.controller,
       preferences,
+      isScanning: () => this.#scans.isRunning,
       takeOver: (start) => this.takeOver(start),
       exit: (exit) => this.#exit(exit),
       afterUpdate: (report, returnTo) => this.afterUpdate(report, returnTo),

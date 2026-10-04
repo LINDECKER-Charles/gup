@@ -11,7 +11,7 @@ import {
   RUN_NOW_DIALOG,
   SCHEDULE_NOTICES,
 } from "../../text/schedule/schedule-menu-labels.js";
-import { seg } from "../../tui/styled-lines.js";
+import { seg, type Line } from "../../tui/styled-lines.js";
 import type { FlowContext } from "./flow-context.js";
 import { runStatusTone } from "./schedule-list-lines.js";
 import type { ListHandlers } from "./schedules-panel.js";
@@ -25,6 +25,9 @@ import type { ListHandlers } from "./schedules-panel.js";
  * outside the screen the launcher has no report to give: the run tracker
  * the scheduler module installs records it instead.
  */
+
+/** No update starts while a scan of the menu runs: package managers are busy with it. */
+const SCAN_RUNNING: readonly Line[] = [[seg(SCHEDULE_NOTICES.scanRunning, "warning")]];
 
 export class ScheduleFlows implements ListHandlers {
   readonly #kit: FlowContext;
@@ -84,6 +87,7 @@ export class ScheduleFlows implements ListHandlers {
 
   async runNow(schedule: Schedule): Promise<void> {
     if (this.#isRunning) return this.#kit.notify([[seg(SCHEDULE_NOTICES.busy, "warning")]]);
+    if (this.#kit.view.isScanning()) return this.#kit.notify(SCAN_RUNNING);
     const providers = this.#providerNames(schedule);
     const isConfirmed = await this.#kit.view.dialogs.confirm({
       title: RUN_NOW_DIALOG.title(schedule.name),
@@ -105,6 +109,8 @@ export class ScheduleFlows implements ListHandlers {
     if (!kit.isLive) return;
     if ("error" in prepared) return kit.notify([[seg(prepared.error, "danger")]]);
     if (prepared.plan.updates.length === 0) return this.#record(prepared, null);
+    // A scan of the menu may have started meanwhile: the launcher would refuse the update.
+    if (kit.view.isScanning()) return kit.notify(SCAN_RUNNING);
     kit.notify([]);
     const report = await kit.view.updates.launch(packagesOf(prepared), {
       scheduleId: schedule.id,
