@@ -153,8 +153,13 @@ one UAC prompt or one `sudo` password.
 - The elevated child (`gup __admin-batch`) is a pure executor: it reads its
   targets from a private file (`mkdtemp` directory, `wx`), calls each
   provider's `update()`, and writes the outcomes back; the unelevated parent
-  validates them. Windows starts it with `Start-Process -Verb RunAs`, its
-  arguments passed as arguments, never as a command line built from them.
+  validates them. Windows starts it with `Start-Process -Verb RunAs` from a
+  constant script, its paths passed as arguments, never as code woven into
+  it. Start-Process joins its arguments with spaces and quotes nothing, so
+  the script wraps each path in double quotes, and a path that cannot be
+  quoted (a `"`, a trailing `\`) is refused: a path with a space never
+  reaches the elevated node split in two
+  (`tests/integration/uac-launcher.test.ts`).
 - It runs only the CLI modules that opt in and **never reads the settings
   file**: a file you can write must not steer a process running as
   administrator. Its install timeout and log level come from the parent's

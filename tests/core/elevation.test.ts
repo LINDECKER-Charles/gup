@@ -340,3 +340,25 @@ describe("elevated wait", () => {
     expect(options).toEqual({ timeout: 3 * 1_200_000 + 300_000 });
   });
 });
+
+describe("UAC launcher", () => {
+  it.each([
+    ["ends in a backslash", "C:\\tools\\gup\\"],
+    ["holds a quote", String.raw`C:\tools\"gup\cli.js`],
+  ])("never hands the elevated child a path that %s", async (_case, cli) => {
+    const previousCli = process.argv[1];
+    setPlatform("win32");
+    process.argv[1] = cli;
+    runInheritMock.mockReset();
+    try {
+      const outcomes = await runElevatedBatch(["choco:a"]);
+      expect(outcomes).toEqual([
+        expect.objectContaining({ success: false, message: expect.stringContaining("quote") }),
+      ]);
+    } finally {
+      process.argv[1] = previousCli ?? "";
+      restorePlatform();
+    }
+    expect(runInheritMock).not.toHaveBeenCalled();
+  });
+});

@@ -289,24 +289,28 @@ interface ElevatedLaunch {
   readonly timeout: number;
 }
 
+/**
+ * The UAC launcher, a constant: the elevated paths arrive as `$args` when it
+ * runs as `powershell.exe -File spawn.ps1 <node> <cli> <inputFile>`, never as
+ * text woven into it. execa hands PowerShell an argv vector, so the only
+ * env-derived inputs flow as data, never as code — the taint flow CodeQL's
+ * `js/shell-command-injection-from-environment` tracks stays broken.
+ *
+ * Start-Process joins `-ArgumentList` with spaces and quotes nothing: each
+ * path is wrapped in double quotes here. Unquoted, a path with a space (a
+ * profile named "Jane Doe", an npm prefix under Program Files) reached the
+ * elevated node split in two, and node tried to load the truncated path as a
+ * module — as administrator. `-FilePath` is a single value and needs none.
+ */
+const UAC_WRAPPER_SCRIPT =
+  "$ErrorActionPreference = 'Stop'\r\n" +
+  "Start-Process -FilePath $args[0] -Verb RunAs -Wait" +
+  " -ArgumentList ('\"' + $args[1] + '\"'),'__admin-batch',('\"' + $args[2] + '\"')\r\n";
+
 async function spawnWithUac({ node, cli, inputFile, timeout }: ElevatedLaunch): Promise<void> {
-  // Write a static PowerShell wrapper next to the input file. The script
-  // body is a hard-coded literal — none of the elevated paths are woven
-  // into it; they arrive as $args[0..2] positional parameters when we
-  // invoke `powershell.exe -File wrapper.ps1 <node> <cli> <inputFile>`.
-  //
-  // execa receives an argv VECTOR (no shell concatenation), and the
-  // wrapper itself never builds a shell line from the args — Start-Process
-  // -ArgumentList takes them as discrete strings. This structurally
-  // breaks the taint flow that CodeQL's
-  // `js/shell-command-injection-from-environment` query tracks: the only
-  // env-derived inputs flow as data through argv, never as code through a
-  // shell command line.
+  for (const path of [cli, inputFile]) assertQuotable(path);
   const ps1 = join(dirname(inputFile), "spawn.ps1");
-  const script =
-    "$ErrorActionPreference = 'Stop'\r\n" +
-    "Start-Process -FilePath $args[0] -ArgumentList $args[1],'__admin-batch',$args[2] -Verb RunAs -Wait\r\n";
-  await writeFile(ps1, script, { encoding: "utf8", flag: "wx" });
+  await writeFile(ps1, UAC_WRAPPER_SCRIPT, { encoding: "utf8", flag: "wx" });
   const powershellArgs = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"];
   const res = await runInherit("powershell.exe", [...powershellArgs, ps1, node, cli, inputFile], {
     timeout,
@@ -339,5 +343,16 @@ function assertNoControlChars(s: string): void {
         `elevation: refusing to spawn with control char in argv: ${JSON.stringify(s)}`,
       );
     }
+  }
+}
+
+/**
+ * A path the UAC launcher can wrap in double quotes: one holding a quote (no
+ * Windows path does) or ending in a backslash (it would escape the closing
+ * quote) is refused rather than handed, mangled, to an elevated process.
+ */
+function assertQuotable(path: string): void {
+  if (path.includes('"') || path.endsWith("\\")) {
+    throw new Error(`elevation: refusing to quote ${JSON.stringify(path)} for Start-Process`);
   }
 }
