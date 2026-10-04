@@ -25,7 +25,9 @@ export function packagesView(): ViewDefinition {
       const count = countPackages(context.state.scans);
       return count > 0 ? { text: String(count), tone: "warning" } : null;
     },
-    facts: (context) => [updateCountFact(countPackages(context.state.scans))],
+    // No results yet (a scan running, or none at launch): "à jour" would be a claim.
+    facts: ({ state }) =>
+      state.scans.length === 0 ? [] : [updateCountFact(countPackages(state.scans))],
   };
 }
 
