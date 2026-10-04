@@ -28,10 +28,11 @@ const PTY_MODULE_PATH = /(?:^|\/)(?:core|support)\/pty\//;
 /**
  * The only receivers of a `.kill(...)` call where a node-pty handle is
  * reachable: `process` (a signal by pid), a `session` or `child` (an install
- * process, whose kill is ptyKill's tree kill), and `_ptyNative` (ConPTY's
- * close in releaseConpty — not IPty.kill).
+ * process, whose kill is ptyKill's tree kill — the E2E harness keeps its own
+ * in a private `#session` field), and `_ptyNative` (ConPTY's close in
+ * releaseConpty — not IPty.kill).
  */
-const KILL_RECEIVERS = new Set(["process", "session", "child", "_ptyNative"]);
+const KILL_RECEIVERS = new Set(["process", "session", "#session", "child", "_ptyNative"]);
 const SCANNED_TREES = ["src", "tests", "scripts"];
 const SOURCE_FILE = /\.(?:ts|mts|mjs)$/;
 
