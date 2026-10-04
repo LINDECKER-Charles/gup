@@ -1,15 +1,7 @@
 import semver from "semver";
-import { activeLocale, type Locale } from "../../core/i18n/locale.js";
 import type { OutdatedPackage } from "../../core/types.js";
 import type { PackageSort } from "../app/ui-preferences.js";
-
-/** Names compared the way a reader sorts them: case and accents aside, numbers by value. */
-const NAME_ORDER: Intl.CollatorOptions = { sensitivity: "base", numeric: true };
-/** The collation of each interface language, as its readers expect it. */
-const COLLATORS: Readonly<Record<Locale, Intl.Collator>> = {
-  en: new Intl.Collator("en-US", NAME_ORDER),
-  fr: new Intl.Collator("fr-FR", NAME_ORDER),
-};
+import { compareNames } from "../text/format.js";
 
 /** Rank of a version jump, biggest first; a jump semver cannot read comes last. */
 const BUMP_RANK: Readonly<Record<string, number>> = {
@@ -39,10 +31,9 @@ export function orderPackages(
   return [...packages].sort((a, b) => bumpRank(a) - bumpRank(b) || byName(a, b));
 }
 
-/** A→Z by name in the collation of the language active now. */
+/** A→Z by name, the way the active language's readers sort. */
 function nameOrder(): (a: OutdatedPackage, b: OutdatedPackage) => number {
-  const collator = COLLATORS[activeLocale()];
-  return (a, b) => collator.compare(a.name ?? a.id, b.name ?? b.id);
+  return (a, b) => compareNames(a.name ?? a.id, b.name ?? b.id);
 }
 
 function bumpRank(pkg: OutdatedPackage): number {

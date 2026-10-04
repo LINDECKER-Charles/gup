@@ -1,4 +1,4 @@
-import { formatDuration } from "../text/format.js";
+import { compareNames, formatDuration } from "../text/format.js";
 import { MENU_LABELS, VIEW_LABELS } from "../text/menu-labels.js";
 import { SCAN_LABELS } from "../text/scan-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
@@ -204,7 +204,7 @@ export class ScanPanel implements Panel, ScanEvents {
       return p.outcome.updates > 0 ? 2 : 3;
     };
     return [...this.#providers.values()].sort(
-      (a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name),
+      (a, b) => rank(a) - rank(b) || compareNames(a.name, b.name),
     );
   }
 

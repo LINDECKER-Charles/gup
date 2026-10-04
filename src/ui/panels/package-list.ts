@@ -5,6 +5,7 @@ import type {
 } from "../../core/types.js";
 import { isUpdatableNow } from "../../core/self-update.js";
 import type { PackageSort } from "../app/ui-preferences.js";
+import { compareNames } from "../text/format.js";
 import { orderPackages } from "./package-order.js";
 
 export type PackageRow =
@@ -58,7 +59,7 @@ export class PackageList {
     this.#sortOf = options.sort ?? (() => "provider");
     this.#scanned = [...scans]
       .filter((scan) => scan.packages.length > 0 || scan.error)
-      .sort((a, b) => nameOf(a.providerId).localeCompare(nameOf(b.providerId)))
+      .sort((a, b) => compareNames(nameOf(a.providerId), nameOf(b.providerId)))
       .map((scan) => ({
         providerId: scan.providerId,
         title: nameOf(scan.providerId),

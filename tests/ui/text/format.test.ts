@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compareNames,
   counted,
   formatClock,
   formatCount,
@@ -132,5 +133,19 @@ describe("English dates", () => {
     expect(formatRelative(at(4, 9, 0), NOW)).toBe("tomorrow 09:00");
     expect(formatRelative(at(5, 9, 0), NOW)).toBe("Mon, Oct 5 09:00");
     expect(formatRelative(new Date(2027, 0, 4, 9, 0), NOW)).toBe("2027-01-04 09:00");
+  });
+});
+
+describe("compareNames", () => {
+  it("sorts the way the language's readers do, whatever the machine's collation", () => {
+    const names = ["Winget", "scoop", "npm (global)", "Python 3.10", "Python 3.9", "Écrin"];
+    expect([...names].sort(compareNames)).toEqual([
+      "Écrin",
+      "npm (global)",
+      "Python 3.9",
+      "Python 3.10",
+      "scoop",
+      "Winget",
+    ]);
   });
 });

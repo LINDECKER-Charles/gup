@@ -25,6 +25,10 @@ const PERCENT = byLocale(
 const SHORT_DAY = byLocale(
   (tag) => new Intl.DateTimeFormat(tag, { weekday: "short", day: "numeric", month: "short" }),
 );
+/** Names compared the way a reader sorts them: case and accents aside, numbers by value. */
+const NAME_ORDER = byLocale(
+  (tag) => new Intl.Collator(tag, { sensitivity: "base", numeric: true }),
+);
 /** The no-break space and the narrow no-break space Intl puts in French numbers. */
 const NARROW_SPACES = /[  ]/g;
 
@@ -61,6 +65,15 @@ function plain(text: string): string {
 }
 
 const pad2 = (value: number): string => String(value).padStart(2, "0");
+
+/**
+ * Two names in the order the active language's readers sort them — never
+ * the machine's own collation, which made the same list sort differently
+ * from one computer to the next.
+ */
+export function compareNames(a: string, b: string): number {
+  return NAME_ORDER[activeLocale()].compare(a, b);
+}
 
 /** `1284` → "1,284" in English, "1 284" in French. */
 export function formatCount(n: number): string {
