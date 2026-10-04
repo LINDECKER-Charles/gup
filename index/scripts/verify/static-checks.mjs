@@ -2,8 +2,9 @@
  * Post-build assertions on the files in dist/, no browser: per-locale HTML
  * (lang/dir, SERP budgets, canonical, hreflang reciprocity, social card,
  * JSON-LD, bootstrap, no leaked placeholder or markup, legacy anchors, CSP,
- * size budget), then the site as a whole (sitemap, 404, legacy URLs, no
- * catalog in the client bundle, JS/CSS/font budgets).
+ * size budget, the terminal demo's interface language), then the site as a
+ * whole (sitemap, 404, legacy URLs, no catalog in the client bundle,
+ * JS/CSS/font budgets).
  *
  * @typedef {import("../../build/page-context.mjs").PageContext} PageContext
  * @typedef {{ report: ReturnType<import("./report.mjs").createReport>, dist: string }} Context
@@ -14,6 +15,7 @@ import { gzipSync } from "node:zlib";
 import { displayWidth } from "../../build/i18n/display-width.mjs";
 import { installCommand } from "../../src/data/facts.js";
 import { LINKS } from "../../src/data/links.js";
+import { interfaceLanguageOf } from "../../src/data/scenes/interface-languages.js";
 import { STRUCTURE } from "../../src/data/structure.js";
 
 const KIB = 1024;
@@ -62,6 +64,7 @@ const ALTERNATE = /<link rel="alternate" hreflang="([^"]+)" href="([^"]+)">/g;
 const FONT_PRELOAD = /<link rel="preload" href="([^"]+)" as="font"/g;
 const JSON_LD = /<script type="application\/ld\+json">(.*?)<\/script>/s;
 const BOOT = /<script id="gup-boot" type="application\/json">(.*?)<\/script>/s;
+const TERM_PANEL = /<div\b[^>]*\bid="term-panel"[^>]*>/;
 
 const read = (file) => readFileSync(file, "utf8");
 const exists = (file) => statSync(file, { throwIfNoEntry: false })?.isFile() === true;
@@ -70,6 +73,9 @@ const first = (html, pattern) => html.match(pattern)?.[1];
 const count = (text, needle) => text.split(needle).length - 1;
 const fromSite = (dist, url) => join(dist, url.slice(LINKS.siteUrl.length));
 const fromBase = (dist, href) => join(dist, href.slice(LINKS.basePath.length));
+
+/** The language the terminal demo's panel is prerendered in (src/ui/terminal/Terminal.jsx). */
+const demoLanguage = (html) => html.match(TERM_PANEL)?.[0].match(/\slang="([^"]+)"/)?.[1];
 
 function visibleText(html) {
   const start = html.indexOf('<div id="root">');
@@ -133,6 +139,9 @@ function checkBody({ report }, { html, page }) {
   report.check(`${id}: install command in the visible text`, words.includes(installCommand));
   report.check(`${id}: ${legacy.length} legacy anchors`, missing.length === 0, missing.join(", "));
   report.check(`${id}: HTML ≤ 30 KB gzipped`, gz(html) <= BUDGET.htmlGz, `${gz(html)} B`);
+  const demo = demoLanguage(html);
+  const expected = interfaceLanguageOf(id);
+  report.check(`${id}: the terminal demo shows the ${expected} interface`, demo === expected, demo);
 }
 
 /** @param {Context} ctx */

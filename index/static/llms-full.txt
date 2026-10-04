@@ -52,7 +52,7 @@ set, the install fails. To trust node-pty once for every global install:
 
 | Command | Effect |
 |---|---|
-| `gup` | Full-screen app (French UI): Scan · Paquets · Planification · Providers · Journal · Options · Quitter |
+| `gup` | Full-screen app (English UI, French with `gup language fr`): Scan · Packages · Schedules · Providers · Journal · Options · Quit |
 | `gup list` | Outdated packages as a table |
 | `gup list --fast` | Skips providers marked `slow` (HTTP per package, filesystem walks) |
 | `gup list --json` | Machine-readable array, pipeable |
@@ -68,7 +68,8 @@ set, the install fails. To trust node-pty once for every global install:
 Flags: `--fast` and `--provider <ids…>` on `gup list` and `gup update`;
 `--json` on `gup list`; `-y` and `--timeout <seconds>` on `gup update`
 (per-install wall clock; default 1200, `0` disables).
-Environment: `GUP_INSTALL_TIMEOUT` (seconds; `--timeout` wins).
+Environment: `GUP_INSTALL_TIMEOUT` (seconds; `--timeout` wins), `GUP_LANG`
+(`en` or `fr`; wins over the language `gup language` saves).
 
 Exit codes: `0` success · `1` partial failure (at least one update failed) ·
 `2` invalid arguments.
@@ -246,8 +247,9 @@ shell-out layer is argv-only with a test-pinned allowlist.
 
 ## Languages
 
-The site is available in these languages (the CLI interface itself is French;
-commands, flags and JSON output are language-neutral):
+The site is available in these languages (the CLI interface itself is in
+English by default and in French with `gup language fr`; commands, flags and
+JSON output are language-neutral):
 
 @@LOCALE_LINKS@@
 

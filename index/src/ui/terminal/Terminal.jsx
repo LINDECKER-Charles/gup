@@ -1,14 +1,16 @@
 /**
  * The hero's terminal demo: a window frame, the scene tabs, the active scene
- * and a visible caption. The frame is always left-to-right (tab order and
- * arrow keys never invert) and the panel takes the scene's language (`fr` for
- * the TUI mocks), so assistive tech reads the French interface in French on
- * every locale. The window label and the caption are the page's own prose
- * and keep its direction.
+ * and a visible caption. The TUI mocks show the interface in the page's
+ * language when gup speaks it, in English otherwise (sceneOf). The frame is
+ * always left-to-right (tab order and arrow keys never invert) and the panel
+ * takes the scene's language, so assistive tech reads the interface in the
+ * language it is written in, whatever the page's. The window label and the
+ * caption are the page's own prose and keep its direction.
  */
 import { useState } from "react";
-import { SCENES } from "../../data/scenes/index.js";
+import { SCENES, sceneOf } from "../../data/scenes/index.js";
 import { useI18n } from "../../i18n/use-i18n.js";
+import { RichText } from "../RichText.jsx";
 import { LineScene } from "./LineScene.jsx";
 import { PackagesScene } from "./PackagesScene.jsx";
 import { RunScene } from "./RunScene.jsx";
@@ -42,7 +44,7 @@ export function Terminal() {
   const { locale, messages } = useI18n();
   const { terminal } = messages.hero;
   const [active, setActive] = useState(SCENES[0].id);
-  const { scene } = SCENES.find((entry) => entry.id === active);
+  const scene = sceneOf(active, locale.id);
   const SceneView = SCENE_VIEWS[scene.kind];
 
   return (
@@ -65,7 +67,7 @@ export function Terminal() {
         <SceneView scene={scene} />
       </div>
       <figcaption className="term-caption" dir={locale.dir}>
-        {terminal.caption}
+        <RichText text={terminal.caption} />
       </figcaption>
     </figure>
   );

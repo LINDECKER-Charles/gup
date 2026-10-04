@@ -2,9 +2,12 @@
  * The run view as the TUI draws it (src/ui/run/): a takeover with no sidebar,
  * the status list — progress bar, done/total, the √ → × counters, the clock,
  * one row per package — over the embedded terminal pane that shows the
- * installer's own output, titled with the provider and the package.
+ * installer's own output, titled with the provider and the package. What a
+ * screen reader says for the marks and the unheaded columns comes with the
+ * scene, in its language (`scene.spoken`).
  *
  * @typedef {import("../../data/scenes/update-scene.js").RunScene} RunScene
+ * @typedef {import("../../data/scenes/update-scene.js").RunSpoken} RunSpoken
  * @typedef {import("../../data/scenes/update-scene.js").RunStatus} RunStatus
  */
 import { TUI_GLYPHS } from "../../data/scenes/tui-glyphs.js";
@@ -13,32 +16,23 @@ import { TuiBox } from "./TuiBox.jsx";
 import { TuiFrame } from "./TuiFrame.jsx";
 import { TuiMark } from "./TuiMark.jsx";
 
-/** What each status mark says to a screen reader (French, like the interface's RUN_SUMMARY). */
-const STATUS_WORDS = {
-  success: "mis à jour",
-  failed: "échec",
-  skipped: "ignorée",
-  cancelled: "annulée",
-  pending: "en attente",
-  running: "en cours",
-};
-/** Column headings, for screen readers only: the run view draws none. */
-const COLUMNS = ["État", "Paquet", "Provider", "Versions", "Durée"];
+/** The counters after done/total, in the TUI's order. */
+const COUNTERS = ["success", "skipped", "failed"];
 /** Between the provider and the package in the pane's title (PANE_LABELS.title). */
 const PANE_TITLE_SEPARATOR = " · ";
 
-/** @param {{ status: RunStatus, value: number }} props */
-function Counter({ status, value }) {
+/** @param {{ status: RunStatus, value: number, word: string }} props */
+function Counter({ status, value, word }) {
   return (
     <span className={`tui-counter tui-status--${status}`}>
-      <TuiMark glyph={TUI_GLYPHS.status[status]} word={STATUS_WORDS[status]} />
+      <TuiMark glyph={TUI_GLYPHS.status[status]} word={word} />
       {` ${value}`}
     </span>
   );
 }
 
-/** @param {{ progress: RunScene["progress"] }} props */
-function ProgressLine({ progress }) {
+/** @param {{ progress: RunScene["progress"], statuses: RunSpoken["statuses"] }} props */
+function ProgressLine({ progress, statuses }) {
   const share = `${Math.round((progress.done / progress.total) * 100)}%`;
   return (
     <p className="tui-run-head">
@@ -46,20 +40,23 @@ function ProgressLine({ progress }) {
         <span className="tui-progress-bar" style={{ "--progress": share }} />
       </span>
       <span className="tui-done">{`${progress.done}/${progress.total}`}</span>
-      <Counter status="success" value={progress.success} />
-      <Counter status="skipped" value={progress.skipped} />
-      <Counter status="failed" value={progress.failed} />
+      {COUNTERS.map((status) => (
+        <Counter key={status} status={status} value={progress[status]} word={statuses[status]} />
+      ))}
       <span className="tui-clock">{progress.clock}</span>
     </p>
   );
 }
 
-/** @param {{ row: import("../../data/scenes/update-scene.js").RunRow }} props */
-function RunRow({ row }) {
+/**
+ * @param {{ row: import("../../data/scenes/update-scene.js").RunRow,
+ *   statuses: RunSpoken["statuses"] }} props
+ */
+function RunRow({ row, statuses }) {
   return (
     <tr className={classNames("tui-row", row.status === "running" && "is-running")}>
       <td className={`tui-mark tui-status--${row.status}`}>
-        <TuiMark glyph={TUI_GLYPHS.status[row.status]} word={STATUS_WORDS[row.status]} />
+        <TuiMark glyph={TUI_GLYPHS.status[row.status]} word={statuses[row.status]} />
       </td>
       <td className="tui-name">{row.name}</td>
       <td className="tui-provider">{row.provider}</td>
@@ -69,13 +66,13 @@ function RunRow({ row }) {
   );
 }
 
-/** @param {{ rows: RunScene["rows"] }} props */
-function RunTable({ rows }) {
+/** @param {{ rows: RunScene["rows"], spoken: RunSpoken }} props */
+function RunTable({ rows, spoken }) {
   return (
     <table className="tui-table tui-run-table">
       <thead className="sr-only">
         <tr>
-          {COLUMNS.map((column) => (
+          {spoken.columns.map((column) => (
             <th key={column} scope="col">
               {column}
             </th>
@@ -84,7 +81,7 @@ function RunTable({ rows }) {
       </thead>
       <tbody>
         {rows.map((row) => (
-          <RunRow key={row.name} row={row} />
+          <RunRow key={row.name} row={row} statuses={spoken.statuses} />
         ))}
       </tbody>
     </table>
@@ -93,12 +90,12 @@ function RunTable({ rows }) {
 
 /** @param {{ scene: RunScene }} props */
 export function RunScene({ scene }) {
-  const { pane } = scene;
+  const { pane, spoken } = scene;
   return (
     <TuiFrame facts={scene.facts} hints={scene.hints} className="tui--takeover">
       <TuiBox title={scene.panelTitle} className="tui-status">
-        <ProgressLine progress={scene.progress} />
-        <RunTable rows={scene.rows} />
+        <ProgressLine progress={scene.progress} statuses={spoken.statuses} />
+        <RunTable rows={scene.rows} spoken={spoken} />
       </TuiBox>
       <TuiBox title={`${pane.provider}${PANE_TITLE_SEPARATOR}${pane.package}`} className="tui-pane">
         <pre className="tui-pane-out">{pane.lines.join("\n")}</pre>
