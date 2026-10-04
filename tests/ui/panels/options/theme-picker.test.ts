@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appearanceSection } from "../../../../src/ui/panels/options/appearance-section.js";
 import { OptionsPanel } from "../../../../src/ui/panels/options/options-panel.js";
 import {
+  CONTRAST_STATUS,
   THEME_LABELS,
   THEME_PICKER,
   THEME_UNAVAILABLE_16,
@@ -74,9 +75,12 @@ describe("theme picker", () => {
     expect(fixture.previewed()).toMatchObject({ id: "light", contrast: "AAA" });
   });
 
-  it("says when the terminal palette is unknown and the contrast cannot be checked", () => {
+  it("says once when the terminal palette is unknown and the contrast cannot be checked", () => {
     const { panel } = openPicker({ saved: "terminal" });
-    expect(text(panel.render(VIEW))).toContain(THEME_PICKER.modeNotes.trusted.slice(0, 30));
+    const shown = text(panel.render(VIEW));
+    expect(shown).toContain(CONTRAST_STATUS.unverified.slice(0, 30));
+    expect(shown).toContain(THEME_PICKER.modeNotes.trusted.slice(0, 30));
+    expect(shown.match(/inconnue/gi)).toHaveLength(1);
   });
 
   it("shows what a 16-colour terminal cannot paint, and refuses to apply it", () => {

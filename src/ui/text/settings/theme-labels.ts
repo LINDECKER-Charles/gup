@@ -112,8 +112,8 @@ export const THEME_PICKER = {
     rgb: "Fond peint par gup (la transparence du terminal n'est pas conservée).",
     detected: "Suit la palette de votre terminal.",
     trusted:
-      "Palette du terminal inconnue : contraste non vérifiable. Choisissez un thème RVB pour " +
-      "une lisibilité garantie.",
+      "Couleurs de votre terminal, telles quelles. Choisissez un thème RVB pour une lisibilité " +
+      "garantie.",
     monochrome: "Couleur et fond de votre terminal ; sélection en vidéo inverse.",
   } satisfies Readonly<Record<PaintMode, string>>,
 } as const;
