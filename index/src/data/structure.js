@@ -58,7 +58,10 @@ export const STRUCTURE = Object.freeze({
   ]),
   /** Footer columns; link ids index LINKS.resources and `footer.links.*`. */
   footer: Object.freeze([
-    { id: "project", links: ["repo", "npm", "issues", "contributing", "releases"] },
+    {
+      id: "project",
+      links: ["repo", "npm", "issues", "support", "contributing", "conduct", "releases"],
+    },
     { id: "docs", links: ["installation", "cli", "providers", "scope"] },
     { id: "technical", links: ["architecture", "howItWorks", "security", "llms"] },
   ]),
