@@ -144,6 +144,25 @@ describe("statusLines", () => {
     expect(lines[3]).toMatch(/^› ✖ b /);
   });
 
+  it("mutes a count of zero: nothing updated is not a success", () => {
+    const { model, direct } = run(["a"]);
+    model.started({ item: direct[0]! });
+    const tones = (line: Line | undefined) =>
+      Object.fromEntries((line ?? []).map((segment) => [segment.text.trim(), segment.tone]));
+    expect(tones(statusLines(model, view()).lines[0])).toMatchObject({
+      "✔ 0": "muted",
+      "↷ 0": "muted",
+      "✖ 0": "muted",
+    });
+    model.finished({ item: direct[0]!, outcome: outcome("a", { success: false }) });
+    model.markDone();
+    const [summary] = statusLines(model, view()).lines;
+    expect(tones(summary)).toMatchObject({
+      "✔ 0 mis à jour": "muted",
+      "✖ 1 échec(s)": "danger",
+    });
+  });
+
   it("says who holds the update batch while the run waits", () => {
     const { model } = run(["a"]);
     const startedAt = new Date(2026, 9, 3, 8, 0).toISOString();

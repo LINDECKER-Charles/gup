@@ -16,9 +16,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 .c3{fill:#e6edf3}
 .c4{fill:#91979d}
 .c5{fill:#3fb950}
-.c6{fill:#d29922}
-.c7{fill:#ff7b72}
-.c8{fill:#ffffff}
+.c6{fill:#ffffff}
 </style>
 <rect y="0.0" width="968.0" height="594.0" rx="10.0" fill="#0d1117"/>
 <rect y="0.0" width="968.0" height="34.0" rx="10.0" fill="#161b22"/>
@@ -38,8 +36,8 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="187.6" y="89.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">░░░░░░░░░░░░░░░░░░░░</text>
 <text class="c3 b" x="367.0" y="89.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3/6</text>
 <text class="c5" x="413.8" y="89.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ 3</text>
-<text class="c6" x="460.6" y="89.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">↷ 0</text>
-<text class="c7" x="507.4" y="89.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✖ 0</text>
+<text class="c4" x="460.6" y="89.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">↷ 0</text>
+<text class="c4" x="507.4" y="89.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✖ 0</text>
 <text class="c4" x="897.4" y="89.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">01:06</text>
 <text class="c2" x="944.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
@@ -90,22 +88,22 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="31.6" y="242.0" textLength="156.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Winget · PowerToys </text>
 <text class="c2" x="187.6" y="242.0" textLength="764.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────────────────────────────────────────────────────────────────────────────────────╮</text>
 <text class="c2" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c8" x="23.8" y="259.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Trouvé PowerToys [Microsoft.PowerToys] Version 0.95.0                                                                </text>
+<text class="c6" x="23.8" y="259.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Trouvé PowerToys [Microsoft.PowerToys] Version 0.95.0                                                                </text>
 <text class="c2" x="944.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c8" x="23.8" y="276.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Ce package d’application vous est concédé sous licence par son propriétaire.                                         </text>
+<text class="c6" x="23.8" y="276.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Ce package d’application vous est concédé sous licence par son propriétaire.                                         </text>
 <text class="c2" x="944.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c8" x="23.8" y="293.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Microsoft n’est pas responsable des packages tiers et n’accorde pas de licences à ceux-ci.                           </text>
+<text class="c6" x="23.8" y="293.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Microsoft n’est pas responsable des packages tiers et n’accorde pas de licences à ceux-ci.                           </text>
 <text class="c2" x="944.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c8" x="23.8" y="310.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Téléchargement en cours https://github.com/microsoft/PowerToys/releases/download/v0.95.0/PowerToysUserSetup-0.95.0-x </text>
+<text class="c6" x="23.8" y="310.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Téléchargement en cours https://github.com/microsoft/PowerToys/releases/download/v0.95.0/PowerToysUserSetup-0.95.0-x </text>
 <text class="c2" x="944.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c8" x="23.8" y="327.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 64.exe                                                                                                               </text>
+<text class="c6" x="23.8" y="327.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 64.exe                                                                                                               </text>
 <text class="c2" x="944.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c8" x="23.8" y="344.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ██████████████████              118 Mo / 196 Mo                                                                    </text>
+<text class="c6" x="23.8" y="344.0" textLength="920.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ██████████████████              118 Mo / 196 Mo                                                                    </text>
 <text class="c2" x="944.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c2" x="944.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>

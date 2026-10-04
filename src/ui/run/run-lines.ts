@@ -191,11 +191,11 @@ function progressCounters(counts: RunCounts): Line {
   return [
     seg(`${counts.done}/${counts.total}`, "strong"),
     seg(GAP),
-    seg(`${STATUS_GLYPHS.success} ${counts.succeeded}`, "success"),
+    counter(`${STATUS_GLYPHS.success} ${counts.succeeded}`, counts.succeeded, "success"),
     seg(GAP),
-    seg(`${STATUS_GLYPHS.skipped} ${counts.skipped}`, "warning"),
+    counter(`${STATUS_GLYPHS.skipped} ${counts.skipped}`, counts.skipped, "warning"),
     seg(GAP),
-    seg(`${STATUS_GLYPHS.failed} ${counts.failed}`, "danger"),
+    counter(`${STATUS_GLYPHS.failed} ${counts.failed}`, counts.failed, "danger"),
     ...(counts.cancelled > 0
       ? [seg(GAP), seg(`${STATUS_GLYPHS.cancelled} ${counts.cancelled}`, "muted")]
       : []),
@@ -203,16 +203,22 @@ function progressCounters(counts: RunCounts): Line {
 }
 
 function summary(counts: RunCounts): Line {
+  const { succeeded, skipped, failed } = counts;
   const parts: Segment[] = [
-    seg(`${STATUS_GLYPHS.success} ${RUN_SUMMARY.succeeded(counts.succeeded)}`, "success"),
+    counter(`${STATUS_GLYPHS.success} ${RUN_SUMMARY.succeeded(succeeded)}`, succeeded, "success"),
     seg(GAP),
-    seg(`${STATUS_GLYPHS.skipped} ${RUN_SUMMARY.skipped(counts.skipped)}`, "warning"),
+    counter(`${STATUS_GLYPHS.skipped} ${RUN_SUMMARY.skipped(skipped)}`, skipped, "warning"),
     seg(GAP),
-    seg(`${STATUS_GLYPHS.failed} ${RUN_SUMMARY.failed(counts.failed)}`, "danger"),
+    counter(`${STATUS_GLYPHS.failed} ${RUN_SUMMARY.failed(failed)}`, failed, "danger"),
   ];
   if (counts.cancelled === 0) return parts;
   const cancelled = `${STATUS_GLYPHS.cancelled} ${RUN_SUMMARY.cancelled(counts.cancelled)}`;
   return [...parts, seg(GAP), seg(cancelled, "muted")];
+}
+
+/** A count in its tone, muted at zero: no package updated is not a success to show in green. */
+function counter(text: string, count: number, tone: Tone): Segment {
+  return seg(text, count === 0 ? "muted" : tone);
 }
 
 function waitingLine(model: RunModel, view: StatusView): Line {
