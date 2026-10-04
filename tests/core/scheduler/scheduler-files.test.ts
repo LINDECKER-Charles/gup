@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -83,10 +83,10 @@ describe("ensureSchedulerDir / trimAgentStderr", () => {
       trimAgentStderr(files);
       await writeFile(files.agentStderr, "x".repeat(AGENT_STDERR_CAP_BYTES));
       trimAgentStderr(files);
-      expect((await stat(files.agentStderr)).size).toBe(AGENT_STDERR_CAP_BYTES);
+      expect(await readFile(files.agentStderr, "utf8")).toHaveLength(AGENT_STDERR_CAP_BYTES);
       await writeFile(files.agentStderr, "x".repeat(AGENT_STDERR_CAP_BYTES + 1));
       trimAgentStderr(files);
-      expect((await stat(files.agentStderr)).size).toBe(0);
+      expect(await readFile(files.agentStderr, "utf8")).toBe("");
     } finally {
       await rm(root, { recursive: true, force: true });
     }
