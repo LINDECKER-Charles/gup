@@ -1,4 +1,4 @@
-import { counted, formatCount } from "../fr-format.js";
+import { counted, formatCount } from "../format.js";
 
 /**
  * `gup report`'s words (French, the language of the interface): command and

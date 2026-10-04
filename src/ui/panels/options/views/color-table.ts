@@ -58,8 +58,6 @@ const GUTTER = "  ";
 const ROLE_WIDTH = 17;
 const HEX_WIDTH = 9;
 const RATIO_WIDTH = 16;
-/** The widest ratio, 21:1: a shorter one is padded to it, so every √ stands in one column. */
-const RATIO_TEXT_WIDTH = formatRatio(21).length;
 const GROUNDS: ReadonlySet<CustomizableToken> = new Set(["background", "highlight"]);
 const SAMPLE_TONE: Readonly<Record<CustomizableToken, Tone>> = {
   accent: "accent",
@@ -71,6 +69,14 @@ const SAMPLE_TONE: Readonly<Record<CustomizableToken, Tone>> = {
   background: "muted",
   highlight: "plain",
 };
+
+/**
+ * The widest ratio, 21:1: a shorter one is padded to it, so every √ stands in one column.
+ * Measured when drawn: the decimal separator is the active language's.
+ */
+function ratioTextWidth(): number {
+  return formatRatio(21).length;
+}
 
 const ROLE: Column = {
   heading: COLOR_EDITOR.columns.role,
@@ -136,7 +142,7 @@ function ratioCell({ token, theme }: RoleCell): Segment {
   const ratio = formatRatio(worstRatio(palette[token], [palette.background, palette.highlight]));
   const { success, warning } = STATUS_GLYPHS;
   if (!correction) {
-    return seg(fit(`${ratio.padEnd(RATIO_TEXT_WIDTH)} ${success}`, RATIO_WIDTH), "success");
+    return seg(fit(`${ratio.padEnd(ratioTextWidth())} ${success}`, RATIO_WIDTH), "success");
   }
   const moved = `${formatRatioValue(correction.before)} → ${ratio} ${warning}`;
   return seg(fit(moved, RATIO_WIDTH), "warning");

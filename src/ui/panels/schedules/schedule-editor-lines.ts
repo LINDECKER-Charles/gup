@@ -6,7 +6,7 @@ import {
   type ValidationIssue,
 } from "../../../core/scheduler/model/validate-schedule.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
-import { formatRelative } from "../../text/fr-format.js";
+import { formatRelative } from "../../text/format.js";
 import { WINGET_UAC_NOTE } from "../../text/schedule/schedule-cli-labels.js";
 import { WARNING_MARK, WEEKDAY_NAMES } from "../../text/schedule/schedule-labels.js";
 import {

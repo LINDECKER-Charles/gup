@@ -3,7 +3,7 @@ import { upcomingRuns } from "../../../core/scheduler/model/recurrence.js";
 import type { Schedule } from "../../../core/scheduler/model/types.js";
 import type { SelectedPackage } from "../../../core/types.js";
 import type { UpdateReport } from "../../../core/update/update-report.js";
-import { formatRelative } from "../../text/fr-format.js";
+import { formatRelative } from "../../text/format.js";
 import { NOTHING_TO_INSTALL } from "../../text/schedule/schedule-cli-labels.js";
 import { NEVER_RAN, runStatusLabel } from "../../text/schedule/schedule-labels.js";
 import {

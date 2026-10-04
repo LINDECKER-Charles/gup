@@ -1,4 +1,4 @@
-import { formatCount } from "./fr-format.js";
+import { formatCount } from "./format.js";
 
 /**
  * Paquets' own words (French, the language of the interface): the package

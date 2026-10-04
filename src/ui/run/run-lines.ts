@@ -8,7 +8,7 @@ import {
   waitingMessage,
   type ElevationKind,
 } from "../text/run-labels.js";
-import { formatClock } from "../text/fr-format.js";
+import { formatClock } from "../text/format.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import {
   fit,

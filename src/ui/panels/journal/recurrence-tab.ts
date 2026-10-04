@@ -10,7 +10,7 @@ import {
   CADENCE_DESCRIPTIONS,
   intervalLabel,
 } from "../../text/journal/activity-labels.js";
-import { formatCount, formatDate, formatRelative } from "../../text/fr-format.js";
+import { formatCount, formatDate, formatRelative } from "../../text/format.js";
 import { JOURNAL_HINTS, RECURRENCE_LABELS } from "../../text/journal/journal-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { fit, seg, type Line } from "../../tui/styled-lines.js";

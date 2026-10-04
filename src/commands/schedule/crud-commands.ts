@@ -7,7 +7,7 @@ import {
   validateDraft,
   type ValidationIssue,
 } from "../../core/scheduler/model/validate-schedule.js";
-import { formatRelative } from "../../ui/text/fr-format.js";
+import { formatRelative } from "../../ui/text/format.js";
 import {
   createdLine,
   disabledLine,

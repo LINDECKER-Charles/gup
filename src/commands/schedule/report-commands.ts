@@ -3,7 +3,7 @@ import { targetKey } from "../../core/scheduler/model/schedule-target.js";
 import type { Schedule, SchedulerState } from "../../core/scheduler/model/types.js";
 import type { InstallRecord } from "../../core/scheduler/persistence/install-record.js";
 import { STATUS_GLYPHS } from "../../ui/theme/glyphs.js";
-import { formatDateTime } from "../../ui/text/fr-format.js";
+import { formatDateTime } from "../../ui/text/format.js";
 import {
   NO_ACTIVE_TRIGGER,
   NO_SCHEDULE,

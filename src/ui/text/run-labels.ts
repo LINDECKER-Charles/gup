@@ -1,5 +1,5 @@
 import type { BatchHolder } from "../../core/update/update-extensions.js";
-import { counted, formatRelative } from "./fr-format.js";
+import { counted, formatRelative } from "./format.js";
 
 /**
  * The words of updates (French, the language of the interface): the run

@@ -8,7 +8,7 @@ import { TICK_INTERVAL_MINUTES } from "../../../core/scheduler/scheduler-timing.
 import type { Mechanism } from "../../../core/scheduler/trigger/os-trigger.js";
 import type { TriggerHealth } from "../../../core/scheduler/trigger/trigger-health.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
-import { formatDuration, formatRelative } from "../fr-format.js";
+import { formatDuration, formatRelative } from "../format.js";
 import { RUN_SUMMARY } from "../run-labels.js";
 
 /**

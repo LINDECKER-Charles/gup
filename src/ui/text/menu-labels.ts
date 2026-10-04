@@ -1,5 +1,5 @@
 import type { OutdatedPackage } from "../../core/types.js";
-import { counted } from "./fr-format.js";
+import { counted } from "./format.js";
 
 /**
  * The interactive menu's own words (French, the language of the interface):

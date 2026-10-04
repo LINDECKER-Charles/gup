@@ -2,7 +2,7 @@ import { stripVTControlCharacters } from "node:util";
 import type { LogLevel } from "../core/log/log.js";
 import type { LogData, LogRecord, LogValue } from "../core/log/types.js";
 import { lineToAnsi } from "./charts/ansi-lines.js";
-import { formatDuration } from "./text/fr-format.js";
+import { formatDuration } from "./text/format.js";
 import {
   COMMAND_END_LABELS,
   ELEVATED_MARK,

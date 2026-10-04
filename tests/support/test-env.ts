@@ -56,6 +56,9 @@ export function sharedTestEnv(root: string): Readonly<Record<string, string>> {
     GUP_HISTORY: "0",
     GUP_CONFIG: "0",
     GUP_LOG_LEVEL: "off",
+    // The language of the suites' expectations, for the CLI they spawn
+    // (tests/support/locale.ts sets it in-process).
+    GUP_LANG: "fr",
     // Date bucketing and report dates must not depend on the developer's zone.
     TZ: "UTC",
     [SANDBOX_ROOT_VAR]: root,

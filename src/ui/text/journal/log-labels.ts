@@ -5,7 +5,7 @@ import {
 } from "../../../core/export/diagnostic-bundle.js";
 import type { LogLevel, LogThreshold } from "../../../core/log/log.js";
 import type { UpdateStatus } from "../../../core/history/types.js";
-import { counted } from "../fr-format.js";
+import { counted } from "../format.js";
 
 /**
  * The debug log's words (French, the language of the interface): `gup log`

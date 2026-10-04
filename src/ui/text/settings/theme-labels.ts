@@ -3,7 +3,7 @@ import { STATUS_GLYPHS } from "../../theme/glyphs.js";
 import type { PaintMode, ResolvedTheme } from "../../theme/resolve-theme.js";
 import type { ContrastLevel, CustomizableToken, ThemeId } from "../../theme/palette.js";
 import type { Tone } from "../../tui/styled-lines.js";
-import { counted, formatDecimal } from "../fr-format.js";
+import { counted, formatDecimal } from "../format.js";
 
 /**
  * The theme engine's words (French, the language of the interface): theme

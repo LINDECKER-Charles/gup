@@ -10,7 +10,7 @@ import {
   type ScanObserver,
 } from "./panels/scan-panel.js";
 import { withScanScreen } from "./prompts/scan-screen.js";
-import { formatDuration } from "./text/fr-format.js";
+import { formatDuration } from "./text/format.js";
 import { canPrompt } from "./tui/screen-host.js";
 
 export interface ScanWithProgressResult {

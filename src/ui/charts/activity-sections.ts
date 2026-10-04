@@ -15,7 +15,7 @@ import {
   SLOWEST_LABELS,
   TREND_LABELS,
 } from "../text/journal/activity-labels.js";
-import { formatDuration, formatPercent, formatRelative } from "../text/fr-format.js";
+import { formatDuration, formatPercent, formatRelative } from "../text/format.js";
 import { fit, seg, type Line, type Segment, type Tone } from "../tui/styled-lines.js";
 import type { ChartGlyphs } from "./chart-glyphs.js";
 import { renderHeatmap } from "./heatmap.js";

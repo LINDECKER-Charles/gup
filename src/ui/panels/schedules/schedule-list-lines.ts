@@ -8,7 +8,7 @@ import type {
 } from "../../../core/scheduler/model/types.js";
 import type { TriggerHealth } from "../../../core/scheduler/trigger/trigger-health.js";
 import { STATUS_GLYPHS } from "../../theme/glyphs.js";
-import { formatDuration, formatRelative } from "../../text/fr-format.js";
+import { formatDuration, formatRelative } from "../../text/format.js";
 import {
   DISABLED_NEXT_RUN,
   NEVER_RAN,

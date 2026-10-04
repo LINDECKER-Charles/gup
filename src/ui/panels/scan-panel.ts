@@ -1,4 +1,4 @@
-import { formatDuration } from "../text/fr-format.js";
+import { formatDuration } from "../text/format.js";
 import { NO_SCAN_YET } from "../text/menu-labels.js";
 import { STATUS_GLYPHS } from "../theme/glyphs.js";
 import type { KeyPress } from "../tui/screen-host.js";
