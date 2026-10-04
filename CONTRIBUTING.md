@@ -246,7 +246,7 @@ Inherit the pattern in `src/providers/wsl/` — the helper `core/wsl.ts` bridges
 
 ### 5.3 "Manual-only" providers
 
-If **every** update requires a GUI action (e.g. JetBrains plugins, Eclipse Marketplace features), the file exists to document the case but is **not** added to `ALL_PROVIDERS`. See the *Manual-only providers* comment among the IDE imports of `src/core/registry.ts`.
+If **every** update requires a GUI action (e.g. JetBrains plugins, Eclipse Marketplace features), do **not** write the provider: every row would be `manual: true`, which `scanAll` drops, so the code would only cost scan time and maintenance. List the source as a candidate (⬜) in [`docs/guide/providers-catalog.md`](docs/guide/providers-catalog.md) instead, saying why — see the comment among the IDE imports of `src/core/registry.ts`.
 
 ### 5.4 Providers sharing a binary with another
 

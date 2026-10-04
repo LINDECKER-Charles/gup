@@ -136,7 +136,7 @@ src/
 │   ├── containers/           # nerdctl, oras, dive, docker-desktop, podman-desktop, rancher-desktop
 │   ├── security/             # trivy, grype, syft, cosign, rekor, gitsign, nuclei, nuclei-templates, pdtm, semgrep
 │   ├── dev-cli/              # lazygit, lazydocker, jj, delta, glab, tea, gh-extensions
-│   ├── ide/                  # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains (+ manual-only refs: jetbrains-plugins, zed-ext, sublime-pc, obsidian-plugins, unity-hub, notepad-pp, eclipse-marketplace)
+│   ├── ide/                  # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains, visual-studio
 │   ├── editor-plugins/       # nvim-lazy, nvim-packer, nvim-mason, vim-plug
 │   ├── embedded-mobile/      # arduino-cli, platformio, android-sdk, expo, fastlane
 │   └── shell/                # oh-my-posh, starship, nerd-fonts, pwsh-modules
@@ -423,7 +423,7 @@ When the PM does not support bulk (case of `SelfProvider`, some GitHub-Release-d
 
 Two orthogonal concepts to clearly separate:
 
-- **`manual: true`** is set on an `OutdatedPackage` by `listOutdated`. Means: "this package is outdated, but I already know no automatic command will work (GUI-only, Microsoft Store, etc.)". `scanAll` **filters them out at scan time** (`packages.filter(pkg => !pkg.manual)`) — the user never sees them. Providers that produce **only** `manual` items are removed from the registry so they don't bloat scan time (cf. the comments in `src/core/registry.ts` around `jetbrains-plugins`, `zed-ext`, etc.).
+- **`manual: true`** is set on an `OutdatedPackage` by `listOutdated`. Means: "this package is outdated, but I already know no automatic command will work (GUI-only, Microsoft Store, etc.)". `scanAll` **filters them out at scan time** (`packages.filter(pkg => !pkg.manual)`) — the user never sees them. A source whose items would **all** be `manual` gets no provider at all, so it does not bloat scan time (see §14.4).
 - **`skipped: true`** is set on an `UpdateOutcome` by `update()`. Means: "I tried, I detected mid-way that a human condition was missing (for example: no admin elevation), I stopped without breaking anything". The user sees it as yellow `SKIP` distinct from red `FAIL`.
 
 ---
@@ -730,7 +730,7 @@ Canonical source: [`docs/guide/providers-catalog.md`](../guide/providers-catalog
 | Shell / cosmetic | 5 | oh-my-posh, starship, nerd-fonts, pwsh-modules, psresource |
 | Meta | 1 | self (auto-update of the PMs themselves) |
 
-The `providers-catalog.md` doc details for each one: ID, upstream source, status (✅ integrated, 🚧 code present / not wired because manual-only, ⬜ candidate, ➡️ absorbed, ❌ out of scope).
+The `providers-catalog.md` doc details for each one: ID, upstream source, status (✅ integrated, ⬜ candidate, ➡️ absorbed, ❌ out of scope).
 
 ---
 
@@ -766,9 +766,9 @@ Three ownership quirks handled:
 - **pip on Windows multi-Python**: resolution of the target interpreter is done from the physical path of `pip.exe` (not via `py -m pip`), to guarantee the install resolved by PATH is the one being updated.
 - **gh**: no `self update`. Delegation to `winget` / `scoop` / `choco` via `install-source.ts`.
 
-### 14.4 Manual-only providers removed from the registry
+### 14.4 Manual-only sources have no provider
 
-The providers `jetbrains-plugins`, `zed-ext`, `sublime-pc`, `obsidian-plugins`, `unity-hub`, `notepad-pp`, `eclipse-marketplace` exist as **code** in `src/providers/ide/` but are **not** in `ALL_PROVIDERS`. Reason: all their items come out `manual: true`, so `scanAll` would filter 100% of them. Leaving them in the registry would add scan time with no UI benefit. The code is kept as a reference for a future where an automatable update path would appear.
+JetBrains plugins, Zed extensions, Sublime Package Control, Obsidian community plugins, Unity editors, Notepad++ plugins and Eclipse p2 features can only be updated through their application's GUI: every item a provider could list would come out `manual: true`, so `scanAll` would filter 100% of them. Registering such a provider would add scan time with no UI benefit, and keeping it unregistered would be dead code. They are listed as candidates (`jetbrains-plugins`, `zed-ext`, `sublime-pc`, `obsidian-plugins`, `unity-hub`, `notepad-pp`, `eclipse-marketplace`) in `providers-catalog.md` §18, for the day an automatable update path appears. Until 0.5.0 they existed as unregistered code in `src/providers/ide/`.
 
 ---
 

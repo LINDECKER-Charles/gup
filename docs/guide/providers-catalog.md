@@ -7,7 +7,6 @@ Unified overview — implementation status, sources, and out-of-scope items. Sou
 | Symbol | Meaning |
 |---|---|
 | ✅ | Integrated (registered in `ALL_PROVIDERS`) |
-| 🚧 | Code present in `src/providers/`, not wired (outputs `manual: true`, filtered by `scanAll`) |
 | ⬜ | Candidate — no code yet |
 | ➡️ | Absorbed — covered by an existing provider |
 | ❌ | Out of scope |
@@ -354,13 +353,19 @@ installed with `Install-PSResource` — the default installer since PowerShell
 | `vscodium-ext` | VSCodium + Open VSX | ✅ |
 | `jetbrains` | JetBrains IDEs (Toolbox + standalone) | ✅ |
 | `visual-studio` | Visual Studio (`vswhere` + release channel manifest) | ✅ |
-| `jetbrains-plugins` | JetBrains plugins | 🚧 |
-| `zed-ext` | Zed extensions | 🚧 |
-| `sublime-pc` | Sublime Package Control | 🚧 |
-| `obsidian-plugins` | Obsidian community plugins | 🚧 |
-| `unity-hub` | Unity Editor versions | 🚧 |
-| `notepad-pp` | Notepad++ plugins | 🚧 |
-| `eclipse-marketplace` | Eclipse / p2 features | 🚧 |
+| `jetbrains-plugins` | JetBrains plugins | ⬜ |
+| `zed-ext` | Zed extensions | ⬜ |
+| `sublime-pc` | Sublime Package Control | ⬜ |
+| `obsidian-plugins` | Obsidian community plugins | ⬜ |
+| `unity-hub` | Unity Editor versions | ⬜ |
+| `notepad-pp` | Notepad++ plugins | ⬜ |
+| `eclipse-marketplace` | Eclipse / p2 features | ⬜ |
+
+The last seven sources can only be updated through their application's own
+GUI: every row a provider could list would be `manual: true`, which `scanAll`
+drops, so a provider would add scan time and show nothing. They stay
+candidates until one of them gains an update path gup can drive without a
+GUI. (Until 0.5.0 they existed as unregistered code in `src/providers/ide/`.)
 
 ## 19. Editor plugins (headless)
 

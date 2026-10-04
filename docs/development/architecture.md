@@ -485,7 +485,7 @@ src/
 │   ├── containers/                 # nerdctl, oras, dive, docker-*, podman-desktop, rancher-desktop
 │   ├── security/                   # trivy, grype, syft, cosign, rekor, gitsign, nuclei, pdtm, semgrep
 │   ├── dev-cli/                    # lazygit, lazydocker, jj, delta, glab, tea, gh-extensions
-│   ├── ide/                        # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains (+ unwired manuals)
+│   ├── ide/                        # vscode-ext, cursor-ext, windsurf-ext, vscodium-ext, jetbrains, visual-studio
 │   ├── editor-plugins/             # nvim-lazy, nvim-packer, nvim-mason, vim-plug
 │   ├── embedded-mobile/            # arduino-cli, platformio, android-sdk, expo, fastlane
 │   ├── shell/                      # oh-my-posh, starship, nerd-fonts, pwsh-modules
