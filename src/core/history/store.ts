@@ -2,6 +2,7 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { log } from "../log/log.js";
 import { redactSecrets } from "../log/redact.js";
 import { installConsole } from "../process/output-router.js";
+import { isSwitchedOff } from "../state/env-switch.js";
 import { RUN_ID, runTrigger } from "../state/run-context.js";
 import { gupVersion } from "../version.js";
 import { historyLocation } from "./paths.js";
@@ -42,7 +43,6 @@ import type {
 
 /** Set to `0` / `false` / `off` / `no` to turn the history off entirely. */
 const ENABLED_ENV = "GUP_HISTORY";
-const DISABLED_VALUES = new Set(["0", "false", "off", "no"]);
 
 /**
  * The history names this machine's packages and the paths tools printed:
@@ -195,8 +195,7 @@ function append(event: HistoryEvent): void {
 
 /** False under `GUP_HISTORY=0` (or `false`, `off`, `no`): nothing is recorded. */
 export function isHistoryEnabled(): boolean {
-  const raw = process.env[ENABLED_ENV];
-  return raw === undefined || !DISABLED_VALUES.has(raw.trim().toLowerCase());
+  return !isSwitchedOff(process.env[ENABLED_ENV]);
 }
 
 /**

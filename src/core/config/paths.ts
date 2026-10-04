@@ -1,5 +1,6 @@
 import { pathFlavour } from "../platform/path-flavour.js";
 import { configDir, type DirContext } from "../state/app-dirs.js";
+import { isSwitchedOff } from "../state/env-switch.js";
 
 /**
  * Where the settings file lives: `config.json` in the user config dir —
@@ -11,7 +12,6 @@ import { configDir, type DirContext } from "../state/app-dirs.js";
 
 const CONFIG_FILE_NAME = "config.json";
 const DISABLE_ENV = "GUP_CONFIG";
-const DISABLED_VALUES = new Set(["0", "false", "off", "no"]);
 
 export function configFilePath(context: Partial<DirContext> = {}): string | null {
   const dir = configDir(context);
@@ -21,6 +21,5 @@ export function configFilePath(context: Partial<DirContext> = {}): string | null
 
 /** `GUP_CONFIG=0|false|off|no`: run on defaults, never read nor write the file. */
 export function isConfigDisabled(env: NodeJS.ProcessEnv): boolean {
-  const raw = env[DISABLE_ENV];
-  return raw !== undefined && DISABLED_VALUES.has(raw.trim().toLowerCase());
+  return isSwitchedOff(env[DISABLE_ENV]);
 }

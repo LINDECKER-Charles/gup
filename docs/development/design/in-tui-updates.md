@@ -220,10 +220,10 @@ use CIM on Windows and `ps` on POSIX, read-only.
 | `PtySession.start/exited/lastOutputAt/write/resize/kill` | Same, without a `pid` getter | Nothing needs it; the kill goes through the session. |
 | execArgv: "keep … drop `--inspect*`/`--debug*`" | Allowlist: everything not kept is dropped | Predictable, and no stray value of a dropped flag survives. |
 
-No foundation contract changed. The `0 false off no` switch set now exists in three modules
-(`config/paths.ts`, `history/store.ts`, `pty/pty-loader.ts`); the first two belong to other
-branches, so the shared helper is left to the wave-3 consolidation. (Still three copies after
-0.5.0: the documentation pass changed no code.)
+No foundation contract changed. The `0 false off no` switch set then existed in three modules
+(`config/paths.ts`, `history/store.ts`, `pty/pty-loader.ts`); the first two belonged to other
+branches, so the shared helper was left to the integration: `isSwitchedOff` in
+`core/state/env-switch.ts` now reads all three switches.
 
 ---
 

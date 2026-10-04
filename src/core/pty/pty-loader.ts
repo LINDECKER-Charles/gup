@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
 import { log } from "../log/log.js";
+import { isSwitchedOff } from "../state/env-switch.js";
 import { PTY_LABELS } from "./pty-labels.js";
 import { ptyKill } from "./pty-kill.js";
 import { isReleasableConpty, PtySession } from "./pty-session.js";
@@ -28,8 +29,6 @@ export const NODE_PTY_PIN = "1.1.0";
  */
 const NODE_PTY_SPECIFIER: string = "node-pty";
 
-/** Same set as `GUP_HISTORY` and `GUP_CONFIG`. */
-const DISABLED_VALUES: ReadonlySet<string> = new Set(["0", "false", "off", "no"]);
 const DISABLE_ENV = "GUP_PTY";
 
 /** The probe: `node -e ""` in a small pseudo-terminal must exit 0 within this budget. */
@@ -118,7 +117,7 @@ export async function detectEmbeddedTerminal(
 }
 
 async function detect(steps: DetectionSteps): Promise<EmbeddedTerminalSupport> {
-  if (isDisabled(steps.env)) return unavailable(PTY_LABELS.disabled);
+  if (isSwitchedOff(steps.env[DISABLE_ENV])) return unavailable(PTY_LABELS.disabled);
   const trampoline = steps.locate();
   if (!trampoline) return unavailable(PTY_LABELS.missingTrampoline);
   const pty = await importModule(steps);
@@ -128,11 +127,6 @@ async function detect(steps: DetectionSteps): Promise<EmbeddedTerminalSupport> {
   const failure = await steps.probe(pty);
   if (failure !== null) return unavailable(PTY_LABELS.probeFailed(failure));
   return { isAvailable: true, pty, trampoline };
-}
-
-function isDisabled(env: NodeJS.ProcessEnv): boolean {
-  const raw = env[DISABLE_ENV];
-  return raw !== undefined && DISABLED_VALUES.has(raw.trim().toLowerCase());
 }
 
 async function importModule(steps: DetectionSteps): Promise<PtyModule | null> {
