@@ -195,17 +195,24 @@ describe("Debug", () => {
 
   it("says when this run writes no log, and counts what could not be read", async () => {
     const data = journalData(undefined, {
-      log: { threshold: "off", records: [], malformed: 2 },
+      log: { threshold: "off", source: "env", records: [], malformed: 2 },
       history: { stats: { files: 1, lines: 9, malformed: 3, unsupported: 1 } },
     });
     const { screen } = await journalOn("4", data);
 
     const lines = screen().join("\n");
     expect(lines).toContain(DEBUG_LABELS.off);
-    expect(lines).toContain(DEBUG_LABELS.offHint);
+    expect(lines).toContain(DEBUG_LABELS.offHint.env);
     expect(lines).toContain(DEBUG_LABELS.empty);
     expect(lines).toContain(DEBUG_LABELS.historySkipped(3));
     expect(lines).toContain(DEBUG_LABELS.historyNewer(1));
     expect(lines).toContain(DEBUG_LABELS.logSkipped(2));
+  });
+
+  it("points to Options when the setting turned the log off", async () => {
+    const data = journalData(undefined, { log: { threshold: "off", source: "setting" } });
+    const { screen } = await journalOn("4", data);
+
+    expect(screen().join("\n")).toContain("Activez-le dans Options › Journal de debug.");
   });
 });

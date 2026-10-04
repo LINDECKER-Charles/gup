@@ -127,7 +127,7 @@ export class DebugTab implements JournalTab {
 /** Said above the list while this run writes no log (older records may still show). */
 function offNotice(log: JournalLog): Line[] {
   if (log.threshold !== "off") return [];
-  return [[seg(DEBUG_LABELS.off, "warning")], [seg(DEBUG_LABELS.offHint, "muted")]];
+  return [[seg(DEBUG_LABELS.off, "warning")], [seg(DEBUG_LABELS.offHint[log.source], "muted")]];
 }
 
 function searchTextOf(record: LogRecord): string {

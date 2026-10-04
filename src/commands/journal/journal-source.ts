@@ -1,7 +1,6 @@
 import { readHistory, type HistoryRead } from "../../core/history/reader.js";
 import { isHistoryEnabled } from "../../core/history/store.js";
 import { buildInsights } from "../../core/insights/build-insights.js";
-import { effectiveLogThreshold } from "../../core/log/log.js";
 import { readLogTail } from "../../core/log/log-reader.js";
 import { stateDir } from "../../core/state/app-dirs.js";
 import type { Period } from "../../core/time/period.js";
@@ -15,7 +14,7 @@ import type {
 } from "../../ui/panels/journal/journal-source.js";
 import { writeDiagnostic } from "./diagnostic.js";
 import { exportHistory } from "./export-history.js";
-import { currentLogSession } from "./log-session.js";
+import { currentLogLevel } from "./log-session.js";
 
 /**
  * The journal view's source: the period's history aggregated, the debug
@@ -72,11 +71,7 @@ async function loadHistory(period: Period, deps: JournalSourceDeps): Promise<Jou
 }
 
 async function loadLog(period: Period, deps: JournalSourceDeps): Promise<JournalLog> {
-  const settings = currentLogSession()?.settings;
-  const writing = {
-    threshold: settings?.threshold ?? effectiveLogThreshold(),
-    source: settings?.source ?? "default",
-  } as const;
+  const writing = currentLogLevel();
   try {
     const query = { limit: MAX_DEBUG_RECORDS, since: period.since };
     const tail = await deps.readLog(query, stateDir("logs"));

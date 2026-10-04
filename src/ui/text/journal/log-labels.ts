@@ -81,6 +81,7 @@ export const LOG_DIAGNOSTIC_LABELS = {
 export const LOG_SOURCE_LABELS = {
   flag: "--log-level",
   env: "GUP_LOG_LEVEL",
+  setting: "réglage",
   default: "défaut",
 } as const;
 
