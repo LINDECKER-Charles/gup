@@ -28,6 +28,7 @@ import { buildReport, entryOf } from "../../src/core/update/update-report.js";
 import { runUpdates } from "../../src/core/update/update-pipeline.js";
 import type { PlannedUpdate } from "../../src/core/update/update-ports.js";
 import { consolePorts, printReport } from "../../src/ui/update-console.js";
+import { RUN_WAITING, waitingMessage } from "../../src/ui/text/run-labels.js";
 
 let stdout: ReturnType<typeof vi.spyOn>;
 const printed = (): string => stdout.mock.calls.map((call: unknown[]) => String(call[0])).join("");
@@ -130,14 +131,19 @@ describe("consolePorts", () => {
     expect(selectMock.mock.calls[0]![0]).toMatchObject({ message: "Stratégie de réessai" });
   });
 
-  it("tells the user it is waiting for another gup run", () => {
-    const { observer } = consolePorts({ gate: open });
-    observer.waiting({ kind: "scheduled", pid: 1, startedAt: new Date(2026, 9, 3, 10, 2).toISOString() });
-    expect(printed()).toBe(
-      chalk.dim(
-        "  Une mise à jour planifiée est en cours (depuis 10:02) — attente… (Ctrl+C pour abandonner)\n",
-      ),
-    );
+  it("tells the user it is waiting for another gup run, in the run view's words", () => {
+    vi.useFakeTimers({ now: new Date(2026, 9, 3, 10, 6), toFake: ["Date"] });
+    try {
+      const { observer } = consolePorts({ gate: open });
+      const startedAt = new Date(2026, 9, 3, 10, 2).toISOString();
+      const holder = { kind: "scheduled" as const, pid: 1, startedAt };
+      observer.waiting(holder);
+      const message = waitingMessage(holder, new Date());
+      expect(message).toBe("Une mise à jour planifiée est en cours (commencée il y a 4 min) — attente…");
+      expect(printed()).toBe(chalk.dim(`  ${message} (${RUN_WAITING.abandon})\n`));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

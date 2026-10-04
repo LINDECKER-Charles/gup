@@ -22,6 +22,7 @@ import {
   retryChoices,
   type RetryAnswer,
 } from "./retry-choices.js";
+import { RUN_WAITING, waitingMessage } from "./text/run-labels.js";
 
 /**
  * The update pipeline on a plain terminal: `gup update`, and the menu when it
@@ -79,7 +80,8 @@ class ConsoleRun implements UpdateObserver, UpdateDecisions {
   cancelled(): void {}
 
   waiting(holder: BatchHolder): void {
-    process.stdout.write(chalk.dim(`  ${waitingMessage(holder)}\n`));
+    const message = `${waitingMessage(holder, new Date())} (${RUN_WAITING.abandon})`;
+    process.stdout.write(chalk.dim(`  ${message}\n`));
   }
 
   async confirmElevation(count: number): Promise<boolean> {
@@ -127,18 +129,6 @@ function elevationQuestion(count: number): string {
   return process.platform === "win32"
     ? `${need}. Ouvrir une invite UAC pour les traiter en bloc ?`
     : `${need} : sudo demandera votre mot de passe. Les traiter en bloc ?`;
-}
-
-function waitingMessage(holder: BatchHolder): string {
-  const since = new Date(holder.startedAt).toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const who =
-    holder.kind === "scheduled"
-      ? "Une mise à jour planifiée est en cours"
-      : "Une autre mise à jour gup est en cours";
-  return `${who} (depuis ${since}) — attente… (Ctrl+C pour abandonner)`;
 }
 
 /** The end-of-run summary: successes (with their advisories), skips, failures. */
