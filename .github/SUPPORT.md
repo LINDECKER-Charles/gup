@@ -63,7 +63,8 @@ publish** before pasting or attaching them.
 - Best effort, no SLA and no paid support. An answer can take a few days,
   sometimes longer.
 - English is preferred so that everyone can follow the thread; French is
-  welcome. The interface itself is in French.
+  welcome. The interface itself speaks English, and French with
+  `gup language fr`: paste its output in whichever language it printed.
 - An issue that cannot be reproduced and gets no reply to a follow-up question
   may be closed. It can be reopened at any time with the missing details.
 - A request outside the [scope](../docs/guide/scope.md) is closed with a link to

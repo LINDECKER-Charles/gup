@@ -86,6 +86,7 @@ reasoning behind the exclusion: [`scope.md`](../guide/scope.md).
 | **Schedule** | A named list of `provider:packageId` targets plus a recurrence, run by the OS-started `gup __schedule-tick`. Never a whole provider. |
 | **CLI module** | A feature's plug into the command line: its commands, global options, startup wiring and `gup doctor` line (`src/commands/cli/`). |
 | **View** | A sidebar entry of the interactive app (`ViewDefinition`), registered in `src/commands/menu-views.ts`. |
+| **Locale** | The language a process speaks, `en` (the default) or `fr`, chosen once at startup (`src/core/i18n/`). Every user-facing text is read in it when it is shown. |
 
 ---
 
@@ -125,21 +126,22 @@ but the contract is: if you can't, return empty or failed with a clear message.
 
 One deliberate exception: when the tool **itself reports** that its scan failed — npm's
 `{"error": {"code": "E503", …}}` report, a pnpm `ERR_PNPM_…` code with no report — `listOutdated`
-throws an `Error` that names it (`npm outdated a échoué (E503) : …`). `scanAll` turns it into the
-provider's scan error, shown as such in Scan, Paquets (whose title bar then counts failed scans
-instead of saying `à jour`) and `gup list` / `gup update`, where returning `[]` would have read as
-"nothing outdated". Output the parser cannot make sense of — empty, garbage, an exit code alone —
-still means "nothing to report": the contract tests' fault sweep holds every provider to it.
+throws an `Error` that names it (`npm outdated failed (E503): …`). `scanAll` turns it into the
+provider's scan error, shown as such in Scan, Packages (whose title bar then counts failed scans
+instead of saying `up to date`) and `gup list` / `gup update`, where returning `[]` would have
+read as "nothing outdated". Output the parser cannot make sense of — empty, garbage, an exit code
+alone — still means "nothing to report": the contract tests' fault sweep holds every provider to
+it.
 
 ---
 
 ## 4. Full command lifecycle
 
-`src/cli.ts` builds a Commander program from the CLI modules (`src/commands/cli/cli-modules.ts`).
-Before any command runs, the startup hook records what started the process (`menu`, `cli` or
-`schedule`) and runs every module's `beforeAction` in order: the debug log, the settings (theme
-engine, menu preferences, install timeout), the scheduler (batch lock), then the commands' own
-(§9.1).
+`src/cli.ts` first chooses the interface language (§9.1), then builds a Commander program from
+the CLI modules (`src/commands/cli/cli-modules.ts`). Before any command runs, the startup hook
+records what started the process (`menu`, `cli` or `schedule`) and runs every module's
+`beforeAction` in order: the debug log, the settings (theme engine, menu preferences, install
+timeout), the scheduler (batch lock), then the commands' own (§9.1).
 
 ### 4.1 `gup` (bare command — interactive app)
 
@@ -156,25 +158,25 @@ engine, menu preferences, install timeout), the scheduler (batch lock), then the
                  ├─ detectAvailableProviders()           (platform gate, bounded probes)
                  ├─ scanAll(...) with per-provider start / end events
                  └─ recordScan(...) + scan.* debug-log events
-           the Scan view draws it live, then Paquets comes to the front
+           the Scan view draws it live, then Packages comes to the front
 
 3. Inside a session (↑↓ · Tab · ← · q, mouse clicks and wheel):
      - Scan          → live progress, then the result per provider; r rescans
-     - Paquets       → outdated packages by provider; espace / click check, a all,
-                       / filter, Entrée update the checked set, p schedule it
-     - Planification → schedules: edit, enable, delete, run now, repair the trigger
+     - Packages      → outdated packages by provider; space / click check, a all,
+                       / filter, Enter update the checked set, p schedule it
+     - Schedules     → schedules: edit, enable, delete, run now, repair the trigger
      - Providers     → detected / not installed / incompatible with this OS
      - Journal       → activity heatmap, recurrence, events, debug log, HTML report
      - Options       → settings, theme picker, colour editor, file
-     - Quitter / q   → the session ends "quit" → exit 0
+     - Quit / q      → the session ends "quit" → exit 0
 
-4. Entrée in Paquets → ctx.updates.launch(checked packages)
+4. Enter in Packages → ctx.updates.launch(checked packages)
      in-screen launcher (embedded terminal available):
        confirmation → the run view takes over the body → runUpdates(...) with the
-       run view's ports and the PTY sink → results → back to Paquets, the updated
+       run view's ports and the PTY sink → results → back to Packages, the updated
        packages dropped (no rescan)
      outside launcher (fallback): the session ends "outside"; MenuApp runs the
-       update on the plain terminal, waits for "Entrée pour revenir à gup…",
+       update on the plain terminal, waits for "Press Enter to return to gup…",
        then opens a new session
 ```
 
@@ -193,7 +195,7 @@ listCommand({ only?, fast?, json? })
 No prompt, no install. The scan is recorded in the history. Always exits 0: a provider that fails
 to scan is reported in its row, not as a process failure.
 
-### 4.3 `gup update [cibles...]`
+### 4.3 `gup update [targets...]`
 
 ```
 updateCommand({ all, yes, only, fast, targets })
@@ -209,8 +211,8 @@ updateCommand({ all, yes, only, fast, targets })
     → updateOnConsole(requests)
 
 (c) neither:
-    → scanWithProgress → package picker (the Paquets table on its own screen)
-    → updateOnConsole(requests)            nothing checked → "Aucune sélection.", exit 0
+    → scanWithProgress → package picker (the Packages table on its own screen)
+    → updateOnConsole(requests)            nothing checked → "Nothing selected.", exit 0
 
 updateOnConsole = a Ctrl+C skip session + runUpdates(requests, consolePorts)
                   + printReport → exit 0, or 1 when anything failed
@@ -225,8 +227,8 @@ updateOnConsole = a Ctrl+C skip session + runUpdates(requests, consolePorts)
 doctorCommand()
   ├─ readProviderStatus()                  every provider: detected / missing / incompatible
   ├─ renderProvidersStatus(report)         the three groups, install hints for the missing
-  └─ "Système": each module's diagnostics() (5 s each, home shortened to ~)
-       Terminal intégré · Journal de debug · Planification · Configuration
+  └─ "System": each module's diagnostics() (5 s each, home shortened to ~)
+       Embedded terminal · Debug log · Language · Schedules · Configuration
 ```
 
 No scan, no update. Exits 0.
@@ -265,6 +267,23 @@ gup __schedule-tick (hidden, started by the OS):
 
 The tick's sequence and the OS triggers are in
 [`architecture.md` §10](architecture.md#10-scheduling).
+
+### 4.7 `gup language`
+
+```
+gup language [code]                         (commands/cli/language-module.ts)
+  ├─ no code → resolveLocale(GUP_LANG, interface.language)
+  │            → "Language: English (default)", the codes gup speaks, how to change it
+  └─ a code  → parseLocale: its primary subtag, any case (fr, FR, fr_FR.UTF-8) → unknown: exit 2
+               → settings.update("interface", { language }) → cannot be saved: exit 1
+               → setActiveLocale, confirm in the new language
+               → GUP_LANG still decides in this shell? say so on stderr
+```
+
+The same choice, made once by `cli.ts` at every start (§9.1), is what every other command speaks;
+`gup doctor` reports it on its "Language" line, a warning when `GUP_LANG` named a language gup
+does not speak. Where the language comes from in each process, and what follows it:
+[`architecture.md` §15](architecture.md#15-interface-language).
 
 ---
 
@@ -459,7 +478,7 @@ Two orthogonal concepts:
 `readonly platforms = PLATFORMS.windows;` (or `macos`, `notWindows`) — one line, a named set.
 35 providers declare one; the registry applies it everywhere (detection, scan, `gup update`
 targets, schedules, the elevated child) and listings show the provider in a greyed
-"Incompatibles avec …" group. `tests/core/platform/platform-gate-source.test.ts` (TypeScript AST)
+"Incompatible with …" group. `tests/core/platform/platform-gate-source.test.ts` (TypeScript AST)
 fails when a provider reads `process.platform` in `isAvailable()` or keeps an install hint for an
 OS it does not run on. Path building that depends on the OS uses `pathFlavour(platform)`, never
 `path.join` inside a platform branch.
@@ -671,23 +690,29 @@ providers; the install hint matching the running platform, so `gup doctor` never
 
 ### 9.1 `cli.ts` and the CLI modules
 
-`cli.ts` parses the program `createProgram` (`commands/cli/program.ts`) assembles: commander put
-in French first (`commander-french.ts`: the help's headings and `[commande]`, `-h` and `help`,
-`--version`, and its usage errors reworded line by line — the words live in
-`ui/text/cli-labels.ts`), then every module of `CLI_MODULES` (one line each, sorted by id)
-registered, then the startup hook. The French settings come first because commander copies the
-help and output configuration into each command when it is created. A module adds its commands and global options (`register`), answers which trigger
-a command path is (`triggerFor`: the tick is a `schedule` run), installs process-wide slots
-before the action (`beforeAction`), contributes its `gup doctor` line (`diagnostics`) and hears
-crashes (`onCrash`). The elevated `__admin-batch` child runs only the modules that opt in
-(`runsInElevatedChild`: the debug log), so it never reads the user's settings.
+`cli.ts` first chooses the interface language: `applyStartupLocale(argv)`
+(`commands/cli/language-module.ts`) takes `GUP_LANG`, then the `interface.language` setting, then
+English — the elevated child, which never reads the settings, starts from `GUP_LANG` and takes its
+parent's language from the batch payload (§9.6). It comes first because the help, the commands'
+descriptions and commander's own words are read as the program is built. `cli.ts` then parses
+the program `createProgram` (`commands/cli/program.ts`) assembles: commander localized first
+(`commander-locale.ts`: the help's headings and `[command]`, `-h` and `help`, `--version`, and
+its usage errors reworded line by line — the words live in `ui/text/cli-labels.ts`, in both
+languages), then every module of `CLI_MODULES` (one line each, sorted by id) registered, then the
+startup hook. The localized settings come first because commander copies the help and output
+configuration into each command when it is created. A module adds its commands and global
+options (`register`), answers which trigger a command path is (`triggerFor`: the tick is a
+`schedule` run), installs process-wide slots before the action (`beforeAction`), contributes its
+`gup doctor` line (`diagnostics`) and hears crashes (`onCrash`). The elevated `__admin-batch`
+child runs only the modules that opt in (`runsInElevatedChild`: the debug log), so it never reads
+the user's settings.
 
 Global error handling (`startup.ts`): a `PromptCancelledError` (Ctrl+C while a prompt or a screen
 holds the keyboard — raw mode turns it into a key, not SIGINT) exits 130 silently; any other
-error prints `Erreur : <message>` on stderr and exits 1. A signal while a screen is up exits
-128 + the signal number once the terminal is restored. Standard output's EPIPE — its reader left,
-`gup … | head` — exits 0 at once and silently (`broken-pipe.ts`, installed by `cli.ts` before
-parsing); any other error of that stream still crashes as unhandled.
+error prints `Error: <message>` on stderr (`Erreur :` in French) and exits 1. A signal while a
+screen is up exits 128 + the signal number once the terminal is restored. Standard output's
+EPIPE — its reader left, `gup … | head` — exits 0 at once and silently (`broken-pipe.ts`,
+installed by `cli.ts` before parsing); any other error of that stream still crashes as unhandled.
 
 ### 9.2 `list.ts`, `update.ts`, `doctor.ts`
 
@@ -705,24 +730,25 @@ instead of rescanning, unless the `rescanAfterUpdate` preference asks for a resc
 ### 9.4 `journal/`
 
 `journal-module.ts` (the `--log-level` option, `gup log`, `gup report`, the log session, the crash
-hook and the "Journal de debug" doctor line), `log-settings.ts` (threshold precedence, the sink
+hook and the "Debug log" doctor line), `log-settings.ts` (threshold precedence, the sink
 per command), `export-history.ts` (read → insights → serialise → stdout or file; html, text, json,
 csv), `journal-source.ts` (the Journal view's data and exports).
 
 ### 9.5 `schedule/`
 
 `schedule-module.ts` (the `schedule` commands, the hidden tick, the batch guard for every other
-command, trigger healing, the "Planification" doctor line), `scheduler-services.ts` (stores,
+command, trigger healing, the "Schedules" doctor line), `scheduler-services.ts` (stores,
 trigger, clock — injectable, so tests never touch the real scheduler), `tick.ts` (the headless
-entry), `schedules-controller.ts` (the Planification view's port).
+entry), `schedules-controller.ts` (the Schedules view's port).
 
 ### 9.6 `admin-batch.ts`
 
 The hidden `__admin-batch <file>` command the elevated batch starts as administrator: reads the
-targets, re-checks each one with `resolveUpdateTarget` — the check `gup update` applies, since the
-payload sat in the temp directory — and fails the ones it refuses without running them, calls
-`provider.update()` for each other one under its operation context, writes the outcomes
-and its debug-log lines back to a file the unelevated parent validates. It never touches the
+targets, with its parent's install timeout, log threshold and language — which it speaks from
+then on —, re-checks each target with `resolveUpdateTarget` — the check `gup update` applies,
+since the payload sat in the temp directory — and fails the ones it refuses without running
+them, calls `provider.update()` for each other one under its operation context, writes the
+outcomes and its debug-log lines back to a file the unelevated parent validates. It never touches the
 history and never reads the settings.
 
 ---
@@ -746,8 +772,8 @@ more aggressive command gets past:
    `gup update`, a dialog in the run view, never for `-y` or a scheduled run.
 3. Tiers, least aggressive first (`RETRY_TIERS`): `force` · `force` + `uninstallPrevious` ·
    `force` + `reinstall`. The labels and their risks are in `ui/retry-choices.ts`.
-4. "Aucun" leaves the failures. A tier that ran is never offered again, nor any less aggressive
-   one: the loop always moves forward and ends when no tier is left.
+4. "None — leave the failures" leaves them. A tier that ran is never offered again, nor any
+   less aggressive one: the loop always moves forward and ends when no tier is left.
 5. Each replayed attempt is recorded in the history with its tier (`retry --force`…).
 
 ### Why this structure
@@ -789,24 +815,25 @@ alternate screen is left after stdin went back to line mode). It handles SIGBREA
 (and SIGINT on POSIX) while a screen is up. `chrome.ts`, `text-panel.ts` and `dialog.ts` draw the
 frame; `styled-lines.ts` turns tone-annotated lines into OpenTUI text.
 
-### 11.4 Theme, glyphs and French text (`theme/`, `text/`)
+### 11.4 Theme, glyphs and the interface's words (`theme/`, `text/`)
 
 `theme/` holds the appearance seam (`Appearance`: style, border, background, glyphs, density),
 the built-in themes, terminal palette detection and the contrast enforcement
 ([`architecture.md` §11](architecture.md#11-settings-themes-and-contrast)). `glyphs.ts` maps every
 symbol a screen may draw to a one-column ASCII stand-in (`GUP_ASCII=1`, `TERM=linux|dumb`, POSIX
 without a UTF-8 locale); a guard test fails on a symbol in `src/ui/` without one. `text/` holds
-every French string, by domain, and `fr-format.ts` (counts, durations, dates, relative times —
-always `fr-FR`, plain spaces, `now` injected).
+every user-facing string by domain, each a `localized()` catalog in English and French, and
+`format.ts` (counts, durations, dates, relative times — the explicit Intl locale of the interface
+language, `en-US` or `fr-FR`, plain spaces, `now` injected).
 
 ### 11.5 One-shot output (`prompts/`, `table.ts`, `scan-progress.ts`, `update-console.ts`, `charts/`)
 
 - `scan-progress.ts`: `runScan` (detection, scan, history record, `scan.*` events) and
   `scanWithProgress`, which shows the Scan panel on its own screen (`prompts/scan-screen.ts`) — or,
   piped or redirected, one summary line without ever loading OpenTUI.
-- `select.ts`: the package picker of `gup update` — the Paquets panel on its own screen
-  (`prompts/package-picker.ts`), with the same rules as the menu: `espace` or a click checks,
-  `a` checks or clears everything shown, `/` filters (checks survive the filter), Entrée updates
+- `select.ts`: the package picker of `gup update` — the Packages panel on its own screen
+  (`prompts/package-picker.ts`), with the same rules as the menu: `space` or a click checks,
+  `a` checks or clears everything shown, `/` filters (checks survive the filter), Enter updates
   the checked set only — with nothing checked it updates nothing and says how to check; `q`
   cancels.
 - `update-console.ts`: the console ports of the pipeline (progress lines, the elevation and retry
@@ -822,7 +849,7 @@ always `fr-FR`, plain spaces, `now` injected).
 Many providers do HTTP per package (helm-search, vscode-ext, pwsh-modules, self) or heavy
 filesystem walks. On a well-populated machine a full scan takes 30–60 seconds.
 
-`--fast` (or **Options › Mode rapide** in the app) **excludes every `slow = true` provider**,
+`--fast` (or **Options › Fast mode** in the app) **excludes every `slow = true` provider**,
 which brings the scan down to typically < 5 seconds. It is **a declarative flag on the provider**,
 not a central allowlist: adding a slow provider only means writing `readonly slow = true`.
 
@@ -1033,7 +1060,9 @@ Conventions:
 - `requiresAdmin` on rows that need UAC or `sudo`; `canUpdateUnattended = false` when every update
   does.
 - Strict TypeScript, no unnecessary casts.
-- Docs / code / identifiers in English; user-facing strings in French.
+- Docs / code / identifiers in English; user-facing strings in English and French, through
+  `localize()` or a `localized()` catalog read when shown — an `installHint` with words is a getter
+  (`_template.ts` shows both).
 
 ---
 
@@ -1088,12 +1117,13 @@ Conventions:
 | `gup doctor` | `doctorModule` | `readProviderStatus()` + modules' `diagnostics()` |
 | `gup log [show\|path\|export]` | `journalModule` | `log-show.ts`, `log-command.ts`, `diagnostic.ts` |
 | `gup report` | `journalModule` | `report-command.ts` → `exportHistory()` |
+| `gup language [code]` | `languageModule` | `languageCommand()`: show the language, or save `interface.language` |
 | `gup schedule …` | `scheduleModule` | `crud-commands.ts`, `report-commands.ts`, `trigger-commands.ts`, `run-now.ts` |
 | `gup __schedule-tick` (hidden) | `scheduleModule` | `tick.ts` → `ScheduledRun.tick()` |
 | `gup __admin-batch <file>` (hidden) | `adminBatchModule` | the elevated executor |
-| `--log-level <niveau>` | `journalModule` (global option) | `resolveLogSettings()` |
+| `--log-level <level>` | `journalModule` (global option) | `resolveLogSettings()` |
 | Ctrl+C inside a prompt | `handleFatal` | `PromptCancelledError` → exit 130 |
-| Fatal error | `handleFatal` | `Erreur : <message>` on stderr, exit 1 |
+| Fatal error | `handleFatal` | `Error: <message>` on stderr, exit 1 |
 
 ---
 

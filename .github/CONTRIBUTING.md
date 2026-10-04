@@ -246,7 +246,38 @@ flowchart LR
 - `success: false, skipped: true` → action requires the user (manual download, GUI). Neither failure nor success; never retried.
 - `success: false, retryable: true` → the failure can be worked around with `--force`/`uninstallPrevious`/`reinstall`. Counted as a failure, and the user is offered a retry (never under `-y`, never in a scheduled run).
 - `success: false` → real failure, message in `message`.
-- Throwing is caught (`erreur inattendue : …`) but is a bug: return an outcome.
+- Throwing is caught (`unexpected error: …`) but is a bug: return an outcome.
+
+### Words the user reads
+
+An install hint, a `note`, an outcome `message`, a scan error: every word a provider shows exists in English and French, and is read when it is shown. The registry creates every provider when it is imported, before startup picks the language — a word read then would stay English for a French user.
+
+```ts
+// A hint that is only a command or a URL stays a plain field, never translated.
+readonly installHint = "winget install YourTool";
+
+// A hint with words around its command is a getter.
+get installHint(): string {
+  return localize({
+    en: "Install YourTool: winget install YourTool",
+    fr: "Installer YourTool : winget install YourTool",
+  });
+}
+
+// A message is built where it is returned.
+return {
+  id: packageId,
+  success: false,
+  message: localize({
+    en: `your-bin could not upgrade ${packageId}`,
+    fr: `your-bin n'a pas pu mettre à jour ${packageId}`,
+  }),
+};
+```
+
+- `localize({ en, fr })` (`core/i18n/localized.ts`) builds one text where it is used; a module-level `localized({ en: {…}, fr: {…} })` catalog groups a provider's words, read inside its methods. English is the reference type: a French side that misses a key or a parameter does not compile.
+- Steps several providers suggest — download a release and replace the binary, install a prerequisite, rerun as administrator — are worded once, in `src/providers/manual-steps.ts` (`MANUAL_STEPS`).
+- `src/providers/_template.ts` shows both forms. The startup guard, `tests/core/i18n/startup-reads.test.ts`, fails on a word read while a module loads; the whole rule is in [documentation.md § Interface text](../docs/development/documentation.md#interface-text).
 
 ---
 
@@ -267,6 +298,7 @@ flowchart LR
 | **`readonly canUpdateUnattended = false`** when *every* update needs an administrator | Scheduled runs never elevate: such a provider cannot be scheduled, and the menu says why. |
 | **`aggregate: true`** on a row whose update acts on the whole provider ("all plugins", a refresh marker) | A schedule names packages, never a provider: such a row is never a scheduling target. |
 | **`options.unattended`** honoured when your tool can stop on a prompt (winget: `--disable-interactivity`) | A scheduled run has nobody to answer; a prompt must fail fast instead of holding the run until its timeout. |
+| **Words in English and French, read when shown** — `localize()`, a `localized()` catalog, an `installHint` with words as a getter, `MANUAL_STEPS` for shared steps ([§ 3](#words-the-user-reads)) | A French user reads French; a word read at import stays English. Pinned by `tests/core/i18n/startup-reads.test.ts`. |
 | **No `console.*`, no direct stdout or stderr** — `log.debug("domain.action", data)` for diagnostics | Output while the full-screen app is mounted would paint over it; the debug log records what you need (drift test: `tests/security/provider-output.test.ts`). |
 | **No new npm dependency without discussion** | Footprint is intentionally minimal. |
 
@@ -339,7 +371,7 @@ update pipeline, the scheduler, log redaction…) have coverage floors that CI e
 
 **English** for code, identifiers, comments, JSDoc, configuration comments, documentation (including release notes) and commit messages: contributors and bug reports arrive in English, and a half-French code base forces every reader to switch languages mid-file.
 
-**French** for every string the user sees at runtime: CLI output, install hints, menu labels, dialogs. That is the language of the interface, not an oversight — see the note in the [CLI reference](../docs/guide/cli-reference.md).
+**English and French** for every string the user sees at runtime: CLI output and help, install hints, menu labels, dialogs, the HTML report. English is the default language of the interface and the reference of every catalog; a change to a word changes both languages. How: [documentation.md § Interface text](../docs/development/documentation.md#interface-text).
 
 ### Size and complexity limits
 
@@ -485,7 +517,7 @@ flowchart TD
 
 ## 10. Documentation
 
-- Documentation is **English**. French UI labels are quoted verbatim, in **bold**, with an English gloss on first use: "**Paquets** (packages)".
+- Documentation is **English** and quotes the English interface: a UI label verbatim, in **bold** ("**Packages**"), the French one beside it only where a French user needs it to find a control ("**Packages** (Paquets)").
 - Users' pages go to `docs/guide/`, contributors' pages to `docs/development/`; the [documentation index](../docs/README.md) lists every page and must list a new one.
 - **Mermaid** diagrams are welcome in `docs/` and in this file when they explain a mechanism: stable diagram types only (`flowchart`, `sequenceDiagram`, `stateDiagram-v2`, `classDiagram`, `gitGraph`), about 20 nodes at most, no custom colours. Check that they render in the pull request's rich diff.
 - **`README.md` is also the npm page**, and npm renders neither Mermaid nor relative image paths: no diagrams there, and images by absolute `raw.githubusercontent.com` URL.

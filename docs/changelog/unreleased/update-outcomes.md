@@ -25,3 +25,8 @@ nothing, or broke something, and retries offered where none could work.
   the Visual Studio provider scanned — after it updated Visual Studio, winget's row failed with
   "no applicable upgrade" and offered to reinstall it — and `self`'s `gh` goes when winget lists
   `GitHub.cli` (`6d36c72`)
+
+## Internal
+
+- The duplicate-row rule's Visual Studio pattern carries the justification of its security lint
+  exception: anchored, no nested repetition (`feb164d`)

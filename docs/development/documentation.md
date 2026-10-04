@@ -1,8 +1,9 @@
 # Documentation conventions
 
 How `gup`'s documentation is written: where a page goes, what the README may
-contain, how diagrams are drawn and how the screenshots of the interactive app
-are produced. For the code conventions, see
+contain, how the interface's own words are written in two languages, how
+diagrams are drawn and how the screenshots of the interactive app are
+produced. For the code conventions, see
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md).
 
 ---
@@ -11,12 +12,55 @@ are produced. For the code conventions, see
 
 - **Everything is written in English**: guides, development notes, release
   notes, code comments. Contributors and bug reports arrive in English.
-- **The interface is French** and stays quoted as it is: name a UI label in
-  **bold**, with an English gloss the first time a page uses it —
-  "**Paquets** (packages)", "**Mode rapide** (fast mode)". Never translate a
-  label in place: a reader looks for the French word on screen.
+- **The docs quote the English interface.** gup speaks English by default
+  and French with `gup language fr` ([below](#interface-text)); a page quotes
+  what the English interface shows. Name a UI label in **bold**, exactly as
+  it reads on screen — "**Packages**", "**Fast mode**" — and quote messages,
+  key hints and dialogs verbatim. Add the French label in parentheses only
+  where a French user needs it to find a control, and sparingly:
+  "**Packages** (Paquets)". Never paraphrase a label: a reader looks for the
+  exact word on screen.
 - User pages explain what to do; contributor pages explain how it works. A
   page that does both is two pages.
+
+## Interface text
+
+Every word gup shows at runtime — the screens, the commands' output and their
+`--help`, install hints, provider messages, the HTML report — exists in
+English and French. English is the default; the machinery is `src/core/i18n/`
+([architecture.md § Interface language](architecture.md#15-interface-language)).
+
+- **A catalog per domain**, `localized({ en: {…}, fr: {…} })`: `src/ui/text/**`
+  for the screens and the commands, `src/report/labels/` for the HTML report,
+  `src/core/pty/pty-labels.ts` for the embedded terminal,
+  `src/providers/manual-steps.ts` for the steps several providers suggest.
+  Each key answers in the active language when it is read. A message built in
+  one place is one call: `localize({ en: "…", fr: "…" })`.
+- **English is the reference.** Its shape is the type (`Translations<T>`):
+  the French side must have every key, and every function the same
+  parameters, or it does not compile. A text with a count goes through
+  `counted()` (`src/ui/text/format.ts`), which agrees it in each language —
+  French takes the singular for 0 and 1, English for 1 only.
+- **Read a text where it is shown, never while a module loads.** Every module
+  of the command line is evaluated before startup chooses the language: a
+  label copied into a module-level constant, or a field a provider sets at
+  construction, stays English for a French user. Keep the catalog and read
+  its key in the function that prints it; an `installHint` with words is a
+  getter. The startup guard, `tests/core/i18n/startup-reads.test.ts`, loads
+  the whole command line with no language chosen and fails on any text read
+  on the way, with the stack that names the module.
+- **What stays as it is:** commands, flags, paths, URLs, product names; log
+  event names, history records and export fields, English `snake_case` in
+  both languages, so a script never depends on the interface. Key names in a
+  hint follow the language (`enter`, `entrée`); the keys do not.
+- **Numbers and dates** go through `src/ui/text/format.ts`, with the
+  explicit Intl locale of the language (`en-US`, `fr-FR`), never the
+  machine's: `2026-10-03` and `Oct 03 14:22` in English, `03/10/2026` and
+  `03/10 14:22` in French.
+
+A change to a word changes both languages in the same commit. Tests read
+labels from their catalogs rather than typing them again
+([testing.md § 5](testing.md#5-rules-every-suite-follows)).
 
 ## Where things go
 
@@ -55,8 +99,9 @@ the states of a screen — that prose would spread over several paragraphs.
   `*-beta` type.
 - **One diagram, one question**, about 20 nodes at most. A one-sentence
   caption before the block says what it answers.
-- **Labels in English**; French UI labels stay verbatim, inside quotes. Quote
-  any label holding `( ) : , #`; break lines with `<br/>`.
+- **Labels in English**; UI labels verbatim, as the English interface shows
+  them, inside quotes. Quote any label holding `( ) : , #`; break lines with
+  `<br/>`.
 - **No custom colours**: no `classDef` fills, no `style` colours. GitHub
   switches between light and dark themes and a fixed fill breaks one of them.
   The existing `stroke-dasharray` boundary class is the one exception.
@@ -146,7 +191,7 @@ only where the real thing would reach the machine:
 
 | Part | In a screenshot |
 |---|---|
-| Views | `menuViews()`, the menu's own list. Providers reads `PROVIDERS_FIXTURE`; Planification reads the fixture schedules; the Journal reads the history and debug log written in the sandbox; Options and the Journal read the scene's settings. |
+| Views | `menuViews()`, the menu's own list. Providers reads `PROVIDERS_FIXTURE`; Schedules reads the fixture schedules; the Journal reads the history and debug log written in the sandbox; Options and the Journal read the scene's settings. |
 | Settings | In memory, as with `GUP_CONFIG=0`: the defaults, then the scene's own. Nothing is read from or written to a file, and no scene sees another's. |
 | Look | The theme engine (`ThemedAppearance`) on those settings, in a truecolor terminal that reports the docs palette — the default `terminal` theme follows it, as on Windows Terminal or iTerm2. |
 | Updates | The in-screen launcher, its run view, the PTY sink and session, the terminal panes. Under them, an in-memory pseudo-terminal plays the script's output; the pipeline is the script, firing the same observer events and asking the same questions (elevation, retry) in the same order. No provider runs. |
@@ -160,7 +205,7 @@ only where the real thing would reach the machine:
   with made-up versions, schedules and history. Never data copied from a real
   machine: no user name, path, host or token can reach a screenshot.
 - **One story.** The fixtures agree with each other: the history's latest
-  scan is the fixture scan, its versions end where Paquets starts, the
+  scan is the fixture scan, its versions end where Packages starts, the
   schedules' last runs are in the history and the debug log tells the same
   morning.
 - **The platform comes from the fixtures** (the fixture machine runs Windows),
@@ -180,15 +225,16 @@ only where the real thing would reach the machine:
   showing the rendering machine's home, temp directory or checkout is
   refused.
 - **Time is frozen** at 2026-09-15 11:30 in Paris (`Date` and the frame
-  clock, so spinners stand still). The UI formats dates and numbers through
-  `src/ui/text/fr-format.ts` (explicit `fr-FR`), never with the host's
-  locale: a CI runner in `en-US` must render the same bytes as a developer in
-  `fr-FR`.
+  clock, so spinners stand still). The screens are rendered in English, the
+  interface's default language. The UI formats dates and numbers through
+  `src/ui/text/format.ts`, with the explicit Intl locale of that language,
+  never the host's: a CI runner in `en-US` must render the same bytes as a
+  developer in `fr-FR`.
 
 ### Alt text
 
 English, at most 250 characters, saying what the screen shows and what state
-it is in — "The Paquets view: 12 outdated packages grouped by provider, Winget
+it is in — "The Packages view: 12 outdated packages grouped by provider, Winget
 fully checked…" — never "Screenshot of…". Figures match the fixture. The
 generator refuses an empty or longer text.
 
@@ -221,15 +267,15 @@ Windows) and say so in the pull request.
 The gallery ends with a picture of the HTML report, a PNG:
 `npm run screenshots:report` writes the fixture history in a throw-away
 directory, has the built CLI write its report there
-(`gup report --format html --no-open`: nothing opens), and photographs it with
+(`gup report --format html --no-open`, in English: nothing opens), and photographs it with
 a headless Chromium using a throw-away profile — never the user's browser
 session. `CHROME_PATH` names the browser (Chrome, Edge, Chromium, or
 Playwright's headless shell); otherwise the usual install path is tried.
 
 A browser's rendering varies with the machine, so this picture is not
 byte-identical and CI does not check it: regenerate it by hand when the
-report's design changes. Its relative dates ("il y a 19 jours") are counted
-from the day it was taken.
+report's design changes. Its relative dates ("19 days ago") are counted from
+the day it was taken.
 
 ### Inside `scripts/screenshots/`
 
