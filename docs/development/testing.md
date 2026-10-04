@@ -145,6 +145,9 @@ A file matching no project never runs, and one matching two runs twice:
   log off and every state directory in a per-run sandbox (`tests/support/test-env.ts`). A test
   that writes creates its own `mkdtemp` directory and points the matching variable at it
   (`GUP_HISTORY_DIR`, `GUP_CONFIG_DIR`, `GUP_LOG_DIR`, `GUP_REPORT_DIR`, `GUP_SCHEDULER_DIR`).
+- **Nothing from your shell.** Each worker drops the inherited `NO_COLOR`, `FORCE_COLOR` and
+  `GUP_*` variables (but the run's opt-ins below) before any test: a test that needs one sets it
+  itself with `vi.stubEnv`.
 - **Nothing real is updated, opened or scheduled** outside the mutating suites, and those only
   ever touch a throw-away npm prefix and a uniquely named `gup-it-<random>` task. A unit test
   never spawns a browser, a scheduled task or `taskkill`: `launchDetached` and `killProcessTree`
