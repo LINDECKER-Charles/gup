@@ -160,7 +160,11 @@ function tableWidth(columns: Columns): number {
 }
 
 /** `widths` narrowed one column at a time, the widest first, to fit `room` or their floors. */
-function shrinkWidest(widths: readonly number[], floors: readonly number[], room: number): number[] {
+function shrinkWidest(
+  widths: readonly number[],
+  floors: readonly number[],
+  room: number,
+): number[] {
   const shrunk = [...widths];
   let excess = shrunk.reduce((sum, width) => sum + width, 0) - room;
   while (excess > 0) {
