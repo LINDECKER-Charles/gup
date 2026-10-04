@@ -21,3 +21,5 @@
   the security policy on GitHub, and a copy frozen into each published version would go on
   stating the supported versions and response aims of the day it was packed
   (`build: stop shipping SECURITY.md in the npm package`)
+- **chore:** `check.cmd` moves to `scripts/`, beside the `check.ps1` it launches, and runs as
+  `scripts\check.cmd` from the repository root (`chore: move check.cmd under scripts`)

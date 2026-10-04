@@ -309,9 +309,10 @@ npm run screenshots:check     # after a change to the interactive app: are the d
 
 A change to what the interactive app draws — a label, a key hint, a layout — changes the generated screenshots in `docs/assets/screens/`: run `npm run screenshots` and commit the result with the change. CI's **Screenshots up to date** step fails otherwise ([documentation.md § Screenshots](../docs/development/documentation.md#screenshots)).
 
-On Windows, `check.cmd` runs all of them and prints one summary (`check.cmd -E2E full` adds the
-real tools of your machine, read-only). The tests need Node ≥ 26.9. Where a new test goes, how to
-run one layer, the end-to-end suites, CI and the manual checklists:
+On Windows, `scripts\check.cmd` runs all of them and prints one summary
+(`scripts\check.cmd -E2E full` adds the real tools of your machine, read-only). The tests need
+Node ≥ 26.9. Where a new test goes, how to run one layer, the end-to-end suites, CI and the manual
+checklists:
 [`docs/development/testing.md`](../docs/development/testing.md).
 
 Cross-platform CI: **Windows** + **macOS** + **Ubuntu**, Node **26**. Every PR that adds a provider must pass all three.
@@ -435,7 +436,7 @@ The scope says where the change lives. It is **required** whenever the changed f
 | `docs/**`, `README.md`, `.github/CONTRIBUTING.md`, `.github/SECURITY.md`, `CHANGELOG.md`, `CITATION.cff` | `docs`, optionally with the topic as scope | `docs(changelog): …` |
 | `package.json`, `package-lock.json`, `tsconfig*.json`, `tsup.config.ts` | `build(deps)`; Dependabot bumps use `chore(deps)` / `chore(deps-dev)` | `build(deps): …` |
 | `eslint.config*.js`, `vitest.config.ts`, `audit-ci.json`, `.semgrep.yml`, `.gitleaks.toml` | `build(lint)` | `build(lint): …` |
-| `scripts/**`, `check.cmd`, `.gitignore`, `.gitattributes` | `chore`, no scope | `chore: …` |
+| `scripts/**`, `.gitignore`, `.gitattributes` | `chore`, no scope | `chore: …` |
 | The version bump of a release | `chore(release): x.y.z` | `chore(release): 0.4.0` |
 
 ---

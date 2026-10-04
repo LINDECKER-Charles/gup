@@ -92,7 +92,7 @@ put 26 first on `PATH` for the session:
 | `npm run fixtures:record -- --provider <id>…` | re-record provider fixtures from the tools installed here ([`provider-contracts.md`](design/provider-contracts.md#7-recorded-fixtures-s11)) |
 | `npm run typecheck` | `tsc` on `src`, then on `tsconfig.tests.json` (tests, scripts, configs) |
 | `npm run lint` | `eslint src tests scripts` |
-| `check.cmd` (Windows) | every gate above in parallel, then the end-to-end smoke alone; `check.cmd -E2E full` or `-E2E mutate` for more, `-E2E none` for less |
+| `scripts\check.cmd` (Windows) | every gate above in parallel, then the end-to-end smoke alone; `scripts\check.cmd -E2E full` or `-E2E mutate` for more, `-E2E none` for less |
 
 The end-to-end scripts load their switches with `node --env-file=tests/e2e/opt-in*.env`, which
 behaves the same in every shell. To run one file or one test, call vitest directly with the same

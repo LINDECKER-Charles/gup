@@ -22,8 +22,8 @@
     none: skip the end-to-end run.
 
 .EXAMPLE
-    check.cmd
-    check.cmd -E2E full
+    scripts\check.cmd
+    scripts\check.cmd -E2E full
 #>
 param(
     [ValidateSet('smoke', 'full', 'mutate', 'none')]

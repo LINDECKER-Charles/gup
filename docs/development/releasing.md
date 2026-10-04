@@ -80,7 +80,7 @@ Then, in the same branch:
    npm pack --dry-run            # package.json, dist/, LICENSE, README.md
    ```
 
-   On Windows, `check.cmd` runs the security audit, the tests and the coverage
+   On Windows, `scripts\check.cmd` runs the security audit, the tests and the coverage
    in parallel and prints a summary; it does not replace the gates above.
 6. Commit the bump as `chore(release): x.y.z`, with the changelog, the release
    notes, the landing facts and the regenerated screenshots in the same commit
