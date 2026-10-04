@@ -209,11 +209,14 @@ const PERIOD_WORDS = localized({
     all: "all history",
     since: (date: string) => `since ${date}`,
     until: (start: string, date: string) => `${start} until ${date}`,
+    /** Two dates: English says "from … to …", never "since … until …". */
+    between: (from: string, to: string) => `from ${from} to ${to}`,
   },
   fr: {
     all: "tout l'historique",
     since: (date) => `depuis le ${date}`,
     until: (start, date) => `${start} jusqu'au ${date}`,
+    between: (from, to) => `depuis le ${from} jusqu'au ${to}`,
   },
 });
 
@@ -227,9 +230,14 @@ const PERIOD_LEADS = localized<Readonly<Record<LeadKind, string>>>({
 
 /**
  * "past 30 days", "past 12 months", "since 2026-01-01", "all history" — and
- * "… until 2026-03-31" when the period was given an end.
+ * "… until 2026-03-31" when the period was given an end, "from 2026-01-01 to
+ * 2026-03-31" when it has both dates.
  */
 export function periodLabel(period: Period): string {
+  const { scope, since } = period;
+  if (period.hasFixedEnd && scope.kind === "date" && since !== null) {
+    return PERIOD_WORDS.between(formatDate(since), formatDate(period.until));
+  }
   const start = periodStartLabel(period);
   return period.hasFixedEnd ? PERIOD_WORDS.until(start, formatDate(period.until)) : start;
 }

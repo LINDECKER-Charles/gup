@@ -44,4 +44,11 @@ describe("the period in English", () => {
 
     expect(periodLabel(period)).toBe("past 30 days until 2026-09-30");
   });
+
+  it("words a period between two dates from one to the other", () => {
+    const period = withUntil(parsePeriod("2026-01-01", NOW)!, parseUntil("2026-03-31")!)!;
+
+    expect(periodLabel(period)).toBe("from 2026-01-01 to 2026-03-31");
+    expect(periodLead(period)).toBe("From 2026-01-01 to 2026-03-31");
+  });
 });
