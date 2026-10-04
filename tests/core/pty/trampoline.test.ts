@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -15,7 +15,9 @@ let distDir: string;
 let srcDir: string;
 
 beforeAll(async () => {
-  dir = await mkdtemp(join(tmpdir(), "gup-trampoline-"));
+  // Resolved: locateTrampoline answers in real paths, and macOS's tmpdir is
+  // itself behind a link (/var → /private/var).
+  dir = await realpath(await mkdtemp(join(tmpdir(), "gup-trampoline-")));
   distDir = join(dir, "dist");
   srcDir = join(dir, "src");
   await mkdirWith(distDir, ["cli.js", "pty-exec.js"]);
