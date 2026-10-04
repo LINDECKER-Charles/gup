@@ -373,27 +373,29 @@ function startInTerminal(request: InheritRequest): InheritProcess {
 }
 
 /**
- * A started child as an install process. A kill aborts it and, on Windows,
- * takes its whole tree down; its exit then also waits for that tree kill. The
- * direct child dies first — the cmd.exe behind a `.cmd` shim — while the
- * installer it started is still running: reported before taskkill reached it,
- * the outcome would let a provider repair what the installer left (npm's
- * staged copy) while the installer still writes there.
+ * A started child as an install process. A kill takes its whole tree down on
+ * Windows, then aborts the child itself (the only kill elsewhere); its exit
+ * also waits for both.
+ *
+ * Tree first: taskkill /T walks the tree from the pid it is given, so once
+ * the abort killed that process — the cmd.exe behind a `.cmd` shim — it found
+ * nothing, and the installer under it kept running, orphaned. And the exit
+ * waits: reported while the installer still runs, the outcome would let a
+ * provider repair what the installer left (npm's staged copy) under its feet.
  */
 function killableChild(
   proc: ResultPromise,
   controller: AbortController,
   exit: Promise<InheritExit>,
 ): InheritProcess {
-  let treeKill: Promise<void> = Promise.resolve();
+  let killed: Promise<void> = Promise.resolve();
   return {
     exited: exit.then(async (result) => {
-      await treeKill;
+      await killed;
       return result;
     }),
     kill: () => {
-      controller.abort();
-      treeKill = killProcessTree(proc.pid);
+      killed = killProcessTree(proc.pid).then(() => controller.abort());
     },
   };
 }

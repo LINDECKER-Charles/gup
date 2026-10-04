@@ -475,6 +475,40 @@ describe("runner skip + interrupt channel", () => {
     expect(execaMock.mock.calls[1]?.[0]).toBe("taskkill");
   });
 
+  // taskkill /T walks the tree from the pid it is given: once execa's abort
+  // killed that process, taskkill finds nothing and the installer under it
+  // (npm, waiting on a download) keeps running, orphaned.
+  it.each([
+    ["the terminal", (): void => {}],
+    [
+      "a pipe sink",
+      (): void => {
+        restoreSink = routeInheritTo(createPipeSink({ onLine: () => {}, capBytes: 1024 }));
+      },
+    ],
+  ])("takes the tree down on %s before aborting the direct child (Windows)", async (_, route) => {
+    setPlatform("win32");
+    route();
+    const install = deferred<unknown>();
+    let isAbortedAtTaskkill: boolean | null = null;
+    const signalOf = (): AbortSignal =>
+      (execaMock.mock.calls[0]![2] as { cancelSignal: AbortSignal }).cancelSignal;
+    execaMock
+      .mockReturnValueOnce(Object.assign(install.promise, { pid: 4242 }))
+      .mockImplementationOnce(() => {
+        isAbortedAtTaskkill = signalOf().aborted;
+        return mkExecaResult();
+      });
+
+    const pending = runInherit("npm", ["install", "-g", "x@latest"]);
+    skipCurrent();
+    install.resolve({ exitCode: 1, failed: true });
+    await pending;
+
+    expect(isAbortedAtTaskkill).toBe(false);
+    expect(signalOf().aborted).toBe(true);
+  });
+
   it("clears the abort hook after completion (no stale skip target)", async () => {
     execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
     await runInherit("foo");

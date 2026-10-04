@@ -169,6 +169,8 @@ describe("createPipeSink", () => {
     const child = pipedChild();
     const started = sink.start({ command: "brew", args: [] });
     started.kill();
+    // Once the tree kill returned (a no-op off Windows): see runner.test.ts.
+    await new Promise((resolve) => setImmediate(resolve));
     const { cancelSignal } = execaMock.mock.calls[0]![2] as { cancelSignal: AbortSignal };
     expect(cancelSignal.aborted).toBe(true);
     child.exit(1);
