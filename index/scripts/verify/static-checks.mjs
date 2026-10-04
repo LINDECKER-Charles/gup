@@ -128,7 +128,9 @@ function checkBody({ report }, { html, page }) {
   const missing = legacy.filter((alias) => !html.includes(`id="${alias}"`));
   report.check(`${id}: no placeholder or markup in the text`, leaks.length === 0, leaks.join(" "));
   report.check(`${id}: exactly one H1`, count(html, "<h1 ") === 1);
-  report.check(`${id}: install command present`, html.includes(installCommand));
+  // Commands render word by word (src/ui/CodeWords.jsx): compare words, not markup.
+  const words = text.replace(/\s+/g, " ");
+  report.check(`${id}: install command in the visible text`, words.includes(installCommand));
   report.check(`${id}: ${legacy.length} legacy anchors`, missing.length === 0, missing.join(", "));
   report.check(`${id}: HTML ≤ 30 KB gzipped`, gz(html) <= BUDGET.htmlGz, `${gz(html)} B`);
 }

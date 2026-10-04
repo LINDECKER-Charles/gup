@@ -19,8 +19,11 @@ const SITE = fileURLToPath(new URL("../../", import.meta.url));
 const CLI = join(SITE, "..");
 /** Commander adds them to every program: `.version()` and the help. */
 const BUILT_IN_FLAGS = ["-h", "--help", "-V", "--version"];
-/** Flags of the tools gup drives, cited as theirs (Homebrew's, in llms-full.txt). */
-const FOREIGN_FLAGS = new Set(["--greedy"]);
+/**
+ * Flags of the tools gup drives, cited as theirs: Homebrew's in llms-full.txt,
+ * npm's in the install notes (the FAQ and the llms texts).
+ */
+const FOREIGN_FLAGS = new Set(["--greedy", "--allow-scripts"]);
 
 const CODE_SPAN = /`([^`\n]+)`/g;
 const FENCED_BLOCK = /```[^\n]*\n([\s\S]*?)```/g;

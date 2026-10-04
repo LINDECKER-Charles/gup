@@ -1,6 +1,7 @@
 /**
  * Geometry: no horizontal overflow at desktop, tablet and phone widths on
- * every locale, and every right-to-left locale mirrored where it should be:
+ * every locale, each install command box showing the whole command inside its
+ * card, and every right-to-left locale mirrored where it should be:
  * header brand on the right, arrows pointing along the reading direction,
  * the terminal caption in the page's direction, the language menu's names
  * all starting on the right, while the terminal itself, commands and key caps
@@ -13,6 +14,7 @@
  */
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { installCommand } from "../../src/data/facts.js";
 import { localeHref } from "../../src/i18n/locale-href.js";
 import { openPage } from "./browser.mjs";
 
@@ -28,6 +30,35 @@ const NARROW_HEADER_MAX_PX = 859;
 const overflowOf = (page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
+/** Each install command box: its text, how much of it scrolls out of sight, its card's edges. */
+const commandBoxesOf = (page) =>
+  page.$$eval(".cmd-line", (lines) =>
+    lines.map((line) => {
+      const box = line.getBoundingClientRect();
+      const card = (line.closest(".hero-copy, .install-panel") ?? line).getBoundingClientRect();
+      return {
+        text: line.querySelector("code")?.textContent ?? "",
+        hidden: line.scrollWidth - line.clientWidth,
+        outside: Math.max(card.left - box.left, box.right - card.right),
+      };
+    }),
+  );
+
+/** The hero's and the install section's: the full command, unscrolled, inside the card. */
+async function checkInstallCommand(report, page, name) {
+  const boxes = await commandBoxesOf(page);
+  const defects = boxes.flatMap((box, index) => [
+    ...(box.text === installCommand ? [] : [`#${index} shows "${box.text}"`]),
+    ...(box.hidden <= OVERFLOW_TOLERANCE_PX ? [] : [`#${index} hides ${box.hidden}px`]),
+    ...(box.outside <= OVERFLOW_TOLERANCE_PX ? [] : [`#${index} leaves its card`]),
+  ]);
+  report.check(
+    `${name}: the install command shows whole, inside its card`,
+    boxes.length > 0 && defects.length === 0,
+    defects.join(", ") || `${boxes.length} boxes`,
+  );
+}
+
 async function saveShots(page, shotsDir, name) {
   await page.screenshot({ path: join(shotsDir, `${name}-top.png`) });
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -41,11 +72,13 @@ async function checkViewports(ctx, target) {
     const options = { viewport, reducedMotion: "reduce" };
     const { context, page } = await openPage(ctx.browser, url, options);
     const overflow = await overflowOf(page);
+    const name = `${target.locale.id} @ ${viewport.width}px`;
     ctx.report.check(
-      `${target.locale.id} @ ${viewport.width}px: no horizontal overflow`,
+      `${name}: no horizontal overflow`,
       overflow <= OVERFLOW_TOLERANCE_PX,
       `${overflow}px`,
     );
+    await checkInstallCommand(ctx.report, page, name);
     if (ctx.shotsDir) await saveShots(page, ctx.shotsDir, `${target.locale.id}-${viewport.name}`);
     await context.close();
   }

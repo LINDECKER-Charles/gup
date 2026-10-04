@@ -27,7 +27,7 @@ started by the OS scheduler.
 ## Install and first run
 
 ```
-npm install -g @@PACKAGE@@
+@@INSTALL_COMMAND@@
 
 gup doctor          # what was detected on this machine, and how to install the rest
 gup list --fast     # what is outdated, skipping the slow providers
@@ -38,6 +38,15 @@ gup update --all -y # everything, no prompt (CI-safe)
 Requires Node.js >= @@NODE@@. The package ships one bundled binary named `gup`.
 Nothing runs until you run it — or until an opt-in schedule you created is
 due, in which case the OS scheduler starts a short-lived gup process.
+
+`--allow-scripts=node-pty` approves the install scripts of node-pty, gup's one
+optional native dependency: the pseudo-terminal behind the embedded terminal
+pane. npm 11 and later ask before running install scripts. Without the flag,
+npm 11 runs them with a warning and npm 12 skips them — harmless on Windows and
+macOS, which get a prebuilt binary, while on Linux the embedded terminal is then
+unavailable and updates run in the plain terminal; with `strict-allow-scripts`
+set, the install fails. To trust node-pty once for every global install:
+`npm config set allow-scripts=node-pty --location=user`.
 
 ## Commands, flags and exit codes
 

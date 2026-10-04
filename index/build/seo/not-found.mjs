@@ -40,14 +40,23 @@ const STYLE = `
     .status { margin: 0; font-size: clamp(48px, 12vw, 96px); font-weight: 700; line-height: 1.1 }
     h1 { margin: 0 0 8px; font-size: 24px }
     p { margin: 0 0 24px; color: #b4b6c2 }
-    code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    code { display: block; margin-block-start: 6px;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
       font-size: 14px; color: #c3c8ff; direction: ltr; unicode-bidi: isolate }
+    code span { white-space: nowrap }
     ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px 14px; flex-wrap: wrap;
       justify-content: center }
     a { display: inline-block; padding: 8px 4px; color: #c3c8ff; text-underline-offset: 3px }
     a.home { padding: 11px 18px; margin-block-end: 28px; border-radius: 9px; background: #8b97ff;
       color: #0b0b12; font-weight: 600; text-decoration: none }
     a:focus-visible { outline: 2px solid #c3c8ff; outline-offset: 2px }`;
+
+/** On a line of its own, wrapping between its words only, like the page's commands. */
+const commandWords = (command) =>
+  command
+    .split(" ")
+    .map((word) => `<span>${escapeHtml(word)}</span>`)
+    .join(" ");
 
 const languageItem = (page) =>
   `<li><a href="${escapeHtml(page.url)}" hreflang="${escapeHtml(page.locale.hreflang)}" ` +
@@ -58,7 +67,7 @@ function body(pages, home) {
   return `<main>
     <p class="status" aria-hidden="true">404</p>
     <h1>${COPY.title}</h1>
-    <p>${escapeHtml(COPY.text)} <code>${escapeHtml(installCommand)}</code></p>
+    <p>${escapeHtml(COPY.text)} <code>${commandWords(installCommand)}</code></p>
     <a class="home" href="${escapeHtml(home.url)}">${COPY.home}</a>
     <nav aria-label="${COPY.languages}">
       <ul>

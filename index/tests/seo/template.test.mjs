@@ -5,6 +5,7 @@ import { inlineJson } from "../../build/html/inline-json.mjs";
 import { renderPage } from "../../build/html/render-page.mjs";
 import { fillTemplate } from "../../build/html/template.mjs";
 import { buildNotFound } from "../../build/seo/not-found.mjs";
+import { installCommand } from "../../src/data/facts.js";
 import { syntheticPages } from "../helpers/fixture-pages.mjs";
 
 const TEMPLATE = `<!doctype html>
@@ -81,4 +82,11 @@ test("the 404 is English, noindex, canonical to the default home, and links ever
     assert.ok(html.includes(`href="${page.url}" hreflang="${page.locale.hreflang}"`), page.locale.id);
   }
   assert.ok(!html.includes("<script"));
+});
+
+test("the 404 gives the whole install command", () => {
+  const command = buildNotFound(pages).match(/<code>(.*?)<\/code>/s)?.[1] ?? "";
+  // Tags become spaces, never nothing: the words read as the browser lays them out.
+  const words = command.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  assert.equal(words, installCommand);
 });

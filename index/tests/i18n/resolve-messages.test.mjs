@@ -8,7 +8,7 @@ const VARS = Object.freeze({
   node: "26",
   nodeEngine: "26.9.0",
   packageName: "@charles_lindecker/gup",
-  installCommand: "npm install -g @charles_lindecker/gup",
+  installCommand: "npm install -g @charles_lindecker/gup --allow-scripts=node-pty",
   year: "2026",
   endonym: "English",
 });

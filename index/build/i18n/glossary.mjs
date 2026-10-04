@@ -31,6 +31,7 @@ export const GLOSSARY = Object.freeze({
     "Mac App Store",
     "mas",
     "npm",
+    "node-pty",
     "pnpm",
     "yarn",
     "bun",

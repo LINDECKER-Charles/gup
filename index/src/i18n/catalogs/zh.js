@@ -240,7 +240,9 @@ export default {
         q: "如何安装 gup？",
         a:
           "运行 `{installCommand}`，然后用 `gup doctor` 查看检测到了哪些 provider。需要 " +
-          "Node.js {nodeEngine} 或更高版本。",
+          "Node.js {nodeEngine} 或更高版本。`--allow-scripts=node-pty` 允许 node-pty 的安装" +
+          "脚本运行，内嵌终端正是依靠 node-pty：不加这个参数，npm 11 会发出警告，npm 12 则会" +
+          "跳过这些脚本。",
       },
       ci: {
         q: "可以在 CI 中使用 gup 吗？",
