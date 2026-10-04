@@ -1,5 +1,4 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -16,10 +15,7 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class MasProvider implements Provider {
   readonly id = "mas";
   readonly displayName = "Mac App Store";
-  readonly installHint = pickInstallHint({
-    darwin: "brew install mas",
-    fallback: "macOS uniquement — https://github.com/mas-cli/mas",
-  });
+  readonly installHint = "brew install mas";
   /** The Mac App Store exists on macOS only. */
   readonly platforms = PLATFORMS.macos;
 

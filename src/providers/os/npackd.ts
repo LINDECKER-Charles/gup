@@ -1,6 +1,5 @@
 import { commandExists, isElevated, run, runInherit } from "../../core/runner.js";
 import type { RunResult } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -49,11 +48,7 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class NpackdProvider implements Provider {
   readonly id = "npackd";
   readonly displayName = "Npackd";
-  readonly installHint = pickInstallHint({
-    win32: "https://www.npackd.org/ — installer Npackd, puis le paquet NpackdCL",
-    fallback:
-      "Npackd est un gestionnaire de paquets Windows — il n'existe pas sur cette plateforme.",
-  });
+  readonly installHint = "https://www.npackd.org/ — installer Npackd, puis le paquet NpackdCL";
   /** Npackd is a Windows package manager; on Linux, `ncl` is the unrelated NCAR binary. */
   readonly platforms = PLATFORMS.windows;
   /** Npackd installs machine-wide by default, behind UAC. */

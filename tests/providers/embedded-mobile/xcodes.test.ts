@@ -148,14 +148,7 @@ describe("XcodesProvider.update", () => {
 });
 
 describe("XcodesProvider.installHint", () => {
-  it("names the tap formula on macOS and refuses to invent one elsewhere", async () => {
-    await system.load({ platform: "darwin" });
+  it("names the upstream tap formula", () => {
     expect(new XcodesProvider().installHint).toBe("brew install xcodesorg/made/xcodes");
-    for (const platform of ["win32", "linux"] as const) {
-      await system.load({ platform });
-      const hint = new XcodesProvider().installHint;
-      expect(hint).toContain("macOS uniquement");
-      expect(hint).not.toContain("brew install");
-    }
   });
 });

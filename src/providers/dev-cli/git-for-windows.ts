@@ -1,5 +1,4 @@
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import {
   describeSource,
   detectInstallSource,
@@ -53,13 +52,7 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class GitForWindowsProvider implements Provider {
   readonly id = "git-for-windows";
   readonly displayName = "Git for Windows";
-  // Windows-only distribution: elsewhere `git` comes from the system package
-  // manager (or the Command Line Tools on macOS), never from a package called
-  // "git-for-windows".
-  readonly installHint = pickInstallHint({
-    win32: "winget install Git.Git",
-    fallback: "Windows uniquement — équivalent macOS/Linux : brew install git",
-  });
+  readonly installHint = "winget install Git.Git";
   /** A Windows-only distribution of git. */
   readonly platforms = PLATFORMS.windows;
 

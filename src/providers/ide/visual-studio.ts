@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { win32 as winPath } from "node:path";
-import { pickInstallHint } from "../../core/install-hint.js";
 import { isElevated, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
@@ -37,11 +36,7 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class VisualStudioProvider implements Provider {
   readonly id = "visual-studio";
   readonly displayName = "Visual Studio";
-  readonly installHint = pickInstallHint({
-    win32: "winget install Microsoft.VisualStudio.2022.Community",
-    fallback:
-      "Windows uniquement — Visual Studio (l'IDE) n'existe pas sur cette plateforme.",
-  });
+  readonly installHint = "winget install Microsoft.VisualStudio.2022.Community";
   /** Visual Studio (the IDE) exists on Windows only. */
   readonly platforms = PLATFORMS.windows;
   /** The Visual Studio Installer refuses to update unelevated. */

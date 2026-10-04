@@ -12,7 +12,6 @@ import { join, win32 as winPath } from "node:path";
 import { tmpdir } from "node:os";
 import AdmZip from "adm-zip";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import { installConsole } from "../../core/process/output-router.js";
 import { runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
@@ -39,17 +38,7 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class NerdFontsProvider implements Provider {
   readonly id = "nerd-fonts";
   readonly displayName = "Nerd Fonts";
-  // Le pilotage par gup reste Windows-only (fonts per-user + enregistrement
-  // HKCU). Ailleurs, Homebrew publie chaque famille en cask, donc on renvoie
-  // vers `brew` plutôt que de laisser l'utilisateur sur une piste morte.
-  readonly installHint = pickInstallHint({
-    win32: "gup update nerd-fonts:<Famille>  (FiraCode, JetBrainsMono, Meslo, …)",
-    darwin:
-      "Windows uniquement — sur macOS : brew install --cask font-<nom>-nerd-font" +
-      " (ex. font-fira-code-nerd-font)",
-    fallback:
-      "Windows uniquement — ailleurs : https://github.com/ryanoasis/nerd-fonts/releases",
-  });
+  readonly installHint = "gup update nerd-fonts:<Famille>  (FiraCode, JetBrainsMono, Meslo, …)";
   /** gup installs the fonts per user under %LOCALAPPDATA% and registers them in HKCU. */
   readonly platforms = PLATFORMS.windows;
   readonly slow = true;

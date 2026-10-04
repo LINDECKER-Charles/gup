@@ -1,5 +1,4 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type {
   OutdatedPackage,
   Provider,
@@ -16,11 +15,7 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class WingetProvider implements Provider {
   readonly id = "winget";
   readonly displayName = "Winget";
-  readonly installHint = pickInstallHint({
-    win32: "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget",
-    fallback:
-      "Winget est un composant Windows — il n'existe pas sur cette plateforme.",
-  });
+  readonly installHint = "Pré-installé sur Windows 11. Sinon: https://aka.ms/getwinget";
   /** Winget is a Windows component: a `winget` found elsewhere is not it. */
   readonly platforms = PLATFORMS.windows;
 

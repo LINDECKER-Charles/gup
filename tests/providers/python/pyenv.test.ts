@@ -387,11 +387,7 @@ describe("PyenvProvider.update", () => {
 });
 
 describe("PyenvProvider.installHint", () => {
-  it("sends Windows to pyenv-win and never suggests this project there", async () => {
-    await system.load({ platform: "win32" });
-    const hint = new PyenvProvider().installHint;
-    expect(hint).toContain("pyenv-win");
-    expect(hint).not.toContain("pyenv.run");
+  it("suggests Homebrew on macOS and the official installer on Linux", async () => {
     await system.load({ platform: "darwin" });
     expect(new PyenvProvider().installHint).toBe("brew install pyenv");
     await system.load({ platform: "linux" });

@@ -78,8 +78,6 @@ export class PyenvProvider implements Provider {
   readonly id = ID;
   readonly displayName = "pyenv";
   readonly installHint = pickInstallHint({
-    win32:
-      "Windows : passer par pyenv-win, un projet distinct — https://github.com/pyenv-win/pyenv-win",
     darwin: "brew install pyenv",
     linux: "curl -fsSL https://pyenv.run | bash",
     fallback: "Installeur officiel : curl -fsSL https://pyenv.run | bash",

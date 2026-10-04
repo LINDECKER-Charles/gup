@@ -4,7 +4,6 @@ import { homedir } from "node:os";
 import { posix as posixPath } from "node:path";
 import pLimit from "p-limit";
 import { commandExists, run } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -56,11 +55,8 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class SparkleProvider implements Provider {
   readonly id = "sparkle";
   readonly displayName = "Sparkle (apps macOS)";
-  readonly installHint = pickInstallHint({
-    darwin:
-      "Rien à installer : gup lit le flux Sparkle (SUFeedURL) des apps de /Applications.",
-    fallback: "macOS uniquement — https://sparkle-project.org",
-  });
+  readonly installHint =
+    "Rien à installer : gup lit le flux Sparkle (SUFeedURL) des apps de /Applications.";
   /** Reads the Sparkle feeds of the macOS app bundles in /Applications. */
   readonly platforms = PLATFORMS.macos;
   // Filesystem walk over every .app bundle plus one HTTP request per app that

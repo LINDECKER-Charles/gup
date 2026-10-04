@@ -293,15 +293,8 @@ describe("NvmProvider.update", () => {
 });
 
 describe("NvmProvider metadata", () => {
-  it("sends Windows to nvm-windows and everyone else to the README", async () => {
-    await system.load({ platform: "win32" });
-    const hint = new NvmProvider().installHint;
-    expect(hint).toContain("nvm-windows");
-    expect(hint).not.toContain("nvm-sh/nvm#installing");
-    for (const platform of ["darwin", "linux"] as const) {
-      await system.load({ platform });
-      expect(new NvmProvider().installHint).toBe(INSTALL_DOC);
-    }
+  it("points at the README's install section, never at the install script", () => {
+    expect(new NvmProvider().installHint).toBe(INSTALL_DOC);
   });
 
   it("is declared slow — it sources a shell and calls GitHub", () => {

@@ -1,5 +1,4 @@
 import { commandExists, run, runInherit } from "../../core/runner.js";
-import { pickInstallHint } from "../../core/install-hint.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
 
@@ -10,10 +9,7 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 export class WslProvider implements Provider {
   readonly id = "wsl";
   readonly displayName = "WSL (kernel)";
-  readonly installHint = pickInstallHint({
-    win32: "Windows feature — `wsl --install`",
-    fallback: "WSL est une fonctionnalité Windows — inexistante sur cette plateforme.",
-  });
+  readonly installHint = "Windows feature — `wsl --install`";
   /** WSL is a Windows feature. */
   readonly platforms = PLATFORMS.windows;
 
