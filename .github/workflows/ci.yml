@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege: every job only reads the repository. `npm ci` runs
+# third-party install scripts (esbuild, node-pty) with this token in reach;
+# without the block it would get the repository's default, possibly write.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true

@@ -140,6 +140,7 @@ The 0.5.0 cycle, built on `chore/integration-0-5-0` in three waves of branches a
 
 ## CI
 
+- **ci:** The CI workflow's token only reads the repository (`permissions: contents: read`), like every other workflow: the install scripts `npm ci` runs never hold a token with write access
 - **ci:** Run the end-to-end smoke on every leg of the required `test` job (names and matrix unchanged), the tests with `GUP_MUTATE=1` on the throw-away runners (the sandboxed Task Scheduler round trip on Windows), and on Linux the coverage run that enforces the floors, its report kept as an artifact ([`0bff5f3`](https://github.com/LINDECKER-Charles/gup/commit/0bff5f3)); the **Screenshots up to date** step (`npm run screenshots:check`, Ubuntu leg) fails a pull request whose UI change left the screenshots stale ([`5336a88`](https://github.com/LINDECKER-Charles/gup/commit/5336a88))
 - **ci:** Install the packed tarball with `npm i -g --ignore-scripts` on Windows and macOS, then require `gup doctor` to find the embedded terminal ([`d16eaaa`](https://github.com/LINDECKER-Charles/gup/commit/d16eaaa))
 - **e2e:** Add the weekly real-machine workflow — the full end-to-end suites on macOS and Windows runners, mutating ones included, and the provider fixtures recorded on macOS and Linux for review; also on demand and on pull requests labelled `e2e-full` ([`859bbc3`](https://github.com/LINDECKER-Charles/gup/commit/859bbc3))
