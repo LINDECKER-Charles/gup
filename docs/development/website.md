@@ -240,9 +240,9 @@ Hindi *एम्बेड किया गया टर्मिनल*, Chinese
 
 The footer's Project column links the community files a visitor looks for besides
 CONTRIBUTING: `SUPPORT.md` and `CODE_OF_CONDUCT.md`. Their labels use each language's usual
-name for the document — the Contributor Covenant's own titles for the code of conduct (French
-*Code de conduite*, Spanish *Código de conducta*, Portuguese *Código de conduta*, Chinese
-*行为准则*, Hindi *आचार संहिता*, Bengali *আচরণবিধি*, Arabic *مدونة السلوك*) — and, for support,
+name for the document — for the code of conduct, French *Code de conduite*, Spanish *Código de
+conducta*, Portuguese *Código de conduta*, Chinese *行为准则*, Hindi *आचार संहिता*, Bengali
+*আচরণবিধি*, Arabic *مدونة السلوك* — and, for support,
 the word for user help rather than one that also means backing, which the install section's
 "Useful to you?" block asks for: *Assistance*, *Soporte*, *Suporte*, *获取帮助* (get help),
 *सहायता*, *সহায়তা*, *المساعدة* (help; *الدعم* also means backing). Back-translated, each

@@ -135,8 +135,8 @@ once per run):
   video** — their contrast is your terminal's own by construction. Contrast
   cannot be verified in this case; pick an RGB theme for a guaranteed one.
 
-Whether a given terminal answers is recorded during the Windows verification
-pass of 0.5.0 (conhost and Windows Terminal) and on macOS later.
+Which terminals answer is not recorded here yet: the manual verification passes
+of 0.5.0 (conhost and Windows Terminal, then macOS) will list them.
 
 ## The contrast guarantee
 
