@@ -4,6 +4,8 @@ import {
   kpiLines,
   slowProvidersLine,
   trendLine,
+  type ChartContext,
+  type ProviderName,
 } from "../../charts/activity-sections.js";
 import { JOURNAL_HINTS } from "../../text/journal/journal-labels.js";
 import type { Line } from "../../tui/styled-lines.js";
@@ -23,7 +25,12 @@ import {
 export class ActivityTab implements JournalTab {
   readonly isModal = false;
   readonly isCapturingText = false;
+  readonly #providerName: ProviderName;
   #data: JournalData | null = null;
+
+  constructor(providerName: ProviderName) {
+    this.#providerName = providerName;
+  }
 
   setData(data: JournalData): void {
     this.#data = data;
@@ -35,7 +42,8 @@ export class ActivityTab implements JournalTab {
     const banner = recordingBanner(history, frame.width);
     const notice = historyPlaceholder(history);
     if (notice) return [...banner, ...notice];
-    return [...banner, ...stack(blocksOf(history.insights, frame), frame.height - banner.length)];
+    const context = { ...frame, providerName: this.#providerName };
+    return [...banner, ...stack(blocksOf(history.insights, context), frame.height - banner.length)];
   }
 
   press(): boolean {
@@ -51,7 +59,7 @@ export class ActivityTab implements JournalTab {
   }
 }
 
-function blocksOf(insights: Insights, frame: TabFrame): Line[][] {
+function blocksOf(insights: Insights, frame: ChartContext): Line[][] {
   return [
     kpiLines(insights, frame),
     heatmapSection(insights, frame),

@@ -62,7 +62,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="234.4" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› </text>
 <text class="c5" x="250.0" y="123.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">15/09 09:09  </text>
 <text class="c7" x="351.4" y="123.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="123.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">winget       </text>
+<text class="c5" x="429.4" y="123.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Winget       </text>
 <text class="c4 b" x="530.8" y="123.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Spotify.Spotify        </text>
 <text class="c5" x="710.2" y="123.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1.2.70 → 1.2.71       10,1 s</text>
 <text class="c0" x="944.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -100,7 +100,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="191.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14/09 09:00  </text>
 <text class="c7" x="351.4" y="191.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="191.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c5" x="429.4" y="191.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm (global) </text>
 <text class="c4 b" x="530.8" y="191.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pnpm                   </text>
 <text class="c5" x="710.2" y="191.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.16.9 → 10.17.0      4,2 s</text>
 <text class="c0" x="944.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -109,7 +109,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="208.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">14/09 09:00  </text>
 <text class="c7" x="351.4" y="208.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="208.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c5" x="429.4" y="208.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm (global) </text>
 <text class="c4 b" x="530.8" y="208.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">typescript             </text>
 <text class="c5" x="710.2" y="208.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 6.0.1 → 6.0.2          3,1 s</text>
 <text class="c0" x="944.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -152,7 +152,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="293.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11/09 09:13  </text>
 <text class="c7" x="351.4" y="293.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="293.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">vscode-ext   </text>
+<text class="c5" x="429.4" y="293.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">VS Code ext… </text>
 <text class="c4 b" x="530.8" y="293.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">esbenp.prettier-vscode </text>
 <text class="c5" x="710.2" y="293.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.9.9 → 11.0.0        2,5 s</text>
 <text class="c0" x="944.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -161,7 +161,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="310.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">11/09 09:08  </text>
 <text class="c7" x="351.4" y="310.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="310.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">winget       </text>
+<text class="c5" x="429.4" y="310.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Winget       </text>
 <text class="c4 b" x="530.8" y="310.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Git.Git                </text>
 <text class="c5" x="710.2" y="310.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 2.50.9 → 2.51.0       19,0 s</text>
 <text class="c0" x="944.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -178,7 +178,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="344.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">10/09 09:05  </text>
 <text class="c7" x="351.4" y="344.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="344.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c5" x="429.4" y="344.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm (global) </text>
 <text class="c4 b" x="530.8" y="344.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pnpm                   </text>
 <text class="c5" x="710.2" y="344.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.16.8 → 10.16.9      5,1 s</text>
 <text class="c0" x="944.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -211,7 +211,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="412.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">07/09 09:13  </text>
 <text class="c7" x="351.4" y="412.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="412.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">vscode-ext   </text>
+<text class="c5" x="429.4" y="412.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">VS Code ext… </text>
 <text class="c4 b" x="530.8" y="412.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">esbenp.prettier-vscode </text>
 <text class="c5" x="710.2" y="412.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.9.8 → 10.9.9        2,4 s</text>
 <text class="c0" x="944.2" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -220,7 +220,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="429.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">07/09 09:06  </text>
 <text class="c7" x="351.4" y="429.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="429.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c5" x="429.4" y="429.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm (global) </text>
 <text class="c4 b" x="530.8" y="429.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">typescript             </text>
 <text class="c5" x="710.2" y="429.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 6.0.0 → 6.0.1          3,5 s</text>
 <text class="c0" x="944.2" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -253,7 +253,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="497.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">03/09 09:09  </text>
 <text class="c6" x="351.4" y="497.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">↷ ignorée </text>
-<text class="c5" x="429.4" y="497.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">winget       </text>
+<text class="c5" x="429.4" y="497.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Winget       </text>
 <text class="c4 b" x="530.8" y="497.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Spotify.Spotify        </text>
 <text class="c5" x="710.2" y="497.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1.2.70 → 1.2.71       10,0 s</text>
 <text class="c0" x="944.2" y="497.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
@@ -262,7 +262,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="218.8" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="514.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">03/09 09:05  </text>
 <text class="c7" x="351.4" y="514.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">✔ réussie </text>
-<text class="c5" x="429.4" y="514.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm-g        </text>
+<text class="c5" x="429.4" y="514.0" textLength="101.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm (global) </text>
 <text class="c4 b" x="530.8" y="514.0" textLength="179.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pnpm                   </text>
 <text class="c5" x="710.2" y="514.0" textLength="226.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.16.7 → 10.16.8      5,0 s</text>
 <text class="c0" x="944.2" y="514.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>

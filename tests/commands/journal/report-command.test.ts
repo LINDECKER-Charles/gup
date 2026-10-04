@@ -209,6 +209,14 @@ describe("gup report", () => {
     expect(output(stderr)).toBe("");
   });
 
+  it("names providers in its text charts as the HTML report and the CSV do", async () => {
+    expect(await runReport({ format: "text" })).toBe(0);
+
+    const text = output(stdout);
+    expect(text).toMatch(/Git\.Git +Winget /);
+    expect(text).toContain("1× Chocolatey · nodejs");
+  });
+
   it("draws its text charts with the symbols chosen in Options", async () => {
     const preferences = (glyphs: "ascii" | "unicode") => ({ glyphs, openReport: true });
 

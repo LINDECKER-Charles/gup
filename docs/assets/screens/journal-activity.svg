@@ -316,7 +316,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c3" x="211.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4 b" x="234.4" y="378.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scans les plus lents  </text>
-<text class="c5" x="406.0" y="378.0" textLength="397.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pwsh-modules 5,9 s · choco 4,0 s · vscode-ext 3,6 s</text>
+<text class="c5" x="406.0" y="378.0" textLength="530.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">PowerShell modules 5,9 s · Chocolatey 4,0 s · VS Code extensions 3,…</text>
 <text class="c0" x="944.2" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c3" x="211.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>

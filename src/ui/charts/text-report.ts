@@ -8,6 +8,7 @@ import { fit, seg, type Line } from "../tui/styled-lines.js";
 import {
   heatmapSection,
   kpiLines,
+  providerLabel,
   slowProvidersLine,
   trendLine,
   type ChartContext,
@@ -38,7 +39,7 @@ export function renderTextReport(insights: Insights, ctx: ChartContext): Line[] 
     trendLine(insights, ctx),
     slowProvidersLine(insights, ctx),
     ...topPackages(insights, ctx),
-    ...recurringFailures(insights.failures, ctx.width),
+    ...recurringFailures(insights.failures, ctx),
   ];
 }
 
@@ -47,7 +48,8 @@ function topPackages(insights: Insights, ctx: ChartContext): Line[] {
   if (entries.length === 0) return [];
   const columns = recurrenceColumns(ctx.width - INDENT.length);
   const max = Math.max(1, ...entries.map((entry) => entry.successes));
-  const context = { columns, measure: "successes", max, glyphs: ctx.glyphs } as const;
+  const { glyphs, providerName } = ctx;
+  const context = { columns, measure: "successes", max, glyphs, providerName } as const;
   return [
     [],
     [seg(TEXT_REPORT_LABELS.topPackages, "strong")],
@@ -57,19 +59,19 @@ function topPackages(insights: Insights, ctx: ChartContext): Line[] {
 }
 
 /** "  2× choco · nodejs — exit code 1603", cut to the width. */
-function failureLine(failure: FailureGroup, width: number): Line {
-  const subject = `${failure.providerId} · ${failure.packageId}`;
+function failureLine(failure: FailureGroup, ctx: ChartContext): Line {
+  const subject = `${providerLabel(failure.providerId, ctx)} · ${failure.packageId}`;
   const head = `${INDENT}${TEXT_REPORT_LABELS.failure(failure.count, subject)}`;
   const message = failure.message ? ` — ${failure.message}` : "";
-  const room = Math.max(0, width - head.length);
+  const room = Math.max(0, ctx.width - head.length);
   return [seg(head, "danger"), seg(fit(message, room).trimEnd(), "muted")];
 }
 
-function recurringFailures(failures: readonly FailureGroup[], width: number): Line[] {
+function recurringFailures(failures: readonly FailureGroup[], ctx: ChartContext): Line[] {
   if (failures.length === 0) return [];
   return [
     [],
     [seg(TEXT_REPORT_LABELS.failures, "strong")],
-    ...failures.slice(0, TOP_FAILURES).map((failure) => failureLine(failure, width)),
+    ...failures.slice(0, TOP_FAILURES).map((failure) => failureLine(failure, ctx)),
   ];
 }

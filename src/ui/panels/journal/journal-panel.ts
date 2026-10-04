@@ -55,6 +55,8 @@ export interface JournalPanelDeps {
   readonly defaultPeriod?: () => PeriodPreset;
   /** A schedule's name from its id, for the event detail; undefined when unknown. */
   readonly scheduleName?: (scheduleId: string) => string | undefined;
+  /** A provider's display name from its id, as every other view names it; default: the id. */
+  readonly providerName?: (providerId: string) => string;
 }
 
 const DEFAULT_PERIOD = JOURNAL_SECTION.defaults.period;
@@ -89,10 +91,11 @@ export class JournalPanel implements Panel {
     this.#deps = deps;
     this.#now = deps.now ?? (() => new Date());
     this.#period = presetPeriod(this.defaultPeriod(), this.#now());
+    const providerName = deps.providerName ?? ((providerId: string) => providerId);
     this.#tabs = [
-      new ActivityTab(),
-      new RecurrenceTab(),
-      new EventsTab(deps.scheduleName),
+      new ActivityTab(providerName),
+      new RecurrenceTab(providerName),
+      new EventsTab({ providerName, scheduleName: deps.scheduleName }),
       new DebugTab({ onDiagnostic: () => void this.export("diagnostic") }),
     ];
   }

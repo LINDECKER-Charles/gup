@@ -1,4 +1,5 @@
 import type { HistoryEvent } from "../../../core/history/types.js";
+import type { ProviderName } from "../../charts/activity-sections.js";
 import { EVENT_LABELS, JOURNAL_HINTS } from "../../text/journal/journal-labels.js";
 import type { KeyPress } from "../../tui/screen-host.js";
 import { seg, type Line } from "../../tui/styled-lines.js";
@@ -37,15 +38,24 @@ const IN_TYPE: Readonly<Record<EventType, (event: HistoryEvent) => boolean>> = {
   scans: (event) => event.kind === "scan",
 };
 
+export interface EventsTabNames {
+  /** A provider's display name from its id: rows, details and the `/` filter. */
+  readonly providerName: ProviderName;
+  /** A schedule's name from its id, for the detail (unknown ids show as such). */
+  readonly scheduleName?: ((scheduleId: string) => string | undefined) | undefined;
+}
+
 export class EventsTab implements JournalTab {
-  readonly #list = new BrowsableList<HistoryEvent>({ searchText: eventSearchText });
-  readonly #scheduleName: ((scheduleId: string) => string | undefined) | undefined;
+  readonly #list: BrowsableList<HistoryEvent>;
+  readonly #names: EventsTabNames;
   #history: JournalHistory | null = null;
   #type: EventType = "all";
 
-  /** `scheduleName`: a schedule's name from its id, for the detail (unknown ids show as such). */
-  constructor(scheduleName?: (scheduleId: string) => string | undefined) {
-    this.#scheduleName = scheduleName;
+  constructor(names: EventsTabNames) {
+    this.#names = names;
+    this.#list = new BrowsableList<HistoryEvent>({
+      searchText: (event) => eventSearchText(event, names.providerName),
+    });
   }
 
   get isModal(): boolean {
@@ -68,13 +78,15 @@ export class EventsTab implements JournalTab {
     if (notice) return [...recordingBanner(history, frame.width), ...notice];
     const current = this.#list.current;
     if (this.#list.isDetailOpen && current) {
-      const context = { ...frame, scheduleName: this.#scheduleName };
+      const context = { ...frame, ...this.#names };
       const { title, body } = eventDetail(current, context);
       return detailView(title, body, { list: this.#list, ...frame });
     }
     const head = this.headLines(history, frame.width);
     const height = frame.height - head.length;
-    const rows = listWindow(this.#list, eventRow, { width: frame.width, height });
+    const row = (event: HistoryEvent, width: number) =>
+      eventRow(event, width, this.#names.providerName);
+    const rows = listWindow(this.#list, row, { width: frame.width, height });
     return [...head, ...(rows.length > 0 ? rows : placeholder(EVENT_LABELS.noMatch))];
   }
 
