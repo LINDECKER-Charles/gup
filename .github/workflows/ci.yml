@@ -101,3 +101,49 @@ jobs:
         env:
           GUP_E2E: "1"
           GUP_E2E_SCOPE: smoke
+
+  # What users install, installed the way an npm 11 user who refuses install
+  # scripts does (amendment X-4): node-pty must still load from its
+  # prebuilds, and gup itself makes macOS's spawn-helper executable.
+  packed:
+    name: packed install (node 26 / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node 26
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm pack` runs `prepare`, which builds dist/.
+      - name: Pack
+        run: npm pack
+
+      - name: Install the tarball globally, install scripts off
+        run: npm install --global ./*.tgz --ignore-scripts
+
+      # The doctor's "Terminal intégré" line says "disponible" (the regex
+      # spells the accents as escapes: the shell is not UTF-8 everywhere).
+      - name: gup doctor finds the embedded terminal
+        run: |
+          gup --version
+          gup doctor | tee doctor.txt
+          node -e '
+            const text = require("node:fs").readFileSync("doctor.txt", "utf8");
+            if (!/Terminal int\u00e9gr\u00e9\s+disponible/.test(text)) {
+              console.error("embedded terminal unavailable after npm i -g --ignore-scripts");
+              process.exit(1);
+            }'
