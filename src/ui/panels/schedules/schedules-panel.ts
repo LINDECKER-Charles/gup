@@ -110,7 +110,7 @@ export class SchedulesPanel implements Panel {
   }
 
   hints(): string {
-    if (!this.#editor) return SCHEDULES_HINTS.list;
+    if (!this.#editor) return SCHEDULES_HINTS.list(this.#underCursor()?.enabled === true);
     return this.#editor.typing ? SCHEDULES_HINTS.typing : SCHEDULES_HINTS.editor;
   }
 
@@ -177,6 +177,10 @@ export class SchedulesPanel implements Panel {
     return index === -1 ? 0 : index;
   }
 
+  #underCursor(): Schedule | undefined {
+    return this.#schedules()[this.#cursor()];
+  }
+
   #moveSelection(step: number): void {
     const schedules = this.#schedules();
     const index = Math.max(0, Math.min(this.#cursor() + step, schedules.length - 1));
@@ -184,7 +188,7 @@ export class SchedulesPanel implements Panel {
   }
 
   #pressInList(key: KeyPress): void {
-    const schedule = this.#schedules()[this.#cursor()];
+    const schedule = this.#underCursor();
     const name = key.name === "d" ? "delete" : key.name;
     const step = LIST_MOVES[name];
     if (step !== undefined) return this.#moveSelection(step);

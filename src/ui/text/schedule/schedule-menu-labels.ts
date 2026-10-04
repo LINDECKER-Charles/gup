@@ -17,9 +17,10 @@ export const SCHEDULES_LABEL = "Planification";
 export const REPAIR_KEY = "i";
 
 export const SCHEDULES_HINTS = {
-  list:
-    "↑↓ naviguer · entrée modifier · espace activer · x exécuter · suppr supprimer · " +
-    `${REPAIR_KEY} déclencheur`,
+  /** Espace switches the schedule under the cursor: the hint says which way. */
+  list: (isEnabled: boolean) =>
+    `↑↓ naviguer · entrée modifier · espace ${isEnabled ? "désactiver" : "activer"} · ` +
+    `x exécuter · suppr supprimer · ${REPAIR_KEY} déclencheur`,
   editor:
     "↑↓ champ · entrée modifier · espace basculer · suppr retirer · ctrl+s enregistrer · " +
     "échap annuler",

@@ -139,6 +139,15 @@ describe("SchedulesPanel, list", () => {
     expect(list.repairTrigger).toHaveBeenCalledOnce();
   });
 
+  it("says which way espace switches the schedule under the cursor", () => {
+    const off = storedSchedule({ id: "0badf00d", name: "Python", enabled: false });
+    const { panel, press } = setup([storedSchedule(), off]);
+    expect(panel.hints()).toContain("espace désactiver");
+    press(key("down"));
+    expect(panel.hints()).toContain("espace activer");
+    expect(panel.hints()).toBe(SCHEDULES_HINTS.list(false));
+  });
+
   it("keeps the cursor on its schedule when the list changes", () => {
     const { port, panel, press, list } = setup([
       storedSchedule(),
