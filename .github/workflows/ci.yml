@@ -177,15 +177,15 @@ jobs:
       - name: Install the tarball globally, install scripts off
         run: npm install --global ./*.tgz --ignore-scripts
 
-      # The doctor's "Terminal intégré" line says "disponible" (the regex
-      # spells the accents as escapes: the shell is not UTF-8 everywhere).
+      # The doctor's "Embedded terminal" line says "available": in English,
+      # the language a fresh install speaks.
       - name: gup doctor finds the embedded terminal
         run: |
           gup --version
           gup doctor | tee doctor.txt
           node -e '
             const text = require("node:fs").readFileSync("doctor.txt", "utf8");
-            if (!/Terminal int\u00e9gr\u00e9\s+disponible/.test(text)) {
+            if (!/Embedded terminal\s+available/.test(text)) {
               console.error("embedded terminal unavailable after npm i -g --ignore-scripts");
               process.exit(1);
             }'
