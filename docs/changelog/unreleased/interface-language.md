@@ -39,7 +39,9 @@
   English UI; CONTRIBUTING says how a provider words a hint or a message (`MANUAL_STEPS`,
   `_template.ts`); SECURITY.md adds the language to the elevated child's validated payload;
   testing.md says the suites speak French; the Windows checklist adds the language and gup's own
-  update (`docs(development): document the interface language for contributors`)
+  update (`docs(development): document the interface language for contributors`); the screenshot
+  notes and the macOS checklist then name the views Packages and Schedules
+  (`docs(development): name the views by their English labels`)
 - **website:** The website page follows the landing's 0.5.1 demo: the TUI mocks are no longer
   "French on purpose" — the French page shows the French interface and the seven others the
   English one, chosen by `interfaceLanguageOf()` — the scenes-truth examples are the English ones,

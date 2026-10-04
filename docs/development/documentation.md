@@ -191,7 +191,7 @@ only where the real thing would reach the machine:
 
 | Part | In a screenshot |
 |---|---|
-| Views | `menuViews()`, the menu's own list. Providers reads `PROVIDERS_FIXTURE`; Planification reads the fixture schedules; the Journal reads the history and debug log written in the sandbox; Options and the Journal read the scene's settings. |
+| Views | `menuViews()`, the menu's own list. Providers reads `PROVIDERS_FIXTURE`; Schedules reads the fixture schedules; the Journal reads the history and debug log written in the sandbox; Options and the Journal read the scene's settings. |
 | Settings | In memory, as with `GUP_CONFIG=0`: the defaults, then the scene's own. Nothing is read from or written to a file, and no scene sees another's. |
 | Look | The theme engine (`ThemedAppearance`) on those settings, in a truecolor terminal that reports the docs palette — the default `terminal` theme follows it, as on Windows Terminal or iTerm2. |
 | Updates | The in-screen launcher, its run view, the PTY sink and session, the terminal panes. Under them, an in-memory pseudo-terminal plays the script's output; the pipeline is the script, firing the same observer events and asking the same questions (elevation, retry) in the same order. No provider runs. |
@@ -205,7 +205,7 @@ only where the real thing would reach the machine:
   with made-up versions, schedules and history. Never data copied from a real
   machine: no user name, path, host or token can reach a screenshot.
 - **One story.** The fixtures agree with each other: the history's latest
-  scan is the fixture scan, its versions end where Paquets starts, the
+  scan is the fixture scan, its versions end where Packages starts, the
   schedules' last runs are in the history and the debug log tells the same
   morning.
 - **The platform comes from the fixtures** (the fixture machine runs Windows),
