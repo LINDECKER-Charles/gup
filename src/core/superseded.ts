@@ -1,4 +1,4 @@
-import type { ProviderScanResult } from "./types.js";
+import type { OutdatedPackage, ProviderScanResult } from "./types.js";
 
 /**
  * The same software listed by two providers, kept with the one that updates
@@ -8,33 +8,48 @@ import type { ProviderScanResult } from "./types.js";
  * uninstall and reinstall it.
  */
 interface Supersession {
-  /** The provider whose row goes… */
-  readonly providerId: string;
-  /** …for these package ids… */
-  readonly packages: RegExp;
+  /** Whether this row of `providerId` goes… */
+  drops(providerId: string, pkg: OutdatedPackage): boolean;
   /** …when the provider that keeps the software scanned it. */
   readonly keeper: string;
   isCovered(keeper: ProviderScanResult): boolean;
 }
 
+/** The keeper's scan went through, whatever it found. */
+const scannedCleanly = (keeper: ProviderScanResult): boolean =>
+  keeper.available && keeper.error === undefined;
+
+const VISUAL_STUDIO_EDITION =
+  // eslint-disable-next-line security/detect-unsafe-regex -- anchored, no nested repetition: literals around one optional four-digit year
+  /^Microsoft\.VisualStudio\.(?:\d{4}\.)?(?:Community|Professional|Enterprise|BuildTools)(?:\.Preview)?$/;
+
 const SUPERSESSIONS: readonly Supersession[] = [
   // The Visual Studio provider drives the installer of every instance;
   // winget's upgrade of an edition only forwards to that same installer.
   {
-    providerId: "winget",
-    packages:
-      // eslint-disable-next-line security/detect-unsafe-regex -- anchored, no nested repetition: literals around one optional four-digit year
-      /^Microsoft\.VisualStudio\.(?:\d{4}\.)?(?:Community|Professional|Enterprise|BuildTools)(?:\.Preview)?$/,
+    drops: (providerId, pkg) => providerId === "winget" && VISUAL_STUDIO_EDITION.test(pkg.id),
     keeper: "visual-studio",
-    isCovered: (keeper) => keeper.available && keeper.error === undefined,
+    isCovered: scannedCleanly,
   },
   // A GitHub CLI winget installed lives in Program Files, where `self` sees
   // no package manager and could only say "download it yourself".
   {
-    providerId: "self",
-    packages: /^gh$/,
+    drops: (providerId, pkg) => providerId === "self" && pkg.id === "gh",
     keeper: "winget",
     isCovered: (keeper) => keeper.packages.some((pkg) => pkg.id === "GitHub.cli"),
+  },
+  // A tool Homebrew installed (Starship, Terraform, the Symfony CLI…) is
+  // updated by `brew upgrade` whichever row asks for it, and `brew outdated`
+  // lists what that command will do: brew's own row is the one to keep, at
+  // the version the formula delivers. Both rows ran the same upgrade, so a
+  // formula brew could not install failed twice. With no brew row there is
+  // nothing to deliver yet — a release the tool's provider reads upstream
+  // before the formula packages it — and the provider's row came back after
+  // every update, a success that changed nothing.
+  {
+    drops: (providerId, pkg) => providerId !== "brew" && pkg.installedBy === "brew",
+    keeper: "brew",
+    isCovered: scannedCleanly,
   },
 ];
 
@@ -51,17 +66,14 @@ export function dropSuperseded(results: readonly ProviderScanResult[]): {
   readonly dropped: SupersededRow[];
 } {
   const dropped: SupersededRow[] = [];
+  const rules = SUPERSESSIONS.filter((rule) => isCovered(rule, results));
   const kept = results.map((result) => {
-    const rules = SUPERSESSIONS.filter(
-      (rule) => rule.providerId === result.providerId && isCovered(rule, results),
-    );
-    if (rules.length === 0) return result;
     const packages = result.packages.filter((pkg) => {
-      const rule = rules.find((candidate) => candidate.packages.test(pkg.id));
+      const rule = rules.find((candidate) => candidate.drops(result.providerId, pkg));
       if (rule) dropped.push({ providerId: result.providerId, packageId: pkg.id, keeper: rule.keeper });
       return rule === undefined;
     });
-    return { ...result, packages };
+    return packages.length === result.packages.length ? result : { ...result, packages };
   });
   return { results: kept, dropped };
 }

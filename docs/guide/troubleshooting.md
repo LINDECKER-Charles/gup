@@ -278,8 +278,10 @@ winget's question there.
   see what was left out and why.
 - **Another provider updates it.** Software two providers list stays with one, so it is never
   updated twice: winget's Visual Studio editions give way to the `visual-studio` provider once it
-  scanned, and the `self` provider's `gh` to winget when winget lists `GitHub.cli`. At
-  `--log-level debug`, `gup log --grep superseded` shows what was left out.
+  scanned, the `self` provider's `gh` to winget when winget lists `GitHub.cli`, and a tool
+  Homebrew installed (Starship, Terraform, the Symfony CLI…) to the `brew` row once brew scanned —
+  at the version its formula delivers, so none while the formula has not packaged the latest
+  release. At `--log-level debug`, `gup log --grep superseded` shows what was left out.
 - **The provider's scan failed.** Its row in **Scan** or **Packages** shows the error;
   `gup log -l warn` has the detail.
 

@@ -109,6 +109,12 @@ three, and §25.4 for the Windows sources deliberately left out.
 rather than macOS-only. `brew-cask`, `mas`, `macports`, `sparkle` and `fink`
 are `PLATFORMS.macos` (see [Platform support](#platform-support)).
 
+A tool another provider follows but Homebrew installed (Starship, Terraform,
+the Symfony CLI…) is listed once, by `brew`: the tool's own row gives way to
+it once brew scanned, since both would run the same `brew upgrade`. Its
+version is the one the formula delivers, so a release the formula has not
+packaged yet is not offered.
+
 `sparkle` is the blind-spot filler: `brew-cask` runs without `--greedy` and so
 hides every cask flagged `auto_updates true`, and `mas` only sees the App Store.
 Reading `SUFeedURL` out of each bundle reaches the rest. It reports but never
