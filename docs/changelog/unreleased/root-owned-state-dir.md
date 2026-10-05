@@ -1,5 +1,15 @@
 # root-owned-state-dir
 
+## Changed
+
+- **cli:** gup refuses to start under sudo, as Homebrew does: `gup does not run under sudo: as
+  root, it would leave files in your home folder that your user can no longer write, and
+  Homebrew refuses to run as root. Run gup without sudo — it asks for your password itself when
+  a package needs administrator rights.` (exit 1). The guard runs before anything is written, the
+  debug log included; the `sudo gup __admin-batch` child gup starts itself, and root's own runs
+  (a root shell, a container: no `SUDO_UID`), still run
+  (`fix(cli): refuse to run under sudo, as Homebrew does`)
+
 ## Fixed
 
 - **core:** a gup folder another user owns is named, with the command that gives it back. macOS's
