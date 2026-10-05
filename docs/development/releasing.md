@@ -112,7 +112,7 @@ Then, in the same branch:
    "What's Changed" block; edit the file, never the release body:
 
    ```bash
-   gh release create x.y.z --title "x.y.z" \
+   gh release create x.y.z --title "gup x.y.z" \
      --notes-file docs/releases/x.y.z.md --generate-notes
    ```
 

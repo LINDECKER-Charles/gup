@@ -7,7 +7,7 @@ commit-level view of the same versions, see [`../changelog/`](../changelog/READM
 
 | Version | Published | Notes | GitHub Release | npm |
 |---|---|---|---|---|
-| `0.5.1` | not yet published | [`0.5.1.md`](0.5.1.md) | — | — |
+| `0.5.1` | 2026-10-04 | [`0.5.1.md`](0.5.1.md) | [0.5.1](https://github.com/LINDECKER-Charles/gup/releases/tag/0.5.1) | [0.5.1](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.5.1) |
 | `0.5.0` | 2026-10-04 | [`0.5.0.md`](0.5.0.md) | [0.5.0](https://github.com/LINDECKER-Charles/gup/releases/tag/0.5.0) | [0.5.0](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.5.0) |
 | `0.4.0` | never published | [`0.4.0.md`](0.4.0.md) — shipped in `0.5.0` | — never tagged | — |
 | `0.3.2` | 2026-08-09 | [`0.3.2.md`](0.3.2.md) | [0.3.2](https://github.com/LINDECKER-Charles/gup/releases/tag/0.3.2) | [0.3.2](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.3.2) |
@@ -55,6 +55,10 @@ checks, tag, npm publish, GitHub Release) is in
    one section per theme, then **Tests**, **Verification** (the full check
    table, with the Node/npm versions it ran on), **Upgrade** (breaking changes
    or "drop-in"), and **Compare** (`<prev>...<version>` link).
+   Every link is absolute (`https://github.com/LINDECKER-Charles/gup/blob/main/…`):
+   the file becomes the release body, where GitHub resolves a relative link
+   against `/blob/` with no branch — `../changelog/0.5.0.md` became
+   `/blob/changelog/0.5.0.md`, a 404.
 2. Commit it with the `chore(release): <version>` bump, tag, publish.
 3. Paste the file as the GitHub Release body and let GitHub append its
    generated block; do not edit the body by hand afterwards, edit the file.

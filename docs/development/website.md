@@ -297,8 +297,9 @@ data, one file per language, and splitting them would only scatter a translation
 `pages.yml` builds, tests, verifies and audits on every push to `main` and every pull request
 touching the site or the facts it derives from. It **deploys only on a published release or a
 manual dispatch**, so the site never advertises a version that is not on npm yet. Release runs
-execute on the release tag: the `github-pages` environment must allow tags matching `v*`
-(Settings → Environments → github-pages → Deployment branches and tags). The workflow is not a
+execute on the release tag: the `github-pages` environment must allow the version tags, `*.*.*`
+— they carry no `v` prefix (Settings → Environments → github-pages → Deployment branches and
+tags). The workflow is not a
 required check: being path-filtered, it never reports on pull requests that do not touch the
 site.
 
