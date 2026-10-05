@@ -1,5 +1,4 @@
-import semver from "semver";
-import manifest from "../../package.json" with { type: "json" };
+import { isSupportedNode, MIN_NODE } from "../../src/core/node-floor.js";
 
 /**
  * Root globalSetup: fail fast, with an actionable message, when the tests run
@@ -7,19 +6,19 @@ import manifest from "../../package.json" with { type: "json" };
  * default `node` is older sees the UI suites die on an obscure `node:ffi`
  * loading error, far from the cause.
  *
- * The supported range is `package.json#engines.node`, the single source of
- * truth the published package already declares.
+ * The floor is `MIN_NODE` (src/core/node-floor.ts), the one gup itself
+ * enforces at start.
  */
 
-/** Throws when `version` (e.g. `process.versions.node`) is outside `range`. */
-export function assertSupportedNode(version: string, range: string): void {
-  if (semver.satisfies(version, range)) return;
+/** Throws when `version` (e.g. `process.versions.node`) is older than `MIN_NODE`. */
+export function assertSupportedNode(version: string): void {
+  if (isSupportedNode(version)) return;
   throw new Error(
-    `gup's tests need Node ${range} (OpenTUI loads its renderer through node:ffi). ` +
+    `gup's tests need Node >=${MIN_NODE} (OpenTUI loads its renderer through node:ffi). ` +
       `Current: v${version}.`,
   );
 }
 
 export default function setup(): void {
-  assertSupportedNode(process.versions.node, manifest.engines.node);
+  assertSupportedNode(process.versions.node);
 }

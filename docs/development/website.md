@@ -22,7 +22,7 @@ npm run og          # re-render the social cards (committed PNGs)
 
 ```mermaid
 flowchart LR
-  F["root package.json<br/>README.md<br/>src/core/registry.ts<br/>registered providers"] -->|scripts/sync-facts.mjs| FA["src/data/facts.js"]
+  F["root package.json<br/>README.md<br/>src/core/registry.ts<br/>registered providers<br/>src/core/node-floor.ts"] -->|scripts/sync-facts.mjs| FA["src/data/facts.js"]
   C["src/i18n/catalogs/&lt;id&gt;.js"] --> R["build/i18n/resolve-messages.mjs"]
   FA --> P["build/page-context.mjs<br/>one PageContext per locale"]
   R --> P
@@ -41,8 +41,9 @@ flowchart LR
   a stale number. The reader walks `ALL_PROVIDERS`, never the filesystem (unregistered provider
   files do not count), takes each provider's one-line `readonly platforms = PLATFORMS.<set>;`
   declaration (none: every system), and fails the build on a set or a declaration form it
-  cannot read rather than counting the provider everywhere. The install command is the
-  README's, verbatim and flags included: the first line of the fenced block under its
+  cannot read rather than counting the provider everywhere. The Node floor is the `MIN_NODE`
+  gup enforces at start (`build/facts/read-node-floor.mjs`), not `engines.node`. The install
+  command is the README's, verbatim and flags included: the first line of the fenced block under its
   `## Install` heading (`build/facts/read-install-command.mjs`), which must start with
   `npm install -g <package name>` or the build fails. Every place the site gives the command —
   hero, install section, FAQ, llms texts, 404, and the social cards when `npm run og`

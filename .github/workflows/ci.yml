@@ -32,8 +32,10 @@ jobs:
         # macOS and Linux are first-class since the Homebrew/apt/dnf
         # delegation landed.
         os: [windows-latest, macos-latest, ubuntu-latest]
-        # Tracks `engines.node` (>=26.9.0), so only the 26 line is tested. The
-        # floor is 26.9 because the interactive UI is OpenTUI, whose native
+        # Tracks the Node floor, MIN_NODE (26.9.0) in src/core/node-floor.ts —
+        # not engines.node, lower on purpose — so only the 26 line is tested
+        # (the older-node job checks that gup stops on Node 20).
+        # The floor is 26.9 because the interactive UI is OpenTUI, whose native
         # renderer loads through `node:ffi` — on by default from 26.9 only.
         # Node 24 was dropped with that move: testing below the declared floor
         # proves nothing the floor allows.
@@ -189,3 +191,48 @@ jobs:
               console.error("embedded terminal unavailable after npm i -g --ignore-scripts");
               process.exit(1);
             }'
+
+  # npm installs gup on any Node `engines.node` accepts (>=20, below the
+  # floor on purpose: src/core/node-floor.ts). There the built entry point
+  # must still run, stop and say where to get a newer Node: it imports only
+  # plain text and checks. The tests fake an older Node; this runs a real
+  # one, the oldest npm installs gup on, with its own npm.
+  older-node:
+    name: older node refusal (node 20 / ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node 26
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm pack` runs `prepare`, which builds dist/.
+      - name: Pack
+        run: npm pack
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      # Install scripts off: node-pty has no Linux prebuild, and compiling it
+      # proves nothing here.
+      - name: Install the tarball globally on Node 20
+        run: npm install --global ./*.tgz --ignore-scripts
+
+      - name: gup stops on Node 20 and links the download page
+        run: |
+          if gup --version 2> refusal.txt; then
+            echo "gup ran on Node $(node --version)"
+            exit 1
+          fi
+          cat refusal.txt
+          grep -F "current version $(node --version)" refusal.txt
+          grep -F "https://nodejs.org/en/download" refusal.txt

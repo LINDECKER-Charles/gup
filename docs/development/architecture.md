@@ -47,7 +47,7 @@ the user asked of it:
 
 ```mermaid
 flowchart LR
-    User([User]) -->|"gup …"| CLI["cli.ts<br/>CLI modules"]
+    User([User]) -->|"gup …"| CLI["cli.ts → main.ts<br/>CLI modules"]
     OS[["OS trigger<br/>Task Scheduler · launchd · cron"]] -->|every 15 min| Tick["gup __schedule-tick"]
     CLI --> Menu["menu<br/>full-screen app"]
     CLI --> Cmds["list · update · doctor<br/>log · report · schedule"]
@@ -86,7 +86,7 @@ Who depends on whom:
 ```mermaid
 flowchart TB
     subgraph Entry["entry"]
-        Cli["cli.ts"] --> Modules["commands/cli/<br/>CLI modules · startup"]
+        Cli["cli.ts → main.ts"] --> Modules["commands/cli/<br/>CLI modules · startup"]
     end
     subgraph Commands["commands/ — one use case each"]
         Cmd["list · update · doctor · menu"]
@@ -118,7 +118,7 @@ flowchart TB
 
 | Layer | Role | Rule |
 |---|---|---|
-| `cli.ts` | Chooses the interface language (§15), then parses the Commander program `commands/cli/program.ts` builds from the CLI modules, commander's own words in that language | No logic: commands, global options and startup hooks come from `commands/cli/cli-modules.ts` (§12). |
+| `cli.ts`, `main.ts` | `cli.ts`, the installed entry point, stops on a Node older than `MIN_NODE` (`core/node-floor.ts`) with where to get a newer one; otherwise it loads `main.ts`, the program, bundled on its own (`dist/main.js`). `main.ts` chooses the interface language (§15), then parses the Commander program `commands/cli/program.ts` builds from the CLI modules, commander's own words in that language | No logic: commands, global options and startup hooks come from `commands/cli/cli-modules.ts` (§12). |
 | `commands/` | One use case per module: `list`, `update`, `doctor`, the menu's controller, `log` and `report` (`journal/`), `schedule` and the tick (`schedule/`), the elevated child (`admin-batch.ts`) | Composes core and UI; owns the composition roots (`menu-views.ts`, `cli-modules.ts`). |
 | `ui/app/` | The interactive app: `MenuApp` (a loop of sessions), `MenuSession` (layout, key routing, view registry), the update launchers, menu preferences | Knows views only through `ViewDefinition`; imports nothing from `commands/` but the menu's state type (`menu-state.ts`). |
 | `ui/views/`, `ui/panels/` | One view per sidebar entry: a factory (`views/<id>-view.ts`) and plain-object panels that render lines and take keys | Ports as parameters; no process, no file access of their own. |
@@ -685,7 +685,8 @@ The threat model, the mitigations and the tests that pin them are in
 
 ```
 src/
-├── cli.ts                  # the interface language, then the Commander program built from the CLI modules
+├── cli.ts                  # the installed entry point: the Node check, then main.ts, a bundle of its own
+├── main.ts                 # the interface language, then the Commander program built from the CLI modules
 ├── pty-exec.ts             # the PTY trampoline (second bundle, dist/pty-exec.js)
 ├── commands/
 │   ├── cli/                # CliModule contract, CLI_MODULES, startup, settings, language and embedded-terminal modules
@@ -699,7 +700,7 @@ src/
 │   ├── elevation.ts        # the elevated batch (UAC / sudo)
 │   ├── types.ts            # the provider contract
 │   ├── install-source.ts · ownership.ts · corepack-ownership.ts   # who owns a binary
-│   ├── gh-releases.ts · hashicorp-releases.ts · wsl.ts · nvim-paths.ts · install-hint.ts · version.ts
+│   ├── gh-releases.ts · hashicorp-releases.ts · wsl.ts · nvim-paths.ts · install-hint.ts · version.ts · node-floor.ts
 │   ├── platform/           # platform sets, the gate, provider status
 │   ├── i18n/               # the interface language: locales, live catalogs, the startup choice
 │   ├── process/            # install sinks, output router, command tracer, PATH lookup
@@ -744,9 +745,9 @@ anything is printed, and every text is read in it when it is shown.
 
 | Process | Where its language comes from |
 |---|---|
-| every command, the menu, the scheduled tick | `applyStartupLocale(argv)` in `cli.ts`, before the program is built: `GUP_LANG` > the `interface.language` setting > English. `GUP_LANG` is read on its primary subtag, in any case (`fr_FR.UTF-8` is French); a language gup has no translation for is ignored, never fatal. The machine's own locale is never consulted. |
+| every command, the menu, the scheduled tick | `applyStartupLocale(argv)` in `main.ts`, before the program is built: `GUP_LANG` > the `interface.language` setting > English. `GUP_LANG` is read on its primary subtag, in any case (`fr_FR.UTF-8` is French); a language gup has no translation for is ignored, never fatal. The machine's own locale is never consulted. |
 | the elevated child (`__admin-batch`) | never the settings: its parent's language travels in the batch payload, validated like the timeout and the log threshold (§6); a parent older than 0.5.1 sends none, and the child speaks English |
-| the PTY trampoline (`dist/pty-exec.js`) | never `cli.ts`: the request carries the parent's language, validated with the rest of the payload; a request that cannot be decoded is refused in English |
+| the PTY trampoline (`dist/pty-exec.js`) | never `main.ts`: the request carries the parent's language, validated with the rest of the payload; a request that cannot be decoded is refused in English |
 
 The module, `core/i18n/`:
 

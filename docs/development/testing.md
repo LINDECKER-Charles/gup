@@ -250,6 +250,12 @@ The `packed install (node 26 / <os>)` job, on Windows and macOS, installs what u
 the embedded terminal available — node-pty loading from its prebuilds, with macOS's
 `spawn-helper` made executable by gup itself.
 
+The `older node refusal (node 20 / ubuntu-latest)` job installs the same tarball on Node 20, the
+oldest Node `engines.node` accepts, with that Node's own npm: `gup --version` must fail, naming
+the running version and nodejs.org's download page. The suites fake an older Node
+(`tests/integration/node-floor-refusal.test.ts`); this job proves that `dist/cli.js` runs on a
+real one. It is not a required check either.
+
 `e2e.yml` runs the full suites (mutating ones included) on macOS and Windows weekly, on demand,
 and on a pull request labelled `e2e-full`; it also records the provider fixtures on macOS and
 Linux. Its artifacts — screens, scan JSON, the JUnit report, the recorded fixtures — are kept

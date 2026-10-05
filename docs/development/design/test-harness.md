@@ -65,7 +65,7 @@ same results (2,932 tests, 2 skipped on Windows).
 ## 3. Node guard and coverage
 
 - `tests/support/node-guard.ts` (root global setup) fails the run below
-  `package.json#engines.node` with `gup's tests need Node >=26.9.0 (OpenTUI loads its renderer
+  `MIN_NODE` (`src/core/node-floor.ts`) with `gup's tests need Node >=26.9.0 (OpenTUI loads its renderer
   through node:ffi). Current: vX.Y.Z.` instead of letting the UI suites die on `node:ffi`.
 - Coverage: the global 90 % thresholds this branch kept until wave 3 are gone; floors on the
   safety-critical modules replace them (`tests/support/coverage-floors.ts`, see

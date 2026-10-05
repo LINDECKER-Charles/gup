@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { describe, expect, it, vi } from "vitest";
 import { CLI_MODULES } from "../../../src/commands/cli/cli-modules.js";
 
-/** The program the real `cli.ts` builds, without parsing anything. */
+/** The program the real `main.ts` builds, without parsing anything. */
 function assembled(): Command {
   const program = new Command().name("gup").exitOverride();
   for (const cliModule of CLI_MODULES) cliModule.register?.(program, { modules: CLI_MODULES });

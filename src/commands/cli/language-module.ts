@@ -15,7 +15,7 @@ import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli-module.
 
 /**
  * The interface language on the command line: chosen before commander is
- * built (`cli.ts` calls {@link applyStartupLocale}), shown and changed with
+ * built (`main.ts` calls {@link applyStartupLocale}), shown and changed with
  * `gup language [code]` — the command an install line chains to pick French —
  * and reported on `gup doctor`'s "System" section.
  */

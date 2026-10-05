@@ -7,7 +7,7 @@ here? [Collect a diagnostic](#collecting-a-diagnostic-for-a-bug-report) and open
 
 - [Installing](#installing)
   - [npm warns about install scripts, or refuses to install](#npm-warns-about-install-scripts-or-refuses-to-install)
-  - [The app needs Node 26.9](#the-app-needs-node-269)
+  - [gup needs Node 26.9](#gup-needs-node-269)
 - [The interactive app](#the-interactive-app)
   - [It refuses to start: no interactive terminal](#it-refuses-to-start-no-interactive-terminal)
   - [The Windows console host](#the-windows-console-host)
@@ -51,15 +51,18 @@ and npm 11 and later ask you to review them: npm 11 still runs them, npm 12 skip
 with `--ignore-scripts` is harmless on Windows and macOS, but leaves Linux without the embedded
 terminal. Details: [installation.md § npm 11 and install scripts](installation.md#npm-11-and-install-scripts).
 
-### The app needs Node 26.9
+### gup needs Node 26.9
 
 ```text
-Error: gup's interactive interface needs Node.js >= 26.9.0 (node:ffi) — current version v24.11.0
+Error: gup needs Node.js 26.9.0 or newer — current version v24.11.0
+Install a newer Node.js: https://nodejs.org/en/download
+Then reinstall gup: npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty
 ```
 
-**Why.** The interactive app's renderer loads through `node:ffi`, on by default from Node 26.9.
-`gup list --json` and `gup update -y` do not load it, but the package requires Node ≥ 26.9 anyway
-(`engines`).
+**Why.** The interactive app's renderer loads through `node:ffi`, on by default from Node 26.9,
+and gup is built for Node 26. Every command checks the running Node before anything else and
+stops there, exit code `1`, rather than failing further on. npm installs gup on an older Node on
+purpose: [installation.md § On an older Node](installation.md#on-an-older-node).
 
 **Fix.** Upgrade Node, ideally through a version manager:
 
@@ -69,7 +72,9 @@ Error: gup's interactive interface needs Node.js >= 26.9.0 (node:ffi) — curren
 | macOS | `brew upgrade node` (or `fnm install 26`, `nvm install 26`, `volta install node@26`) |
 | Linux | your version manager: `fnm install 26`, `nvm install 26`, `volta install node@26` |
 
-Then reinstall gup for the new Node: `npm install -g @charles_lindecker/gup --allow-scripts=node-pty`.
+Then reinstall gup for the new Node: `npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty`.
+A version manager keeps global packages per Node version; the reinstall also brings back the
+embedded terminal if the install on the older Node skipped node-pty.
 
 ## The interactive app
 

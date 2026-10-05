@@ -31,7 +31,7 @@ import type {
  *   file must cost a dimmed warning, not a failed upgrade. Every write is
  *   wrapped, and the warning is emitted once per process so a long batch does
  *   not turn into a wall of the same message.
- * - **Synchronous writes.** Every command in `cli.ts` ends on
+ * - **Synchronous writes.** Every command in `main.ts` ends on
  *   `process.exit(code)`, which does not drain pending async I/O — a
  *   fire-and-forget append would routinely lose the last records of a run. At
  *   these sizes the syscall is noise next to spawning an installer.

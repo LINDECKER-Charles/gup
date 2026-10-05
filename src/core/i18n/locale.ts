@@ -2,7 +2,7 @@
  * The languages gup speaks, and the one this process speaks.
  *
  * English is the default; French is the other language gup ships. The
- * command line chooses the locale once at startup (`cli.ts`), before it
+ * command line chooses the locale once at startup (`main.ts`), before it
  * builds commander — the help and the usage errors are localized — from the
  * `GUP_LANG` variable, then the `interface.language` setting, then the
  * default (`commands/cli/language-module.ts`). The elevated child takes its
