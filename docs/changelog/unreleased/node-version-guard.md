@@ -18,3 +18,7 @@
   runs before any module of the program is evaluated; `process.argv[1]` stays `dist/cli.js`, so
   the trampoline lookup, the elevated child and the scheduled task's command are unchanged
   (`refactor(cli): load the program from a bundle of its own`)
+- **landing:** the site's Node floor (`nodeMajor`, `nodeEngine` in `facts.js`) is read from
+  `MIN_NODE` in `src/core/node-floor.ts`, the floor gup enforces, instead of `engines.node`
+  (`build/facts/read-node-floor.mjs`, with its tests); the site still says Node ≥ 26
+  (`refactor(landing): read the Node floor from src/core/node-floor.ts`)

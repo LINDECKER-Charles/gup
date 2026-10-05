@@ -63,7 +63,8 @@ Then, in the same branch:
    and add its row to the table there.
 3. **Landing facts.** Run `npm --prefix index run sync:facts`. It regenerates
    `index/src/data/facts.js` (version, provider count, Node floor) from the
-   root `package.json` and the registry; the landing build does the same, but
+   root `package.json`, the registry and `src/core/node-floor.ts`; the landing
+   build does the same, but
    the committed copy must not lag behind the release.
 4. **Screenshots.** Run `npm run screenshots`. The title bar of every generated
    screenshot shows `gup v<version>`, read from `package.json`: after the bump
