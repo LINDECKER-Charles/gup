@@ -11,6 +11,11 @@
   too; a test holds the tsup target and `@types/node` to its major
   (`feat(cli): stop on a Node older than 26.9 with where to get one`)
 
+## CI
+
+- **pages:** the site rebuilds when `src/core/node-floor.ts` changes, the source of its Node floor
+  (`ci(pages): rebuild the site when the Node floor changes`)
+
 ## Internal
 
 - **cli:** the installed entry point `dist/cli.js` only loads the program, now a bundle of its own

@@ -29,6 +29,7 @@ on:
       - "package.json"
       - "README.md"
       - "src/core/registry.ts"
+      - "src/core/node-floor.ts"
       - "src/providers/**"
       # The terminal demo mirrors the interface.
       - "src/ui/**"
@@ -40,6 +41,7 @@ on:
       - "package.json"
       - "README.md"
       - "src/core/registry.ts"
+      - "src/core/node-floor.ts"
       - "src/providers/**"
       - "src/ui/**"
   release:
