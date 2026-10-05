@@ -439,14 +439,14 @@ fast). Used by gup's own test suites only: `GUP_E2E`, `GUP_E2E_SCOPE`, `GUP_MUTA
 | Code | Meaning |
 |---|---|
 | `0` | Success, or nothing to do — or the reader of gup's output left (`gup report -f csv \| head`): gup stops at once, silently |
-| `1` | At least one update failed, the `--all` confirmation was declined, a file could not be read or written, a schedule's trigger could not be changed, or an unhandled error occurred (`Error: …` on stderr) |
+| `1` | At least one update failed, the `--all` confirmation was declined, a file could not be read or written, a schedule's trigger could not be changed, or an unhandled error occurred (`Error: …` on stderr) — and any command on a Node older than 26.9, which stops before it runs ([troubleshooting](troubleshooting.md#gup-needs-node-269)) |
 | `2` | Bad invocation: malformed target, unknown or foreign provider, invalid `--timeout`, `--log-level`, `--since`, `--format` or schedule arguments, an unknown language code — nothing was changed |
 | `130` | Ctrl+C at a prompt or on a full screen |
 | `128 + n` | Signal `n` while a full screen was up (the console window closed, Ctrl+Break, a kill): the terminal is restored first |
 
 | Command | Codes |
 |---|---|
-| `gup` | `0` on quit; `1` when the app cannot start (no interactive terminal, Node older than 26.9) |
+| `gup` | `0` on quit; `1` when the app cannot start (no interactive terminal) |
 | `gup list`, `gup doctor` | `0` — a provider that fails to scan is reported in-band, not as a process failure |
 | `gup update` | `0`, `1` (a failure, a declined `--all`), `2` |
 | `gup log`, `gup report` | `0` (a report written but not opened is a success), `1`, `2` |

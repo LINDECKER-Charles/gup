@@ -1,10 +1,6 @@
-import semver from "semver";
 import { SCREEN_ERRORS } from "../text/menu-labels.js";
 
 export type Tui = typeof import("@opentui/core");
-
-/** First Node release with `node:ffi` on by default — OpenTUI loads its renderer through it. */
-const MIN_NODE = "26.9.0";
 
 let pending: Promise<Tui> | null = null;
 
@@ -23,9 +19,6 @@ export function loadTui(): Promise<Tui> {
 }
 
 function describeLoadFailure(err: unknown): string {
-  if (semver.lt(process.versions.node, MIN_NODE)) {
-    return SCREEN_ERRORS.nodeTooOld(MIN_NODE, process.version);
-  }
   const reason = err instanceof Error ? err.message : String(err);
   return SCREEN_ERRORS.loadFailed(reason);
 }

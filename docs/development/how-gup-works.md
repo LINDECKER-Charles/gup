@@ -690,8 +690,11 @@ providers; the install hint matching the running platform, so `gup doctor` never
 
 ### 9.1 `cli.ts` and the CLI modules
 
-`cli.ts`, the installed entry point, only loads `main.ts`, the program, which tsup bundles on its
-own (§17). `main.ts` first chooses the interface language: `applyStartupLocale(argv)`
+`cli.ts`, the installed entry point, first checks the running Node against `MIN_NODE`
+(`core/node-floor.ts`): on an older one it prints where to get a newer Node and how to reinstall
+gup, in the language `GUP_LANG` names, and exits 1 before any module of the program loads.
+Otherwise it loads `main.ts`, the program, which tsup bundles on its own (§17). `main.ts` first
+chooses the interface language: `applyStartupLocale(argv)`
 (`commands/cli/language-module.ts`) takes `GUP_LANG`, then the `interface.language` setting, then
 English — the elevated child, which never reads the settings, starts from `GUP_LANG` and takes its
 parent's language from the batch payload (§9.6). It comes first because the help, the commands'

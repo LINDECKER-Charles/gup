@@ -178,18 +178,12 @@ export const CONFIRM_UPDATE = localized({
 /** Why an interactive screen could not open, or ended early: errors of every full screen. */
 export const SCREEN_ERRORS = localized({
   en: {
-    nodeTooOld: (minimum: string, current: string) =>
-      `gup's interactive interface needs Node.js >= ${minimum} ` +
-      `(node:ffi) — current version ${current}`,
     loadFailed: (reason: string) => `cannot load the interactive interface (OpenTUI): ${reason}`,
     notATerminal: "this action needs an interactive terminal (stdin/stdout TTY)",
     /** Ctrl+C on a screen: the process ends with code 130, this message unseen but in a trace. */
     cancelled: "interrupted by the user",
   },
   fr: {
-    nodeTooOld: (minimum, current) =>
-      `l'interface interactive de gup nécessite Node.js >= ${minimum} ` +
-      `(node:ffi) — version actuelle ${current}`,
     loadFailed: (reason) => `impossible de charger l'interface interactive (OpenTUI) : ${reason}`,
     notATerminal: "cette action demande un terminal interactif (stdin/stdout TTY)",
     cancelled: "interrompu par l'utilisateur",
