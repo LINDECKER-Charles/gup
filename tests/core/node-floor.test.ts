@@ -6,6 +6,9 @@ import { SELF_UPDATE_COMMAND } from "../../src/core/self-update.js";
 import tsupConfig from "../../tsup.config.js";
 import { useLocale } from "../support/locale.js";
 
+/** The lowest `engines.node` floor of a published gup: `>=20`, from 0.1.0 to 0.2.2. */
+const LOWEST_PUBLISHED_FLOOR = "20.0.0";
+
 describe("the Node floor", () => {
   it.each(["26.9.0", "26.10.0", "27.0.0"])("runs on Node %s", (version) => {
     expect(isSupportedNode(version)).toBe(true);
@@ -23,6 +26,14 @@ describe("the Node floor", () => {
 
     expect(tsupConfig).toMatchObject({ target: `node${major}` });
     expect(semver.minVersion(manifest.devDependencies["@types/node"])?.major).toBe(major);
+  });
+
+  // Raised above the lowest floor a published release declared, `engines`
+  // would send npm back to that release on the Nodes in between, silently
+  // (see MIN_NODE). gup 0.1.0 to 0.2.2 declared `>=20`.
+  it("is not what package.json's engines declares: npm must install the latest on Node 20", () => {
+    expect(semver.satisfies(LOWEST_PUBLISHED_FLOOR, manifest.engines.node)).toBe(true);
+    expect(semver.satisfies(MIN_NODE, manifest.engines.node)).toBe(true);
   });
 });
 

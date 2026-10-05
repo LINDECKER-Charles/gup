@@ -32,8 +32,9 @@ jobs:
         # macOS and Linux are first-class since the Homebrew/apt/dnf
         # delegation landed.
         os: [windows-latest, macos-latest, ubuntu-latest]
-        # Tracks `engines.node` (>=26.9.0), so only the 26 line is tested. The
-        # floor is 26.9 because the interactive UI is OpenTUI, whose native
+        # Tracks the Node floor, MIN_NODE (26.9.0) in src/core/node-floor.ts —
+        # not engines.node, lower on purpose — so only the 26 line is tested.
+        # The floor is 26.9 because the interactive UI is OpenTUI, whose native
         # renderer loads through `node:ffi` — on by default from 26.9 only.
         # Node 24 was dropped with that move: testing below the declared floor
         # proves nothing the floor allows.

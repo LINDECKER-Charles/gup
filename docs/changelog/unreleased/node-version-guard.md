@@ -10,6 +10,14 @@
   The floor is `MIN_NODE` in `src/core/node-floor.ts`, which the tests' global setup now reads
   too; a test holds the tsup target and `@types/node` to its major
   (`feat(cli): stop on a Node older than 26.9 with where to get one`)
+- **deps:** `engines.node` goes from `>=26.9.0` down to `>=20`, the lowest floor a published gup
+  declared, so that npm installs the latest gup on any Node from 20 and gup itself says which Node
+  to install. Asked for a package without a version, npm installs the newest release whose
+  `engines` accepts the running Node, without a word: Node 22.13 to 26.8 got 0.3.2, Node 20 to
+  22.12 got 0.2.2, and `npm install -g` kept reinstalling them. The Node gup needs is still 26.9
+  (`MIN_NODE`): the tsup target, `@types/node`, CI, Dependabot and the docs follow it, and a test
+  keeps `engines` from rising above Node 20 again
+  (`build: let npm install the latest gup on any Node from 20`)
 
 ## CI
 

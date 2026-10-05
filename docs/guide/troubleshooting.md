@@ -61,7 +61,8 @@ Then reinstall gup: npm install -g @charles_lindecker/gup@latest --allow-scripts
 
 **Why.** The interactive app's renderer loads through `node:ffi`, on by default from Node 26.9,
 and gup is built for Node 26. Every command checks the running Node before anything else and
-stops there, exit code `1`, rather than failing further on.
+stops there, exit code `1`, rather than failing further on. npm installs gup on an older Node on
+purpose: [installation.md § On an older Node](installation.md#on-an-older-node).
 
 **Fix.** Upgrade Node, ideally through a version manager:
 

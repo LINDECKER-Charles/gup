@@ -10,8 +10,16 @@ import { SELF_UPDATE_COMMAND } from "./self-update.js";
  *
  * `cli.ts` checks it before the program loads, and stops on an older Node
  * with where to get a newer one; the tests' global setup holds the suites to
- * it. The tsup target and `@types/node` follow its major
- * (tests/core/node-floor.test.ts).
+ * it; the landing states it. The tsup target and `@types/node` follow its
+ * major (tests/core/node-floor.test.ts).
+ *
+ * `package.json#engines.node` says less on purpose: Node 20, the lowest floor
+ * any published gup declared. Asked for gup with no version, npm installs the
+ * newest release whose `engines` admits the running Node, without a word: with
+ * `engines` at 26.9, Node 22.13 to 26.8 silently got 0.3.2 (Node 20 to 22.12,
+ * 0.2.2), and nothing told its users why gup stayed old. Admitting every Node
+ * an older release admits keeps npm on the latest, whose entry point then says
+ * which Node to install.
  */
 export const MIN_NODE = "26.9.0";
 

@@ -11,9 +11,12 @@ export default defineConfig({
   // dependencies by itself, not optional ones.
   external: ["node-pty"],
   format: ["esm"],
-  // Must track `engines.node` in package.json: emitting for an older target
-  // silently down-levels syntax the supported runtimes handle natively, and
-  // lets code that needs a newer runtime build without complaint.
+  // Must track the Node floor, `MIN_NODE` in src/core/node-floor.ts (a test
+  // holds the major), not `engines.node`, which is lower on purpose: emitting
+  // for an older target silently down-levels syntax the supported runtimes
+  // handle natively, and lets code that needs a newer runtime build without
+  // complaint. `dist/cli.js` must still run on older Nodes: it imports only
+  // plain text and checks.
   target: "node26",
   platform: "node",
   outDir: "dist",

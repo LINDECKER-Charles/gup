@@ -6,8 +6,9 @@ import { ERROR_LABELS } from "./ui/text/cli-labels.js";
 /**
  * The installed entry point (`bin`: `dist/cli.js`). On a Node older than gup
  * needs, it says which one to install instead of letting the program fail
- * somewhere further: npm only warns (`EBADENGINE`) when asked to install gup
- * there. Otherwise it loads the program, a bundle of its own (`dist/main.js`).
+ * somewhere further: npm installs gup there, `engines` being lower on purpose
+ * (see `MIN_NODE`). Otherwise it loads the program, a bundle of its own
+ * (`dist/main.js`).
  *
  * So this file must run on any Node: it imports only modules that hold
  * plain text and checks, and none of the program's. The program's specifier
