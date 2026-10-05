@@ -87,7 +87,7 @@ const SCOOP: ProviderContractCase = {
   scenario: "scoop",
   create: () => new GitForWindowsProvider(),
   system: gitMachine({ version: BEHIND, binary: binaryPathVia("scoop", "git") }),
-  outdated: [{ ...row, note: "via scoop" }],
+  outdated: [{ ...row, note: "via scoop", installedBy: "scoop" }],
   update: { packageId: "git-for-windows", installs: [["scoop", "update", "git"]] },
   routes: [
     ...delegationRoutes("git", {

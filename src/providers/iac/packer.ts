@@ -3,6 +3,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
 } from "../../core/install-source.js";
 import { fetchHashicorpLatest } from "../../core/hashicorp-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
@@ -47,6 +48,7 @@ export class PackerProvider implements Provider {
         current,
         latest: normLatest,
         note: describeSource(source),
+        ...installedByField(source),
         ...(source === "manual" && { manual: true }),
       },
     ];

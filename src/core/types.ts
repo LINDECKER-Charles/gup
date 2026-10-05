@@ -1,3 +1,5 @@
+import type { InstallSource } from "./install-source.js";
+
 /**
  * A set of `process.platform` values. Always one of the named sets of
  * `core/platform/platforms.ts`, never an inline array.
@@ -13,6 +15,13 @@ export interface OutdatedPackage {
   latest: string;
   /** Optional extra info ("pinned", "unknown", "source: msstore"...). */
   note?: string;
+  /**
+   * The package manager that installed the software, set by a provider that
+   * hands its update to it (Starship's row, updated by `brew upgrade
+   * starship`). Once brew scanned, a row Homebrew installed gives way to
+   * brew's own (`core/superseded.ts`).
+   */
+  installedBy?: Exclude<InstallSource, "manual">;
   /**
    * True when the provider knows ahead of time that calling update() will
    * return a `skipped` outcome — no automatic action possible. Excluded

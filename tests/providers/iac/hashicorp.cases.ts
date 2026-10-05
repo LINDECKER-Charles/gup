@@ -155,7 +155,14 @@ const BOUNDARY_ONE_LINE_BANNER: ProviderContractCase = {
     http: [hashicorpLatest("boundary", "0.17.0")],
   }),
   outdated: [
-    { id: "boundary", name: "Boundary", current: "0.15.4", latest: "0.17.0", note: "via brew" },
+    {
+      id: "boundary",
+      name: "Boundary",
+      current: "0.15.4",
+      latest: "0.17.0",
+      note: "via brew",
+      installedBy: "brew",
+    },
   ],
   update: { packageId: "boundary", installs: [["brew", "upgrade", "--formula", "boundary"]] },
   updateAll: "collapsed",

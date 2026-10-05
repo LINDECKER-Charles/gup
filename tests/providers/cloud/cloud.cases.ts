@@ -155,7 +155,7 @@ const HEROKU: ProviderContractCase = {
   scenario: "scoop",
   create: () => new HerokuProvider(),
   system: installedVia("scoop", "heroku", HEROKU_MACHINE),
-  outdated: [{ ...HEROKU_ROW, note: "via scoop" }],
+  outdated: [{ ...HEROKU_ROW, note: "via scoop", installedBy: "scoop" }],
   update: { packageId: "heroku", installs: [["scoop", "update", "heroku-cli"]] },
   routes: delegationRoutes("heroku", {
     ids: HEROKU_IDS,

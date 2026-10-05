@@ -44,7 +44,7 @@ function scoopCase(tool: ReleasedTool): ProviderContractCase {
     scenario: "scoop",
     create: tool.create,
     system: installedVia("scoop", tool.binary, { commands: [tool.probe], http: [tool.release] }),
-    outdated: [{ id, name, current, latest, note: "via scoop" }],
+    outdated: [{ id, name, current, latest, note: "via scoop", installedBy: "scoop" }],
     update: { packageId: id, installs: [argv] },
     routes: delegationRoutes(tool.binary, tool.delegation),
     updateAll: "collapsed",

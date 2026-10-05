@@ -2,6 +2,7 @@ import { commandExists, run, runInherit } from "../../core/runner.js";
 import {
   describeSource,
   detectInstallSource,
+  installedByField,
   runPmUpdate,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
@@ -48,6 +49,7 @@ export class HerokuProvider implements Provider {
         current,
         latest,
         note: describeSource(source),
+        ...installedByField(source),
       },
     ];
   }

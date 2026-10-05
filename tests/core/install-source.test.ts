@@ -49,6 +49,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
   resolveBinaryPath,
   runPmUpdate,
   upgradeNeedsRoot,
@@ -433,5 +434,16 @@ describe("describeSource", () => {
       "via dnf",
       "manuel",
     ]);
+  });
+});
+
+describe("installedByField", () => {
+  it("names the package manager a row's update goes through", () => {
+    expect(installedByField("brew")).toEqual({ installedBy: "brew" });
+    expect(installedByField("scoop")).toEqual({ installedBy: "scoop" });
+  });
+
+  it("names none for a manual install, so the row keeps its own update", () => {
+    expect(installedByField("manual")).toEqual({});
   });
 });

@@ -4,6 +4,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
 } from "../../core/install-source.js";
 import { MANUAL_STEPS } from "../manual-steps.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
@@ -46,6 +47,7 @@ export class SymfonyCliProvider implements Provider {
         current,
         latest: normLatest,
         note: describeSource(source),
+        ...installedByField(source),
         ...(source === "manual" && { manual: true }),
       },
     ];

@@ -42,7 +42,16 @@ const XCODES: ProviderContractCase = {
   scenario: "homebrew",
   create: () => new XcodesProvider(),
   system: xcodesMachine("2.0.3"),
-  outdated: [{ id: "xcodes", name: "xcodes", current: "2.0.3", latest: "2.1.0", note: "via brew" }],
+  outdated: [
+    {
+      id: "xcodes",
+      name: "xcodes",
+      current: "2.0.3",
+      latest: "2.1.0",
+      note: "via brew",
+      installedBy: "brew",
+    },
+  ],
   update: { packageId: "xcodes", installs: [["brew", "upgrade", "--formula", "xcodes"]] },
   // Homebrew only: every other installer gets the download instructions.
   routes: delegationRoutes("xcodes", {

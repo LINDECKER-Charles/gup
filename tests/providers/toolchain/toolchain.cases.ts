@@ -284,7 +284,7 @@ const SWIFTLY_HOMEBREW: ProviderContractCase = {
   scenario: "homebrew",
   create: () => new SwiftlyProvider(),
   system: SWIFTLY_BREW_MACHINE,
-  outdated: [{ ...SWIFTLY_ROW, note: "via brew" }],
+  outdated: [{ ...SWIFTLY_ROW, note: "via brew", installedBy: "brew" }],
   update: { packageId: "swiftly", installs: [["brew", "upgrade", "--formula", "swiftly"]] },
   routes: [
     {

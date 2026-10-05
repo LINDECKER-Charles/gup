@@ -4,6 +4,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { MANUAL_STEPS } from "../manual-steps.js";
@@ -45,6 +46,7 @@ export class CosignProvider implements Provider {
         current,
         latest,
         note: describeSource(source),
+        ...installedByField(source),
         ...(source === "manual" && { manual: true }),
       },
     ];
