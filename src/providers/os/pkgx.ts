@@ -3,6 +3,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
 } from "../../core/install-source.js";
 import {
   fetchGitHubReleaseTagMatching,
@@ -113,6 +114,7 @@ export class PkgxProvider implements Provider {
         current,
         latest,
         note: describeSource(source),
+        ...installedByField(source),
       },
     ];
   }

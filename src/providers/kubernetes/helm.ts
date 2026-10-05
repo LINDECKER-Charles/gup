@@ -3,6 +3,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
 } from "../../core/install-source.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { MANUAL_STEPS } from "../manual-steps.js";
@@ -50,6 +51,7 @@ export class HelmProvider implements Provider {
         current,
         latest,
         note: describeSource(source),
+        ...installedByField(source),
         ...(source === "manual" && { manual: true }),
       },
     ];

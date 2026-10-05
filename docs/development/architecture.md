@@ -157,6 +157,7 @@ classDiagram
         +current: string
         +latest: string
         +note?: string
+        +installedBy?: InstallSource
         +manual?: boolean
         +requiresAdmin?: boolean
         +aggregate?: boolean
@@ -199,6 +200,9 @@ classDiagram
   Npackd, MacPorts, Fink, pkgin, Visual Studio): never scheduled.
 - `manual: true` — no command can update the row; `scanAll` drops it, so no list or picker
   ever shows it.
+- `installedBy` — the package manager a delegating provider hands the update to
+  (`installedByField(source)`, next to the `via …` note). A row Homebrew installed gives way to
+  brew's own row once brew scanned (`dropSuperseded`).
 - `requiresAdmin: true` — the update needs UAC or `sudo`; the pipeline moves the row to the
   single elevated batch (§6).
 - `aggregate: true` — updating the row acts on the whole provider ("all plugins", a refresh
@@ -279,6 +283,9 @@ sequenceDiagram
 - Rows a provider flags `manual` are dropped; then `filterByOwnership` drops OS-level rows for a
   binary a toolchain manager owns (`choco:nodejs` while nvm-windows owns `node`), logged at
   `debug` as `scan.ownership-excluded`.
+- `dropSuperseded` (`core/superseded.ts`) keeps software two providers list with one, the one
+  that updates it: winget's Visual Studio editions give way to `visual-studio`, `self:gh` to
+  winget, a row `installedBy: "brew"` to brew's own; logged at `debug` as `scan.superseded`.
 - `runScan` (`ui/scan-progress.ts`) records the scan in the history with each provider's own
   duration. The menu feeds its events to the Scan view; the one-shot commands show the same panel
   on their own screen, or one summary line when output is piped.

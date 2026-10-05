@@ -532,7 +532,7 @@ const PKGX: ProviderContractCase = {
   scenario: "homebrew",
   create: () => new PkgxProvider(),
   system: pkgxMachine("/opt/homebrew/bin/pkgx"),
-  outdated: [{ ...PKGX_ROW, note: "via brew" }],
+  outdated: [{ ...PKGX_ROW, note: "via brew", installedBy: "brew" }],
   update: { packageId: "pkgx", installs: [["brew", "upgrade", "--formula", "pkgx"]] },
   routes: delegationRoutes("pkgx", {
     ids: { brew: "pkgx" },

@@ -23,6 +23,7 @@ const PACKAGE_FIELDS: Readonly<Record<keyof OutdatedPackage, Field>> = {
   current: "string",
   latest: "string",
   note: "string",
+  installedBy: "string",
   manual: "boolean",
   requiresAdmin: "boolean",
   aggregate: "boolean",

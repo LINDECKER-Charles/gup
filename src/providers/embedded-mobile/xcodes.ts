@@ -3,6 +3,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
 } from "../../core/install-source.js";
 import type { InstallSource } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest, normalizeVersion } from "../../core/gh-releases.js";
@@ -74,7 +75,14 @@ export class XcodesProvider implements Provider {
 
       const source = await detectInstallSource("xcodes");
       return [
-        { id: PACKAGE_ID, name: "xcodes", current, latest, note: updateNote(source) },
+        {
+          id: PACKAGE_ID,
+          name: "xcodes",
+          current,
+          latest,
+          note: updateNote(source),
+          ...installedByField(source),
+        },
       ];
     } catch {
       return [];

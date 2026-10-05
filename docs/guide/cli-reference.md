@@ -408,6 +408,7 @@ table — so the payload stays pipeable.
 | `packages[].name` | `string?` | Display name, when the provider has one |
 | `packages[].current` / `.latest` | `string` | Versions as the provider reports them, verbatim |
 | `packages[].note` | `string?` | Free-form annotation (`pinned`, `source: msstore`…); a provider's own sentence follows the interface language |
+| `packages[].installedBy` | `string?` | The package manager the update goes through (`brew`, `scoop`, `choco`, `winget`, `apt`, `dnf`), on the row of a tool a provider follows but a package manager installed |
 | `packages[].requiresAdmin` | `boolean?` | Will go through the elevated batch |
 | `packages[].aggregate` | `boolean?` | Updating it updates the whole provider (never a scheduling target) |
 | `error` | `string?` | Set when the provider was reachable but its scan failed, in the interface language |

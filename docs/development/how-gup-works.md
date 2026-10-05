@@ -72,7 +72,7 @@ reasoning behind the exclusion: [`scope.md`](../guide/scope.md).
 | **Provider** | Isolated module that knows how to handle **one** installation source. One file = one provider. Implements the `Provider` interface (`src/core/types.ts`). Examples: `WingetProvider`, `NpmGlobalProvider`, `HelmProvider`. |
 | **Provider id** | Stable kebab-case identifier, unique across the registry. Used at the CLI: `gup update <provider-id>:<packageId>` (e.g. `winget:Microsoft.PowerShell`). |
 | **Platform set** | The OSes gup supports a provider on (`PLATFORMS.windows`, `macos`, `notWindows`; omitted = everywhere). Elsewhere the provider is never probed, scanned or updated, and listings grey it out. |
-| **OutdatedPackage** | One scan-result entry: `{ id, name?, current, latest, note?, manual?, requiresAdmin?, aggregate? }`. The **currency** between the provider layer and everything above it. |
+| **OutdatedPackage** | One scan-result entry: `{ id, name?, current, latest, note?, installedBy?, manual?, requiresAdmin?, aggregate? }`. The **currency** between the provider layer and everything above it. |
 | **UpdateOutcome** | Result of an update: `{ id, success, skipped?, message?, retryable?, recovery? }`. |
 | **ProviderScanResult** | Per-provider aggregate after a scan: `{ providerId, available, packages[], error? }`. |
 | **slow** | Declarative flag on a provider whose scan does HTTP per package or a heavy filesystem walk. Skipped in `--fast` mode. |
@@ -338,6 +338,8 @@ The most complex and most variable method. The contract:
    - `current` / `latest`: strings as emitted by the tool, **un-normalized** (the UI displays them
      as-is — semantic comparison happens inside the provider via `normalizeVersion()`).
    - `note?`: free-form extra info (`"pinned"`, `"unknown version"`, `"source: msstore"`…).
+   - `installedBy?`: the package manager a delegating provider hands the update to, spread from
+     `installedByField(source)`; a row Homebrew installed gives way to brew's own in `scanAll`.
    - `manual?: true`: no command can update it; filtered by `scanAll`.
    - `requiresAdmin?: true`: the update needs UAC or `sudo` (Chocolatey through
      `flagForElevation`; on macOS and Linux MacPorts, Fink, pkgin and the apt/dnf delegations).
@@ -530,10 +532,13 @@ const raw = await Promise.all(
   ),
 );
 const { results, exclusions } = await filterByOwnership(raw);   // §8.5
+const deduplicated = dropSuperseded(results);                    // core/superseded.ts
 ```
 
 `scanProvider` calls `onProviderStart`, wraps `listOutdated()` in a `try/catch` (a throw becomes
-`error: string`), drops `manual` rows, then calls `onProviderEnd`.
+`error: string`), drops `manual` rows, then calls `onProviderEnd`. `dropSuperseded` then keeps
+software two providers list with the one that updates it — a row `installedBy: "brew"` gives way
+to brew's own once brew scanned.
 
 Invariants set here:
 1. **Concurrency 4 by default** — no machine saturated by subprocesses.
@@ -1095,6 +1100,7 @@ Conventions:
 | `Provider.platforms` | `PlatformSet?` | provider class | a named set; enforced by the registry only |
 | `Provider.canUpdateUnattended` | `boolean?` | provider class | `false` → never scheduled |
 | `OutdatedPackage.manual` | `boolean?` | output of `listOutdated` | filtered in `scanAll`, never user-visible |
+| `OutdatedPackage.installedBy` | `InstallSource?` | output of `listOutdated` | `brew` → gives way to brew's own row once brew scanned |
 | `OutdatedPackage.requiresAdmin` | `boolean?` | output of `listOutdated` | → the single elevated batch |
 | `OutdatedPackage.aggregate` | `boolean?` | output of `listOutdated` | never a scheduling target |
 | `UpdateOutcome.success` | `boolean` | output of `update` | `false` ↔ failure OR skip |

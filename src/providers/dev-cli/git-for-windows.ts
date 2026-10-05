@@ -2,6 +2,7 @@ import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import {
   describeSource,
   detectInstallSource,
+  installedByField,
   runPmUpdate,
   type InstallSource,
   type PackageIds,
@@ -153,6 +154,7 @@ async function scanGitForWindows(id: string): Promise<OutdatedPackage[]> {
       current,
       latest,
       note: describeUpdatePath(source, updater),
+      ...installedByField(source),
     },
   ];
 }

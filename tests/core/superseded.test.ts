@@ -13,6 +13,15 @@ function scanned(providerId: string, ids: readonly string[], error?: string): Pr
   };
 }
 
+/** A delegating provider's one row, its update going through `installedBy`. */
+function delegated(
+  providerId: string,
+  installedBy?: OutdatedPackage["installedBy"],
+): ProviderScanResult {
+  const pkg = { ...row(providerId), ...(installedBy !== undefined && { installedBy }) };
+  return { providerId, available: true, packages: [pkg] };
+}
+
 const ids = (results: readonly ProviderScanResult[], providerId: string): string[] =>
   results.find((result) => result.providerId === providerId)?.packages.map((p) => p.id) ?? [];
 
@@ -54,6 +63,38 @@ describe("dropSuperseded", () => {
     expect(ids(withWinget.results, "self")).toEqual(["npm"]);
     const withoutIt = dropSuperseded([self, scanned("winget", ["Git.Git"])]);
     expect(ids(withoutIt.results, "self")).toEqual(["gh", "npm"]);
+  });
+
+  // A real run on macOS: `symfony-cli` (Homebrew's tap formula) and the
+  // Symfony CLI provider's row both ran the same `brew upgrade`, and the
+  // formula brew could not install failed twice.
+  it("leaves a tool Homebrew installed to brew's own row", () => {
+    const brew = scanned("brew", ["symfony-cli/tap/symfony-cli", "cmake"]);
+    const { results, dropped } = dropSuperseded([brew, delegated("symfony-cli", "brew")]);
+    expect(ids(results, "brew")).toEqual(["symfony-cli/tap/symfony-cli", "cmake"]);
+    expect(ids(results, "symfony-cli")).toEqual([]);
+    expect(dropped).toEqual([{ providerId: "symfony-cli", packageId: "symfony-cli", keeper: "brew" }]);
+  });
+
+  // The provider reads its latest release upstream; until the formula packages
+  // it, `brew upgrade` succeeds without changing anything, run after run.
+  it("drops it too when brew has no update for it", () => {
+    const { results } = dropSuperseded([scanned("brew", ["cmake"]), delegated("starship", "brew")]);
+    expect(ids(results, "starship")).toEqual([]);
+  });
+
+  it("keeps the tool's row when brew was not scanned or its scan failed", () => {
+    const starship = delegated("starship", "brew");
+    for (const others of [[], [scanned("brew", [], "brew outdated: exit 1")]]) {
+      expect(ids(dropSuperseded([starship, ...others]).results, "starship")).toEqual(["starship"]);
+    }
+  });
+
+  it("keeps the rows of tools another package manager installed, or none", () => {
+    const others = [delegated("starship", "scoop"), delegated("pyenv", "apt"), delegated("terraform")];
+    const { results, dropped } = dropSuperseded([scanned("brew", ["cmake"]), ...others]);
+    expect(results.slice(1)).toEqual(others);
+    expect(dropped).toEqual([]);
   });
 
   it("changes nothing on a scan without both providers", () => {
