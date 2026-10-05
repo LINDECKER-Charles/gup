@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
-import { existsSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stateDir } from "../../../src/core/state/app-dirs.js";
+import { explainAccessError } from "../../../src/core/state/foreign-owner.js";
 import {
   BatchLock,
   batchLockLocation,
@@ -10,6 +11,12 @@ import {
   type BatchLockLocation,
 } from "../../../src/core/update/batch-lock.js";
 import { useTempDirs } from "../../support/temp-dirs.js";
+
+// Spied, not replaced: a failure still reaches the caller as the check words it.
+vi.mock("../../../src/core/state/foreign-owner.js", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../../../src/core/state/foreign-owner.js")>();
+  return { ...original, explainAccessError: vi.fn(original.explainAccessError) };
+});
 
 // Registered first, so it runs after the release of every lock below.
 const tempDir = useTempDirs();
@@ -106,6 +113,26 @@ describe("BatchLock", () => {
     writeFileSync(location.endpoint, "");
     expect(await acquire()).toBeInstanceOf(BatchLock);
   });
+
+  // Root writes anywhere: the read-only dir only stops a regular user.
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+    "fails on a lock dir it may not write, instead of reporting a holder to wait for",
+    async () => {
+      chmodSync(schedulerDir, 0o500);
+      try {
+        await expect(BatchLock.tryAcquire(location, "interactive")).rejects.toMatchObject({
+          code: "EACCES",
+        });
+        // The dir is this user's own: the check leaves the error as it is.
+        expect(explainAccessError).toHaveBeenCalledWith(
+          expect.objectContaining({ code: "EACCES" }),
+          schedulerDir,
+        );
+      } finally {
+        chmodSync(schedulerDir, 0o700);
+      }
+    },
+  );
 
   it("is released by the operating system when the holder process dies", async () => {
     const child = spawn(

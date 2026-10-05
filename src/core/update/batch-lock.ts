@@ -6,6 +6,7 @@ import { dirname } from "node:path";
 import { writeFileAtomic } from "../config/atomic-write.js";
 import { pathFlavour } from "../platform/path-flavour.js";
 import { stateDir, type DirContext } from "../state/app-dirs.js";
+import { explainAccessError } from "../state/foreign-owner.js";
 import type { BatchGuard, BatchHolder, BatchWait } from "./update-extensions.js";
 
 /**
@@ -44,7 +45,9 @@ const PROBE_TIMEOUT_MS = 1000;
 /** How quickly a Ctrl+C ends a wait. */
 const ABORT_CHECK_MS = 100;
 const STATE_DIR_MODE = 0o700;
-const IN_USE_CODES = new Set(["EADDRINUSE", "EACCES"]);
+const ADDRESS_IN_USE = "EADDRINUSE";
+/** A named pipe another process holds can also answer EACCES — on Windows only. */
+const PIPE_HELD = "EACCES";
 
 /**
  * Where the lock lives for `context`, or null when the platform gives no
@@ -101,8 +104,7 @@ export class BatchLock {
     location: BatchLockLocation,
     kind: BatchHolder["kind"],
   ): Promise<BatchLock | { readonly busy: BatchHolder | null }> {
-    mkdirSync(dirname(location.infoFile), { recursive: true, mode: STATE_DIR_MODE });
-    const server = await listenOn(location.endpoint);
+    const server = await openEndpoint(location);
     if (!server) return { busy: readHolder(location.infoFile) };
     const holder: BatchHolder = { kind, pid: process.pid, startedAt: new Date().toISOString() };
     try {
@@ -144,6 +146,21 @@ export function createBatchGuard(
   };
 }
 
+/**
+ * The lock's dir, then its endpoint; null when another live process holds
+ * it. When another user owns the dir — gup once run with sudo — the error
+ * names that user and the command that gives the dir back.
+ */
+async function openEndpoint(location: BatchLockLocation): Promise<Server | null> {
+  const dir = dirname(location.infoFile);
+  try {
+    mkdirSync(dir, { recursive: true, mode: STATE_DIR_MODE });
+    return await listenOn(location.endpoint);
+  } catch (err) {
+    throw explainAccessError(err, dir);
+  }
+}
+
 /** Listen on the endpoint; null when another live process holds it. */
 async function listenOn(endpoint: string): Promise<Server | null> {
   const first = await tryListen(endpoint);
@@ -159,7 +176,7 @@ function tryListen(endpoint: string): Promise<Server | "in-use"> {
   return new Promise((resolve, reject) => {
     const server = createServer((socket) => socket.destroy());
     server.once("error", (err: NodeJS.ErrnoException) => {
-      if (IN_USE_CODES.has(err.code ?? "")) resolve("in-use");
+      if (isInUse(err.code)) resolve("in-use");
       else reject(err);
     });
     server.listen(endpoint, () => {
@@ -168,6 +185,14 @@ function tryListen(endpoint: string): Promise<Server | "in-use"> {
       resolve(server);
     });
   });
+}
+
+/**
+ * On POSIX, EACCES is a socket gup may not create in the lock's dir: an error
+ * to report, not a holder to wait for — the run would wait forever.
+ */
+function isInUse(code: string | undefined): boolean {
+  return code === ADDRESS_IN_USE || (process.platform === "win32" && code === PIPE_HELD);
 }
 
 /** True when a live process accepts connections on the endpoint. A silent one counts as alive. */

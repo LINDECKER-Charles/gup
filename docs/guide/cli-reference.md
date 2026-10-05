@@ -147,6 +147,15 @@ The **Language** line names the language gup speaks and where it comes from (`GU
 `setting` or `default`); a `GUP_LANG` gup has no translation for turns it into a warning (`▲`)
 that says so: `English (default) · GUP_LANG=de ignored: gup speaks en, fr`.
 
+On macOS and Linux, a **File ownership** line follows **Language**: `gup's folders are yours`, or
+one warning per gup folder or file another user owns — what a run under `sudo` left to root —
+with the command that gives it back
+([Troubleshooting](troubleshooting.md#a-gup-folder-belongs-to-root)):
+
+```text
+  ▲ File ownership           ~/Library/Application Support/gup belongs to root, not to you — gup was probably run with sudo. Give it back to your user: sudo chown -R jane "$HOME/Library/Application Support/gup"
+```
+
 Detection runs eight probes at a time, each capped at 15 s, so one stuck tool cannot hang the
 command. Run it first when a package you expected never shows up in a scan, and attach its output
 to a bug report.
