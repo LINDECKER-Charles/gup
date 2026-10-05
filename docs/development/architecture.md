@@ -640,10 +640,18 @@ under every theme and measures every painted cell. User guide:
 A feature plugs into the command line with a `CliModule` — `register` (its commands and global
 options), `triggerFor`, `beforeAction`, `diagnostics` (its `gup doctor` "System" line),
 `onCrash`, `runsInElevatedChild` — and one line in `CLI_MODULES`. Before every command,
-`installStartup` records what started the run, then runs every `beforeAction` in order: logging,
-settings, scheduler, then the commands' own. The elevated `__admin-batch` child runs only the
-modules that opt in (the debug log's), so nothing it runs as an administrator reads the user's
-settings.
+`installStartup` records what started the run, then runs every `beforeAction` in order: the root
+guard, logging, settings, scheduler, then the commands' own. The elevated `__admin-batch` child
+runs only the modules that opt in (the debug log's), so nothing it runs as an administrator reads
+the user's settings.
+
+The root guard (`root-guard-module.ts`) refuses a run under `sudo` — root, with a `SUDO_UID`
+naming another account — before anything is written, the log included: macOS's `sudo` keeps the
+user's HOME, and gup run that way left its state to root in the user's folders, where the next
+run as the user could not write it. The elevated child, which it does not opt in to, and root's
+own runs (no `SUDO_UID`) go through. Its `gup doctor` line lists the gup folders and files
+another user owns, with the `chown` that gives them back (`core/state/foreign-owner.ts`, which
+also words the access errors of the update lock and the history).
 
 `beforeAction` installs the process-wide **slots**; nothing else does, except the install sink,
 which is routed around a batch. Library code reads them; tests reset them.

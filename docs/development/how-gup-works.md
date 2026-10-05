@@ -140,8 +140,9 @@ it.
 `src/cli.ts` first chooses the interface language (§9.1), then builds a Commander program from
 the CLI modules (`src/commands/cli/cli-modules.ts`). Before any command runs, the startup hook
 records what started the process (`menu`, `cli` or `schedule`) and runs every module's
-`beforeAction` in order: the debug log, the settings (theme engine, menu preferences, install
-timeout), the scheduler (batch lock), then the commands' own (§9.1).
+`beforeAction` in order: the root guard (a run under `sudo` stops there, before anything is
+written), the debug log, the settings (theme engine, menu preferences, install timeout), the
+scheduler (batch lock), then the commands' own (§9.1).
 
 ### 4.1 `gup` (bare command — interactive app)
 
@@ -228,7 +229,8 @@ doctorCommand()
   ├─ readProviderStatus()                  every provider: detected / missing / incompatible
   ├─ renderProvidersStatus(report)         the three groups, install hints for the missing
   └─ "System": each module's diagnostics() (5 s each, home shortened to ~)
-       Embedded terminal · Debug log · Language · Schedules · Configuration
+       Embedded terminal · Debug log · Language · File ownership (POSIX) · Schedules ·
+       Configuration
 ```
 
 No scan, no update. Exits 0.

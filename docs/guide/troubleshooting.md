@@ -16,6 +16,8 @@ here? [Collect a diagnostic](#collecting-a-diagnostic-for-a-bug-report) and open
 - [Updates](#updates)
   - [The embedded terminal is unavailable](#the-embedded-terminal-is-unavailable)
   - [The update waits for another gup](#the-update-waits-for-another-gup)
+  - [A gup folder belongs to root](#a-gup-folder-belongs-to-root)
+  - [gup refuses to run under sudo](#gup-refuses-to-run-under-sudo)
   - [Administrator packages were skipped](#administrator-packages-were-skipped)
   - [An install hangs](#an-install-hangs)
   - [gup does not update itself (Windows)](#gup-does-not-update-itself-windows)
@@ -157,6 +159,44 @@ driving your package managers. gup waits for it to finish.
 **Fix.** Wait, or give up: `x` in the app's run view, Ctrl+C in a terminal. The lock is released by
 the system when its holder exits, however it exits; if the wait never ends, a gup process is still
 running — find it (Task Manager, `ps aux | grep gup`) and let it finish or close it.
+
+### A gup folder belongs to root
+
+```text
+The update was interrupted: cannot write /Users/jane/Library/Application Support/gup/locks:
+/Users/jane/Library/Application Support/gup belongs to root, not to you — gup was probably run
+with sudo. Give it back to your user: sudo chown -R jane "$HOME/Library/Application Support/gup"
+```
+
+In a terminal the same message follows `Error:`; the history says
+`history not written — cannot write …` with the same fix. Versions before this message only said
+`EACCES: permission denied, mkdir '…/gup/locks'`, or `history not written — EACCES: …`.
+
+**Why.** gup was once run with `sudo` (macOS and Linux). On macOS `sudo` keeps your home folder, so
+gup, running as root, created its folders there as root's: your later runs can no longer write
+them. From 0.5.0 on, an update takes a lock in that folder before it starts, so no update starts.
+
+**Fix.** Run the command the message gives, once — it asks for your password — then run gup
+without `sudo`, which [gup now refuses](#gup-refuses-to-run-under-sudo). `gup doctor`'s
+**File ownership** line lists every gup folder or file that still belongs to someone else, each
+with its command; it says `gup's folders are yours` once none does.
+
+### gup refuses to run under sudo
+
+```text
+Error: gup does not run under sudo: as root, it would leave files in your home folder that your
+user can no longer write, and Homebrew refuses to run as root. Run gup without sudo — it asks
+for your password itself when a package needs administrator rights.
+```
+
+**Why.** Run as root, gup leaves root's files in your home folder
+([above](#a-gup-folder-belongs-to-root)), and the package managers object too: Homebrew refuses to
+run as root, and an npm or pip global installed as root leaves root's files in your prefix.
+
+**Fix.** Run `gup` without `sudo`. The packages that need administrator rights (MacPorts, Fink,
+pkgin, apt…) run together behind one `sudo` password gup asks for itself
+([below](#administrator-packages-were-skipped)). Only a run through `sudo` is refused: gup runs as
+root where root is the account itself — a root shell, a container.
 
 ### Administrator packages were skipped
 

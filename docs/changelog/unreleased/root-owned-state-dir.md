@@ -31,3 +31,11 @@
   error, where `listen` answering EACCES counted as a holder: the run reported an unknown
   "another gup" and waited for it forever. EACCES still means a held pipe on Windows only
   (`fix(core/update): fail on a lock dir gup may not write instead of waiting`)
+
+## Documentation
+
+- **docs:** Troubleshooting explains a gup folder that belongs to root — the message, the
+  `EACCES` older versions printed, the `chown` that fixes it — and why gup refuses `sudo`;
+  the CLI reference shows `gup doctor`'s **File ownership** line, and the development pages the
+  root guard's place in the startup order
+  (`docs: explain gup's root-owned folders and the sudo refusal`)
