@@ -23,6 +23,10 @@
 
 - **pages:** the site rebuilds when `src/core/node-floor.ts` changes, the source of its Node floor
   (`ci(pages): rebuild the site when the Node floor changes`)
+- **ci:** an `older node refusal (node 20 / ubuntu-latest)` job packs gup on Node 26, installs the
+  tarball on Node 20 with that Node's npm, and checks that `gup --version` fails with the running
+  version and nodejs.org's download page: the suites only fake an older Node
+  (`ci(ci): check that the packed gup stops on Node 20`)
 
 ## Internal
 

@@ -509,7 +509,7 @@ flowchart TD
    | `semgrep` | `security.yml` | the rules in `.github/semgrep.yml` plus the `p/typescript` and `p/nodejs` packs |
    | `gitleaks` | `security.yml` | secret scan of the whole history (`.gitleaks.toml`) |
 
-   The `docs` workflow (`docs.yml`) also checks Markdown links and anchors when documentation changes. It is not required — a path-filtered workflow cannot be — but a red run is fixed before merging. Neither are `packed install` (`ci.yml`: the packed tarball installed without its install scripts on Windows and macOS, then `gup doctor`) and the `e2e` workflow (the full end-to-end suites on real macOS and Windows runners, weekly or with the `e2e-full` label), but a red run there is read before merging too.
+   The `docs` workflow (`docs.yml`) also checks Markdown links and anchors when documentation changes. It is not required — a path-filtered workflow cannot be — but a red run is fixed before merging. Neither are `packed install` (`ci.yml`: the packed tarball installed without its install scripts on Windows and macOS, then `gup doctor`), `older node refusal` (`ci.yml`: the same tarball on Node 20, where gup must stop and link nodejs.org) and the `e2e` workflow (the full end-to-end suites on real macOS and Windows runners, weekly or with the `e2e-full` label), but a red run there is read before merging too.
 5. **Review.** Every review conversation must be resolved before the merge.
 6. **Merge.** The maintainer merges, with a merge commit that keeps your commits as they are — which is why their messages matter. The repository admin can bypass the ruleset; contributions are merged with all eight checks green.
 
