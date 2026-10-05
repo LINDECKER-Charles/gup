@@ -92,10 +92,23 @@ npm run dev -- list --fast
 
 | | |
 |---|---|
-| **Node** | ≥ 26.9.0 — matches `engines.node`; the interactive app (OpenTUI) loads its native renderer through `node:ffi`, on by default from 26.9 |
+| **Node** | ≥ 26.9.0, checked when gup starts ([below](#on-an-older-node)); the interactive app (OpenTUI) loads its native renderer through `node:ffi`, on by default from 26.9 |
 | **Shell** | any: PowerShell, cmd, bash, zsh, fish |
 | **Terminal** | any for the commands; the interactive app needs a real terminal (stdin and stdout attached to a TTY). Windows Terminal is recommended over the classic console host |
 | **OS** | Windows, macOS, Linux |
+
+### On an older Node
+
+npm installs gup on any Node from 20, then gup stops at start with the version you have, a link
+to [nodejs.org's download page](https://nodejs.org/en/download) and the line that reinstalls gup
+once Node is upgraded ([troubleshooting](troubleshooting.md#gup-needs-node-269)).
+
+That is on purpose: `package.json` declares `engines.node >=20`, below the Node gup needs. Asked
+for a package without a version, npm installs the newest release whose `engines` accepts the
+running Node, and says nothing about the newer ones it skipped. With `engines` at 26.9, Node 22.13
+to 26.8 silently got gup 0.3.2, the last release that accepted them (Node 20 to 22.12, 0.2.2), and
+`npm install -g` kept reinstalling it. Accepting every Node an older release accepted keeps npm on the latest release,
+and lets gup say what to do.
 
 Scanning never needs elevation. `gup` only asks for it when a selected package genuinely
 requires it, and then only once for the whole batch — see

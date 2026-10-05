@@ -4,6 +4,7 @@ import { log } from "../log/log.js";
 import { redactSecrets } from "../log/redact.js";
 import { installConsole } from "../process/output-router.js";
 import { isSwitchedOff } from "../state/env-switch.js";
+import { explainAccessError } from "../state/foreign-owner.js";
 import { RUN_ID, runTrigger } from "../state/run-context.js";
 import { gupVersion } from "../version.js";
 import { historyLocation } from "./paths.js";
@@ -31,7 +32,7 @@ import type {
  *   file must cost a dimmed warning, not a failed upgrade. Every write is
  *   wrapped, and the warning is emitted once per process so a long batch does
  *   not turn into a wall of the same message.
- * - **Synchronous writes.** Every command in `cli.ts` ends on
+ * - **Synchronous writes.** Every command in `main.ts` ends on
  *   `process.exit(code)`, which does not drain pending async I/O — a
  *   fire-and-forget append would routinely lose the last records of a run. At
  *   these sizes the syscall is noise next to spawning an installer.
@@ -190,7 +191,8 @@ function append(event: HistoryEvent): void {
     const line = `${JSON.stringify(event)}\n`;
     appendFileSync(location.file, line, { encoding: "utf8", mode: FILE_MODE });
   } catch (err) {
-    warnOnce(err);
+    // A month gup ran with sudo is root's file: the warning says how to give it back.
+    warnOnce(explainAccessError(err, location.file));
   }
 }
 

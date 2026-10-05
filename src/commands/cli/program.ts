@@ -24,7 +24,7 @@ const VERSION_FLAGS = "-V, --version";
 /**
  * gup's command line, assembled but not parsed: in the language startup
  * chose, then every command, global option and startup hook of `modules`.
- * `cli.ts` parses it; tests read its help without running anything.
+ * `main.ts` parses it; tests read its help without running anything.
  */
 export function createProgram(modules: readonly CliModule[]): Command {
   const program = new Command();

@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import type { RunTrigger } from "../../core/state/run-context.js";
 
 /**
- * How a feature plugs into the command line without editing `cli.ts`: it
+ * How a feature plugs into the command line without editing `main.ts`: it
  * registers its commands and global options, wires its process-wide slots
  * (log backend, launcher, batch guard…) before the action runs, contributes
  * lines to `gup doctor`, and hears about a crash. Every module is one line in
@@ -55,11 +55,13 @@ export interface CliModule {
 }
 
 /**
- * beforeAction order of the modules that need one: logging first (so every
- * later step can log), then the settings everything else reads, then the
- * scheduler. The command modules only register commands.
+ * beforeAction order of the modules that need one: the root guard first (a
+ * run under sudo must not write anything, not even the log), then logging (so
+ * every later step can log), then the settings everything else reads, then
+ * the scheduler. The command modules only register commands.
  */
 export const MODULE_ORDER = {
+  rootGuard: 0,
   logging: 10,
   settings: 20,
   scheduler: 50,

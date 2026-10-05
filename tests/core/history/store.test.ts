@@ -240,6 +240,27 @@ describe("opt-out and failure handling", () => {
     expect(String(stderrSpy.mock.calls[0]![0])).toContain("historique non écrit");
   });
 
+  it("lets the ownership check name the fix for a history another user owns", async () => {
+    const ownership = "../../../src/core/state/foreign-owner.js";
+    vi.resetModules();
+    vi.doMock(ownership, () => ({
+      explainAccessError: (_error: unknown, path: string) => new Error(`root owns ${path}`),
+    }));
+    try {
+      (await import("../../../src/core/i18n/locale.js")).setActiveLocale(SUITE_LOCALE);
+      const fresh = await import("../../../src/core/history/store.js");
+      const blocker = join(dir, "blocker");
+      writeFileSync(blocker, "not a directory");
+      process.env["GUP_HISTORY_DIR"] = join(blocker, "history");
+      fresh.recordUpdate({ providerId: "p", outcome: outcome() });
+    } finally {
+      vi.doUnmock(ownership);
+    }
+    expect(String(stderrSpy.mock.calls[0]![0])).toMatch(
+      /historique non écrit — root owns .*blocker.history.\d{4}-\d{2}\.jsonl/,
+    );
+  });
+
   it("tells the debug log why the history was not written", async () => {
     const facade = await import("../../../src/core/log/log.js");
     const emit = vi.fn();

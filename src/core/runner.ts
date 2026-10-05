@@ -592,7 +592,8 @@ const ROOT_UID = 0;
  *
  * Windows: `net session` requires admin privileges, so its exit code is a
  * reliable cheap probe. POSIX: running as root — the sudo'd elevated batch
- * child, or a user who started gup with sudo. Providers whose update needs
+ * child, or root itself (a root shell, a container); gup refuses to start
+ * under sudo otherwise (`root-guard-module.ts`). Providers whose update needs
  * UAC or sudo flag their rows `requiresAdmin` only when this is false, so a
  * single prompt covers the whole batch.
  */

@@ -3,6 +3,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
 } from "../../core/install-source.js";
 import { fetchGitHubReleaseLatest } from "../../core/gh-releases.js";
 import { pickInstallHint } from "../../core/install-hint.js";
@@ -46,6 +47,7 @@ export class TFLintProvider implements Provider {
         current,
         latest,
         note: describeSource(source),
+        ...installedByField(source),
         ...(source === "manual" && { manual: true }),
       },
     ];

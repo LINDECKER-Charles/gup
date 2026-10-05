@@ -9,6 +9,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
   resolveBinaryPath,
   upgradeNeedsRoot,
   type PackageIds,
@@ -279,6 +280,7 @@ async function buildRows(current: string, latest: string): Promise<OutdatedPacka
     current,
     latest,
     note: source === "manual" ? TEXT.unknownSourceNote : describeSource(source),
+    ...installedByField(source),
   };
   return upgradeNeedsRoot(source, PACKAGE_IDS) ? flagForElevation([row]) : [row];
 }

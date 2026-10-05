@@ -11,6 +11,8 @@ import type { Sandbox } from "./sandbox.js";
 
 export const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 export const CLI_ENTRY = join(REPO_ROOT, "dist", "cli.js");
+/** The program `dist/cli.js` loads. */
+export const PROGRAM_ENTRY = join(REPO_ROOT, "dist", "main.js");
 export const TRAMPOLINE_ENTRY = join(REPO_ROOT, "dist", "pty-exec.js");
 
 /** Detection probes up to 150 tools on a slow CI disk; a scan may reach the network. */

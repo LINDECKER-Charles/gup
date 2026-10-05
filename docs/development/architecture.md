@@ -47,7 +47,7 @@ the user asked of it:
 
 ```mermaid
 flowchart LR
-    User([User]) -->|"gup …"| CLI["cli.ts<br/>CLI modules"]
+    User([User]) -->|"gup …"| CLI["cli.ts → main.ts<br/>CLI modules"]
     OS[["OS trigger<br/>Task Scheduler · launchd · cron"]] -->|every 15 min| Tick["gup __schedule-tick"]
     CLI --> Menu["menu<br/>full-screen app"]
     CLI --> Cmds["list · update · doctor<br/>log · report · schedule"]
@@ -86,7 +86,7 @@ Who depends on whom:
 ```mermaid
 flowchart TB
     subgraph Entry["entry"]
-        Cli["cli.ts"] --> Modules["commands/cli/<br/>CLI modules · startup"]
+        Cli["cli.ts → main.ts"] --> Modules["commands/cli/<br/>CLI modules · startup"]
     end
     subgraph Commands["commands/ — one use case each"]
         Cmd["list · update · doctor · menu"]
@@ -118,7 +118,7 @@ flowchart TB
 
 | Layer | Role | Rule |
 |---|---|---|
-| `cli.ts` | Chooses the interface language (§15), then parses the Commander program `commands/cli/program.ts` builds from the CLI modules, commander's own words in that language | No logic: commands, global options and startup hooks come from `commands/cli/cli-modules.ts` (§12). |
+| `cli.ts`, `main.ts` | `cli.ts`, the installed entry point, stops on a Node older than `MIN_NODE` (`core/node-floor.ts`) with where to get a newer one; otherwise it loads `main.ts`, the program, bundled on its own (`dist/main.js`). `main.ts` chooses the interface language (§15), then parses the Commander program `commands/cli/program.ts` builds from the CLI modules, commander's own words in that language | No logic: commands, global options and startup hooks come from `commands/cli/cli-modules.ts` (§12). |
 | `commands/` | One use case per module: `list`, `update`, `doctor`, the menu's controller, `log` and `report` (`journal/`), `schedule` and the tick (`schedule/`), the elevated child (`admin-batch.ts`) | Composes core and UI; owns the composition roots (`menu-views.ts`, `cli-modules.ts`). |
 | `ui/app/` | The interactive app: `MenuApp` (a loop of sessions), `MenuSession` (layout, key routing, view registry), the update launchers, menu preferences | Knows views only through `ViewDefinition`; imports nothing from `commands/` but the menu's state type (`menu-state.ts`). |
 | `ui/views/`, `ui/panels/` | One view per sidebar entry: a factory (`views/<id>-view.ts`) and plain-object panels that render lines and take keys | Ports as parameters; no process, no file access of their own. |
@@ -157,6 +157,7 @@ classDiagram
         +current: string
         +latest: string
         +note?: string
+        +installedBy?: InstallSource
         +manual?: boolean
         +requiresAdmin?: boolean
         +aggregate?: boolean
@@ -199,6 +200,9 @@ classDiagram
   Npackd, MacPorts, Fink, pkgin, Visual Studio): never scheduled.
 - `manual: true` — no command can update the row; `scanAll` drops it, so no list or picker
   ever shows it.
+- `installedBy` — the package manager a delegating provider hands the update to
+  (`installedByField(source)`, next to the `via …` note). A row Homebrew installed gives way to
+  brew's own row once brew scanned (`dropSuperseded`).
 - `requiresAdmin: true` — the update needs UAC or `sudo`; the pipeline moves the row to the
   single elevated batch (§6).
 - `aggregate: true` — updating the row acts on the whole provider ("all plugins", a refresh
@@ -279,6 +283,9 @@ sequenceDiagram
 - Rows a provider flags `manual` are dropped; then `filterByOwnership` drops OS-level rows for a
   binary a toolchain manager owns (`choco:nodejs` while nvm-windows owns `node`), logged at
   `debug` as `scan.ownership-excluded`.
+- `dropSuperseded` (`core/superseded.ts`) keeps software two providers list with one, the one
+  that updates it: winget's Visual Studio editions give way to `visual-studio`, `self:gh` to
+  winget, a row `installedBy: "brew"` to brew's own; logged at `debug` as `scan.superseded`.
 - `runScan` (`ui/scan-progress.ts`) records the scan in the history with each provider's own
   duration. The menu feeds its events to the Scan view; the one-shot commands show the same panel
   on their own screen, or one summary line when output is piped.
@@ -640,10 +647,18 @@ under every theme and measures every painted cell. User guide:
 A feature plugs into the command line with a `CliModule` — `register` (its commands and global
 options), `triggerFor`, `beforeAction`, `diagnostics` (its `gup doctor` "System" line),
 `onCrash`, `runsInElevatedChild` — and one line in `CLI_MODULES`. Before every command,
-`installStartup` records what started the run, then runs every `beforeAction` in order: logging,
-settings, scheduler, then the commands' own. The elevated `__admin-batch` child runs only the
-modules that opt in (the debug log's), so nothing it runs as an administrator reads the user's
-settings.
+`installStartup` records what started the run, then runs every `beforeAction` in order: the root
+guard, logging, settings, scheduler, then the commands' own. The elevated `__admin-batch` child
+runs only the modules that opt in (the debug log's), so nothing it runs as an administrator reads
+the user's settings.
+
+The root guard (`root-guard-module.ts`) refuses a run under `sudo` — root, with a `SUDO_UID`
+naming another account — before anything is written, the log included: macOS's `sudo` keeps the
+user's HOME, and gup run that way left its state to root in the user's folders, where the next
+run as the user could not write it. The elevated child, which it does not opt in to, and root's
+own runs (no `SUDO_UID`) go through. Its `gup doctor` line lists the gup folders and files
+another user owns, with the `chown` that gives them back (`core/state/foreign-owner.ts`, which
+also words the access errors of the update lock and the history).
 
 `beforeAction` installs the process-wide **slots**; nothing else does, except the install sink,
 which is routed around a batch. Library code reads them; tests reset them.
@@ -685,7 +700,8 @@ The threat model, the mitigations and the tests that pin them are in
 
 ```
 src/
-├── cli.ts                  # the interface language, then the Commander program built from the CLI modules
+├── cli.ts                  # the installed entry point: the Node check, then main.ts, a bundle of its own
+├── main.ts                 # the interface language, then the Commander program built from the CLI modules
 ├── pty-exec.ts             # the PTY trampoline (second bundle, dist/pty-exec.js)
 ├── commands/
 │   ├── cli/                # CliModule contract, CLI_MODULES, startup, settings, language and embedded-terminal modules
@@ -699,7 +715,7 @@ src/
 │   ├── elevation.ts        # the elevated batch (UAC / sudo)
 │   ├── types.ts            # the provider contract
 │   ├── install-source.ts · ownership.ts · corepack-ownership.ts   # who owns a binary
-│   ├── gh-releases.ts · hashicorp-releases.ts · wsl.ts · nvim-paths.ts · install-hint.ts · version.ts
+│   ├── gh-releases.ts · hashicorp-releases.ts · wsl.ts · nvim-paths.ts · install-hint.ts · version.ts · node-floor.ts
 │   ├── platform/           # platform sets, the gate, provider status
 │   ├── i18n/               # the interface language: locales, live catalogs, the startup choice
 │   ├── process/            # install sinks, output router, command tracer, PATH lookup
@@ -744,9 +760,9 @@ anything is printed, and every text is read in it when it is shown.
 
 | Process | Where its language comes from |
 |---|---|
-| every command, the menu, the scheduled tick | `applyStartupLocale(argv)` in `cli.ts`, before the program is built: `GUP_LANG` > the `interface.language` setting > English. `GUP_LANG` is read on its primary subtag, in any case (`fr_FR.UTF-8` is French); a language gup has no translation for is ignored, never fatal. The machine's own locale is never consulted. |
+| every command, the menu, the scheduled tick | `applyStartupLocale(argv)` in `main.ts`, before the program is built: `GUP_LANG` > the `interface.language` setting > English. `GUP_LANG` is read on its primary subtag, in any case (`fr_FR.UTF-8` is French); a language gup has no translation for is ignored, never fatal. The machine's own locale is never consulted. |
 | the elevated child (`__admin-batch`) | never the settings: its parent's language travels in the batch payload, validated like the timeout and the log threshold (§6); a parent older than 0.5.1 sends none, and the child speaks English |
-| the PTY trampoline (`dist/pty-exec.js`) | never `cli.ts`: the request carries the parent's language, validated with the rest of the payload; a request that cannot be decoded is refused in English |
+| the PTY trampoline (`dist/pty-exec.js`) | never `main.ts`: the request carries the parent's language, validated with the rest of the payload; a request that cannot be decoded is refused in English |
 
 The module, `core/i18n/`:
 

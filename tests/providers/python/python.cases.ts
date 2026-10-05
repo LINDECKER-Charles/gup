@@ -325,7 +325,7 @@ const PYENV_HOMEBREW: ProviderContractCase = {
   scenario: "homebrew",
   create: () => new PyenvProvider(),
   system: PYENV_BREW_MACHINE,
-  outdated: [{ ...PYENV_ROW, note: "via brew" }],
+  outdated: [{ ...PYENV_ROW, note: "via brew", installedBy: "brew" }],
   update: { packageId: "pyenv", installs: [["brew", "upgrade", "--formula", "pyenv"]] },
   routes: delegationRoutes(
     "pyenv",
@@ -343,7 +343,7 @@ const PYENV_APT: ProviderContractCase = {
     commands: pyenvAnswers("2.8.3", { stdout: "/home/u/.pyenv" }),
     http: [PYENV_RELEASE],
   }),
-  outdated: [{ ...PYENV_ROW, note: "via apt", requiresAdmin: true }],
+  outdated: [{ ...PYENV_ROW, note: "via apt", installedBy: "apt", requiresAdmin: true }],
   update: {
     packageId: "pyenv",
     installs: [["sudo", "apt-get", "install", "--only-upgrade", "-y", "pyenv"]],

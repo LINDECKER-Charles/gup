@@ -72,7 +72,7 @@ reasoning behind the exclusion: [`scope.md`](../guide/scope.md).
 | **Provider** | Isolated module that knows how to handle **one** installation source. One file = one provider. Implements the `Provider` interface (`src/core/types.ts`). Examples: `WingetProvider`, `NpmGlobalProvider`, `HelmProvider`. |
 | **Provider id** | Stable kebab-case identifier, unique across the registry. Used at the CLI: `gup update <provider-id>:<packageId>` (e.g. `winget:Microsoft.PowerShell`). |
 | **Platform set** | The OSes gup supports a provider on (`PLATFORMS.windows`, `macos`, `notWindows`; omitted = everywhere). Elsewhere the provider is never probed, scanned or updated, and listings grey it out. |
-| **OutdatedPackage** | One scan-result entry: `{ id, name?, current, latest, note?, manual?, requiresAdmin?, aggregate? }`. The **currency** between the provider layer and everything above it. |
+| **OutdatedPackage** | One scan-result entry: `{ id, name?, current, latest, note?, installedBy?, manual?, requiresAdmin?, aggregate? }`. The **currency** between the provider layer and everything above it. |
 | **UpdateOutcome** | Result of an update: `{ id, success, skipped?, message?, retryable?, recovery? }`. |
 | **ProviderScanResult** | Per-provider aggregate after a scan: `{ providerId, available, packages[], error? }`. |
 | **slow** | Declarative flag on a provider whose scan does HTTP per package or a heavy filesystem walk. Skipped in `--fast` mode. |
@@ -137,11 +137,12 @@ it.
 
 ## 4. Full command lifecycle
 
-`src/cli.ts` first chooses the interface language (§9.1), then builds a Commander program from
-the CLI modules (`src/commands/cli/cli-modules.ts`). Before any command runs, the startup hook
+`src/main.ts`, which `src/cli.ts` loads, first chooses the interface language (§9.1), then builds a
+Commander program from the CLI modules (`src/commands/cli/cli-modules.ts`). Before any command runs, the startup hook
 records what started the process (`menu`, `cli` or `schedule`) and runs every module's
-`beforeAction` in order: the debug log, the settings (theme engine, menu preferences, install
-timeout), the scheduler (batch lock), then the commands' own (§9.1).
+`beforeAction` in order: the root guard (a run under `sudo` stops there, before anything is
+written), the debug log, the settings (theme engine, menu preferences, install timeout), the
+scheduler (batch lock), then the commands' own (§9.1).
 
 ### 4.1 `gup` (bare command — interactive app)
 
@@ -228,7 +229,8 @@ doctorCommand()
   ├─ readProviderStatus()                  every provider: detected / missing / incompatible
   ├─ renderProvidersStatus(report)         the three groups, install hints for the missing
   └─ "System": each module's diagnostics() (5 s each, home shortened to ~)
-       Embedded terminal · Debug log · Language · Schedules · Configuration
+       Embedded terminal · Debug log · Language · File ownership (POSIX) · Schedules ·
+       Configuration
 ```
 
 No scan, no update. Exits 0.
@@ -280,7 +282,7 @@ gup language [code]                         (commands/cli/language-module.ts)
                → GUP_LANG still decides in this shell? say so on stderr
 ```
 
-The same choice, made once by `cli.ts` at every start (§9.1), is what every other command speaks;
+The same choice, made once by `main.ts` at every start (§9.1), is what every other command speaks;
 `gup doctor` reports it on its "Language" line, a warning when `GUP_LANG` named a language gup
 does not speak. Where the language comes from in each process, and what follows it:
 [`architecture.md` §15](architecture.md#15-interface-language).
@@ -336,6 +338,8 @@ The most complex and most variable method. The contract:
    - `current` / `latest`: strings as emitted by the tool, **un-normalized** (the UI displays them
      as-is — semantic comparison happens inside the provider via `normalizeVersion()`).
    - `note?`: free-form extra info (`"pinned"`, `"unknown version"`, `"source: msstore"`…).
+   - `installedBy?`: the package manager a delegating provider hands the update to, spread from
+     `installedByField(source)`; a row Homebrew installed gives way to brew's own in `scanAll`.
    - `manual?: true`: no command can update it; filtered by `scanAll`.
    - `requiresAdmin?: true`: the update needs UAC or `sudo` (Chocolatey through
      `flagForElevation`; on macOS and Linux MacPorts, Fink, pkgin and the apt/dnf delegations).
@@ -528,10 +532,13 @@ const raw = await Promise.all(
   ),
 );
 const { results, exclusions } = await filterByOwnership(raw);   // §8.5
+const deduplicated = dropSuperseded(results);                    // core/superseded.ts
 ```
 
 `scanProvider` calls `onProviderStart`, wraps `listOutdated()` in a `try/catch` (a throw becomes
-`error: string`), drops `manual` rows, then calls `onProviderEnd`.
+`error: string`), drops `manual` rows, then calls `onProviderEnd`. `dropSuperseded` then keeps
+software two providers list with the one that updates it — a row `installedBy: "brew"` gives way
+to brew's own once brew scanned.
 
 Invariants set here:
 1. **Concurrency 4 by default** — no machine saturated by subprocesses.
@@ -690,11 +697,15 @@ providers; the install hint matching the running platform, so `gup doctor` never
 
 ### 9.1 `cli.ts` and the CLI modules
 
-`cli.ts` first chooses the interface language: `applyStartupLocale(argv)`
+`cli.ts`, the installed entry point, first checks the running Node against `MIN_NODE`
+(`core/node-floor.ts`): on an older one it prints where to get a newer Node and how to reinstall
+gup, in the language `GUP_LANG` names, and exits 1 before any module of the program loads.
+Otherwise it loads `main.ts`, the program, which tsup bundles on its own (§17). `main.ts` first
+chooses the interface language: `applyStartupLocale(argv)`
 (`commands/cli/language-module.ts`) takes `GUP_LANG`, then the `interface.language` setting, then
 English — the elevated child, which never reads the settings, starts from `GUP_LANG` and takes its
 parent's language from the batch payload (§9.6). It comes first because the help, the commands'
-descriptions and commander's own words are read as the program is built. `cli.ts` then parses
+descriptions and commander's own words are read as the program is built. `main.ts` then parses
 the program `createProgram` (`commands/cli/program.ts`) assembles: commander localized first
 (`commander-locale.ts`: the help's headings and `[command]`, `-h` and `help`, `--version`, and
 its usage errors reworded line by line — the words live in `ui/text/cli-labels.ts`, in both
@@ -712,7 +723,7 @@ holds the keyboard — raw mode turns it into a key, not SIGINT) exits 130 silen
 error prints `Error: <message>` on stderr (`Erreur :` in French) and exits 1. A signal while a
 screen is up exits 128 + the signal number once the terminal is restored. Standard output's
 EPIPE — its reader left, `gup … | head` — exits 0 at once and silently (`broken-pipe.ts`,
-installed by `cli.ts` before parsing); any other error of that stream still crashes as unhandled.
+installed by `main.ts` before parsing); any other error of that stream still crashes as unhandled.
 
 ### 9.2 `list.ts`, `update.ts`, `doctor.ts`
 
@@ -993,9 +1004,10 @@ necessary, no `any`. Comments say *why*, never *what*.
 ### Stack
 
 - ESM TypeScript, strict `tsconfig.json`.
-- Bundler: `tsup`, two entries and two bundles: `dist/cli.js` (the CLI) and `dist/pty-exec.js`
-  (the PTY trampoline, about 9 KB, so an install in the embedded terminal does not pay for loading
-  the CLI). Target `node26`; `node-pty` is marked external (an optional native dependency, loaded
+- Bundler: `tsup`, three entries and three bundles: `dist/cli.js` (the installed entry point,
+  which loads the program), `dist/main.js` (the program) and `dist/pty-exec.js` (the PTY
+  trampoline, about 9 KB, so an install in the embedded terminal does not pay for loading the
+  CLI). Target `node26`; `node-pty` is marked external (an optional native dependency, loaded
   at runtime only).
 - Distributed via npm as `@charles_lindecker/gup`. `git clone` + `npm install && npm run build &&
   npm link` is also supported for local hacking.
@@ -1004,7 +1016,7 @@ necessary, no `any`. Comments say *why*, never *what*.
 
 ```
 dev                  # tsx src/cli.ts (no-build dev loop)
-build                # tsup → dist/cli.js + dist/pty-exec.js
+build                # tsup → dist/cli.js + dist/main.js + dist/pty-exec.js
 start                # node dist/cli.js
 typecheck            # tsc --noEmit, on src then on the tests (tests/tsconfig.json)
 typecheck:scripts    # tsc on the screenshot generator
@@ -1088,6 +1100,7 @@ Conventions:
 | `Provider.platforms` | `PlatformSet?` | provider class | a named set; enforced by the registry only |
 | `Provider.canUpdateUnattended` | `boolean?` | provider class | `false` → never scheduled |
 | `OutdatedPackage.manual` | `boolean?` | output of `listOutdated` | filtered in `scanAll`, never user-visible |
+| `OutdatedPackage.installedBy` | `InstallSource?` | output of `listOutdated` | `brew` → gives way to brew's own row once brew scanned |
 | `OutdatedPackage.requiresAdmin` | `boolean?` | output of `listOutdated` | → the single elevated batch |
 | `OutdatedPackage.aggregate` | `boolean?` | output of `listOutdated` | never a scheduling target |
 | `UpdateOutcome.success` | `boolean` | output of `update` | `false` ↔ failure OR skip |

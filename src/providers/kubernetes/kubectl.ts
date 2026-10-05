@@ -3,6 +3,7 @@ import {
   delegateUpdate,
   describeSource,
   detectInstallSource,
+  installedByField,
 } from "../../core/install-source.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { localize } from "../../core/i18n/localized.js";
@@ -50,6 +51,7 @@ export class KubectlProvider implements Provider {
         current,
         latest,
         note: describeSource(source),
+        ...installedByField(source),
         ...(source === "manual" && { manual: true }),
       },
     ];

@@ -59,7 +59,7 @@ npm link            # exposes gup globally (optional)
 
 Requirements: **Node ≥ 26.9**, any shell — the interactive UI is OpenTUI, whose native renderer loads through `node:ffi`, on by default from 26.9. To iterate without rebuilding: `npm run dev -- <args>` (uses `tsx`).
 
-Install Node through a version manager rather than over your system Node, so this floor does not fight your other projects: [nvm-windows](https://github.com/coreybutler/nvm-windows), [fnm](https://github.com/Schniz/fnm) or [Volta](https://volta.sh/) on Windows; fnm, Volta or [nvm](https://github.com/nvm-sh/nvm) on macOS and Linux. On an older Node, npm only warns (`EBADENGINE`), then the UI tests and the interactive app fail to load.
+Install Node through a version manager rather than over your system Node, so this floor does not fight your other projects: [nvm-windows](https://github.com/coreybutler/nvm-windows), [fnm](https://github.com/Schniz/fnm) or [Volta](https://volta.sh/) on Windows; fnm, Volta or [nvm](https://github.com/nvm-sh/nvm) on macOS and Linux. On an older Node, npm installs without a word — `engines.node` is lower than the floor on purpose ([`src/core/node-floor.ts`](../src/core/node-floor.ts) says why) — then the tests' global setup and gup itself stop with the version to install.
 
 ### node-pty, the optional native dependency
 
@@ -79,7 +79,7 @@ They show up in `npm outdated` or as Dependabot pull requests; none is an oversi
 | Package | Pinned to | Why |
 |---|---|---|
 | `typescript` | `^6` | typescript-eslint does not support the TypeScript 7 API yet — `npm run lint` and `npm run lint:security` both fail outright on TS 7 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)). `tsc --noEmit` and the build are fine on 7; the linters are the blocker. |
-| `@types/node` | `^26` | Matched to the `engines.node` floor on purpose. Typing against the *minimum* supported runtime is what makes `tsc` reject an API that only exists on a newer Node line — bumping these types to the latest silently removes that guard. Raise it only together with `engines`. |
+| `@types/node` | `^26` | Matched to the Node floor on purpose, `MIN_NODE` in `src/core/node-floor.ts` — not `engines.node`, which is lower so that npm always installs the latest release. Typing against the *minimum* supported runtime is what makes `tsc` reject an API that only exists on a newer Node line — bumping these types to the latest silently removes that guard. Raise it only together with `MIN_NODE` and the tsup target; `tests/core/node-floor.test.ts` holds the three to the same major. |
 | `@opentui/core` | exact | A young API with a native renderer: the screen host's teardown order (conhost), the embedded terminal, frame timing and the screenshot generator are checked against this version. |
 | `node-pty` | exact | gup releases each Windows pseudo-console through node-pty internals that are checked against the pinned version (a unit test ties the pin to `package.json`); a bump means re-checking `releaseConpty` in `src/core/pty/pty-session.ts`. |
 | `croner` | exact | Schedules are evaluated by it: a behaviour change in cron parsing or DST handling would move users' updates. |
@@ -509,7 +509,7 @@ flowchart TD
    | `semgrep` | `security.yml` | the rules in `.github/semgrep.yml` plus the `p/typescript` and `p/nodejs` packs |
    | `gitleaks` | `security.yml` | secret scan of the whole history (`.gitleaks.toml`) |
 
-   The `docs` workflow (`docs.yml`) also checks Markdown links and anchors when documentation changes. It is not required — a path-filtered workflow cannot be — but a red run is fixed before merging. Neither are `packed install` (`ci.yml`: the packed tarball installed without its install scripts on Windows and macOS, then `gup doctor`) and the `e2e` workflow (the full end-to-end suites on real macOS and Windows runners, weekly or with the `e2e-full` label), but a red run there is read before merging too.
+   The `docs` workflow (`docs.yml`) also checks Markdown links and anchors when documentation changes. It is not required — a path-filtered workflow cannot be — but a red run is fixed before merging. Neither are `packed install` (`ci.yml`: the packed tarball installed without its install scripts on Windows and macOS, then `gup doctor`), `older node refusal` (`ci.yml`: the same tarball on Node 20, where gup must stop and link nodejs.org) and the `e2e` workflow (the full end-to-end suites on real macOS and Windows runners, weekly or with the `e2e-full` label), but a red run there is read before merging too.
 5. **Review.** Every review conversation must be resolved before the merge.
 6. **Merge.** The maintainer merges, with a merge commit that keeps your commits as they are — which is why their messages matter. The repository admin can bypass the ruleset; contributions are merged with all eight checks green.
 

@@ -112,7 +112,7 @@ export async function runElevatedBatch(
 /**
  * Scan rows whose update needs UAC or sudo, made ready for the elevated
  * batch: flagged `requiresAdmin` unless this process already runs elevated
- * (the batch child itself, or gup started with sudo), in which case they
+ * (the batch child itself, or gup run by root), in which case they
  * update in place without any prompt.
  */
 export async function flagForElevation(rows: OutdatedPackage[]): Promise<OutdatedPackage[]> {

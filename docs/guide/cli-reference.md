@@ -147,6 +147,15 @@ The **Language** line names the language gup speaks and where it comes from (`GU
 `setting` or `default`); a `GUP_LANG` gup has no translation for turns it into a warning (`▲`)
 that says so: `English (default) · GUP_LANG=de ignored: gup speaks en, fr`.
 
+On macOS and Linux, a **File ownership** line follows **Language**: `gup's folders are yours`, or
+one warning per gup folder or file another user owns — what a run under `sudo` left to root —
+with the command that gives it back
+([Troubleshooting](troubleshooting.md#a-gup-folder-belongs-to-root)):
+
+```text
+  ▲ File ownership           ~/Library/Application Support/gup belongs to root, not to you — gup was probably run with sudo. Give it back to your user: sudo chown -R jane "$HOME/Library/Application Support/gup"
+```
+
 Detection runs eight probes at a time, each capped at 15 s, so one stuck tool cannot hang the
 command. Run it first when a package you expected never shows up in a scan, and attach its output
 to a bug report.
@@ -399,6 +408,7 @@ table — so the payload stays pipeable.
 | `packages[].name` | `string?` | Display name, when the provider has one |
 | `packages[].current` / `.latest` | `string` | Versions as the provider reports them, verbatim |
 | `packages[].note` | `string?` | Free-form annotation (`pinned`, `source: msstore`…); a provider's own sentence follows the interface language |
+| `packages[].installedBy` | `string?` | The package manager the update goes through (`brew`, `scoop`, `choco`, `winget`, `apt`, `dnf`), on the row of a tool a provider follows but a package manager installed |
 | `packages[].requiresAdmin` | `boolean?` | Will go through the elevated batch |
 | `packages[].aggregate` | `boolean?` | Updating it updates the whole provider (never a scheduling target) |
 | `error` | `string?` | Set when the provider was reachable but its scan failed, in the interface language |
@@ -439,14 +449,14 @@ fast). Used by gup's own test suites only: `GUP_E2E`, `GUP_E2E_SCOPE`, `GUP_MUTA
 | Code | Meaning |
 |---|---|
 | `0` | Success, or nothing to do — or the reader of gup's output left (`gup report -f csv \| head`): gup stops at once, silently |
-| `1` | At least one update failed, the `--all` confirmation was declined, a file could not be read or written, a schedule's trigger could not be changed, or an unhandled error occurred (`Error: …` on stderr) |
+| `1` | At least one update failed, the `--all` confirmation was declined, a file could not be read or written, a schedule's trigger could not be changed, or an unhandled error occurred (`Error: …` on stderr) — and any command on a Node older than 26.9, which stops before it runs ([troubleshooting](troubleshooting.md#gup-needs-node-269)) |
 | `2` | Bad invocation: malformed target, unknown or foreign provider, invalid `--timeout`, `--log-level`, `--since`, `--format` or schedule arguments, an unknown language code — nothing was changed |
 | `130` | Ctrl+C at a prompt or on a full screen |
 | `128 + n` | Signal `n` while a full screen was up (the console window closed, Ctrl+Break, a kill): the terminal is restored first |
 
 | Command | Codes |
 |---|---|
-| `gup` | `0` on quit; `1` when the app cannot start (no interactive terminal, Node older than 26.9) |
+| `gup` | `0` on quit; `1` when the app cannot start (no interactive terminal) |
 | `gup list`, `gup doctor` | `0` — a provider that fails to scan is reported in-band, not as a process failure |
 | `gup update` | `0`, `1` (a failure, a declined `--all`), `2` |
 | `gup log`, `gup report` | `0` (a report written but not opened is a success), `1`, `2` |

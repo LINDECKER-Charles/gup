@@ -13,7 +13,7 @@ import { runInherit, type RunResult } from "./core/runner.js";
  * execa resolves PATHEXT and escapes `.cmd` targets as always. The runner
  * sanitises the command and argv again here.
  *
- * It speaks the language the request carries: `cli.ts` never runs in this
+ * It speaks the language the request carries: `main.ts` never runs in this
  * process, so nothing else chooses one. A request it cannot decode names
  * none, and is refused in the default language.
  */

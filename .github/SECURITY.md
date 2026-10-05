@@ -14,8 +14,9 @@
 | Any older release | ❌ Upgrade to the latest release |
 
 While `gup` is in `0.x`, fixes are made on the latest minor line only. The
-supported runtime is the one `engines.node` allows (Node ≥ 26.9); a problem
-that only reproduces on an older Node is not supported.
+supported runtime is the one gup checks at start (Node ≥ 26.9, `MIN_NODE` in
+`src/core/node-floor.ts`; `engines.node` is lower on purpose); a problem that
+only reproduces on an older Node is not supported.
 
 ## Reporting a vulnerability
 

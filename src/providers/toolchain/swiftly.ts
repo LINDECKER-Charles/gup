@@ -2,6 +2,7 @@ import { commandExists, run, runInherit } from "../../core/runner.js";
 import {
   describeSource,
   detectInstallSource,
+  installedByField,
   runPmUpdate,
 } from "../../core/install-source.js";
 import type { InstallSource } from "../../core/install-source.js";
@@ -85,6 +86,7 @@ export class SwiftlyProvider implements Provider {
           current,
           latest,
           note: updateNote(source),
+          ...installedByField(source),
         },
       ];
     } catch {

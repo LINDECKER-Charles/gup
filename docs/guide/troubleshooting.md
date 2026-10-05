@@ -7,7 +7,7 @@ here? [Collect a diagnostic](#collecting-a-diagnostic-for-a-bug-report) and open
 
 - [Installing](#installing)
   - [npm warns about install scripts, or refuses to install](#npm-warns-about-install-scripts-or-refuses-to-install)
-  - [The app needs Node 26.9](#the-app-needs-node-269)
+  - [gup needs Node 26.9](#gup-needs-node-269)
 - [The interactive app](#the-interactive-app)
   - [It refuses to start: no interactive terminal](#it-refuses-to-start-no-interactive-terminal)
   - [The Windows console host](#the-windows-console-host)
@@ -16,6 +16,8 @@ here? [Collect a diagnostic](#collecting-a-diagnostic-for-a-bug-report) and open
 - [Updates](#updates)
   - [The embedded terminal is unavailable](#the-embedded-terminal-is-unavailable)
   - [The update waits for another gup](#the-update-waits-for-another-gup)
+  - [A gup folder belongs to root](#a-gup-folder-belongs-to-root)
+  - [gup refuses to run under sudo](#gup-refuses-to-run-under-sudo)
   - [Administrator packages were skipped](#administrator-packages-were-skipped)
   - [An install hangs](#an-install-hangs)
   - [gup does not update itself (Windows)](#gup-does-not-update-itself-windows)
@@ -51,15 +53,18 @@ and npm 11 and later ask you to review them: npm 11 still runs them, npm 12 skip
 with `--ignore-scripts` is harmless on Windows and macOS, but leaves Linux without the embedded
 terminal. Details: [installation.md § npm 11 and install scripts](installation.md#npm-11-and-install-scripts).
 
-### The app needs Node 26.9
+### gup needs Node 26.9
 
 ```text
-Error: gup's interactive interface needs Node.js >= 26.9.0 (node:ffi) — current version v24.11.0
+Error: gup needs Node.js 26.9.0 or newer — current version v24.11.0
+Install a newer Node.js: https://nodejs.org/en/download
+Then reinstall gup: npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty
 ```
 
-**Why.** The interactive app's renderer loads through `node:ffi`, on by default from Node 26.9.
-`gup list --json` and `gup update -y` do not load it, but the package requires Node ≥ 26.9 anyway
-(`engines`).
+**Why.** The interactive app's renderer loads through `node:ffi`, on by default from Node 26.9,
+and gup is built for Node 26. Every command checks the running Node before anything else and
+stops there, exit code `1`, rather than failing further on. npm installs gup on an older Node on
+purpose: [installation.md § On an older Node](installation.md#on-an-older-node).
 
 **Fix.** Upgrade Node, ideally through a version manager:
 
@@ -69,7 +74,9 @@ Error: gup's interactive interface needs Node.js >= 26.9.0 (node:ffi) — curren
 | macOS | `brew upgrade node` (or `fnm install 26`, `nvm install 26`, `volta install node@26`) |
 | Linux | your version manager: `fnm install 26`, `nvm install 26`, `volta install node@26` |
 
-Then reinstall gup for the new Node: `npm install -g @charles_lindecker/gup --allow-scripts=node-pty`.
+Then reinstall gup for the new Node: `npm install -g @charles_lindecker/gup@latest --allow-scripts=node-pty`.
+A version manager keeps global packages per Node version; the reinstall also brings back the
+embedded terminal if the install on the older Node skipped node-pty.
 
 ## The interactive app
 
@@ -157,6 +164,44 @@ driving your package managers. gup waits for it to finish.
 **Fix.** Wait, or give up: `x` in the app's run view, Ctrl+C in a terminal. The lock is released by
 the system when its holder exits, however it exits; if the wait never ends, a gup process is still
 running — find it (Task Manager, `ps aux | grep gup`) and let it finish or close it.
+
+### A gup folder belongs to root
+
+```text
+The update was interrupted: cannot write /Users/jane/Library/Application Support/gup/locks:
+/Users/jane/Library/Application Support/gup belongs to root, not to you — gup was probably run
+with sudo. Give it back to your user: sudo chown -R jane "$HOME/Library/Application Support/gup"
+```
+
+In a terminal the same message follows `Error:`; the history says
+`history not written — cannot write …` with the same fix. Versions before this message only said
+`EACCES: permission denied, mkdir '…/gup/locks'`, or `history not written — EACCES: …`.
+
+**Why.** gup was once run with `sudo` (macOS and Linux). On macOS `sudo` keeps your home folder, so
+gup, running as root, created its folders there as root's: your later runs can no longer write
+them. From 0.5.0 on, an update takes a lock in that folder before it starts, so no update starts.
+
+**Fix.** Run the command the message gives, once — it asks for your password — then run gup
+without `sudo`, which [gup now refuses](#gup-refuses-to-run-under-sudo). `gup doctor`'s
+**File ownership** line lists every gup folder or file that still belongs to someone else, each
+with its command; it says `gup's folders are yours` once none does.
+
+### gup refuses to run under sudo
+
+```text
+Error: gup does not run under sudo: as root, it would leave files in your home folder that your
+user can no longer write, and Homebrew refuses to run as root. Run gup without sudo — it asks
+for your password itself when a package needs administrator rights.
+```
+
+**Why.** Run as root, gup leaves root's files in your home folder
+([above](#a-gup-folder-belongs-to-root)), and the package managers object too: Homebrew refuses to
+run as root, and an npm or pip global installed as root leaves root's files in your prefix.
+
+**Fix.** Run `gup` without `sudo`. The packages that need administrator rights (MacPorts, Fink,
+pkgin, apt…) run together behind one `sudo` password gup asks for itself
+([below](#administrator-packages-were-skipped)). Only a run through `sudo` is refused: gup runs as
+root where root is the account itself — a root shell, a container.
 
 ### Administrator packages were skipped
 
@@ -278,8 +323,10 @@ winget's question there.
   see what was left out and why.
 - **Another provider updates it.** Software two providers list stays with one, so it is never
   updated twice: winget's Visual Studio editions give way to the `visual-studio` provider once it
-  scanned, and the `self` provider's `gh` to winget when winget lists `GitHub.cli`. At
-  `--log-level debug`, `gup log --grep superseded` shows what was left out.
+  scanned, the `self` provider's `gh` to winget when winget lists `GitHub.cli`, and a tool
+  Homebrew installed (Starship, Terraform, the Symfony CLI…) to the `brew` row once brew scanned —
+  at the version its formula delivers, so none while the formula has not packaged the latest
+  release. At `--log-level debug`, `gup log --grep superseded` shows what was left out.
 - **The provider's scan failed.** Its row in **Scan** or **Packages** shows the error;
   `gup log -l warn` has the detail.
 

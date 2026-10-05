@@ -2,7 +2,7 @@ import { realpath } from "node:fs/promises";
 
 import { localize } from "./i18n/localized.js";
 import { run, runInherit } from "./runner.js";
-import type { UpdateOutcome } from "./types.js";
+import type { OutdatedPackage, UpdateOutcome } from "./types.js";
 
 export type InstallSource =
   | "scoop"
@@ -290,6 +290,16 @@ async function runDelegated(
   const options = spec.shell === undefined ? {} : { shell: spec.shell };
   const res = await runInherit(spec.command, spec.args, options);
   return { id, success: !res.failed };
+}
+
+/**
+ * What a delegating provider's row records about `source`: the package
+ * manager its update goes through, none for a manual install. Spread next to
+ * the row's note, it lets the scan leave a tool Homebrew installed to brew's
+ * own row (`core/superseded.ts`).
+ */
+export function installedByField(source: InstallSource): Pick<OutdatedPackage, "installedBy"> {
+  return source === "manual" ? {} : { installedBy: source };
 }
 
 export function describeSource(source: InstallSource): string {
