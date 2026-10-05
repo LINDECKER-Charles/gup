@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stateDir } from "../../../src/core/state/app-dirs.js";
@@ -106,6 +106,21 @@ describe("BatchLock", () => {
     writeFileSync(location.endpoint, "");
     expect(await acquire()).toBeInstanceOf(BatchLock);
   });
+
+  // Root writes anywhere: the read-only dir only stops a regular user.
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+    "fails on a lock dir it may not write, instead of reporting a holder to wait for",
+    async () => {
+      chmodSync(schedulerDir, 0o500);
+      try {
+        await expect(BatchLock.tryAcquire(location, "interactive")).rejects.toMatchObject({
+          code: "EACCES",
+        });
+      } finally {
+        chmodSync(schedulerDir, 0o700);
+      }
+    },
+  );
 
   it("is released by the operating system when the holder process dies", async () => {
     const child = spawn(
