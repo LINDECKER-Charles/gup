@@ -4,6 +4,7 @@ import { log } from "../log/log.js";
 import { redactSecrets } from "../log/redact.js";
 import { installConsole } from "../process/output-router.js";
 import { isSwitchedOff } from "../state/env-switch.js";
+import { explainAccessError } from "../state/foreign-owner.js";
 import { RUN_ID, runTrigger } from "../state/run-context.js";
 import { gupVersion } from "../version.js";
 import { historyLocation } from "./paths.js";
@@ -190,7 +191,8 @@ function append(event: HistoryEvent): void {
     const line = `${JSON.stringify(event)}\n`;
     appendFileSync(location.file, line, { encoding: "utf8", mode: FILE_MODE });
   } catch (err) {
-    warnOnce(err);
+    // A month gup ran with sudo is root's file: the warning says how to give it back.
+    warnOnce(explainAccessError(err, location.file));
   }
 }
 

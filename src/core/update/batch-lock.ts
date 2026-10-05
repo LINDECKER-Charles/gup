@@ -6,6 +6,7 @@ import { dirname } from "node:path";
 import { writeFileAtomic } from "../config/atomic-write.js";
 import { pathFlavour } from "../platform/path-flavour.js";
 import { stateDir, type DirContext } from "../state/app-dirs.js";
+import { explainAccessError } from "../state/foreign-owner.js";
 import type { BatchGuard, BatchHolder, BatchWait } from "./update-extensions.js";
 
 /**
@@ -103,8 +104,7 @@ export class BatchLock {
     location: BatchLockLocation,
     kind: BatchHolder["kind"],
   ): Promise<BatchLock | { readonly busy: BatchHolder | null }> {
-    mkdirSync(dirname(location.infoFile), { recursive: true, mode: STATE_DIR_MODE });
-    const server = await listenOn(location.endpoint);
+    const server = await openEndpoint(location);
     if (!server) return { busy: readHolder(location.infoFile) };
     const holder: BatchHolder = { kind, pid: process.pid, startedAt: new Date().toISOString() };
     try {
@@ -144,6 +144,21 @@ export function createBatchGuard(
       }
     },
   };
+}
+
+/**
+ * The lock's dir, then its endpoint; null when another live process holds
+ * it. When another user owns the dir — gup once run with sudo — the error
+ * names that user and the command that gives the dir back.
+ */
+async function openEndpoint(location: BatchLockLocation): Promise<Server | null> {
+  const dir = dirname(location.infoFile);
+  try {
+    mkdirSync(dir, { recursive: true, mode: STATE_DIR_MODE });
+    return await listenOn(location.endpoint);
+  } catch (err) {
+    throw explainAccessError(err, dir);
+  }
 }
 
 /** Listen on the endpoint; null when another live process holds it. */
