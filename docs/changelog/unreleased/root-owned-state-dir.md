@@ -1,5 +1,13 @@
 # root-owned-state-dir
 
+## Added
+
+- **cli:** `gup doctor`'s **File ownership** line checks gup's folders (settings, history, log,
+  reports, schedules, update lock) and their files on macOS and Linux: `gup's folders are yours`,
+  or one warning per entry another user owns — what an earlier run under sudo left to root — with
+  the `sudo chown -R` that gives it back
+  (`feat(cli): name the gup files another user owns in gup doctor`)
+
 ## Changed
 
 - **cli:** gup refuses to start under sudo, as Homebrew does: `gup does not run under sudo: as

@@ -1,4 +1,4 @@
-import { lstatSync } from "node:fs";
+import { lstatSync, readdirSync } from "node:fs";
 import { homedir, userInfo } from "node:os";
 import { posix } from "node:path";
 
@@ -18,7 +18,7 @@ import { localized } from "../i18n/localized.js";
  * files stay writable, so there is nothing to look for.
  */
 
-const { dirname, isAbsolute, relative, sep } = posix;
+const { dirname, isAbsolute, join, relative, sep } = posix;
 const ROOT_UID = 0;
 /** What a write into an entry owned by another user fails with. */
 const ACCESS_CODES: ReadonlySet<string> = new Set(["EACCES", "EPERM"]);
@@ -74,6 +74,23 @@ export function foreignEntryOf(
   const nearest = nearestEntry(path, ctx);
   if (nearest === null || nearest.uid === ctx.uid) return null;
   return topmostOwnedBy(nearest, ctx);
+}
+
+/**
+ * Every foreign entry among `dirs` and their direct children, once each:
+ * where a run under sudo leaves its files (a history month, a day's log).
+ */
+export function foreignEntriesIn(
+  dirs: readonly string[],
+  context: Partial<OwnershipContext> = {},
+): ForeignEntry[] {
+  const ctx = resolveContext(context);
+  const found = new Map<string, ForeignEntry>();
+  for (const path of dirs.flatMap((dir) => [dir, ...childrenOf(dir)])) {
+    const entry = foreignEntryOf(path, ctx);
+    if (entry !== null) found.set(entry.path, entry);
+  }
+  return [...found.values()];
 }
 
 /** What to tell the user about `entry`: who owns it and the command that gives it back. */
@@ -147,6 +164,15 @@ function chownCommand(path: string, ctx: OwnershipContext): string {
 
 function ownerName(uid: number): string {
   return uid === ROOT_UID ? "root" : `uid ${uid}`;
+}
+
+function childrenOf(dir: string): string[] {
+  try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- read-only listing of one of gup's own state folders, from app-dirs
+    return readdirSync(dir).map((name) => join(dir, name));
+  } catch {
+    return [];
+  }
 }
 
 function resolveContext(context: Partial<OwnershipContext>): OwnershipContext {

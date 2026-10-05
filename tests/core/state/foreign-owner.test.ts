@@ -1,14 +1,22 @@
+import { lstatSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   explainAccessError,
+  foreignEntriesIn,
   foreignEntryHint,
   foreignEntryOf,
   type OwnershipContext,
 } from "../../../src/core/state/foreign-owner.js";
 import { useLocale } from "../../support/locale.js";
+import { useTempDirs } from "../../support/temp-dirs.js";
+
+const tempDir = useTempDirs();
 
 const ME = 501;
 const ROOT = 0;
+/** Neither root nor whoever runs the suite. */
+const SOMEONE_ELSE = 4242;
 const HOME = "/Users/jane";
 const SUPPORT = `${HOME}/Library/Application Support`;
 const GUP = `${SUPPORT}/gup`;
@@ -124,5 +132,41 @@ describe("explainAccessError", () => {
     const full = Object.assign(new Error("no space"), { code: "ENOSPC", path: `${GUP}/locks` });
     expect(explainAccessError(full, GUP, machine())).toBe(full);
     expect(explainAccessError("not an error", GUP, machine())).toBe("not an error");
+  });
+});
+
+// Real folders, with another owner simulated: a test cannot chown to someone else.
+describe.skipIf(process.platform === "win32")("foreignEntriesIn", () => {
+  it("finds each foreign folder and file once, among the folders and their children", async () => {
+    const home = await tempDir("gup-foreign-");
+    const history = join(home, "gup", "history");
+    const logs = join(home, "logs");
+    mkdirSync(history, { recursive: true });
+    mkdirSync(logs);
+    writeFileSync(join(history, "2026-08.jsonl"), "");
+    writeFileSync(join(logs, "gup-2026-10-05.jsonl"), "");
+    writeFileSync(join(logs, "gup-2026-10-06.jsonl"), "");
+    const foreign = new Set([join(home, "gup"), history, join(logs, "gup-2026-10-05.jsonl")]);
+    const ownerOf = (path: string): number | null => {
+      if (foreign.has(path)) return SOMEONE_ELSE;
+      try {
+        return lstatSync(path).uid;
+      } catch {
+        return null;
+      }
+    };
+    const context = { uid: lstatSync(home).uid, home, user: "jane", ownerOf };
+    const dirs = [history, join(home, "gup", "locks"), logs];
+    expect(foreignEntriesIn(dirs, context).map((entry) => entry.path)).toEqual([
+      join(home, "gup"),
+      join(logs, "gup-2026-10-05.jsonl"),
+    ]);
+  });
+
+  it("finds nothing in folders that are all the user's", async () => {
+    const home = await tempDir("gup-foreign-");
+    mkdirSync(join(home, "gup", "history"), { recursive: true });
+    const context = { uid: lstatSync(home).uid, home, user: "jane" };
+    expect(foreignEntriesIn([join(home, "gup", "history")], context)).toEqual([]);
   });
 });
