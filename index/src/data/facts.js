@@ -5,7 +5,7 @@
 
 export const facts = {
   /** Published npm version, from the root package.json. */
-  version: "0.5.1",
+  version: "0.5.2",
   /** Number of entries in ALL_PROVIDERS (src/core/registry.ts). */
   providerCount: 153,
   /** Minimum Node major, from MIN_NODE in src/core/node-floor.ts ("26.9.0"). */
