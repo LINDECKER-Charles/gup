@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import type { RunTrigger } from "../../core/state/run-context.js";
 
 /**
- * How a feature plugs into the command line without editing `cli.ts`: it
+ * How a feature plugs into the command line without editing `main.ts`: it
  * registers its commands and global options, wires its process-wide slots
  * (log backend, launcher, batch guard…) before the action runs, contributes
  * lines to `gup doctor`, and hears about a crash. Every module is one line in

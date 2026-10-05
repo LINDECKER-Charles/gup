@@ -1,9 +1,11 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  // pty-exec is the trampoline the embedded terminal runs once per install:
-  // its own small bundle, so an install does not pay for loading the CLI.
-  entry: ["src/cli.ts", "src/pty-exec.ts"],
+  // cli is the installed entry point, which loads the program (main) as a
+  // bundle of its own. pty-exec is the trampoline the embedded terminal runs
+  // once per install: its own small bundle, so an install does not pay for
+  // loading the CLI.
+  entry: ["src/cli.ts", "src/main.ts", "src/pty-exec.ts"],
   // node-pty is an optional dependency with a native part, loaded at runtime
   // only (core/pty/pty-loader.ts); tsup externalises dependencies and peer
   // dependencies by itself, not optional ones.

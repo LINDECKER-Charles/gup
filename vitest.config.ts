@@ -99,10 +99,16 @@ export default defineConfig({
       reporter: ["text", "text-summary", "html", "lcov", "json-summary"],
       reportsDirectory: "./coverage",
       include: ["src/**/*.ts"],
-      // The entry point only wires commander, and the trampoline runs in a
-      // child process the instrumentation never sees (tests/integration
-      // exercises it).
-      exclude: ["src/cli.ts", "src/pty-exec.ts", "src/**/_template.ts", "src/**/*.d.ts"],
+      // The entry points only load the program and wire commander, and the
+      // trampoline runs in a child process the instrumentation never sees
+      // (tests/integration exercises it).
+      exclude: [
+        "src/cli.ts",
+        "src/main.ts",
+        "src/pty-exec.ts",
+        "src/**/_template.ts",
+        "src/**/*.d.ts",
+      ],
       clean: true,
       // No global gate: floors on the safety-critical modules only.
       thresholds: { ...COVERAGE_FLOORS },

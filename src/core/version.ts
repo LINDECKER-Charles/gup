@@ -7,8 +7,8 @@ export const PACKAGE_NAME = "@charles_lindecker/gup";
  * Candidate locations of package.json relative to the importing module.
  *
  * Two entries because the module graph is flat at runtime but nested in
- * development: tsup bundles everything into `dist/cli.js`, one level below the
- * package root, while `npm run dev` runs this file from `src/core/`, two
+ * development: tsup bundles the program into `dist/main.js`, one level below
+ * the package root, while `npm run dev` runs this file from `src/core/`, two
  * levels below. Each candidate is validated by name so a stray package.json
  * belonging to a parent directory can never be picked up.
  */
