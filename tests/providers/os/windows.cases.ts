@@ -61,6 +61,7 @@ export function wingetUpgradeArgv(id: string): string[] {
     "--accept-package-agreements",
     "--accept-source-agreements",
     "--include-unknown",
+    "--disable-interactivity",
   ];
 }
 

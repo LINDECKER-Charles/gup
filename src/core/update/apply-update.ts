@@ -3,7 +3,7 @@ import { localized } from "../i18n/localized.js";
 import { withOperation } from "../state/run-context.js";
 import type { OutdatedPackage, Provider, UpdateOptions, UpdateOutcome } from "../types.js";
 import { finalizeOutcome } from "./finalize-outcome.js";
-import type { UpdateDecisions, UpdateRequest } from "./update-ports.js";
+import type { UpdateRequest } from "./update-ports.js";
 
 /**
  * The single place where an update is actually applied: everything that must
@@ -96,18 +96,10 @@ function rejectionMessage(error: unknown): string {
     : REJECTION_MESSAGES.unexpectedFailure(reason);
 }
 
-/**
- * What a request carries into its attempt: its scan entry and schedule (for
- * the history record) and, when nobody watches the run, the provider option
- * that forbids prompting.
- */
-export function applyOptionsOf(
-  request: UpdateRequest,
-  decisions: Pick<UpdateDecisions, "unattended">,
-): ApplyOptions {
+/** What a request carries into its attempt: its scan entry and schedule, for the history record. */
+export function applyOptionsOf(request: UpdateRequest): ApplyOptions {
   return {
     ...(request.pkg && { pkg: request.pkg }),
     ...(request.scheduleId !== undefined && { scheduleId: request.scheduleId }),
-    ...(decisions.unattended === true && { update: { unattended: true } }),
   };
 }

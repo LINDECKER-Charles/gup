@@ -426,12 +426,11 @@ interface UpdateOptions {
   force?: boolean;              // bypass the installer hash check (winget --force)
   uninstallPrevious?: boolean;  // winget --uninstall-previous (destructive)
   reinstall?: boolean;          // last resort: uninstall + install in two commands
-  unattended?: boolean;         // nobody watches (scheduled run): never stop on a prompt
 }
 ```
 
 `force`, `uninstallPrevious` and `reinstall` are NEVER set on a first attempt: only after the
-user explicitly picks a retry strategy (§10). `unattended` is set by scheduled runs.
+user explicitly picks a retry strategy (§10).
 
 Typical implementation:
 
@@ -439,10 +438,9 @@ Typical implementation:
 async update(packageId: string, options?: UpdateOptions): Promise<UpdateOutcome> {
   const args = ["upgrade", "--id", packageId, "--exact", "--silent",
                 "--accept-package-agreements", "--accept-source-agreements",
-                "--include-unknown"];
+                "--include-unknown", "--disable-interactivity"];
   if (options?.force) args.push("--force");
   if (options?.uninstallPrevious) args.push("--uninstall-previous");
-  if (options?.unattended) args.push("--disable-interactivity");
   const res = await runInherit("winget", args);
   return res.failed
     ? { id: packageId, success: false, retryable: true }
@@ -918,7 +916,10 @@ Winget has no JSON mode for `upgrade`. The provider:
 5. Marks `note: "unknown version"` when the installed version is `<` (winget's sentinel).
 
 The update accepts the three retry tiers through `UpdateOptions`; each failure that one of them
-could get past is flagged `retryable`. Unattended runs add `--disable-interactivity`.
+could get past is flagged `retryable`. Every winget call carries `--disable-interactivity`: the
+one question no flag answers, an install folder the manifest requires (Battle.net), would
+otherwise hold the batch in the embedded terminal; refused, it ends as a skip that names the
+command to run (`0x8A15005F`).
 
 ### 14.2 `ScoopProvider` — the `shell: true` exception
 
@@ -1109,7 +1110,6 @@ Conventions:
 | `UpdateOptions.force` | `boolean?` | input of `update` | never set by default, opt-in user only |
 | `UpdateOptions.uninstallPrevious` | `boolean?` | input of `update` | destructive, opt-in user only |
 | `UpdateOptions.reinstall` | `boolean?` | input of `update` | destructive, last resort, opt-in user only |
-| `UpdateOptions.unattended` | `boolean?` | input of `update` | set by scheduled runs only |
 | `ScanOptions.concurrency` | `number?` | input of `scanAll` | default 4 |
 | `ScanOptions.only` | `string[]?` | input of `scanAll` | restriction by provider id |
 | `ScanOptions.fast` | `boolean?` | input of `scanAll` | skip `slow` ones |

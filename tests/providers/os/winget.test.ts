@@ -186,10 +186,11 @@ describe("WingetProvider.listOutdated", () => {
 describe("WingetProvider.update", () => {
   const ID = "Some.Package";
 
-  it("forbids prompts in an unattended run", async () => {
+  it("forbids prompts, even in a run someone watches", async () => {
     await system.load(WINGET_MACHINE);
-    await new WingetProvider().update(ID, { unattended: true });
-    expect(installArgvs()).toEqual([[...wingetUpgradeArgv(ID), "--disable-interactivity"]]);
+    await new WingetProvider().update(ID);
+    expect(installArgvs()).toEqual([wingetUpgradeArgv(ID)]);
+    expect(installArgvs()[0]).toContain("--disable-interactivity");
   });
 
   it("adds --force, then --uninstall-previous, on the retry tiers", async () => {
@@ -206,7 +207,14 @@ describe("WingetProvider.update", () => {
     await system.load(WINGET_MACHINE);
     const outcome = await new WingetProvider().update(ID, { reinstall: true });
     expect(outcome).toEqual({ id: ID, success: true });
-    const target = ["--id", ID, "--exact", "--silent", "--accept-source-agreements"];
+    const target = [
+      "--id",
+      ID,
+      "--exact",
+      "--silent",
+      "--accept-source-agreements",
+      "--disable-interactivity",
+    ];
     expect(installArgvs()).toEqual([
       ["winget", "uninstall", ...target],
       [
@@ -224,14 +232,6 @@ describe("WingetProvider.update", () => {
     await system.load(WINGET_MACHINE);
     await new WingetProvider().update(ID, { reinstall: true, force: false });
     expect(installArgvs()[1]).not.toContain("--force");
-  });
-
-  it("keeps both reinstall passes non-interactive in an unattended run", async () => {
-    await system.load(WINGET_MACHINE);
-    await new WingetProvider().update(ID, { reinstall: true, unattended: true });
-    const argvs = installArgvs();
-    expect(argvs).toHaveLength(2);
-    for (const argv of argvs) expect(argv).toContain("--disable-interactivity");
   });
 
   it("installs even when the uninstall pass failed", async () => {
@@ -252,8 +252,8 @@ describe("WingetProvider.update", () => {
   it.each([
     // The manifest forbids upgrades (Parsec, Android Studio).
     [0x8a150114, "winget ne peut pas mettre à jour ce paquet"],
-    // winget asked for an install location it could not read (Battle.net).
-    [0x8a150042, `lancer winget upgrade --id ${ID} dans un terminal`],
+    // The manifest requires an install folder (Battle.net).
+    [0x8a15005f, `lancer winget upgrade --id ${ID} --location <dossier> dans un terminal`],
   ])("skips, with what to do, a failure winget says no retry can fix (%s)", async (code, text) => {
     await system.load(WINGET_MACHINE);
     system.answerInstall({ exitCode: code | 0 });
