@@ -9,7 +9,8 @@ narrative of each release, see
 
 | Version | Published | Commits | In one sentence |
 |---|---|---:|---|
-| [Unreleased](unreleased.md) | `main` after 0.5.2 | 0 | Nothing yet. |
+| [Unreleased](unreleased.md) | `main` after 0.5.3 | 0 | Nothing yet. |
+| [`0.5.3`](0.5.3.md) | not yet published | 16 | 0.5.3 adds 17 popular terminal themes, taking the picker from 10 to 27, and scrolls the picker's list to keep the cursor in view, stops a winget package that asks for an install folder from holding the batch, and bumps source-map-js for GHSA-68fv-2mgg-jv7q. |
 | [`0.5.2`](0.5.2.md) | 2026-10-05 | 25 | 0.5.2 stops gup on a Node older than 26.9 with where to get a newer one and lets npm install it there, refuses to run under `sudo` and names the gup folders a `sudo` run left to root with the command that gives them back, and lists a tool Homebrew installed once, by `brew`. |
 | [`0.5.1`](0.5.1.md) | 2026-10-04 | 85 | 0.5.1 makes gup speak English by default and French on demand (`gup language fr`), leaves gup's own update on Windows for after it exits, fixes pip, composer, pnpm and winget updates that reported a success they were not, and tidies the repository root. |
 | [`0.5.0`](0.5.0.md) | 2026-10-04 | 541 | 0.5.0 runs updates inside the interactive app in an embedded terminal, picks packages by checking them, reads the history back as a debug log, an activity journal and an HTML report, updates chosen packages on a schedule, holds every text of ten themes to WCAG AA, greys out the providers of other systems, translates the landing site into eight languages and runs the provider tests as contracts on a fake machine; as the first version published since 0.3.2, it also ships 0.4.0. |
