@@ -1,0 +1,272 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 812.0 526.0" width="812.0" height="526.0" role="img" aria-labelledby="t d">
+<title id="t">gup — Packages · SynthWave '84</title>
+<desc id="d">The Packages view in the SynthWave '84 theme, with packages checked, the cursor row highlighted and the selection bar's button.</desc>
+<style>
+text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;font-size:16px}
+.t{font-size:12px;letter-spacing:.4px;fill:#8b949e}
+.b{font-weight:700}
+.i{font-style:italic}
+.u{text-decoration:underline}
+.s{text-decoration:line-through}
+.us{text-decoration:underline line-through}
+.d{opacity:0.62}
+.c0{fill:#ff7edb}
+.c1{fill:#262335}
+.c2{fill:#37294d}
+.c3{fill:#5d6aad}
+.c4{fill:#ffffff}
+.c5{fill:#36f9f6}
+.c6{fill:#8c94c6}
+.c7{fill:#fede5d}
+.c8{fill:#72f1b8}
+.c9{fill:#ff6164}
+</style>
+<rect y="0.0" width="812.0" height="526.0" rx="10.0" fill="#0d1117"/>
+<rect y="0.0" width="812.0" height="34.0" rx="10.0" fill="#161b22"/>
+<rect y="24.0" width="812.0" height="10.0" fill="#161b22"/>
+<line x1="0.0" y1="34.0" x2="812.0" y2="34.0" stroke="#21262d"/>
+<circle cx="22.0" cy="17.0" r="5.5" fill="#ff5f57"/>
+<circle cx="40.0" cy="17.0" r="5.5" fill="#febc2e"/>
+<circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
+<text class="t" x="406.0" y="21.0" text-anchor="middle">gup — Packages · SynthWave '84</text>
+<rect class="c0" x="16.0" y="42.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="59.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="76.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="93.0" width="15.6" height="17.0"/>
+<rect class="c2" x="31.6" y="93.0" width="171.6" height="17.0"/>
+<rect class="c1" x="203.2" y="93.0" width="592.8" height="17.0"/>
+<rect class="c1" x="16.0" y="110.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="127.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="144.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="161.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="178.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="195.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="212.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="229.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="246.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="263.0" width="218.4" height="17.0"/>
+<rect class="c2" x="234.4" y="263.0" width="546.0" height="17.0"/>
+<rect class="c1" x="780.4" y="263.0" width="15.6" height="17.0"/>
+<rect class="c1" x="16.0" y="280.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="297.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="314.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="331.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="348.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="365.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="382.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="399.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="416.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="433.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="450.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="467.0" width="608.4" height="17.0"/>
+<rect class="c0" x="624.4" y="467.0" width="148.2" height="17.0"/>
+<rect class="c1" x="772.6" y="467.0" width="23.4" height="17.0"/>
+<rect class="c1" x="16.0" y="484.0" width="780.0" height="17.0"/>
+<rect class="c1" x="16.0" y="501.0" width="780.0" height="17.0"/>
+<text class="c1 b" x="16.0" y="55.0" textLength="452.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.3  │  14 detected  │  12 updates  │  normal mode</text>
+<text class="c3" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
+<text class="c4" x="31.6" y="72.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Menu </text>
+<text class="c3" x="78.4" y="72.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">─────────────────╮</text>
+<text class="c5" x="218.8" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┏━</text>
+<text class="c4" x="234.4" y="72.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Packages </text>
+<text class="c5" x="312.4" y="72.0" textLength="483.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</text>
+<text class="c3" x="16.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="89.0" textLength="163.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scan                 </text>
+<text class="c3" x="211.0" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="234.4" y="89.0" textLength="366.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">          Package            Current   Latest  </text>
+<text class="c5" x="788.2" y="89.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c0" x="31.6" y="106.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌ </text>
+<text class="c4 b" x="47.2" y="106.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Packages          </text>
+<text class="c7" x="187.6" y="106.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">12</text>
+<text class="c3" x="211.0" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="106.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[ ] </text>
+<text class="c4 b" x="281.2" y="106.0" textLength="93.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Cargo (Rust)</text>
+<text class="c6" x="374.8" y="106.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  0/2</text>
+<text class="c5" x="788.2" y="106.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Schedules         </text>
+<text class="c6" x="187.6" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3</text>
+<text class="c3" x="211.0" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="123.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
+<text class="c0" x="296.8" y="123.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
+<text class="c4" x="312.4" y="123.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ripgrep           </text>
+<text class="c7" x="452.8" y="123.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 14.1.1 </text>
+<text class="c6" x="515.2" y="123.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="123.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">15.0.0 </text>
+<text class="c5" x="788.2" y="123.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="140.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
+<text class="c0" x="296.8" y="140.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
+<text class="c4" x="312.4" y="140.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">bat               </text>
+<text class="c7" x="452.8" y="140.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.25.0 </text>
+<text class="c6" x="515.2" y="140.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="140.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">0.26.0 </text>
+<text class="c5" x="788.2" y="140.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="157.0" textLength="163.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Providers            </text>
+<text class="c3" x="211.0" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="157.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[ ] </text>
+<text class="c4 b" x="281.2" y="157.0" textLength="78.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Chocolatey</text>
+<text class="c6" x="359.2" y="157.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  0/1</text>
+<text class="c5" x="788.2" y="157.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="174.0" textLength="163.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Journal              </text>
+<text class="c3" x="211.0" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="174.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
+<text class="c4" x="312.4" y="174.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">nodejs-lts        </text>
+<text class="c7" x="452.8" y="174.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 24.8.0 </text>
+<text class="c6" x="515.2" y="174.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="174.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">24.9.0 </text>
+<text class="c5" x="788.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="191.0" textLength="163.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options              </text>
+<text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="250.0" y="191.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[–] </text>
+<text class="c4 b" x="281.2" y="191.0" textLength="93.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">npm (global)</text>
+<text class="c6" x="374.8" y="191.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  1/3</text>
+<text class="c5" x="788.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="208.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
+<text class="c0" x="296.8" y="208.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
+<text class="c4" x="312.4" y="208.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">typescript        </text>
+<text class="c7" x="452.8" y="208.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 6.0.2  </text>
+<text class="c6" x="515.2" y="208.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="208.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">6.0.3  </text>
+<text class="c5" x="788.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c6" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
+<text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="250.0" y="225.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [■] </text>
+<text class="c0" x="296.8" y="225.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
+<text class="c4 b" x="312.4" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pnpm              </text>
+<text class="c7" x="452.8" y="225.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.17.0</text>
+<text class="c6" x="515.2" y="225.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="225.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">10.18.1</text>
+<text class="c5" x="788.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="242.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
+<text class="c4" x="312.4" y="242.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">eslint            </text>
+<text class="c7" x="452.8" y="242.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 10.9.0 </text>
+<text class="c6" x="515.2" y="242.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="242.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">10.9.1 </text>
+<text class="c5" x="788.2" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="259.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[ ] </text>
+<text class="c4 b" x="281.2" y="259.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">pipx</text>
+<text class="c6" x="312.4" y="259.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  0/2</text>
+<text class="c5" x="788.2" y="259.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c0" x="234.4" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">› </text>
+<text class="c6" x="250.0" y="276.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
+<text class="c0" x="296.8" y="276.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
+<text class="c4" x="312.4" y="276.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ruff              </text>
+<text class="c7" x="452.8" y="276.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.13.0 </text>
+<text class="c6" x="515.2" y="276.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="276.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">0.13.2 </text>
+<text class="c5" x="788.2" y="276.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c6" x="250.0" y="293.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
+<text class="c4" x="312.4" y="293.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">httpie            </text>
+<text class="c7" x="452.8" y="293.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 3.2.3  </text>
+<text class="c6" x="515.2" y="293.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="293.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">3.2.4  </text>
+<text class="c5" x="788.2" y="293.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c9" x="250.0" y="310.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">× </text>
+<text class="c4 b" x="265.6" y="310.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Scoop</text>
+<text class="c9" x="304.6" y="310.0" textLength="234.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  scoop status failed (code 1)</text>
+<text class="c5" x="788.2" y="310.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="250.0" y="327.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[■] </text>
+<text class="c4 b" x="281.2" y="327.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Winget</text>
+<text class="c6" x="328.0" y="327.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  4/4</text>
+<text class="c5" x="788.2" y="327.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="250.0" y="344.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [■] </text>
+<text class="c0" x="296.8" y="344.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">∞ </text>
+<text class="c4 b" x="312.4" y="344.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Git               </text>
+<text class="c7" x="452.8" y="344.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 2.51.0 </text>
+<text class="c6" x="515.2" y="344.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="344.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">2.52.0 </text>
+<text class="c5" x="788.2" y="344.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="250.0" y="361.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [■] </text>
+<text class="c4 b" x="312.4" y="361.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">PowerToys         </text>
+<text class="c7" x="452.8" y="361.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 0.94.1 </text>
+<text class="c6" x="515.2" y="361.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="361.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">0.95.0 </text>
+<text class="c5" x="788.2" y="361.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="250.0" y="378.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [■] </text>
+<text class="c4 b" x="312.4" y="378.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">7-Zip             </text>
+<text class="c7" x="452.8" y="378.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 25.00  </text>
+<text class="c6" x="515.2" y="378.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="378.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">25.01  </text>
+<text class="c5" x="788.2" y="378.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="250.0" y="395.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [■] </text>
+<text class="c4 b" x="312.4" y="395.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Visual Studio Code</text>
+<text class="c7" x="452.8" y="395.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1.104.0</text>
+<text class="c6" x="515.2" y="395.0" textLength="23.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> → </text>
+<text class="c8" x="538.6" y="395.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1.105.1</text>
+<text class="c5" x="788.2" y="395.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="788.2" y="412.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="788.2" y="429.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="788.2" y="446.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c5" x="788.2" y="463.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c3" x="211.0" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="218.8" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c8" x="234.4" y="480.0" textLength="374.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">● 5 of 12 checked                               </text>
+<text class="c0" x="616.6" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▐</text>
+<text class="c1 b" x="624.4" y="480.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Enter  Update (5) </text>
+<text class="c0" x="772.6" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">▌</text>
+<text class="c5" x="788.2" y="480.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
+<text class="c3" x="16.0" y="497.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╰────────────────────────╯</text>
+<text class="c5" x="218.8" y="497.0" textLength="577.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</text>
+<text class="c6" x="16.0" y="514.0" textLength="772.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> space check · / filter · p schedule · a check all · ↑↓ navigate · r rescan · … · tab menu · q quit</text>
+</svg>

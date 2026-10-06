@@ -24,7 +24,7 @@ stays light; everything dense lives here.
 | [`guide/scheduled-updates.md`](guide/scheduled-updates.md) | Per-package scheduled updates: how a run works, recurrences, what an unattended run never does, the commands, the Schedules view, the OS trigger, troubleshooting — **screenshots, mermaid diagram**. |
 | [`guide/journal-and-reports.md`](guide/journal-and-reports.md) | The activity history, the Journal view, the HTML report, `gup report`, the debug log and `gup log`, privacy — **screenshots, mermaid diagram**. |
 | [`guide/configuration.md`](guide/configuration.md) | The Options view, which value wins, the interface language, the settings file and its sections, environment variables — **mermaid diagram**. |
-| [`guide/themes-and-accessibility.md`](guide/themes-and-accessibility.md) | The ten themes, the theme picker, custom colours, how the default theme follows the terminal, the contrast guarantee, accessibility — **screenshots**. |
+| [`guide/themes-and-accessibility.md`](guide/themes-and-accessibility.md) | The 27 themes, the theme picker, custom colours, how the default theme follows the terminal, the contrast guarantee, accessibility — **screenshots**. |
 | [`guide/troubleshooting.md`](guide/troubleshooting.md) | Each message, its cause and the fix: install scripts, Node, conhost, the embedded terminal, providers, schedules, the report, the language; where gup keeps its files; collecting a diagnostic. |
 | [`guide/scope.md`](guide/scope.md) | Why `gup` exists, what belongs in it, and what is deliberately excluded — with the reasoning. |
 | [`guide/providers-catalog.md`](guide/providers-catalog.md) | Exhaustive catalog of the 153 providers, implementation status (✅ ⬜ ➡️ ❌), the OSes each runs on, and evaluated candidates. |

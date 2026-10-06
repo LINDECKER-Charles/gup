@@ -38,7 +38,7 @@ or your VS Code extensions, `ncu -g` only sees npm, and every cloud CLI ships it
 - **Scheduled updates, per package** — never a whole provider — run by a short-lived gup the OS
   starts; nothing stays resident.
 - **An activity journal** in the terminal, and a self-contained **HTML report** in your browser.
-- **Ten themes, contrast guaranteed**: every text reaches WCAG AA, your custom colours included.
+- **27 themes, contrast guaranteed** (Nord, Gruvbox, Solarized, Dracula, Catppuccin…): every text reaches WCAG AA, your custom colours included.
 - **Scriptable**: `--json`, documented exit codes, `-y` for CI, a debug log you can export.
 - **English or French**: the app, every command and its help, the HTML report —
   `gup language fr` switches.

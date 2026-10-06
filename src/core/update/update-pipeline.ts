@@ -37,9 +37,9 @@ const HEADLESS_LABELS = localized({
 });
 
 /**
- * Scheduled runs: nobody is there to answer a UAC or sudo prompt, to consent
- * to a retry, nor to answer an installer's own question. The message is read
- * when a run declines, in the language startup chose.
+ * Scheduled runs: nobody is there to answer a UAC or sudo prompt, nor to
+ * consent to a retry. The message is read when a run declines, in the
+ * language startup chose.
  */
 export const HEADLESS_DECISIONS: UpdateDecisions = {
   confirmElevation: async () => false,
@@ -47,7 +47,6 @@ export const HEADLESS_DECISIONS: UpdateDecisions = {
   get declinedElevation() {
     return HEADLESS_LABELS.declinedElevation;
   },
-  unattended: true,
 };
 
 export async function runUpdates(
@@ -103,7 +102,7 @@ async function attemptOne(item: PlannedUpdate, ports: UpdatePorts): Promise<Outc
   }
   ports.observer.started({ item });
   const startedAt = Date.now();
-  const options = applyOptionsOf(item, ports.decisions);
+  const options = applyOptionsOf(item);
   const outcome = await applyUpdate(lookup.provider, item.packageId, options);
   ports.observer.finished({ item, outcome, durationMs: Date.now() - startedAt });
   return entryOf(item, outcome);

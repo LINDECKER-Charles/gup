@@ -151,12 +151,7 @@ describe("applyOptionsOf", () => {
   it("carries a request's scan entry and schedule, and nothing it lacks", () => {
     const pkg = { id: "a", current: "1", latest: "2" };
     const request = { providerId: "p", packageId: "a", pkg, scheduleId: "s" };
-    expect(applyOptionsOf(request, {})).toEqual({ pkg, scheduleId: "s" });
-    expect(applyOptionsOf({ providerId: "p", packageId: "a" }, {})).toEqual({});
-  });
-
-  it("tells the provider not to prompt when nobody watches the run", () => {
-    const request = { providerId: "p", packageId: "a" };
-    expect(applyOptionsOf(request, { unattended: true })).toEqual({ update: { unattended: true } });
+    expect(applyOptionsOf(request)).toEqual({ pkg, scheduleId: "s" });
+    expect(applyOptionsOf({ providerId: "p", packageId: "a" })).toEqual({});
   });
 });

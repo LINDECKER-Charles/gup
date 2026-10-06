@@ -176,7 +176,6 @@ classDiagram
         +force?: boolean
         +uninstallPrevious?: boolean
         +reinstall?: boolean
-        +unattended?: boolean
     }
 
     class ProviderScanResult {
@@ -209,8 +208,7 @@ classDiagram
   marker): never a scheduling target.
 - `slow: true` — the scan does HTTP per package or a filesystem walk; `--fast` skips it.
 - `skipped: true` on an outcome is not a failure: shown `→`, counted apart, never retried.
-- `retryable: true` lets the retry pass offer `force` / `uninstallPrevious` / `reinstall`;
-  `unattended` is set by scheduled runs (winget then runs with `--disable-interactivity`).
+- `retryable: true` lets the retry pass offer `force` / `uninstallPrevious` / `reinstall`.
 - `recovery` on an outcome says what the provider undid after an attempt that did not finish
   (npm-g moving back the copy a killed npm had staged): `finalizeOutcome` appends it to the
   final message, the skip reason of an interrupted install included.
@@ -739,7 +737,7 @@ src/
     ├── panels/             # Scan, Packages, Providers; journal/, options/, schedules/
     ├── run/                # the run view; terminal/ (panes over OpenTUI's embedded terminal)
     ├── tui/                # OpenTUI loader, screen host, teardown, chrome, dialogs, text panel
-    ├── theme/              # appearance seam, glyphs, built-in themes, contrast; color/, runtime/
+    ├── theme/              # appearance seam, glyphs, built-in themes, contrast; color/, palettes/, runtime/
     ├── settings/           # settings service and sections the UI owns, Options rows of other features
     ├── charts/             # heatmap, bars, sparklines, the text report
     ├── text/               # the interface's words by domain, English and French; format.ts

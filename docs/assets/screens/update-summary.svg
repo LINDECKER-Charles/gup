@@ -28,7 +28,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <circle cx="58.0" cy="17.0" r="5.5" fill="#28c840"/>
 <text class="t" x="484.0" y="21.0" text-anchor="middle">gup — Update</text>
 <rect class="c0" x="16.0" y="42.0" width="936.0" height="17.0"/>
-<text class="c1 b" x="16.0" y="55.0" textLength="436.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.2  │  Update finished  │  6 packages  │  02:27</text>
+<text class="c1 b" x="16.0" y="55.0" textLength="436.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> gup v0.5.3  │  Update finished  │  6 packages  │  02:27</text>
 <text class="c2" x="16.0" y="72.0" textLength="15.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">╭─</text>
 <text class="c3" x="31.6" y="72.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Update — finished </text>
 <text class="c2" x="179.8" y="72.0" textLength="772.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">──────────────────────────────────────────────────────────────────────────────────────────────────╮</text>

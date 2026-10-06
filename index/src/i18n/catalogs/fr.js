@@ -118,7 +118,7 @@ export default {
       themes: {
         title: "Des thèmes qui restent lisibles",
         text:
-          `Dix thèmes intégrés ou tes propres couleurs${NB}: gup vérifie chacun au regard ` +
+          `27 thèmes intégrés ou tes propres couleurs${NB}: gup vérifie chacun au regard ` +
           "du WCAG AA — 4,5:1 pour le texte, 3:1 pour les bordures, 7:1 si tu choisis AAA " +
           "— et corrige ce qui n'atteint pas le seuil.",
       },
