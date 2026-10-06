@@ -9,6 +9,7 @@ import {
   THEME_LABELS,
   THEME_PICKER,
 } from "../../../text/settings/theme-labels.js";
+import { ListCursor } from "../../../tui/list-cursor.js";
 import type { KeyPress } from "../../../tui/screen-host.js";
 import {
   fillLine,
@@ -35,6 +36,10 @@ const LIST_WIDTH = 31;
 const COLUMN_SEPARATOR = " │ ";
 /** Narrower than this, the preview goes under the list. */
 const SIDE_BY_SIDE_MIN = 66;
+/** Under a narrow panel's list, the preview keeps the rest of the height. */
+const NARROW_LIST_SHARE = 0.5;
+/** The list's heading and three themes, however short the panel. */
+const MIN_LIST_HEIGHT = 4;
 const UP_KEYS: ReadonlySet<string> = new Set(["up", "k"]);
 const DOWN_KEYS: ReadonlySet<string> = new Set(["down", "j"]);
 const APPLY_KEYS: ReadonlySet<string> = new Set(["return", "enter", "space"]);
@@ -42,10 +47,11 @@ const CANCEL_KEYS: ReadonlySet<string> = new Set(["escape", "left"]);
 
 /**
  * Every theme, with whether this terminal can paint it and its lowest
- * contrast. The theme under the cursor is painted on the whole app at once
- * (a preview, nothing saved); Entrée saves it, Échap goes back to the saved
- * one. A preview the user leaves open while browsing other views stays on
- * screen (the title bar says it is not saved) until they come back.
+ * contrast; a list taller than the panel scrolls to keep the cursor in view.
+ * The theme under the cursor is painted on the whole app at once (a preview,
+ * nothing saved); Entrée saves it, Échap goes back to the saved one. A
+ * preview the user leaves open while browsing other views stays on screen
+ * (the title bar says it is not saved) until they come back.
  */
 export class ThemePicker implements OptionsView {
   readonly title = THEME_PICKER.title;
@@ -67,7 +73,7 @@ export class ThemePicker implements OptionsView {
    */
   render(viewport: Viewport): readonly Line[] {
     const availability = this.#deps.host.appearance.availability();
-    const list = this.listLines(availability);
+    const list = this.listLines(availability, listHeight(viewport));
     if (viewport.width >= SIDE_BY_SIDE_MIN) {
       const previewWidth = viewport.width - LIST_WIDTH - COLUMN_SEPARATOR.length;
       const { intro, sample, report, note } = this.preview(availability, previewWidth);
@@ -86,9 +92,10 @@ export class ThemePicker implements OptionsView {
   }
 
   /** A click on a theme tries it, as the arrows do. */
-  click(row: number): void {
-    const index = row - 1;
-    if (index >= 0 && index < THEME_IDS.length) this.moveTo(index);
+  click(row: number, viewport: Viewport): void {
+    const { start, end } = this.visibleRange(listHeight(viewport));
+    const index = start + row - 1;
+    if (row >= 1 && index < end) this.moveTo(index);
   }
 
   private get current(): ThemeId {
@@ -126,9 +133,19 @@ export class ThemePicker implements OptionsView {
     this.#deps.controls.close();
   }
 
-  private listLines(availability: readonly ThemeAvailability[]): Line[] {
-    const rows = availability.map((entry, index): Line => {
-      const isCursor = index === this.#cursor;
+  /** The themes shown in a list of `height` lines, heading included: the cursor's neighbours. */
+  private visibleRange(height: number): { start: number; end: number } {
+    const cursor = new ListCursor(
+      THEME_IDS.map(() => true),
+      this.#cursor,
+    );
+    return cursor.window(Math.max(1, height - 1));
+  }
+
+  private listLines(availability: readonly ThemeAvailability[], height: number): Line[] {
+    const { start, end } = this.visibleRange(height);
+    const rows = availability.slice(start, end).map((entry, offset): Line => {
+      const isCursor = start + offset === this.#cursor;
       const line: Line = [
         seg(isCursor ? "› " : "  ", "accent"),
         seg(fit(THEME_LABELS[entry.id], LABEL_WIDTH), entry.isAvailable ? "plain" : "disabled"),
@@ -163,6 +180,12 @@ interface Preview {
   readonly sample: Line[];
   readonly report: Line[];
   readonly note: Line[];
+}
+
+/** Lines the list gets, heading included: the whole height beside the preview, a share above it. */
+function listHeight(viewport: Viewport): number {
+  if (viewport.width >= SIDE_BY_SIDE_MIN) return viewport.height;
+  return Math.max(MIN_LIST_HEIGHT, Math.floor(viewport.height * NARROW_LIST_SHARE));
 }
 
 /** The non-empty blocks, a blank row between two. */
