@@ -5,9 +5,26 @@ import type { HexPalette } from "./hex-palette.js";
  * Community themes on a dark ground, from each theme's published colours.
  * Where a canonical colour falls short of AA on the background or the
  * highlight, it is moved along its lightness only, hue kept, just far enough;
- * each palette names the roles that moved.
+ * each palette names the roles that moved. A `strong` the theme lacks is its
+ * text, lightened.
  */
 export const COMMUNITY_DARK_PALETTES = {
+  // Ayu Dark (ayu-theme/ayu-colors). Moved for AA: muted.
+  "ayu-dark": {
+    background: "#10141C",
+    highlight: "#1B1F29",
+    text: "#BFBDB6",
+    strong: "#EDEAE3",
+    muted: "#7C869C",
+    accent: "#E6B450",
+    success: "#AAD94C",
+    warning: "#FF8F40",
+    danger: "#F07178",
+    accentFill: "#E6B450",
+    onAccent: "#10141C",
+    borderIdle: "#5A6378",
+    borderFocus: "#E6B450",
+  },
   // Catppuccin Mocha.
   "catppuccin-mocha": {
     background: "#1E1E2E",
@@ -24,6 +41,22 @@ export const COMMUNITY_DARK_PALETTES = {
     borderIdle: "#6C7086",
     borderFocus: "#CBA6F7",
   },
+  // Cobalt2 (Wes Bos). Moved for AA: muted, danger.
+  cobalt2: {
+    background: "#193549",
+    highlight: "#1F4662",
+    text: "#FFFFFF",
+    strong: "#FFFFFF",
+    muted: "#AFAFAE",
+    accent: "#FFC600",
+    success: "#3AD900",
+    warning: "#FF9D00",
+    danger: "#FF8CA5",
+    accentFill: "#FFC600",
+    onAccent: "#193549",
+    borderIdle: "#0088FF",
+    borderFocus: "#FFC600",
+  },
   // Dracula. Moved for AA: muted, accent, danger, highlight.
   dracula: {
     background: "#282A36",
@@ -39,5 +72,154 @@ export const COMMUNITY_DARK_PALETTES = {
     onAccent: "#282A36",
     borderIdle: "#6E7BAE",
     borderFocus: "#FF79C6",
+  },
+  // Everforest dark, medium contrast; the title bar is its status-line green. Moved for AA:
+  // muted, danger.
+  everforest: {
+    background: "#2D353B",
+    highlight: "#343F44",
+    text: "#D3C6AA",
+    strong: "#FBEDD0",
+    muted: "#9DABA1",
+    accent: "#7FBBB3",
+    success: "#A7C080",
+    warning: "#DBBC7F",
+    danger: "#F3898B",
+    accentFill: "#A7C080",
+    onAccent: "#2D353B",
+    borderIdle: "#7A8478",
+    borderFocus: "#A7C080",
+  },
+  // Gruvbox dark (morhetz), medium contrast; muted is its fg3. Moved for AA: danger.
+  "gruvbox-dark": {
+    background: "#282828",
+    highlight: "#3C3836",
+    text: "#EBDBB2",
+    strong: "#FBF1C7",
+    muted: "#BDAE93",
+    accent: "#FE8019",
+    success: "#B8BB26",
+    warning: "#FABD2F",
+    danger: "#FF7964",
+    accentFill: "#FE8019",
+    onAccent: "#282828",
+    borderIdle: "#928374",
+    borderFocus: "#FABD2F",
+  },
+  // Kanagawa wave (rebelot); warning and danger are its diagnostic orange and peach red, the
+  // focus its carp yellow. Moved for AA: muted, accent, danger, idle border.
+  kanagawa: {
+    background: "#1F1F28",
+    highlight: "#363646",
+    text: "#DCD7BA",
+    strong: "#FDF8DA",
+    muted: "#A1A097",
+    accent: "#81A0DC",
+    success: "#98BB6C",
+    warning: "#FF9E3B",
+    danger: "#FF7474",
+    accentFill: "#7E9CD8",
+    onAccent: "#1F1F28",
+    borderIdle: "#676881",
+    borderFocus: "#E6C384",
+  },
+  // Monokai, as Sublime Text ships it; its pink is the danger and the focus. Moved for AA:
+  // muted, danger.
+  monokai: {
+    background: "#272822",
+    highlight: "#3E3D32",
+    text: "#F8F8F2",
+    strong: "#FFFFFF",
+    muted: "#ABA792",
+    accent: "#66D9EF",
+    success: "#A6E22E",
+    warning: "#E6DB74",
+    danger: "#FF7D9A",
+    accentFill: "#A6E22E",
+    onAccent: "#272822",
+    borderIdle: "#75715E",
+    borderFocus: "#F92672",
+  },
+  // Nord (nordtheme). Moved for AA: muted, danger, idle border.
+  nord: {
+    background: "#2E3440",
+    highlight: "#3B4252",
+    text: "#D8DEE9",
+    strong: "#ECEFF4",
+    muted: "#A0AECA",
+    accent: "#88C0D0",
+    success: "#A3BE8C",
+    warning: "#EBCB8B",
+    danger: "#F59199",
+    accentFill: "#88C0D0",
+    onAccent: "#2E3440",
+    borderIdle: "#727D92",
+    borderFocus: "#81A1C1",
+  },
+  // One Dark (Atom); highlight and strong are One Dark Pro's selected list row. Moved for AA:
+  // muted, danger, idle border.
+  "one-dark": {
+    background: "#282C34",
+    highlight: "#323842",
+    text: "#ABB2BF",
+    strong: "#D7DAE0",
+    muted: "#99A1AF",
+    accent: "#61AFEF",
+    success: "#98C379",
+    warning: "#E5C07B",
+    danger: "#F37C85",
+    accentFill: "#61AFEF",
+    onAccent: "#282C34",
+    borderIdle: "#6D7587",
+    borderFocus: "#C678DD",
+  },
+  // Rosé Pine (main): rose title bar, iris focus, leaf success. AA as published.
+  "rose-pine": {
+    background: "#191724",
+    highlight: "#26233A",
+    text: "#E0DEF4",
+    strong: "#FBFBFF",
+    muted: "#908CAA",
+    accent: "#EBBCBA",
+    success: "#95B1AC",
+    warning: "#F6C177",
+    danger: "#EB6F92",
+    accentFill: "#EBBCBA",
+    onAccent: "#191724",
+    borderIdle: "#6E6A86",
+    borderFocus: "#C4A7E7",
+  },
+  // Solarized dark. Text is base1 and muted base0, lifted: base0, its usual body text, falls
+  // short of AA on base02. Moved for AA: muted, accent, success, warning, danger, idle border.
+  "solarized-dark": {
+    background: "#002B36",
+    highlight: "#073642",
+    text: "#93A1A1",
+    strong: "#EEE8D5",
+    muted: "#8A9C9E",
+    accent: "#3E9FE7",
+    success: "#8DA218",
+    warning: "#BE9218",
+    danger: "#FF665A",
+    accentFill: "#2AA198",
+    onAccent: "#002B36",
+    borderIdle: "#5D737A",
+    borderFocus: "#2AA198",
+  },
+  // SynthWave '84 (Robb Owen), without the glow. Moved for AA: muted, danger, idle border.
+  "synthwave-84": {
+    background: "#262335",
+    highlight: "#37294D",
+    text: "#FFFFFF",
+    strong: "#FFFFFF",
+    muted: "#8C94C6",
+    accent: "#FF7EDB",
+    success: "#72F1B8",
+    warning: "#FEDE5D",
+    danger: "#FF6164",
+    accentFill: "#FF7EDB",
+    onAccent: "#262335",
+    borderIdle: "#5D6AAD",
+    borderFocus: "#36F9F6",
   },
 } as const satisfies Readonly<Partial<Record<RgbThemeId, HexPalette>>>;
