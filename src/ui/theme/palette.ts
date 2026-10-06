@@ -53,15 +53,36 @@ export const CUSTOMIZABLE_TOKENS = [
 ] as const satisfies readonly ColorToken[];
 export type CustomizableToken = (typeof CUSTOMIZABLE_TOKENS)[number];
 
-/** Themes gup paints in RGB, from its own palettes. */
+/**
+ * Themes gup paints in RGB, from its own palettes: gup's own, then the
+ * community themes on a dark ground, then those on a light ground, each
+ * group in alphabetical order.
+ */
 export const RGB_THEME_IDS = [
   "dark",
   "light",
   "high-contrast",
   "colorblind",
-  "dracula",
+  "ayu-dark",
   "catppuccin-mocha",
+  "cobalt2",
+  "dracula",
+  "everforest",
+  "gruvbox-dark",
+  "kanagawa",
+  "monokai",
+  "nord",
+  "one-dark",
+  "rose-pine",
+  "solarized-dark",
+  "synthwave-84",
+  "catppuccin-latte",
+  "flexoki-light",
   "github-light",
+  "gruvbox-light",
+  "papercolor-light",
+  "rose-pine-dawn",
+  "solarized-light",
 ] as const;
 export type RgbThemeId = (typeof RGB_THEME_IDS)[number];
 

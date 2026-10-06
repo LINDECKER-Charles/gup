@@ -293,7 +293,7 @@ Every tab and key: [journal-and-reports.md](journal-and-reports.md#in-the-menu-t
 
 ## Options
 
-![Options, theme picker: every built-in theme with its lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
+![Options, theme picker: the built-in themes with their lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
 
 **Options** holds every setting, saved as you change it: SCAN & INSTALL, APPEARANCE (theme,
 custom colors, contrast level, symbols, density), BEHAVIOR (language, startup view, confirmation,

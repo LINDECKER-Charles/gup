@@ -119,7 +119,7 @@ https://github.com/LINDECKER-Charles/gup/blob/main/docs/guide/providers-catalog.
 
 ## Commands
 
-- `gup` — full-screen interactive app (English UI, French with `gup language fr`). Sidebar: Scan · Packages · Schedules, then Providers · Journal · Options, then Quit. In Packages, `space` checks a package (on a provider row, all of its packages), `a` checks everything, `enter` updates the checked ones in an embedded terminal pane without leaving the app — or in the plain terminal, with the reason shown, when no pseudo-terminal is available — and `p` schedules them. In Journal, `o` opens the HTML report. Providers that cannot run on the current OS are listed greyed out. Options offer ten themes and custom colours, each checked against WCAG AA (4.5:1 for text, 3:1 for borders, 7:1 at AAA) and corrected when it falls short.
+- `gup` — full-screen interactive app (English UI, French with `gup language fr`). Sidebar: Scan · Packages · Schedules, then Providers · Journal · Options, then Quit. In Packages, `space` checks a package (on a provider row, all of its packages), `a` checks everything, `enter` updates the checked ones in an embedded terminal pane without leaving the app — or in the plain terminal, with the reason shown, when no pseudo-terminal is available — and `p` schedules them. In Journal, `o` opens the HTML report. Providers that cannot run on the current OS are listed greyed out. Options offer 27 themes and custom colours, each checked against WCAG AA (4.5:1 for text, 3:1 for borders, 7:1 at AAA) and corrected when it falls short.
 - `gup list` — outdated packages as a table
 - `gup list --fast` — skips the providers marked slow (HTTP per package, filesystem walks)
 - `gup list --json` — machine-readable, pipeable

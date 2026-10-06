@@ -121,7 +121,7 @@ export default {
       themes: {
         title: "Themes that stay readable",
         text:
-          "Ten built-in themes or your own colors: gup checks each one against WCAG AA — " +
+          "27 built-in themes or your own colors: gup checks each one against WCAG AA — " +
           "4.5:1 for text, 3:1 for borders, 7:1 if you pick AAA — and corrects what falls " +
           "short.",
       },

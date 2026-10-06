@@ -29,20 +29,45 @@ Pick the theme in the interactive app, **Options › Theme**, with a live previe
 | `light` | the same, for light backgrounds | 4.8:1 |
 | `high-contrast` | white on black, bright accents; AAA everywhere | 7.8:1 |
 | `colorblind` | Okabe-Ito colours: success sky blue, danger orange — never red against green | 5.9:1 |
-| `dracula` | Dracula, a few colours adjusted for AA (muted, accent, danger, highlight) | 4.6:1 |
+| `ayu-dark` | Ayu Dark: a golden accent on near black; muted adjusted for AA | 4.5:1 |
 | `catppuccin-mocha` | Catppuccin Mocha | 5.4:1 |
+| `cobalt2` | Cobalt2: golden yellow on cobalt blue; muted and danger adjusted for AA | 4.5:1 |
+| `dracula` | Dracula, a few colours adjusted for AA (muted, accent, danger, highlight) | 4.6:1 |
+| `everforest` | Everforest dark: soft greens, its status-line green on the title bar; muted and danger adjusted for AA | 4.5:1 |
+| `gruvbox-dark` | Gruvbox dark: warm retro tones, orange accent; danger adjusted for AA | 4.5:1 |
+| `kanagawa` | Kanagawa wave: ink, parchment and wave blue; muted, accent, danger and the idle border adjusted for AA | 4.5:1 |
+| `monokai` | Monokai, as Sublime Text ships it: vivid colours on olive black; muted and danger adjusted for AA | 4.5:1 |
+| `nord` | Nord: an arctic, north-bluish palette; muted, danger and the idle border adjusted for AA | 4.5:1 |
+| `one-dark` | One Dark (Atom), with One Dark Pro's selected row; muted, danger and the idle border adjusted for AA | 4.5:1 |
+| `rose-pine` | Rosé Pine: muted rose, gold and iris, as published | 4.7:1 |
+| `solarized-dark` | Solarized dark: body text is base1, as base0 falls short of AA on the cursor row; muted, the accents and the idle border adjusted for AA | 4.5:1 |
+| `synthwave-84` | SynthWave '84, without the glow: neon pink and cyan on purple; muted, danger and the idle border adjusted for AA | 4.5:1 |
+| `catppuccin-latte` | Catppuccin Latte; muted, the accents, the title bar and the idle border adjusted for AA | 4.5:1 |
+| `flexoki-light` | Flexoki light: inky colours on warm paper; muted and warning adjusted for AA | 4.5:1 |
 | `github-light` | GitHub light, adjusted for AA (success, warning, highlight) | 4.5:1 |
+| `gruvbox-light` | Gruvbox light: warm retro tones on cream; accent, success and warning adjusted for AA | 4.5:1 |
+| `papercolor-light` | PaperColor light: light paper tones, deep blue accent; success and warning adjusted for AA | 4.5:1 |
+| `rose-pine-dawn` | Rosé Pine Dawn: rose title bar, iris accent; muted, the accents, the title bar and the idle border adjusted for AA | 4.5:1 |
+| `solarized-light` | Solarized light: body text is base01, held apart from muted (base00); every colour but the grounds adjusted for AA | 4.5:1 |
 | `monochrome` | no colour: your terminal's text colour only, selection in inverse video | your terminal's |
 
-The RGB themes (`auto` to `github-light`) paint their own background: a
+Every theme but `terminal` and `monochrome` paints its own background: a
 transparent or image background of your terminal is covered while `gup`'s screen
 is up. `terminal` and `monochrome` leave your terminal's background as it is.
+
+The community themes (`ayu-dark` to `solarized-light`) start from each theme's
+published colours. A colour that falls short of AA on the background or the cursor
+row is moved along its lightness only, hue kept, just far enough: the table names
+those. Each family comes in one flavour per ground at most, and a theme that would
+look like another one in the few colour roles `gup` paints is left out — Tokyo Night
+and Night Owl paint as `catppuccin-mocha`, Material as `nord`, Tomorrow Night as
+`kanagawa`.
 
 The cursor row is a soft tint on purpose: the `›` in the gutter carries the
 cursor, the tint only reinforces it.
 
-The same **Packages** view in eight of them (the default `terminal` theme is the
-one every other screenshot of these docs shows):
+The same **Packages** view in every theme but `terminal`, the one every other
+screenshot of these docs shows, and `auto`, which paints `dark` or `light`:
 
 | | |
 |---|---|
@@ -50,10 +75,28 @@ one every other screenshot of these docs shows):
 | `dark` — **Dark (gup)** | `light` — **Light (gup)** |
 | ![The Packages view in the High contrast theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-high-contrast.svg) | ![The Packages view in the Colorblind (Okabe-Ito) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-colorblind.svg) |
 | `high-contrast` — **High contrast** | `colorblind` — **Colorblind (Okabe-Ito)** |
-| ![The Packages view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-dracula.svg) | ![The Packages view in the Catppuccin Mocha theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-catppuccin-mocha.svg) |
-| `dracula` — **Dracula** | `catppuccin-mocha` — **Catppuccin Mocha** |
-| ![The Packages view in the GitHub (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-github-light.svg) | ![The Packages view in the Monochrome theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-monochrome.svg) |
-| `github-light` — **GitHub (light)** | `monochrome` — **Monochrome** |
+| ![The Packages view in the Ayu Dark theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-ayu-dark.svg) | ![The Packages view in the Catppuccin Mocha theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-catppuccin-mocha.svg) |
+| `ayu-dark` — **Ayu Dark** | `catppuccin-mocha` — **Catppuccin Mocha** |
+| ![The Packages view in the Cobalt2 theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-cobalt2.svg) | ![The Packages view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-dracula.svg) |
+| `cobalt2` — **Cobalt2** | `dracula` — **Dracula** |
+| ![The Packages view in the Everforest theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-everforest.svg) | ![The Packages view in the Gruvbox (dark) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-gruvbox-dark.svg) |
+| `everforest` — **Everforest** | `gruvbox-dark` — **Gruvbox (dark)** |
+| ![The Packages view in the Kanagawa theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-kanagawa.svg) | ![The Packages view in the Monokai theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-monokai.svg) |
+| `kanagawa` — **Kanagawa** | `monokai` — **Monokai** |
+| ![The Packages view in the Nord theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-nord.svg) | ![The Packages view in the One Dark theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-one-dark.svg) |
+| `nord` — **Nord** | `one-dark` — **One Dark** |
+| ![The Packages view in the Rosé Pine theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-rose-pine.svg) | ![The Packages view in the Solarized (dark) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-solarized-dark.svg) |
+| `rose-pine` — **Rosé Pine** | `solarized-dark` — **Solarized (dark)** |
+| ![The Packages view in the SynthWave '84 theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-synthwave-84.svg) | ![The Packages view in the Catppuccin Latte theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-catppuccin-latte.svg) |
+| `synthwave-84` — **SynthWave '84** | `catppuccin-latte` — **Catppuccin Latte** |
+| ![The Packages view in the Flexoki (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-flexoki-light.svg) | ![The Packages view in the GitHub (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-github-light.svg) |
+| `flexoki-light` — **Flexoki (light)** | `github-light` — **GitHub (light)** |
+| ![The Packages view in the Gruvbox (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-gruvbox-light.svg) | ![The Packages view in the PaperColor (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-papercolor-light.svg) |
+| `gruvbox-light` — **Gruvbox (light)** | `papercolor-light` — **PaperColor (light)** |
+| ![The Packages view in the Rosé Pine Dawn theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-rose-pine-dawn.svg) | ![The Packages view in the Solarized (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-solarized-light.svg) |
+| `rose-pine-dawn` — **Rosé Pine Dawn** | `solarized-light` — **Solarized (light)** |
+| ![The Packages view in the Monochrome theme, with packages checked, the cursor row highlighted and the selection bar's button.](../assets/screens/theme-monochrome.svg) | |
+| `monochrome` — **Monochrome** | |
 
 ## Choosing a theme
 
@@ -65,7 +108,7 @@ the same number the picker and the editor give; the colours drawn from them
 (the title bar's fill, the text on it, the focus border) follow without being
 counted again. `enter` opens the theme picker:
 
-![Options, theme picker: every built-in theme with its lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
+![Options, theme picker: the built-in themes with their lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
 
 | Mark | Meaning |
 |---|---|

@@ -6,6 +6,8 @@ import {
   THEME_LABELS,
   THEME_PICKER,
 } from "../../../../src/ui/text/settings/theme-labels.js";
+import { THEME_IDS } from "../../../../src/ui/theme/palette.js";
+import type { Line } from "../../../../src/ui/tui/styled-lines.js";
 import { useLocale } from "../../../support/locale.js";
 import {
   key,
@@ -16,6 +18,17 @@ import {
   VIEW,
   type FixtureOptions,
 } from "./options-fixture.js";
+
+/** Side by side, but too short for every theme: the list scrolls. */
+const SHORT_VIEW = { width: 100, height: 6 };
+
+/** The list column of a side-by-side render: its heading and rows, without the blank tail. */
+function listColumn(lines: readonly Line[]): string[] {
+  return text(lines)
+    .split("\n")
+    .map((line) => (line.split(" │ ")[0] ?? "").trimEnd())
+    .filter((line) => line !== "");
+}
 
 /** The Options list with the picker open on the saved theme. */
 function openPicker(options: FixtureOptions & { readonly saved?: "dark" | "terminal" } = {}) {
@@ -105,12 +118,31 @@ describe("theme picker", () => {
     expect(previewed()?.id).toBe("high-contrast");
   });
 
+  it("scrolls a list taller than the panel to keep the cursor in view", () => {
+    const { panel } = openPicker({ saved: "terminal" });
+    THEME_IDS.slice(1).forEach(() => panel.press(key("down")));
+    const list = listColumn(panel.render(SHORT_VIEW));
+    expect(list).toHaveLength(SHORT_VIEW.height);
+    expect(list.at(-1)).toMatch(new RegExp(`^› ${THEME_LABELS.monochrome}`));
+    expect(list.some((line) => line.includes(THEME_LABELS.terminal))).toBe(false);
+  });
+
+  it("tries the theme a click lands on in a scrolled list", () => {
+    const { panel, previewed } = openPicker({ saved: "terminal" });
+    THEME_IDS.slice(1).forEach(() => panel.press(key("down")));
+    panel.click(1, SHORT_VIEW);
+    expect(previewed()?.id).toBe(THEME_IDS.at(-(SHORT_VIEW.height - 1)));
+  });
+
   it("puts the preview under the list on a narrow panel", () => {
     const { panel } = openPicker();
     const lines = text(panel.render({ width: 50, height: 40 })).split("\n");
-    const listEnd = lines.findIndex((line) => line.includes(THEME_LABELS.monochrome));
+    const gap = lines.indexOf("");
+    expect(lines.slice(0, gap).some((line) => line.startsWith(`› ${THEME_LABELS.dark}`))).toBe(
+      true,
+    );
     expect(lines.findIndex((line) => line.includes(THEME_PICKER.previewHeading))).toBeGreaterThan(
-      listEnd,
+      gap,
     );
     expect(panel.render({ width: 50, height: 12 })).toHaveLength(12);
   });
