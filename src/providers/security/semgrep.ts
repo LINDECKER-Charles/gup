@@ -1,9 +1,8 @@
-import { existsSync } from "node:fs";
-import { posix as posixPath, win32 as winPath } from "node:path";
-import { commandExists, run, runInherit, whichFirst } from "../../core/runner.js";
+import { commandExists, run, runInherit } from "../../core/runner.js";
 import { pickInstallHint } from "../../core/install-hint.js";
 import { localize } from "../../core/i18n/localized.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
+import { pythonBehind } from "../python/python-behind.js";
 
 interface PypiJson {
   info?: { version?: string };
@@ -48,7 +47,8 @@ export class SemgrepProvider implements Provider {
   }
 
   async update(_packageId: string): Promise<UpdateOutcome> {
-    const python = await pythonForSemgrep();
+    // Null: a manual skip rather than a `--user` install the old copy would shadow.
+    const python = await pythonBehind("semgrep");
     if (!python) {
       return {
         id: "semgrep",
@@ -92,34 +92,4 @@ async function fetchPypiLatest(pkg: string): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-/**
- * Resolve the python interpreter that owns the `semgrep` entry point currently
- * on PATH. Returns null if the binary or its companion interpreter can't be
- * located — caller surfaces that as a manual skip rather than risking a
- * --user shadow install.
- *
- * - Windows: `<prefix>\Scripts\semgrep.exe`  →  `<prefix>\python.exe`
- * - POSIX:   `<prefix>/bin/semgrep`         →  `<prefix>/bin/python{3,}`
- */
-async function pythonForSemgrep(): Promise<string | null> {
-  const bin = await whichFirst("semgrep");
-  if (!bin) return null;
-  // The targeted layout decides the path flavour, not the host's separator:
-  // `C:\…\Scripts\semgrep.exe` stays a Windows path even when parsed on a
-  // POSIX runner (the tests that mock `process.platform`).
-  const isWindows = process.platform === "win32";
-  const p = isWindows ? winPath : posixPath;
-  const sameDir = p.dirname(bin);
-  const parent = p.dirname(sameDir);
-  const candidates = isWindows
-    ? [p.join(parent, "python.exe"), p.join(sameDir, "python.exe")]
-    : [
-        p.join(sameDir, "python3"),
-        p.join(sameDir, "python"),
-        p.join(parent, "bin", "python3"),
-        p.join(parent, "bin", "python"),
-      ];
-  return candidates.find((c) => existsSync(c)) ?? null;
 }
