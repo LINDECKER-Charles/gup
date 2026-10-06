@@ -191,7 +191,7 @@ comes from your settings.
 
 | Field | Values | Default |
 |---|---|---|
-| `id` | `terminal`, `auto`, `dark`, `light`, `high-contrast`, `colorblind`, `dracula`, `catppuccin-mocha`, `github-light`, `monochrome` | `terminal` |
+| `id` | `terminal`, `auto`, `dark`, `light`, `high-contrast`, `colorblind`, `ayu-dark`, `catppuccin-mocha`, `cobalt2`, `dracula`, `everforest`, `gruvbox-dark`, `kanagawa`, `monokai`, `nord`, `one-dark`, `rose-pine`, `solarized-dark`, `synthwave-84`, `catppuccin-latte`, `flexoki-light`, `github-light`, `gruvbox-light`, `papercolor-light`, `rose-pine-dawn`, `solarized-light`, `monochrome` — see [themes-and-accessibility.md](themes-and-accessibility.md#themes) | `terminal` |
 | `contrast` | `AA` (text ≥ 4.5:1) or `AAA` (text ≥ 7:1) | `AA` |
 | `custom` | per theme, colours for `accent`, `success`, `warning`, `danger`, `text`, `muted`, `background`, `highlight`, as `#RRGGBB` or `#RGB` | none |
 

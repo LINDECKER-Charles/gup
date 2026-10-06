@@ -739,7 +739,7 @@ src/
     ├── panels/             # Scan, Packages, Providers; journal/, options/, schedules/
     ├── run/                # the run view; terminal/ (panes over OpenTUI's embedded terminal)
     ├── tui/                # OpenTUI loader, screen host, teardown, chrome, dialogs, text panel
-    ├── theme/              # appearance seam, glyphs, built-in themes, contrast; color/, runtime/
+    ├── theme/              # appearance seam, glyphs, built-in themes, contrast; color/, palettes/, runtime/
     ├── settings/           # settings service and sections the UI owns, Options rows of other features
     ├── charts/             # heatmap, bars, sparklines, the text report
     ├── text/               # the interface's words by domain, English and French; format.ts

@@ -111,7 +111,7 @@ to add one.
 
 **gup — Options** · 100 × 28
 
-![Options, theme picker: every built-in theme with its lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](options-themes.svg)
+![Options, theme picker: the built-in themes with their lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](options-themes.svg)
 
 ### options-colors
 
@@ -151,11 +151,11 @@ to add one.
 
 ![The Packages view in the Colorblind (Okabe-Ito) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-colorblind.svg)
 
-### theme-dracula
+### theme-ayu-dark
 
-**gup — Packages · Dracula** · 100 × 28
+**gup — Packages · Ayu Dark** · 100 × 28
 
-![The Packages view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-dracula.svg)
+![The Packages view in the Ayu Dark theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-ayu-dark.svg)
 
 ### theme-catppuccin-mocha
 
@@ -163,11 +163,113 @@ to add one.
 
 ![The Packages view in the Catppuccin Mocha theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-catppuccin-mocha.svg)
 
+### theme-cobalt2
+
+**gup — Packages · Cobalt2** · 100 × 28
+
+![The Packages view in the Cobalt2 theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-cobalt2.svg)
+
+### theme-dracula
+
+**gup — Packages · Dracula** · 100 × 28
+
+![The Packages view in the Dracula theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-dracula.svg)
+
+### theme-everforest
+
+**gup — Packages · Everforest** · 100 × 28
+
+![The Packages view in the Everforest theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-everforest.svg)
+
+### theme-gruvbox-dark
+
+**gup — Packages · Gruvbox (dark)** · 100 × 28
+
+![The Packages view in the Gruvbox (dark) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-gruvbox-dark.svg)
+
+### theme-kanagawa
+
+**gup — Packages · Kanagawa** · 100 × 28
+
+![The Packages view in the Kanagawa theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-kanagawa.svg)
+
+### theme-monokai
+
+**gup — Packages · Monokai** · 100 × 28
+
+![The Packages view in the Monokai theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-monokai.svg)
+
+### theme-nord
+
+**gup — Packages · Nord** · 100 × 28
+
+![The Packages view in the Nord theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-nord.svg)
+
+### theme-one-dark
+
+**gup — Packages · One Dark** · 100 × 28
+
+![The Packages view in the One Dark theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-one-dark.svg)
+
+### theme-rose-pine
+
+**gup — Packages · Rosé Pine** · 100 × 28
+
+![The Packages view in the Rosé Pine theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-rose-pine.svg)
+
+### theme-solarized-dark
+
+**gup — Packages · Solarized (dark)** · 100 × 28
+
+![The Packages view in the Solarized (dark) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-solarized-dark.svg)
+
+### theme-synthwave-84
+
+**gup — Packages · SynthWave '84** · 100 × 28
+
+![The Packages view in the SynthWave '84 theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-synthwave-84.svg)
+
+### theme-catppuccin-latte
+
+**gup — Packages · Catppuccin Latte** · 100 × 28
+
+![The Packages view in the Catppuccin Latte theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-catppuccin-latte.svg)
+
+### theme-flexoki-light
+
+**gup — Packages · Flexoki (light)** · 100 × 28
+
+![The Packages view in the Flexoki (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-flexoki-light.svg)
+
 ### theme-github-light
 
 **gup — Packages · GitHub (light)** · 100 × 28
 
 ![The Packages view in the GitHub (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-github-light.svg)
+
+### theme-gruvbox-light
+
+**gup — Packages · Gruvbox (light)** · 100 × 28
+
+![The Packages view in the Gruvbox (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-gruvbox-light.svg)
+
+### theme-papercolor-light
+
+**gup — Packages · PaperColor (light)** · 100 × 28
+
+![The Packages view in the PaperColor (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-papercolor-light.svg)
+
+### theme-rose-pine-dawn
+
+**gup — Packages · Rosé Pine Dawn** · 100 × 28
+
+![The Packages view in the Rosé Pine Dawn theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-rose-pine-dawn.svg)
+
+### theme-solarized-light
+
+**gup — Packages · Solarized (light)** · 100 × 28
+
+![The Packages view in the Solarized (light) theme, with packages checked, the cursor row highlighted and the selection bar's button.](theme-solarized-light.svg)
 
 ### theme-monochrome
 

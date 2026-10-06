@@ -56,7 +56,7 @@ export const SETTINGS_GROUP: SceneGroup = {
         return optionsTitle();
       },
       alt:
-        "Options, theme picker: every built-in theme with its lowest contrast ratio, the " +
+        "Options, theme picker: the built-in themes with their lowest contrast ratio, the " +
         "Dracula theme under the cursor previewed on the whole app, its sample and contrast " +
         "verdict on the right.",
       size: SCENE_SIZES.default,
