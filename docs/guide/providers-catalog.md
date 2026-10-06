@@ -171,7 +171,7 @@ the distro is upgraded through `sudo apt-get install --only-upgrade` /
 
 | ID | Source | Status |
 |---|---|---|
-| `pip` | pip (user); an upgrade `pip check` says breaks a dependent is undone | ✅ |
+| `pip` | pip: the user site, and the site-packages of a Python installed in a folder of the user's; an upgrade `pip check` says breaks a dependent is undone | ✅ |
 | `pipx` | pipx | ✅ |
 | `uv-tools` | uv tools | ✅ |
 | `poetry` | Poetry self-update | ✅ |

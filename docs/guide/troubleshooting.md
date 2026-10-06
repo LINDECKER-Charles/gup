@@ -261,7 +261,8 @@ and ends the update as a skip that names the dependent and its requirement.
 offered again at each scan until they accept the new one — usually with their own next release.
 When gup could not put the previous version back, the update fails instead
 (`click 8.5.0 breaks semgrep 1.178.0 (click~=8.4.2), and putting 8.4.2 back failed`): reinstall it
-yourself, `pip install --user click==8.4.2`.
+yourself, `pip install --user click==8.4.2` — without `--user` when the package lives in your
+Python's own site-packages rather than in your user site (`pip show click` says which).
 
 ### pnpm updated itself, but the old version still runs
 
@@ -329,6 +330,12 @@ installed in — or let it update itself, as game launchers do.
   Homebrew installed (Starship, Terraform, the Symfony CLI…) to the `brew` row once brew scanned —
   at the version its formula delivers, so none while the formula has not packaged the latest
   release. At `--log-level debug`, `gup log --grep superseded` shows what was left out.
+- **A pip package outside your user site.** `pip` lists the user site, plus the site-packages of
+  the Python behind the `pip` on `PATH` when that folder is yours to write: a python.org install
+  "for me only", a Python in a folder of yours, pyenv. It leaves that folder alone when it is not
+  writable without administrator rights (`C:\Program Files`, `/usr`), when the Python is
+  externally managed (Homebrew, Debian, Ubuntu: their package manager upgrades it), or when that
+  `pip` belongs to a virtual or conda environment.
 - **The provider's scan failed.** Its row in **Scan** or **Packages** shows the error;
   `gup log -l warn` has the detail.
 
