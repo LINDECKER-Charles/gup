@@ -117,7 +117,7 @@ export default {
       themes: {
         title: "Temas que continuam legíveis",
         text:
-          "Dez temas integrados ou suas próprias cores: o gup verifica cada um segundo o " +
+          "27 temas integrados ou suas próprias cores: o gup verifica cada um segundo o " +
           "WCAG AA — 4,5:1 para texto, 3:1 para bordas, 7:1 se você escolher AAA — e " +
           "corrige o que ficar abaixo do limite.",
       },

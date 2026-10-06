@@ -117,7 +117,7 @@ export default {
       themes: {
         title: "Temas que siguen siendo legibles",
         text:
-          "Diez temas integrados o tus propios colores: gup comprueba cada uno según WCAG AA " +
+          "27 temas integrados o tus propios colores: gup comprueba cada uno según WCAG AA " +
           "(4,5:1 para el texto, 3:1 para los bordes, 7:1 si eliges AAA) y corrige lo que " +
           "se queda corto.",
       },
