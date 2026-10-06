@@ -87,12 +87,6 @@ export interface UpdateDecisions {
   chooseRetry(request: RetryRequest): Promise<RetryStrategyId | null>;
   /** Message on the packages left out when confirmElevation() says no. */
   readonly declinedElevation?: string;
-  /**
-   * Nobody watches this run (a scheduled update): every attempt tells its
-   * provider not to prompt (`UpdateOptions.unattended`), since a question
-   * nobody answers would hold the run until the install timeout.
-   */
-  readonly unattended?: boolean;
 }
 
 export interface UpdatePorts {

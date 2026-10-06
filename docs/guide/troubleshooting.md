@@ -284,16 +284,18 @@ SKIP 1 manual action required:
      - <id> — winget cannot upgrade this package: use its publisher's own updater
 ```
 
-or `winget needs an answer gup cannot give: run winget upgrade --id <id> in a terminal`.
+or `winget needs an install folder gup cannot choose: run winget upgrade --id <id> --location
+<folder> in a terminal`.
 
 **Why.** winget said itself that no strategy can work, so gup offers no retry (`--force`,
 `--uninstall-previous`, a reinstall) and ends the update as a skip: the package's manifest forbids
-upgrades through winget (`0x8A150114`: Parsec, Android Studio), or winget asked a question no flag
-answers and could not read a reply (`0x8A150042`: Battle.net's install location).
+upgrades through winget (`0x8A150114`: Parsec, Android Studio), or it requires an install folder
+that only you know (`0x8A15005F`: Battle.net). gup runs winget with `--disable-interactivity`, so
+that question fails at once instead of holding the rest of the batch.
 
 **Fix.** For the first, update the application with its publisher's own updater, often from the
-application itself. For the second, run `winget upgrade --id <id>` in a terminal and answer
-winget's question there.
+application itself. For the second, run the command shown with the folder the application is
+installed in — or let it update itself, as game launchers do.
 
 ## Providers and packages
 

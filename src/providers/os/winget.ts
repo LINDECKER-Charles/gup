@@ -9,6 +9,15 @@ import { PLATFORMS } from "../../core/platform/platforms.js";
 import { localize } from "../../core/i18n/localized.js";
 
 /**
+ * Every install and uninstall refuses to ask. The agreement flags answer all
+ * but one of winget's questions: the install folder a manifest may require
+ * (Battle.net), which gup cannot know. Asked in the embedded terminal, that
+ * question holds the whole batch until someone skips the package; refused,
+ * it ends as a skip that says what to run (INSTALL_LOCATION_REQUIRED below).
+ */
+const NO_PROMPT = "--disable-interactivity";
+
+/**
  * Winget has no machine-readable output for `upgrade`.
  * Strategy: parse the fixed-width text table, locating columns by header offsets.
  * Resilient to localized headers (FR/EN) thanks to position-based slicing.
@@ -75,7 +84,7 @@ export class WingetProvider implements Provider {
       "--accept-package-agreements",
       "--accept-source-agreements",
       "--include-unknown",
-      ...interactivityArgs(options),
+      NO_PROMPT,
     ];
     if (options?.force) args.push("--force");
     if (options?.uninstallPrevious) args.push("--uninstall-previous");
@@ -105,7 +114,7 @@ export class WingetProvider implements Provider {
       "--exact",
       "--silent",
       "--accept-source-agreements",
-      ...interactivityArgs(options),
+      NO_PROMPT,
     ];
     await runInherit("winget", ["uninstall", ...baseArgs]);
 
@@ -167,18 +176,18 @@ const FINAL_FAILURES: ReadonlyMap<number, FailureMessage> = new Map<number, Fail
         fr: "winget ne peut pas mettre à jour ce paquet : passer par l'outil de son éditeur",
       }),
   ],
-  // APPINSTALLER_CLI_ERROR_PROMPT_INPUT_ERROR: winget asked a question no
-  // flag answers (Battle.net's install location) and could not read a reply.
+  // APPINSTALLER_CLI_ERROR_INSTALL_LOCATION_REQUIRED: the manifest requires
+  // an install folder, which only the user knows (Battle.net).
   [
-    hresult(0x8a150042),
+    hresult(0x8a15005f),
     (packageId) =>
       localize({
         en:
-          "winget needs an answer gup cannot give: " +
-          `run winget upgrade --id ${packageId} in a terminal`,
+          "winget needs an install folder gup cannot choose: " +
+          `run winget upgrade --id ${packageId} --location <folder> in a terminal`,
         fr:
-          "winget attend une réponse que gup ne peut pas donner : " +
-          `lancer winget upgrade --id ${packageId} dans un terminal`,
+          "winget demande un dossier d'installation que gup ne peut pas choisir : " +
+          `lancer winget upgrade --id ${packageId} --location <dossier> dans un terminal`,
       }),
   ],
 ]);
@@ -219,14 +228,6 @@ interface WingetColumns {
   version: number;
   available: number;
   source: number;
-}
-
-/**
- * An unattended run (a scheduled update) has nobody to answer a prompt:
- * winget then refuses to ask instead of waiting until the install timeout.
- */
-function interactivityArgs(options: UpdateOptions | undefined): string[] {
-  return options?.unattended ? ["--disable-interactivity"] : [];
 }
 
 /**
