@@ -21,6 +21,8 @@ export interface PtyLaunch {
   readonly rows: number;
   /** The trampoline's exit file (Windows fast path). */
   readonly exitFile?: string;
+  /** Variables added to gup's environment; the trampoline passes them on to the install. */
+  readonly env?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -49,6 +51,7 @@ export class PtySession implements InheritProcess {
       name: TERM_NAME,
       cols: Math.max(MIN_COLS, launch.cols),
       rows: Math.max(MIN_ROWS, launch.rows),
+      ...(launch.env !== undefined && { env: { ...process.env, ...launch.env } }),
     });
     return new PtySession(handle, launch.exitFile, onData);
   }

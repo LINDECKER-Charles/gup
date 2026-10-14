@@ -458,8 +458,9 @@ flowchart LR
 ```
 
 - **Sanitisers.** `sanitizeCommand` and `sanitizeArgs` refuse what could be read as an option or a
-  shell construct before anything spawns; a refusal rejects, which `applyUpdate` turns into a
-  failed outcome.
+  shell construct before anything spawns, and `sanitizeEnv` a variable an install adds whose name
+  is not portable or whose value the argv barrier would refuse; a refusal rejects, which
+  `applyUpdate` turns into a failed outcome.
 - **Install sinks** (`core/process/inherit-sink.ts`). `routeInheritTo(sink)` installs one around a
   batch and restores the previous one after: the run view routes installs to its terminal panes, a
   scheduled run to a pipe. Providers do not change: they keep calling `runInherit`.
@@ -467,7 +468,9 @@ flowchart LR
   installer itself — its Windows spawn ignores `PATHEXT` and has no `cmd.exe` escaping. It starts
   the trampoline with a constant command line and one base64url payload; the trampoline calls
   `runInherit` with no sink, so PATH resolution, `.cmd` escaping and the argv barrier work as
-  without a PTY. node-pty's own `kill()` is never called: a skip kills the trampoline's tree
+  without a PTY. The variables a request adds (`HOMEBREW_NO_ASK`) go into the trampoline's
+  environment, never into its payload, and reach the installer from there. node-pty's own
+  `kill()` is never called: a skip kills the trampoline's tree
   (`taskkill /T /F`, or the process group on POSIX), and each session releases its pseudo-console
   once the installer exits (`releaseConpty`).
 - **Embedded terminal detection** (`core/pty/pty-loader.ts`) never throws: `GUP_PTY` turned off, a

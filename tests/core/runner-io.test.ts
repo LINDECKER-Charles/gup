@@ -134,6 +134,15 @@ describe("createPipeSink", () => {
     expect(options).not.toHaveProperty("windowsHide");
   });
 
+  it("adds the request's variables to the child's environment", async () => {
+    const { sink } = collectingSink();
+    const child = pipedChild();
+    const started = sink.start({ command: "brew", args: ["upgrade"], env: { HOMEBREW_NO_ASK: "1" } });
+    child.exit(0);
+    await started.exited;
+    expect(execaMock.mock.calls[0]![2]).toMatchObject({ env: { HOMEBREW_NO_ASK: "1" } });
+  });
+
   it("hands every line to onLine with its stream, the last partial line included", async () => {
     const { lines, sink } = collectingSink();
     const child = pipedChild();
