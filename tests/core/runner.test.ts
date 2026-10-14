@@ -206,6 +206,28 @@ describe("runner.runInherit", () => {
     expect(opts).not.toHaveProperty("timeout");
   });
 
+  it("adds the caller's variables to the environment the child inherits", async () => {
+    execaMock.mockReturnValueOnce(mkExecaResult({ exitCode: 0 }));
+    await runInherit("brew", ["upgrade", "--formula", "dotnet"], { env: { HOMEBREW_NO_ASK: "1" } });
+    const [, , opts] = execaMock.mock.calls[0]!;
+    expect(opts).toMatchObject({ env: { HOMEBREW_NO_ASK: "1" } });
+    // execa merges `env` over gup's own environment unless told not to.
+    expect(opts).not.toHaveProperty("extendEnv");
+  });
+
+  it.each([
+    ["an empty name", { "": "1" }],
+    ["a name holding `=`", { "A=B": "1" }],
+    ["a name starting with a digit", { "1X": "1" }],
+    ["a name holding a shell metacharacter", { "X;rm": "1" }],
+    ["a NUL in a value", { X: "a\u0000b" }],
+    ["an escape sequence in a value", { X: "\u001b[2J" }],
+    ["a value that is not a string", { X: 1 as unknown as string }],
+  ])("refuses %s before anything is spawned", async (_label, env) => {
+    await expect(runInherit("brew", ["upgrade"], { env })).rejects.toThrow(/runner:/);
+    expect(execaMock).not.toHaveBeenCalled();
+  });
+
   it("reports a failed exit when the spawn itself throws", async () => {
     execaMock.mockImplementationOnce(() => {
       throw new Error("spawn EINVAL");
@@ -254,6 +276,22 @@ describe("runner.runInherit with an install sink", () => {
       cwd: "C:\\x",
     });
     expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it("hands the sink the request's variables once sanitised", async () => {
+    const child = fakeChild();
+    const sink = sinkStarting(child);
+    restore = routeInheritTo(sink);
+    const pending = runInherit("brew", ["upgrade", "--cask", "iterm2"], {
+      env: { HOMEBREW_NO_ASK: "1" },
+    });
+    child.exit({ exitCode: 0, failed: false });
+    await pending;
+    expect(sink.start).toHaveBeenCalledWith({
+      command: "brew",
+      args: ["upgrade", "--cask", "iterm2"],
+      env: { HOMEBREW_NO_ASK: "1" },
+    });
   });
 
   it("refuses an unsafe command before the sink sees it", async () => {

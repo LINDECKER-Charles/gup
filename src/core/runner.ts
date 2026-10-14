@@ -120,6 +120,32 @@ function sanitizeArgs(args: readonly string[]): string[] {
   return cleaned;
 }
 
+// A portable variable name: what POSIX shells accept, and nothing a platform
+// would read as part of the value (`=`) or as the end of the block (NUL).
+const SAFE_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/**
+ * Environment barrier for the variables an install adds: each name must match
+ * {@link SAFE_ENV_NAME_PATTERN}, each value the argv allowlist. Returns a
+ * fresh record built from the regex matches, as {@link sanitizeArgs} does —
+ * own properties only, so even a `__proto__` name stays a plain variable.
+ */
+function sanitizeEnv(env: Readonly<Record<string, string>>): Record<string, string> {
+  const cleaned: [string, string][] = [];
+  for (const [name, value] of Object.entries(env)) {
+    const nameMatch = SAFE_ENV_NAME_PATTERN.exec(name);
+    if (!nameMatch) {
+      throw new Error(`runner: refusing unsafe environment variable name: ${name}`);
+    }
+    const valueMatch = typeof value === "string" ? SAFE_ARG_PATTERN.exec(value) : null;
+    if (!valueMatch) {
+      throw new Error(`runner: environment variable ${name} has a forbidden value`);
+    }
+    cleaned.push([nameMatch[0], valueMatch[0]]);
+  }
+  return Object.fromEntries(cleaned);
+}
+
 // ---------------------------------------------------------------------------
 // Install timeout + manual-skip plumbing
 //
@@ -284,15 +310,17 @@ export async function run(
 
 /**
  * Every option a `runInherit` caller uses: scoop's PowerShell shim needs the
- * shell, the Visual Studio and Cygwin installers a working directory. Narrower
- * than execa's options on purpose — whatever is accepted here must make sense
- * for every install sink, not only for the terminal.
+ * shell, the Visual Studio and Cygwin installers a working directory, Homebrew
+ * a variable. Narrower than execa's options on purpose — whatever is accepted
+ * here must make sense for every install sink, not only for the terminal.
  */
 export interface InheritOptions {
   readonly cwd?: string;
   readonly shell?: boolean;
   /** Per-call cap in ms; 0 disables it. Defaults to the install timeout. */
   readonly timeout?: number;
+  /** Variables added to the inherited environment, never a replacement for it. */
+  readonly env?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -337,6 +365,7 @@ function inheritRequest(command: string, args: string[], options: InheritOptions
     args: sanitizeArgs(args),
     ...(options.cwd !== undefined && { cwd: options.cwd }),
     ...(options.shell !== undefined && { shell: options.shell }),
+    ...(options.env !== undefined && { env: sanitizeEnv(options.env) }),
   };
 }
 
@@ -344,11 +373,15 @@ function timeoutMsOf(timeout: number | undefined): number {
   return typeof timeout === "number" ? timeout : installTimeoutSeconds * 1000;
 }
 
-/** The execa options that place a request: its working directory and shell routing. */
+/**
+ * The execa options that place a request: its working directory, its shell
+ * routing and its added variables (execa merges them over gup's environment).
+ */
 function placementOf(request: InheritRequest): Options {
   return {
     ...(request.cwd !== undefined && { cwd: request.cwd }),
     ...(request.shell !== undefined && { shell: request.shell }),
+    ...(request.env !== undefined && { env: { ...request.env } }),
   };
 }
 

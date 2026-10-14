@@ -21,6 +21,8 @@ export interface InheritRequest {
   readonly cwd?: string;
   /** Only the allowlisted shell-routed callsites (scoop's PowerShell shim) set it. */
   readonly shell?: boolean;
+  /** Variables set on top of gup's own environment, which the child inherits as usual. */
+  readonly env?: Readonly<Record<string, string>>;
 }
 
 /** How a child ended. */

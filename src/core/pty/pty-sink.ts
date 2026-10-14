@@ -63,7 +63,8 @@ export function createPtySink(backend: PtyBackend, panes: PtyPanes): InheritSink
 /**
  * The pane is bound here, at spawn: the run view opens the next package's
  * pane as soon as this one reports its outcome, while this child's last
- * output may still be on its way.
+ * output may still be on its way. The request's added variables go into the
+ * trampoline's environment, which the install inherits from it.
  */
 function startInPane(request: InheritRequest, backend: PtyBackend, pane: PtyPane): InheritProcess {
   const exitFile = process.platform === "win32" ? exitFileSlot() : null;
@@ -71,7 +72,12 @@ function startInPane(request: InheritRequest, backend: PtyBackend, pane: PtyPane
     const launch = trampolineLaunch(request, backend.trampoline, exitFile?.path);
     const session = PtySession.start(
       backend.pty,
-      { ...launch, ...pane.size(), ...(exitFile !== null && { exitFile: exitFile.path }) },
+      {
+        ...launch,
+        ...pane.size(),
+        ...(exitFile !== null && { exitFile: exitFile.path }),
+        ...(request.env !== undefined && { env: request.env }),
+      },
       (data) => pane.write(data),
     );
     const detach = attachSafely(pane, session);

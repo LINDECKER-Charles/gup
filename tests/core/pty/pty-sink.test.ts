@@ -54,6 +54,13 @@ describe("createPtySink", () => {
     expect(decodePayload(call!.args[1]!)).toStrictEqual({ v: 1, ...REQUEST, locale: SUITE_LOCALE });
   });
 
+  it("hands the request's variables to the trampoline's environment, never to its payload", () => {
+    sink().start({ ...REQUEST, env: { HOMEBREW_NO_ASK: "1" } });
+    const [call] = pty.spawned;
+    expect(call!.options.env).toMatchObject({ HOMEBREW_NO_ASK: "1" });
+    expect(decodePayload(call!.args[1]!)).toStrictEqual({ v: 1, ...REQUEST, locale: SUITE_LOCALE });
+  });
+
   it("on Windows, hands the trampoline an exit file, removed once the install settled", async () => {
     setPlatform("win32");
     const child = sink().start(REQUEST);
