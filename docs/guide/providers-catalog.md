@@ -115,6 +115,13 @@ it once brew scanned, since both would run the same `brew upgrade`. Its
 version is the one the formula delivers, so a release the formula has not
 packaged yet is not offered.
 
+Every `brew upgrade` gup runs, `wsl-brew`'s included, sets `HOMEBREW_NO_ASK`:
+since Homebrew 6.0, an upgrade that also moves another package (a dependent,
+a new dependency) asks "Do you want to proceed with the upgrade? [y/n]"
+first, and checking the package in gup already gave that answer. A cask whose
+installer needs administrator rights still asks for your password: that one
+only you can type.
+
 `sparkle` is the blind-spot filler: `brew-cask` runs without `--greedy` and so
 hides every cask flagged `auto_updates true`, and `mas` only sees the App Store.
 Reading `SUFeedURL` out of each bundle reaches the rest. It reports but never

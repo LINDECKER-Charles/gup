@@ -46,10 +46,15 @@ export class WslBrewProvider implements Provider {
     return out;
   }
 
+  /**
+   * `brew upgrade` with no name asks before anything it would upgrade
+   * (Homebrew 6.0's default ask mode), and the embedded terminal gives it a
+   * terminal to ask in: the row was checked in gup, so it never asks.
+   */
   async update(packageId: string): Promise<UpdateOutcome> {
     const res = await runInDistroInherit(
       packageId,
-      `${BREW_PREFIX} && brew update && brew upgrade`,
+      `${BREW_PREFIX} && brew update && HOMEBREW_NO_ASK=1 brew upgrade`,
     );
     return { id: packageId, success: !res.failed };
   }

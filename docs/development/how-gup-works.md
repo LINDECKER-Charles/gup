@@ -608,6 +608,12 @@ releases its pseudo-console when the installer exits (node-pty 1.1.0 alone leave
 `conhost.exe` and a worker thread behind per session). Detection, failure reasons and the
 fallback are in [`architecture.md` §8](architecture.md#8-runner-and-process-seams).
 
+An install may add variables to its environment (`InheritOptions.env`): every `brew upgrade`
+carries `HOMEBREW_NO_ASK=1`, so that Homebrew 6.0's ask mode never stops an upgrade that also moves
+a dependent on "Do you want to proceed with the upgrade? [y/n]". execa merges them over gup's own
+environment; the PTY sink puts them in the trampoline's environment rather than its payload, and
+the trampoline's `runInherit` passes them on.
+
 ### `RunResult`
 
 ```ts

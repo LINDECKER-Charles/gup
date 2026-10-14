@@ -52,7 +52,7 @@ const BREW_CASKS_JSON = JSON.stringify({
   ],
 });
 
-const BREW_MACHINE: SystemSpec = {
+export const BREW_MACHINE: SystemSpec = {
   platform: "darwin",
   bin: { brew: "/opt/homebrew/bin/brew" },
   commands: [

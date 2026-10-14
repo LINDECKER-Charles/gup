@@ -1,3 +1,4 @@
+import { BREW_NO_ASK_ENV } from "../../core/install-source.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
@@ -44,14 +45,17 @@ export class BrewCaskProvider implements Provider {
     return parseBrewOutdated(stdout, "casks");
   }
 
+  /** Never asks, as formulae do: a cask's dependencies come with it (see {@link BREW_NO_ASK_ENV}). */
   async update(packageId: string): Promise<UpdateOutcome> {
-    const res = await runInherit("brew", ["upgrade", "--cask", packageId]);
+    const res = await runInherit("brew", ["upgrade", "--cask", packageId], {
+      env: BREW_NO_ASK_ENV,
+    });
     return { id: packageId, success: !res.failed };
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {
     if (packages.length === 0) return [];
-    const res = await runInherit("brew", ["upgrade", "--cask"]);
+    const res = await runInherit("brew", ["upgrade", "--cask"], { env: BREW_NO_ASK_ENV });
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
   }
 }

@@ -1,12 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { parseBrewOutdated } from "../../../src/providers/os/brew.js";
-import { BREW_FORMULAE_JSON } from "./posix.cases.js";
+import type { OutdatedPackage, UpdateOutcome } from "../../../src/core/types.js";
+import { BrewCaskProvider } from "../../../src/providers/os/brew-cask.js";
+import { BrewProvider, parseBrewOutdated } from "../../../src/providers/os/brew.js";
+import { system } from "../../support/system/fake-system.js";
+import { installs } from "../../support/system/trace.js";
+import { BREW_FORMULAE_JSON, BREW_MACHINE } from "./posix.cases.js";
 
 /**
  * Homebrew formulae and casks share one `brew outdated --json=v2` envelope:
  * one side per provider, the active keg last, and a payload garbled by a
- * broken install degrades to no rows.
+ * broken install degrades to no rows. Their upgrades never stop on
+ * Homebrew's confirmation.
  */
+
+const ROW: OutdatedPackage = { id: "dotnet", name: "dotnet", current: "10.0.401", latest: "10.0.401_1" };
+
+describe("Homebrew upgrades", () => {
+  // Homebrew 6.0 asks "Do you want to proceed with the upgrade? [y/n]" before
+  // an upgrade that also moves another package (dotnet pulling powershell),
+  // and the embedded terminal lets it ask: the row checked in gup is the answer.
+  it.each<[string, () => Promise<UpdateOutcome | UpdateOutcome[]>, string[]]>([
+    ["a formula", () => new BrewProvider().update("dotnet"), ["brew", "upgrade", "--formula", "dotnet"]],
+    ["every formula", () => new BrewProvider().updateAll([ROW]), ["brew", "upgrade", "--formula"]],
+    ["a cask", () => new BrewCaskProvider().update("dotnet-sdk"), ["brew", "upgrade", "--cask", "dotnet-sdk"]],
+    ["every cask", () => new BrewCaskProvider().updateAll([ROW]), ["brew", "upgrade", "--cask"]],
+  ])("never lets %s wait on Homebrew's confirmation", async (_label, update, argv) => {
+    await system.load(BREW_MACHINE);
+    await update();
+    expect(installs()).toEqual([
+      { mode: "inherit", argv, shell: false, env: { HOMEBREW_NO_ASK: "1" } },
+    ]);
+  });
+});
 
 describe("parseBrewOutdated", () => {
   it("takes the highest installed keg when several are present", () => {

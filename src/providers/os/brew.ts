@@ -1,3 +1,4 @@
+import { BREW_NO_ASK_ENV } from "../../core/install-source.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
@@ -62,8 +63,15 @@ export class BrewProvider implements Provider {
     return parseBrewOutdated(stdout, "formulae");
   }
 
+  /**
+   * Never asks: the formula was checked in gup, so the dependents and new
+   * dependencies its upgrade pulls in go through without Homebrew's
+   * confirmation (see {@link BREW_NO_ASK_ENV}).
+   */
   async update(packageId: string): Promise<UpdateOutcome> {
-    const res = await runInherit("brew", ["upgrade", "--formula", packageId]);
+    const res = await runInherit("brew", ["upgrade", "--formula", packageId], {
+      env: BREW_NO_ASK_ENV,
+    });
     return { id: packageId, success: !res.failed };
   }
 
@@ -71,7 +79,7 @@ export class BrewProvider implements Provider {
     if (packages.length === 0) return [];
     // `brew upgrade --formula` handles the whole set in one resolution pass
     // (shared dependencies get built once) and skips pinned formulae itself.
-    const res = await runInherit("brew", ["upgrade", "--formula"]);
+    const res = await runInherit("brew", ["upgrade", "--formula"], { env: BREW_NO_ASK_ENV });
     return packages.map((p) => ({ id: p.id, success: !res.failed }));
   }
 }
