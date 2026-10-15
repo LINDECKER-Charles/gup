@@ -24,6 +24,7 @@ here? [Collect a diagnostic](#collecting-a-diagnostic-for-a-bug-report) and open
   - [A pip upgrade was undone](#a-pip-upgrade-was-undone)
   - [pnpm updated itself, but the old version still runs](#pnpm-updated-itself-but-the-old-version-still-runs)
   - [winget says it cannot upgrade a package](#winget-says-it-cannot-upgrade-a-package)
+  - [Homebrew says your Command Line Tools do not support this macOS](#homebrew-says-your-command-line-tools-do-not-support-this-macos)
 - [Providers and packages](#providers-and-packages)
   - [A provider is "not installed", or greyed out](#a-provider-is-not-installed-or-greyed-out)
   - [A package I expected is missing](#a-package-i-expected-is-missing)
@@ -296,6 +297,31 @@ that question fails at once instead of holding the rest of the batch.
 **Fix.** For the first, update the application with its publisher's own updater, often from the
 application itself. For the second, run the command shown with the folder the application is
 installed in — or let it update itself, as game launchers do.
+
+### Homebrew says your Command Line Tools do not support this macOS
+
+```text
+SKIP 1 manual action required:
+     - symfony-cli/tap/symfony-cli — Homebrew must build it from source, and your Command Line
+       Tools do not support macOS 27: update them from Software Update in System Settings, or
+       reinstall them: sudo rm -rf /Library/Developer/CommandLineTools && sudo xcode-select --install
+```
+
+or the same skip saying `your Command Line Tools are too old`, `your Xcode is too old for this
+macOS`, `the Command Line Tools are not installed` or `the Xcode license is not accepted`.
+
+**Why.** A formula with no bottle for your Mac installs from source — a tap's formula such as the
+Symfony CLI's, which ships no bottle at all, or any formula on a macOS newer than its bottles — and
+Homebrew checks the build tools before it starts: after a major macOS upgrade, the Command Line
+Tools are often left behind. The bottled formulae of the same batch go through; only these stop,
+and every retry would stop the same way, so gup ends them as a skip that says what to do. It reads
+Homebrew's message from the app's terminal pane or a scheduled run's output: a `gup update` in your
+terminal, outside the app, shows Homebrew's own message and counts the update as failed.
+
+**Fix.** Update the Command Line Tools from Software Update in System Settings. If it offers
+nothing, reinstall them: `sudo rm -rf /Library/Developer/CommandLineTools && sudo xcode-select
+--install`. For Xcode, update it from the App Store; for the license, `sudo xcodebuild -license`.
+`brew config` then shows a `CLT:` version instead of `unknown`; update the formula again.
 
 ## Providers and packages
 

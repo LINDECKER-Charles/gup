@@ -2,6 +2,7 @@ import { BREW_NO_ASK_ENV } from "../../core/install-source.js";
 import { commandExists, run, runInherit } from "../../core/runner.js";
 import type { OutdatedPackage, Provider, UpdateOutcome } from "../../core/types.js";
 import { PLATFORMS } from "../../core/platform/platforms.js";
+import { buildToolsBlock } from "./brew-build-tools.js";
 
 /**
  * Envelope returned by `brew outdated --json=v2`. Both keys are always
@@ -66,13 +67,19 @@ export class BrewProvider implements Provider {
   /**
    * Never asks: the formula was checked in gup, so the dependents and new
    * dependencies its upgrade pulls in go through without Homebrew's
-   * confirmation (see {@link BREW_NO_ASK_ENV}).
+   * confirmation (see {@link BREW_NO_ASK_ENV}). A formula Homebrew must build
+   * from source with build tools it refuses ends as the manual action that
+   * fixes them (see {@link buildToolsBlock}), not as a failure to retry.
    */
   async update(packageId: string): Promise<UpdateOutcome> {
     const res = await runInherit("brew", ["upgrade", "--formula", packageId], {
       env: BREW_NO_ASK_ENV,
     });
-    return { id: packageId, success: !res.failed };
+    if (!res.failed) return { id: packageId, success: true };
+    const block = buildToolsBlock(res.outputTail);
+    return block === undefined
+      ? { id: packageId, success: false }
+      : { id: packageId, success: false, skipped: true, message: block };
   }
 
   async updateAll(packages: OutdatedPackage[]): Promise<UpdateOutcome[]> {

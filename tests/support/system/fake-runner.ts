@@ -154,7 +154,15 @@ function installResult(answer: InstallAnswer, argv: readonly string[]): RunResul
   if (answer.timedOut) return interrupted("timedOut");
   if (answer.aborted) return interrupted("aborted");
   const exitCode = answer.exitCode ?? 0;
-  return { stdout: "", stderr: "", exitCode, failed: exitCode !== 0 };
+  const failed = exitCode !== 0;
+  if (failed && answer.output) machine().failureOutput = answer.output;
+  return {
+    stdout: "",
+    stderr: "",
+    exitCode,
+    failed,
+    ...(answer.output !== undefined && { outputTail: answer.output }),
+  };
 }
 
 /** Installs answer from the `answerInstall` queue, exit 0 once it is empty. */
@@ -198,6 +206,14 @@ function consumeInterrupt(): { timedOut: boolean; aborted: boolean } {
   return flags;
 }
 
+/** Faked for the same reason as {@link consumeInterrupt}. */
+function consumeFailureOutput(): string | undefined {
+  const state = machine();
+  const output = state.failureOutput;
+  state.failureOutput = undefined;
+  return output;
+}
+
 export const fakeRunner = {
   run,
   runInherit,
@@ -205,4 +221,5 @@ export const fakeRunner = {
   commandExists,
   isElevated,
   consumeInterrupt,
+  consumeFailureOutput,
 };

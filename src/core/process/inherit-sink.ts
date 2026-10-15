@@ -29,7 +29,7 @@ export interface InheritRequest {
 export interface InheritExit {
   readonly exitCode: number;
   readonly failed: boolean;
-  /** The last visible output, when the sink retains it (a PTY pane does). */
+  /** The last output, when the sink retains it: a PTY pane always, the pipe sink for a failure. */
   readonly outputTail?: string;
 }
 

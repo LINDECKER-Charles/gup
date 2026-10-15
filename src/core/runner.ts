@@ -35,6 +35,12 @@ export interface RunResult {
   timedOut?: boolean;
   /** Set when the user manually skipped this run (Ctrl+C → skipCurrent()). */
   aborted?: boolean;
+  /**
+   * `runInherit` only: what the install sink kept of the output — the
+   * embedded terminal's last lines, the end of a failed scheduled install's.
+   * Absent when the install wrote to the user's terminal, which keeps nothing.
+   */
+  outputTail?: string;
 }
 
 // Allowlist for the `command` argument: alphanumerics + the path glyphs that
@@ -218,6 +224,20 @@ export function consumeInterrupt(): InterruptFlags {
   return flags;
 }
 
+// The same gap for the output of a failed install: a provider that answers
+// `{ success: false }` drops it, and the outcome's message is where the user
+// reads why (the run view, the journal, the report). runInherit keeps the
+// tail of the last failed install a sink retained; the batch loop
+// reads-and-clears it with the interrupt flags.
+let pendingFailureOutput: string | undefined;
+
+/** Read and reset what a sink kept of the last failed runInherit call's output. */
+export function consumeFailureOutput(): string | undefined {
+  const output = pendingFailureOutput;
+  pendingFailureOutput = undefined;
+  return output;
+}
+
 /** taskkill's own cap: the exit of a killed install waits for it, so it must end. */
 const TREE_KILL_TIMEOUT_MS = 10_000;
 
@@ -349,14 +369,23 @@ export async function runInherit(
   const interrupts = armInterrupts(() => child.kill(), timeoutMsOf(options.timeout));
   try {
     const exit = await child.exited;
-    if (interrupts.flags.timedOut) pendingInterrupt.timedOut = true;
-    if (interrupts.flags.aborted) pendingInterrupt.aborted = true;
     const result = inheritResult(exit, interrupts.flags);
+    keepForOutcome(result);
     trace.end({ ...result, ...(exit.outputTail !== undefined && { stdout: exit.outputTail }) });
     return result;
   } finally {
     interrupts.dispose();
   }
+}
+
+/**
+ * What the provider's outcome drops, kept for the batch loop: the interrupt
+ * cause, and what a sink kept of a failed install's output.
+ */
+function keepForOutcome(result: RunResult): void {
+  if (result.timedOut) pendingInterrupt.timedOut = true;
+  if (result.aborted) pendingInterrupt.aborted = true;
+  if (result.failed && result.outputTail) pendingFailureOutput = result.outputTail;
 }
 
 function inheritRequest(command: string, args: string[], options: InheritOptions): InheritRequest {
@@ -481,7 +510,7 @@ function armInterrupts(
 
 /**
  * The child wrote to the terminal (or into a sink), so there is nothing to
- * hand back but the exit status and the interrupt cause.
+ * hand back but the exit status, the interrupt cause and what a sink kept.
  */
 function inheritResult(exit: InheritExit, flags: InterruptFlags): RunResult {
   const out: RunResult = {
@@ -492,6 +521,7 @@ function inheritResult(exit: InheritExit, flags: InterruptFlags): RunResult {
   };
   if (flags.timedOut) out.timedOut = true;
   if (flags.aborted) out.aborted = true;
+  if (exit.outputTail !== undefined) out.outputTail = exit.outputTail;
   return out;
 }
 
@@ -534,9 +564,11 @@ function startPiped(request: InheritRequest, options: PipeSinkOptions): InheritP
       pipeLines(proc.stdout, (line) => options.onLine(line, "stdout"), options.capBytes),
       pipeLines(proc.stderr, (line) => options.onLine(line, "stderr"), options.capBytes),
     ];
+    const tail = keepTail(proc.stdout, proc.stderr);
     const exited = settled(proc).then((exit) => {
       for (const flush of flushers) flush();
-      return exit;
+      const outputTail = tail();
+      return exit.failed && outputTail !== "" ? { ...exit, outputTail } : exit;
     });
     return killableChild(proc, controller, exited);
   } catch {
@@ -554,6 +586,24 @@ function pipeLines(
   stream?.setEncoding("utf8");
   stream?.on("data", (chunk: string) => splitter.push(chunk));
   return () => splitter.end();
+}
+
+/** Characters of a failed scheduled install's output kept for its outcome: some thirty lines. */
+const PIPE_TAIL_CHARS = 2_048;
+
+/**
+ * The end of both streams as they arrived, outside the log's byte budget: the
+ * line that says why an install failed comes last, often after a truncation.
+ * Called once the streams are decoded (`pipeLines` set their encoding).
+ */
+function keepTail(...streams: ReadonlyArray<Readable | null>): () => string {
+  let tail = "";
+  for (const stream of streams) {
+    stream?.on("data", (chunk: string) => {
+      tail = (tail + chunk).slice(-PIPE_TAIL_CHARS);
+    });
+  }
+  return () => tail;
 }
 
 /**

@@ -54,6 +54,8 @@ export interface MachineState {
   readonly faults: Fault[];
   readonly installAnswers: InstallAnswer[];
   interrupt: { timedOut: boolean; aborted: boolean };
+  /** What a sink kept of the last failed install, for `consumeFailureOutput`. */
+  failureOutput: string | undefined;
   readonly spawns: SpawnRecord[];
   readonly requests: RequestRecord[];
   readonly fsReads: string[];
@@ -150,6 +152,7 @@ function emptyState(platform: SimPlatform): MachineState {
     faults: [],
     installAnswers: [],
     interrupt: { timedOut: false, aborted: false },
+    failureOutput: undefined,
     spawns: [],
     requests: [],
     fsReads: [],
