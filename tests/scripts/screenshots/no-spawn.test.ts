@@ -62,6 +62,7 @@ describe("the screenshots' spawn guard", () => {
     expect(runner.getInstallTimeoutSeconds()).toBe(90);
     expect(runner.normalizeExitCode(4294967295, "win32")).toBe(-1);
     expect(runner.consumeInterrupt()).toEqual({ timedOut: false, aborted: false });
+    expect(runner.consumeFailureOutput()).toBeUndefined();
     expect(runner.skipCurrent()).toBe(false);
     expect(spawnGuard.attempts).toEqual([]);
   });

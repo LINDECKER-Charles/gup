@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/** The interrupt flags come from the runner's one-slot channel: driven directly here. */
-const { consumeMock } = vi.hoisted(() => ({
+/**
+ * The interrupt flags and a failed install's output come from the runner's
+ * one-slot channels: driven directly here.
+ */
+const { consumeMock, failureOutputMock } = vi.hoisted(() => ({
   consumeMock: vi.fn(() => ({ timedOut: false, aborted: false })),
+  failureOutputMock: vi.fn((): string | undefined => undefined),
 }));
 vi.mock("../../../src/core/runner.js", () => ({
   consumeInterrupt: consumeMock,
+  consumeFailureOutput: failureOutputMock,
   getInstallTimeoutSeconds: () => 1200,
 }));
 
@@ -21,7 +26,14 @@ import { useLocale } from "../../support/locale.js";
 beforeEach(() => {
   consumeMock.mockReset();
   consumeMock.mockReturnValue({ timedOut: false, aborted: false });
+  failureOutputMock.mockReset();
+  failureOutputMock.mockReturnValue(undefined);
 });
+
+/** What the embedded terminal kept of a `brew upgrade` stopped by the build tools. */
+const BREW_OUTPUT =
+  "==> Upgrading symfony-cli\nError: Your Command Line Tools (CLT) does not support macOS 27.\n" +
+  "You should download the Command Line Tools for Xcode 27.0.";
 
 describe("finalizeOutcome", () => {
   it("passes a completed outcome through untouched", () => {
@@ -74,6 +86,44 @@ describe("finalizeOutcome", () => {
   });
 });
 
+describe("finalizeOutcome on a failure the provider did not explain", () => {
+  it("gives it the line of the install's output that says why", () => {
+    failureOutputMock.mockReturnValueOnce(BREW_OUTPUT);
+    expect(finalizeOutcome({ id: "x", success: false })).toEqual({
+      id: "x",
+      success: false,
+      message: "Error: Your Command Line Tools (CLT) does not support macOS 27.",
+    });
+  });
+
+  it("says what the provider recovered after that line", () => {
+    failureOutputMock.mockReturnValueOnce("npm error code EBUSY\n");
+    expect(finalizeOutcome({ id: "x", success: false, recovery: "copie restaurée" }).message).toBe(
+      "npm error code EBUSY — copie restaurée",
+    );
+  });
+
+  it.each([
+    ["a failure the provider explained", { id: "x", success: false, message: "échec" }],
+    ["a success", { id: "x", success: true }],
+    ["a skip", { id: "x", success: false, skipped: true, message: "manuel" }],
+  ])("leaves %s as the provider said it", (_label, outcome) => {
+    failureOutputMock.mockReturnValueOnce(BREW_OUTPUT);
+    expect(finalizeOutcome(outcome)).toEqual(outcome);
+  });
+
+  it("leaves an interrupt's message alone, and clears the output with the flags", () => {
+    consumeMock.mockReturnValueOnce({ timedOut: true, aborted: false });
+    failureOutputMock.mockReturnValueOnce(BREW_OUTPUT);
+    expect(finalizeOutcome({ id: "x", success: false }).message).toBe("timeout (1200s) — install ignorée");
+    expect(failureOutputMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays bare when no sink kept the output (an install in the user's terminal)", () => {
+    expect(finalizeOutcome({ id: "x", success: false })).toEqual({ id: "x", success: false });
+  });
+});
+
 describe("isManualSkip / skippedAs", () => {
   it("recognise the user's skip, recovery note included, and reword it", () => {
     consumeMock.mockReturnValueOnce({ timedOut: false, aborted: true });
@@ -100,8 +150,9 @@ describe("isManualSkip / skippedAs", () => {
 });
 
 describe("discardPendingInterrupt", () => {
-  it("consumes the pending flags", () => {
+  it("consumes the pending flags and the pending failure output", () => {
     discardPendingInterrupt();
     expect(consumeMock).toHaveBeenCalledTimes(1);
+    expect(failureOutputMock).toHaveBeenCalledTimes(1);
   });
 });

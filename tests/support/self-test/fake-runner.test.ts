@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   commandExists,
+  consumeFailureOutput,
   consumeInterrupt,
   getInstallTimeoutSeconds,
   isElevated,
@@ -235,6 +236,17 @@ describe("fake runner: runInherit()", () => {
     await expect(runInherit("b")).resolves.toMatchObject({ failed: true, aborted: true });
     expect(consumeInterrupt()).toEqual({ timedOut: false, aborted: true });
     expect(consumeInterrupt()).toEqual({ timedOut: false, aborted: false });
+  });
+
+  it("hands back what a sink kept, and reports a failed install's through consumeFailureOutput", async () => {
+    await system.load({ platform: "linux" });
+    system.answerInstall({ output: "==> Upgrading jq" }, { exitCode: 1, output: "Error: no bottle" });
+
+    await expect(runInherit("a")).resolves.toMatchObject({ failed: false, outputTail: "==> Upgrading jq" });
+    expect(consumeFailureOutput()).toBeUndefined();
+    await expect(runInherit("b")).resolves.toMatchObject({ failed: true, outputTail: "Error: no bottle" });
+    expect(consumeFailureOutput()).toBe("Error: no bottle");
+    expect(consumeFailureOutput()).toBeUndefined();
   });
 
   it("rejects when an answer says the runner rejected", async () => {

@@ -13,6 +13,8 @@ const PROCESS_FREE = {
     "getInstallTimeoutSeconds",
     "setInstallTimeoutSeconds",
     "consumeInterrupt",
+    // Hands back what a sink kept of a failed install; with every start refused, nothing.
+    "consumeFailureOutput",
     "normalizeExitCode",
     // Stops the install the runner started; with every start refused, there is none.
     "skipCurrent",

@@ -15,6 +15,7 @@ import {
   type InheritSink,
 } from "../../src/core/process/inherit-sink.js";
 import {
+  consumeFailureOutput,
   consumeInterrupt,
   createPipeSink,
   DEFAULT_INSTALL_TIMEOUT_S,
@@ -260,7 +261,27 @@ describe("runner.runInherit with an install sink", () => {
   afterEach(() => {
     restore();
     consumeInterrupt();
+    consumeFailureOutput();
     setInstallTimeoutSeconds(1200);
+  });
+
+  it("hands back what the sink kept, and keeps a failed install's for its outcome", async () => {
+    const child = fakeChild();
+    restore = routeInheritTo(sinkStarting(child));
+    const pending = runInherit("brew", ["upgrade", "--formula", "jq"]);
+    child.exit({ exitCode: 1, failed: true, outputTail: "Error: no bottle" });
+    await expect(pending).resolves.toMatchObject({ failed: true, outputTail: "Error: no bottle" });
+    expect(consumeFailureOutput()).toBe("Error: no bottle");
+    expect(consumeFailureOutput()).toBeUndefined();
+  });
+
+  it("keeps nothing for the outcome of an install that succeeded", async () => {
+    const child = fakeChild();
+    restore = routeInheritTo(sinkStarting(child));
+    const pending = runInherit("brew", ["upgrade", "--formula", "jq"]);
+    child.exit({ exitCode: 0, failed: false, outputTail: "==> Upgrading jq" });
+    await expect(pending).resolves.toMatchObject({ failed: false, outputTail: "==> Upgrading jq" });
+    expect(consumeFailureOutput()).toBeUndefined();
   });
 
   it("hands the sanitised request to the sink and never spawns through execa", async () => {
