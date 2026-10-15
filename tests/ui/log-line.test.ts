@@ -58,6 +58,19 @@ describe("logRecordLine", () => {
     expect(summary({ event: "session.crash", data: { error: { name: "TypeError", message: "boom" } } })).toBe("boom");
   });
 
+  it("shows the line of an install's output that says why it failed, not the advice after it", () => {
+    const outputTail =
+      "Error: Your Command Line Tools (CLT) does not support macOS 27.\n" +
+      "Update them from Software Update in System Settings.\n" +
+      "You should download the Command Line Tools for Xcode 27.0.";
+    expect(
+      summary({
+        event: "cmd.end",
+        data: { mode: "pty", cmd: "brew", args: ["upgrade"], exitCode: 1, ms: 1700, failed: true, outputTail },
+      }),
+    ).toBe("brew upgrade · exit 1 · 1,7 s · Error: Your Command Line Tools (CLT) does not support macOS 27.");
+  });
+
   it("lists the scalar data of other events, and marks the elevated child's records", () => {
     expect(summary({ event: "update.cancelled", data: { count: 2, packages: ["a:b"], note: null } })).toBe(
       "count=2 note=null",
