@@ -108,7 +108,7 @@
     "darwin"
   ],
   "dependencies": {
-    "@opentui/core": "0.5.14",
+    "@opentui/core": "0.6.6",
     "adm-zip": "^0.6.1",
     "chalk": "^6.0.1",
     "cli-table3": "^0.6.5",
