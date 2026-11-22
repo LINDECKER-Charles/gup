@@ -254,6 +254,8 @@ describe("WingetProvider.update", () => {
     [0x8a150114, "winget ne peut pas mettre à jour ce paquet"],
     // The manifest requires an install folder (Battle.net).
     [0x8a15005f, `lancer winget upgrade --id ${ID} --location <dossier> dans un terminal`],
+    // The installer refuses an elevated winget (Spotify).
+    [0x8a150056, `lancer winget upgrade --id ${ID} dans un terminal non élevé`],
   ])("skips, with what to do, a failure winget says no retry can fix (%s)", async (code, text) => {
     await system.load(WINGET_MACHINE);
     system.answerInstall({ exitCode: code | 0 });

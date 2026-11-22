@@ -286,17 +286,22 @@ SKIP 1 manual action required:
 ```
 
 or `winget needs an install folder gup cannot choose: run winget upgrade --id <id> --location
-<folder> in a terminal`.
+<folder> in a terminal`, or `this installer refuses to run as administrator and winget was
+elevated: run winget upgrade --id <id> in a terminal that is not elevated`.
 
 **Why.** winget said itself that no strategy can work, so gup offers no retry (`--force`,
 `--uninstall-previous`, a reinstall) and ends the update as a skip: the package's manifest forbids
-upgrades through winget (`0x8A150114`: Parsec, Android Studio), or it requires an install folder
-that only you know (`0x8A15005F`: Battle.net). gup runs winget with `--disable-interactivity`, so
-that question fails at once instead of holding the rest of the batch.
+upgrades through winget (`0x8A150114`: Parsec, Android Studio), it requires an install folder
+that only you know (`0x8A15005F`: Battle.net), or it forbids running its installer as
+administrator while winget's own process was elevated (`0x8A150056`: Spotify). gup runs winget
+with `--disable-interactivity`, so the folder question fails at once instead of holding the rest
+of the batch. A retry of the third would run in the same elevated context, and its last tier
+uninstalls the application before an install winget then refuses.
 
 **Fix.** For the first, update the application with its publisher's own updater, often from the
 application itself. For the second, run the command shown with the folder the application is
-installed in — or let it update itself, as game launchers do.
+installed in — or let it update itself, as game launchers do. For the third, run the command shown
+in a terminal opened without "Run as administrator".
 
 ### Homebrew says your Command Line Tools do not support this macOS
 
@@ -351,10 +356,14 @@ nothing, reinstall them: `sudo rm -rf /Library/Developer/CommandLineTools && sud
   see what was left out and why.
 - **Another provider updates it.** Software two providers list stays with one, so it is never
   updated twice: winget's Visual Studio editions give way to the `visual-studio` provider once it
-  scanned, the `self` provider's `gh` to winget when winget lists `GitHub.cli`, and a tool
-  Homebrew installed (Starship, Terraform, the Symfony CLI…) to the `brew` row once brew scanned —
-  at the version its formula delivers, so none while the formula has not packaged the latest
-  release. At `--log-level debug`, `gup log --grep superseded` shows what was left out.
+  scanned, and a tool Homebrew installed (Starship, Terraform, the Symfony CLI…) to the `brew` row
+  once brew scanned — at the version its formula delivers, so none while the formula has not
+  packaged the latest release. When both providers list an update for it, one row gives way to the
+  other: the `self` provider's `gh` to winget's `GitHub.cli`, winget's `Git.Git` to the
+  `git-for-windows` row, the `semgrep` provider's row to `uv-tools` or `pipx` when semgrep is one
+  of their tools, `self`'s `npm` and `pip` to the `npm-g` and `pip` rows, and `pnpm-g`'s `pnpm` to
+  `self`'s, the one that checks the `pnpm` on your `PATH` changed. At `--log-level debug`,
+  `gup log --grep superseded` shows what was left out.
 - **The provider's scan failed.** Its row in **Scan** or **Packages** shows the error;
   `gup log -l warn` has the detail.
 
