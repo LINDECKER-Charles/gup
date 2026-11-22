@@ -631,7 +631,7 @@ export async function launchDetached(
       // explorer.exe is a GUI-subsystem binary: there is no console to hide,
       // and SW_HIDE could be handed down to the window it opens.
       windowsHide: process.platform !== "win32",
-    }) as ResultPromise;
+    });
     // execa's subprocess is no ChildProcess any more: the Node events and
     // unref() live on its documented `nodeChildProcess` escape hatch.
     const node = child.nodeChildProcess;
