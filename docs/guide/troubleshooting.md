@@ -356,10 +356,14 @@ nothing, reinstall them: `sudo rm -rf /Library/Developer/CommandLineTools && sud
   see what was left out and why.
 - **Another provider updates it.** Software two providers list stays with one, so it is never
   updated twice: winget's Visual Studio editions give way to the `visual-studio` provider once it
-  scanned, the `self` provider's `gh` to winget when winget lists `GitHub.cli`, and a tool
-  Homebrew installed (Starship, Terraform, the Symfony CLI…) to the `brew` row once brew scanned —
-  at the version its formula delivers, so none while the formula has not packaged the latest
-  release. At `--log-level debug`, `gup log --grep superseded` shows what was left out.
+  scanned, and a tool Homebrew installed (Starship, Terraform, the Symfony CLI…) to the `brew` row
+  once brew scanned — at the version its formula delivers, so none while the formula has not
+  packaged the latest release. When both providers list an update for it, one row gives way to the
+  other: the `self` provider's `gh` to winget's `GitHub.cli`, winget's `Git.Git` to the
+  `git-for-windows` row, the `semgrep` provider's row to `uv-tools` or `pipx` when semgrep is one
+  of their tools, `self`'s `npm` and `pip` to the `npm-g` and `pip` rows, and `pnpm-g`'s `pnpm` to
+  `self`'s, the one that checks the `pnpm` on your `PATH` changed. At `--log-level debug`,
+  `gup log --grep superseded` shows what was left out.
 - **The provider's scan failed.** Its row in **Scan** or **Packages** shows the error;
   `gup log -l warn` has the detail.
 
