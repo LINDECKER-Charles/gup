@@ -219,6 +219,15 @@ jobs:
             echo "  BatchMode yes"
           } > ~/.ssh/config
 
+      # A refused key or a host key that does not match fails here, not as
+      # a missing network in the next step.
+      - name: Reach the host
+        run: |
+          if ! ssh target true; then
+            echo "::error::SSH to the host failed: is the public half of FEEDBACK_SSH_KEY in the deploy user's authorized_keys, and does FEEDBACK_SSH_KNOWN_HOSTS match the host?"
+            exit 1
+          fi
+
       - name: Check the shared edge network
         run: |
           if ! ssh target "docker network inspect edge > /dev/null"; then
