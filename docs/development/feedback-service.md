@@ -21,6 +21,7 @@ serves the **back office** where the maintainer triages them.
  ┌───────────────────── feedback service (VPS) ─────────────────────┐
  │  Fastify ── PostgreSQL ── mail outbox ──► SMTP ──► maintainer     │
  │  /admin  back office (server-rendered, no client script)         │
+ │  /mcp    MCP endpoint for the maintainer's Claude Code (token)   │
  └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -170,7 +171,10 @@ body ≤ 1 MiB. The install row is created by its first non-empty batch.
 Responses: `202 { "accepted": { "history": 12, "logs": 340 } }` (newly stored counts);
 `400 invalid`; `401 unauthorized` (bad signature); `413 too_large`; `429 rate_limited`.
 The CLI drops a batch answered `400` or `413` (it would fail again) and retries the others
-on its next run.
+on its next upload. It syncs about once a week, and at once when the user opens the feedback
+form; a sync cut short carries on at the next command that writes the journals. A first sync
+sends the install's whole local history, at most 5 batches per run, well under the 60
+uploads per hour an install may make.
 
 A literal example lives in [`feedback/contract/log-batch.v1.example.json`](../../feedback/contract/log-batch.v1.example.json):
 the service's tests post it and the CLI's tests compare their batch shape to it.
@@ -198,7 +202,11 @@ client-side script, strict CSP (`default-src 'none'`; styles and fonts from `'se
 | `GET /admin` | inbox: search (`q`), status pills with counts (`status`, `all` for every status; opens on `new`), kind pills (`kind`), newest first, paginated |
 | `GET /admin/feedback/{id}` | one feedback: message and reply by mail, context (address, install ID with a link to its journals when shared, version, platform, language); status in one click, private note, delete |
 | `GET /admin/installs` | installs that shared journals: last upload, version, platform, counts |
-| `GET /admin/installs/{id}` | one install: its feedback, failed updates, recent scans, debug-log records (minimum-level pills), erase |
+| `GET /admin/installs/{id}` | one install: every column, counts, the period its journals cover and when retention next purges them; its feedback; the whole history (`kind`, `status`, `hpage`); the debug log (`level`, `q`, `lpage`); erase |
+| `GET /admin/installs/{id}/runs/{runId}` | one run: its span and counts, then every history item and log line it wrote, merged oldest first (`page`, 200 a page) |
+| `GET /admin/installs/{id}/export` | everything stored for the install as JSON Lines, downloaded (`gup-install-{id}.jsonl`) |
+| `GET /admin/mails` | the mail relay as configured (never its user or password), outbox counts, every unsent mail with its attempts and last error |
+| `POST /admin/mails/test` · `POST /admin/mails/retry` | send a test mail to `FEEDBACK_NOTIFY_TO`; make every unsent mail due now |
 | `GET /admin/assets/{name}` | stylesheet, fonts, logo and favicons; no session needed (the login page uses them) |
 
 **Search.** `q` is trimmed, its spaces collapsed, cut to 100 characters. It matches,
@@ -207,6 +215,42 @@ ignoring case, a part of the title, the message, the reporter's address or the i
 follow the search and the kind, so the pills say what each status would list. The query
 scans the table (`ILIKE`), which an inbox of a few thousand rows answers at once; a
 `pg_trgm` index is the step after.
+
+**Install journals.** The install page reads everything the service holds for it. The
+history lists scans and updates together, newest first, 50 a page, filtered by kind
+(`kind=scan|update`) and update status (`status=success|failed|skipped`); each pill counts
+what it would list under the other filter. The debug log shows `warn` and above by default
+(`level`), 50 lines a page, and searches (`q`, same trimming and 100-character cut as the
+inbox) the event name and every key and value of the record, ignoring case, `%`, `_` and
+`\` taken literally — a value the JSON text escapes, such as a Windows path, is found as
+typed. History and log keep their own filters and page in the URL, so moving through one
+never resets the other, and every link lands on its section. Each history item and log
+line folds its whole record as received, pretty-printed and escaped, and links to its run.
+A run's page merges the history items and log lines of one `runId`, oldest first (at the
+same instant a log line comes before the history item it led to). The search scans the
+install's log lines (`ILIKE` on the event, the JSON text and a `jsonb_path_query` walk of
+its scalars): a few thousand lines per install, bounded by retention, answer in tens of
+milliseconds.
+
+**Export.** `GET /admin/installs/{id}/export` answers `application/x-ndjson`, one JSON
+object per line, each with a `type`: `export` (format `gup-install-export`, `version` 1,
+`exportedAt`, `retentionDays`), `install`, then every `feedback`, every `history` item and
+every `log` line, oldest first. The journals are read in keyset chunks of 1000 as the
+response drains, so an install of any size streams in flat memory. Admin-only and
+`no-store`, like every back-office response.
+
+**Mails.** The page shows the relay as read from `SMTP_URL` — host, port (nodemailer's
+default when the URL names none: 465 for `smtps://`, 587 otherwise), implicit TLS or
+STARTTLS — the sender, the recipient, the outbox's poll interval and attempt cap; or says
+it is not configured and that mails wait in the outbox. Counts: waiting (never tried),
+failing (tried, not sent, given-up mails included), sent in the last 30 days; then every
+unsent mail, oldest first, with its feedback, attempts, next attempt and the start of its
+last error. *Envoyer un mail de test* sends a plain mail to `FEEDBACK_NOTIFY_TO` through
+the same relay as notifications, at most 5 per 10 minutes per address, and reports the
+relay's answer — refused with a notice when SMTP is not configured; the last result lives
+in the process's memory. *Relancer maintenant* makes every unsent mail due at once, and
+gives a given-up mail one more attempt. Both are CSRF-checked forms answered by a redirect
+and a notice.
 
 **Design.** The back office takes the landing's design (`index/`): its oklch tokens (dark
 only), Anton for page names, Geist for text, Geist Mono for labels and controls, the violet
@@ -221,7 +265,9 @@ fixed in `src/views/admin-assets.ts`, so no request reads a path it names.
 |---|---|
 | Inbox | Search with a visible label and a persistent hint; one pill group per filter (one value each, `aria-current`), a swipeable row below 720 px so the list starts in the first screen; new feedback counted and edged in amber; the card's title is its link and the whole card its target; three empty states (nothing yet, nothing new, nothing matches — with a way out) |
 | Feedback | Reading on the left, acting on the right (sticky from 1024 px); "Répondre par mail" is the page's only primary button; the status is four submit buttons (`aria-pressed`), one click each; the note says it never reaches the reporter; deletion folded under a danger zone and refused until its box is ticked |
-| Installs, install | Tables that stack into labelled cards below 720 px; jump pills with counts to each section of the install page; the debug log as a list of lines, errors tinted; erasing folded like deletion |
+| Installs, install | Tables that stack into labelled cards below 720 px; jump pills with counts to each section of the install page; the facts panel ends on the export; history in one table with two pill groups, failures in red under the subject; the debug log as a list of lines, errors tinted, its search above the level pills; a record's data folded under "Données complètes" and scrolling in its own box; erasing folded like deletion |
+| Run | The run's facts, then one list where history items sit among log lines, tinted violet (red when failed), with their status where a line has its level |
+| Mails | Outbox on the left (counters, waiting and failing ones highlighted, then the unsent mails), relay on the right with its two actions; a refused test shows the relay's error in full, escaped |
 
 Checked at 390 × 844 and 1440 × 900 with the CSP enforced: no horizontal overflow, no
 blocked resource, axe (WCAG 2.2 AA and best practices) without violation on every page,
@@ -237,6 +283,53 @@ makes browsers send `Origin: null` on the back office's own forms; login rate-li
 per 15 minutes per address, 100 per hour in all) and answered in constant time whatever
 the user name. Every response carries `X-Content-Type-Options: nosniff`, and
 `Strict-Transport-Security` when `FEEDBACK_PUBLIC_URL` is `https:`.
+
+## MCP access
+
+`POST /mcp` serves the [Model Context Protocol](https://modelcontextprotocol.io) so the
+maintainer's Claude Code can analyse feedback and shared journals straight from
+production. Off unless `FEEDBACK_MCP_TOKEN_SHA256` is set: without it `/mcp` answers `404`
+like any unknown path. Registration on the maintainer's machine:
+[`feedback/README.md`](../../feedback/README.md#connect-claude-code).
+
+**Transport.** Streamable HTTP, stateless (no `Mcp-Session-Id`, a fresh server instance
+per request), answers in plain JSON (no SSE for tool calls). Both protocol eras: the
+2025-era `initialize` handshake and the 2026-07-28 per-request envelope. `GET` and `DELETE`
+answer `405` (`Allow: POST`); bodies must be `application/json`, at most 1 MiB. Built on
+the official SDK (`@modelcontextprotocol/server` v2, tool schemas in zod).
+
+**Authentication.** `Authorization: Bearer <token>`. The service holds only the token's
+SHA-256 (64 lowercase hex, checked at start; the digest of an empty token is refused) and
+compares the presented token's digest in constant time. Missing, malformed or wrong token:
+`401 unauthorized` with `WWW-Authenticate: Bearer`. A request carrying an `Origin` header
+is refused with `403` whatever its token — browsers send it, MCP clients do not, so no web
+page can drive the endpoint (DNS rebinding, CSRF). The token and the `Authorization` header
+never reach the logs (pino redaction; the header is not passed to the SDK).
+
+**Limits**, in memory per process, per client address: 600 calls per hour; 20 failed
+authentications per 15 minutes, after which even the right token gets `429` until the
+window ends. Responses carry `Cache-Control: no-store` and `nosniff`.
+
+**Tools.** Inputs are strict JSON schemas (unknown keys, out-of-range pages, malformed IDs
+refused); results are structured JSON plus a compact text rendering; dates are ISO 8601
+UTC; lists are newest first and paginated (`page` from 1). An unknown ID or an invalid
+input is a tool error (`isError`), never an HTTP error.
+
+| Tool | Input | Returns |
+|---|---|---|
+| `search_feedback` | `query?` (≤ 100, the inbox's search), `status?`, `kind?`, `page?`, `pageSize?` (20, ≤ 100) | items (message cut to a 280-character preview), total, counts per status under the same query and kind; every status when `status` is omitted |
+| `get_feedback` | `id` | the whole feedback, note and address included, and the summary of its install when that install shared journals |
+| `update_feedback` | `id`, `status?`, `note?` (≤ 5000, plain text, trimmed; `""` clears) | the updated feedback; at least one of `status` and `note` |
+| `list_installs` | `page?`, `pageSize?` (20, ≤ 100) | installs that shared journals, most recent upload first |
+| `get_install` | `installId` | summary, history counts per kind and status, the span and run count of its records, its feedback |
+| `list_history` | `installId`, `kind?`, `status?`, `page?`, `pageSize?` (50, ≤ 500) | history items with their full `data` |
+| `list_logs` | `installId`, `maxLevel?` (`trace` by default), `query?` (≤ 100: the event name, any key or value), `page?`, `pageSize?` (100, ≤ 500) | log lines with level, event and full `data` |
+| `get_run` | `installId`, `runId`, `page?`, `pageSize?` (200, ≤ 500) | the run's span and counts, then its history items and log lines merged, oldest first |
+
+What it cannot do: delete a feedback, erase an install, send mail, or reach anything but
+these ports — the only write is a feedback's status and note, with the back office's rules.
+Whoever holds the token reads every feedback (reporters' addresses included) and every
+shared journal: it is as sensitive as the admin password.
 
 ## Mail relay
 
