@@ -10,6 +10,11 @@
   update, a list or a scheduled run, within a 5 s budget; nothing is sent while the question
   is unanswered or `GUP_SHARE_LOGS` is off
   (`feat(core/feedback): give each install a signing key and share its journals`)
+- **core/feedback:** the journals are synced about once a week instead of after every command;
+  a sync cut short carries on at the next command, opening the feedback form syncs at once,
+  the first sync sends the whole local history instead of 30 days, and `gup feedback status`
+  shows when the next one is due
+  (`feat(core/feedback): sync the shared journals once a week`)
 - **ui:** a Feedback view in the menu (install ID, form link, copy), a "Share journals" row in
   Options, and the one-time consent question, default no
   (`feat(ui): add the Feedback view and the journal-sharing question`)
@@ -28,6 +33,14 @@
   and number, status changes take one click, deletions sit behind a folded confirmation,
   and every table stacks into cards on a phone
   (`feat(feedback): redesign the back office on the landing's design`)
+- **feedback:** an install's page pages through its whole history (by kind and status) and
+  searches its debug log, every record unfolds its full data, a run page tells one gup run
+  end to end, and an export downloads everything stored as JSON Lines; a Mails page shows the
+  relay and its queue, sends a test mail and retries failed ones
+  (`feat(feedback): open each install's whole journals and the mail relay`)
+- **feedback:** an MCP endpoint (`POST /mcp`) lets Claude Code search and read feedback,
+  installs and their journals and triage feedback, behind a bearer token whose digest only
+  the service holds (`feat(feedback): give Claude an MCP endpoint on the service`)
 - **landing:** a Feedback section with a bug/suggestion form that works with and without
   JavaScript, prefilled by the CLI's link, in the eight languages
   (`feat(landing): add the feedback form`)
