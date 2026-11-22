@@ -126,7 +126,7 @@
     "@types/semver": "^7.8.0",
     "@typescript-eslint/eslint-plugin": "^8.71.1",
     "@typescript-eslint/parser": "^8.66.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.12",
     "@xterm/headless": "6.0.0",
     "audit-ci": "^7.1.0",
     "eslint": "^10.12.0",
@@ -135,7 +135,7 @@
     "tsup": "^9.0.0",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "overrides": {
     "esbuild": "^0.28.1"
