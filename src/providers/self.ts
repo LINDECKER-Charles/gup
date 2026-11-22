@@ -1,6 +1,4 @@
-import { access } from "node:fs/promises";
-import path from "node:path";
-import { commandExists, isElevated, run, runInherit, whichFirst } from "../core/runner.js";
+import { commandExists, isElevated, run, runInherit } from "../core/runner.js";
 import { isCorepackShim } from "../core/corepack-ownership.js";
 import {
   fetchGitHubReleaseLatest,
@@ -13,6 +11,7 @@ import { isSupportedOn } from "../core/platform/is-supported-on.js";
 import { PLATFORMS } from "../core/platform/platforms.js";
 import { localized } from "../core/i18n/localized.js";
 import { MANUAL_STEPS } from "./manual-steps.js";
+import { pythonBehind } from "./python/python-behind.js";
 
 /**
  * Meta-provider that surfaces self-updates of the package managers themselves
@@ -192,42 +191,6 @@ async function fetchPypiLatest(pkg: string): Promise<string | null> {
   }
 }
 
-/**
- * Resolve the Python interpreter that hosts a given `pip` shim.
- *
- * Critical: a bare `py` invocation resolves to whichever Python is starred in
- * `py -0` (often the free-threaded build when multiple 3.13 variants are
- * installed), which is NOT necessarily the interpreter behind the `pip.exe`
- * on PATH. Running `py -m pip install -U pip` then targets the wrong site —
- * `pip --version` keeps reporting the old binary because PATH still resolves
- * to the un-updated install. We instead derive the host Python from `pip`'s
- * own location, so discovery and update target the same interpreter.
- *
- * Layout assumed:
- *   Windows  → <root>\Scripts\pip.exe  ↔  <root>\python.exe
- *   POSIX    → <bindir>/pip            ↔  <bindir>/{python3,python}
- */
-async function resolvePythonForPip(): Promise<string | null> {
-  const pipPath = await whichFirst("pip");
-  if (!pipPath) return null;
-
-  // Explicit path flavours rather than the host-dependent `path.*`: a
-  // `C:\…\python.exe` stays a Windows path even when the process building it
-  // runs on macOS (unit tests mock `process.platform`), and vice versa.
-  if (process.platform === "win32") {
-    const installRoot = path.win32.dirname(path.win32.dirname(pipPath));
-    const python = path.win32.join(installRoot, "python.exe");
-    return (await pathExists(python)) ? python : null;
-  }
-
-  const binDir = path.posix.dirname(pipPath);
-  for (const candidate of ["python3", "python"]) {
-    const p = path.posix.join(binDir, candidate);
-    if (await pathExists(p)) return p;
-  }
-  return null;
-}
-
 /** Why `pnpm self-update` exited 0 and the pnpm on PATH still reports `version`. */
 function pnpmStillOnPath(version: string): string {
   const folder = process.platform === "win32" ? "%PNPM_HOME%\\bin" : "$PNPM_HOME/bin";
@@ -248,15 +211,6 @@ async function resolvePython(): Promise<string | null> {
   if (await commandExists("python")) return "python";
   if (await commandExists("python3")) return "python3";
   return null;
-}
-
-async function pathExists(p: string): Promise<boolean> {
-  try {
-    await access(p);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 const TARGETS: SelfTarget[] = [
@@ -429,9 +383,9 @@ const TARGETS: SelfTarget[] = [
     current: async () => parseFirstSemver(await runStdout("pip", ["--version"])),
     latest: async () => fetchPypiLatest("pip"),
     update: async () => {
-      // Target the Python that hosts the pip on PATH — see resolvePythonForPip
-      // for why a bare `py` is unsafe when multiple 3.x installs coexist.
-      const py = (await resolvePythonForPip()) ?? (await resolvePython());
+      // Target the Python that hosts the pip on PATH — see pythonBehind for
+      // why a bare `py` is unsafe when multiple 3.x installs coexist.
+      const py = (await pythonBehind("pip")) ?? (await resolvePython());
       if (!py) {
         return {
           id: "pip",

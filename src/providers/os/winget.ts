@@ -190,6 +190,22 @@ const FINAL_FAILURES: ReadonlyMap<number, FailureMessage> = new Map<number, Fail
           `lancer winget upgrade --id ${packageId} --location <dossier> dans un terminal`,
       }),
   ],
+  // APPINSTALLER_CLI_ERROR_INSTALLER_PROHIBITS_ELEVATION: the manifest says
+  // the installer must not run as administrator (Spotify), and winget's own
+  // token holds the Administrators group. Every tier runs in that same
+  // context, and the last one uninstalls before an install that is refused.
+  [
+    hresult(0x8a150056),
+    (packageId) =>
+      localize({
+        en:
+          "this installer refuses to run as administrator and winget was elevated: " +
+          `run winget upgrade --id ${packageId} in a terminal that is not elevated`,
+        fr:
+          "cet installeur refuse de tourner en administrateur et winget était élevé : " +
+          `lancer winget upgrade --id ${packageId} dans un terminal non élevé`,
+      }),
+  ],
 ]);
 
 /**
