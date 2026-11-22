@@ -30,9 +30,10 @@ The contract is the reference; in short:
 - **Back-office login**: the password, then a TOTP code (required in production). A code
   works once; a password-checked session gets 5 code attempts, reserved before each check,
   then the password is asked again. Wrong passwords and codes are logged as warnings.
-- **MCP** (`/mcp`, off unless configured): a bearer token checked against its SHA-256,
-  no browser origin, 20 failed authentications per 15 minutes and 600 calls per hour per
-  address; reads everything, writes only a feedback's status and note.
+- **MCP** (`/mcp`): the bearer token of an access issued in the back office, stored as its
+  SHA-256 only, with its own permissions and an expiry of one year at most, revocable at
+  once; no browser origin, 20 failed authentications per 15 minutes and 600 calls per hour
+  per address; writes only a feedback's status and note, with `feedback:triage`.
 - **Input**: 64 KiB bodies for feedback and admin notes, 1 MiB per log batch; text
   fields refuse control characters (tabs and line breaks aside) and ill-formed Unicode.
 - **Responses**: `nosniff` everywhere, HSTS when the public URL is https; the back office
@@ -48,8 +49,8 @@ The contract is the reference; in short:
 | `src/domain/` | contract vocabulary and validation (feedback, log batches) |
 | `src/http/api/`, `src/http/admin/` | public API, back office (guard, routes, errors) |
 | `src/ports/` | the interfaces the app is built on (`mail/`: mailer and outbox) |
-| `src/views/` | escaping `html` template tag (`kit/`), French words and formats (`text/`), pages (`pages/inbox/`, `pages/install/`, `pages/mails/`), served assets |
-| `src/auth/`, `src/security/` | admin credentials and sessions; hashing, tokens, origin checks |
+| `src/views/` | escaping `html` template tag (`kit/`), French words and formats (`text/`), pages (`pages/inbox/`, `pages/install/`, `pages/mails/`, `pages/mcp/`), served assets |
+| `src/auth/`, `src/security/` | admin credentials and sessions, MCP accesses; hashing, tokens, origin checks |
 | `src/identity/` | install IDs and the verification of their signed requests |
 | `src/store/` | PostgreSQL adapters of the ports (`feedback/`, `install/` for the journal reader's SQL), migration runner |
 | `src/mail/`, `src/jobs/` | outbox worker and mail; retention job and task scheduling |
@@ -160,7 +161,6 @@ list.
 | `COOKIE_SECURE` | `true` | `false` for local http only: drops `Secure` and the `__Host-` prefix |
 | `HOST`, `PORT` | `0.0.0.0`, `8080` | listen address |
 | `LOG_LEVEL` | `info` | pino level; logs are JSON lines on stdout |
-| `FEEDBACK_MCP_TOKEN_SHA256` | unset | SHA-256 (64 lowercase hex) of the bearer token of `/mcp`, the MCP endpoint for Claude Code; unset, the endpoint does not exist. See [Connect Claude Code](#connect-claude-code) |
 
 The service never reads `ADMIN_PASSWORD`: the vault keeps the clear password for the human
 only, and compose passes the container nothing but the variables it lists.
@@ -203,24 +203,21 @@ the new QR code. The service refuses to start in production without a key.
 ### Connect Claude Code
 
 `POST /mcp` lets Claude Code read the feedback and the shared journals, and triage
-feedback (status and note), with the tools the contract lists under
-[MCP access](../docs/development/feedback-service.md#mcp-access). It answers only a bearer
-token whose SHA-256 is `FEEDBACK_MCP_TOKEN_SHA256`: the server holds the digest, the
-maintainer's machine holds the token.
+feedback, with the tools the contract lists under
+[MCP access](../docs/development/feedback-service.md#mcp-access). It answers the bearer
+token of an access issued in the back office, tab **04 MCP**; with none issued, every request
+gets `401`.
 
-1. Create the token and its digest, and keep the token in the secrets vault:
-
-   ```sh
-   TOKEN="$(openssl rand -hex 32)"
-   printf '%s' "$TOKEN" | sha256sum | cut -d' ' -f1   # → FEEDBACK_MCP_TOKEN_SHA256
-   ```
-
-2. Put the digest in the production `.env` (the `FEEDBACK_ENV_FILE` secret) and deploy.
-   Compose passes it to the container; the service refuses to start on a malformed one.
-3. Expose the token to Claude Code as the environment variable `GUP_FEEDBACK_MCP_TOKEN`
-   (a user-level variable, or exported by the shell profile from the vault), then register
-   the server once, in **user** scope, with the variable written literally — single quotes,
-   so the shell leaves `${…}` alone and Claude Code expands it at each connection:
+1. Issue an access: a name (the tool and the machine), its permissions — `feedback:read`,
+   `feedback:triage` (which brings reading), `journals:read` — and a lifetime of 1, 7, 30 or
+   90 days or a year. The next page shows the token once; the service keeps its SHA-256 and
+   its last four characters, never the token.
+2. Put the token in a user-level environment variable of the machine — `GUP_FEEDBACK_MCP_TOKEN`
+   for production, `GUP_FEEDBACK_DEV_MCP_TOKEN` for the local stack — or in the vault
+   (`feedback/prod-client.env`), exported by the shell profile.
+3. Register the server once per machine, in **user** scope, with the variable written
+   literally — single quotes, so the shell leaves `${…}` alone and Claude Code expands it at
+   each connection. The tab shows the command for its own environment:
 
    ```sh
    claude mcp add --transport http --scope user gup-feedback \
@@ -230,26 +227,19 @@ maintainer's machine holds the token.
    ```
 
    The same line works in PowerShell (one line, no `\`): single quotes keep `${…}` literal
-   there too. The entry lands in `~/.claude.json` with the placeholder, never the token;
-   check with `claude mcp get gup-feedback` that the header still reads
-   `${GUP_FEEDBACK_MCP_TOKEN}`. Do not add it to a `.mcp.json` in this repository: it is
-   public, and the token would be one typo away. If the variable is missing when Claude Code
-   starts, it warns and sends the placeholder as is: the service answers `401`.
+   there too. The entry lands in `~/.claude.json` with the placeholder, never the token. Do
+   not add it to a `.mcp.json` in this repository: it is public, and the token would be one
+   typo away. If the variable is missing when Claude Code starts, it sends the placeholder as
+   is: the service answers `401`.
 
-The local stack answers on its own `/mcp` with the token of `dev.env`. Register it beside the
-production one, under another name and another variable, so both can stay registered:
+The local stack registers beside production under `gup-feedback-dev`, at
+`http://127.0.0.1:8787/mcp`, with `GUP_FEEDBACK_DEV_MCP_TOKEN`: both can stay registered.
 
-```sh
-claude mcp add --transport http --scope user gup-feedback-dev \
-  http://127.0.0.1:8787/mcp \
-  --header 'Authorization: Bearer ${GUP_FEEDBACK_DEV_MCP_TOKEN}'
-```
-
-Rotating: new token and digest, redeploy, update the variable; the old token stops working
-at the restart. A leaked token gives read access to every feedback (reporters' addresses
-included) and every shared journal, and the right to change statuses and notes — never to
-delete. Failed authentications are limited to 20 per 15 minutes per address, all MCP calls
-to 600 per hour per address.
+An access lists and serves only the tools of its permissions, and the instructions it gets
+say which. Renewing one is issuing another, then revoking the old one once the variable holds
+the new token; a revoked or expired token gets `401` at its next request, and the access stays
+listed 90 days before the daily purge removes it. A leaked token gives what its permissions
+give until it expires or is revoked — never deletion.
 
 ## Deployment
 
@@ -278,8 +268,8 @@ The deploy job copies `compose.yaml` and `compose.deploy.yaml` to
 Maintainers derive these from the secrets vault (project `GlobalUpdater`), never the other
 way round: `feedback/prod.env` is `FEEDBACK_ENV_FILE`, `feedback/deploy.key` is
 `FEEDBACK_SSH_KEY` (its public half sits in the host's `authorized_keys`), and
-`feedback/prod-client.env` keeps what never reaches the server — the admin password and the
-MCP token. Change the vault first, deposit it (`coffre deployer GlobalUpdater`), then push
+`feedback/prod-client.env` keeps what never reaches the server — the admin password and,
+optionally, the token of an MCP access. Change the vault first, deposit it (`coffre deployer GlobalUpdater`), then push
 from Git Bash, through stdin: `gh secret set FEEDBACK_ENV_FILE < feedback/prod.env`.
 
 Prerequisites on the host:

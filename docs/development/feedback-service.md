@@ -21,7 +21,7 @@ serves the **back office** where the maintainer triages them.
  ┌───────────────────── feedback service (VPS) ─────────────────────┐
  │  Fastify ── PostgreSQL ── mail outbox ──► SMTP ──► maintainer     │
  │  /admin  back office (server-rendered, no client script)         │
- │  /mcp    MCP endpoint for the maintainer's Claude Code (token)   │
+ │  /mcp    MCP endpoint for the maintainer's Claude Code (access)  │
  └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -209,6 +209,9 @@ client-side script, strict CSP (`default-src 'none'`; styles and fonts from `'se
 | `GET /admin/mails` | the mail relay as configured (never its user or password), outbox counts, every unsent mail with its attempts and last error |
 | `POST /admin/mails/test` · `POST /admin/mails/retry` | send a test mail to the address typed in (the notification recipient by default); make every unsent mail due now |
 | `POST /admin/mails/recipient` · `POST /admin/mails/recipient/reset` | change the address notifications go to; go back to `FEEDBACK_NOTIFY_TO` |
+| `GET /admin/mcp` · `POST /admin/mcp` | the MCP accesses, active then expired or revoked, and the form that issues one (`422` with the refused fields) |
+| `GET /admin/mcp/token` | the token of the access the session just issued, once: in memory for 10 minutes, then gone |
+| `POST /admin/mcp/{id}/revoke` | revoke an active access, confirmed by a ticked box |
 | `GET /admin/assets/{name}` | stylesheet, fonts, logo and favicons; no session needed (the login page uses them) |
 
 **Search.** `q` is trimmed, its spaces collapsed, cut to 100 characters. It matches,
@@ -308,9 +311,18 @@ form is a logout: the half-open session goes at once. Every response carries `X-
 
 `POST /mcp` serves the [Model Context Protocol](https://modelcontextprotocol.io) so the
 maintainer's Claude Code can analyse feedback and shared journals straight from
-production. Off unless `FEEDBACK_MCP_TOKEN_SHA256` is set: without it `/mcp` answers `404`
-like any unknown path. Registration on the maintainer's machine:
-[`feedback/README.md`](../../feedback/README.md#connect-claude-code).
+production, through accesses the back office issues (tab *04 MCP*). Registration on the
+maintainer's machine: [`feedback/README.md`](../../feedback/README.md#connect-claude-code).
+
+**Accesses.** Each has a name, permissions, an expiry and a token. Permissions:
+`feedback:read` (search and read feedback, reporters' addresses included),
+`feedback:triage` (change a feedback's status and note; brings `feedback:read`, since the
+tool answers with the feedback it changed), `journals:read` (installs and their journals).
+Lifetimes: 1, 7, 30, 90 or 365 days, 30 by default; none is unlimited. The token is
+`gupmcp_` and 43 base64url characters (256 random bits); it is shown once, on the page that
+follows the issue, and the service keeps its SHA-256 and its last four characters only. A
+revoked access cannot be restored: issue another. Expired and revoked accesses stay listed
+90 days, then the daily purge deletes them.
 
 **Transport.** Streamable HTTP, stateless (no `Mcp-Session-Id`, a fresh server instance
 per request), answers in plain JSON (no SSE for tool calls). Both protocol eras: the
@@ -318,10 +330,11 @@ per request), answers in plain JSON (no SSE for tool calls). Both protocol eras:
 answer `405` (`Allow: POST`); bodies must be `application/json`, at most 1 MiB. Built on
 the official SDK (`@modelcontextprotocol/server` v2, tool schemas in zod).
 
-**Authentication.** `Authorization: Bearer <token>`. The service holds only the token's
-SHA-256 (64 lowercase hex, checked at start; the digest of an empty token is refused) and
-compares the presented token's digest in constant time. Missing, malformed or wrong token:
-`401 unauthorized` with `WWW-Authenticate: Bearer`. A request carrying an `Origin` header
+**Authentication.** `Authorization: Bearer <token>`. The presented token's SHA-256 is
+looked up among the active accesses (not revoked, not expired) in one statement that also
+records the access's last use; a token of the wrong shape is refused before any lookup.
+Missing, malformed, unknown, expired or revoked token: `401 unauthorized` with
+`WWW-Authenticate: Bearer` — with no access issued, every request gets it. A request carrying an `Origin` header
 is refused with `403` whatever its token — browsers send it, MCP clients do not, so no web
 page can drive the endpoint (DNS rebinding, CSRF). The token and the `Authorization` header
 never reach the logs (pino redaction; the header is not passed to the SDK).
@@ -330,7 +343,12 @@ never reach the logs (pino redaction; the header is not passed to the SDK).
 authentications per 15 minutes, after which even the right token gets `429` until the
 window ends. Responses carry `Cache-Control: no-store` and `nosniff`.
 
-**Tools.** Inputs are strict JSON schemas (unknown keys, out-of-range pages, malformed IDs
+**Tools.** An access lists and serves only the tools of its permissions — `search_feedback`
+and `get_feedback` for `feedback:read`, `update_feedback` for `feedback:triage`, the five
+others for `journals:read` — and the server's instructions name what it may do. Two tools
+straddle permissions and leave out what the access does not cover: `get_feedback` returns
+`install: null` without `journals:read`, `get_install` returns `feedback: null` without
+`feedback:read`. Inputs are strict JSON schemas (unknown keys, out-of-range pages, malformed IDs
 refused); results are structured JSON plus a compact text rendering; dates are ISO 8601
 UTC; lists are newest first and paginated (`page` from 1). An unknown ID or an invalid
 input is a tool error (`isError`), never an HTTP error.
@@ -346,10 +364,10 @@ input is a tool error (`isError`), never an HTTP error.
 | `list_logs` | `installId`, `maxLevel?` (`trace` by default), `query?` (≤ 100: the event name, any key or value), `page?`, `pageSize?` (100, ≤ 500) | log lines with level, event and full `data` |
 | `get_run` | `installId`, `runId`, `page?`, `pageSize?` (200, ≤ 500) | the run's span and counts, then its history items and log lines merged, oldest first |
 
-What it cannot do: delete a feedback, erase an install, send mail, or reach anything but
-these ports — the only write is a feedback's status and note, with the back office's rules.
-Whoever holds the token reads every feedback (reporters' addresses included) and every
-shared journal: it is as sensitive as the admin password.
+What it cannot do: delete a feedback, erase an install, send mail, issue an access, or
+reach anything but these ports — the only write is a feedback's status and note, with the
+back office's rules. Whoever holds a token gets what its permissions give until it expires
+or is revoked: with `feedback:read`, every reporter's address.
 
 ## Mail relay
 
@@ -362,8 +380,9 @@ the reporter. Without SMTP settings the service runs and the outbox waits.
 ## Retention
 
 Uploaded journal items older than `LOG_RETENTION_DAYS` (default 90) are purged daily; an
-install with nothing left and no upload within that window is deleted. Feedback is kept
-until the maintainer deletes it.
+install with nothing left and no upload within that window is deleted. An MCP access is
+deleted 90 days after it expired or was revoked. Feedback is kept until the maintainer
+deletes it.
 
 ## Running it
 
