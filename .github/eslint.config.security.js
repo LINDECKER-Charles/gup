@@ -183,7 +183,10 @@ export default [
     // %LOCALAPPDATA%, ~/Library/…, $XDG_*_HOME) — or the user's own
     // GUP_CONFIG_DIR / GUP_*_DIR override, the same trust boundary as their
     // home directory — joined with constant basenames (`config.json`,
-    // `schedules.json`, `state.json`, `<file>.lock`, a UTC-dated log name).
+    // `schedules.json`, `state.json`, `<file>.lock`, a UTC-dated log name,
+    // the feedback directory's `identity.json`, `sharing.json` and
+    // `upload-cursor.json`). Journal sharing reads the dated log files the
+    // listing of the logs root returned, nothing else.
     // Writes go through `wx` temp files and atomic renames; nothing here
     // derives a path from a provider's output or a network response. Globs
     // naming modules that later branches add are listed up front so each
@@ -195,6 +198,10 @@ export default [
       "src/core/log/**/*.ts",
       "src/core/history/reader.ts",
       "src/core/scheduler/persistence/**/*.ts",
+      "src/core/feedback/install-identity.ts",
+      "src/core/feedback/sharing-decision-file.ts",
+      "src/core/feedback/upload-cursor.ts",
+      "src/core/export/shared-journals.ts",
     ],
     rules: {
       "security/detect-non-literal-fs-filename": "off",
