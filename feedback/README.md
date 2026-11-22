@@ -41,12 +41,12 @@ The contract is the reference; in short:
 | `src/app.ts` | `buildApp(deps)`: the HTTP application, built from ports only |
 | `src/domain/` | contract vocabulary and validation (feedback, log batches) |
 | `src/http/api/`, `src/http/admin/` | public API, back office (guard, routes, errors) |
-| `src/views/` | escaping `html` template tag, layout and pages |
+| `src/views/` | escaping `html` template tag (`kit/`), French words and formats (`text/`), pages, served assets |
 | `src/auth/`, `src/security/` | admin credentials and sessions; hashing, tokens, origin checks |
 | `src/identity/` | install IDs and the verification of their signed requests |
 | `src/store/` | PostgreSQL adapters of the ports, migration runner |
 | `src/mail/`, `src/jobs/` | outbox worker and mail; retention job and task scheduling |
-| `assets/app.css` | the back office's only stylesheet, served with a content hash |
+| `assets/` | the back office's stylesheet (`styles/`, one file per layer), fonts, logo and favicons, copied from the landing and served with a content hash |
 | `migrations/` | SQL migrations, applied in name order |
 | `contract/` | the upload example the tests post |
 

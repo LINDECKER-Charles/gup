@@ -189,16 +189,43 @@ healthcheck and the deployment probe.
 ## Back office
 
 Server-rendered HTML under `/admin`, in French (its only reader is the maintainer), no
-client-side script, strict CSP (`default-src 'none'`; styles from `'self'`).
+client-side script, strict CSP (`default-src 'none'`; styles and fonts from `'self'`).
 
 | Page | What it does |
 |---|---|
 | `GET /admin/login` · `POST /admin/login` | single admin account (`ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`) |
 | `POST /admin/logout` | ends the session |
-| `GET /admin` | inbox: feedback by status (tabs with counts) and kind, newest first, paginated |
-| `GET /admin/feedback/{id}` | one feedback: content, reporter address (mailto), install ID (link to its journals when shared), version, platform; change status, keep a private note, delete |
+| `GET /admin` | inbox: search (`q`), status pills with counts (`status`, `all` for every status; opens on `new`), kind pills (`kind`), newest first, paginated |
+| `GET /admin/feedback/{id}` | one feedback: message and reply by mail, context (address, install ID with a link to its journals when shared, version, platform, language); status in one click, private note, delete |
 | `GET /admin/installs` | installs that shared journals: last upload, version, platform, counts |
-| `GET /admin/installs/{id}` | one install: its feedback, failed updates, recent scans, debug-log records (level filter), erase |
+| `GET /admin/installs/{id}` | one install: its feedback, failed updates, recent scans, debug-log records (minimum-level pills), erase |
+| `GET /admin/assets/{name}` | stylesheet, fonts, logo and favicons; no session needed (the login page uses them) |
+
+**Search.** `q` is trimmed, its spaces collapsed, cut to 100 characters. It matches,
+ignoring case, a part of the title, the message, the reporter's address or the install ID —
+`%` and `_` taken literally — or the feedback's number (`42` or `#42`). The status counts
+follow the search and the kind, so the pills say what each status would list. The query
+scans the table (`ILIKE`), which an inbox of a few thousand rows answers at once; a
+`pg_trgm` index is the step after.
+
+**Design.** The back office takes the landing's design (`index/`): its oklch tokens (dark
+only), Anton for page names, Geist for text, Geist Mono for labels and controls, the violet
+accent, amber for what is new, the bloom-and-grid backdrop, the glass top bar with the logo.
+The fonts, the logo and the favicons are copies of `index/static/` files in
+`feedback/assets/`; the stylesheet is split by layer in `assets/styles/` (tokens, base,
+frame, controls, lists, detail, tables) and served joined as `app.css`. Every asset URL
+carries a content hash (`?v=`) and is cached as immutable; the table of served files is
+fixed in `src/views/admin-assets.ts`, so no request reads a path it names.
+
+| Screen | Choices |
+|---|---|
+| Inbox | Search with a visible label and a persistent hint; one pill group per filter (one value each, `aria-current`), a swipeable row below 720 px so the list starts in the first screen; new feedback counted and edged in amber; the card's title is its link and the whole card its target; three empty states (nothing yet, nothing new, nothing matches — with a way out) |
+| Feedback | Reading on the left, acting on the right (sticky from 1024 px); "Répondre par mail" is the page's only primary button; the status is four submit buttons (`aria-pressed`), one click each; the note says it never reaches the reporter; deletion folded under a danger zone and refused until its box is ticked |
+| Installs, install | Tables that stack into labelled cards below 720 px; jump pills with counts to each section of the install page; the debug log as a list of lines, errors tinted; erasing folded like deletion |
+
+Checked at 390 × 844 and 1440 × 900 with the CSP enforced: no horizontal overflow, no
+blocked resource, axe (WCAG 2.2 AA and best practices) without violation on every page,
+every action reachable by keyboard behind a skip link, a visible focus ring everywhere.
 
 Statuses: `new` → `in_progress` → `resolved` or `dismissed` (any transition allowed).
 
