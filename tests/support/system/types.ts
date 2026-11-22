@@ -93,6 +93,11 @@ export interface InstallAnswer {
   readonly timedOut?: boolean;
   /** The user skipped it (Ctrl+C): failed, `aborted`, reported by `consumeInterrupt`. */
   readonly aborted?: boolean;
+  /**
+   * What an install sink kept of the output (`RunResult.outputTail`); a
+   * failed install's is also reported by `consumeFailureOutput`.
+   */
+  readonly output?: string;
 }
 
 export interface SpawnRecord {

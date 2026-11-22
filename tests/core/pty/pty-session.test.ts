@@ -76,6 +76,13 @@ describe("PtySession: start and I/O", () => {
     expect(tiny.spawned[0]!.options).toMatchObject({ cols: 20, rows: 3 });
   });
 
+  it("adds a launch's variables to gup's environment, and leaves node-pty's default alone otherwise", () => {
+    const { spawned } = start({ ...LAUNCH, env: { HOMEBREW_NO_ASK: "1" } });
+    // node-pty takes `env` as the whole environment: gup's own must be in it.
+    expect(spawned[0]!.options.env).toEqual({ ...process.env, HOMEBREW_NO_ASK: "1" });
+    expect(start().spawned[0]!.options).not.toHaveProperty("env");
+  });
+
   it("forwards the output and tells when it last came", () => {
     const { session, handle, onData } = start();
     const before = session.lastOutputAt;

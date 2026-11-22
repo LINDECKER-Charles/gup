@@ -1,5 +1,6 @@
 import { localized } from "../i18n/localized.js";
-import { consumeInterrupt, getInstallTimeoutSeconds } from "../runner.js";
+import { tellingLine } from "../process/telling-line.js";
+import { consumeFailureOutput, consumeInterrupt, getInstallTimeoutSeconds } from "../runner.js";
 import type { UpdateOutcome } from "../types.js";
 
 /** The messages of an interrupted install, in the interface's language. */
@@ -23,15 +24,31 @@ const RECOVERY_SEPARATOR = " — ";
  * Rewrite an interrupted outcome (manual skip or timeout) as a deliberate
  * SKIP so the summary shows it as a skip rather than a hard failure, and the
  * retry step doesn't offer to retry something the user explicitly skipped.
- * Whatever the provider did to recover (`recovery`) is said after the
- * message, interrupted or not.
+ * A failure the provider left unexplained takes the telling line of what the
+ * install printed, when a sink kept it. Whatever the provider did to recover
+ * (`recovery`) is said after the message, interrupted or not.
  */
 export function finalizeOutcome(outcome: UpdateOutcome): UpdateOutcome {
   const { timedOut, aborted } = consumeInterrupt();
+  const failureOutput = consumeFailureOutput();
   if (timedOut) return skippedAs(outcome, INTERRUPT_MESSAGES.timedOut(getInstallTimeoutSeconds()));
   if (aborted) return skippedAs(outcome, INTERRUPT_MESSAGES.manualSkip);
-  const message = messageWithRecovery(outcome.message, outcome.recovery);
+  const reason = outcome.message || unexplainedFailure(outcome, failureOutput);
+  const message = messageWithRecovery(reason, outcome.recovery);
   return message === undefined ? outcome : { ...outcome, message };
+}
+
+/**
+ * Why a failure with no message failed, in the installer's own words: a
+ * provider answering `{ success: false }` (most do) would otherwise leave the
+ * run view, the journal and the report with a bare "failed".
+ */
+function unexplainedFailure(
+  outcome: UpdateOutcome,
+  output: string | undefined,
+): string | undefined {
+  const isFailure = !outcome.success && outcome.skipped !== true;
+  return isFailure && output !== undefined ? tellingLine(output) : undefined;
 }
 
 /** `outcome` as a skip for `reason`, its recovery note (if any) after the reason. */
@@ -54,10 +71,12 @@ function messageWithRecovery(
 }
 
 /**
- * Drop any interrupt flag left behind by a runInherit call that isn't routed
- * through {@link finalizeOutcome} (e.g. the elevated-batch PowerShell wait), so
- * a stale flag can't bleed into the next package's outcome.
+ * Drop any interrupt flag — or failed install's output — left behind by a
+ * runInherit call that isn't routed through {@link finalizeOutcome} (e.g. the
+ * elevated-batch PowerShell wait), so it can't bleed into the next package's
+ * outcome.
  */
 export function discardPendingInterrupt(): void {
   consumeInterrupt();
+  consumeFailureOutput();
 }

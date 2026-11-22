@@ -129,6 +129,14 @@ describe("runner: real process spawn", () => {
     ).resolves.toMatchObject({ failed: true, exitCode: 2 });
   });
 
+  it("runInherit adds its variables to the environment the child inherits", async () => {
+    // Exit 0 only when the added variable arrived and gup's own PATH came with it.
+    const script = 'process.exit(process.env.HOMEBREW_NO_ASK === "1" && process.env.PATH ? 0 : 3)';
+    await expect(
+      runInherit(process.execPath, ["-e", script], { env: { HOMEBREW_NO_ASK: "1" } }),
+    ).resolves.toMatchObject({ failed: false, exitCode: 0 });
+  });
+
   it("runInherit through the pipe sink delivers the child's lines, keyboard closed", async () => {
     const lines: Array<[string, string]> = [];
     const restore = routeInheritTo(

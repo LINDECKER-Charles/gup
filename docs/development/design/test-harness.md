@@ -91,7 +91,7 @@ flowchart LR
 
 | Boundary | Faked by | Behaviour |
 |---|---|---|
-| runner | `fake-runner.ts` | `run`: injected fault › `where`/`which` from `bin` › `CommandScript` (with `then` repeats, final newline stripped) › ENOENT-like failure for an absent binary › strict error for a present but unscripted one. `runInherit`: the `answerInstall` queue, exit 0 when empty. `whichFirst`, `commandExists`, `isElevated`, `consumeInterrupt` from the spec. Every other runner export stays real. |
+| runner | `fake-runner.ts` | `run`: injected fault › `where`/`which` from `bin` › `CommandScript` (with `then` repeats, final newline stripped) › ENOENT-like failure for an absent binary › strict error for a present but unscripted one. `runInherit`: the `answerInstall` queue, exit 0 when empty. `whichFirst`, `commandExists`, `isElevated`, `consumeInterrupt` and `consumeFailureOutput` from the spec. Every other runner export stays real. |
 | `node:fs`, `node:fs/promises` | `fake-fs.ts`, `fs-tree.ts` | The functions `src` imports, over a tree with the simulated OS's path rules (win32 case-insensitive and separator-agnostic; POSIX strict), symlinks (relative targets, intermediate links, loops), exec bits, real error codes. Writes land in the tree. Any other function is a usage error, never the real disk. |
 | `node:os`, `process` | `os-identity.ts` | `process.platform`, a scrubbed per-platform env (case-insensitive proxy on win32), `process.getuid` (501 darwin, 1000 linux, absent on win32), `homedir`/`tmpdir`/`platform()` derived from them. The machine has a home and a temp dir; each `bin` path exists as an executable file. |
 | `fetch` | `fake-net.ts` | Exact method + URL routes answered with native `Response`s; an aborted signal rejects with its reason. |
@@ -166,8 +166,8 @@ Suite mistakes fail at collection: duplicate case labels, a waiver without a rea
 | # | Spec | Shipped | Why |
 |---|---|---|---|
 | D1 | The sweep injects each spawn argv × 5 modes and installs × {exit-1, rejects, timeout}; generated test 7 also requires "install rejects → resolves" | Spawn modes `exit-1`, `empty`, `garbage`, `timeout`; installs `exit-1`, `timeout`; `rejects` stays available to `system.inject` | `run`/`runInherit` use `reject: false`: they only reject when the argv barrier refuses a call, which is not an environmental fault. Providers let that refusal propagate (the registry records it), so the spec's own opentofu example would fail tests 5 and 7. |
-| D2 | Five runner functions are faked | `consumeInterrupt` too | The real one reads the real runner's private slot, which the fake `runInherit` cannot set. |
-| D3 | `InstallAnswer { exitCode, rejects, timedOut }` | + `aborted` | Mirrors the runner's second interrupt cause (Ctrl+C skip). |
+| D2 | Five runner functions are faked | `consumeInterrupt` and `consumeFailureOutput` too | The real ones read the real runner's private slots, which the fake `runInherit` cannot set. |
+| D3 | `InstallAnswer { exitCode, rejects, timedOut }` | + `aborted`, `output` | `aborted` mirrors the runner's second interrupt cause (Ctrl+C skip); `output` is what an install sink kept (`RunResult.outputTail`). |
 | D4 | Fake fs: the listed functions, the rest real | Also `mkdir` and `copyFile` (imported by `nerd-fonts`), `rename` and `rmdir` (npm-g moving back the copy a killed npm staged; `rename` refuses a directory onto an existing path on Windows, replaces an empty one on POSIX); every unmodelled function is a recorded usage error | The real disk must be unreachable from the providers project. `readdir` with `withFileTypes`/`recursive` is a usage error too (no `src` caller). |
 | D5 | `node:os`: homedir and tmpdir | + `platform()` | A simulated `process.platform` next to the real `os.platform()` is an inconsistency waiting to happen. |
 | D6 | `reset()`: empty machine | Also the host platform's scrubbed env | No test of the providers project sees the developer's real environment, loaded or not. |

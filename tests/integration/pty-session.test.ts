@@ -160,6 +160,16 @@ describe.skipIf(!backend)("embedded terminal on a real pseudo-terminal", () => {
     expect(visibleText(pane)).toContain("bonjour depuis le pty");
   });
 
+  it("hands the installer the variables its request adds, through the trampoline", async () => {
+    const script = "console.log('ask=' + process.env.HOMEBREW_NO_ASK + ' path=' + Boolean(process.env.PATH))";
+    const { result, pane } = await runInPane(...node(script), {
+      options: { env: { HOMEBREW_NO_ASK: "1" } },
+    });
+    expect(result).toMatchObject({ exitCode: 0, failed: false });
+    await settle(() => visibleText(pane).includes("ask=1 path=true"));
+    expect(visibleText(pane)).toContain("ask=1 path=true");
+  });
+
   const codes = IS_WINDOWS ? [0, 3010, 7, -1] : [0, 7, 42];
   it.each(codes)("reports exit code %i as the installer returned it", async (code) => {
     const { result } = await runInPane(...node(`process.exit(${code})`));

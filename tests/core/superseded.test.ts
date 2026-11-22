@@ -65,6 +65,26 @@ describe("dropSuperseded", () => {
     expect(ids(withoutIt.results, "self")).toEqual(["gh", "npm"]);
   });
 
+  // Real runs on Windows: winget's Git.Git failed against the installer the
+  // Git for Windows provider had left running; semgrep's own row skipped with
+  // "host Python not found" while uv-tools updated it; self's pnpm row failed
+  // with "still on PATH" after pnpm-g's had updated pnpm.
+  it.each([
+    { provider: "winget", id: "Git.Git", keeper: "git-for-windows", keeperId: "git-for-windows" },
+    { provider: "semgrep", id: "semgrep", keeper: "uv-tools", keeperId: "semgrep" },
+    { provider: "semgrep", id: "semgrep", keeper: "pipx", keeperId: "semgrep" },
+    { provider: "self", id: "npm", keeper: "npm-g", keeperId: "npm" },
+    { provider: "self", id: "pip", keeper: "pip", keeperId: "pip" },
+    { provider: "pnpm-g", id: "pnpm", keeper: "self", keeperId: "pnpm" },
+  ])("leaves $provider's $id to $keeper once it lists $keeperId", (rule) => {
+    const { provider, id, keeper, keeperId } = rule;
+    const listed = dropSuperseded([scanned(provider, [id, "other"]), scanned(keeper, [keeperId])]);
+    expect(ids(listed.results, provider)).toEqual(["other"]);
+    expect(listed.dropped).toEqual([{ providerId: provider, packageId: id, keeper }]);
+    const silent = dropSuperseded([scanned(provider, [id]), scanned(keeper, [])]);
+    expect(ids(silent.results, provider)).toEqual([id]);
+  });
+
   // A real run on macOS: `symfony-cli` (Homebrew's tap formula) and the
   // Symfony CLI provider's row both ran the same `brew upgrade`, and the
   // formula brew could not install failed twice.

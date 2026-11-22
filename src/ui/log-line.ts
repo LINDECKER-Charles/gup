@@ -1,6 +1,7 @@
 import { stripVTControlCharacters } from "node:util";
 import type { LogLevel } from "../core/log/log.js";
 import type { LogData, LogRecord, LogValue } from "../core/log/types.js";
+import { tellingLine } from "../core/process/telling-line.js";
 import { lineToAnsi } from "./charts/ansi-lines.js";
 import { formatDateTime, formatDuration } from "./text/format.js";
 import {
@@ -95,7 +96,7 @@ function commandEndSummary(data: LogData): string {
   const parts = [commandLine(data), `exit ${text(data["exitCode"])}`, duration(data["ms"])];
   if (data["timedOut"] === true) parts.push(COMMAND_END_LABELS.timedOut);
   if (data["aborted"] === true) parts.push(COMMAND_END_LABELS.aborted);
-  const output = lastLine(data["stderrTail"] ?? data["outputTail"]);
+  const output = tellingLine(text(data["stderrTail"] ?? data["outputTail"]));
   if (output) parts.push(output);
   return parts.join(" · ");
 }
@@ -134,14 +135,6 @@ function pairs(data: LogData): string {
 
 function duration(value: LogValue | undefined): string {
   return typeof value === "number" ? formatDuration(value) : "?";
-}
-
-/** The last non-empty line of a captured output: what usually names the error. */
-function lastLine(value: LogValue | undefined): string {
-  const lines = stripVTControlCharacters(text(value))
-    .split(/\r?\n/)
-    .map((line) => line.trim());
-  return lines.filter(Boolean).at(-1) ?? "";
 }
 
 function field(value: LogValue | undefined, key: string): LogValue | undefined {

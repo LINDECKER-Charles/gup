@@ -31,7 +31,12 @@ const PAYLOAD_KEYS: ReadonlySet<string> = new Set([
   "locale",
 ]);
 
-export interface TrampolinePayload extends InheritRequest {
+/**
+ * The request minus its added variables: those reach the trampoline as its own
+ * environment (node-pty's `env`), which its `runInherit` passes on to the
+ * install, so the command line never carries them.
+ */
+export interface TrampolinePayload extends Omit<InheritRequest, "env"> {
   readonly v: typeof PAYLOAD_VERSION;
   /** Where the trampoline writes the exit code before exiting (Windows fast path). */
   readonly exitFile?: string;
