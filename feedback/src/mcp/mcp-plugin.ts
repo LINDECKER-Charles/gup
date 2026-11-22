@@ -40,7 +40,9 @@ export function mcpPlugin(deps: AppDeps, tokenDigest: Buffer) {
     app.post(MCP_PATH, { bodyLimit: BODY_LIMIT_BYTES }, async (request, reply) => {
       const response = await endpoint.handle(
         toWebRequest(request, deps.config.publicOrigin), request.body);
-      return reply.send(response);
+      // The SDK's JSON-RPC response (application/json, nosniff), never HTML: semgrep's
+      // Express rule direct-response-write does not apply to it.
+      return reply.send(response); // nosemgrep
     });
     app.get(MCP_PATH, methodNotAllowed);
     app.delete(MCP_PATH, methodNotAllowed);

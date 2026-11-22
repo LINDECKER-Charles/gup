@@ -20,7 +20,7 @@ export interface FeedbackPageInput {
 const NOT_GIVEN = html`<span class="muted">non renseigné</span>`;
 
 function mailtoHref(feedback: Feedback, email: string): string {
-  const address = encodeURIComponent(email).replace("%40", "@");
+  const address = encodeURIComponent(email).replaceAll("%40", "@");
   return `mailto:${address}?subject=${encodeURIComponent(`Re: ${feedback.title}`)}`;
 }
 
