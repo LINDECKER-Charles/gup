@@ -263,6 +263,55 @@ textarea.field-control {
   color: var(--violet-ink);
 }
 
+/* ── Checkboxes ────────────────────────────────────────────────────────────
+   Drawn in the theme, still native inputs: keyboard, forms and assistive
+   technologies see a checkbox. --tick colours the ticked box (violet; red
+   where it confirms an irreversible action). */
+
+input[type="checkbox"] {
+  --tick: var(--violet);
+  --tick-ink: var(--violet-ink);
+  appearance: none;
+  display: inline-grid;
+  flex: none;
+  place-content: center;
+  inline-size: 20px;
+  block-size: 20px;
+  margin: 1px 0 0;
+  /* A control's outline needs 3:1 against the page (WCAG 1.4.11): no hairline here. */
+  border: 1.5px solid var(--fg-dim);
+  border-radius: 6px;
+  background: var(--bg-deep);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+input[type="checkbox"]::before {
+  content: "";
+  inline-size: 11px;
+  block-size: 11px;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+  box-shadow: inset 1em 1em var(--tick-ink);
+  /* Forced colours drop the shadow and keep this: the tick stays visible. */
+  background-color: CanvasText;
+  transform: scale(0);
+  transition: transform 0.12s ease-out;
+}
+input[type="checkbox"]:hover,
+label:hover > input[type="checkbox"] {
+  border-color: var(--tick);
+}
+input[type="checkbox"]:checked {
+  border-color: var(--tick);
+  background: var(--tick);
+}
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--tick);
+  outline-offset: 2px;
+}
+
 /* ── Confirmation box ──────────────────────────────────────────────────── */
 
 .check {
@@ -273,12 +322,9 @@ textarea.field-control {
   line-height: 1.5;
   color: var(--fg-muted);
 }
-.check input {
-  flex: none;
-  inline-size: 20px;
-  block-size: 20px;
-  margin: 1px 0 0;
-  accent-color: var(--red);
+.check input[type="checkbox"] {
+  --tick: var(--red);
+  --tick-ink: var(--red-ink);
 }
 
 /* ── Danger zone: an irreversible action, folded until asked for ───────── */
@@ -368,13 +414,6 @@ select.field-control {
 .option:has(input:checked) {
   border-color: var(--edge-violet);
   background: var(--tint-violet);
-}
-.option input {
-  flex: none;
-  inline-size: 20px;
-  block-size: 20px;
-  margin: 1px 0 0;
-  accent-color: var(--violet);
 }
 .option__text {
   display: grid;
