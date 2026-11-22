@@ -256,6 +256,12 @@ The deploy job copies `compose.yaml` and `compose.deploy.yaml` to
 `docker compose up -d --remove-orphans` as project `gup-feedback-prod`, and probes
 `/healthz` through the edge until it answers.
 
+The stack's private network (service and database) has a fixed subnet, `10.232.1.0/24`,
+outside the pools Docker hands out (`172.17-31/16`, `192.168/16`): the shared VPS has used
+them all up, and a network left to Docker fails with "all predefined address pools have been
+fully subnetted". On another host, change it in `compose.deploy.yaml` if it overlaps a route
+there (`ip -4 route`).
+
 | Setting | Kind | Content |
 |---|---|---|
 | `FEEDBACK_SSH_HOST` | secret | VPS address |
