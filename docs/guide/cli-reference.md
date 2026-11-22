@@ -49,6 +49,8 @@ gup report --format csv --since 30d                  # the last 30 days' update 
 gup schedule add winget:Git.Git --every weekly --on mon
 gup schedule list                                    # schedules, next and last runs
 gup language fr                                      # the interface in French from now on
+gup feedback                                         # report a bug or an idea: the feedback form
+gup feedback share off                               # stop sharing your journals, erase them
 gup --version                                        # print the version
 ```
 
@@ -137,6 +139,7 @@ Prints three groups, then a **System** section:
   System
   ────────────────────────────────────────
   ● Embedded terminal        available — updates run in the interface
+  ○ Feedback                 journal sharing not asked yet · install 3f2c8a4e-1b6d-4e2f-9a7c-5d8e0f1a2b3c
   ● Debug log                info (default) · ~\AppData\Local\gup\logs
   ● Language                 English (default)
   ○ Schedules                no active schedule
@@ -146,6 +149,10 @@ Prints three groups, then a **System** section:
 The **Language** line names the language gup speaks and where it comes from (`GUP_LANG`,
 `setting` or `default`); a `GUP_LANG` gup has no translation for turns it into a warning (`▲`)
 that says so: `English (default) · GUP_LANG=de ignored: gup speaks en, fr`.
+
+The **Feedback** line says whether your journals are shared (`on`, `off`, `not asked yet`, or
+`off (GUP_SHARE_LOGS)`) and gives the install ID to quote in a bug report, or says it is not
+created yet: `gup doctor` never creates it ([feedback-and-sharing.md](feedback-and-sharing.md)).
 
 On macOS and Linux, a **File ownership** line follows **Language**: `gup's folders are yours`, or
 one warning per gup folder or file another user owns — what a run under `sudo` left to root —
@@ -274,10 +281,37 @@ settings file and what follows the language: [configuration.md § Interface lang
 | `1` | The setting could not be saved (`Error: the language could not be saved: …`) |
 | `2` | Unknown code (`Error: unknown language "de": choose en, fr`): nothing was saved |
 
+## `gup feedback`
+
+The way to the feedback form, and the switch for sharing your journals with the maintainer.
+
+```bash
+gup feedback             # the install ID and the form's address; opens the form
+gup feedback --no-open   # the same, without opening the browser
+gup feedback id          # the install ID alone
+gup feedback share on    # share the activity history and debug log, redacted
+gup feedback share off   # stop sharing, and erase what was shared
+gup feedback status      # sharing on/off/not asked, the install ID, the last upload (creates nothing)
+```
+
+The form opens in the interface's language, prefilled with the install ID, gup's version and
+the platform; the browser only opens from a terminal, outside CI. Journal sharing is off until
+you agree: the app, `gup update` and `gup list` ask once, when someone is at the keyboard.
+`GUP_SHARE_LOGS=0` turns it off for a shell. A `GUP_FEEDBACK_API` or `GUP_FEEDBACK_FORM` gup
+refuses is reported on stderr and turns off what it addresses. What is sent, when, and the
+install identity:
+[feedback-and-sharing.md](feedback-and-sharing.md).
+
+| Exit | When |
+|---|---|
+| `0` | Done — `share off` included when the service could not be reached to erase (it says so) |
+| `1` | No install ID (no state directory, or the identity file cannot be read), the form's address refused, or the choice could not be saved |
+| `2` | `share` with anything but `on` or `off`: nothing was saved |
+
 ## Interactive app
 
 `gup` with no subcommand opens a full-screen app: a menu on the left (**Scan**, **Packages**,
-**Schedules**, **Providers**, **Journal**, **Options**), the view in front on the right, the
+**Schedules**, **Providers**, **Journal**, **Feedback**, **Options**), the view in front on the right, the
 keys that apply at the bottom. Check packages in **Packages** and press Enter: the update runs
 inside the app, each install in a live terminal pane, then you land back on the table. Every view
 and every key: [interactive-app.md](interactive-app.md).
@@ -436,6 +470,8 @@ fields, `"schema": "gup.history-export/1"`), `gup schedule list --json` and `sta
 | `GUP_LOG_RETENTION_DAYS` | Days of debug log kept, `1` to `365` (default `14`) |
 | `GUP_REPORT_DIR` | Where reports and diagnostic archives go by default |
 | `GUP_SCHEDULER_DIR` | Keep the schedules and their state somewhere else (the OS trigger only sees it if it is set in your login environment) |
+| `GUP_SHARE_LOGS` | `0`, `false`, `off` or `no`: never share the journals in this shell, and never ask ([feedback-and-sharing.md](feedback-and-sharing.md)) |
+| `GUP_FEEDBACK_DIR` | Keep the sharing answer, the install identity and the upload cursor somewhere else |
 | `GUP_PTY` | `0`, `false`, `off` or `no`: no embedded terminal — updates started from the app run in your terminal |
 | `GUP_ASCII` | `1`: ASCII symbols and borders when Options › **Symbols** is `auto` (automatic on `TERM=linux` or `dumb`, and on macOS/Linux without a UTF-8 locale) |
 | `NO_COLOR` | Any non-empty value: no colour, in the screens (monochrome) and in console output ([no-color.org](https://no-color.org)) |

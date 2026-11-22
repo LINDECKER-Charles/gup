@@ -61,13 +61,56 @@ flowchart LR
   scripts, `vite.config.js` and the tests); `scripts/` holds the executables. Nothing under
   `src/` may import `build/` or a catalog.
 - **Production CSP.** The prerender adds a `<meta http-equiv="Content-Security-Policy">`
-  (everything same-origin, `style-src 'unsafe-inline'` for React `style` attributes). The dev
-  server omits it: Vite's HMR client needs inline scripts and a websocket. `verify` fails on any
-  CSP violation in the console.
+  (everything same-origin except the feedback service, `style-src 'unsafe-inline'` for React
+  `style` attributes). The service origin (`LINKS.feedbackApi`, below) is added to `connect-src`
+  (the script's `fetch`) and `form-action` (the no-JavaScript post), where `'self'` stays beside
+  it because Chromium also checks the redirect back to the landing against `form-action`. The 404
+  page has no form and keeps `form-action 'none'`. The dev server omits the policy: Vite's HMR
+  client needs inline scripts and a websocket. `verify` fails on any CSP violation in the
+  console.
 - **Every published URL keeps working**: `/gup/` (now the English `x-default`; French moved to
   `/gup/fr/`), `/gup/public/*`, `/gup/fonts/*`, `robots.txt`, `sitemap.xml`, `llms.txt`,
   `llms-full.txt`, and every fragment the old page published (`#pourquoi`, `#plateformes`,
   `#usage`, …) through alias anchors declared in `src/data/structure.js`.
+
+## The feedback form
+
+Section `#feedback` ("07 / Feedback", `src/sections/Feedback.jsx`, logic and components in
+`src/feedback/`) sits after Install: Install stays the page's conversion target and nothing
+competes with it, and the form ends the page right above the footer, which links to it
+("Send feedback", `footer.links.feedback`). It is not in the header: that row holds the four
+reading sections. It posts to the feedback service; the contract (fields, limits, responses) is
+[`feedback-service.md`](feedback-service.md), mirrored once in `src/feedback/rules.js`.
+
+- **Service origin.** One constant, `LINKS.feedbackApi` (`src/data/links.js`): the production
+  service by default, `VITE_FEEDBACK_API` at build time to override it (local development:
+  `VITE_FEEDBACK_API=http://127.0.0.1:8787 npm run dev`). The form's endpoint and the CSP both
+  derive from it, so they cannot disagree; the prerender reads the variable from the process
+  environment, the bundles from Vite's `import.meta.env`. A malformed value fails the build.
+- **Without JavaScript** the prerendered form is a `method="post"` urlencoded form to
+  `<service>/api/feedback`, with the page's locale and canonical URL as `returnTo`. The service
+  answers `303` back to `<page>?feedback=sent|invalid|limited#feedback`. A static page cannot
+  read a query string without a script, so that path lands back on the (reset) form without a
+  status message; the browser's native `required` / `minlength` / `maxlength` validation catches
+  most mistakes first. The context fields (`gupVersion`, `platform`, `startedAt`) are `disabled`,
+  hence not posted, until hydration fills them.
+- **With JavaScript** (`use-feedback-form.js`): validation moves to translated messages tied to
+  the fields (`aria-describedby`, `aria-invalid`), submit becomes a `fetch` of the JSON body (no
+  credentials, 15 s timeout), the button is disabled while sending, and the outcome is announced
+  in one live region (sent, invalid with the service's `fields`, rate-limited, unreachable). A
+  successful send clears the title and the message and keeps the rest (kind, address, install
+  ID), ready for a second report.
+- **CLI link.** `<page>?install=<uuid>&version=<x.y.z>&platform=<os>#feedback` prefills the
+  install ID and the version/platform (shown under the form as what is sent with the message).
+  Each value is checked against the service's own rule first and dropped when it fails
+  (`prefill-from-query.js`). A `?feedback=` status in the URL is shown, then removed from the
+  address.
+- **Honeypot** `website`: visually hidden, `aria-hidden`, `tabindex="-1"`, never sent by the
+  script. The privacy note under the form states what is stored and what is not; keep it true to
+  the service's behaviour (no IP stored, no tracking).
+- **Tests.** `tests/feedback/*` (query prefill and status, validation, payload, origin
+  override); `verify` posts to a stub of the service in a real browser (`feedback-checks.mjs`)
+  and checks the no-JavaScript markup and the CSP in every locale.
 
 ## Content model
 
@@ -280,6 +323,7 @@ reads "code of conduct" and "support" or "help".
 | `tests/i18n/*` | Catalog parity (keys, placeholders, code spans, key caps, glossary, untranslated copy), plural completeness, resolver and parser errors, SERP budgets, each language's register (French spacing, Spanish `¿ ¡`, Chinese spacing and full-width punctuation, the Hindi and Bengali danda, Arabic punctuation), Arabic count agreement. |
 | `tests/seo/*` | Head (canonical, alternates, Open Graph, preloads, escaping), JSON-LD graph, sitemap, template slots, CSP placement, 404. |
 | `tests/rules/*` | Logical CSS properties only, WCAG AA contrast of the tokens (every text colour comes from a token), no catalog or build module imported by `src/`, letter-spacing only through tracking tokens zeroed for non-Latin scripts, every non-Latin script rendering its sans, display and mono faces from its own fonts, the terminal demo held to the CLI's sources in each interface language, with exactly the CLI's languages and the page-to-language mapping pinned (see "The terminal demo"), every `gup` command and flag the page, its examples and the two llms texts cite registered by the CLI's commander declarations (flags of the tools gup drives, such as Homebrew's `--greedy` and npm's `--allow-scripts`, are named in the test), every provider id llms.txt lists under a category named after a domain (`Cloud CLIs`, `Dev CLIs`…) belonging to that domain, and the English hero lead and social description saying updates run in the embedded terminal, never "without ever leaving" the interface (the UAC window and the no-PTY fallback are exceptions). |
+| `tests/feedback/*` | The feedback form's pure parts: CLI-link prefill validated with the service's rules, the redirect status, field validation, the JSON payload, the service-origin override. |
 | `tests/facts/*` | The registry reader: registered providers only, per-system counts from the `platforms` declarations, refusal of an unknown set, an unreadable declaration or a count mismatch. The README reader: the command under `## Install`, flags kept, LF or CRLF, refusal of a missing command or of one that does not install the package. |
 | `npm run verify` | Per locale: files, lang/dir, budgets, hreflang reciprocity, social card size, JSON-LD vs visible FAQ, leaked placeholders, legacy anchors, the `lang` of the prerendered terminal demo (the page's own interface language when gup speaks it, English otherwise), CSP, clean console (hydration and CSP errors included), heading outline, skip link, no letter-spacing on Arabic, Indic or Han text, no-JS and reduced-motion rendering, overflow at 1440/820/390 px, and at each width the install command whole in both its boxes — unscrolled, inside its card. Every right-to-left locale: brand on the right, arrows mirrored, terminal caption in the page's direction, language menu names on the right, terminal, commands and key caps left-to-right, header fade on the scrolling side. Site-wide: sitemap, 404, legacy URLs, llms.txt languages, no catalog in the bundle, tabs, copy, language menu (each name tagged with its own language, all starting on one edge). |
 | `npm run lhci` | Lighthouse mobile ≥ 0.95 on performance (best of 3), accessibility, best practices and SEO (median of 3). |

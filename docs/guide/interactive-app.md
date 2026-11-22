@@ -24,6 +24,7 @@ Options › **Language** ([how](configuration.md#interface-language)). This page
 - [Schedules](#schedules)
 - [Providers](#providers)
 - [Journal](#journal)
+- [Feedback](#feedback)
 - [Options](#options)
 - [Keyboard and mouse](#keyboard-and-mouse)
 - [Without the app](#without-the-app)
@@ -41,16 +42,20 @@ the classic console host (see [Troubleshooting](troubleshooting.md#the-windows-c
 By default the app scans when it opens and shows **Scan** while it runs. Options › **Startup
 view** and **Scan at startup** change both.
 
+The first time it opens, the app asks once whether to share your journals with gup's
+maintainer. **No** is the default, and Escape answers no; nothing is shared until you say yes
+([what and when](feedback-and-sharing.md#sharing-your-journals)).
+
 ## The layout
 
 | Part | What it shows |
 |---|---|
 | Title bar | `gup v<version>`, then facts: how many providers were detected, how many updates are available (`12 updates`), the scan mode and provider filter, and what other views add (`theme preview` while a theme is previewed, unseen scheduled runs) |
-| Sidebar (**Menu**) | **Scan**, **Packages**, **Schedules** · **Providers**, **Journal**, **Options** · **Quit** — in French, **Paquets**, **Planification** and **Quitter**. A badge after an entry counts what waits there: outdated packages, enabled schedules, `!` when a scheduled run failed since you last looked |
+| Sidebar (**Menu**) | **Scan**, **Packages**, **Schedules** · **Providers**, **Journal**, **Feedback**, **Options** · **Quit** — in French, **Paquets**, **Planification**, **Retours** and **Quitter**. A badge after an entry counts what waits there: outdated packages, enabled schedules, `!` when a scheduled run failed since you last looked |
 | View | The entry in front. The panel that has the keyboard has a **heavy** border, the other one a rounded border |
 | Hint bar | The keys that apply right now. On a narrow terminal it drops the view's last hints (marked `…`) and keeps `tab menu · q quit` whole. While a dialog is open it shows the dialog's keys |
 
-How the views connect (Providers, Journal and Options are a click away at any time):
+How the views connect (Providers, Journal, Feedback and Options are a click away at any time):
 
 ```mermaid
 stateDiagram-v2
@@ -293,13 +298,22 @@ updates, the headline numbers, outdated packages over time, the slowest scans), 
 debug log). `1`–`4` switch tabs, `p` changes the period, `o` opens the HTML report, `e` exports.
 Every tab and key: [journal-and-reports.md](journal-and-reports.md#in-the-menu-the-journal-view).
 
+## Feedback
+
+**Feedback** is where a bug report or an idea starts: it shows this install's ID (or that it is
+created on your first Enter or `c`) and the address of the feedback form. Enter opens the form in
+your browser, in the interface's language and already filled with the install ID, gup's version
+and the platform; `c` copies the install ID.
+The same as `gup feedback` ([feedback-and-sharing.md](feedback-and-sharing.md)).
+
 ## Options
 
 ![Options, theme picker: the built-in themes with their lowest contrast ratio, the Dracula theme under the cursor previewed on the whole app, its sample and contrast verdict on the right.](../assets/screens/options-themes.svg)
 
 **Options** holds every setting, saved as you change it: SCAN & INSTALL, APPEARANCE (theme,
 custom colors, contrast level, symbols, density), BEHAVIOR (language, startup view, confirmation,
-sort, mouse…), JOURNAL and FILE (reset, the settings file). The theme picker paints the whole app
+sort, mouse…), JOURNAL, FEEDBACK (**Share journals**: on or off, with the install ID beside it
+once it exists; turning it off erases what was shared) and FILE (reset, the settings file). The theme picker paints the whole app
 with the theme under the cursor before you choose it. Every row: [configuration.md](configuration.md);
 themes and the contrast guarantee: [themes-and-accessibility.md](themes-and-accessibility.md).
 

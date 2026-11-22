@@ -126,6 +126,7 @@ The commands never prompt with `-y`, write JSON with `--json` and say how it wen
 | [Journal and reports](docs/guide/journal-and-reports.md) | The activity history, the Journal view, the HTML report, the debug log |
 | [Configuration](docs/guide/configuration.md) · [Themes and accessibility](docs/guide/themes-and-accessibility.md) | Settings, the interface language, the settings file, themes, the contrast guarantee |
 | [Troubleshooting](docs/guide/troubleshooting.md) | Messages, causes, fixes; where gup keeps its files; collecting a diagnostic |
+| [Feedback and sharing](docs/guide/feedback-and-sharing.md) | `gup feedback` and the feedback form; opt-in sharing of your redacted journals, and how to stop |
 | [Scope](docs/guide/scope.md) · [Providers catalog](docs/guide/providers-catalog.md) | What `gup` covers, and the 153 providers |
 | [Architecture](docs/development/architecture.md) · [How `gup` works](docs/development/how-gup-works.md) | Layers, pipelines, process seams, local state — with diagrams |
 | [Changelog](docs/changelog/README.md) · [Release notes](docs/releases/README.md) | Every change since the first commit; what each version shipped |
