@@ -45,6 +45,16 @@ const MESSAGES: Readonly<Record<string, Message>> = {
     text: "Aucun relais SMTP n’est configuré : relancer ne ferait partir aucun mail.",
     isAlert: true,
   },
+  "access-revoked": { text: "Accès révoqué : son jeton est refusé dès maintenant." },
+  "access-inactive": {
+    text: "Cet accès avait déjà expiré ou été révoqué : rien n’a changé.",
+    isAlert: true,
+  },
+  "token-gone": {
+    text: "Un jeton ne s’affiche qu’une fois, juste après l’émission. Perdu : révoquez "
+      + "l’accès et émettez-en un autre.",
+    isAlert: true,
+  },
 };
 
 export function notice(code: string | null): SafeHtml {

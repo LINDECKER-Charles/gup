@@ -24,6 +24,16 @@ export class RequestParams {
     return choices.find((choice) => choice === value) ?? null;
   }
 
+  /**
+   * The known values among those a field sent (a group of checkboxes sends
+   * its name once per ticked box): each once, in the order of `choices`.
+   */
+  choices<T extends string>(name: string, choices: readonly T[]): T[] {
+    const value = this.#source[name];
+    const sent = Array.isArray(value) ? value : [value];
+    return choices.filter((choice) => sent.includes(choice));
+  }
+
   /** A strictly positive integer written in decimal. */
   positiveInteger(name: string): number | null {
     const value = this.text(name);

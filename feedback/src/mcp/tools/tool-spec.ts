@@ -1,5 +1,6 @@
 import type { FastifyBaseLogger } from "fastify";
 import type * as z from "zod";
+import type { McpPermission } from "../../domain/mcp-access.js";
 import type { FeedbackRepository } from "../../ports/feedback-repository.js";
 import type { InstallReader } from "../../ports/install-reader.js";
 
@@ -9,6 +10,11 @@ export interface ToolContext {
   readonly journals: InstallReader;
   /** For failures the caller only sees as an opaque error. */
   readonly logger: FastifyBaseLogger;
+  /**
+   * What the request's access may do. Tools are registered by permission;
+   * a tool that would show another permission's data leaves it out.
+   */
+  readonly permissions: ReadonlySet<McpPermission>;
 }
 
 /** A tool's answer: the structured result, and the same in a few lines a model reads cheaply. */

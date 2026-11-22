@@ -8,6 +8,7 @@ import type { InstallStore } from "./ports/install-store.js";
 import type { MailSettingsStore } from "./ports/mail/mail-settings-store.js";
 import type { Mailer } from "./ports/mail/mailer.js";
 import type { OutboxMonitor } from "./ports/mail/outbox-monitor.js";
+import type { McpAccessStore } from "./ports/mcp-access-store.js";
 import type { SecondFactorStore } from "./ports/second-factor-store.js";
 import type { SessionRepository } from "./ports/session-repository.js";
 
@@ -26,6 +27,8 @@ export interface AppDeps {
   readonly sessions: SessionRepository;
   /** The TOTP steps already used; read only when ADMIN_TOTP_SECRET is set. */
   readonly secondFactors: SecondFactorStore;
+  /** The accesses to /mcp the back office issued. */
+  readonly mcpAccesses: McpAccessStore;
   readonly health: HealthProbe;
   readonly clock: Clock;
   /** Fastify logger settings; false silences it (tests). */

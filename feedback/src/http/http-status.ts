@@ -13,6 +13,7 @@ export const HTTP_STATUS = {
   methodNotAllowed: 405,
   payloadTooLarge: 413,
   unsupportedMediaType: 415,
+  unprocessableContent: 422,
   tooManyRequests: 429,
   internalError: 500,
   serviceUnavailable: 503,

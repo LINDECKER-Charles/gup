@@ -9,6 +9,9 @@ export const ADMIN_UI = {
   codePath: "/admin/login/code",
   assetsPath: "/admin/assets",
   mailsPath: "/admin/mails",
+  mcpPath: "/admin/mcp",
+  /** The one page that shows an access's token, right after it is issued. */
+  mcpTokenPath: "/admin/mcp/token",
   /** The inbox's `status` value that lifts the status filter. */
   allStatuses: "all",
   /** The hidden field of every form that carries the session's CSRF token. */

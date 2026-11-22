@@ -1,9 +1,17 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { McpAccesses } from "../auth/mcp-accesses.js";
 import { sendApiError } from "../http/api/api-error.js";
 import { HTTP_STATUS } from "../http/http-status.js";
 import { RateLimitGate } from "../http/rate-limit-gate.js";
+import type { McpGrant } from "../ports/mcp-access-store.js";
 import { DURATION_MS } from "../time-units.js";
-import { BearerTokenVerifier } from "./bearer-token-verifier.js";
+
+declare module "fastify" {
+  interface FastifyRequest {
+    /** What the request's token opens; the guard sets it on every request it lets through. */
+    mcpGrant: McpGrant | null;
+  }
+}
 
 const LIMITS = {
   /** Per client address: guessing a 256-bit token is hopeless, this keeps the logs quiet. */
@@ -17,7 +25,7 @@ const SECURITY_HEADERS = {
   "Referrer-Policy": "no-referrer",
 } as const;
 
-/** Same answer for a missing, malformed or wrong token. */
+/** Same answer for a missing, malformed, unknown, expired or revoked token. */
 const UNAUTHORIZED = {
   status: HTTP_STATUS.unauthorized,
   error: "unauthorized",
@@ -33,16 +41,16 @@ const FOREIGN_ORIGIN = {
 /**
  * onRequest hook of the MCP routes, before any body is read: no browser
  * (an `Origin` header means a page is calling — DNS rebinding, CSRF; MCP
- * clients send none), a cap on calls, then the bearer token, whose failures
- * are limited on their own.
+ * clients send none), a cap on calls, then the bearer token of an active
+ * access, whose failures are limited on their own.
  */
 export class McpGuard {
-  readonly #verifier: BearerTokenVerifier;
+  readonly #accesses: McpAccesses;
   readonly #calls: RateLimitGate;
   readonly #failedAuth: RateLimitGate;
 
-  constructor(app: FastifyInstance, tokenDigest: Buffer) {
-    this.#verifier = new BearerTokenVerifier(tokenDigest);
+  constructor(app: FastifyInstance, accesses: McpAccesses) {
+    this.#accesses = accesses;
     this.#calls = new RateLimitGate(app.createRateLimit(LIMITS.calls));
     this.#failedAuth = new RateLimitGate(app.createRateLimit(LIMITS.failedAuth));
   }
@@ -51,9 +59,13 @@ export class McpGuard {
     reply.headers(SECURITY_HEADERS);
     if (request.headers.origin !== undefined) return sendApiError(reply, FOREIGN_ORIGIN);
     await this.#calls.enforce(request);
-    // Exhausted: `enforce` throws the 429, even for the right token.
+    // Exhausted: `enforce` throws the 429, even for a valid token.
     if (await this.#failedAuth.isExhausted(request)) await this.#failedAuth.enforce(request);
-    if (this.#verifier.isAuthorized(request.headers.authorization)) return undefined;
+    const grant = await this.#accesses.authorize(request.headers.authorization);
+    if (grant !== null) {
+      request.mcpGrant = grant;
+      return undefined;
+    }
     await this.#failedAuth.count(request);
     reply.header("WWW-Authenticate", "Bearer");
     return sendApiError(reply, UNAUTHORIZED);

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { ConfigError } from "../../src/config/config-error.js";
 import { loadConfig } from "../../src/config/load-config.js";
@@ -91,23 +90,6 @@ describe("loadConfig", () => {
   ])("rejects ADMIN_TOTP_SECRET %s", (_name, raw) => {
     expect(problemsOf({ ...MINIMAL, ADMIN_TOTP_SECRET: raw }).join())
       .toContain("ADMIN_TOTP_SECRET must be base32");
-  });
-
-  it("enables MCP only with the SHA-256 of its token, never the token", () => {
-    expect(loadConfig(MINIMAL).mcpTokenDigest).toBeUndefined();
-    const digest = createHash("sha256").update("a-random-token").digest("hex");
-    expect(loadConfig({ ...MINIMAL, FEEDBACK_MCP_TOKEN_SHA256: digest }).mcpTokenDigest)
-      .toEqual(Buffer.from(digest, "hex"));
-  });
-
-  it.each([
-    ["a token instead of its digest", "a-random-token"],
-    ["upper-case hex", "A".repeat(64)],
-    ["a truncated digest", "a".repeat(63)],
-    ["the digest of an empty token", createHash("sha256").update("").digest("hex")],
-  ])("rejects FEEDBACK_MCP_TOKEN_SHA256 as %s", (_name, raw) => {
-    expect(problemsOf({ ...MINIMAL, FEEDBACK_MCP_TOKEN_SHA256: raw }).join())
-      .toContain("FEEDBACK_MCP_TOKEN_SHA256");
   });
 
   it.each([

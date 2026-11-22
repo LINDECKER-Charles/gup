@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/server";
+import { MCP_PERMISSIONS, type McpPermission } from "../domain/mcp-access.js";
 import { getFeedbackTool } from "./tools/feedback/get-feedback.js";
 import { searchFeedbackTool } from "./tools/feedback/search-feedback.js";
 import { updateFeedbackTool } from "./tools/feedback/update-feedback.js";
@@ -10,7 +11,7 @@ import { listLogsTool } from "./tools/journals/list-logs.js";
 import { registerTool } from "./tools/register-tool.js";
 import type { ToolContext } from "./tools/tool-spec.js";
 
-const SERVER_INFO = { name: "gup-feedback", version: "1.0.0" } as const;
+const SERVER_INFO = { name: "gup-feedback", version: "1.1.0" } as const;
 
 /** What a model needs to know before its first call. */
 const INSTRUCTIONS = [
@@ -27,17 +28,43 @@ const INSTRUCTIONS = [
     + "update_feedback (status and note): nothing here deletes or erases.",
 ].join("\n");
 
-/** One server instance: the protocol state of one request, the tools over the ports. */
+/** What each permission lets a model do, in its words. */
+const ABILITIES: Readonly<Record<McpPermission, string>> = {
+  "feedback:read": "read feedback",
+  "feedback:triage": "triage feedback (status and note)",
+  "journals:read": "read shared journals",
+};
+
+/** Each permission's tools: a tool outside the access's permissions is not even listed. */
+const TOOLS: Readonly<Record<McpPermission, (server: McpServer, context: ToolContext) => void>> = {
+  "feedback:read": (server, context) => {
+    registerTool(server, searchFeedbackTool(context), context.logger);
+    registerTool(server, getFeedbackTool(context), context.logger);
+  },
+  "feedback:triage": (server, context) => {
+    registerTool(server, updateFeedbackTool(context), context.logger);
+  },
+  "journals:read": (server, context) => {
+    registerTool(server, listInstallsTool(context), context.logger);
+    registerTool(server, getInstallTool(context), context.logger);
+    registerTool(server, listHistoryTool(context), context.logger);
+    registerTool(server, listLogsTool(context), context.logger);
+    registerTool(server, getRunTool(context), context.logger);
+  },
+};
+
+function grantedLine(granted: readonly McpPermission[]): string {
+  const abilities = granted.map((permission) => ABILITIES[permission]);
+  return `This access may: ${abilities.join("; ") || "nothing"}. Tools beyond its `
+    + "permissions are not listed; the maintainer grants them in the back office.";
+}
+
+/** One server instance: the protocol state of one request, the tools its access may use. */
 export function createFeedbackMcpServer(context: ToolContext): McpServer {
-  const server = new McpServer(SERVER_INFO, { instructions: INSTRUCTIONS });
-  const { logger } = context;
-  registerTool(server, searchFeedbackTool(context), logger);
-  registerTool(server, getFeedbackTool(context), logger);
-  registerTool(server, updateFeedbackTool(context), logger);
-  registerTool(server, listInstallsTool(context), logger);
-  registerTool(server, getInstallTool(context), logger);
-  registerTool(server, listHistoryTool(context), logger);
-  registerTool(server, listLogsTool(context), logger);
-  registerTool(server, getRunTool(context), logger);
+  const granted = MCP_PERMISSIONS.filter((permission) => context.permissions.has(permission));
+  const server = new McpServer(SERVER_INFO, {
+    instructions: `${INSTRUCTIONS}\n${grantedLine(granted)}`,
+  });
+  for (const permission of granted) TOOLS[permission](server, context);
   return server;
 }

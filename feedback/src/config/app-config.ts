@@ -34,9 +34,4 @@ export interface AppConfig {
   readonly logRetentionDays: number;
   readonly outboxPollIntervalMs: number;
   readonly logLevel: string;
-  /**
-   * SHA-256 of the bearer token of `/mcp`; the token itself is never held.
-   * Absent = the MCP endpoint does not exist.
-   */
-  readonly mcpTokenDigest?: Buffer;
 }

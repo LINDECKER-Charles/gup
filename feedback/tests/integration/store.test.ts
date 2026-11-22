@@ -11,6 +11,7 @@ import { PgOutboxRepository } from "../../src/store/feedback/pg-outbox-repositor
 import { migrate } from "../../src/store/migrate.js";
 import { PgInstallReader } from "../../src/store/pg-install-reader.js";
 import { PgInstallStore } from "../../src/store/pg-install-store.js";
+import { PgMcpAccessStore } from "../../src/store/pg-mcp-access-store.js";
 import { PgRetentionStore } from "../../src/store/pg-retention-store.js";
 import { PgSecondFactorStore } from "../../src/store/pg-second-factor-store.js";
 import { PgSessionRepository } from "../../src/store/pg-session-repository.js";
@@ -54,14 +55,14 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
   beforeEach(async () => {
     await migrate(pool);
     await pool.query(`TRUNCATE feedback, mail_outbox, install, admin_session,
-      admin_second_factor, mail_setting RESTART IDENTITY CASCADE`);
+      admin_second_factor, mail_setting, mcp_access RESTART IDENTITY CASCADE`);
   });
 
   it("migrates an empty database once, then finds nothing to apply", async () => {
     await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
     expect(await migrate(pool)).toEqual(
       ["001_initial.sql", "002_journal_reading.sql", "003_second_factor.sql",
-        "004_mail_setting.sql"]);
+        "004_mail_setting.sql", "005_mcp_access.sql"]);
     expect(await migrate(pool)).toEqual([]);
   });
 
@@ -146,7 +147,7 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
     const now = new Date();
     await pool.query("UPDATE install_log_item SET received_at = $1", [new Date(now.getTime() - 100 * DAY_MS)]);
     const cutoff = new Date(now.getTime() - 90 * DAY_MS);
-    const window = { journalCutoff: cutoff, now, sessionIdleCutoff: now };
+    const window = { journalCutoff: cutoff, now, sessionIdleCutoff: now, mcpAccessCutoff: now };
     const first = await new PgRetentionStore(pool).purge(window);
     expect(first).toMatchObject({ historyItems: 0, logItems: 2, installs: 0 });
     await pool.query("UPDATE install_history_item SET received_at = $1", [new Date(now.getTime() - 100 * DAY_MS)]);
@@ -173,7 +174,9 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
     expect(await sessions.find(tokenHash)).toMatchObject({
       csrfToken: "csrf", lastSeenAt: later, secondFactor: "due", codeAttempts: 2,
     });
-    const window = { journalCutoff: now, now: later, sessionIdleCutoff: later };
+    const window = {
+      journalCutoff: now, now: later, sessionIdleCutoff: later, mcpAccessCutoff: later,
+    };
     expect(await new PgRetentionStore(pool).purge(window)).toMatchObject({ sessions: 1 });
     expect(await sessions.find(tokenHash)).toBeNull();
   });
@@ -226,5 +229,48 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
     expect(claimed).toHaveLength(4);
     expect(a[0]?.attempts).toBe(1);
     expect(await outbox.claimDue(request)).toEqual([]);
+  });
+
+  it("opens an MCP access by its token's digest while active, then purges it", async () => {
+    const accesses = new PgMcpAccessStore(pool);
+    const now = new Date("2026-11-20T10:00:00Z");
+    const access = {
+      id: "5b0e6a4c-2f1d-4e8b-9c7a-1d2e3f4a5b6c", name: "Claude Code, portable",
+      permissions: ["feedback:read", "journals:read"] as const, tokenHint: "abcd",
+      createdAt: now, expiresAt: new Date(now.getTime() + DAY_MS), tokenDigest: sha256("token"),
+    };
+    await accesses.create(access);
+    await expect(accesses.create({ ...access, id: "6c1f7b5d-3a2e-4f9c-8d8b-2e3f4a5b6c7d" }))
+      .rejects.toThrow();
+    const later = new Date(now.getTime() + 60_000);
+    expect(await accesses.use(sha256("token"), later)).toEqual(
+      { accessId: access.id, permissions: ["feedback:read", "journals:read"] });
+    expect(await accesses.use(sha256("other"), later)).toBeNull();
+    expect(await accesses.list()).toEqual([{
+      id: access.id, name: access.name, permissions: ["feedback:read", "journals:read"],
+      tokenHint: "abcd", createdAt: now, expiresAt: access.expiresAt, lastUsedAt: later,
+      revokedAt: null,
+    }]);
+    expect(await accesses.use(sha256("token"), access.expiresAt)).toBeNull();
+    expect(await accesses.revoke(access.id, later)).toBe(true);
+    expect(await accesses.revoke(access.id, later)).toBe(false);
+    expect(await accesses.use(sha256("token"), later)).toBeNull();
+    const retention = new PgRetentionStore(pool);
+    const window = { journalCutoff: now, now, sessionIdleCutoff: now };
+    expect(await retention.purge({ ...window, mcpAccessCutoff: later }))
+      .toMatchObject({ mcpAccesses: 0 });
+    expect(await retention.purge({ ...window, mcpAccessCutoff: new Date(later.getTime() + 1) }))
+      .toMatchObject({ mcpAccesses: 1 });
+  });
+
+  it("refuses an MCP access with an unknown permission or none", async () => {
+    const now = new Date();
+    const insert = (permissions: string[]) => pool.query(
+      `INSERT INTO mcp_access (id, name, token_sha256, token_hint, permissions, created_at,
+         expires_at) VALUES (gen_random_uuid(), 'x', $1, 'abcd', $2, $3, $4)`,
+      [sha256(permissions.join()), permissions, now, new Date(now.getTime() + DAY_MS)]);
+    await expect(insert(["admin:all"])).rejects.toThrow();
+    await expect(insert([])).rejects.toThrow();
+    await expect(insert(["feedback:triage"])).resolves.toBeDefined();
   });
 });

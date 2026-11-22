@@ -17,7 +17,7 @@ export class PgRetentionStore implements RetentionStore {
 
   purge(window: PurgeWindow): Promise<PurgeReport> {
     return withTransaction(this.#pool, async (client) => {
-      const { journalCutoff, now, sessionIdleCutoff } = window;
+      const { journalCutoff, now, sessionIdleCutoff, mcpAccessCutoff } = window;
       const history = await client.query(
         "DELETE FROM install_history_item WHERE received_at < $1", [journalCutoff]);
       const logs = await client.query(
@@ -26,11 +26,14 @@ export class PgRetentionStore implements RetentionStore {
       const sessions = await client.query(
         "DELETE FROM admin_session WHERE expires_at <= $1 OR last_seen_at <= $2",
         [now, sessionIdleCutoff]);
+      const accesses = await client.query(
+        "DELETE FROM mcp_access WHERE coalesce(revoked_at, expires_at) < $1", [mcpAccessCutoff]);
       return {
         historyItems: history.rowCount ?? 0,
         logItems: logs.rowCount ?? 0,
         installs: installs.rowCount ?? 0,
         sessions: sessions.rowCount ?? 0,
+        mcpAccesses: accesses.rowCount ?? 0,
       };
     });
   }

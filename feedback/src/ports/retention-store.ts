@@ -5,6 +5,8 @@ export interface PurgeWindow {
   readonly now: Date;
   /** Sessions idle since before this go. */
   readonly sessionIdleCutoff: Date;
+  /** MCP accesses expired or revoked before this go. */
+  readonly mcpAccessCutoff: Date;
 }
 
 export interface PurgeReport {
@@ -12,6 +14,7 @@ export interface PurgeReport {
   readonly logItems: number;
   readonly installs: number;
   readonly sessions: number;
+  readonly mcpAccesses: number;
 }
 
 export interface RetentionStore {

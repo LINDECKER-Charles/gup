@@ -6,6 +6,7 @@ import type { AppDeps } from "./app-deps.js";
 import { AdminCredentials } from "./auth/admin-credentials.js";
 import { AdminSecondFactor } from "./auth/admin-second-factor.js";
 import { AdminSessions } from "./auth/admin-sessions.js";
+import { McpAccesses } from "./auth/mcp-accesses.js";
 import { Totp } from "./auth/totp.js";
 import type { AdminContext } from "./http/admin/admin-context.js";
 import { adminPlugin } from "./http/admin/admin-plugin.js";
@@ -48,7 +49,7 @@ function recipientOf(deps: AppDeps): NotifyRecipient | null {
   return mail === null ? null : new NotifyRecipient(deps.mailSettings, mail.notifyTo);
 }
 
-function adminContext(deps: AppDeps): AdminContext {
+function adminContext(deps: AppDeps, mcpAccesses: McpAccesses): AdminContext {
   return {
     config: deps.config,
     feedback: deps.feedback,
@@ -57,6 +58,7 @@ function adminContext(deps: AppDeps): AdminContext {
     outbox: deps.outbox,
     mailer: deps.mailer,
     recipient: recipientOf(deps),
+    mcpAccesses,
     clock: deps.clock,
     sessions: new AdminSessions({ repository: deps.sessions, clock: deps.clock }),
     credentials: new AdminCredentials(deps.config.admin),
@@ -83,9 +85,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   registerHealthRoute(app, deps.health);
   registerFeedbackRoute(app, deps);
   await app.register(installRoutes(deps));
-  await app.register(adminPlugin(adminContext(deps)), { prefix: ADMIN_UI.home });
-  // Without a configured token digest the endpoint does not exist: /mcp answers 404.
-  const { mcpTokenDigest } = deps.config;
-  if (mcpTokenDigest !== undefined) await app.register(mcpPlugin(deps, mcpTokenDigest));
+  // Issued and revoked by the back office, checked by /mcp: one instance for both.
+  const mcpAccesses = new McpAccesses(deps.mcpAccesses, deps.clock);
+  await app.register(adminPlugin(adminContext(deps, mcpAccesses)), { prefix: ADMIN_UI.home });
+  await app.register(mcpPlugin(deps, mcpAccesses));
   return app;
 }

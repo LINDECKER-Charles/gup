@@ -1,16 +1,19 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { AppDeps } from "../../../src/app-deps.js";
 import { JOURNAL_VOCABULARY } from "../../../src/domain/journal.js";
+import { MCP_PERMISSIONS, type McpPermission } from "../../../src/domain/mcp-access.js";
 import type {
   HistoryQuery, InstallReader, InstallSummary, LogQuery, RunEntry, RunKey, RunQuery,
   StoredHistoryRecord, StoredLogRecord,
 } from "../../../src/ports/install-reader.js";
 import type { Page, PageRequest } from "../../../src/ports/page.js";
-import { createTestApp, testConfig, type TestApp } from "../../support/test-app.js";
+import { MCP_TOKEN } from "../../../src/security/mcp-token.js";
+import { sha256 } from "../../../src/security/sha256.js";
+import { DURATION_MS } from "../../../src/time-units.js";
+import { createTestApp, type TestApp } from "../../support/test-app.js";
 
 /** A throwaway token per test run: what the maintainer would hold, never the service. */
-export const TOKEN = randomBytes(32).toString("base64url");
-export const TOKEN_DIGEST = createHash("sha256").update(TOKEN).digest();
+export const TOKEN = MCP_TOKEN.create();
 export const INSTALL_ID = "0f8b2c1e-6d3a-4b7c-9e21-5a4d3c2b1a09";
 export const RUN_ID = "run-2026-11-20-a";
 export const OTHER_RUN_ID = "run-2026-11-19-z";
@@ -112,13 +115,34 @@ export class FixedInstallReader implements InstallReader {
 
 export const LEVELS = JOURNAL_VOCABULARY.logLevels;
 
-/** The app with the MCP endpoint enabled for TOKEN. */
-export function createMcpApp(overrides: Partial<AppDeps> = {}): Promise<TestApp> {
-  return createTestApp({
-    config: testConfig({ mcpTokenDigest: TOKEN_DIGEST }),
-    journals: new FixedInstallReader(),
-    ...overrides,
+export interface GrantedAccess {
+  readonly token?: string;
+  readonly permissions?: readonly McpPermission[];
+  readonly lifetimeMs?: number;
+}
+
+/** Stores an access as the back office would issue it, without going through a page. */
+export async function grantAccess(ctx: TestApp, access: GrantedAccess = {}): Promise<string> {
+  const token = access.token ?? MCP_TOKEN.create();
+  const createdAt = ctx.clock.now();
+  const id = randomUUID();
+  await ctx.mcpAccesses.create({
+    id, name: `test access ${id.slice(0, 8)}`,
+    permissions: access.permissions ?? MCP_PERMISSIONS, tokenHint: MCP_TOKEN.hint(token),
+    createdAt, expiresAt: new Date(createdAt.getTime() + (access.lifetimeMs ?? DURATION_MS.day)),
+    tokenDigest: sha256(token),
   });
+  return id;
+}
+
+/** The app with one access holding TOKEN, with every permission unless told otherwise. */
+export async function createMcpApp(
+  overrides: Partial<AppDeps> = {},
+  permissions: readonly McpPermission[] = MCP_PERMISSIONS,
+): Promise<TestApp> {
+  const ctx = await createTestApp({ journals: new FixedInstallReader(), ...overrides });
+  await grantAccess(ctx, { token: TOKEN, permissions });
+  return ctx;
 }
 
 export interface RpcCall {

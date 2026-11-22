@@ -1,6 +1,5 @@
 import { isEmailAddress } from "../domain/email-address.js";
 import { PasswordHash } from "../security/password-hash.js";
-import { sha256 } from "../security/sha256.js";
 import { DURATION_MS } from "../time-units.js";
 import type { AppConfig, FeedbackEnv, MailConfig } from "./app-config.js";
 import { ConfigError } from "./config-error.js";
@@ -23,9 +22,6 @@ const MAX_POLL_SECONDS = 3600;
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"];
 const ENVIRONMENTS: readonly FeedbackEnv[] = ["production", "development"];
 const SMTP_URL_PATTERN = /^smtps?:\/\//;
-const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/;
-/** What `printf '%s' "$TOKEN" | sha256sum` prints when TOKEN is unset: a mistake, never a token. */
-const EMPTY_TOKEN_DIGEST = sha256("").toString("hex");
 
 function readEnvironment(reader: EnvReader): FeedbackEnv {
   const raw = reader.optional("FEEDBACK_ENV") ?? "production";
@@ -105,22 +101,6 @@ function readOrigins(reader: EnvReader, env: FeedbackEnv) {
   };
 }
 
-/** Unset = no MCP endpoint; set, only the digest of the token, never the token. */
-function readMcpTokenDigest(reader: EnvReader): { mcpTokenDigest?: Buffer } {
-  const name = "FEEDBACK_MCP_TOKEN_SHA256";
-  const digest = reader.optional(name);
-  if (digest === null) return {};
-  if (!SHA256_HEX_PATTERN.test(digest)) {
-    reader.reject(name, "must be 64 lowercase hex characters: the SHA-256 of the MCP token");
-    return {};
-  }
-  if (digest === EMPTY_TOKEN_DIGEST) {
-    reader.reject(name, "is the SHA-256 of an empty token");
-    return {};
-  }
-  return { mcpTokenDigest: Buffer.from(digest, "hex") };
-}
-
 /** Builds the configuration from the environment; throws a ConfigError listing every problem. */
 export function loadConfig(variables: Readonly<Record<string, string | undefined>>): AppConfig {
   const reader = new EnvReader(variables);
@@ -137,7 +117,6 @@ export function loadConfig(variables: Readonly<Record<string, string | undefined
     mail: readMail(reader),
     ...readDurations(reader),
     logLevel: readLogLevel(reader),
-    ...readMcpTokenDigest(reader),
   };
   const username = reader.required("ADMIN_USERNAME");
   const totpSecret = readTotpSecret(reader, env);

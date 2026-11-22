@@ -20,6 +20,7 @@ import { PgMailSettingsStore } from "./store/feedback/pg-mail-settings-store.js"
 import { PgHealthProbe } from "./store/pg-health-probe.js";
 import { PgInstallReader } from "./store/pg-install-reader.js";
 import { PgInstallStore } from "./store/pg-install-store.js";
+import { PgMcpAccessStore } from "./store/pg-mcp-access-store.js";
 import { PgOutboxMonitor } from "./store/feedback/pg-outbox-monitor.js";
 import { PgOutboxRepository } from "./store/feedback/pg-outbox-repository.js";
 import { PgRetentionStore } from "./store/pg-retention-store.js";
@@ -120,7 +121,6 @@ function outboxTask(
 
 /** What an operator should know the service runs with, or without. */
 function logOptionalFeatures(config: AppConfig, app: FastifyInstance): void {
-  if (config.mcpTokenDigest !== undefined) app.log.info("MCP endpoint enabled on /mcp");
   if (config.admin.totpSecret === null) {
     app.log.warn("ADMIN_TOTP_SECRET is not set: the back office signs in with the password alone");
   }
@@ -148,7 +148,8 @@ async function main(): Promise<void> {
     config, clock: SYSTEM_CLOCK, logger: loggerOptions(config.logLevel),
     feedback: new PgFeedbackRepository(pool), installs: new PgInstallStore(pool),
     journals: new PgInstallReader(pool), sessions: new PgSessionRepository(pool),
-    secondFactors: new PgSecondFactorStore(pool), mailSettings,
+    secondFactors: new PgSecondFactorStore(pool), mcpAccesses: new PgMcpAccessStore(pool),
+    mailSettings,
     outbox: new PgOutboxMonitor(pool), mailer, health: new PgHealthProbe(pool),
   });
   pool.on("error", (error) => app.log.error({ err: error }, "idle database client failed"));

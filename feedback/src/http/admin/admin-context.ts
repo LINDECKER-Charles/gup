@@ -1,6 +1,7 @@
 import type { AdminCredentials } from "../../auth/admin-credentials.js";
 import type { AdminSecondFactor } from "../../auth/admin-second-factor.js";
 import type { AdminSessions } from "../../auth/admin-sessions.js";
+import type { McpAccesses } from "../../auth/mcp-accesses.js";
 import type { AppConfig } from "../../config/app-config.js";
 import type { Clock } from "../../ports/clock.js";
 import type { FeedbackRepository } from "../../ports/feedback-repository.js";
@@ -22,6 +23,8 @@ export interface AdminContext {
   readonly mailer: Mailer | null;
   /** Where notifications go; null when SMTP is not configured. */
   readonly recipient: NotifyRecipient | null;
+  /** The accesses to /mcp: the same instance the MCP guard checks tokens with. */
+  readonly mcpAccesses: McpAccesses;
   readonly clock: Clock;
   readonly sessions: AdminSessions;
   readonly credentials: AdminCredentials;

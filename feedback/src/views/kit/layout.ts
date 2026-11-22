@@ -3,7 +3,7 @@ import { ADMIN_UI } from "../admin-ui.js";
 import { csrfField } from "../csrf-field.js";
 import { html, type SafeHtml } from "./html.js";
 
-export type AdminSection = "inbox" | "installs" | "mails";
+export type AdminSection = "inbox" | "installs" | "mails" | "mcp";
 
 export interface LayoutInput {
   readonly title: string;
@@ -18,7 +18,8 @@ const THEME_COLOR = "#0b0c10";
 const SECTIONS: readonly { section: AdminSection; href: string; index: string; label: string }[] = [
   { section: "inbox", href: ADMIN_UI.home, index: "01", label: "Retours" },
   { section: "installs", href: `${ADMIN_UI.home}/installs`, index: "02", label: "Installations" },
-  { section: "mails", href: `${ADMIN_UI.home}/mails`, index: "03", label: "Mails" },
+  { section: "mails", href: ADMIN_UI.mailsPath, index: "03", label: "Mails" },
+  { section: "mcp", href: ADMIN_UI.mcpPath, index: "04", label: "MCP" },
 ];
 
 function brand(): SafeHtml {

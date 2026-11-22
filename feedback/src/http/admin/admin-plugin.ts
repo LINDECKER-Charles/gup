@@ -11,6 +11,7 @@ import { registerInstallsRoutes } from "./routes/installs-routes.js";
 import { RequestParams } from "./request-params.js";
 import { registerLoginRoutes } from "./routes/login-routes.js";
 import { registerMailsRoutes } from "./routes/mails-routes.js";
+import { registerMcpRoutes } from "./routes/mcp-routes.js";
 
 /** No script, no inline style, no framing, forms posting back here only. */
 const CONTENT_SECURITY_POLICY = [
@@ -63,5 +64,6 @@ export function adminPlugin(context: AdminContext) {
     registerFeedbackRoutes(app, context);
     registerInstallsRoutes(app, context);
     registerMailsRoutes(app, context);
+    registerMcpRoutes(app, context);
   };
 }

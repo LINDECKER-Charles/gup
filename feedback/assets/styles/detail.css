@@ -341,3 +341,102 @@
   letter-spacing: 0.3em;
   text-align: center;
 }
+
+/* ── MCP accesses: one card each, the revocation folded under it ───────── */
+
+.accesses {
+  display: grid;
+  gap: 12px;
+}
+.access {
+  display: grid;
+  gap: 14px;
+  min-inline-size: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.access__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.access__name {
+  min-inline-size: 0;
+  font-size: 17px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+/* What stopped working reads as history: quieter, still legible. */
+.access--expired,
+.access--revoked {
+  border-style: dashed;
+  background: none;
+}
+.access--expired .access__name,
+.access--revoked .access__name {
+  color: var(--fg-muted);
+}
+
+/* ── Plugging Claude Code in ───────────────────────────────────────────── */
+
+.steps {
+  display: grid;
+  gap: 12px;
+  padding-inline-start: 20px;
+  list-style: decimal;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+.steps li::marker {
+  font-family: var(--font-mono);
+  color: var(--fg-dim);
+}
+.command {
+  margin-block-start: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--chip-bg);
+  font-size: 12.5px;
+  line-height: 1.55;
+  user-select: all;
+}
+.command code {
+  font-size: inherit;
+  color: var(--fg);
+}
+/* Whole on its line when it fits; wrapped inside only when it cannot. */
+.command__part {
+  display: inline-block;
+  max-inline-size: 100%;
+}
+
+/* ── The token, shown once ─────────────────────────────────────────────── */
+
+.reveal {
+  max-inline-size: 760px;
+}
+.reveal__warning {
+  margin-block-end: 14px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--amber);
+}
+/* One click selects it whole; it wraps instead of widening the page. */
+.secret {
+  margin-block-end: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--edge-amber);
+  border-radius: var(--radius);
+  background: var(--bg-deep);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+  user-select: all;
+}

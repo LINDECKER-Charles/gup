@@ -48,6 +48,11 @@
 - **feedback:** the Mails page chooses the address feedback notifications go to (back to
   `FEEDBACK_NOTIFY_TO` in one click), and sends its test mail to any address typed in
   (`feat(feedback): choose the notification recipient and the test mail's address`)
+- **feedback:** an MCP tab in the back office issues accesses to `/mcp` — a name, permissions
+  (read feedback, triage it, read journals) and a lifetime of a day to a year — shows each
+  token once, lists their last use and revokes them; an access sees only the tools its
+  permissions open. They replace the single token of `FEEDBACK_MCP_TOKEN_SHA256`
+  (`feat(feedback): issue MCP accesses with permissions and expiry`)
 - **landing:** a Feedback section with a bug/suggestion form that works with and without
   JavaScript, prefilled by the CLI's link, in the eight languages
   (`feat(landing): add the feedback form`)

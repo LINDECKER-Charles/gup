@@ -65,7 +65,8 @@
 .nav {
   order: 3;
   display: flex;
-  gap: 18px;
+  flex-wrap: wrap;
+  column-gap: 18px;
   inline-size: 100%;
   border-block-start: 1px solid var(--line-faint);
 }
@@ -92,6 +93,12 @@
 }
 .nav__index {
   color: var(--fg-dim);
+}
+/* Four sections fit one row on a phone without their numbers; the page header keeps them. */
+@media (max-width: 479px) {
+  .nav__index {
+    display: none;
+  }
 }
 
 .logout {

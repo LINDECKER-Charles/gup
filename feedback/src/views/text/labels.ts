@@ -1,5 +1,8 @@
 import type { FeedbackKind, FeedbackStatus } from "../../domain/feedback.js";
 import type { HistoryKind, LogLevel, UpdateStatus } from "../../domain/journal.js";
+import type {
+  McpAccessLifetime, McpAccessState, McpPermission,
+} from "../../domain/mcp-access.js";
 
 /** Every French word the back office shows for a code, in one place. */
 export const LABELS = {
@@ -49,4 +52,27 @@ export const LABELS = {
   platform: { win32: "Windows", darwin: "macOS", linux: "Linux", other: "Autre" } as Readonly<
     Record<string, string>
   >,
+  mcpPermission: {
+    "feedback:read": "Lire les retours",
+    "feedback:triage": "Trier les retours",
+    "journals:read": "Lire les journaux",
+  } satisfies Record<McpPermission, string>,
+  /** What a permission opens, under its box in the issue form. */
+  mcpPermissionHint: {
+    "feedback:read": "Recherche et détail, adresse du rapporteur comprise.",
+    "feedback:triage": "Change le statut et la note privée ; donne aussi la lecture.",
+    "journals:read": "Installations, historiques et journaux de débogage partagés.",
+  } satisfies Record<McpPermission, string>,
+  mcpAccessState: {
+    active: "Actif",
+    expired: "Expiré",
+    revoked: "Révoqué",
+  } satisfies Record<McpAccessState, string>,
+  mcpLifetime: {
+    1: "1 jour",
+    7: "7 jours",
+    30: "30 jours",
+    90: "90 jours",
+    365: "1 an",
+  } satisfies Record<McpAccessLifetime, string>,
 } as const;

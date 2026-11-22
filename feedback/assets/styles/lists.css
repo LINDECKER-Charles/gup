@@ -269,3 +269,25 @@
   font-size: 12.5px;
   color: var(--fg-dim);
 }
+
+/* An MCP access: active in green, expired in amber, revoked in red. */
+.badge--access-active {
+  border-color: var(--edge-green);
+  background: var(--tint-green);
+  color: var(--green);
+}
+.badge--access-expired {
+  border-color: var(--edge-amber);
+  background: var(--tint-amber);
+  color: var(--amber);
+}
+.badge--access-revoked {
+  border-color: var(--edge-red);
+  background: var(--tint-red);
+  color: var(--red);
+}
+.badge--permission {
+  border-color: var(--edge-violet);
+  background: var(--tint-violet);
+  color: var(--violet-text);
+}

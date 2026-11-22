@@ -34,13 +34,20 @@ export class AdminSession {
     return this.#app.inject({ method: "GET", url, cookies: { [COOKIE]: this.#token } });
   }
 
-  /** Posts the form with this session's CSRF token unless `fields` sets its own. */
-  post(url: string, fields: Record<string, string> = {}) {
+  /**
+   * Posts the form with this session's CSRF token unless `fields` sets its
+   * own; a list sends its field once per value, as ticked checkboxes do.
+   */
+  post(url: string, fields: Record<string, string | readonly string[]> = {}) {
+    const form = new URLSearchParams();
+    for (const [name, value] of Object.entries({ _csrf: this.csrf, ...fields })) {
+      for (const one of typeof value === "string" ? [value] : value) form.append(name, one);
+    }
     return this.#app.inject({
       method: "POST",
       url,
       cookies: { [COOKIE]: this.#token },
-      payload: new URLSearchParams({ _csrf: this.csrf, ...fields }).toString(),
+      payload: form.toString(),
       headers: { origin: PUBLIC_ORIGIN, "content-type": FORM },
     });
   }

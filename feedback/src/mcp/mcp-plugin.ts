@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { AppDeps } from "../app-deps.js";
+import type { McpAccesses } from "../auth/mcp-accesses.js";
 import { sendApiError } from "../http/api/api-error.js";
 import { HTTP_STATUS } from "../http/http-status.js";
 import { createFeedbackMcpServer } from "./feedback-mcp-server.js";
@@ -22,24 +23,30 @@ function methodNotAllowed(_request: FastifyRequest, reply: FastifyReply): Fastif
 
 /**
  * `POST /mcp`: the MCP server Claude Code reaches to read feedback and shared
- * journals, behind a bearer token. Mounted in its own scope: JSON bodies
- * only, and the guard runs on these routes alone.
+ * journals, behind the token of an access issued in the back office; each
+ * request gets the tools of its access's permissions. Mounted in its own
+ * scope: JSON bodies only, and the guard runs on these routes alone.
  */
-export function mcpPlugin(deps: AppDeps, tokenDigest: Buffer) {
+export function mcpPlugin(deps: AppDeps, accesses: McpAccesses) {
   return async (app: FastifyInstance): Promise<void> => {
-    const context = { feedback: deps.feedback, journals: deps.journals, logger: app.log };
     const endpoint = new McpEndpoint({
-      createServer: () => createFeedbackMcpServer(context),
+      createServer: (grant) => createFeedbackMcpServer({
+        feedback: deps.feedback, journals: deps.journals, logger: app.log,
+        permissions: new Set(grant.permissions),
+      }),
       onError: (error) => app.log.warn({ err: error }, "MCP request rejected"),
     });
     app.addHook("onClose", () => endpoint.close());
     app.removeAllContentTypeParsers();
     app.addContentTypeParser(JSON_CONTENT_TYPE, { parseAs: "string" },
       app.getDefaultJsonParser("error", "error"));
-    app.addHook("onRequest", new McpGuard(app, tokenDigest).check);
+    app.decorateRequest("mcpGrant", null);
+    app.addHook("onRequest", new McpGuard(app, accesses).check);
     app.post(MCP_PATH, { bodyLimit: BODY_LIMIT_BYTES }, async (request, reply) => {
+      // The guard answers every request without a grant before this runs.
+      const grant = request.mcpGrant ?? { accessId: "", permissions: [] };
       const response = await endpoint.handle(
-        toWebRequest(request, deps.config.publicOrigin), request.body);
+        toWebRequest(request, deps.config.publicOrigin), request.body, grant);
       // The SDK's JSON-RPC response (application/json, nosniff), never HTML: semgrep's
       // Express rule direct-response-write does not apply to it.
       return reply.send(response); // nosemgrep

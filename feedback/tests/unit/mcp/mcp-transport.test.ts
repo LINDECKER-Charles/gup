@@ -1,6 +1,7 @@
 import { Writable } from "node:stream";
 import { afterEach, describe, expect, it } from "vitest";
 import { loggerOptions } from "../../../src/logger-options.js";
+import { MCP_TOKEN } from "../../../src/security/mcp-token.js";
 import { MemoryFeedbackRepository } from "../../support/memory-feedback-repository.js";
 import { createTestApp, PUBLIC_ORIGIN, type TestApp } from "../../support/test-app.js";
 import { createMcpApp, rpc, TOKEN } from "./mcp-harness.js";
@@ -18,16 +19,18 @@ afterEach(async () => {
 });
 
 describe("MCP endpoint", () => {
-  it("does not exist without a configured token digest", async () => {
+  it("refuses every request while no access is issued", async () => {
     ctx = await createTestApp();
     const response = await rpc(ctx.app, { method: "tools/list" });
-    expect(response.statusCode).toBe(404);
+    expect(response.statusCode).toBe(401);
   });
 
   it.each([
     ["no Authorization header", null],
-    ["a wrong token", "not-the-token"],
+    ["a malformed token", "not-the-token"],
+    ["a well-formed token no access holds", MCP_TOKEN.create()],
     ["the right token with a suffix", `${TOKEN}x`],
+    ["the right token in another case", TOKEN.toUpperCase()],
   ])("answers 401 with a Bearer challenge to %s", async (_name, token) => {
     ctx = await createMcpApp();
     const response = await rpc(ctx.app, { method: "tools/list", token });

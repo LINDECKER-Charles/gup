@@ -1,5 +1,6 @@
 import type { FeedbackKind, FeedbackStatus } from "../../domain/feedback.js";
 import { JOURNAL_VOCABULARY, type HistoryKind } from "../../domain/journal.js";
+import type { McpAccessState, McpPermission } from "../../domain/mcp-access.js";
 import { html, type SafeHtml } from "./html.js";
 import { LABELS } from "../text/labels.js";
 
@@ -9,7 +10,9 @@ type BadgeSpec =
   | { readonly family: "level"; readonly rank: number }
   | { readonly family: "entry"; readonly value: HistoryKind }
   /** An update's status: free text in the contract, a known word or shown as sent. */
-  | { readonly family: "outcome"; readonly value: string };
+  | { readonly family: "outcome"; readonly value: string }
+  | { readonly family: "access"; readonly value: McpAccessState }
+  | { readonly family: "permission"; readonly value: McpPermission };
 
 const UNKNOWN_OUTCOME_TONE = "outcome-other";
 
@@ -34,6 +37,10 @@ function describe(spec: BadgeSpec): { text: string; tone: string } {
       return { text: LABELS.historyKind[spec.value], tone: `entry-${spec.value}` };
     case "outcome":
       return outcome(spec.value);
+    case "access":
+      return { text: LABELS.mcpAccessState[spec.value], tone: `access-${spec.value}` };
+    case "permission":
+      return { text: LABELS.mcpPermission[spec.value], tone: "permission" };
   }
 }
 

@@ -325,3 +325,69 @@ textarea.field-control {
 .danger__body .btn {
   justify-self: start;
 }
+
+/* ── Refused fields: the message under the field, the field outlined ───── */
+
+.field-control[aria-invalid="true"] {
+  border-color: var(--red);
+}
+.field-error {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--red);
+}
+select.field-control {
+  cursor: pointer;
+}
+
+/* ── Options: checkboxes, each with what it means ──────────────────────── */
+
+.options {
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+}
+.options > legend {
+  margin-block-end: 8px;
+  padding: 0;
+}
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg-deep);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.option:hover {
+  border-color: var(--violet);
+}
+.option:has(input:checked) {
+  border-color: var(--edge-violet);
+  background: var(--tint-violet);
+}
+.option input {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--violet);
+}
+.option__text {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 0;
+}
+.option__label {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.option__hint {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--fg-dim);
+}
