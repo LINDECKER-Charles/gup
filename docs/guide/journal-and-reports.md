@@ -231,8 +231,8 @@ The journal only reads the history: nothing it shows ever decides what gup updat
   name or a message that looks like HTML is displayed as text.
 - To open the report, gup starts the platform's own opener — `explorer.exe` (by its full path)
   on Windows, `/usr/bin/open` on macOS, `xdg-open` on Linux (`wslview` first under WSL) — never a
-  shell. A path holding a comma or a quote is not handed to `explorer.exe`, which would split it:
-  gup prints the address instead.
+  shell. On Windows the path is handed over quoted, so a folder name holding a comma opens like
+  any other.
 - A CSV cell that starts like a spreadsheet formula (`=`, `+`, `-`, `@`) is prefixed with `'`,
   so opening the file never runs anything.
 - Messages printed by tools are shown without their escape sequences: the journal never changes
