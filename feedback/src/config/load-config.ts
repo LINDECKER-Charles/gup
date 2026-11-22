@@ -4,6 +4,7 @@ import { DURATION_MS } from "../time-units.js";
 import type { AppConfig, FeedbackEnv, MailConfig } from "./app-config.js";
 import { ConfigError } from "./config-error.js";
 import { EnvReader } from "./env-reader.js";
+import { readTotpSecret } from "./read-totp-secret.js";
 import { readTrustProxy } from "./read-trust-proxy.js";
 
 const DEFAULTS = {
@@ -139,6 +140,7 @@ export function loadConfig(variables: Readonly<Record<string, string | undefined
     ...readMcpTokenDigest(reader),
   };
   const username = reader.required("ADMIN_USERNAME");
+  const totpSecret = readTotpSecret(reader, env);
   if (reader.errors.length > 0 || passwordHash === null) throw new ConfigError(reader.errors);
-  return { ...config, admin: { username, passwordHash } };
+  return { ...config, admin: { username, passwordHash, totpSecret } };
 }

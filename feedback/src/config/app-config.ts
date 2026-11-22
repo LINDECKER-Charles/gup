@@ -21,7 +21,12 @@ export interface AppConfig {
   readonly allowedOrigins: readonly string[];
   /** Fastify `trustProxy`: which peers may set `X-Forwarded-For`. */
   readonly trustProxy: boolean | readonly string[];
-  readonly admin: { readonly username: string; readonly passwordHash: PasswordHash };
+  readonly admin: {
+    readonly username: string;
+    readonly passwordHash: PasswordHash;
+    /** Key of the authenticator app; null = no second factor (development only). */
+    readonly totpSecret: Buffer | null;
+  };
   /** false only for local http development: drops `Secure` and the `__Host-` prefix. */
   readonly cookieSecure: boolean;
   /** null = no SMTP: feedback is accepted and its mail waits in the outbox. */

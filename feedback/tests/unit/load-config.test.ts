@@ -2,15 +2,20 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { ConfigError } from "../../src/config/config-error.js";
 import { loadConfig } from "../../src/config/load-config.js";
+import { base32Encode } from "../../src/security/base32.js";
 import { PasswordHash } from "../../src/security/password-hash.js";
 
 const HASH = (await PasswordHash.create("a long enough password")).toString();
+const TOTP_KEY = Buffer.from("a 20-byte TOTP key!!", "ascii");
 const MINIMAL = {
   DATABASE_URL: "postgres://gup:secret@db:5432/gup",
   FEEDBACK_PUBLIC_URL: "https://feedback.example.test/",
   ADMIN_USERNAME: "admin",
   ADMIN_PASSWORD_HASH: HASH,
+  ADMIN_TOTP_SECRET: base32Encode(TOTP_KEY),
 };
+const WITHOUT_TOTP = Object.fromEntries(
+  Object.entries(MINIMAL).filter(([name]) => name !== "ADMIN_TOTP_SECRET"));
 
 function problemsOf(env: Record<string, string>): readonly string[] {
   try {
@@ -65,6 +70,27 @@ describe("loadConfig", () => {
     expect(problemsOf(local).join()).toContain("FEEDBACK_PUBLIC_URL must be https");
     expect(loadConfig({ ...local, FEEDBACK_ENV: "development" }))
       .toMatchObject({ publicOrigin: "http://127.0.0.1:8787" });
+  });
+
+  it("reads the TOTP key in base32, as an authenticator app shows it", () => {
+    expect(loadConfig(MINIMAL).admin.totpSecret).toEqual(TOTP_KEY);
+    const spaced = base32Encode(TOTP_KEY).toLowerCase().replace(/(.{4})/g, "$1 ");
+    expect(loadConfig({ ...MINIMAL, ADMIN_TOTP_SECRET: spaced }).admin.totpSecret)
+      .toEqual(TOTP_KEY);
+  });
+
+  it("requires a second factor in production only", () => {
+    expect(problemsOf(WITHOUT_TOTP).join()).toContain("ADMIN_TOTP_SECRET is required");
+    expect(loadConfig({ ...WITHOUT_TOTP, FEEDBACK_ENV: "development" }).admin.totpSecret)
+      .toBeNull();
+  });
+
+  it.each([
+    ["not base32", "not-base32-1890!"],
+    ["shorter than 128 bits", base32Encode(Buffer.alloc(15, 1))],
+  ])("rejects ADMIN_TOTP_SECRET %s", (_name, raw) => {
+    expect(problemsOf({ ...MINIMAL, ADMIN_TOTP_SECRET: raw }).join())
+      .toContain("ADMIN_TOTP_SECRET must be base32");
   });
 
   it("enables MCP only with the SHA-256 of its token, never the token", () => {

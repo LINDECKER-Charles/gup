@@ -198,6 +198,7 @@ client-side script, strict CSP (`default-src 'none'`; styles and fonts from `'se
 | Page | What it does |
 |---|---|
 | `GET /admin/login` · `POST /admin/login` | single admin account (`ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`) |
+| `GET /admin/login/code` · `POST /admin/login/code` | second step: the TOTP code of the app enrolled with `ADMIN_TOTP_SECRET` |
 | `POST /admin/logout` | ends the session |
 | `GET /admin` | inbox: search (`q`), status pills with counts (`status`, `all` for every status; opens on `new`), kind pills (`kind`), newest first, paginated |
 | `GET /admin/feedback/{id}` | one feedback: message and reply by mail, context (address, install ID with a link to its journals when shared, version, platform, language); status in one click, private note, delete |
@@ -280,8 +281,15 @@ cookie (`__Host-gup_admin`), stored hashed with an absolute 7-day and an idle 12
 expiry; a per-session CSRF token in every form; mutating routes also check `Origin`
 (`null` counts as foreign) — hence `Referrer-Policy: same-origin`, since `no-referrer`
 makes browsers send `Origin: null` on the back office's own forms; login rate-limited (10
-per 15 minutes per address, 100 per hour in all) and answered in constant time whatever
-the user name. Every response carries `X-Content-Type-Options: nosniff`, and
+per 15 minutes per address for each step, 100 per hour in all) and answered in constant
+time whatever the user name.
+
+Second factor (required with `FEEDBACK_ENV=production`): the right password opens a
+session that reaches nothing but the code form, for 5 minutes. The code is TOTP (RFC
+6238: HMAC-SHA-1, 6 digits, 30-second steps, one step either side), compared in
+constant time; the right one replaces that session with a full one (a new token), and
+the step it belongs to is recorded so the same code, or an older one, never opens
+another. Five wrong codes drop the half-open session: the password is asked again. Every response carries `X-Content-Type-Options: nosniff`, and
 `Strict-Transport-Security` when `FEEDBACK_PUBLIC_URL` is `https:`.
 
 ## MCP access

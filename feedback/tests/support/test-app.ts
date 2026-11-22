@@ -8,6 +8,7 @@ import { MemoryFeedbackRepository } from "./memory-feedback-repository.js";
 import { MemoryInstallReader } from "./memory-install-reader.js";
 import { MemoryInstallStore } from "./memory-install-store.js";
 import { MemoryOutboxMonitor } from "./memory-outbox-monitor.js";
+import { MemorySecondFactorStore } from "./memory-second-factor-store.js";
 import { MemorySessionRepository } from "./memory-session-repository.js";
 
 export const ADMIN_USERNAME = "admin";
@@ -29,7 +30,7 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     landingUrl: LANDING_URL,
     allowedOrigins: [LANDING_ORIGIN],
     trustProxy: false,
-    admin: { username: ADMIN_USERNAME, passwordHash: PASSWORD_HASH },
+    admin: { username: ADMIN_USERNAME, passwordHash: PASSWORD_HASH, totpSecret: null },
     cookieSecure: true,
     mail: null,
     logRetentionDays: 90,
@@ -60,6 +61,7 @@ export interface TestApp {
   readonly journals: MemoryInstallReader;
   readonly outbox: MemoryOutboxMonitor;
   readonly sessions: MemorySessionRepository;
+  readonly secondFactors: MemorySecondFactorStore;
 }
 
 export async function createTestApp(overrides: Partial<AppDeps> = {}): Promise<TestApp> {
@@ -69,6 +71,7 @@ export async function createTestApp(overrides: Partial<AppDeps> = {}): Promise<T
   const sessions = new MemorySessionRepository();
   const journals = new MemoryInstallReader();
   const outbox = new MemoryOutboxMonitor();
+  const secondFactors = new MemorySecondFactorStore();
   const app = await buildApp({
     config: testConfig(),
     feedback,
@@ -77,10 +80,11 @@ export async function createTestApp(overrides: Partial<AppDeps> = {}): Promise<T
     outbox,
     mailer: null,
     sessions,
+    secondFactors,
     health: { isHealthy: async () => true },
     clock,
     logger: false,
     ...overrides,
   });
-  return { app, clock, feedback, installs, journals, outbox, sessions };
+  return { app, clock, feedback, installs, journals, outbox, sessions, secondFactors };
 }

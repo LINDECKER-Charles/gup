@@ -5,6 +5,8 @@
 export const ADMIN_UI = {
   home: "/admin",
   loginPath: "/admin/login",
+  /** The second step of a login: the authenticator app's code. */
+  codePath: "/admin/login/code",
   assetsPath: "/admin/assets",
   mailsPath: "/admin/mails",
   /** The inbox's `status` value that lifts the status filter. */

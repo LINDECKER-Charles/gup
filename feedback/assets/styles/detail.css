@@ -327,3 +327,10 @@
 .auth__panel .display {
   font-size: 44px;
 }
+/* A one-time code reads digit by digit: monospaced, spaced out. */
+.field-control--code {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  text-align: center;
+}

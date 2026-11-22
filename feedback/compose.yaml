@@ -13,6 +13,8 @@ services:
     environment:
       DATABASE_URL: postgres://gup_feedback:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@gup-feedback-postgres:5432/gup_feedback
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?ADMIN_PASSWORD_HASH is required}
+      # Second factor; required in production (compose.deploy.yaml), optional in development.
+      ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:-}
       # Optional: unset or empty, the /mcp endpoint does not exist (README.md).
       FEEDBACK_MCP_TOKEN_SHA256: ${FEEDBACK_MCP_TOKEN_SHA256:-}
       PORT: "8080"

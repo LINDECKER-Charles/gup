@@ -19,31 +19,33 @@ declare module "fastify" {
   }
 }
 
-function isCsrfTokenValid(request: FastifyRequest, session: AdminSession): boolean {
+export function isCsrfTokenValid(request: FastifyRequest, session: AdminSession): boolean {
   const token = new RequestParams(request.body).text(ADMIN_UI.csrfField);
   return token !== null && constantTimeEqual(token, session.csrfToken);
 }
 
-function refuse(): never {
+export function refuseFormSubmission(): never {
   throw new HttpError(HTTP_STATUS.forbidden, "Cross-site or expired form submission refused.");
 }
 
 /**
  * preHandler of every back-office route: a POST must come from the service's
- * own origin (login included), and a non-public route needs a live session —
- * plus, for a POST, that session's CSRF token.
+ * own origin (login included), and a non-public route needs a live, fully
+ * signed-in session (second factor given) — plus, for a POST, that session's
+ * CSRF token.
  */
 export function createAdminGuard(context: AdminContext) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     const isPost = request.method === "POST";
-    if (isPost && !isSameOriginRequest(request.headers, context.config.publicOrigin)) refuse();
+    const { publicOrigin } = context.config;
+    if (isPost && !isSameOriginRequest(request.headers, publicOrigin)) refuseFormSubmission();
     if (request.routeOptions.config.isPublicAdminRoute === true) return;
     const session = await context.sessions.resolve(context.cookie.read(request));
-    if (session === null) {
+    if (session === null || session.secondFactorDue) {
       await reply.redirect(ADMIN_UI.loginPath, HTTP_STATUS.seeOther);
       return;
     }
-    if (isPost && !isCsrfTokenValid(request, session)) refuse();
+    if (isPost && !isCsrfTokenValid(request, session)) refuseFormSubmission();
     await context.sessions.keepAlive(session);
     request.adminSession = session;
   };

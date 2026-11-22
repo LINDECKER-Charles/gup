@@ -20,6 +20,7 @@ import { PgInstallStore } from "./store/pg-install-store.js";
 import { PgOutboxMonitor } from "./store/feedback/pg-outbox-monitor.js";
 import { PgOutboxRepository } from "./store/feedback/pg-outbox-repository.js";
 import { PgRetentionStore } from "./store/pg-retention-store.js";
+import { PgSecondFactorStore } from "./store/pg-second-factor-store.js";
 import { PgSessionRepository } from "./store/pg-session-repository.js";
 
 const POOL_SIZE = 10;
@@ -104,6 +105,14 @@ function outboxTask(
   });
 }
 
+/** What an operator should know the service runs with, or without. */
+function logOptionalFeatures(config: AppConfig, app: FastifyInstance): void {
+  if (config.mcpTokenDigest !== undefined) app.log.info("MCP endpoint enabled on /mcp");
+  if (config.admin.totpSecret === null) {
+    app.log.warn("ADMIN_TOTP_SECRET is not set: the back office signs in with the password alone");
+  }
+}
+
 function onShutdown(stop: () => Promise<void>, app: FastifyInstance): void {
   const shutdown = (signal: string) => {
     app.log.info({ signal }, "shutting down");
@@ -129,12 +138,13 @@ async function main(): Promise<void> {
     config, clock: SYSTEM_CLOCK, logger: loggerOptions(config.logLevel),
     feedback: new PgFeedbackRepository(pool), installs: new PgInstallStore(pool),
     journals: new PgInstallReader(pool), sessions: new PgSessionRepository(pool),
+    secondFactors: new PgSecondFactorStore(pool),
     outbox: new PgOutboxMonitor(pool), mailer, health: new PgHealthProbe(pool),
   });
   pool.on("error", (error) => app.log.error({ err: error }, "idle database client failed"));
   await waitForDatabase(pool, app);
   app.log.info({ applied: await migrate(pool) }, "migrations up to date");
-  if (config.mcpTokenDigest !== undefined) app.log.info("MCP endpoint enabled on /mcp");
+  logOptionalFeatures(config, app);
   const relay = { outbox: new PgOutboxRepository(pool), mailer };
   const tasks = [retentionTask(config, pool, app), outboxTask(config, app, relay)]
     .filter((task) => task !== null);

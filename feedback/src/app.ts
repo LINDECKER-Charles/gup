@@ -4,7 +4,10 @@ import fastifyRateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { AppDeps } from "./app-deps.js";
 import { AdminCredentials } from "./auth/admin-credentials.js";
+import { AdminSecondFactor } from "./auth/admin-second-factor.js";
 import { AdminSessions } from "./auth/admin-sessions.js";
+import { Totp } from "./auth/totp.js";
+import type { AdminContext } from "./http/admin/admin-context.js";
 import { adminPlugin } from "./http/admin/admin-plugin.js";
 import { SessionCookie } from "./http/admin/session-cookie.js";
 import { apiErrorHandler } from "./http/api/api-error-handler.js";
@@ -31,7 +34,15 @@ async function registerPlugins(app: FastifyInstance): Promise<void> {
   });
 }
 
-function adminContext(deps: AppDeps) {
+function secondFactorOf(deps: AppDeps): AdminSecondFactor | null {
+  const { totpSecret } = deps.config.admin;
+  if (totpSecret === null) return null;
+  return new AdminSecondFactor({
+    totp: new Totp(totpSecret), store: deps.secondFactors, clock: deps.clock,
+  });
+}
+
+function adminContext(deps: AppDeps): AdminContext {
   return {
     config: deps.config,
     feedback: deps.feedback,
@@ -42,6 +53,7 @@ function adminContext(deps: AppDeps) {
     clock: deps.clock,
     sessions: new AdminSessions({ repository: deps.sessions, clock: deps.clock }),
     credentials: new AdminCredentials(deps.config.admin),
+    secondFactor: secondFactorOf(deps),
     cookie: new SessionCookie(deps.config.cookieSecure),
   };
 }

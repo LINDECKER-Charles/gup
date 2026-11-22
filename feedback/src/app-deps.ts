@@ -7,6 +7,7 @@ import type { InstallReader } from "./ports/install-reader.js";
 import type { InstallStore } from "./ports/install-store.js";
 import type { Mailer } from "./ports/mail/mailer.js";
 import type { OutboxMonitor } from "./ports/mail/outbox-monitor.js";
+import type { SecondFactorStore } from "./ports/second-factor-store.js";
 import type { SessionRepository } from "./ports/session-repository.js";
 
 /** Everything the HTTP application needs, as ports: tests pass in-memory fakes. */
@@ -20,6 +21,8 @@ export interface AppDeps {
   /** The relay the outbox worker sends through; null when SMTP is not configured. */
   readonly mailer: Mailer | null;
   readonly sessions: SessionRepository;
+  /** The TOTP steps already used; read only when ADMIN_TOTP_SECRET is set. */
+  readonly secondFactors: SecondFactorStore;
   readonly health: HealthProbe;
   readonly clock: Clock;
   /** Fastify logger settings; false silences it (tests). */

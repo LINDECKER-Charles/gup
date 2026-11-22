@@ -25,8 +25,10 @@ The contract is the reference; in short:
   stored; an install row is created by its first non-empty batch.
 - **Rate limits**, in memory per process: 120 requests per hour per address across the
   install routes (IPv6 grouped by /64), 60 uploads per hour per install, 10 new installs
-  per hour per address; 5 feedbacks per 10 minutes per address; 10 logins per
-  15 minutes per address and 100 per hour overall.
+  per hour per address; 5 feedbacks per 10 minutes per address; 10 password and 10 code
+  attempts per 15 minutes per address, and 100 per hour overall, both steps counted.
+- **Back-office login**: the password, then a TOTP code (required in production). A code
+  works once; 5 wrong codes drop the half-open session and ask for the password again.
 - **MCP** (`/mcp`, off unless configured): a bearer token checked against its SHA-256,
   no browser origin, 20 failed authentications per 15 minutes and 600 calls per hour per
   address; reads everything, writes only a feedback's status and note.
@@ -70,9 +72,14 @@ PASSWORD="$(openssl rand -base64 18)"        # your admin password: keep it
 {
   echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
   echo "ADMIN_PASSWORD_HASH=$(printf '%s' "$PASSWORD" | npm run -s admin:hash)"
+  echo "ADMIN_TOTP_SECRET=$(npm run -s admin:totp -- secret)"
 } > dev.env
 echo "admin password: $PASSWORD"
+grep '^ADMIN_TOTP_SECRET=' dev.env | cut -d= -f2- | npm run -s admin:totp -- qr totp-dev.svg
 ```
+
+Scan `totp-dev.svg` with an authenticator app, then delete it. Leaving
+`ADMIN_TOTP_SECRET` out of `dev.env` signs in with the password alone (development only).
 
 Then start the service, Postgres and Mailpit:
 
@@ -82,7 +89,7 @@ docker compose --env-file dev.env -f compose.yaml -f compose.dev.yaml up -d --bu
 
 | URL | What |
 |---|---|
-| <http://127.0.0.1:8787/admin> | back office — user `admin`, the password above |
+| <http://127.0.0.1:8787/admin> | back office — user `admin`, the password above, then the app's code |
 | <http://127.0.0.1:8787/api/feedback> | the API the landing posts to |
 | <http://127.0.0.1:8025> | Mailpit: every notification mail lands here |
 | `127.0.0.1:5439` | Postgres, user and database `gup_feedback` (`FEEDBACK_DEV_DB_PORT` in `dev.env` moves it) |
@@ -140,6 +147,7 @@ list.
 | `FEEDBACK_PUBLIC_URL` | required | public URL of the service; its origin gates admin forms, signs install requests and builds mail links; https in production |
 | `ADMIN_USERNAME` | required | the single back-office account |
 | `ADMIN_PASSWORD_HASH` | required | `scrypt:N:r:p:salt:hash`, from `npm run -s admin:hash`; see the bounds below |
+| `ADMIN_TOTP_SECRET` | required in production | base32 key of the authenticator app, 16 bytes at least, from `npm run -s admin:totp -- secret`; see below |
 | `FEEDBACK_ENV` | `production` | `development` allows `COOKIE_SECURE=false` and the demo seed |
 | `FEEDBACK_LANDING_URL` | `https://lindecker-charles.github.io/gup/` | where a no-JavaScript form returns when its `returnTo` is not allowed |
 | `FEEDBACK_ALLOWED_ORIGINS` | the landing's origin | comma-separated origins allowed to post feedback (CORS, form return) |
@@ -172,6 +180,23 @@ else. A hash is accepted only with `N` a power of two in [2^14, 2^17], `r` in [8
 at start and refuses to run when the host cannot. Rotating it means replacing `ADMIN_PASSWORD_HASH` and restarting; open sessions
 survive until they expire, so delete them (`DELETE FROM admin_session`) when the old
 password leaked.
+
+### Second factor
+
+After the password, the back office asks for the 6-digit code of an authenticator app
+(TOTP, RFC 6238: SHA-1, 30 seconds, the previous and next step accepted). The key is
+`ADMIN_TOTP_SECRET`, held by the vault like the other secrets; nothing about it is
+stored in the database but the last step a code was accepted for, so a code works once.
+
+```sh
+npm run -s admin:totp -- secret            # a new key, printed and nothing else
+printf '%s' "$ADMIN_TOTP_SECRET" | npm run -s admin:totp -- qr totp.svg [account]
+```
+
+The second command writes the enrolment QR code (owner-only file) without printing the
+key: scan it, then delete the file. Apps that take a key by hand accept
+`ADMIN_TOTP_SECRET` as it is. A lost phone means a new key: replace it, redeploy, scan
+the new QR code. The service refuses to start in production without a key.
 
 ### Connect Claude Code
 

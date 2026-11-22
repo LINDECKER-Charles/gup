@@ -41,6 +41,10 @@
 - **feedback:** an MCP endpoint (`POST /mcp`) lets Claude Code search and read feedback,
   installs and their journals and triage feedback, behind a bearer token whose digest only
   the service holds (`feat(feedback): give Claude an MCP endpoint on the service`)
+- **feedback:** the back office asks for an authenticator app's code after the password
+  (TOTP, required in production); a code works once, five wrong ones ask for the password
+  again, and `npm run admin:totp` makes the key and its QR code without printing the key
+  (`feat(feedback): ask for a TOTP code after the admin password`)
 - **landing:** a Feedback section with a bug/suggestion form that works with and without
   JavaScript, prefilled by the CLI's link, in the eight languages
   (`feat(landing): add the feedback form`)

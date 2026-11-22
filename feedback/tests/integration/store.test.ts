@@ -11,6 +11,7 @@ import { migrate } from "../../src/store/migrate.js";
 import { PgInstallReader } from "../../src/store/pg-install-reader.js";
 import { PgInstallStore } from "../../src/store/pg-install-store.js";
 import { PgRetentionStore } from "../../src/store/pg-retention-store.js";
+import { PgSecondFactorStore } from "../../src/store/pg-second-factor-store.js";
 import { PgSessionRepository } from "../../src/store/pg-session-repository.js";
 import { DURATION_MS } from "../../src/time-units.js";
 
@@ -51,12 +52,13 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
 
   beforeEach(async () => {
     await migrate(pool);
-    await pool.query("TRUNCATE feedback, mail_outbox, install, admin_session RESTART IDENTITY CASCADE");
+    await pool.query("TRUNCATE feedback, mail_outbox, install, admin_session, admin_second_factor RESTART IDENTITY CASCADE");
   });
 
   it("migrates an empty database once, then finds nothing to apply", async () => {
     await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
-    expect(await migrate(pool)).toEqual(["001_initial.sql", "002_journal_reading.sql"]);
+    expect(await migrate(pool)).toEqual(
+      ["001_initial.sql", "002_journal_reading.sql", "003_second_factor.sql"]);
     expect(await migrate(pool)).toEqual([]);
   });
 
@@ -155,13 +157,30 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
     const now = new Date();
     const tokenHash = sha256("token");
     const expiresAt = new Date(now.getTime() + 7 * DAY_MS);
-    await sessions.create({ tokenHash, csrfToken: "csrf", createdAt: now, lastSeenAt: now, expiresAt });
+    await sessions.create({
+      tokenHash, csrfToken: "csrf", createdAt: now, lastSeenAt: now, expiresAt,
+      secondFactorDue: true, failedCodes: 0,
+    });
     const later = new Date(now.getTime() + DAY_MS);
     await sessions.touch(tokenHash, later);
-    expect(await sessions.find(tokenHash)).toMatchObject({ csrfToken: "csrf", lastSeenAt: later });
+    expect(await sessions.countFailedCode(tokenHash)).toBe(1);
+    expect(await sessions.countFailedCode(tokenHash)).toBe(2);
+    expect(await sessions.countFailedCode(sha256("unknown"))).toBe(0);
+    expect(await sessions.find(tokenHash)).toMatchObject({
+      csrfToken: "csrf", lastSeenAt: later, secondFactorDue: true, failedCodes: 2,
+    });
     const window = { journalCutoff: now, now: later, sessionIdleCutoff: later };
     expect(await new PgRetentionStore(pool).purge(window)).toMatchObject({ sessions: 1 });
     expect(await sessions.find(tokenHash)).toBeNull();
+  });
+
+  it("accepts a TOTP step once, never an older one, and one of two racing claims", async () => {
+    const steps = new PgSecondFactorStore(pool);
+    expect(await steps.claim(1000)).toBe(true);
+    expect(await steps.claim(1000)).toBe(false);
+    expect(await steps.claim(999)).toBe(false);
+    const racing = await Promise.all([steps.claim(1001), steps.claim(1001)]);
+    expect(racing.filter(Boolean)).toHaveLength(1);
   });
 
   it("hands a due mail to one claimer only, and hides it for the lease", async () => {

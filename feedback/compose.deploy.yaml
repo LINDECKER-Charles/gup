@@ -13,6 +13,7 @@ services:
     environment:
       FEEDBACK_PUBLIC_URL: ${FEEDBACK_PUBLIC_URL:?FEEDBACK_PUBLIC_URL is required}
       ADMIN_USERNAME: ${ADMIN_USERNAME:?ADMIN_USERNAME is required}
+      ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:?ADMIN_TOTP_SECRET is required}
       # Optional: unset or empty takes the service's default (README.md).
       FEEDBACK_LANDING_URL: ${FEEDBACK_LANDING_URL:-}
       FEEDBACK_ALLOWED_ORIGINS: ${FEEDBACK_ALLOWED_ORIGINS:-}

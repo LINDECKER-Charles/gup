@@ -1,4 +1,5 @@
 import type { AdminCredentials } from "../../auth/admin-credentials.js";
+import type { AdminSecondFactor } from "../../auth/admin-second-factor.js";
 import type { AdminSessions } from "../../auth/admin-sessions.js";
 import type { AppConfig } from "../../config/app-config.js";
 import type { Clock } from "../../ports/clock.js";
@@ -21,5 +22,7 @@ export interface AdminContext {
   readonly clock: Clock;
   readonly sessions: AdminSessions;
   readonly credentials: AdminCredentials;
+  /** null when ADMIN_TOTP_SECRET is unset (development only): the password alone signs in. */
+  readonly secondFactor: AdminSecondFactor | null;
   readonly cookie: SessionCookie;
 }
