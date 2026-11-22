@@ -23,6 +23,11 @@
   (`Reply-To` set to the reporter), and serves a French back office without client script
   (inbox by status and kind, detail with notes, installs and their journals, erase)
   (`feat(feedback): add the feedback service and its back office`)
+- **feedback:** the back office takes the landing's design (fonts, colours, logo, favicons,
+  served by the service), its inbox gains a search over title, message, address, install ID
+  and number, status changes take one click, deletions sit behind a folded confirmation,
+  and every table stacks into cards on a phone
+  (`feat(feedback): redesign the back office on the landing's design`)
 - **landing:** a Feedback section with a bug/suggestion form that works with and without
   JavaScript, prefilled by the CLI's link, in the eight languages
   (`feat(landing): add the feedback form`)
