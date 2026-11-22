@@ -179,10 +179,22 @@ interface UpgradeCommand {
   command: string;
   args: string[];
   shell?: boolean;
+  env?: Readonly<Record<string, string>>;
 }
 
 /** Distro package managers write system prefixes, so their upgrades run under it. */
 const SUDO = "sudo";
+
+/**
+ * What every `brew upgrade` gup runs adds to its environment. Since Homebrew
+ * 6.0, ask mode is the default: an upgrade that would also move a package it
+ * was not given (a dependent, a new dependency) stops on "Do you want to
+ * proceed with the upgrade? [y/n]" whenever it has a terminal, the embedded
+ * one included. Checking the package in gup already gave that answer. The
+ * variable rather than `--yes`: a Homebrew older than 6.0 refuses the flag
+ * and ignores the variable.
+ */
+export const BREW_NO_ASK_ENV: Readonly<Record<string, string>> = { HOMEBREW_NO_ASK: "1" };
 
 /**
  * Upgrade command per package manager, or null when `packageIds` does not
@@ -218,10 +230,10 @@ const UPGRADE_COMMANDS: Record<
   // different upgrade commands, so the cask token wins when present.
   brew: (ids) => {
     if (ids.brewCask) {
-      return { command: "brew", args: ["upgrade", "--cask", ids.brewCask] };
+      return { command: "brew", args: ["upgrade", "--cask", ids.brewCask], env: BREW_NO_ASK_ENV };
     }
     if (!ids.brew) return null;
-    return { command: "brew", args: ["upgrade", "--formula", ids.brew] };
+    return { command: "brew", args: ["upgrade", "--formula", ids.brew], env: BREW_NO_ASK_ENV };
   },
   // `install --only-upgrade` rather than `upgrade <pkg>`: the latter is not a
   // real apt-get subcommand and would upgrade the whole system on apt(8).
@@ -287,8 +299,10 @@ async function runDelegated(
   id: string,
   spec: UpgradeCommand,
 ): Promise<UpdateOutcome> {
-  const options = spec.shell === undefined ? {} : { shell: spec.shell };
-  const res = await runInherit(spec.command, spec.args, options);
+  const res = await runInherit(spec.command, spec.args, {
+    ...(spec.shell !== undefined && { shell: spec.shell }),
+    ...(spec.env !== undefined && { env: spec.env }),
+  });
   return { id, success: !res.failed };
 }
 

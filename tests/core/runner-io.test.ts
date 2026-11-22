@@ -134,6 +134,15 @@ describe("createPipeSink", () => {
     expect(options).not.toHaveProperty("windowsHide");
   });
 
+  it("adds the request's variables to the child's environment", async () => {
+    const { sink } = collectingSink();
+    const child = pipedChild();
+    const started = sink.start({ command: "brew", args: ["upgrade"], env: { HOMEBREW_NO_ASK: "1" } });
+    child.exit(0);
+    await started.exited;
+    expect(execaMock.mock.calls[0]![2]).toMatchObject({ env: { HOMEBREW_NO_ASK: "1" } });
+  });
+
   it("hands every line to onLine with its stream, the last partial line included", async () => {
     const { lines, sink } = collectingSink();
     const child = pipedChild();
@@ -162,6 +171,33 @@ describe("createPipeSink", () => {
       ["0123456789", "stdout"],
       [OUTPUT_LABELS.truncated, "stdout"],
     ]);
+  });
+
+  it("keeps the end of a failed install's output for its outcome, past the log's budget", async () => {
+    const { lines, sink } = collectingSink(16);
+    const child = pipedChild();
+    const started = sink.start({ command: "brew", args: [] });
+    child.stdout.write("==> Upgrading symfony-cli\n");
+    child.stderr.write("Error: Your Command Line Tools (CLT) does not support macOS 27.\n");
+    child.exit(1);
+    const exit = await started.exited;
+    expect(lines.every(([line]) => line === OUTPUT_LABELS.truncated)).toBe(true);
+    expect(exit).toEqual({
+      exitCode: 1,
+      failed: true,
+      outputTail: "==> Upgrading symfony-cli\nError: Your Command Line Tools (CLT) does not support macOS 27.\n",
+    });
+  });
+
+  it("keeps only the last characters of a long failed install", async () => {
+    const { sink } = collectingSink();
+    const child = pipedChild();
+    const started = sink.start({ command: "brew", args: [] });
+    child.stdout.write(`${"x".repeat(5000)}\nError: the end\n`);
+    child.exit(1);
+    const { outputTail } = await started.exited;
+    expect(outputTail).toHaveLength(2048);
+    expect(outputTail?.endsWith("Error: the end\n")).toBe(true);
   });
 
   it("aborts the child on kill", async () => {

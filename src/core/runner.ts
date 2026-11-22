@@ -35,6 +35,12 @@ export interface RunResult {
   timedOut?: boolean;
   /** Set when the user manually skipped this run (Ctrl+C → skipCurrent()). */
   aborted?: boolean;
+  /**
+   * `runInherit` only: what the install sink kept of the output — the
+   * embedded terminal's last lines, the end of a failed scheduled install's.
+   * Absent when the install wrote to the user's terminal, which keeps nothing.
+   */
+  outputTail?: string;
 }
 
 // Allowlist for the `command` argument: alphanumerics + the path glyphs that
@@ -120,6 +126,32 @@ function sanitizeArgs(args: readonly string[]): string[] {
   return cleaned;
 }
 
+// A portable variable name: what POSIX shells accept, and nothing a platform
+// would read as part of the value (`=`) or as the end of the block (NUL).
+const SAFE_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/**
+ * Environment barrier for the variables an install adds: each name must match
+ * {@link SAFE_ENV_NAME_PATTERN}, each value the argv allowlist. Returns a
+ * fresh record built from the regex matches, as {@link sanitizeArgs} does —
+ * own properties only, so even a `__proto__` name stays a plain variable.
+ */
+function sanitizeEnv(env: Readonly<Record<string, string>>): Record<string, string> {
+  const cleaned: [string, string][] = [];
+  for (const [name, value] of Object.entries(env)) {
+    const nameMatch = SAFE_ENV_NAME_PATTERN.exec(name);
+    if (!nameMatch) {
+      throw new Error(`runner: refusing unsafe environment variable name: ${name}`);
+    }
+    const valueMatch = typeof value === "string" ? SAFE_ARG_PATTERN.exec(value) : null;
+    if (!valueMatch) {
+      throw new Error(`runner: environment variable ${name} has a forbidden value`);
+    }
+    cleaned.push([nameMatch[0], valueMatch[0]]);
+  }
+  return Object.fromEntries(cleaned);
+}
+
 // ---------------------------------------------------------------------------
 // Install timeout + manual-skip plumbing
 //
@@ -190,6 +222,20 @@ export function consumeInterrupt(): InterruptFlags {
   const flags = pendingInterrupt;
   pendingInterrupt = { timedOut: false, aborted: false };
   return flags;
+}
+
+// The same gap for the output of a failed install: a provider that answers
+// `{ success: false }` drops it, and the outcome's message is where the user
+// reads why (the run view, the journal, the report). runInherit keeps the
+// tail of the last failed install a sink retained; the batch loop
+// reads-and-clears it with the interrupt flags.
+let pendingFailureOutput: string | undefined;
+
+/** Read and reset what a sink kept of the last failed runInherit call's output. */
+export function consumeFailureOutput(): string | undefined {
+  const output = pendingFailureOutput;
+  pendingFailureOutput = undefined;
+  return output;
 }
 
 /** taskkill's own cap: the exit of a killed install waits for it, so it must end. */
@@ -284,15 +330,17 @@ export async function run(
 
 /**
  * Every option a `runInherit` caller uses: scoop's PowerShell shim needs the
- * shell, the Visual Studio and Cygwin installers a working directory. Narrower
- * than execa's options on purpose — whatever is accepted here must make sense
- * for every install sink, not only for the terminal.
+ * shell, the Visual Studio and Cygwin installers a working directory, Homebrew
+ * a variable. Narrower than execa's options on purpose — whatever is accepted
+ * here must make sense for every install sink, not only for the terminal.
  */
 export interface InheritOptions {
   readonly cwd?: string;
   readonly shell?: boolean;
   /** Per-call cap in ms; 0 disables it. Defaults to the install timeout. */
   readonly timeout?: number;
+  /** Variables added to the inherited environment, never a replacement for it. */
+  readonly env?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -321,14 +369,23 @@ export async function runInherit(
   const interrupts = armInterrupts(() => child.kill(), timeoutMsOf(options.timeout));
   try {
     const exit = await child.exited;
-    if (interrupts.flags.timedOut) pendingInterrupt.timedOut = true;
-    if (interrupts.flags.aborted) pendingInterrupt.aborted = true;
     const result = inheritResult(exit, interrupts.flags);
+    keepForOutcome(result);
     trace.end({ ...result, ...(exit.outputTail !== undefined && { stdout: exit.outputTail }) });
     return result;
   } finally {
     interrupts.dispose();
   }
+}
+
+/**
+ * What the provider's outcome drops, kept for the batch loop: the interrupt
+ * cause, and what a sink kept of a failed install's output.
+ */
+function keepForOutcome(result: RunResult): void {
+  if (result.timedOut) pendingInterrupt.timedOut = true;
+  if (result.aborted) pendingInterrupt.aborted = true;
+  if (result.failed && result.outputTail) pendingFailureOutput = result.outputTail;
 }
 
 function inheritRequest(command: string, args: string[], options: InheritOptions): InheritRequest {
@@ -337,6 +394,7 @@ function inheritRequest(command: string, args: string[], options: InheritOptions
     args: sanitizeArgs(args),
     ...(options.cwd !== undefined && { cwd: options.cwd }),
     ...(options.shell !== undefined && { shell: options.shell }),
+    ...(options.env !== undefined && { env: sanitizeEnv(options.env) }),
   };
 }
 
@@ -344,11 +402,15 @@ function timeoutMsOf(timeout: number | undefined): number {
   return typeof timeout === "number" ? timeout : installTimeoutSeconds * 1000;
 }
 
-/** The execa options that place a request: its working directory and shell routing. */
+/**
+ * The execa options that place a request: its working directory, its shell
+ * routing and its added variables (execa merges them over gup's environment).
+ */
 function placementOf(request: InheritRequest): Options {
   return {
     ...(request.cwd !== undefined && { cwd: request.cwd }),
     ...(request.shell !== undefined && { shell: request.shell }),
+    ...(request.env !== undefined && { env: { ...request.env } }),
   };
 }
 
@@ -448,7 +510,7 @@ function armInterrupts(
 
 /**
  * The child wrote to the terminal (or into a sink), so there is nothing to
- * hand back but the exit status and the interrupt cause.
+ * hand back but the exit status, the interrupt cause and what a sink kept.
  */
 function inheritResult(exit: InheritExit, flags: InterruptFlags): RunResult {
   const out: RunResult = {
@@ -459,6 +521,7 @@ function inheritResult(exit: InheritExit, flags: InterruptFlags): RunResult {
   };
   if (flags.timedOut) out.timedOut = true;
   if (flags.aborted) out.aborted = true;
+  if (exit.outputTail !== undefined) out.outputTail = exit.outputTail;
   return out;
 }
 
@@ -501,9 +564,11 @@ function startPiped(request: InheritRequest, options: PipeSinkOptions): InheritP
       pipeLines(proc.stdout, (line) => options.onLine(line, "stdout"), options.capBytes),
       pipeLines(proc.stderr, (line) => options.onLine(line, "stderr"), options.capBytes),
     ];
+    const tail = keepTail(proc.stdout, proc.stderr);
     const exited = settled(proc).then((exit) => {
       for (const flush of flushers) flush();
-      return exit;
+      const outputTail = tail();
+      return exit.failed && outputTail !== "" ? { ...exit, outputTail } : exit;
     });
     return killableChild(proc, controller, exited);
   } catch {
@@ -521,6 +586,24 @@ function pipeLines(
   stream?.setEncoding("utf8");
   stream?.on("data", (chunk: string) => splitter.push(chunk));
   return () => splitter.end();
+}
+
+/** Characters of a failed scheduled install's output kept for its outcome: some thirty lines. */
+const PIPE_TAIL_CHARS = 2_048;
+
+/**
+ * The end of both streams as they arrived, outside the log's byte budget: the
+ * line that says why an install failed comes last, often after a truncation.
+ * Called once the streams are decoded (`pipeLines` set their encoding).
+ */
+function keepTail(...streams: ReadonlyArray<Readable | null>): () => string {
+  let tail = "";
+  for (const stream of streams) {
+    stream?.on("data", (chunk: string) => {
+      tail = (tail + chunk).slice(-PIPE_TAIL_CHARS);
+    });
+  }
+  return () => tail;
 }
 
 /**
@@ -548,7 +631,7 @@ export async function launchDetached(
       // explorer.exe is a GUI-subsystem binary: there is no console to hide,
       // and SW_HIDE could be handed down to the window it opens.
       windowsHide: process.platform !== "win32",
-    }) as ResultPromise;
+    });
     // execa's subprocess is no ChildProcess any more: the Node events and
     // unref() live on its documented `nodeChildProcess` escape hatch.
     const node = child.nodeChildProcess;

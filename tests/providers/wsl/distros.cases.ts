@@ -117,7 +117,8 @@ export const BREW: CountingManager = {
   label: "brew",
   probe: (distro) => binaryProbe(distro, "brew", BREW_PATHS),
   count: (distro) => inDistro(distro, `${BREW_ENV} && brew outdated --quiet 2>/dev/null | wc -l`),
-  upgrade: (distro) => inDistro(distro, `${BREW_ENV} && brew update && brew upgrade`),
+  upgrade: (distro) =>
+    inDistro(distro, `${BREW_ENV} && brew update && HOMEBREW_NO_ASK=1 brew upgrade`),
 };
 
 /** dnf's count is its exit code: 100 when updates exist, one line per package. */

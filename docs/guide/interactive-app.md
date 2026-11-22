@@ -141,8 +141,9 @@ The run view takes the whole body of the screen until you leave the results:
 - **One row per package**, in the order they run: `·` waiting, a spinner while it installs, `√`
   updated, `→` skipped, `×` failed, `▪` cancelled. A row shows its provider, its versions, its
   duration, `admin` for a package of the elevated batch and `retry --force` on a retry; a line
-  under it gives the installer's message when there is one. The header counts them and shows the
-  run's clock.
+  under it gives the installer's message when there is one — for a failure its provider gives no
+  reason for, the line of the install's output that says why: its first `Error:`, `error:` or
+  `fatal:` line, else its last. The header counts them and shows the run's clock.
 - **The terminal pane** below shows the package being installed: its real output, progress bars
   included. The mouse wheel scrolls back through it.
 - **Balanced or enlarged:** the list takes what it needs, up to a bit less than half the screen;
@@ -230,7 +231,8 @@ Installs run in the app's terminal pane through
 [node-pty](https://github.com/microsoft/node-pty), an optional dependency with a native part. When
 it cannot be used, the confirmation says why and the update runs outside the app, as before 0.5.0:
 the screen gives the terminal back, installers print there, and Enter brings you back to the
-menu (`Press Enter to return to gup…`).
+menu (`Press Enter to return to gup…`). gup then sees none of their output: a failure keeps only
+the reason its provider gives, and the installer's own message stays in your terminal.
 
 | Reason shown | What it means | What to do |
 |---|---|---|

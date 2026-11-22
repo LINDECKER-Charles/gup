@@ -85,11 +85,11 @@ is verified by the CI step of wave 3.
   process-chokepoint drift test). The setup mocks it with `spawnGuard.guard(runner)`: every
   function export is replaced by a refusal that throws `screenshots must not spawn processes`
   and records the call, **except** a reviewed list of process-free helpers (install timeout
-  get/set, `consumeInterrupt`, `normalizeExitCode`, `skipCurrent`). Deny by default: a runner
-  export added later is refused until someone reviews it. Providers swallow probe errors, so
-  the record is what matters — the setup fails the scene that made any call. Verified
-  against the real detection path: a scene left on the production Providers port fails with
-  131 recorded probes.
+  get/set, `consumeInterrupt`, `consumeFailureOutput`, `normalizeExitCode`, `skipCurrent`).
+  Deny by default: a runner export added later is refused until someone reviews it.
+  Providers swallow probe errors, so the record is what matters — the setup fails the scene
+  that made any call. Verified against the real detection path: a scene left on the
+  production Providers port fails with 131 recorded probes.
 - **No personal data.** Fixtures are fictional; `GUP_*` is scrubbed; data directories are
   temporary and deleted afterwards. A screenshot cannot show the developer's packages,
   history, paths or user name.

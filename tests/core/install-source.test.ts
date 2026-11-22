@@ -270,8 +270,11 @@ interface UpgradeRow {
   readonly source: Exclude<InstallSource, "manual">;
   readonly ids: PackageIds;
   readonly argv: readonly string[];
-  readonly options?: { readonly shell: boolean };
+  readonly options?: { readonly shell?: boolean; readonly env?: Readonly<Record<string, string>> };
 }
+
+/** Homebrew 6.0 asks before an upgrade that moves other packages: never through gup. */
+const BREW_NO_ASK = { env: { HOMEBREW_NO_ASK: "1" } };
 
 const WINGET_UPGRADE = [
   "winget",
@@ -293,12 +296,18 @@ const UPGRADES: readonly UpgradeRow[] = [
   },
   { source: "choco", ids: { choco: "terraform" }, argv: ["choco", "upgrade", "terraform", "-y"] },
   { source: "winget", ids: { winget: "Hashicorp.Terraform" }, argv: WINGET_UPGRADE },
-  { source: "brew", ids: { brew: "helm" }, argv: ["brew", "upgrade", "--formula", "helm"] },
+  {
+    source: "brew",
+    ids: { brew: "helm" },
+    argv: ["brew", "upgrade", "--formula", "helm"],
+    options: BREW_NO_ASK,
+  },
   // A cask and a formula of the same name are different installs: the cask wins.
   {
     source: "brew",
     ids: { brew: "docker", brewCask: "docker-desktop" },
     argv: ["brew", "upgrade", "--cask", "docker-desktop"],
+    options: BREW_NO_ASK,
   },
   // `install --only-upgrade`: `apt-get upgrade <pkg>` would upgrade the whole system.
   {

@@ -60,6 +60,8 @@ export interface PtySpawnOptions {
   readonly name: string;
   readonly cols: number;
   readonly rows: number;
+  /** The child's whole environment, not an addition to it; node-pty's default is gup's own. */
+  readonly env?: NodeJS.ProcessEnv;
 }
 
 export interface PtyModule {
