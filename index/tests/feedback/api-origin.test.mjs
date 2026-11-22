@@ -20,7 +20,7 @@ function feedbackApiWith(value) {
 }
 
 test("the production service is the default", () => {
-  assert.equal(feedbackApiWith(undefined), "https://gup.charles-lindecker.com");
+  assert.equal(feedbackApiWith(undefined), "https://feedback.global-updater.com");
 });
 
 test("VITE_FEEDBACK_API overrides it, reduced to an origin", () => {

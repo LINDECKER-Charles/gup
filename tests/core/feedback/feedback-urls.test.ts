@@ -3,7 +3,7 @@ import { currentClientInfo } from "../../../src/core/feedback/client-info.js";
 import { FeedbackUrls, type FormContext } from "../../../src/core/feedback/feedback-urls.js";
 
 const INSTALL_ID = "3f2c8a4e-1b6d-4e2f-9a7c-5d8e0f1a2b3c";
-const PRODUCTION = "https://gup.charles-lindecker.com";
+const PRODUCTION = "https://feedback.global-updater.com";
 
 function context(client: Partial<FormContext["client"]> = {}): FormContext {
   return {

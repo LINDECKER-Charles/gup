@@ -33,7 +33,7 @@ const ATTENDED: ConsentFacts = {
 };
 const NOW = Date.parse("2026-11-20T12:00:00.000Z");
 const SENT_AT = "2026-11-19T08:00:00.000Z";
-const PRODUCTION = "https://gup.charles-lindecker.com";
+const PRODUCTION = "https://feedback.global-updater.com";
 
 describe("shouldAskConsent", () => {
   it.each(["", "update", "list"])("asks before %j while no answer is saved", (commandPath) => {

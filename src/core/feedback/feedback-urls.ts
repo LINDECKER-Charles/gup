@@ -22,7 +22,7 @@ export interface FormContext {
 
 const SERVICE_ENV = "GUP_FEEDBACK_API";
 const FORM_ENV = "GUP_FEEDBACK_FORM";
-const DEFAULT_SERVICE_ORIGIN = "https://gup.charles-lindecker.com";
+const DEFAULT_SERVICE_ORIGIN = "https://feedback.global-updater.com";
 const DEFAULT_FORM_URL = "https://lindecker-charles.github.io/gup/";
 /** The landing's French pages live under `fr/`; English is at its root. */
 const LOCALE_PATHS: Readonly<Record<Locale, string>> = { en: "", fr: "fr/" };

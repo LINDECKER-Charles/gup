@@ -31,7 +31,7 @@ limit changes here first.
 
 | What | Production | Local development |
 |---|---|---|
-| Service (API + back office) | `https://gup.charles-lindecker.com` | `http://127.0.0.1:8787` |
+| Service (API + back office) | `https://feedback.global-updater.com` | `http://127.0.0.1:8787` |
 | Landing (form) | `https://lindecker-charles.github.io/gup/` | `http://127.0.0.1:5173/gup/` (Vite) |
 | Mail catcher | the real SMTP relay | Mailpit, `http://127.0.0.1:8025` |
 
@@ -84,7 +84,7 @@ Authorization: GupInstall <publicKey>.<ts>.<signature>
 gup-install-v1\n<METHOD>\n<origin><pathname>\n<ts>\n<base64url(sha256(rawBody))>
 ```
 
-`<origin>` is the service origin the CLI targets (`https://gup.charles-lindecker.com`, no
+`<origin>` is the service origin the CLI targets (`https://feedback.global-updater.com`, no
 trailing slash) and the service compares it with its own `FEEDBACK_PUBLIC_URL` origin;
 `<pathname>` is the request path without query; `rawBody` is the exact bytes sent (empty for
 `DELETE`). The service answers `401 unauthorized` when the header is malformed, the derived

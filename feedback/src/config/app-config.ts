@@ -14,7 +14,7 @@ export interface AppConfig {
   readonly host: string;
   readonly port: number;
   readonly databaseUrl: string;
-  /** Origin of this service (`https://gup.charles-lindecker.com`), no trailing slash. */
+  /** Origin of this service (`https://feedback.global-updater.com`), no trailing slash. */
   readonly publicOrigin: string;
   readonly landingUrl: string;
   /** Origins allowed to post feedback: CORS and the form redirect. */

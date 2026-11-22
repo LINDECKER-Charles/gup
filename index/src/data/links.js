@@ -15,7 +15,7 @@ const REPO = "https://github.com/LINDECKER-Charles/gup";
 const NPM = `https://www.npmjs.com/package/${facts.packageName}`;
 
 /** Where the feedback service answers; local development points it at 127.0.0.1:8787. */
-const DEFAULT_FEEDBACK_API = "https://gup.charles-lindecker.com";
+const DEFAULT_FEEDBACK_API = "https://feedback.global-updater.com";
 
 /**
  * The feedback service origin: `VITE_FEEDBACK_API` when set, the default
