@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+# Local development secrets, deposited by the secrets vault (see README).
+/dev.env
+# The root .gitignore ignores every `.env.*`; the documented template is the exception.
+!.env.example

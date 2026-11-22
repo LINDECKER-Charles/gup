@@ -1,0 +1,58 @@
+import type { FastifyBaseLogger } from "fastify";
+import type { MailConfig } from "../config/app-config.js";
+import type { Clock } from "../ports/clock.js";
+import type { Mailer } from "../ports/mailer.js";
+import type { OutboxRepository, PendingMail } from "../ports/outbox-repository.js";
+import { feedbackMail } from "./feedback-mail.js";
+import { RETRY_POLICY } from "./retry-policy.js";
+import { DURATION_MS } from "../time-units.js";
+
+const BATCH_SIZE = 10;
+/** Longer than any SMTP exchange: a lease that expires means the worker died. */
+const LEASE_MS = 5 * DURATION_MS.minute;
+
+export interface OutboxWorkerDeps {
+  readonly outbox: OutboxRepository;
+  readonly mailer: Mailer;
+  readonly clock: Clock;
+  readonly mail: MailConfig;
+  readonly publicOrigin: string;
+  readonly logger: FastifyBaseLogger;
+}
+
+/** Sends the due notification mails, one claimed batch per run. */
+export class OutboxWorker {
+  readonly #deps: OutboxWorkerDeps;
+
+  constructor(deps: OutboxWorkerDeps) {
+    this.#deps = deps;
+  }
+
+  async runOnce(): Promise<void> {
+    const pending = await this.#deps.outbox.claimDue({
+      now: this.#deps.clock.now(),
+      limit: BATCH_SIZE,
+      leaseMs: LEASE_MS,
+      maxAttempts: RETRY_POLICY.maxAttempts,
+    });
+    for (const mail of pending) await this.#deliver(mail);
+  }
+
+  async #deliver(pending: PendingMail): Promise<void> {
+    const { mailer, outbox, clock, mail, publicOrigin, logger } = this.#deps;
+    try {
+      await mailer.send(feedbackMail({ feedback: pending.feedback, mail, publicOrigin }));
+      await outbox.markSent(pending.id, clock.now());
+    } catch (error) {
+      const isLastAttempt = pending.attempts >= RETRY_POLICY.maxAttempts;
+      const retryAt = isLastAttempt
+        ? null
+        : new Date(clock.now().getTime() + RETRY_POLICY.delayAfter(pending.attempts));
+      const message = (error as Error).message;
+      await outbox.markFailed({ id: pending.id, error: message, retryAt });
+      const context = { outboxId: pending.id, attempts: pending.attempts, error: message };
+      if (isLastAttempt) logger.error(context, "notification mail given up");
+      else logger.warn(context, "notification mail failed, will retry");
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "client": {
+    "gupVersion": "0.6.0",
+    "platform": "win32",
+    "arch": "x64",
+    "node": "26.10.0",
+    "locale": "fr"
+  },
+  "history": [
+    {
+      "v": 1,
+      "ts": "2026-11-20T08:00:00.000Z",
+      "runId": "5b8f6f0e-2a1c-4d3e-9f10-1a2b3c4d5e6f",
+      "gup": "0.6.0",
+      "platform": "win32",
+      "kind": "scan",
+      "trigger": "menu",
+      "durationMs": 8123,
+      "fast": false,
+      "filter": [],
+      "providers": [
+        { "providerId": "winget", "outdated": 3, "durationMs": 4210 },
+        { "providerId": "npm-g", "outdated": 0, "durationMs": 912 }
+      ],
+      "outdated": 3
+    },
+    {
+      "v": 1,
+      "ts": "2026-11-20T08:01:12.500Z",
+      "runId": "5b8f6f0e-2a1c-4d3e-9f10-1a2b3c4d5e6f",
+      "gup": "0.6.0",
+      "platform": "win32",
+      "kind": "update",
+      "trigger": "menu",
+      "providerId": "winget",
+      "packageId": "Git.Git",
+      "status": "failed",
+      "from": "2.51.0",
+      "to": "2.52.0",
+      "durationMs": 30500,
+      "message": "Installer failed with exit code 1603 (log in ~\\AppData\\Local\\Temp\\WinGet)"
+    }
+  ],
+  "logs": [
+    {
+      "v": 1,
+      "ts": "2026-11-20T08:01:12.480Z",
+      "level": "warn",
+      "event": "update.failed",
+      "runId": "5b8f6f0e-2a1c-4d3e-9f10-1a2b3c4d5e6f",
+      "pid": 4242,
+      "ctx": { "op": "update", "providerId": "winget", "packageId": "Git.Git" },
+      "data": { "exitCode": 1603, "durationMs": 30500 }
+    },
+    {
+      "v": 1,
+      "ts": "2026-11-20T08:01:13.002Z",
+      "level": "info",
+      "event": "run.finished",
+      "runId": "5b8f6f0e-2a1c-4d3e-9f10-1a2b3c4d5e6f",
+      "pid": 4242
+    }
+  ]
+}
