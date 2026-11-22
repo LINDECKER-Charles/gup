@@ -94,7 +94,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c5" x="803.8" y="174.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ~10 d monthly </text>
 <text class="c0" x="944.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
+<text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Feedback          </text>
 <text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4" x="250.0" y="191.0" textLength="210.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">typescript                 </text>
@@ -104,6 +104,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c5" x="803.8" y="191.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ~14 d monthly </text>
 <text class="c0" x="944.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="208.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
 <text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4" x="250.0" y="208.0" textLength="210.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Spotify.Spotify            </text>
@@ -113,7 +114,6 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c5" x="803.8" y="208.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ~18 d monthly </text>
 <text class="c0" x="944.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c5" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4" x="250.0" y="225.0" textLength="210.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Git.Git                    </text>
@@ -123,6 +123,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c5" x="803.8" y="225.0" textLength="132.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   ~21 d monthly </text>
 <text class="c0" x="944.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="47.2" y="242.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4" x="250.0" y="242.0" textLength="210.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">nodejs-lts                 </text>

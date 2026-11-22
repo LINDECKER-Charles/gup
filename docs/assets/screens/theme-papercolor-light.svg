@@ -129,7 +129,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c10" x="538.6" y="174.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">24.9.0 </text>
 <text class="c6" x="788.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c5" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
+<text class="c5" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Feedback          </text>
 <text class="c4" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c6" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c10" x="250.0" y="191.0" textLength="31.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[–] </text>
@@ -137,6 +137,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c7" x="374.8" y="191.0" textLength="39.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  1/3</text>
 <text class="c6" x="788.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="47.2" y="208.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
 <text class="c4" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c6" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c7" x="250.0" y="208.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>
@@ -147,7 +148,6 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c10" x="538.6" y="208.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">6.0.3  </text>
 <text class="c6" x="788.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c7" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c4" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c6" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c10" x="250.0" y="225.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [■] </text>
@@ -158,6 +158,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c10" x="538.6" y="225.0" textLength="54.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">10.18.1</text>
 <text class="c6" x="788.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c4" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c7" x="47.2" y="242.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c4" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c6" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c7" x="250.0" y="242.0" textLength="46.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  [ ] </text>

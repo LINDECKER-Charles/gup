@@ -92,7 +92,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="585.4" y="174.0" textLength="85.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">menu · menu</text>
 <text class="c0" x="944.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
+<text class="c4" x="47.2" y="191.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Feedback          </text>
 <text class="c3" x="211.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="191.0" textLength="163.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Sep 15 09:02:13.402  </text>
@@ -101,6 +101,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="585.4" y="191.0" textLength="148.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">code 0 · 2 min 13 s</text>
 <text class="c0" x="944.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="208.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options           </text>
 <text class="c3" x="211.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="208.0" textLength="163.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Sep 15 09:00:06.580  </text>
@@ -109,7 +110,6 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="585.4" y="208.0" textLength="319.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ms=6400 providers=14 outdated=12 errors=1</text>
 <text class="c0" x="944.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c5" x="47.2" y="225.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c3" x="211.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="225.0" textLength="218.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Sep 15 09:00:04.185  DEBUG  </text>
@@ -117,6 +117,7 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c4" x="585.4" y="225.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[choco] ms=4000 outdated=1</text>
 <text class="c0" x="944.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="47.2" y="242.0" textLength="140.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit              </text>
 <text class="c3" x="211.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
 <text class="c0" x="218.8" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c5" x="250.0" y="242.0" textLength="218.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Sep 15 09:00:03.285  DEBUG  </text>
