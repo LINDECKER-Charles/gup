@@ -286,17 +286,22 @@ SKIP 1 manual action required:
 ```
 
 or `winget needs an install folder gup cannot choose: run winget upgrade --id <id> --location
-<folder> in a terminal`.
+<folder> in a terminal`, or `this installer refuses to run as administrator and winget was
+elevated: run winget upgrade --id <id> in a terminal that is not elevated`.
 
 **Why.** winget said itself that no strategy can work, so gup offers no retry (`--force`,
 `--uninstall-previous`, a reinstall) and ends the update as a skip: the package's manifest forbids
-upgrades through winget (`0x8A150114`: Parsec, Android Studio), or it requires an install folder
-that only you know (`0x8A15005F`: Battle.net). gup runs winget with `--disable-interactivity`, so
-that question fails at once instead of holding the rest of the batch.
+upgrades through winget (`0x8A150114`: Parsec, Android Studio), it requires an install folder
+that only you know (`0x8A15005F`: Battle.net), or it forbids running its installer as
+administrator while winget's own process was elevated (`0x8A150056`: Spotify). gup runs winget
+with `--disable-interactivity`, so the folder question fails at once instead of holding the rest
+of the batch. A retry of the third would run in the same elevated context, and its last tier
+uninstalls the application before an install winget then refuses.
 
 **Fix.** For the first, update the application with its publisher's own updater, often from the
 application itself. For the second, run the command shown with the folder the application is
-installed in — or let it update itself, as game launchers do.
+installed in — or let it update itself, as game launchers do. For the third, run the command shown
+in a terminal opened without "Run as administrator".
 
 ### Homebrew says your Command Line Tools do not support this macOS
 
