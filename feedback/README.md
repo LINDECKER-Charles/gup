@@ -236,6 +236,15 @@ maintainer's machine holds the token.
    public, and the token would be one typo away. If the variable is missing when Claude Code
    starts, it warns and sends the placeholder as is: the service answers `401`.
 
+The local stack answers on its own `/mcp` with the token of `dev.env`. Register it beside the
+production one, under another name and another variable, so both can stay registered:
+
+```sh
+claude mcp add --transport http --scope user gup-feedback-dev \
+  http://127.0.0.1:8787/mcp \
+  --header 'Authorization: Bearer ${GUP_FEEDBACK_DEV_MCP_TOKEN}'
+```
+
 Rotating: new token and digest, redeploy, update the variable; the old token stops working
 at the restart. A leaked token gives read access to every feedback (reporters' addresses
 included) and every shared journal, and the right to change statuses and notes — never to
