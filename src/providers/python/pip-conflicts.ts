@@ -1,5 +1,6 @@
 import { localize } from "../../core/i18n/localized.js";
 import { run } from "../../core/runner.js";
+import { canonicalName } from "./canonical-name.js";
 
 /**
  * What an upgrade broke, as pip itself sees it. `pip install --upgrade X`
@@ -27,8 +28,6 @@ export interface BrokenRequirement {
 
 /** `<dependent> <version> has requirement <spec>, but you have <name> <version>.` */
 const BROKEN_REQUIREMENT = /^(\S+ \S+) has requirement (.+), but you have (\S+) (\S+)\.$/;
-/** PEP 503: case, `-`, `_` and `.` do not tell two project names apart. */
-const NAME_SEPARATORS = /[-_.]+/g;
 
 export async function brokenRequirements(pip: string): Promise<BrokenRequirement[]> {
   // Exits 1 when something is broken: the report is on stdout either way.
@@ -85,8 +84,4 @@ export function breakageMessage(
         en: `${packageId} ${version} breaks ${dependents}, and putting ${previous} back failed`,
         fr: `${packageId} ${version} casse ${dependents}, et le retour à ${previous} a échoué`,
       });
-}
-
-function canonicalName(name: string): string {
-  return name.toLowerCase().replace(NAME_SEPARATORS, "-");
 }
