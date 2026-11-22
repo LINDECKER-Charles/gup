@@ -152,7 +152,7 @@ list.
 | `FEEDBACK_LANDING_URL` | `https://lindecker-charles.github.io/gup/` | where a no-JavaScript form returns when its `returnTo` is not allowed |
 | `FEEDBACK_ALLOWED_ORIGINS` | the landing's origin | comma-separated origins allowed to post feedback (CORS, form return) |
 | `SMTP_URL` | unset | `smtp://` or `smtps://` URL; unset, mails wait in the outbox |
-| `MAIL_FROM`, `FEEDBACK_NOTIFY_TO` | required with `SMTP_URL` | sender and recipient of notifications |
+| `MAIL_FROM`, `FEEDBACK_NOTIFY_TO` | required with `SMTP_URL` | sender and recipient of notifications; the back office's Mails page can send them elsewhere, and back |
 | `LOG_RETENTION_DAYS` | `90` | journal items received longer ago are purged daily |
 | `OUTBOX_POLL_INTERVAL_SECONDS` | `30` | how often the outbox is checked |
 | `TRUST_PROXY` | `loopback,uniquelocal` | peers allowed to set `X-Forwarded-For` (the edge, on a private network): `true`, `false`, or a comma-separated list of `loopback`, `linklocal`, `uniquelocal`, IPs and CIDR ranges |

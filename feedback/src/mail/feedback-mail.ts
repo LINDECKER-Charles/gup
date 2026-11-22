@@ -7,6 +7,8 @@ import { LABELS } from "../views/text/labels.js";
 export interface FeedbackMailInput {
   readonly feedback: Feedback;
   readonly mail: MailConfig;
+  /** The notification address in force (NotifyRecipient), not necessarily `mail.notifyTo`. */
+  readonly to: string;
   readonly publicOrigin: string;
 }
 
@@ -44,7 +46,7 @@ export function feedbackMail(input: FeedbackMailInput): OutgoingMail {
   const { feedback, mail } = input;
   const adminUrl = `${input.publicOrigin}/admin/feedback/${feedback.id}`;
   return {
-    to: mail.notifyTo,
+    to: input.to,
     from: mail.from,
     replyTo: feedback.email,
     subject: oneLine(`[gup] ${LABELS.kind[feedback.kind]} #${feedback.id} — ${feedback.title}`),

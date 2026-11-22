@@ -6,6 +6,7 @@ import { validateLogBatch } from "../../src/domain/validate-log-batch.js";
 import type { LogBatch } from "../../src/domain/journal.js";
 import { sha256 } from "../../src/security/sha256.js";
 import { PgFeedbackRepository } from "../../src/store/feedback/pg-feedback-repository.js";
+import { PgMailSettingsStore } from "../../src/store/feedback/pg-mail-settings-store.js";
 import { PgOutboxRepository } from "../../src/store/feedback/pg-outbox-repository.js";
 import { migrate } from "../../src/store/migrate.js";
 import { PgInstallReader } from "../../src/store/pg-install-reader.js";
@@ -52,13 +53,15 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
 
   beforeEach(async () => {
     await migrate(pool);
-    await pool.query("TRUNCATE feedback, mail_outbox, install, admin_session, admin_second_factor RESTART IDENTITY CASCADE");
+    await pool.query(`TRUNCATE feedback, mail_outbox, install, admin_session,
+      admin_second_factor, mail_setting RESTART IDENTITY CASCADE`);
   });
 
   it("migrates an empty database once, then finds nothing to apply", async () => {
     await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
     expect(await migrate(pool)).toEqual(
-      ["001_initial.sql", "002_journal_reading.sql", "003_second_factor.sql"]);
+      ["001_initial.sql", "002_journal_reading.sql", "003_second_factor.sql",
+        "004_mail_setting.sql"]);
     expect(await migrate(pool)).toEqual([]);
   });
 
@@ -181,6 +184,20 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
     expect(await steps.claim(999)).toBe(false);
     const racing = await Promise.all([steps.claim(1001), steps.claim(1001)]);
     expect(racing.filter(Boolean)).toHaveLength(1);
+  });
+
+  it("keeps one notification address, replaced in place, then forgotten", async () => {
+    const settings = new PgMailSettingsStore(pool);
+    expect(await settings.notifyTo()).toBeNull();
+    const first = { address: "triage@example.org", updatedAt: new Date("2026-11-20T10:00:00Z") };
+    await settings.setNotifyTo(first);
+    expect(await settings.notifyTo()).toEqual(first);
+    const second = { address: "ops@example.org", updatedAt: new Date("2026-11-21T10:00:00Z") };
+    await settings.setNotifyTo(second);
+    expect(await settings.notifyTo()).toEqual(second);
+    expect((await pool.query("SELECT 1 FROM mail_setting")).rowCount).toBe(1);
+    await settings.clearNotifyTo();
+    expect(await settings.notifyTo()).toBeNull();
   });
 
   it("hands a due mail to one claimer only, and hides it for the lease", async () => {

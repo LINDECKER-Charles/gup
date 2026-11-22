@@ -6,6 +6,7 @@ import type { Clock } from "../../ports/clock.js";
 import type { FeedbackRepository } from "../../ports/feedback-repository.js";
 import type { InstallReader } from "../../ports/install-reader.js";
 import type { InstallStore } from "../../ports/install-store.js";
+import type { NotifyRecipient } from "../../mail/notify-recipient.js";
 import type { Mailer } from "../../ports/mail/mailer.js";
 import type { OutboxMonitor } from "../../ports/mail/outbox-monitor.js";
 import type { SessionCookie } from "./session-cookie.js";
@@ -19,6 +20,8 @@ export interface AdminContext {
   readonly outbox: OutboxMonitor;
   /** null when SMTP is not configured. */
   readonly mailer: Mailer | null;
+  /** Where notifications go; null when SMTP is not configured. */
+  readonly recipient: NotifyRecipient | null;
   readonly clock: Clock;
   readonly sessions: AdminSessions;
   readonly credentials: AdminCredentials;

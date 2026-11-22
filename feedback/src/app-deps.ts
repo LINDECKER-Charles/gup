@@ -5,6 +5,7 @@ import type { FeedbackRepository } from "./ports/feedback-repository.js";
 import type { HealthProbe } from "./ports/health-probe.js";
 import type { InstallReader } from "./ports/install-reader.js";
 import type { InstallStore } from "./ports/install-store.js";
+import type { MailSettingsStore } from "./ports/mail/mail-settings-store.js";
 import type { Mailer } from "./ports/mail/mailer.js";
 import type { OutboxMonitor } from "./ports/mail/outbox-monitor.js";
 import type { SecondFactorStore } from "./ports/second-factor-store.js";
@@ -20,6 +21,8 @@ export interface AppDeps {
   readonly outbox: OutboxMonitor;
   /** The relay the outbox worker sends through; null when SMTP is not configured. */
   readonly mailer: Mailer | null;
+  /** The notification address the back office set, over FEEDBACK_NOTIFY_TO. */
+  readonly mailSettings: MailSettingsStore;
   readonly sessions: SessionRepository;
   /** The TOTP steps already used; read only when ADMIN_TOTP_SECRET is set. */
   readonly secondFactors: SecondFactorStore;

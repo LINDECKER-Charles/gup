@@ -124,7 +124,8 @@ describe("mails page", () => {
     csrfToken: "token", notice: null, pollIntervalMs: 5_000, maxAttempts: 8,
     relay: {
       endpoint: { host: HOSTILE, port: 465, isDefaultPort: true, isImplicitTls: true },
-      from: HOSTILE, to: HOSTILE,
+      from: HOSTILE, configuredTo: HOSTILE,
+      recipient: { address: HOSTILE, changedAt: AT },
     },
     lastTest: { at: AT, to: HOSTILE, error: HOSTILE },
     testLimit: { max: 5, windowMs: 600_000 },

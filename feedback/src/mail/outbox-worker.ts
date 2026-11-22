@@ -4,6 +4,7 @@ import type { Clock } from "../ports/clock.js";
 import type { Mailer } from "../ports/mail/mailer.js";
 import type { OutboxRepository, PendingMail } from "../ports/mail/outbox-repository.js";
 import { feedbackMail } from "./feedback-mail.js";
+import type { NotifyRecipient } from "./notify-recipient.js";
 import { RETRY_POLICY } from "./retry-policy.js";
 import { DURATION_MS } from "../time-units.js";
 
@@ -16,6 +17,8 @@ export interface OutboxWorkerDeps {
   readonly mailer: Mailer;
   readonly clock: Clock;
   readonly mail: MailConfig;
+  /** Read at each batch: a change in the back office applies to the mails still queued. */
+  readonly recipient: Pick<NotifyRecipient, "current">;
   readonly publicOrigin: string;
   readonly logger: FastifyBaseLogger;
 }
@@ -35,13 +38,15 @@ export class OutboxWorker {
       leaseMs: LEASE_MS,
       maxAttempts: RETRY_POLICY.maxAttempts,
     });
-    for (const mail of pending) await this.#deliver(mail);
+    if (pending.length === 0) return;
+    const { address } = await this.#deps.recipient.current();
+    for (const mail of pending) await this.#deliver(mail, address);
   }
 
-  async #deliver(pending: PendingMail): Promise<void> {
+  async #deliver(pending: PendingMail, to: string): Promise<void> {
     const { mailer, outbox, clock, mail, publicOrigin, logger } = this.#deps;
     try {
-      await mailer.send(feedbackMail({ feedback: pending.feedback, mail, publicOrigin }));
+      await mailer.send(feedbackMail({ feedback: pending.feedback, mail, to, publicOrigin }));
       await outbox.markSent(pending.id, clock.now());
     } catch (error) {
       const isLastAttempt = pending.attempts >= RETRY_POLICY.maxAttempts;

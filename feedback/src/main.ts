@@ -8,12 +8,15 @@ import { IntervalTask } from "./jobs/interval-task.js";
 import { RetentionJob } from "./jobs/retention-job.js";
 import { loggerOptions } from "./logger-options.js";
 import { NodemailerMailer } from "./mail/nodemailer-mailer.js";
+import { NotifyRecipient } from "./mail/notify-recipient.js";
 import { OutboxWorker } from "./mail/outbox-worker.js";
 import { SYSTEM_CLOCK } from "./ports/clock.js";
+import type { MailSettingsStore } from "./ports/mail/mail-settings-store.js";
 import type { Mailer } from "./ports/mail/mailer.js";
 import type { OutboxRepository } from "./ports/mail/outbox-repository.js";
 import { migrate } from "./store/migrate.js";
 import { PgFeedbackRepository } from "./store/feedback/pg-feedback-repository.js";
+import { PgMailSettingsStore } from "./store/feedback/pg-mail-settings-store.js";
 import { PgHealthProbe } from "./store/pg-health-probe.js";
 import { PgInstallReader } from "./store/pg-install-reader.js";
 import { PgInstallStore } from "./store/pg-install-store.js";
@@ -80,6 +83,15 @@ function retentionTask(config: AppConfig, pool: pg.Pool, app: FastifyInstance): 
 interface OutboxRelay {
   readonly outbox: OutboxRepository;
   readonly mailer: Mailer | null;
+  readonly mailSettings: MailSettingsStore;
+}
+
+function openPool(config: AppConfig): pg.Pool {
+  return new pg.Pool({
+    connectionString: config.databaseUrl,
+    max: POOL_SIZE,
+    connectionTimeoutMillis: CONNECT_TIMEOUT_MS,
+  });
 }
 
 /** One relay for the outbox worker and the back office's test mail; none without SMTP. */
@@ -97,6 +109,7 @@ function outboxTask(
   }
   const worker = new OutboxWorker({
     outbox: relay.outbox, mailer: relay.mailer,
+    recipient: new NotifyRecipient(relay.mailSettings, config.mail.notifyTo),
     clock: SYSTEM_CLOCK, mail: config.mail, publicOrigin: config.publicOrigin, logger: app.log,
   });
   const run = () => worker.runOnce();
@@ -128,24 +141,21 @@ function onShutdown(stop: () => Promise<void>, app: FastifyInstance): void {
 
 async function main(): Promise<void> {
   const config = await readConfig();
-  const pool = new pg.Pool({
-    connectionString: config.databaseUrl,
-    max: POOL_SIZE,
-    connectionTimeoutMillis: CONNECT_TIMEOUT_MS,
-  });
+  const pool = openPool(config);
   const mailer = mailerOf(config);
+  const mailSettings = new PgMailSettingsStore(pool);
   const app = await buildApp({
     config, clock: SYSTEM_CLOCK, logger: loggerOptions(config.logLevel),
     feedback: new PgFeedbackRepository(pool), installs: new PgInstallStore(pool),
     journals: new PgInstallReader(pool), sessions: new PgSessionRepository(pool),
-    secondFactors: new PgSecondFactorStore(pool),
+    secondFactors: new PgSecondFactorStore(pool), mailSettings,
     outbox: new PgOutboxMonitor(pool), mailer, health: new PgHealthProbe(pool),
   });
   pool.on("error", (error) => app.log.error({ err: error }, "idle database client failed"));
   await waitForDatabase(pool, app);
   app.log.info({ applied: await migrate(pool) }, "migrations up to date");
   logOptionalFeatures(config, app);
-  const relay = { outbox: new PgOutboxRepository(pool), mailer };
+  const relay = { outbox: new PgOutboxRepository(pool), mailer, mailSettings };
   const tasks = [retentionTask(config, pool, app), outboxTask(config, app, relay)]
     .filter((task) => task !== null);
   for (const task of tasks) task.start();

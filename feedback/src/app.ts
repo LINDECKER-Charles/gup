@@ -17,6 +17,7 @@ import { installRoutes } from "./http/api/install-routes.js";
 import { HttpError } from "./http/http-error.js";
 import { HTTP_STATUS } from "./http/http-status.js";
 import { securityHeaders } from "./http/security-headers.js";
+import { NotifyRecipient } from "./mail/notify-recipient.js";
 import { mcpPlugin } from "./mcp/mcp-plugin.js";
 import { ADMIN_UI } from "./views/admin-ui.js";
 
@@ -42,6 +43,11 @@ function secondFactorOf(deps: AppDeps): AdminSecondFactor | null {
   });
 }
 
+function recipientOf(deps: AppDeps): NotifyRecipient | null {
+  const { mail } = deps.config;
+  return mail === null ? null : new NotifyRecipient(deps.mailSettings, mail.notifyTo);
+}
+
 function adminContext(deps: AppDeps): AdminContext {
   return {
     config: deps.config,
@@ -50,6 +56,7 @@ function adminContext(deps: AppDeps): AdminContext {
     journals: deps.journals,
     outbox: deps.outbox,
     mailer: deps.mailer,
+    recipient: recipientOf(deps),
     clock: deps.clock,
     sessions: new AdminSessions({ repository: deps.sessions, clock: deps.clock }),
     credentials: new AdminCredentials(deps.config.admin),

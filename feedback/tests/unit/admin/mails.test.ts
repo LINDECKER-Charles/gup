@@ -107,6 +107,31 @@ describe("test mail", () => {
     expect(page).not.toContain("<script>");
   });
 
+  it("sends it to the address typed in, naming where notifications go", async () => {
+    const mailer = new RecordingMailer();
+    const admin = await open({ mailer });
+    const response = await admin.post(`${MAILS}/test`, { to: "  someone@example.org " });
+    expect(noticeOf(response)).toBe("test-sent");
+    expect(mailer.sent[0]?.to).toBe("someone@example.org");
+    expect(mailer.sent[0]?.text).toContain(`partent, elles, à ${MAIL.notifyTo}`);
+    expect((await admin.get(MAILS)).body).toContain("pour someone@example.org");
+  });
+
+  it.each([
+    ["not an address", "maintainer"],
+    ["a second recipient", "a@example.org, b@example.org"],
+    ["a smuggled header", "a@example.org\r\nBcc: b@example.org"],
+    ["a display name", "Me <a@example.org>"],
+    ["an address too long", `${"a".repeat(250)}@example.org`],
+  ])("refuses %s, sending nothing and counting nothing", async (_case, to) => {
+    const mailer = new RecordingMailer();
+    const admin = await open({ mailer });
+    expect(noticeOf(await admin.post(`${MAILS}/test`, { to }))).toBe("test-invalid");
+    expect(mailer.sent).toHaveLength(0);
+    for (let attempt = 0; attempt < 5; attempt++) await admin.post(`${MAILS}/test`);
+    expect(mailer.sent).toHaveLength(5);
+  });
+
   it("refuses with a notice when SMTP is not configured", async () => {
     const admin = await open();
     expect(noticeOf(await admin.post(`${MAILS}/test`))).toBe("test-unconfigured");
@@ -128,6 +153,64 @@ describe("test mail", () => {
     const response = await admin.post(`${MAILS}/test`, { _csrf: "forged" });
     expect(response.statusCode).toBe(403);
     expect(mailer.sent).toHaveLength(0);
+  });
+});
+
+describe("notification recipient", () => {
+  const TRIAGE = "triage@example.org";
+
+  it("is FEEDBACK_NOTIFY_TO until changed, with nothing to go back to", async () => {
+    const admin = await open({ mailer: new RecordingMailer() });
+    const body = (await admin.get(MAILS)).body;
+    expect(body).toContain("FEEDBACK_NOTIFY_TO, par défaut");
+    expect(body).toMatch(/id="recipient"[^>]*value="maintainer@example\.test"/);
+    expect(body).not.toContain("/admin/mails/recipient/reset");
+  });
+
+  it("changes, then serves the page, the test mail and the outbox", async () => {
+    const mailer = new RecordingMailer();
+    const admin = await open({ mailer });
+    expect(noticeOf(await admin.post(`${MAILS}/recipient`, { to: TRIAGE }))).toBe("recipient-saved");
+    expect(ctx.mailSettings.stored).toEqual({ address: TRIAGE, updatedAt: ctx.clock.now() });
+    const body = (await admin.get(MAILS)).body;
+    expect(body).toContain(`choisi ici le`);
+    expect(body).toContain(`au lieu de ${MAIL.notifyTo}`);
+    expect(body).toContain(`formaction="/admin/mails/recipient/reset"`);
+    await admin.post(`${MAILS}/test`);
+    expect(mailer.sent[0]?.to).toBe(TRIAGE);
+    expect(mailer.sent[0]?.text).toContain("même destinataire");
+  });
+
+  it("goes back to FEEDBACK_NOTIFY_TO, by the button or by typing it", async () => {
+    const admin = await open({ mailer: new RecordingMailer() });
+    await admin.post(`${MAILS}/recipient`, { to: TRIAGE });
+    expect(noticeOf(await admin.post(`${MAILS}/recipient/reset`))).toBe("recipient-reset");
+    expect(ctx.mailSettings.stored).toBeNull();
+    await admin.post(`${MAILS}/recipient`, { to: TRIAGE });
+    const typedBack = await admin.post(`${MAILS}/recipient`, { to: MAIL.notifyTo });
+    expect(noticeOf(typedBack)).toBe("recipient-reset");
+    expect(ctx.mailSettings.stored).toBeNull();
+  });
+
+  it("refuses what is not one address and keeps the recipient", async () => {
+    const admin = await open({ mailer: new RecordingMailer() });
+    for (const to of ["", "nobody", "a@example.org; b@example.org", "a@example.org\nBcc: b@x.y"]) {
+      expect(noticeOf(await admin.post(`${MAILS}/recipient`, { to }))).toBe("recipient-invalid");
+    }
+    expect(ctx.mailSettings.stored).toBeNull();
+  });
+
+  it("cannot change without SMTP, nor without the CSRF token", async () => {
+    const unconfigured = await open();
+    expect(noticeOf(await unconfigured.post(`${MAILS}/recipient`, { to: TRIAGE })))
+      .toBe("recipient-unconfigured");
+    await ctx.app.close();
+    const admin = await open({ mailer: new RecordingMailer() });
+    const forged = await admin.post(`${MAILS}/recipient`, { to: TRIAGE, _csrf: "forged" });
+    expect(forged.statusCode).toBe(403);
+    expect((await admin.post(`${MAILS}/recipient/reset`, { _csrf: "forged" })).statusCode)
+      .toBe(403);
+    expect(ctx.mailSettings.stored).toBeNull();
   });
 });
 

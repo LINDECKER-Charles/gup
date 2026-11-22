@@ -21,6 +21,20 @@ const MESSAGES: Readonly<Record<string, Message>> = {
     text: "Aucun relais SMTP n’est configuré : le mail de test ne peut pas partir.",
     isAlert: true,
   },
+  "test-invalid": {
+    text: "Cette adresse n’est pas valide : le mail de test n’est pas parti.",
+    isAlert: true,
+  },
+  "recipient-saved": { text: "Destinataire enregistré : les prochains retours lui sont notifiés." },
+  "recipient-reset": { text: "Les retours sont de nouveau notifiés à FEEDBACK_NOTIFY_TO." },
+  "recipient-invalid": {
+    text: "Cette adresse n’est pas valide : le destinataire n’a pas changé.",
+    isAlert: true,
+  },
+  "recipient-unconfigured": {
+    text: "Aucun relais SMTP n’est configuré : aucun mail ne part, à aucune adresse.",
+    isAlert: true,
+  },
   "test-limited": {
     text: "Trop de mails de test en peu de temps. Réessayez dans quelques minutes.",
     isAlert: true,

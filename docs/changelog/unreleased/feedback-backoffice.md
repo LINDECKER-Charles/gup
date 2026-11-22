@@ -45,6 +45,9 @@
   (TOTP, required in production); a code works once, five wrong ones ask for the password
   again, and `npm run admin:totp` makes the key and its QR code without printing the key
   (`feat(feedback): ask for a TOTP code after the admin password`)
+- **feedback:** the Mails page chooses the address feedback notifications go to (back to
+  `FEEDBACK_NOTIFY_TO` in one click), and sends its test mail to any address typed in
+  (`feat(feedback): choose the notification recipient and the test mail's address`)
 - **landing:** a Feedback section with a bug/suggestion form that works with and without
   JavaScript, prefilled by the CLI's link, in the eight languages
   (`feat(landing): add the feedback form`)

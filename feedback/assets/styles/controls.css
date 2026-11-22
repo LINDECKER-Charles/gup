@@ -81,6 +81,16 @@
   display: grid;
   gap: 18px;
 }
+/* The grid's gap already spaces a form's title from its fields. */
+.form > .panel__title {
+  margin-block-end: 0;
+}
+.form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
 
 .field {
   display: grid;

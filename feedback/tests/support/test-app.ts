@@ -8,6 +8,7 @@ import { MemoryFeedbackRepository } from "./memory-feedback-repository.js";
 import { MemoryInstallReader } from "./memory-install-reader.js";
 import { MemoryInstallStore } from "./memory-install-store.js";
 import { MemoryOutboxMonitor } from "./memory-outbox-monitor.js";
+import { MemoryMailSettingsStore } from "./memory-mail-settings-store.js";
 import { MemorySecondFactorStore } from "./memory-second-factor-store.js";
 import { MemorySessionRepository } from "./memory-session-repository.js";
 
@@ -62,6 +63,7 @@ export interface TestApp {
   readonly outbox: MemoryOutboxMonitor;
   readonly sessions: MemorySessionRepository;
   readonly secondFactors: MemorySecondFactorStore;
+  readonly mailSettings: MemoryMailSettingsStore;
 }
 
 export async function createTestApp(overrides: Partial<AppDeps> = {}): Promise<TestApp> {
@@ -72,6 +74,7 @@ export async function createTestApp(overrides: Partial<AppDeps> = {}): Promise<T
   const journals = new MemoryInstallReader();
   const outbox = new MemoryOutboxMonitor();
   const secondFactors = new MemorySecondFactorStore();
+  const mailSettings = new MemoryMailSettingsStore();
   const app = await buildApp({
     config: testConfig(),
     feedback,
@@ -81,10 +84,13 @@ export async function createTestApp(overrides: Partial<AppDeps> = {}): Promise<T
     mailer: null,
     sessions,
     secondFactors,
+    mailSettings,
     health: { isHealthy: async () => true },
     clock,
     logger: false,
     ...overrides,
   });
-  return { app, clock, feedback, installs, journals, outbox, sessions, secondFactors };
+  return {
+    app, clock, feedback, installs, journals, outbox, sessions, secondFactors, mailSettings,
+  };
 }

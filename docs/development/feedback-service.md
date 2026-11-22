@@ -207,7 +207,8 @@ client-side script, strict CSP (`default-src 'none'`; styles and fonts from `'se
 | `GET /admin/installs/{id}/runs/{runId}` | one run: its span and counts, then every history item and log line it wrote, merged oldest first (`page`, 200 a page) |
 | `GET /admin/installs/{id}/export` | everything stored for the install as JSON Lines, downloaded (`gup-install-{id}.jsonl`) |
 | `GET /admin/mails` | the mail relay as configured (never its user or password), outbox counts, every unsent mail with its attempts and last error |
-| `POST /admin/mails/test` · `POST /admin/mails/retry` | send a test mail to `FEEDBACK_NOTIFY_TO`; make every unsent mail due now |
+| `POST /admin/mails/test` · `POST /admin/mails/retry` | send a test mail to the address typed in (the notification recipient by default); make every unsent mail due now |
+| `POST /admin/mails/recipient` · `POST /admin/mails/recipient/reset` | change the address notifications go to; go back to `FEEDBACK_NOTIFY_TO` |
 | `GET /admin/assets/{name}` | stylesheet, fonts, logo and favicons; no session needed (the login page uses them) |
 
 **Search.** `q` is trimmed, its spaces collapsed, cut to 100 characters. It matches,
@@ -246,12 +247,17 @@ STARTTLS — the sender, the recipient, the outbox's poll interval and attempt c
 it is not configured and that mails wait in the outbox. Counts: waiting (never tried),
 failing (tried, not sent, given-up mails included), sent in the last 30 days; then every
 unsent mail, oldest first, with its feedback, attempts, next attempt and the start of its
-last error. *Envoyer un mail de test* sends a plain mail to `FEEDBACK_NOTIFY_TO` through
+last error. *Destinataire des retours* changes the address notifications go to; it is
+stored in the database (`mail_setting`, one row) and read by the worker at each batch,
+so mails already queued go there too. Typing `FEEDBACK_NOTIFY_TO` back, or *Revenir à…*,
+deletes the row: the configured address applies again. *Envoyer un mail de test* sends a
+plain mail to the address typed in (the notification recipient when left empty) through
 the same relay as notifications, at most 5 per 10 minutes per address, and reports the
 relay's answer — refused with a notice when SMTP is not configured; the last result lives
-in the process's memory. *Relancer maintenant* makes every unsent mail due at once, and
-gives a given-up mail one more attempt. Both are CSRF-checked forms answered by a redirect
-and a notice.
+in the process's memory. Both address fields take one address only: no display name, no
+list, no space or line break (254 characters at most). *Relancer maintenant* makes every
+unsent mail due at once, and gives a given-up mail one more attempt. All are CSRF-checked
+forms answered by a redirect and a notice.
 
 **Design.** The back office takes the landing's design (`index/`): its oklch tokens (dark
 only), Anton for page names, Geist for text, Geist Mono for labels and controls, the violet
@@ -344,7 +350,7 @@ shared journal: it is as sensitive as the admin password.
 Each new feedback queues a mail in an outbox table, in the same transaction as the
 feedback: a mail server that is down delays the mail, never loses the feedback. A worker
 sends pending mails with an exponential backoff (up to 8 attempts) to `FEEDBACK_NOTIFY_TO`,
-with `Reply-To` set to the reporter when they left an address — answering the mail answers
+or to the address the back office set in its place, with `Reply-To` set to the reporter when they left an address — answering the mail answers
 the reporter. Without SMTP settings the service runs and the outbox waits.
 
 ## Retention

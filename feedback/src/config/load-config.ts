@@ -1,3 +1,4 @@
+import { isEmailAddress } from "../domain/email-address.js";
 import { PasswordHash } from "../security/password-hash.js";
 import { sha256 } from "../security/sha256.js";
 import { DURATION_MS } from "../time-units.js";
@@ -21,7 +22,6 @@ const MAX_RETENTION_DAYS = 3650;
 const MAX_POLL_SECONDS = 3600;
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"];
 const ENVIRONMENTS: readonly FeedbackEnv[] = ["production", "development"];
-const ADDRESS_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 const SMTP_URL_PATTERN = /^smtps?:\/\//;
 const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/;
 /** What `printf '%s' "$TOKEN" | sha256sum` prints when TOKEN is unset: a mistake, never a token. */
@@ -47,7 +47,7 @@ function readPasswordHash(reader: EnvReader): PasswordHash | null {
 
 function readAddress(reader: EnvReader, name: string): string {
   const address = reader.required(name);
-  if (address !== "" && !ADDRESS_PATTERN.test(address)) reader.reject(name, "is not an address");
+  if (address !== "" && !isEmailAddress(address)) reader.reject(name, "is not an address");
   return address;
 }
 

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Feedback } from "../../src/domain/feedback.js";
+import { NotifyRecipient } from "../../src/mail/notify-recipient.js";
 import { OutboxWorker } from "../../src/mail/outbox-worker.js";
 import { RETRY_POLICY } from "../../src/mail/retry-policy.js";
 import type { OutgoingMail } from "../../src/ports/mail/mailer.js";
 import type {
   ClaimRequest, MailFailure, OutboxRepository, PendingMail,
 } from "../../src/ports/mail/outbox-repository.js";
+import { MemoryMailSettingsStore } from "../support/memory-mail-settings-store.js";
 import { ManualClock } from "../support/test-app.js";
 
 const FEEDBACK: Feedback = {
@@ -37,13 +39,16 @@ class OneMailOutbox implements OutboxRepository {
   }
 }
 
-function run(attempts: number, send: (mail: OutgoingMail) => Promise<void>) {
+function run(
+  attempts: number, send: (mail: OutgoingMail) => Promise<void>,
+  recipient = new NotifyRecipient(new MemoryMailSettingsStore(), MAIL.notifyTo),
+) {
   const outbox = new OneMailOutbox({ id: 7, attempts, feedback: FEEDBACK });
   const clock = new ManualClock();
   const silent = { error: () => undefined, warn: () => undefined };
   const worker = new OutboxWorker({
-    outbox, mailer: { send }, clock, mail: MAIL, publicOrigin: "https://feedback.example.test",
-    logger: silent as never,
+    outbox, mailer: { send }, recipient, clock, mail: MAIL,
+    publicOrigin: "https://feedback.example.test", logger: silent as never,
   });
   return { outbox, clock, done: worker.runOnce() };
 }
@@ -63,6 +68,17 @@ describe("OutboxWorker", () => {
     });
     expect(mails[0]?.text).toContain("https://feedback.example.test/admin/feedback/42");
     expect(outbox.claims[0]?.maxAttempts).toBe(8);
+  });
+
+  it("sends to the recipient chosen in the back office, read when the mail leaves", async () => {
+    const settings = new MemoryMailSettingsStore();
+    const recipient = new NotifyRecipient(settings, MAIL.notifyTo);
+    await recipient.change("triage@example.test", new Date());
+    const mails: OutgoingMail[] = [];
+    await run(1, async (mail) => {
+      mails.push(mail);
+    }, recipient).done;
+    expect(mails[0]?.to).toBe("triage@example.test");
   });
 
   it("retries a failed send later, the wait doubling with each attempt", async () => {
