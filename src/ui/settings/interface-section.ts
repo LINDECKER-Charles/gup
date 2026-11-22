@@ -35,6 +35,7 @@ const VIEW_IDS = keysOf<ViewId>({
   schedules: true,
   providers: true,
   journal: true,
+  feedback: true,
   options: true,
 });
 const PACKAGE_SORTS = keysOf<PackageSort>({ provider: true, name: true, bump: true });
