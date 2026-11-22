@@ -5,6 +5,7 @@ import type { CsvDelimiter } from "../../core/export/csv.js";
 import type { OpenResult } from "../../core/export/open-external.js";
 import { OutputExistsError } from "../../core/export/output-file.js";
 import { MAX_REPORT_UPDATES } from "../../core/export/report-model.js";
+import { isCiRun } from "../../core/state/ci-run.js";
 import { parsePeriod, parseUntil, withUntil, type Period } from "../../core/time/period.js";
 import { settingsService } from "../../ui/settings/settings-service.js";
 import { resolveGlyphMode, type GlyphPreference } from "../../ui/theme/glyphs.js";
@@ -147,7 +148,7 @@ function opensBrowser(
 ): boolean {
   if (report.format !== "html" || report.target.kind !== "file") return false;
   if (options.open !== undefined) return options.open;
-  const isWatched = process.stdout.isTTY === true && (process.env["CI"] ?? "") === "";
+  const isWatched = process.stdout.isTTY === true && !isCiRun();
   return preferences.openReport && isWatched;
 }
 

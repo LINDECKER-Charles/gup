@@ -1,0 +1,52 @@
+# Base stack: the service and its Postgres. Never used alone — combine it with
+# compose.dev.yaml (local, built from source) or compose.deploy.yaml (the VPS,
+# published image behind the shared Caddy edge). See README.md.
+#
+# Only the variables listed under `environment` reach the app: the env file
+# given to Compose is used for interpolation, never passed through whole — so
+# ADMIN_PASSWORD, kept in dev.env for the human, never enters the container.
+
+name: gup-feedback
+
+services:
+  gup-feedback:
+    environment:
+      DATABASE_URL: postgres://gup_feedback:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@gup-feedback-postgres:5432/gup_feedback
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?ADMIN_PASSWORD_HASH is required}
+      # Second factor; required in production (compose.deploy.yaml), optional in development.
+      ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:-}
+      PORT: "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: gup_feedback
+      POSTGRES_DB: gup_feedback
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      # Postgres 18 images keep their data under a versioned subdirectory of
+      # /var/lib/postgresql: mounting the parent keeps major upgrades possible.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gup_feedback -d gup_feedback"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      default:
+        aliases:
+          - gup-feedback-postgres
+
+volumes:
+  postgres-data:

@@ -127,6 +127,125 @@ updates:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
 
+  # ── Feedback service in feedback/ (tested, imaged and deployed by feedback.yml)
+  # A network-facing service holding reporters' addresses: its runtime
+  # dependencies matter as much as the CLI's, so it gets the same cooldown.
+  - package-ecosystem: npm
+    directory: "/feedback"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: "Europe/Paris"
+
+    cooldown:
+      default-days: 14
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+
+    open-pull-requests-limit: 3
+
+    versioning-strategy: increase
+
+    groups:
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+      feedback-dev-dependencies:
+        applies-to: version-updates
+        dependency-type: development
+        update-types: [minor, patch]
+      feedback-runtime-dependencies:
+        applies-to: version-updates
+        dependency-type: production
+        update-types: [minor, patch]
+
+    ignore:
+      # Pinned to the 26.x line, like the CLI: the image runs node:26.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+
+  # Base image of the Dockerfile (node:26-alpine); the next entry covers the
+  # images the compose files name (postgres:18-alpine, Mailpit).
+  - package-ecosystem: docker
+    directory: "/feedback"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: "Europe/Paris"
+
+    cooldown:
+      default-days: 14
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+
+    open-pull-requests-limit: 2
+
+    groups:
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+      feedback-images:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+    ignore:
+      # Major lines move by hand: Node with the CLI's engines, Postgres with a
+      # dump and restore of the data directory.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: docker-compose
+    directory: "/feedback"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: "Europe/Paris"
+
+    cooldown:
+      default-days: 14
+      semver-patch-days: 7
+      semver-minor-days: 14
+      semver-major-days: 30
+
+    open-pull-requests-limit: 2
+
+    groups:
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+      feedback-compose-images:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+    ignore:
+      # Major lines move by hand, as in the Dockerfile entry above.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+
+    labels: [dependencies]
+    commit-message:
+      prefix: "chore(deps)"
+
   # ── GitHub Actions ────────────────────────────────────────────────────────
   # Highest-value target in the repo: a workflow runs with a token, so a
   # compromised action is code execution in CI. The cooldown matters more here

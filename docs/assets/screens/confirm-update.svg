@@ -90,22 +90,23 @@ text{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sa
 <text class="c0" x="694.6" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="788.2" y="174.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c4" x="47.2" y="191.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options </text>
+<text class="c4" x="47.2" y="191.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Feedback</text>
 <text class="c0" x="109.6" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="694.6" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="788.2" y="191.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c4" x="47.2" y="208.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Options </text>
 <text class="c0" x="109.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="208.0" textLength="280.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">• nodejs-lts 24.8.0 → 24.9.0 (admin)</text>
 <text class="c0" x="694.6" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="788.2" y="208.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
-<text class="c5" x="47.2" y="225.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit    </text>
 <text class="c0" x="109.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="225.0" textLength="202.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">• typescript 6.0.2 → 6.0.3</text>
 <text class="c0" x="694.6" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c0" x="788.2" y="225.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">┃</text>
 <text class="c3" x="16.0" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">│</text>
+<text class="c5" x="47.2" y="242.0" textLength="62.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Quit    </text>
 <text class="c0" x="109.6" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>
 <text class="c4" x="125.2" y="242.0" textLength="171.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">• ruff 0.13.0 → 0.13.2</text>
 <text class="c0" x="694.6" y="242.0" textLength="7.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">║</text>

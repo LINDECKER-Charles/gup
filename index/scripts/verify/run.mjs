@@ -13,6 +13,7 @@ import { join, resolve } from "node:path";
 import { pageContexts } from "../../build/page-context.mjs";
 import { lastContentChange } from "../last-change.mjs";
 import { serveDist } from "../serve.mjs";
+import { runFeedbackChecks } from "./feedback-checks.mjs";
 import { runInteractionChecks } from "./interaction-checks.mjs";
 import { runLayoutChecks } from "./layout-checks.mjs";
 import { runPageChecks } from "./page-checks.mjs";
@@ -44,6 +45,7 @@ async function runBrowserChecks(report, pages) {
   try {
     await runPageChecks(ctx, pages);
     await runInteractionChecks(ctx, pages);
+    await runFeedbackChecks(ctx, pages);
     await runLayoutChecks(ctx, pages);
   } finally {
     await browser.close();

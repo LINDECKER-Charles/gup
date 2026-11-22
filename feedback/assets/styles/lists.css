@@ -1,0 +1,293 @@
+/* The inbox: toolbar, feedback cards, badges, chips, empty states, pages. */
+
+.toolbar {
+  display: grid;
+  gap: 18px;
+  margin-block-end: 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.toolbar > *,
+.toolbar__filters > * {
+  min-inline-size: 0;
+}
+.toolbar__filters {
+  display: grid;
+  gap: 18px;
+}
+@media (min-width: 1024px) {
+  .toolbar {
+    padding: 22px;
+  }
+  .toolbar__filters {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}
+
+.results {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-block-end: 14px;
+  font-size: 14px;
+  color: var(--fg-muted);
+}
+.results a {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+/* ── Feedback cards: the title is the link, the whole card is its target ─ */
+
+.rows {
+  display: grid;
+  gap: 10px;
+}
+.row {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+.row:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+.row:focus-within {
+  border-color: var(--violet);
+}
+/* Not yet looked at: an amber edge, beside the "Nouveau" badge. */
+.row--new::before {
+  content: "";
+  position: absolute;
+  inset-block: 16px;
+  inset-inline-start: -1px;
+  inline-size: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--amber);
+}
+
+.row__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+.row__id {
+  color: var(--fg-soft);
+}
+.row__date {
+  margin-inline-start: auto;
+}
+
+.row__title {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.row__title a {
+  color: var(--fg);
+  text-decoration: none;
+}
+.row__title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+/* The ring goes round the card, the link's whole target. */
+.row__title a:focus-visible {
+  outline: none;
+}
+.row__title a:focus-visible::after {
+  border-radius: var(--radius-lg);
+  outline: 2px solid var(--violet-text);
+  outline-offset: 2px;
+}
+.row:hover .row__title a {
+  color: var(--violet-text);
+}
+
+.row__excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--chip-bg);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+/* ── Badges: a colour and always its word ──────────────────────────────── */
+
+.badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.7;
+  letter-spacing: var(--label-tracking-tight);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+.badge--status-new,
+.badge--level-warn {
+  border-color: var(--edge-amber);
+  background: var(--tint-amber);
+  color: var(--amber);
+}
+.badge--status-in_progress,
+.badge--level-info {
+  border-color: var(--edge-violet);
+  background: var(--tint-violet);
+  color: var(--violet-text);
+}
+.badge--status-resolved {
+  border-color: var(--edge-green);
+  background: var(--tint-green);
+  color: var(--green);
+}
+.badge--kind-bug,
+.badge--level-error {
+  border-color: var(--edge-red);
+  background: var(--tint-red);
+  color: var(--red);
+}
+.badge--kind-suggestion,
+.badge--entry-scan {
+  border-color: var(--edge-lilac);
+  background: var(--tint-lilac);
+  color: var(--lilac);
+}
+.badge--entry-update {
+  border-color: var(--edge-violet);
+  background: var(--tint-violet);
+  color: var(--violet-text);
+}
+.badge--outcome-success {
+  border-color: var(--edge-green);
+  background: var(--tint-green);
+  color: var(--green);
+}
+.badge--outcome-failed {
+  border-color: var(--edge-red);
+  background: var(--tint-red);
+  color: var(--red);
+}
+.badge--outcome-skipped {
+  border-color: var(--edge-amber);
+  background: var(--tint-amber);
+  color: var(--amber);
+}
+
+/* ── Empty states and pages ────────────────────────────────────────────── */
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 40px 20px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-align: center;
+}
+.empty__title {
+  font-weight: 600;
+}
+.empty__hint {
+  max-inline-size: 48ch;
+  font-size: 14.5px;
+  color: var(--fg-muted);
+}
+.empty .btn {
+  margin-block-start: 12px;
+}
+/* Inside a panel: what is missing, without a second frame. */
+.empty--inline {
+  justify-items: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: start;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block-start: 20px;
+}
+.pagination__position {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--fg-dim);
+}
+
+/* An MCP access: active in green, expired in amber, revoked in red. */
+.badge--access-active {
+  border-color: var(--edge-green);
+  background: var(--tint-green);
+  color: var(--green);
+}
+.badge--access-expired {
+  border-color: var(--edge-amber);
+  background: var(--tint-amber);
+  color: var(--amber);
+}
+.badge--access-revoked {
+  border-color: var(--edge-red);
+  background: var(--tint-red);
+  color: var(--red);
+}
+.badge--permission {
+  border-color: var(--edge-violet);
+  background: var(--tint-violet);
+  color: var(--violet-text);
+}

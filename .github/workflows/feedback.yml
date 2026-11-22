@@ -1,0 +1,270 @@
+name: feedback
+
+# The feedback service in feedback/: tests it, publishes its image to GHCR and
+# deploys it to the VPS behind the shared Caddy edge (feedback/README.md).
+#
+#   - test   every trigger: typecheck, lint, unit tests, integration tests on a
+#            real Postgres; on pull requests, also builds the image.
+#   - image  main only (push or manual dispatch): builds and pushes
+#            ghcr.io/<owner>/gup-feedback:sha-<commit>. No moving tag: the
+#            host runs the exact commit the deploy job names.
+#   - deploy main only: manual dispatch, or a push when the repository
+#            variable FEEDBACK_AUTO_DEPLOY is 'true'.
+#
+# Not a required check on purpose: a path-filtered workflow never reports on
+# pull requests that do not touch the service, which would block them forever.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "feedback/**"
+      - ".github/workflows/feedback.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "feedback/**"
+      - ".github/workflows/feedback.yml"
+  workflow_dispatch:
+
+# Least privilege: only the image job writes packages, only on main.
+permissions:
+  contents: read
+
+# A newer push to a pull request supersedes its run; a run on main is never
+# cancelled half-way (it may be pushing the image or deploying).
+concurrency:
+  group: feedback-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Force the JavaScript actions onto Node.js 24 until every upstream ships it
+# (GitHub's documented opt-in; Node 20 runtimes are deprecated).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  test:
+    name: feedback service tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: feedback
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # A throwaway database: the integration suite drops its public schema.
+      FEEDBACK_TEST_DATABASE_URL: postgres://postgres:test@127.0.0.1:5432/postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: feedback/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint (size and complexity limits included)
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Integration tests (Postgres)
+        run: npm run test:integration
+
+      # The image job only runs where it pushes; a pull request still proves
+      # the Dockerfile builds.
+      - name: Build the image
+        if: github.event_name == 'pull_request'
+        run: docker build --tag gup-feedback:ci .
+
+  image:
+    name: feedback image
+    # A dispatch from another branch tests it, nothing more.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.name.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # GHCR refuses upper-case repository names; the owner may have some.
+      - name: Name the image
+        id: name
+        run: |
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/gup-feedback" >> "$GITHUB_OUTPUT"
+          echo "tag=sha-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      # The source label links the package to this repository, which lets
+      # the deploy job pull it with its own short-lived token.
+      - name: Build
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}
+          TAG: ${{ steps.name.outputs.tag }}
+        run: >-
+          docker build feedback
+          --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          --label "org.opencontainers.image.revision=${GITHUB_SHA}"
+          --tag "${IMAGE}:${TAG}"
+
+      - name: Push
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}
+          TAG: ${{ steps.name.outputs.tag }}
+        run: docker push "${IMAGE}:${TAG}"
+
+      - name: Log out of GHCR
+        if: always()
+        run: docker logout ghcr.io
+
+  deploy:
+    name: feedback deploy
+    needs: image
+    if: >-
+      github.ref == 'refs/heads/main'
+      && (github.event_name == 'workflow_dispatch'
+          || (github.event_name == 'push' && vars.FEEDBACK_AUTO_DEPLOY == 'true'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    # One deployment at a time, never cancelled half-way.
+    concurrency:
+      group: feedback-deploy
+      cancel-in-progress: false
+    environment:
+      name: feedback
+      url: ${{ vars.FEEDBACK_PUBLIC_URL }}
+    env:
+      DEPLOY_DIR: /opt/gup-feedback-prod
+      COMPOSE_PROJECT_NAME: gup-feedback-prod
+      COMPOSE: docker compose -f compose.yaml -f compose.deploy.yaml
+      IMAGE_TAG: ${{ needs.image.outputs.tag }}
+      SSH_HOST: ${{ secrets.FEEDBACK_SSH_HOST }}
+      SSH_USER: ${{ secrets.FEEDBACK_SSH_USER }}
+      PUBLIC_URL: ${{ vars.FEEDBACK_PUBLIC_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            feedback/compose.yaml
+            feedback/compose.deploy.yaml
+          sparse-checkout-cone-mode: false
+
+      - name: Check the deployment settings
+        env:
+          HAS_KEY: ${{ secrets.FEEDBACK_SSH_KEY != '' }}
+          HAS_ENV_FILE: ${{ secrets.FEEDBACK_ENV_FILE != '' }}
+          HAS_KNOWN_HOSTS: ${{ secrets.FEEDBACK_SSH_KNOWN_HOSTS != '' }}
+        run: |
+          missing=()
+          [ "$HAS_KEY" = "true" ] || missing+=("secret FEEDBACK_SSH_KEY")
+          [ "$HAS_KNOWN_HOSTS" = "true" ] || missing+=("secret FEEDBACK_SSH_KNOWN_HOSTS")
+          [ -n "$SSH_HOST" ] || missing+=("secret FEEDBACK_SSH_HOST")
+          [ -n "$SSH_USER" ] || missing+=("secret FEEDBACK_SSH_USER")
+          [ "$HAS_ENV_FILE" = "true" ] || missing+=("secret FEEDBACK_ENV_FILE")
+          [ -n "$PUBLIC_URL" ] || missing+=("variable FEEDBACK_PUBLIC_URL")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf '::error::Missing deployment setting: %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+      # Host key pinned by FEEDBACK_SSH_KNOWN_HOSTS, never learned on first
+      # contact: a runner cannot tell the VPS from a machine in the middle.
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.FEEDBACK_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.FEEDBACK_SSH_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          {
+            echo "Host target"
+            echo "  HostName $SSH_HOST"
+            echo "  User $SSH_USER"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking yes"
+            echo "  BatchMode yes"
+          } > ~/.ssh/config
+
+      - name: Check the shared edge network
+        run: |
+          if ! ssh target "docker network inspect edge > /dev/null"; then
+            echo "::error::Docker network 'edge' is missing on the host: start the shared Caddy edge first."
+            exit 1
+          fi
+
+      - name: Copy the compose files
+        run: |
+          ssh target "mkdir -p '$DEPLOY_DIR'"
+          scp feedback/compose.yaml feedback/compose.deploy.yaml "target:$DEPLOY_DIR/"
+
+      # Written through stdin, never argv: the settings hold secrets.
+      - name: Write the environment file
+        env:
+          ENV_FILE: ${{ secrets.FEEDBACK_ENV_FILE }}
+        run: |
+          {
+            printf '%s\n' "$ENV_FILE"
+            echo "COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT_NAME"
+            echo "IMAGE_TAG=$IMAGE_TAG"
+          } | ssh target "umask 077 && cat > '$DEPLOY_DIR/.env'"
+
+      - name: Pull the image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" \
+            | ssh target "docker login ghcr.io --username '$GITHUB_ACTOR' --password-stdin"
+          for attempt in 1 2 3; do
+            if ssh target "cd '$DEPLOY_DIR' && $COMPOSE pull --quiet"; then exit 0; fi
+            echo "Pull attempt $attempt failed, retrying."
+            sleep $((attempt * 10))
+          done
+          exit 1
+
+      - name: Start the service
+        run: ssh target "cd '$DEPLOY_DIR' && $COMPOSE up -d --remove-orphans"
+
+      - name: Probe /healthz through the edge
+        run: |
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors \
+            --max-time 10 "${PUBLIC_URL%/}/healthz"
+
+      - name: Clean up credentials
+        if: always()
+        run: |
+          ssh target "docker logout ghcr.io" || true
+          rm -f ~/.ssh/deploy_key

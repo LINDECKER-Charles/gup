@@ -151,6 +151,7 @@ export const LAUNCH_VIEW_VALUES = localized<Readonly<Record<ViewId, string>>>({
     schedules: "Schedules",
     providers: "Providers",
     journal: "Journal",
+    feedback: "Feedback",
     options: "Options",
   },
   fr: {
@@ -159,6 +160,7 @@ export const LAUNCH_VIEW_VALUES = localized<Readonly<Record<ViewId, string>>>({
     schedules: "Planification",
     providers: "Providers",
     journal: "Journal",
+    feedback: "Retours",
     options: "Options",
   },
 });

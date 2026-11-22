@@ -46,7 +46,7 @@ export function toJsonExport({ meta, insights, events }: JsonExportInput): strin
       stats: meta.stats,
     }),
     insights: insightsDocument(insights),
-    events: events.map((event) => snakeCaseKeys(redactedEvent(event))),
+    events: events.map((event) => snakeCaseKeys(redactHistoryEvent(event))),
   };
   return `${JSON.stringify(document, null, INDENT)}\n`;
 }
@@ -69,7 +69,11 @@ function periodOf(period: Period): object {
   };
 }
 
-function redactedEvent(event: HistoryEvent): HistoryEvent {
+/**
+ * A history record with its free text redacted again, its shape untouched.
+ * Shared with the journals an install shares with the maintainer.
+ */
+export function redactHistoryEvent(event: HistoryEvent): HistoryEvent {
   return event.kind === "update" ? redactedUpdate(event) : redactedScan(event);
 }
 

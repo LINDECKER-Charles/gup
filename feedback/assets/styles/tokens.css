@@ -1,0 +1,88 @@
+/* ----------------------------------------------------------------------------
+   Design tokens. The ramp, accents and type stacks are the landing's
+   (index/src/styles/foundation/tokens.css): the back office reads as the same
+   product. Dark only, like the landing.
+
+   Text tokens reach WCAG AA (4.5:1) on every surface they are drawn on, tints
+   included. --line-*, --deco-* and --edge-* are for borders and decoration
+   only; a --tint-* sits behind the text token of the same hue.
+---------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces. */
+  --bg: oklch(0.13 0.008 265);
+  --bg-deep: oklch(0.1 0.008 265);
+  --bg-glass: oklch(0.13 0.008 265 / 0.86);
+  --surface: oklch(0.155 0.01 265);
+  --surface-raised: oklch(0.19 0.014 265);
+  --chip-bg: oklch(0.11 0.008 265);
+
+  /* Hairlines and decoration — never text. */
+  --line-faint: oklch(0.2 0.01 265);
+  --line: oklch(0.25 0.012 265);
+  --line-strong: oklch(0.32 0.014 265);
+  --deco-faint: oklch(0.42 0.01 265);
+
+  /* Text ramp, brightest first. --fg-dim is the floor for any text. */
+  --fg: oklch(0.97 0.004 265);
+  --fg-muted: oklch(0.76 0.008 265);
+  --fg-soft: oklch(0.68 0.01 265);
+  --fg-dim: oklch(0.63 0.01 265);
+
+  /* Accents. Text on a filled accent uses the matching ink. */
+  --violet: oklch(0.68 0.2 275);
+  --violet-lit: oklch(0.75 0.19 275);
+  --violet-text: oklch(0.8 0.15 275);
+  --violet-ink: oklch(0.13 0.008 265);
+  --amber: oklch(0.85 0.15 75);
+  --amber-ink: oklch(0.17 0.02 75);
+  --green: oklch(0.8 0.17 150);
+  --red: oklch(0.72 0.17 25);
+  --red-lit: oklch(0.78 0.15 25);
+  --red-ink: oklch(0.13 0.008 265);
+  --lilac: oklch(0.78 0.13 305);
+
+  /* Tones: a faint fill and a border behind the hue's own text token. */
+  --tint-violet: oklch(0.68 0.2 275 / 0.16);
+  --tint-amber: oklch(0.85 0.15 75 / 0.12);
+  --tint-green: oklch(0.8 0.17 150 / 0.1);
+  --tint-red: oklch(0.72 0.17 25 / 0.12);
+  --tint-lilac: oklch(0.78 0.13 305 / 0.12);
+  --edge-violet: oklch(0.68 0.2 275 / 0.45);
+  --edge-amber: oklch(0.85 0.15 75 / 0.35);
+  --edge-green: oklch(0.8 0.17 150 / 0.4);
+  --edge-red: oklch(0.72 0.17 25 / 0.45);
+  --edge-lilac: oklch(0.78 0.13 305 / 0.35);
+  --underline: oklch(0.8 0.15 275 / 0.4);
+
+  /* The landing's backdrop. */
+  --glow-violet: oklch(0.68 0.2 275 / 0.16);
+  --glow-amber: oklch(0.85 0.15 75 / 0.05);
+  --grid-line: oklch(0.32 0.02 275 / 0.08);
+
+  /* Typography. */
+  --font-brand: "Anton", "Anton Fallback", Impact, sans-serif;
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, "SFMono-Regular", Menlo,
+    Consolas, monospace;
+  --label-tracking: 0.14em;
+  --label-tracking-tight: 0.06em;
+
+  /* Layout. One break at 720 px (one column below), one at 1024 px (side panel). */
+  --shell-max: 1180px;
+  --shell-pad: 16px;
+  --topbar-h: 60px;
+  --radius-sm: 7px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (min-width: 720px) {
+  :root {
+    --shell-pad: 32px;
+  }
+}

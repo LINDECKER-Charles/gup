@@ -15,6 +15,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { renderPage } from "../build/html/render-page.mjs";
+import { LINKS } from "../src/data/links.js";
 import { pageContexts } from "../build/page-context.mjs";
 import { buildNotFound } from "../build/seo/not-found.mjs";
 import { buildSitemap } from "../build/seo/sitemap.mjs";
@@ -27,8 +28,10 @@ const MIN_MARKUP_CHARS = 2000;
 
 /**
  * Production Content-Security-Policy, as a <meta> (GitHub Pages cannot set
- * headers). Everything is same-origin; the JSON data blocks are not executed
- * and need no allowance. `style-src 'unsafe-inline'` covers the few React
+ * headers). Everything is same-origin except the feedback service, which the
+ * form posts to (`form-action`, which Chromium also applies to the redirect
+ * back, hence `'self'`) and the script fetches (`connect-src`). The JSON data
+ * blocks are not executed and need no allowance. `style-src 'unsafe-inline'` covers the few React
  * `style` attributes (CSS custom properties). Never applied in dev, where
  * Vite's HMR client needs inline scripts and a websocket.
  */
@@ -38,9 +41,9 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self'",
+  `connect-src 'self' ${LINKS.feedbackApi}`,
   "base-uri 'self'",
-  "form-action 'none'",
+  `form-action 'self' ${LINKS.feedbackApi}`,
   "object-src 'none'",
 ].join("; ");
 

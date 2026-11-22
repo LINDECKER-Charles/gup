@@ -19,7 +19,14 @@ import type { UpdateLauncher } from "./update-launcher.js";
  */
 
 /** Every menu view, present or planned: work views first, information and settings after. */
-export type ViewId = "scan" | "packages" | "schedules" | "providers" | "journal" | "options";
+export type ViewId =
+  | "scan"
+  | "packages"
+  | "schedules"
+  | "providers"
+  | "journal"
+  | "feedback"
+  | "options";
 
 /** A short count after a sidebar label ("12" next to Paquets). */
 export interface SidebarBadge {

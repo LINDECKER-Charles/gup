@@ -1,0 +1,16 @@
+# Only what the image builds from: package files, tsconfig, src, migrations, assets.
+node_modules
+dist
+coverage
+tests
+scripts
+contract
+*.md
+.env*
+dev.env
+compose*.yaml
+eslint.config.js
+vitest.config.ts
+.gitignore
+.dockerignore
+Dockerfile

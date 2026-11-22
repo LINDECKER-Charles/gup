@@ -1,12 +1,16 @@
+import { openWebPage } from "../core/export/open-external.js";
 import { readProviderStatus } from "../core/platform/provider-status.js";
 import type { ViewDefinition } from "../ui/app/view-definition.js";
 import { journalOptions } from "../ui/settings/journal-options.js";
+import { sharingOptions } from "../ui/settings/sharing-options.js";
+import { feedbackView } from "../ui/views/feedback-view.js";
 import { journalView } from "../ui/views/journal-view.js";
 import { optionsView } from "../ui/views/options-view.js";
 import { packagesView } from "../ui/views/packages-view.js";
 import { providersView } from "../ui/views/providers-view.js";
 import { scanView } from "../ui/views/scan-view.js";
 import { schedulesView } from "../ui/views/schedules-view.js";
+import { processSharing } from "./feedback/process-sharing.js";
 import { journalSource } from "./journal/journal-source.js";
 import { currentLogLevel } from "./journal/log-session.js";
 import { menuSchedules } from "./schedule/schedules-controller.js";
@@ -19,9 +23,23 @@ import { menuSchedules } from "./schedule/schedules-controller.js";
  */
 export function menuViews(): readonly ViewDefinition[] {
   const schedules = menuSchedules();
+  // The process's own: the erasure the Options row starts is awaited before the process exits.
+  const sharing = processSharing();
   return [
+    feedbackView({
+      installId: () => sharing.installId(),
+      createInstallId: () => sharing.createInstallId(),
+      formUrl: (installId) => sharing.formUrl(installId),
+      openForm: async (url) => {
+        // A report is coming: the session's upload ignores the weekly wait.
+        sharing.requestSync();
+        return (await openWebPage(url)).opened;
+      },
+    }),
     journalView(journalSource, { scheduleName: (id) => schedules.scheduleName(id) }),
-    optionsView({ extraSections: [journalOptions({ logLevel: currentLogLevel })] }),
+    optionsView({
+      extraSections: [journalOptions({ logLevel: currentLogLevel }), sharingOptions(sharing)],
+    }),
     packagesView(),
     providersView({ status: readProviderStatus }),
     scanView(),

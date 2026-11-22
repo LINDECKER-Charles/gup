@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   openerFor,
   openExternal,
+  openWebPage,
   type Launch,
   type OpenerFacts,
 } from "../../../src/core/export/open-external.js";
@@ -176,5 +177,41 @@ describe("openExternal: an HTML page only", () => {
     expect(openerFor("\\\\?\\C:\\Users\\user\\rapport.html", facts({ platform: "win32" }))).toMatchObject({
       args: ["\\\\?\\C:\\Users\\user\\rapport.html"],
     });
+  });
+});
+
+describe("openWebPage", () => {
+  const FORM = "https://example.test/gup/fr/?install=abc&version=1.0.0&platform=win32#feedback";
+
+  it("hands an https page to the platform's launcher", async () => {
+    const launch = vi.fn<Launch>(async () => true);
+
+    const result = await openWebPage(FORM, { platform: "darwin", env: {}, launch });
+
+    expect(result).toEqual({ opened: true, launcher: "/usr/bin/open" });
+    expect(launch).toHaveBeenCalledWith("/usr/bin/open", [FORM]);
+  });
+
+  it("opens through explorer.exe on Windows, the address as its only argument", async () => {
+    const launch = vi.fn<Launch>(async () => true);
+
+    await openWebPage(FORM, { platform: "win32", env: { SystemRoot: "C:\\Windows" }, launch });
+
+    expect(launch).toHaveBeenCalledWith("C:\\Windows\\explorer.exe", [FORM]);
+  });
+
+  it.each([
+    ["a file URL", "file:///C:/Windows/System32/calc.exe"],
+    ["a script URL", "javascript:alert(1)"],
+    ["clear text to another machine", "http://example.test/gup/"],
+    ["credentials", "https://user:pass@example.test/"],
+    ["no URL at all", "C:\\r\\report.html"],
+  ])("refuses %s without launching anything", async (_case, url) => {
+    const launch = vi.fn<Launch>(async () => true);
+
+    const result = await openWebPage(url, { platform: "darwin", env: {}, launch });
+
+    expect(result).toMatchObject({ opened: false, launcher: null });
+    expect(launch).not.toHaveBeenCalled();
   });
 });

@@ -23,6 +23,8 @@ export interface SandboxDirs {
   readonly logs: string;
   readonly reports: string;
   readonly scheduler: string;
+  /** The install identity and the upload cursor. */
+  readonly feedback: string;
   /** `npm_config_prefix`: where `npm i -g` installs and what `npm outdated -g` reads. */
   readonly npmPrefix: string;
   /** What `npm root -g` prints for that prefix: where the global packages live. */
@@ -58,6 +60,7 @@ export async function createSandbox(label: string): Promise<Sandbox> {
     logs: join(root, "logs"),
     reports: join(root, "reports"),
     scheduler: join(root, "scheduler"),
+    feedback: join(root, "feedback"),
     npmPrefix: join(root, "npm"),
     npmGlobalRoot: npmGlobalRoot(join(root, "npm")),
     npmCache: join(root, "npm-cache"),
@@ -102,6 +105,10 @@ function sandboxVariables(dirs: SandboxDirs): Record<string, string> {
     GUP_LOG_DIR: dirs.logs,
     GUP_REPORT_DIR: dirs.reports,
     GUP_SCHEDULER_DIR: dirs.scheduler,
+    GUP_FEEDBACK_DIR: dirs.feedback,
+    // The sandbox has a real settings file: without this the menu would ask
+    // whether to share the journals, and a granted run would upload them.
+    GUP_SHARE_LOGS: "0",
     npm_config_prefix: dirs.npmPrefix,
     npm_config_cache: dirs.npmCache,
     npm_config_update_notifier: "false",

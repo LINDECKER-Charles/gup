@@ -1,0 +1,44 @@
+{
+  "name": "@charles_lindecker/gup-feedback",
+  "version": "0.1.0",
+  "private": true,
+  "description": "gup feedback service: public feedback and journal-upload API, mail relay and server-rendered back office.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "dev": "tsx watch src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests scripts",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "admin:hash": "tsx scripts/admin-hash.ts",
+    "admin:totp": "tsx scripts/admin-totp.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/formbody": "^9.0.2",
+    "@fastify/rate-limit": "^11.3.0",
+    "@modelcontextprotocol/server": "^2.4.0",
+    "fastify": "^5.12.8",
+    "nodemailer": "^10.6.1",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
+    "eslint": "^10.15.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "uqr": "^0.1.3",
+    "vitest": "^5.1.1"
+  }
+}

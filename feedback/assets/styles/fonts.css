@@ -1,0 +1,56 @@
+/* ----------------------------------------------------------------------------
+   The landing's faces (index/static/fonts), served by the service itself: the
+   back office makes no third-party request. Anton for page names, Geist for
+   text, Geist Mono for labels, identifiers and controls.
+
+   The "* Fallback" faces pin the system fallback to each webfont's metrics so
+   the swap does not reflow the page.
+---------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "Anton";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("anton.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("geist.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("geist-mono.woff2") format("woff2-variations");
+}
+
+@font-face {
+  font-family: "Anton Fallback";
+  src: local("Impact"), local("Haettenschweiler"), local("Arial Narrow Bold"),
+    local("Arial Narrow"), local("DejaVu Sans Condensed");
+  ascent-override: 102%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial"), local("Helvetica"), local("Liberation Sans");
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}
+@font-face {
+  font-family: "Geist Mono Fallback";
+  src: local("Consolas"), local("Menlo"), local("Liberation Mono"), local("Courier New");
+  ascent-override: 96%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+}

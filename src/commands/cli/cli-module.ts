@@ -4,9 +4,9 @@ import type { RunTrigger } from "../../core/state/run-context.js";
 /**
  * How a feature plugs into the command line without editing `main.ts`: it
  * registers its commands and global options, wires its process-wide slots
- * (log backend, launcher, batch guard…) before the action runs, contributes
- * lines to `gup doctor`, and hears about a crash. Every module is one line in
- * `cli-modules.ts`.
+ * (log backend, launcher, batch guard…) before the action runs, finishes its
+ * work before the process exits, contributes lines to `gup doctor`, and hears
+ * about a crash. Every module is one line in `cli-modules.ts`.
  */
 
 export interface RegisterContext {
@@ -48,6 +48,15 @@ export interface CliModule {
   triggerFor?(commandPath: string): RunTrigger | undefined;
   /** Composition: install this module's slots for the command about to run. */
   beforeAction?(context: StartupContext): void | Promise<void>;
+  /**
+   * The command is done and the process is about to exit: bounded,
+   * best-effort work (the shared journals' upload). Runs for the commands
+   * that end through `endCommand` (`startup.ts`) — those that write the
+   * journals: the menu, `update`, `list`, `gup schedule …` and the
+   * scheduler's tick; and `gup feedback`, which requests a sync — never in
+   * the elevated child. Must not throw.
+   */
+  beforeExit?(context: StartupContext): Promise<void>;
   /** Lines for the "System" section of `gup doctor`. */
   diagnostics?(): Promise<readonly DiagnosticLine[]>;
   /** The process is about to exit on an uncaught error. Must not throw. */

@@ -1,0 +1,38 @@
+# Production on the VPS: the published image, behind the shared Caddy edge
+# (caddy-docker-proxy on the external `edge` network), no published port.
+# Written by the deploy job of .github/workflows/feedback.yml into
+# /opt/gup-feedback-prod with a .env built from the FEEDBACK_ENV_FILE secret:
+#
+#   docker compose -f compose.yaml -f compose.deploy.yaml up -d --remove-orphans
+
+services:
+  gup-feedback:
+    image: ghcr.io/lindecker-charles/gup-feedback:${IMAGE_TAG:?IMAGE_TAG is required}
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      FEEDBACK_PUBLIC_URL: ${FEEDBACK_PUBLIC_URL:?FEEDBACK_PUBLIC_URL is required}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?ADMIN_USERNAME is required}
+      ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:?ADMIN_TOTP_SECRET is required}
+      # Optional: unset or empty takes the service's default (README.md).
+      FEEDBACK_LANDING_URL: ${FEEDBACK_LANDING_URL:-}
+      FEEDBACK_ALLOWED_ORIGINS: ${FEEDBACK_ALLOWED_ORIGINS:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      FEEDBACK_NOTIFY_TO: ${FEEDBACK_NOTIFY_TO:-}
+      LOG_RETENTION_DAYS: ${LOG_RETENTION_DAYS:-}
+      LOG_LEVEL: ${LOG_LEVEL:-}
+    networks:
+      - default
+      - edge
+    labels:
+      caddy: ${CADDY_DOMAINS:?CADDY_DOMAINS is required}
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+
+  postgres:
+    restart: unless-stopped
+    mem_limit: 384m
+
+networks:
+  edge:
+    external: true

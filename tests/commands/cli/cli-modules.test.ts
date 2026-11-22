@@ -22,6 +22,7 @@ describe("CLI_MODULES", () => {
       "__admin-batch",
       "__schedule-tick",
       "doctor",
+      "feedback",
       "language",
       "list",
       "log",

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+# Secrets deposited by the secrets vault (see README): the local stack's, the
+# production dotenv the FEEDBACK_ENV_FILE secret derives from, and the
+# maintainer's own (admin password, MCP token), which never reach the server.
+/dev.env
+/prod.env
+/prod-client.env
+# Private key of the deploy job (FEEDBACK_SSH_KEY); its public half is on the host.
+/deploy.key
+/deploy.key.pub
+# The root .gitignore ignores every `.env.*`; the documented template is the exception.
+!.env.example

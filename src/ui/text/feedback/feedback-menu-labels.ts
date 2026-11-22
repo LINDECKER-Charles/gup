@@ -1,0 +1,48 @@
+import { localized } from "../../../core/i18n/localized.js";
+
+/** The menu's Feedback view and the sharing row of Options. */
+export const FEEDBACK_MENU_LABELS = localized({
+  en: {
+    view: "Feedback",
+    intro: "Found a bug, or have an idea? Tell the maintainer on the feedback form.",
+    idIntro: "Quote this install ID: it links your report to the journals you share.",
+    installId: (id: string) => `Install ID   ${id}`,
+    form: (url: string) => `Form         ${url}`,
+    noIdentity: "No install ID: gup has no readable folder for its state on this machine.",
+    idPending: "Install ID   not created yet: opening the form or copying the ID creates it",
+    formRefused: "GUP_FEEDBACK_FORM is not an address gup accepts: no form to open.",
+    hints: "enter open the form · c copy the ID",
+    opened: "The form is open in your browser.",
+    openFailed: "The browser could not be opened: copy the address above.",
+    copied: "Install ID copied.",
+    copyFailed: "This terminal cannot copy: select the ID above.",
+    optionsTitle: "FEEDBACK",
+    shareLabel: "Share journals",
+    shareHint: (id: string) => `history and debug log, redacted · install ${id}`,
+    shareHintNoId: "history and debug log, redacted",
+    forcedOff: "off: GUP_SHARE_LOGS turns sharing off in this shell",
+    erasing: "Sharing is off; erasing what was shared…",
+  },
+  fr: {
+    view: "Retours",
+    intro: "Un bug, une idée ? Dites-le au mainteneur sur le formulaire de retours.",
+    idIntro: "Citez cet ID d'installation : il relie votre retour aux journaux partagés.",
+    installId: (id) => `ID d'installation   ${id}`,
+    form: (url) => `Formulaire          ${url}`,
+    noIdentity: "Pas d'ID d'installation : gup n'a aucun dossier d'état lisible sur cette machine.",
+    idPending:
+      "ID d'installation   pas encore créé : ouvrir le formulaire ou copier l'ID le crée",
+    formRefused: "GUP_FEEDBACK_FORM n'est pas une adresse que gup accepte : aucun formulaire.",
+    hints: "entrée ouvrir le formulaire · c copier l'ID",
+    opened: "Le formulaire est ouvert dans votre navigateur.",
+    openFailed: "Le navigateur n'a pas pu être ouvert : copiez l'adresse ci-dessus.",
+    copied: "ID d'installation copié.",
+    copyFailed: "Ce terminal ne sait pas copier : sélectionnez l'ID ci-dessus.",
+    optionsTitle: "RETOURS",
+    shareLabel: "Partager les journaux",
+    shareHint: (id) => `historique et journal de debug, expurgés · installation ${id}`,
+    shareHintNoId: "historique et journal de debug, expurgés",
+    forcedOff: "désactivé : GUP_SHARE_LOGS coupe le partage dans ce shell",
+    erasing: "Partage désactivé ; effacement de ce qui a été partagé…",
+  },
+});

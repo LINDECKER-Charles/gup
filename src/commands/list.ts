@@ -1,5 +1,6 @@
 import { scanAll } from "../core/registry.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
+import { endCommand } from "./cli/startup.js";
 import { recordScan } from "../core/history/store.js";
 import { localized } from "../core/i18n/localized.js";
 import { scanWithProgress } from "../ui/scan-progress.js";
@@ -68,7 +69,7 @@ export const listModule: CliModule = {
           ...(opts.fast !== undefined && { fast: opts.fast }),
           ...(opts.json !== undefined && { json: opts.json }),
         });
-        process.exit(code);
+        await endCommand(code);
       });
   },
 };

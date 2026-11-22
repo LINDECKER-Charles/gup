@@ -333,12 +333,54 @@ export default {
       star: "Star on GitHub",
     },
   },
+  feedback: {
+    kicker: "07 / FEEDBACK",
+    title: "Found a bug? Got an idea?",
+    lead: "Tell me what broke, or what would make gup better. I read every message.",
+    kinds: { legend: "What is it about?", bug: "Bug report", suggestion: "Suggestion" },
+    fields: {
+      title: { label: "Title" },
+      message: {
+        label: "Message",
+        hint: "What happened, what you expected, and your system if it matters.",
+        unit: "characters",
+      },
+      email: { label: "Email", hint: "Only to answer you." },
+      installId: {
+        label: "Install ID",
+        hint:
+          "Run `gup feedback id` to get it — it lets the maintainer read the journals you " +
+          "chose to share.",
+      },
+    },
+    optional: "optional",
+    context: "Sent with your message:",
+    submit: "Send message",
+    sending: "Sending…",
+    status: {
+      sent: "Thank you — your message has been sent.",
+      invalid: "Some fields are missing or invalid — please check the form.",
+      limited: "Too many messages from your network just now. Please try again in a few minutes.",
+      unreachable: "The feedback service could not be reached. Please try again later.",
+    },
+    errors: {
+      title: "Give your message a short title.",
+      message: "Add a few more words so I can act on it.",
+      email: "That does not look like an email address.",
+      installId: "That is not a valid install ID; copy it again from the terminal.",
+    },
+    privacy:
+      "**Stored:** your message and, only if you give them, your email, install ID, version " +
+      "and platform. **Not stored:** your IP address — it only limits abuse and is never " +
+      "saved. No tracking, no cookies. Everything is used only to handle your feedback.",
+  },
   footer: {
     tagline:
       "Global Updater — one CLI for {providers} installation sources. Strict TypeScript, " +
       "ESM, Node ≥ {node}.",
     columns: { project: "Project", docs: "Documentation", technical: "Technical" },
     links: {
+      feedback: "Send feedback",
       repo: "Source code · GitHub",
       npm: "Package · npm",
       issues: "Issues",

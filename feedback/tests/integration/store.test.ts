@@ -1,0 +1,277 @@
+import { readFileSync } from "node:fs";
+import pg from "pg";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import type { NewFeedback } from "../../src/domain/feedback.js";
+import { validateLogBatch } from "../../src/domain/validate-log-batch.js";
+import type { LogBatch } from "../../src/domain/journal.js";
+import { sha256 } from "../../src/security/sha256.js";
+import { PgFeedbackRepository } from "../../src/store/feedback/pg-feedback-repository.js";
+import { PgMailSettingsStore } from "../../src/store/feedback/pg-mail-settings-store.js";
+import { PgOutboxRepository } from "../../src/store/feedback/pg-outbox-repository.js";
+import { migrate } from "../../src/store/migrate.js";
+import { PgInstallReader } from "../../src/store/pg-install-reader.js";
+import { PgInstallStore } from "../../src/store/pg-install-store.js";
+import { PgMcpAccessStore } from "../../src/store/pg-mcp-access-store.js";
+import { PgRetentionStore } from "../../src/store/pg-retention-store.js";
+import { PgSecondFactorStore } from "../../src/store/pg-second-factor-store.js";
+import { PgSessionRepository } from "../../src/store/pg-session-repository.js";
+import { DURATION_MS } from "../../src/time-units.js";
+
+/**
+ * Runs against a throwaway database only: it drops the `public` schema.
+ *   docker run -d --rm --name gup-feedback-test-pg -e POSTGRES_PASSWORD=test \
+ *     -p 127.0.0.1:55432:5432 postgres:18-alpine
+ *   FEEDBACK_TEST_DATABASE_URL=postgres://postgres:test@127.0.0.1:55432/postgres
+ */
+const DATABASE_URL = process.env["FEEDBACK_TEST_DATABASE_URL"];
+const INSTALL_ID = "8c1d4f2e-3b5a-4c6d-8e7f-9a0b1c2d3e4f";
+const OTHER_INSTALL_ID = "0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0";
+const DAY_MS = DURATION_MS.day;
+const FEEDBACK: NewFeedback = {
+  kind: "bug", title: "Broken", message: "Something is broken.", email: "a@example.com",
+  installId: INSTALL_ID, gupVersion: "0.6.0", platform: "win32", locale: "fr",
+};
+
+function exampleBatch(): LogBatch {
+  const url = new URL("../../contract/log-batch.v1.example.json", import.meta.url);
+  const validation = validateLogBatch(JSON.parse(readFileSync(url, "utf8")));
+  if (!validation.ok) throw new Error("the contract example no longer validates");
+  return validation.value;
+}
+
+describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
+  const pool = new pg.Pool({ connectionString: DATABASE_URL });
+  const feedback = new PgFeedbackRepository(pool);
+  const installs = new PgInstallStore(pool);
+
+  beforeAll(async () => {
+    await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
+  });
+
+  afterAll(async () => {
+    await pool.end();
+  });
+
+  beforeEach(async () => {
+    await migrate(pool);
+    await pool.query(`TRUNCATE feedback, mail_outbox, install, admin_session,
+      admin_second_factor, mail_setting, mcp_access RESTART IDENTITY CASCADE`);
+  });
+
+  it("migrates an empty database once, then finds nothing to apply", async () => {
+    await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
+    expect(await migrate(pool)).toEqual(
+      ["001_initial.sql", "002_journal_reading.sql", "003_second_factor.sql",
+        "004_mail_setting.sql", "005_mcp_access.sql"]);
+    expect(await migrate(pool)).toEqual([]);
+  });
+
+  it("round-trips a feedback and queues its mail in the same write", async () => {
+    const id = await feedback.create(FEEDBACK);
+    await feedback.updateStatus(id, "in_progress");
+    await feedback.updateNote(id, "Looking into it.");
+    expect(await feedback.find(id)).toMatchObject({
+      ...FEEDBACK, id, status: "in_progress", note: "Looking into it.",
+    });
+    const page = await feedback.list({
+      status: "in_progress", kind: null, search: null, page: 1, pageSize: 20,
+    });
+    expect(page.total).toBe(1);
+    expect(await feedback.countByStatus({ kind: null, search: null }))
+      .toMatchObject({ in_progress: 1, new: 0 });
+    const outbox = await pool.query("SELECT feedback_id FROM mail_outbox");
+    expect(outbox.rows).toEqual([{ feedback_id: String(id) }]);
+  });
+
+  it("searches text, address, install and number, with % and _ taken literally", async () => {
+    // "see config" would match `e_c` if `_` stayed a wildcard.
+    const first = await feedback.create({
+      ...FEEDBACK, title: "Upgrade at 100% stalls", message: "It froze; see config.",
+    });
+    await feedback.create({ ...FEEDBACK, kind: "suggestion", title: "Dark theme", email: null,
+      message: "A snake_case option.", installId: OTHER_INSTALL_ID });
+    const titles = async (search: string) => (await feedback.list({
+      status: null, kind: null, search, page: 1, pageSize: 20,
+    })).items.map((item) => item.title);
+    expect(await titles("100%")).toEqual(["Upgrade at 100% stalls"]);
+    expect(await titles("%")).toEqual(["Upgrade at 100% stalls"]);
+    expect(await titles("e_c")).toEqual(["Dark theme"]);
+    expect(await titles("A@EXAMPLE")).toEqual(["Upgrade at 100% stalls"]);
+    expect(await titles(OTHER_INSTALL_ID.slice(0, 8))).toEqual(["Dark theme"]);
+    expect(await titles(`#${first}`)).toEqual(["Upgrade at 100% stalls"]);
+    expect(await feedback.countByStatus({ kind: "bug", search: "dark" }))
+      .toMatchObject({ new: 0 });
+    expect(await feedback.countByStatus({ kind: null, search: "dark" }))
+      .toMatchObject({ new: 1 });
+  });
+
+  it("creates the install with its first batch and stores each item once", async () => {
+    const batch = exampleBatch();
+    const command = { installId: INSTALL_ID, batch, mayCreateInstall: true };
+    const first = await installs.storeBatch(command);
+    const again = await installs.storeBatch({ ...command, mayCreateInstall: false });
+    expect(first).toEqual({ kind: "stored", accepted: { history: 2, logs: 2 }, isNewInstall: true });
+    expect(again).toEqual({ kind: "stored", accepted: { history: 0, logs: 0 }, isNewInstall: false });
+    const reader = new PgInstallReader(pool);
+    expect(await reader.find(INSTALL_ID)).toMatchObject({ platform: "win32", historyCount: 2 });
+    const logs = await reader.listLogs({ installId: INSTALL_ID, maxLevelRank: 1, page: 1, pageSize: 50 });
+    expect(logs.items.map((item) => item.event)).toEqual(["update.failed"]);
+  });
+
+  it("never creates an install from an empty batch, nor once creation is refused", async () => {
+    const empty = { ...exampleBatch(), history: [], logs: [] };
+    const fromEmpty = await installs.storeBatch({
+      installId: INSTALL_ID, batch: empty, mayCreateInstall: true,
+    });
+    const refused = await installs.storeBatch({
+      installId: OTHER_INSTALL_ID, batch: exampleBatch(), mayCreateInstall: false,
+    });
+    expect(fromEmpty).toEqual({
+      kind: "stored", accepted: { history: 0, logs: 0 }, isNewInstall: false,
+    });
+    expect(refused).toEqual({ kind: "creation_refused" });
+    expect((await pool.query("SELECT id FROM install")).rowCount).toBe(0);
+  });
+
+  it("erases an install with everything uploaded for it, and ignores an unknown one", async () => {
+    await installs.storeBatch({ installId: INSTALL_ID, batch: exampleBatch(), mayCreateInstall: true });
+    await installs.remove(INSTALL_ID);
+    await installs.remove(OTHER_INSTALL_ID);
+    const left = await pool.query(
+      "SELECT (SELECT count(*) FROM install) + (SELECT count(*) FROM install_log_item) AS n");
+    expect(left.rows).toEqual([{ n: "0" }]);
+  });
+
+  it("purges journal items past retention, then the install left empty", async () => {
+    await installs.storeBatch({ installId: INSTALL_ID, batch: exampleBatch(), mayCreateInstall: true });
+    const now = new Date();
+    await pool.query("UPDATE install_log_item SET received_at = $1", [new Date(now.getTime() - 100 * DAY_MS)]);
+    const cutoff = new Date(now.getTime() - 90 * DAY_MS);
+    const window = { journalCutoff: cutoff, now, sessionIdleCutoff: now, mcpAccessCutoff: now };
+    const first = await new PgRetentionStore(pool).purge(window);
+    expect(first).toMatchObject({ historyItems: 0, logItems: 2, installs: 0 });
+    await pool.query("UPDATE install_history_item SET received_at = $1", [new Date(now.getTime() - 100 * DAY_MS)]);
+    await pool.query("UPDATE install SET last_seen_at = $1", [new Date(now.getTime() - 100 * DAY_MS)]);
+    const second = await new PgRetentionStore(pool).purge(window);
+    expect(second).toMatchObject({ historyItems: 2, installs: 1 });
+  });
+
+  it("round-trips an admin session and purges it once idle", async () => {
+    const sessions = new PgSessionRepository(pool);
+    const now = new Date();
+    const tokenHash = sha256("token");
+    const expiresAt = new Date(now.getTime() + 7 * DAY_MS);
+    await sessions.create({
+      tokenHash, csrfToken: "csrf", createdAt: now, lastSeenAt: now, expiresAt,
+      secondFactor: "due", codeAttempts: 0,
+    });
+    const later = new Date(now.getTime() + DAY_MS);
+    await sessions.touch(tokenHash, later);
+    expect(await sessions.reserveCodeAttempt(tokenHash, 2)).toBe(1);
+    expect(await sessions.reserveCodeAttempt(tokenHash, 2)).toBe(2);
+    expect(await sessions.reserveCodeAttempt(tokenHash, 2)).toBeNull();
+    expect(await sessions.reserveCodeAttempt(sha256("unknown"), 2)).toBeNull();
+    expect(await sessions.find(tokenHash)).toMatchObject({
+      csrfToken: "csrf", lastSeenAt: later, secondFactor: "due", codeAttempts: 2,
+    });
+    const window = {
+      journalCutoff: now, now: later, sessionIdleCutoff: later, mcpAccessCutoff: later,
+    };
+    expect(await new PgRetentionStore(pool).purge(window)).toMatchObject({ sessions: 1 });
+    expect(await sessions.find(tokenHash)).toBeNull();
+  });
+
+  it("gives a due session its code attempts once each, racing posts included", async () => {
+    const sessions = new PgSessionRepository(pool);
+    const now = new Date();
+    const session = {
+      csrfToken: "csrf", createdAt: now, lastSeenAt: now, expiresAt: new Date(now.getTime() + DAY_MS),
+      codeAttempts: 0,
+    };
+    await sessions.create({ ...session, tokenHash: sha256("due"), secondFactor: "due" });
+    await sessions.create({ ...session, tokenHash: sha256("passed"), secondFactor: "passed" });
+    const racing = await Promise.all(
+      Array.from({ length: 8 }, () => sessions.reserveCodeAttempt(sha256("due"), 5)));
+    expect(racing.filter((attempt) => attempt !== null).sort()).toEqual([1, 2, 3, 4, 5]);
+    expect(await sessions.reserveCodeAttempt(sha256("passed"), 5)).toBeNull();
+  });
+
+  it("accepts a TOTP step once, never an older one, and one of two racing claims", async () => {
+    const steps = new PgSecondFactorStore(pool);
+    expect(await steps.claim(1000)).toBe(true);
+    expect(await steps.claim(1000)).toBe(false);
+    expect(await steps.claim(999)).toBe(false);
+    const racing = await Promise.all([steps.claim(1001), steps.claim(1001)]);
+    expect(racing.filter(Boolean)).toHaveLength(1);
+  });
+
+  it("keeps one notification address, replaced in place, then forgotten", async () => {
+    const settings = new PgMailSettingsStore(pool);
+    expect(await settings.notifyTo()).toBeNull();
+    const first = { address: "triage@example.org", updatedAt: new Date("2026-11-20T10:00:00Z") };
+    await settings.setNotifyTo(first);
+    expect(await settings.notifyTo()).toEqual(first);
+    const second = { address: "ops@example.org", updatedAt: new Date("2026-11-21T10:00:00Z") };
+    await settings.setNotifyTo(second);
+    expect(await settings.notifyTo()).toEqual(second);
+    expect((await pool.query("SELECT 1 FROM mail_setting")).rowCount).toBe(1);
+    await settings.clearNotifyTo();
+    expect(await settings.notifyTo()).toBeNull();
+  });
+
+  it("hands a due mail to one claimer only, and hides it for the lease", async () => {
+    for (let i = 0; i < 4; i += 1) await feedback.create(FEEDBACK);
+    const outbox = new PgOutboxRepository(pool);
+    const request = { now: new Date(Date.now() + 1000), limit: 3, leaseMs: 60_000, maxAttempts: 8 };
+    const [a, b] = await Promise.all([outbox.claimDue(request), outbox.claimDue(request)]);
+    const claimed = [...a, ...b].map((mail) => mail.id);
+    expect(new Set(claimed).size).toBe(claimed.length);
+    expect(claimed).toHaveLength(4);
+    expect(a[0]?.attempts).toBe(1);
+    expect(await outbox.claimDue(request)).toEqual([]);
+  });
+
+  it("opens an MCP access by its token's digest while active, then purges it", async () => {
+    const accesses = new PgMcpAccessStore(pool);
+    const now = new Date("2026-11-20T10:00:00Z");
+    const access = {
+      id: "5b0e6a4c-2f1d-4e8b-9c7a-1d2e3f4a5b6c", name: "Claude Code, portable",
+      permissions: ["feedback:read", "journals:read"] as const, tokenHint: "abcd",
+      createdAt: now, expiresAt: new Date(now.getTime() + DAY_MS), tokenDigest: sha256("token"),
+    };
+    await accesses.create(access);
+    await expect(accesses.create({ ...access, id: "6c1f7b5d-3a2e-4f9c-8d8b-2e3f4a5b6c7d" }))
+      .rejects.toThrow();
+    const later = new Date(now.getTime() + 60_000);
+    expect(await accesses.use(sha256("token"), later)).toEqual(
+      { accessId: access.id, permissions: ["feedback:read", "journals:read"] });
+    expect(await accesses.use(sha256("other"), later)).toBeNull();
+    expect(await accesses.list()).toEqual([{
+      id: access.id, name: access.name, permissions: ["feedback:read", "journals:read"],
+      tokenHint: "abcd", createdAt: now, expiresAt: access.expiresAt, lastUsedAt: later,
+      revokedAt: null,
+    }]);
+    expect(await accesses.use(sha256("token"), access.expiresAt)).toBeNull();
+    expect(await accesses.revoke(access.id, later)).toBe(true);
+    expect(await accesses.revoke(access.id, later)).toBe(false);
+    expect(await accesses.use(sha256("token"), later)).toBeNull();
+    const retention = new PgRetentionStore(pool);
+    const window = { journalCutoff: now, now, sessionIdleCutoff: now };
+    expect(await retention.purge({ ...window, mcpAccessCutoff: later }))
+      .toMatchObject({ mcpAccesses: 0 });
+    expect(await retention.purge({ ...window, mcpAccessCutoff: new Date(later.getTime() + 1) }))
+      .toMatchObject({ mcpAccesses: 1 });
+  });
+
+  it("refuses an MCP access with an unknown permission, none, or triage alone", async () => {
+    const now = new Date();
+    const insert = (permissions: string[]) => pool.query(
+      `INSERT INTO mcp_access (id, name, token_sha256, token_hint, permissions, created_at,
+         expires_at) VALUES (gen_random_uuid(), 'x', $1, 'abcd', $2, $3, $4)`,
+      [sha256(permissions.join()), permissions, now, new Date(now.getTime() + DAY_MS)]);
+    await expect(insert(["admin:all"])).rejects.toThrow();
+    await expect(insert([])).rejects.toThrow();
+    await expect(insert(["feedback:triage"])).rejects.toThrow(/mcp_access_triage_reads/);
+    await expect(insert(["feedback:triage", "feedback:read"])).resolves.toBeDefined();
+  });
+});

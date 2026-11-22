@@ -4,16 +4,25 @@ import { ADMIN_BATCH_COMMAND } from "../../core/elevation.js";
 import { setRunTrigger, type RunTrigger } from "../../core/state/run-context.js";
 import { PromptCancelledError } from "../../ui/tui/prompt-cancelled.js";
 import { ERROR_LABELS } from "../../ui/text/cli-labels.js";
-import type { CliModule } from "./cli-module.js";
+import type { CliModule, StartupContext } from "./cli-module.js";
 
 /** Exit code of a run the user cancelled with Ctrl+C (128 + SIGINT). */
 const CANCELLED_EXIT_CODE = 130;
 const FAILURE_EXIT_CODE = 1;
 
+interface Ending {
+  readonly modules: readonly CliModule[];
+  readonly context: StartupContext;
+}
+
+/** The command running and the modules that end it, set before its action. */
+let ending: Ending | null = null;
+
 /**
  * Before any command runs: record what started this process, then let each
  * module install its slots, in {@link CliModule.order}. The elevated
- * `__admin-batch` child only runs the modules that opt in.
+ * `__admin-batch` child only runs the modules that opt in, and never their
+ * {@link CliModule.beforeExit}.
  */
 export function installStartup(program: Command, modules: readonly CliModule[]): void {
   const ordered = [...modules].sort((a, b) => a.order - b.order);
@@ -21,12 +30,38 @@ export function installStartup(program: Command, modules: readonly CliModule[]):
     const commandPath = commandPathOf(actionCommand);
     setRunTrigger(triggerOf(commandPath, ordered));
     const isElevatedChild = commandPath === ADMIN_BATCH_COMMAND;
-    const options = actionCommand.optsWithGlobals<Record<string, unknown>>();
+    const context: StartupContext = {
+      commandPath,
+      options: actionCommand.optsWithGlobals<Record<string, unknown>>(),
+    };
+    ending = isElevatedChild ? null : { modules: ordered, context };
     for (const cliModule of ordered) {
       if (isElevatedChild && cliModule.runsInElevatedChild !== true) continue;
-      await cliModule.beforeAction?.({ commandPath, options });
+      await cliModule.beforeAction?.(context);
     }
   });
+}
+
+/**
+ * End the command with `code`, once every module's
+ * {@link CliModule.beforeExit} ran — each one alone, so a failing one does
+ * not stop the next. Called by the commands that write the journals, and by
+ * `gup feedback`, whose form requests their upload.
+ */
+export async function endCommand(
+  code: number,
+  exit: (code: number) => void = (status) => process.exit(status),
+): Promise<void> {
+  const current = ending;
+  ending = null;
+  for (const cliModule of current?.modules ?? []) {
+    try {
+      if (current !== null) await cliModule.beforeExit?.(current.context);
+    } catch {
+      // A module's last word must not change how the command ends.
+    }
+  }
+  exit(code);
 }
 
 /**

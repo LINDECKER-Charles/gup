@@ -21,6 +21,7 @@ export const STRUCTURE = Object.freeze({
     { id: "security", isInNav: false, legacyIds: ["securite"] },
     { id: "faq", isInNav: true, legacyIds: [] },
     { id: "install", isInNav: false, legacyIds: [] },
+    { id: "feedback", isInNav: false, legacyIds: [] },
   ]),
   /** Only the three flagship features carry a "New" badge. */
   features: Object.freeze([
@@ -60,7 +61,7 @@ export const STRUCTURE = Object.freeze({
   footer: Object.freeze([
     {
       id: "project",
-      links: ["repo", "npm", "issues", "support", "contributing", "conduct", "releases"],
+      links: ["repo", "npm", "issues", "feedback", "support", "contributing", "conduct", "releases"],
     },
     { id: "docs", links: ["installation", "cli", "providers", "scope"] },
     { id: "technical", links: ["architecture", "howItWorks", "security", "llms"] },

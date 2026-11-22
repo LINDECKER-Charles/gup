@@ -12,6 +12,9 @@ import { BrandMark } from "../ui/BrandMark.jsx";
 import { Shell } from "../ui/Shell.jsx";
 import { FooterLanguages } from "./FooterLanguages.jsx";
 
+/** An on-page anchor is in the page's own language, unlike the English docs. */
+const isOnPage = (href) => href.startsWith("#");
+
 function FooterColumn({ column, footer }) {
   return (
     <nav aria-labelledby={`foot-${column.id}`}>
@@ -19,13 +22,16 @@ function FooterColumn({ column, footer }) {
         {footer.columns[column.id]}
       </h2>
       <ul className="foot-list">
-        {column.links.map((link) => (
-          <li key={link}>
-            <a href={LINKS.resources[link]} hrefLang="en">
-              {footer.links[link]}
-            </a>
-          </li>
-        ))}
+        {column.links.map((link) => {
+          const href = LINKS.resources[link];
+          return (
+            <li key={link}>
+              <a href={href} hrefLang={isOnPage(href) ? undefined : "en"}>
+                {footer.links[link]}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

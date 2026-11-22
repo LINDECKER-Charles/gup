@@ -5,8 +5,9 @@ view of the interactive app (`gup`, then Options in the menu): each change
 applies at once and is kept in one JSON file, read when `gup` starts. Scripts
 are never affected by it except for the install timeout (see
 [Scan & install](#scan--install)), the debug log's level, what
-`gup report` does in a terminal (see [Journal](#journal)) and the language
-gup speaks (see [Interface language](#interface-language)).
+`gup report` does in a terminal (see [Journal](#journal)), the language
+gup speaks (see [Interface language](#interface-language)) and whether your
+journals are shared (see [Feedback](#feedback)).
 
 - [The Options view](#the-options-view)
 - [Which value wins](#which-value-wins)
@@ -204,7 +205,7 @@ when painted (see [themes-and-accessibility.md](themes-and-accessibility.md#the-
 | Field | Values | Default | What it does |
 |---|---|---|---|
 | `language` | `en`, `fr` | `en` | the interface language, read when gup starts; `GUP_LANG` wins over it ([details](#interface-language)) |
-| `launchView` | `scan`, `packages`, `schedules`, `providers`, `journal`, `options` | `scan` | the view in front when the menu opens |
+| `launchView` | `scan`, `packages`, `schedules`, `providers`, `journal`, `feedback`, `options` | `scan` | the view in front when the menu opens |
 | `scanOnLaunch` | `true`, `false` | `true` | scan when the menu opens |
 | `confirmBeforeUpdate` | `true`, `false` | `true` | ask before an update starts |
 | `rescanAfterUpdate` | `true`, `false` | `false` | after an update, rescan everything instead of dropping the updated packages |
@@ -249,6 +250,17 @@ The debug log's level follows this precedence:
 `gup report --open` and `--no-open` win over `journal.openReport`. What each
 setting does: [journal-and-reports.md](journal-and-reports.md#settings).
 
+### Feedback
+
+Nothing about feedback lives in this file, because it roams with your profile: a yes given on
+one machine must not start uploads from another. Whether the journals are shared, the install
+identity and the upload cursor are machine-local state, in `sharing.json`, `identity.json` and
+`upload-cursor.json` under the `feedback` state directory
+(`%LOCALAPPDATA%\gup\feedback`, `~/Library/Application Support/gup/feedback`,
+`$XDG_STATE_HOME/gup/feedback`; `GUP_FEEDBACK_DIR` moves it). `GUP_CONFIG=0` does not affect
+them, and resetting every setting in Options leaves them alone. What is shared and when:
+[feedback-and-sharing.md](feedback-and-sharing.md).
+
 ## Environment variables
 
 | Variable | Effect |
@@ -260,6 +272,8 @@ setting does: [journal-and-reports.md](journal-and-reports.md#settings).
 | `GUP_INSTALL_TIMEOUT` | per-install cap in seconds; wins over the file, `--timeout` wins over it |
 | `GUP_LOG_LEVEL` | the debug log's level; wins over `log.level`, `--log-level` wins over it |
 | `GUP_ASCII` | `1`: ASCII symbols and borders when `glyphs` is `auto` |
+| `GUP_SHARE_LOGS` | `0`, `false`, `off` or `no`: never share the journals, never ask; the saved answer is left as it is |
+| `GUP_FEEDBACK_DIR` | keep the sharing answer, the install identity and the upload cursor in another directory |
 
 ## When something is wrong
 

@@ -338,12 +338,55 @@ export default {
       star: "Une étoile sur GitHub",
     },
   },
+  feedback: {
+    kicker: "07 / RETOURS",
+    title: "Un bug ? Une idée ?",
+    lead: "Dites-moi ce qui ne marche pas ou ce qui améliorerait gup. Je lis chaque message.",
+    kinds: { legend: "De quoi s’agit-il ?", bug: "Rapport de bug", suggestion: "Idée" },
+    fields: {
+      title: { label: "Titre" },
+      message: {
+        label: "Votre message",
+        hint: "Ce qui s’est passé, ce que vous attendiez, et votre système si cela compte.",
+        unit: "caractères",
+      },
+      email: { label: "E-mail", hint: "Uniquement pour vous répondre." },
+      installId: {
+        label: "ID d’installation",
+        hint:
+          "Lancez `gup feedback id` pour l’obtenir : il permet au mainteneur de lire les " +
+          "journaux que vous avez choisi de partager.",
+      },
+    },
+    optional: "facultatif",
+    context: "Envoyé avec votre message :",
+    submit: "Envoyer le message",
+    sending: "Envoi…",
+    status: {
+      sent: "Merci : votre message a bien été envoyé.",
+      invalid: "Des champs sont manquants ou invalides : vérifiez le formulaire.",
+      limited: "Trop de messages depuis votre réseau à l’instant. Réessayez dans quelques minutes.",
+      unreachable: "Le service de retours est injoignable. Réessayez plus tard.",
+    },
+    errors: {
+      title: "Donnez un titre court à votre message.",
+      message: "Ajoutez quelques mots pour que je puisse agir.",
+      email: "Cela ne ressemble pas à une adresse e-mail.",
+      installId: "Cet ID d’installation n’est pas valide ; copiez-le à nouveau depuis le terminal.",
+    },
+    privacy:
+      "**Conservé :** votre message et, seulement si vous les fournissez, votre e-mail, " +
+      "votre ID d’installation, la version et la plateforme. **Non conservé :** votre " +
+      "adresse IP — elle sert à limiter les abus et n’est jamais enregistrée. Ni pistage ni " +
+      "cookies. Tout sert uniquement à traiter votre retour.",
+  },
   footer: {
     tagline:
       "Global Updater — une CLI pour {providers} sources d'installation. TypeScript strict, " +
       "ESM, Node ≥ {node}.",
     columns: { project: "Projet", docs: "Documentation", technical: "Technique" },
     links: {
+      feedback: "Envoyer un retour",
       repo: "Code source · GitHub",
       npm: "Paquet · npm",
       issues: "Issues",

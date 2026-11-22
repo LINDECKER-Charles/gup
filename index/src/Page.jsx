@@ -14,6 +14,7 @@ import { I18nContext } from "./i18n/i18n-context.js";
 import { useReveal } from "./lib/use-reveal.js";
 import { Coverage } from "./sections/Coverage.jsx";
 import { Faq } from "./sections/Faq.jsx";
+import { Feedback } from "./sections/Feedback.jsx";
 import { Features } from "./sections/Features.jsx";
 import { Hero } from "./sections/Hero.jsx";
 import { HowItWorks } from "./sections/HowItWorks.jsx";
@@ -42,6 +43,7 @@ export function Page({ locale, messages }) {
         <Security />
         <Faq />
         <Install />
+        <Feedback />
       </main>
       <Footer />
     </I18nContext.Provider>
