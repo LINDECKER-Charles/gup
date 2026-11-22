@@ -40,14 +40,17 @@ describe("openerFor", () => {
     }
   });
 
-  it.each([
-    ["a relative path", "reports\\report.html"],
-    ["a comma, which explorer reads as a separator", "C:\\Users\\Doe, Jane\\report.html"],
-    ["a quote", 'C:\\r\\"report".html'],
-  ])("refuses %s on Windows", (_case, file) => {
-    expect(openerFor(file, facts({ platform: "win32", env: { SystemRoot: "C:\\Windows" } }))).toEqual({
-      reason: expect.any(String),
+  it("refuses a relative path on Windows", () => {
+    expect(openerFor("reports\\report.html", facts({ platform: "win32" }))).toEqual({
+      reason: "not an absolute path",
     });
+  });
+
+  // Separators to explorer only when unquoted: the runner quotes every argument on Windows.
+  it("hands explorer a path holding a comma or an equals sign as it is", () => {
+    const file = "C:\\Users\\Doe, Jane\\a=b\\report.html";
+
+    expect(openerFor(file, facts({ platform: "win32" }))).toMatchObject({ args: [file] });
   });
 
   it("opens with /usr/bin/open on macOS", () => {
