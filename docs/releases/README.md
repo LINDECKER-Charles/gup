@@ -7,6 +7,7 @@ commit-level view of the same versions, see [`../changelog/`](../changelog/READM
 
 | Version | Published | Notes | GitHub Release | npm |
 |---|---|---|---|---|
+| `0.6.1` | not yet published | [`0.6.1.md`](0.6.1.md) | — | — |
 | `0.6.0` | 2026-11-22 | [`0.6.0.md`](0.6.0.md) | [0.6.0](https://github.com/LINDECKER-Charles/gup/releases/tag/0.6.0) | [0.6.0](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.6.0) |
 | `0.5.3` | 2026-10-06 | [`0.5.3.md`](0.5.3.md) | [0.5.3](https://github.com/LINDECKER-Charles/gup/releases/tag/0.5.3) | [0.5.3](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.5.3) |
 | `0.5.2` | 2026-10-05 | [`0.5.2.md`](0.5.2.md) | [0.5.2](https://github.com/LINDECKER-Charles/gup/releases/tag/0.5.2) | [0.5.2](https://www.npmjs.com/package/@charles_lindecker/gup/v/0.5.2) |

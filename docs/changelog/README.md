@@ -9,7 +9,8 @@ narrative of each release, see
 
 | Version | Published | Commits | In one sentence |
 |---|---|---:|---|
-| [Unreleased](unreleased.md) | `main` after 0.6.0 | 0 | Nothing yet. |
+| [Unreleased](unreleased.md) | `main` after 0.6.1 | 0 | Nothing yet. |
+| [`0.6.1`](0.6.1.md) | not yet published | 10 | 0.6.1 opens the feedback form in the browser on Windows, where `explorer.exe` read its query string as a separator and opened the Documents folder, opens an HTML report under a folder whose name holds a comma, and gives the feedback service's production stack a subnet of its own. |
 | [`0.6.0`](0.6.0.md) | 2026-11-22 | 85 | 0.6.0 adds a feedback form and opt-in journal sharing behind an install ID, backed by a new feedback service and its back office, stops Homebrew waiting on its own confirmation, explains a failed install in its installer's words, ends winget's elevation refusal and Homebrew's build-tools block as skips, stops five tools being updated twice, and covers a user-owned Python's site-packages. |
 | [`0.5.3`](0.5.3.md) | 2026-10-06 | 16 | 0.5.3 adds 17 popular terminal themes, taking the picker from 10 to 27, and scrolls the picker's list to keep the cursor in view, stops a winget package that asks for an install folder from holding the batch, and bumps source-map-js for GHSA-68fv-2mgg-jv7q. |
 | [`0.5.2`](0.5.2.md) | 2026-10-05 | 25 | 0.5.2 stops gup on a Node older than 26.9 with where to get a newer one and lets npm install it there, refuses to run under `sudo` and names the gup folders a `sudo` run left to root with the command that gives them back, and lists a tool Homebrew installed once, by `brew`. |
