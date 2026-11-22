@@ -338,12 +338,55 @@ export default {
       star: "Dale una estrella en GitHub",
     },
   },
+  feedback: {
+    kicker: "07 / COMENTARIOS",
+    title: "¿Un bug? ¿Una idea?",
+    lead: "Cuéntame qué falla o qué mejoraría gup. Leo todos los mensajes.",
+    kinds: { legend: "¿De qué se trata?", bug: "Informe de bug", suggestion: "Sugerencia" },
+    fields: {
+      title: { label: "Título" },
+      message: {
+        label: "Mensaje",
+        hint: "Qué pasó, qué esperabas y tu sistema si es relevante.",
+        unit: "caracteres",
+      },
+      email: { label: "Correo electrónico", hint: "Solo para responderte." },
+      installId: {
+        label: "ID de instalación",
+        hint:
+          "Ejecuta `gup feedback id` para obtenerlo: permite al mantenedor leer los registros " +
+          "que decidiste compartir.",
+      },
+    },
+    optional: "opcional",
+    context: "Se envía con tu mensaje:",
+    submit: "Enviar mensaje",
+    sending: "Enviando…",
+    status: {
+      sent: "Gracias: tu mensaje se ha enviado.",
+      invalid: "Faltan campos o alguno no es válido: revisa el formulario.",
+      limited: "Demasiados mensajes desde tu red en este momento. Inténtalo en unos minutos.",
+      unreachable: "No se pudo contactar con el servicio de comentarios. Inténtalo más tarde.",
+    },
+    errors: {
+      title: "Ponle un título breve a tu mensaje.",
+      message: "Añade algunas palabras más para que pueda actuar.",
+      email: "Eso no parece una dirección de correo.",
+      installId: "No es un ID de instalación válido; cópialo de nuevo desde el terminal.",
+    },
+    privacy:
+      "**Se guarda:** tu mensaje y, solo si los das, tu correo, tu ID de instalación, la " +
+      "versión y la plataforma. **No se guarda:** tu dirección IP; solo sirve para limitar " +
+      "abusos y nunca se almacena. Sin seguimiento ni cookies. Todo se usa únicamente para " +
+      "atender tu comentario.",
+  },
   footer: {
     tagline:
       "Global Updater — una CLI para {providers} fuentes de instalación. TypeScript " +
       "estricto, ESM, Node ≥ {node}.",
     columns: { project: "Proyecto", docs: "Documentación", technical: "Técnico" },
     links: {
+      feedback: "Enviar comentarios",
       repo: "Código fuente · GitHub",
       npm: "Paquete · npm",
       issues: "Incidencias",

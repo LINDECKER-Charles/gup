@@ -14,6 +14,22 @@ const SITE_URL = `${ORIGIN}${BASE_PATH}`;
 const REPO = "https://github.com/LINDECKER-Charles/gup";
 const NPM = `https://www.npmjs.com/package/${facts.packageName}`;
 
+/** Where the feedback service answers; local development points it at 127.0.0.1:8787. */
+const DEFAULT_FEEDBACK_API = "https://gup.charles-lindecker.com";
+
+/**
+ * The feedback service origin: `VITE_FEEDBACK_API` when set, the default
+ * otherwise. Read from Vite's replaced `import.meta.env` in the bundles and
+ * from the process environment in the prerender, which runs in plain Node —
+ * so the CSP the prerender writes always names the very origin the bundle
+ * posts to.
+ */
+function readFeedbackApi() {
+  const configured =
+    import.meta.env?.VITE_FEEDBACK_API ?? globalThis.process?.env?.VITE_FEEDBACK_API;
+  return new URL(configured || DEFAULT_FEEDBACK_API).origin;
+}
+
 /** A document in the repository, at the default branch. */
 const doc = (path) => `${REPO}/blob/main/${path}`;
 
@@ -23,6 +39,7 @@ export const LINKS = Object.freeze({
   siteUrl: SITE_URL,
   repo: REPO,
   npm: NPM,
+  feedbackApi: readFeedbackApi(),
   kofi: "https://ko-fi.com/charleslindecker",
   sponsors: "https://github.com/sponsors/LINDECKER-Charles",
   author: "https://github.com/LINDECKER-Charles",
@@ -44,5 +61,7 @@ export const LINKS = Object.freeze({
     howItWorks: doc("docs/development/how-gup-works.md"),
     security: doc(".github/SECURITY.md"),
     llms: `${SITE_URL}llms.txt`,
+    /** On-page anchor: the footer links to the form like to any other resource. */
+    feedback: "#feedback",
   }),
 });

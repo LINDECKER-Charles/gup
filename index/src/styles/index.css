@@ -24,6 +24,7 @@
 @import "./sections/security.css";
 @import "./sections/faq.css";
 @import "./sections/install.css";
+@import "./sections/feedback.css";
 
 @import "./ui/terminal.css";
 @import "./ui/tui.css";

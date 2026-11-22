@@ -338,12 +338,55 @@ export default {
       star: "Dê uma estrela no GitHub",
     },
   },
+  feedback: {
+    kicker: "07 / COMENTÁRIOS",
+    title: "Um bug? Uma ideia?",
+    lead: "Conte-me o que quebrou ou o que melhoraria o gup. Leio todas as mensagens.",
+    kinds: { legend: "Sobre o que é?", bug: "Relato de bug", suggestion: "Sugestão" },
+    fields: {
+      title: { label: "Título" },
+      message: {
+        label: "Mensagem",
+        hint: "O que aconteceu, o que você esperava e seu sistema, se for relevante.",
+        unit: "caracteres",
+      },
+      email: { label: "E-mail", hint: "Só para responder a você." },
+      installId: {
+        label: "ID da instalação",
+        hint:
+          "Execute `gup feedback id` para obtê-lo: ele permite ao mantenedor ler os registros " +
+          "que você escolheu compartilhar.",
+      },
+    },
+    optional: "opcional",
+    context: "Enviado junto com sua mensagem:",
+    submit: "Enviar mensagem",
+    sending: "Enviando…",
+    status: {
+      sent: "Obrigado: sua mensagem foi enviada.",
+      invalid: "Há campos ausentes ou inválidos: confira o formulário.",
+      limited: "Mensagens demais vindas da sua rede agora. Tente novamente em alguns minutos.",
+      unreachable: "Não foi possível acessar o serviço de feedback. Tente novamente mais tarde.",
+    },
+    errors: {
+      title: "Dê um título curto à sua mensagem.",
+      message: "Acrescente mais algumas palavras para que eu possa agir.",
+      email: "Isso não parece um endereço de e-mail.",
+      installId: "Esse não é um ID de instalação válido; copie-o novamente do terminal.",
+    },
+    privacy:
+      "**Armazenado:** sua mensagem e, somente se você informar, seu e-mail, o ID da " +
+      "instalação, a versão e a plataforma. **Não armazenado:** seu endereço IP; ele serve " +
+      "apenas para limitar abusos e nunca é gravado. Sem rastreamento nem cookies. Tudo é " +
+      "usado apenas para tratar o seu feedback.",
+  },
   footer: {
     tagline:
       "Global Updater — uma CLI para {providers} fontes de instalação. TypeScript estrito, " +
       "ESM, Node ≥ {node}.",
     columns: { project: "Projeto", docs: "Documentação", technical: "Técnico" },
     links: {
+      feedback: "Enviar comentários",
       repo: "Código-fonte · GitHub",
       npm: "Pacote · npm",
       issues: "Issues",

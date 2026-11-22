@@ -303,12 +303,52 @@ export default {
       star: "在 GitHub 上点星标",
     },
   },
+  feedback: {
+    kicker: "07 / 反馈",
+    title: "发现 bug？有想法？",
+    lead: "告诉我哪里出了问题，或者怎样能让 gup 更好。我会阅读每一条消息。",
+    kinds: { legend: "是哪一类？", bug: "Bug 报告", suggestion: "建议" },
+    fields: {
+      title: { label: "标题" },
+      message: {
+        label: "内容",
+        hint: "发生了什么、你期望的结果，必要时再说明你的系统。",
+        unit: "字符",
+      },
+      email: { label: "电子邮件", hint: "仅用于回复你。" },
+      installId: {
+        label: "安装 ID",
+        hint: "运行 `gup feedback id` 获取——它能让维护者查看你选择共享的日志。",
+      },
+    },
+    optional: "可选",
+    context: "随消息一并发送：",
+    submit: "发送消息",
+    sending: "发送中…",
+    status: {
+      sent: "谢谢，你的消息已发送。",
+      invalid: "有字段缺失或无效，请检查表单。",
+      limited: "你所在的网络刚刚发送了过多消息，请几分钟后再试。",
+      unreachable: "无法连接到反馈服务，请稍后再试。",
+    },
+    errors: {
+      title: "请给消息起一个简短的标题。",
+      message: "请再多写几句，方便我处理。",
+      email: "这看起来不像电子邮件地址。",
+      installId: "这不是有效的安装 ID，请重新从终端复制。",
+    },
+    privacy:
+      "**保存的内容：**你的消息；仅在你提供时，还包括邮箱、安装 ID、版本和平台。" +
+      "**不保存的内容：**你的 IP 地址——它只用于限制滥用，从不存储。不做跟踪，不使用 " +
+      "cookie。所有信息仅用于处理你的反馈。",
+  },
   footer: {
     tagline:
       "Global Updater — 一个 CLI 管理 {providers} 个安装来源。严格模式 TypeScript、ESM、" +
       "Node ≥ {node}。",
     columns: { project: "项目", docs: "文档", technical: "技术" },
     links: {
+      feedback: "发送反馈",
       repo: "源代码 · GitHub",
       npm: "软件包 · npm",
       issues: "问题反馈",
