@@ -415,7 +415,6 @@ line is left out):
 | Not run from a terminal, or `CI` is set | `gup report --open` opens it anyway |
 | Linux: no desktop opener (`xdg-open` missing, a server without a desktop) | install `xdg-utils`, or open the file yourself |
 | WSL: no `wslview` | install `wslu`, or open the file from Windows |
-| Windows: the path holds a comma or a quote, which `explorer.exe` would split | write the report elsewhere: `gup report --out <path>` |
 
 Open the printed path in any browser: the file needs no network and no gup.
 

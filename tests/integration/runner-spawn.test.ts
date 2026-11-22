@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -160,6 +160,18 @@ describe("runner: real process spawn", () => {
 
   it("launchDetached reports a started process", async () => {
     await expect(launchDetached(process.execPath, ["-e", "0"])).resolves.toBe(true);
+  });
+
+  // On Windows the runner writes the command line itself, every token quoted:
+  // a C-runtime program must still read each argument back whole.
+  it("launchDetached hands every argument over whole", async () => {
+    const out = join(dir, "detached-argv.json");
+    const url = "https://example.test/a,b/?install=x&version=1 2#feedback";
+    const script = "require('node:fs').writeFileSync(process.argv[1], JSON.stringify(process.argv[2]))";
+
+    await expect(launchDetached(process.execPath, ["-e", script, out, url])).resolves.toBe(true);
+
+    await expect.poll(() => readFile(out, "utf8").catch(() => null)).toBe(JSON.stringify(url));
   });
 
   // Windows only spawns a missing binary through cmd.exe (see launchDetached).
