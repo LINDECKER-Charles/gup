@@ -34,5 +34,12 @@ services:
     mem_limit: 384m
 
 networks:
+  # The stack's private network (the service and its database). Its subnet is
+  # set outside the pools Docker hands out (172.17-31/16, 192.168/16), which
+  # the shared host has used up; no other stack there uses 10.232.0.0/16.
+  default:
+    ipam:
+      config:
+        - subnet: 10.232.1.0/24
   edge:
     external: true
