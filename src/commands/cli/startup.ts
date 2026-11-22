@@ -45,7 +45,8 @@ export function installStartup(program: Command, modules: readonly CliModule[]):
 /**
  * End the command with `code`, once every module's
  * {@link CliModule.beforeExit} ran — each one alone, so a failing one does
- * not stop the next. Called by the commands that write the journals.
+ * not stop the next. Called by the commands that write the journals, and by
+ * `gup feedback`, whose form requests their upload.
  */
 export async function endCommand(
   code: number,

@@ -7,7 +7,11 @@ import {
   readInstallIdentity,
   type InstallIdentity,
 } from "../../core/feedback/install-identity.js";
-import { uploadJournals, type UploadLimits } from "../../core/feedback/journal-uploader.js";
+import {
+  UPLOAD_LIMITS,
+  uploadJournals,
+  type UploadLimits,
+} from "../../core/feedback/journal-uploader.js";
 import { SharingDecisionFile } from "../../core/feedback/sharing-decision-file.js";
 import {
   sharingState,
@@ -15,6 +19,7 @@ import {
   type SharingDecision,
   type SharingState,
 } from "../../core/feedback/sharing-state.js";
+import { nextSyncAt } from "../../core/feedback/sync-cadence.js";
 import { UploadCursorFile } from "../../core/feedback/upload-cursor.js";
 import { activeLocale } from "../../core/i18n/locale.js";
 import { log } from "../../core/log/log.js";
@@ -32,6 +37,10 @@ import { stateDir } from "../../core/state/app-dirs.js";
  * stand (`gup doctor`, `gup feedback status`, the menu's drawings) never
  * creates it. A failure to read or create it is remembered for the process:
  * no command waits on the file lock twice.
+ *
+ * The journals are synced about once a week; opening the feedback form
+ * ({@link requestSync}) makes the next upload ignore that wait, so a report
+ * finds fresh journals behind its install ID.
  */
 
 export interface SharingDeps {
@@ -60,6 +69,7 @@ export class SharingControl {
   #hasIdentityFailed = false;
   #urls: FeedbackUrls | null = null;
   #erasing: Promise<ErasureOutcome> | null = null;
+  #isSyncRequested = false;
 
   constructor(deps: SharingDeps = PROCESS_SHARING_DEPS) {
     this.#deps = deps;
@@ -93,6 +103,32 @@ export class SharingControl {
     return dir === null ? null : new UploadCursorFile(dir).read().lastUploadAt;
   }
 
+  /**
+   * When the next sync is due, ISO 8601; null when it is due now (or when
+   * the machine gives gup no state directory). Reads only.
+   */
+  nextSyncDue(): string | null {
+    const dir = this.#deps.dir();
+    if (dir === null) return null;
+    const cursor = new UploadCursorFile(dir).read();
+    const intervalDays = this.#deps.limits?.syncIntervalDays ?? UPLOAD_LIMITS.syncIntervalDays;
+    const dueAt = nextSyncAt(cursor, this.#now(), intervalDays);
+    return dueAt === null ? null : new Date(dueAt).toISOString();
+  }
+
+  /**
+   * The user opened the feedback form: the next {@link upload} of this
+   * process ignores the weekly wait, whatever command it ends.
+   */
+  requestSync(): void {
+    this.#isSyncRequested = true;
+  }
+
+  /** {@link requestSync} was called and no upload has run since. */
+  isSyncRequested(): boolean {
+    return this.#isSyncRequested;
+  }
+
   /** The feedback form in the interface's language, prefilled; null when the override is refused. */
   formUrl(installId: string): string | null {
     return this.#feedbackUrls().formUrl({ installId, client: currentClientInfo(activeLocale()) });
@@ -105,8 +141,8 @@ export class SharingControl {
 
   /**
    * Save the user's answer. A yes creates the install identity; a yes after
-   * a no shares only what is written from now on — the 30-day backlog is
-   * for the very first answer. Throws when the answer cannot be saved.
+   * a no shares only what is written from now on — the whole local history
+   * is for the very first answer. Throws when the answer cannot be saved.
    */
   decide(decision: Answer): void {
     const dir = this.#deps.dir();
@@ -142,8 +178,13 @@ export class SharingControl {
     await this.#erasing;
   }
 
-  /** Send the journals written since the last upload, when sharing is on. Never throws. */
+  /**
+   * Send the journals written since the last upload, when sharing is on and
+   * a sync is due or was requested. Never throws.
+   */
   async upload(): Promise<void> {
+    const isForced = this.#isSyncRequested;
+    this.#isSyncRequested = false;
     if (this.state() !== "granted") return;
     const dir = this.#deps.dir();
     const identity = this.#find(loadInstallIdentity);
@@ -161,6 +202,7 @@ export class SharingControl {
           dirs: { history: stateDir("history"), logs: stateDir("logs") },
         }),
       isGranted: () => this.state() === "granted",
+      isForced,
       ...(fetch !== undefined && { fetch }),
       ...(now !== undefined && { now }),
       ...(limits !== undefined && { limits }),

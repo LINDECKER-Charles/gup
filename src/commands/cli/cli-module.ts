@@ -53,7 +53,8 @@ export interface CliModule {
    * best-effort work (the shared journals' upload). Runs for the commands
    * that end through `endCommand` (`startup.ts`) — those that write the
    * journals: the menu, `update`, `list`, `gup schedule …` and the
-   * scheduler's tick — never in the elevated child. Must not throw.
+   * scheduler's tick; and `gup feedback`, which requests a sync — never in
+   * the elevated child. Must not throw.
    */
   beforeExit?(context: StartupContext): Promise<void>;
   /** Lines for the "System" section of `gup doctor`. */

@@ -13,7 +13,7 @@ import { printAnswer, withDialog } from "./dialog-screen.js";
  * ends the run. The install ID is not shown: it is created only on a yes.
  */
 export async function askSharingConsent(host?: ScreenHost): Promise<boolean> {
-  const text = [LABELS.what, "", LABELS.never, LABELS.change, "", LABELS.question];
+  const text = [LABELS.what, "", LABELS.when, LABELS.never, LABELS.change, "", LABELS.question];
   const no = DIALOG_LABELS.answeredNo;
   let isGranted: boolean;
   try {

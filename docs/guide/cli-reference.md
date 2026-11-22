@@ -291,12 +291,13 @@ gup feedback --no-open   # the same, without opening the browser
 gup feedback id          # the install ID alone
 gup feedback share on    # share the activity history and debug log, redacted
 gup feedback share off   # stop sharing, and erase what was shared
-gup feedback status      # sharing on/off/not asked, the install ID, the last upload (creates nothing)
+gup feedback status      # sharing on/off, the install ID, the last upload, the next sync
 ```
 
 The form opens in the interface's language, prefilled with the install ID, gup's version and
 the platform; the browser only opens from a terminal, outside CI. Journal sharing is off until
 you agree: the app, `gup update` and `gup list` ask once, when someone is at the keyboard.
+Shared journals are synced about once a week, and at the exit of `gup feedback`.
 `GUP_SHARE_LOGS=0` turns it off for a shell. A `GUP_FEEDBACK_API` or `GUP_FEEDBACK_FORM` gup
 refuses is reported on stderr and turns off what it addresses. What is sent, when, and the
 install identity:

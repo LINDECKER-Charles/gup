@@ -3,6 +3,7 @@ import type { Command } from "commander";
 import type { OpenResult } from "../../core/export/open-external.js";
 import { ERROR_LABELS } from "../../ui/text/cli-labels.js";
 import { FEEDBACK_CLI_LABELS as LABELS } from "../../ui/text/feedback/feedback-cli-labels.js";
+import { endCommand } from "../cli/startup.js";
 import type { SharingControl } from "./sharing-control.js";
 
 /**
@@ -11,6 +12,8 @@ import type { SharingControl } from "./sharing-control.js";
  * switch, and where sharing stands. Plain text only: the output is a few
  * lines a person reads, and no other command of gup speaks JSON globally.
  * Each one says on stderr when a `GUP_FEEDBACK_*` override is refused.
+ * `gup feedback` ends through `endCommand`: showing the form requests a
+ * sync, which the feedback module runs before the process exits.
  */
 
 export interface FeedbackCommandDeps {
@@ -38,7 +41,7 @@ export class FeedbackCommands {
       .command("feedback")
       .description(LABELS.commandDescription)
       .option("--no-open", LABELS.noOpen)
-      .action(async (opts: { open: boolean }) => process.exit(await this.form(opts.open)));
+      .action(async (opts: { open: boolean }) => endCommand(await this.form(opts.open)));
     feedback
       .command("id")
       .description(LABELS.idDescription)
@@ -54,7 +57,11 @@ export class FeedbackCommands {
       .action(() => process.exit(this.status()));
   }
 
-  /** The install ID and the form's address; the form opens unless `--no-open` or nobody watches. */
+  /**
+   * The install ID and the form's address; the form opens unless `--no-open`
+   * or nobody watches. Either way a report is coming: the journals are synced
+   * before the process exits, whatever the weekly cadence says.
+   */
   async form(shouldOpen: boolean): Promise<number> {
     const sharing = this.#sharing();
     const installId = sharing.createInstallId();
@@ -62,6 +69,7 @@ export class FeedbackCommands {
     this.#deps.write(`${LABELS.installId(installId)}\n`);
     const url = sharing.formUrl(installId);
     if (url === null) return FAILURE_EXIT_CODE;
+    sharing.requestSync();
     this.#deps.write(`${LABELS.form(url)}\n${chalk.dim(LABELS.idHint)}\n`);
     if (!shouldOpen || !this.#deps.isWatched()) return 0;
     const result = await this.#deps.openPage(url);
@@ -97,16 +105,21 @@ export class FeedbackCommands {
     return 0;
   }
 
-  /** Where sharing stands: the decision, the install ID, the last upload. Creates nothing. */
+  /**
+   * Where sharing stands: the decision, the install ID, the last upload and,
+   * while sharing is on, when the next sync is due. Creates nothing.
+   */
   status(): number {
     const sharing = this.#sharing();
+    const state = sharing.state();
     const installId = sharing.installId();
     const lastUpload = sharing.lastUploadAt();
     const lines = [
-      LABELS.status(LABELS.states[sharing.state()]),
+      LABELS.status(LABELS.states[state]),
       installId === null ? LABELS.idNotCreated : LABELS.installId(installId),
       lastUpload === null ? LABELS.neverUploaded : LABELS.lastUpload(lastUpload),
     ];
+    if (state === "granted") lines.push(nextSyncLine(sharing.nextSyncDue()));
     this.#deps.write(`${lines.join("\n")}\n`);
     return 0;
   }
@@ -124,4 +137,8 @@ export class FeedbackCommands {
     this.#deps.writeError(`${chalk.red(ERROR_LABELS.prefix)} ${message}\n`);
     return code;
   }
+}
+
+function nextSyncLine(dueAt: string | null): string {
+  return dueAt === null ? LABELS.nextSyncNow : LABELS.nextSync(dueAt);
 }

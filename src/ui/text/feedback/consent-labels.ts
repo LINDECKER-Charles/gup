@@ -12,6 +12,7 @@ export const CONSENT_LABELS = localized({
       "gup can send this machine's activity history and debug log to its maintainer, " +
       "so the problems you run into can be analysed. They are redacted the same way as " +
       "gup log export: secrets removed, your home folder shown as ~.",
+    when: "Sent about once a week, and when you open the feedback form.",
     never: "Never sent: your settings file, your environment.",
     change: "Change it any time: gup feedback share on|off, or in Options.",
     question: "Share your journals?",
@@ -22,6 +23,7 @@ export const CONSENT_LABELS = localized({
       "gup peut envoyer l'historique d'activité et le journal de debug de cette machine à " +
       "son mainteneur, pour analyser les problèmes que vous rencontrez. Ils sont expurgés " +
       "comme pour gup log export : secrets retirés, dossier personnel affiché ~.",
+    when: "Envoyés environ une fois par semaine, et quand vous ouvrez le formulaire de retour.",
     never: "Jamais envoyés : votre fichier de réglages, votre environnement.",
     change: "Modifiable à tout moment : gup feedback share on|off, ou dans Options.",
     question: "Partager vos journaux ?",

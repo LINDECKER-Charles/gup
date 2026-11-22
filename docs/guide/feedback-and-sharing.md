@@ -5,7 +5,7 @@ gup offers two independent ways to help its maintainer:
 - **The feedback form** — report a bug or suggest an idea, at any time, from `gup feedback` or
   the app's **Feedback** view.
 - **Journal sharing** — opt in once, and gup sends this machine's activity history and debug log,
-  redacted, after the commands that write them. Off unless you say yes.
+  redacted, about once a week and whenever you open the feedback form. Off unless you say yes.
 
 Both are tied to an **install ID**: an identifier gup creates the first time you act on feedback —
 you say yes to sharing, open the form, ask for the ID or copy it. Looking at where things stand
@@ -34,6 +34,11 @@ you can report a bug without sharing anything.
 
 In the app, the **Feedback** view shows the same: Enter opens the form, `c` copies the install ID.
 
+When you share your journals, opening the form — `gup feedback` (with or without `--no-open`), or
+Enter in the **Feedback** view — also sends them without waiting for the weekly sync: at the exit
+of `gup feedback`, at the end of the app session for the view. The report you are about to write
+then finds the latest journals behind your install ID.
+
 ## Sharing your journals
 
 ### The question
@@ -47,6 +52,7 @@ gup can send this machine's activity history and debug log to its maintainer, so
 you run into can be analysed. They are redacted the same way as gup log export: secrets removed,
 your home folder shown as ~.
 
+Sent about once a week, and when you open the feedback form.
 Never sent: your settings file, your environment.
 Change it any time: gup feedback share on|off, or in Options.
 
@@ -68,8 +74,11 @@ nothing is shared.
 
 ### What is sent, and when
 
-Once you said yes, gup uploads what its journals gained since the last upload, after the app
-closes, after `gup update`, `gup list` and `gup schedule run-now`, and after a scheduled run:
+Once you said yes, gup syncs its journals **about once a week**: what they gained since the last
+upload goes out after the app closes, after `gup update`, `gup list` or `gup schedule run-now`, or
+after a scheduled run — the first of these once a week has passed since the last completed sync.
+The other runs of that week send nothing. Opening the feedback form syncs at once, whatever the
+week says ([above](#reporting-a-bug-or-an-idea)). What is sent:
 
 - the [activity history](journal-and-reports.md) records,
 - the [debug log](journal-and-reports.md) records,
@@ -82,13 +91,17 @@ holds stay on the machine. The records sharing writes about itself (`sharing.*`)
 Every batch also carries gup's version, the platform, the CPU architecture, Node's version and the
 interface language.
 
-The first upload after your first yes reaches back 30 days at most; when nothing is new, nothing
-is sent. The upload never delays gup for long: a few seconds and five batches at most, after
-which what is left waits for the next run, and it stops before its next batch when sharing is
-turned off meanwhile. A batch the service rejects as malformed or too large is dropped; one that
-could not be delivered (no network, the service busy or down) is sent again next time. The upload
-never prints anything and never fails a command; what it did is in the debug log
-(`sharing.upload`, `sharing.upload-dropped`, `sharing.upload-failed`). The service keeps shared
+The first sync after your first yes sends everything your local journals hold — the whole history
+and debug log, oldest first; when nothing is new, nothing is sent. The upload never delays gup for
+long: a few seconds and five batches at most per run, and it stops before its next batch when
+sharing is turned off meanwhile. A sync that could not finish — a large first backlog, the time
+budget, the service unreachable — is not complete: the next of the runs above carries on where it
+stopped, without waiting a week, until nothing is left; only then does the week start again.
+
+A batch the service rejects as malformed or too large is dropped; one that could not be delivered
+(no network, the service busy or down) is sent again next time. The upload never prints anything
+and never fails a command; what it did is in the debug log (`sharing.upload`,
+`sharing.upload-dropped`, `sharing.upload-failed`, `sharing.sync-done`). The service keeps shared
 journals for 90 days.
 
 ### Changing your mind
@@ -103,12 +116,17 @@ gup feedback status      # where sharing stands
 Sharing: on
 Install ID: 3f2c8a4e-1b6d-4e2f-9a7c-5d8e0f1a2b3c
 Last upload: 2026-11-20T08:01:13.002Z
+Next sync: from 2026-11-27T08:01:13.120Z
 ```
+
+While sharing is on, the last line says when the weekly sync is due next, or
+`Next sync: at the next run` when it is due already (no sync completed yet, a week passed, or one
+is unfinished).
 
 `share off` saves the refusal, then asks the service to erase everything this install shared. If
 the service cannot be reached, sharing is still off and the command says so: run it again later
 to erase. Turning sharing back on after turning it off shares only what is written from then on:
-the 30-day reach applies to your very first yes only.
+sending the whole local history is for your very first yes only.
 
 Options › **Share journals** is the same switch, with the install ID beside it once it exists.
 Turning it off there erases in the background; when you leave the app, gup waits a few seconds
@@ -133,8 +151,8 @@ profile and gets shared:
 
 `GUP_FEEDBACK_DIR` moves it. The file is private to your account; the private key is never
 printed nor logged. Next to it, `sharing.json` keeps your answer and `upload-cursor.json` records
-how far the uploads went. `gup doctor` shows whether sharing is on and the install ID, or that it
-is not created yet.
+how far the uploads went, when the last one was acknowledged and when the last sync completed.
+`gup doctor` shows whether sharing is on and the install ID, or that it is not created yet.
 
 ## For contributors
 

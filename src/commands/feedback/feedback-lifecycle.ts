@@ -9,8 +9,10 @@ import type { SharingControl } from "./sharing-control.js";
 /**
  * What feedback does around every command: the one-time question about
  * sharing the journals (before the menu, `update` or `list`), the upload of
- * what the command wrote once it is done — after any erasure the menu
- * started — and the `gup doctor` line, which only reads.
+ * the journals once the command is done — after any erasure the menu
+ * started — and the `gup doctor` line, which only reads. The upload itself
+ * keeps to a weekly cadence (`SharingControl.upload`): most runs end without
+ * sending anything.
  */
 
 export interface FeedbackLifecycleDeps {
@@ -23,7 +25,11 @@ export interface FeedbackLifecycleDeps {
   readonly deadlineMs: number;
 }
 
-/** The commands after which what the journals gained is uploaded. */
+/**
+ * The commands that write the journals, after which a sync is attempted.
+ * Any other command attempts one only when it opened the feedback form
+ * (`SharingControl.requestSync`): `gup feedback`.
+ */
 const UPLOADING_COMMANDS: ReadonlySet<string> = new Set([
   "",
   "update",
@@ -69,12 +75,16 @@ export class FeedbackLifecycle {
     save(sharing, isGranted ? "granted" : "denied");
   }
 
-  /** Finish an erasure in flight, then upload after a command that wrote the journals. */
+  /**
+   * Finish an erasure in flight, then upload after a command that wrote the
+   * journals or opened the feedback form.
+   */
   async afterCommand(context: StartupContext): Promise<void> {
     const sharing = this.#deps.sharing();
     const work = (async () => {
       await sharing.settled();
-      if (UPLOADING_COMMANDS.has(context.commandPath)) await sharing.upload();
+      const isUploading = UPLOADING_COMMANDS.has(context.commandPath);
+      if (isUploading || sharing.isSyncRequested()) await sharing.upload();
     })();
     let timer: NodeJS.Timeout | undefined;
     const deadline = new Promise<void>((resolve) => {

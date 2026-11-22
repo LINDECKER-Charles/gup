@@ -30,7 +30,11 @@ export function menuViews(): readonly ViewDefinition[] {
       installId: () => sharing.installId(),
       createInstallId: () => sharing.createInstallId(),
       formUrl: (installId) => sharing.formUrl(installId),
-      openForm: async (url) => (await openWebPage(url)).opened,
+      openForm: async (url) => {
+        // A report is coming: the session's upload ignores the weekly wait.
+        sharing.requestSync();
+        return (await openWebPage(url)).opened;
+      },
     }),
     journalView(journalSource, { scheduleName: (id) => schedules.scheduleName(id) }),
     optionsView({

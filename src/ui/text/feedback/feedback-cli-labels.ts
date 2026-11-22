@@ -14,7 +14,8 @@ export const FEEDBACK_CLI_LABELS = localized({
     shareDescription: "Shares your journals with the maintainer, or stops: on | off",
     shareArgument: "on or off",
     statusDescription:
-      "Shows whether your journals are shared, the install ID and the last upload",
+      "Shows whether your journals are shared, the install ID, the last upload " +
+      "and the next sync",
     installId: (id: string) => `Install ID: ${id}`,
     form: (url: string) => `Feedback form: ${url}`,
     idHint: "Quote the install ID in a report: it links it to the journals you share.",
@@ -26,7 +27,9 @@ export const FEEDBACK_CLI_LABELS = localized({
       "what it points to is off for this run.",
     unknownChoice: (value: string) => `unknown choice "${value}": choose on or off`,
     saveFailed: (reason: string) => `the choice could not be saved: ${reason}`,
-    sharedOn: "Your journals are shared: they go out after an update, a list or a menu session.",
+    sharedOn:
+      "Your journals are shared: they go out about once a week, after an update, a list " +
+      "or a menu session, and when you open the feedback form.",
     forcedOffWarning: "GUP_SHARE_LOGS turns sharing off in this shell: nothing is sent here.",
     erasure: {
       erased: "Sharing is off; what this install shared was erased from the service.",
@@ -37,6 +40,8 @@ export const FEEDBACK_CLI_LABELS = localized({
     status: (state: string) => `Sharing: ${state}`,
     lastUpload: (when: string) => `Last upload: ${when}`,
     neverUploaded: "Last upload: none yet",
+    nextSync: (when: string) => `Next sync: from ${when}`,
+    nextSyncNow: "Next sync: at the next run",
     states: {
       ask: "not asked yet",
       granted: "on",
@@ -56,7 +61,8 @@ export const FEEDBACK_CLI_LABELS = localized({
     shareDescription: "Partage vos journaux avec le mainteneur, ou arrête : on | off",
     shareArgument: "on ou off",
     statusDescription:
-      "Indique si vos journaux sont partagés, l'ID d'installation et le dernier envoi",
+      "Indique si vos journaux sont partagés, l'ID d'installation, le dernier " +
+      "et le prochain envoi",
     installId: (id) => `ID d'installation : ${id}`,
     form: (url) => `Formulaire : ${url}`,
     idHint: "Citez l'ID d'installation dans un signalement : il le relie aux journaux partagés.",
@@ -69,8 +75,8 @@ export const FEEDBACK_CLI_LABELS = localized({
     unknownChoice: (value) => `choix inconnu « ${value} » : choisir on ou off`,
     saveFailed: (reason) => `le choix n'a pas pu être enregistré : ${reason}`,
     sharedOn:
-      "Vos journaux sont partagés : ils partent après une mise à jour, une liste " +
-      "ou une session du menu.",
+      "Vos journaux sont partagés : ils partent environ une fois par semaine, après une " +
+      "mise à jour, une liste ou une session du menu, et quand vous ouvrez le formulaire.",
     forcedOffWarning: "GUP_SHARE_LOGS désactive le partage dans ce shell : rien n'est envoyé ici.",
     erasure: {
       erased:
@@ -82,6 +88,8 @@ export const FEEDBACK_CLI_LABELS = localized({
     status: (state) => `Partage : ${state}`,
     lastUpload: (when) => `Dernier envoi : ${when}`,
     neverUploaded: "Dernier envoi : aucun pour l'instant",
+    nextSync: (when) => `Prochain envoi : à partir du ${when}`,
+    nextSyncNow: "Prochain envoi : à la prochaine exécution",
     states: {
       ask: "pas encore demandé",
       granted: "activé",

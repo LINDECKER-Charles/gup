@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -121,6 +121,7 @@ describe("uploadJournals", () => {
       history: null,
       logs: { at: items[999]!.ts, count: 1 },
       lastUploadAt: new Date(NOW).toISOString(),
+      lastSyncAt: null,
     });
   });
 
@@ -233,18 +234,111 @@ describe("uploadJournals", () => {
     const collect: UploaderDeps["collect"] = async (query) =>
       items.filter((item) => Date.parse(item.ts) >= query.logsFrom.getTime());
 
-    expect(await uploadJournals({ ...uploader, collect, fetch: again.fetch })).toEqual({
-      batches: 0,
-      stop: "done",
-    });
+    const forced = { ...uploader, collect, fetch: again.fetch, isForced: true };
+
+    expect(await uploadJournals(forced)).toEqual({ batches: 0, stop: "done" });
     expect(again.fetch).not.toHaveBeenCalled();
   });
 
-  it("redacts the history, and reaches back 30 days at most on a first upload", async () => {
+  describe("the weekly cadence", () => {
+    const LATER = (days: number) => () => NOW + days * DAY_MS;
+    const EMPTY = { history: null, logs: null, lastUploadAt: null, lastSyncAt: null };
+
+    it("completes a sync when nothing is left, then waits a week", async () => {
+      const uploader = await deps({ items: logItems(3), fetch: fakeService().fetch });
+      expect(await uploadJournals(uploader)).toEqual({ batches: 1, stop: "done" });
+      expect(uploader.cursor.read().lastSyncAt).toBe(new Date(NOW).toISOString());
+
+      const early = fakeService();
+      const collect = vi.fn<UploaderDeps["collect"]>(async () => logItems(2, NOW + DAY_MS));
+      const run = { ...uploader, collect, fetch: early.fetch, now: LATER(6.9) };
+
+      expect(await uploadJournals(run)).toEqual({ batches: 0, stop: "not-due" });
+      expect(collect).not.toHaveBeenCalled();
+      expect(early.fetch).not.toHaveBeenCalled();
+    });
+
+    it("syncs again once the week is over", async () => {
+      const uploader = await deps({ items: logItems(3), fetch: fakeService().fetch });
+      await uploadJournals(uploader);
+      const due = fakeService();
+      const items = logItems(2, NOW + DAY_MS);
+      const next = { collect: async () => items, fetch: due.fetch, now: LATER(7) };
+
+      const summary = await uploadJournals({ ...uploader, ...next });
+
+      expect(summary).toEqual({ batches: 1, stop: "done" });
+      expect(uploader.cursor.read().lastSyncAt).toBe(new Date(LATER(7)()).toISOString());
+    });
+
+    it("leaves the sync instant alone on a partial run, and carries on at the next", async () => {
+      const items = logItems(4_500);
+      const uploader = await deps({ items, fetch: fakeService().fetch, limits: { maxBatches: 2 } });
+      const synced = new Date(NOW - 10 * DAY_MS).toISOString();
+      uploader.cursor.save({ ...EMPTY, lastSyncAt: synced });
+
+      expect(await uploadJournals(uploader)).toEqual({ batches: 2, stop: "budget" });
+      expect(uploader.cursor.read().lastSyncAt).toBe(synced);
+
+      const collect: UploaderDeps["collect"] = async (query) =>
+        items.filter((item) => Date.parse(item.ts) >= query.logsFrom.getTime());
+      const second = fakeService();
+      const summary = await uploadJournals({ ...uploader, collect, fetch: second.fetch });
+
+      expect(summary).toEqual({ batches: 2, stop: "budget" });
+      expect(second.sent[0]!.body.logs[0]!.ts).toBe(items[2_000]!.ts);
+    });
+
+    it("resumes an unfinished sync at once, even within the week of a completed one", async () => {
+      const uploader = await deps({ items: logItems(10), fetch: fakeService().fetch });
+      const synced = new Date(NOW - DAY_MS).toISOString();
+      const uploaded = new Date(NOW - DAY_MS / 2).toISOString();
+      uploader.cursor.save({ ...EMPTY, lastUploadAt: uploaded, lastSyncAt: synced });
+
+      expect(await uploadJournals(uploader)).toEqual({ batches: 1, stop: "done" });
+    });
+
+    it("is not complete when the journals held more than one run reads", async () => {
+      const service = fakeService();
+      const uploader = await deps({ items: logItems(2_000), fetch: service.fetch });
+
+      const summary = await uploadJournals({ ...uploader, limits: { maxBatches: 2 } });
+
+      expect(summary).toEqual({ batches: 2, stop: "budget" });
+      expect(uploader.cursor.read().lastSyncAt).toBeNull();
+    });
+
+    it("ignores the wait when forced: the user opened the feedback form", async () => {
+      const uploader = await deps({ items: logItems(3), fetch: fakeService().fetch });
+      await uploadJournals(uploader);
+      const forced = fakeService();
+      const items = logItems(1, NOW + 1);
+      const next = { collect: async () => items, fetch: forced.fetch, now: LATER(1) };
+
+      const summary = await uploadJournals({ ...uploader, ...next, isForced: true });
+
+      expect(summary).toEqual({ batches: 1, stop: "done" });
+      expect(uploader.cursor.read().lastSyncAt).toBe(new Date(LATER(1)()).toISOString());
+    });
+
+    it("reads a cursor file written before the sync instant existed as never synced", async () => {
+      const dir = await tempDir("gup-cursor-");
+      const lastUploadAt = new Date(NOW).toISOString();
+      const legacy = { v: 1, history: null, logs: null, lastUploadAt };
+      await writeFile(join(dir, "upload-cursor.json"), JSON.stringify(legacy));
+      const cursor = new UploadCursorFile(dir);
+
+      expect(cursor.read()).toEqual({ ...EMPTY, lastUploadAt, lastSyncAt: null });
+      const uploader = await deps({ cursor, items: logItems(1), fetch: fakeService().fetch });
+      expect(await uploadJournals(uploader)).toEqual({ batches: 1, stop: "done" });
+    });
+  });
+
+  it("redacts the history, and sends all of it on a first upload", async () => {
     const historyDir = await tempDir("gup-history-");
     const message = `install failed, see ${join(homedir(), "AppData", "Local", "Temp", "x.log")}`;
     await writeHistoryShards(historyDir, [
-      updateEvent("winget", "Old.Package", { ts: new Date(NOW - 40 * DAY_MS).toISOString() }),
+      updateEvent("winget", "Old.Package", { ts: new Date(NOW - 400 * DAY_MS).toISOString() }),
       updateEvent("winget", "Git.Git", {
         ts: new Date(NOW - DAY_MS).toISOString(),
         status: "failed",
@@ -258,8 +352,8 @@ describe("uploadJournals", () => {
     await uploadJournals(await deps({ collect, fetch: service.fetch }));
 
     const history = service.sent[0]!.body.history as { packageId: string; message?: string }[];
-    expect(history.map((event) => event.packageId)).toEqual(["Git.Git"]);
-    expect(history[0]?.message).toContain("~");
-    expect(history[0]?.message).not.toContain(homedir());
+    expect(history.map((event) => event.packageId)).toEqual(["Old.Package", "Git.Git"]);
+    expect(history[1]?.message).toContain("~");
+    expect(history[1]?.message).not.toContain(homedir());
   });
 });

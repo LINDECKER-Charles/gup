@@ -33,6 +33,7 @@ const ATTENDED: ConsentFacts = {
 };
 const NOW = Date.parse("2026-11-20T12:00:00.000Z");
 const SENT_AT = "2026-11-19T08:00:00.000Z";
+const SENT_CURSOR = { history: null, logs: { at: SENT_AT, count: 1 }, lastUploadAt: SENT_AT };
 const PRODUCTION = "https://feedback.global-updater.com";
 
 describe("shouldAskConsent", () => {
@@ -161,7 +162,7 @@ describe("feedback sharing", () => {
       expect(() => sharing.decide("granted")).toThrow();
     });
 
-    it("a yes after a no shares only from now on; a first yes keeps the 30-day reach", async () => {
+    it("a yes after a no shares only from now on; a first yes shares everything", async () => {
       const first = await sharingFor();
       first.sharing.decide("granted");
       expect(new UploadCursorFile(first.dir).read().logs).toBeNull();
@@ -292,7 +293,7 @@ describe("feedback sharing", () => {
       sharing.decide("granted");
       const identity = readInstallIdentity(dir)!;
       const cursor = new UploadCursorFile(dir);
-      cursor.save({ history: null, logs: { at: SENT_AT, count: 1 }, lastUploadAt: SENT_AT });
+      cursor.save({ ...SENT_CURSOR, lastSyncAt: SENT_AT });
       const { commands: cli, write } = commands(sharing);
 
       expect(await cli.share("off")).toBe(0);
@@ -305,7 +306,12 @@ describe("feedback sharing", () => {
       expect(init.method).toBe("DELETE");
       expect(isSignedBy({ authorization: headers["authorization"]!, method: "DELETE", url, body: "" }))
         .toBe(true);
-      expect(cursor.read()).toEqual({ history: null, logs: null, lastUploadAt: null });
+      expect(cursor.read()).toEqual({
+        history: null,
+        logs: null,
+        lastUploadAt: null,
+        lastSyncAt: null,
+      });
       expect(write).toHaveBeenCalledWith(`${FEEDBACK_CLI_LABELS.erasure.erased}\n`);
     });
 
@@ -317,7 +323,7 @@ describe("feedback sharing", () => {
       const { sharing, dir } = await sharingFor({ fetch });
       sharing.decide("granted");
       const cursor = new UploadCursorFile(dir);
-      cursor.save({ history: null, logs: { at: SENT_AT, count: 1 }, lastUploadAt: SENT_AT });
+      cursor.save({ ...SENT_CURSOR, lastSyncAt: SENT_AT });
       const { commands: cli, write } = commands(sharing);
 
       expect(await cli.share("off")).toBe(0);
