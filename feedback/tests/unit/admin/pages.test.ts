@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { Feedback } from "../../src/domain/feedback.js";
+import type { Feedback } from "../../../src/domain/feedback.js";
 import type {
   InstallSummary, StoredHistoryRecord, StoredLogRecord,
-} from "../../src/ports/install-reader.js";
-import type { Page } from "../../src/ports/page.js";
-import { feedbackPage } from "../../src/views/pages/feedback-page.js";
-import { installPage } from "../../src/views/pages/install-page.js";
+} from "../../../src/ports/install-reader.js";
+import type { Page } from "../../../src/ports/page.js";
+import { feedbackPage } from "../../../src/views/pages/feedback-page.js";
+import { installPage } from "../../../src/views/pages/install-page.js";
 
 /** Breaks out of an attribute, then out of the text: whatever the context, it must stay text. */
 const HOSTILE = `"'><script>alert(1)</script><img src=x onerror=alert(2)>`;
@@ -19,7 +19,7 @@ function pageOf<T>(items: readonly T[]): Page<T> {
 /** Whether the markup holds any element or attribute an attacker injected. */
 function expectInert(markup: string): void {
   expect(markup).not.toContain("<script");
-  expect(markup).not.toContain("<img");
+  expect(markup).not.toContain("<img src=x");
   expect(markup).not.toMatch(/<[a-z][^>]*\sonerror=/i);
   expect(markup).not.toMatch(/href="javascript:/i);
 }

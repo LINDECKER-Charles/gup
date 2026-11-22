@@ -2,10 +2,15 @@ import type { StoredHistoryRecord } from "../../ports/install-reader.js";
 import type { Page } from "../../ports/page.js";
 import { DURATION_MS } from "../../time-units.js";
 import { emptyState } from "../kit/empty-state.js";
-import { formatDate } from "../kit/format-date.js";
 import { html, type SafeHtml } from "../kit/html.js";
+import { formatDate } from "../text/format-date.js";
 
 const SECONDS = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+
+export interface HistorySectionsInput {
+  readonly failedUpdates: Page<StoredHistoryRecord>;
+  readonly scans: Page<StoredHistoryRecord>;
+}
 
 function text(record: StoredHistoryRecord, name: string): string | null {
   const value = record.data[name];
@@ -18,19 +23,7 @@ function seconds(record: StoredHistoryRecord): string {
 }
 
 function versions(record: StoredHistoryRecord): string {
-  const from = text(record, "from") ?? "?";
-  const to = text(record, "to") ?? "?";
-  return `${from} → ${to}`;
-}
-
-function failedRow(record: StoredHistoryRecord): SafeHtml {
-  return html`<tr>
-    <td>${formatDate(record.ts)}</td>
-    <td>${text(record, "providerId") ?? "—"}</td>
-    <td class="mono">${text(record, "packageId") ?? "—"}</td>
-    <td class="mono">${versions(record)}</td>
-    <td class="wrap">${text(record, "message") ?? "—"}</td>
-  </tr>`;
+  return `${text(record, "from") ?? "?"} → ${text(record, "to") ?? "?"}`;
 }
 
 function providerErrors(record: StoredHistoryRecord): number {
@@ -40,51 +33,74 @@ function providerErrors(record: StoredHistoryRecord): number {
     typeof provider === "object" && provider !== null && "error" in provider).length;
 }
 
-function scanRow(record: StoredHistoryRecord): SafeHtml {
-  const providers = record.data["providers"];
+/** Each cell holds one element or plain text: below 720 px, a row stacks into a card. */
+function failedRow(record: StoredHistoryRecord): SafeHtml {
   return html`<tr>
-    <td>${formatDate(record.ts)}</td>
-    <td class="num">${seconds(record)}</td>
-    <td class="num">${text(record, "outdated") ?? "—"}</td>
-    <td class="num">${Array.isArray(providers) ? providers.length : "—"}</td>
-    <td class="num">${providerErrors(record)}</td>
+    <td class="nowrap" data-label="Date">${formatDate(record.ts)}</td>
+    <td data-label="Source">${text(record, "providerId") ?? "—"}</td>
+    <td class="mono" data-label="Paquet">${text(record, "packageId") ?? "—"}</td>
+    <td class="mono" data-label="Versions">${versions(record)}</td>
+    <td class="wrap" data-label="Message">${text(record, "message") ?? "—"}</td>
   </tr>`;
 }
 
-export interface HistorySectionsInput {
-  readonly failedUpdates: Page<StoredHistoryRecord>;
-  readonly scans: Page<StoredHistoryRecord>;
+function scanRow(record: StoredHistoryRecord): SafeHtml {
+  const providers = record.data["providers"];
+  return html`<tr>
+    <td class="nowrap" data-label="Date">${formatDate(record.ts)}</td>
+    <td class="num" data-label="Durée">${seconds(record)}</td>
+    <td class="num" data-label="En retard">${text(record, "outdated") ?? "—"}</td>
+    <td class="num" data-label="Sources">${Array.isArray(providers) ? providers.length : "—"}</td>
+    <td class="num" data-label="En erreur">${providerErrors(record)}</td>
+  </tr>`;
 }
 
-function failedSection(page: Page<StoredHistoryRecord>): SafeHtml {
-  const body = page.items.length === 0
-    ? emptyState("Aucune mise à jour échouée.")
-    : html`<div class="table-wrap"><table class="table">
-      <thead><tr><th scope="col">Date</th><th scope="col">Source</th>
-        <th scope="col">Paquet</th><th scope="col">Versions</th>
-        <th scope="col">Message</th></tr></thead>
-      <tbody>${page.items.map(failedRow)}</tbody></table></div>`;
-  const more = page.total > page.items.length
-    ? html`<p class="hint">Les ${page.items.length} plus récentes sur ${page.total}.</p>` : "";
-  return html`<section class="section" aria-labelledby="failed-title">
-    <h2 class="section__title" id="failed-title">Mises à jour échouées</h2>${body}${more}
-  </section>`;
+interface HistoryTable {
+  readonly id: string;
+  readonly title: string;
+  readonly empty: string;
+  readonly head: SafeHtml;
+  readonly row: (record: StoredHistoryRecord) => SafeHtml;
 }
 
-function scanSection(page: Page<StoredHistoryRecord>): SafeHtml {
+const FAILED: HistoryTable = {
+  id: "echecs",
+  title: "Mises à jour échouées",
+  empty: "Aucune mise à jour échouée.",
+  head: html`<th scope="col">Date</th><th scope="col">Source</th><th scope="col">Paquet</th>
+    <th scope="col">Versions</th><th scope="col">Message</th>`,
+  row: failedRow,
+};
+
+const SCANS: HistoryTable = {
+  id: "analyses",
+  title: "Analyses récentes",
+  empty: "Aucune analyse partagée.",
+  head: html`<th scope="col">Date</th><th scope="col" class="num">Durée</th>
+    <th scope="col" class="num">Paquets en retard</th><th scope="col" class="num">Sources</th>
+    <th scope="col" class="num">Sources en erreur</th>`,
+  row: scanRow,
+};
+
+/** The latest records only; the note says how many the install holds in all. */
+function section(spec: HistoryTable, page: Page<StoredHistoryRecord>): SafeHtml {
   const body = page.items.length === 0
-    ? emptyState("Aucune analyse partagée.")
-    : html`<div class="table-wrap"><table class="table">
-      <thead><tr><th scope="col">Date</th><th scope="col" class="num">Durée</th>
-        <th scope="col" class="num">Paquets en retard</th><th scope="col" class="num">Sources</th>
-        <th scope="col" class="num">Sources en erreur</th></tr></thead>
-      <tbody>${page.items.map(scanRow)}</tbody></table></div>`;
-  return html`<section class="section" aria-labelledby="scans-title">
-    <h2 class="section__title" id="scans-title">Analyses récentes</h2>${body}
+    ? emptyState({ title: spec.empty })
+    : html`<div class="table-wrap"><table class="table table--stack">
+      <thead><tr>${spec.head}</tr></thead>
+      <tbody>${page.items.map(spec.row)}</tbody></table></div>`;
+  const note = page.total > page.items.length
+    ? html`<p class="section__note">Les ${page.items.length} plus récentes sur ${page.total}</p>`
+    : "";
+  return html`<section class="section" id="${spec.id}" aria-labelledby="${spec.id}-title">
+    <div class="section__head">
+      <h2 class="section__title" id="${spec.id}-title">${spec.title}</h2>${note}
+    </div>
+    ${body}
   </section>`;
 }
 
 /** What the install's history says: failed updates first, then recent scans. */
 export function historySections(input: HistorySectionsInput): SafeHtml {
-  return html`${failedSection(input.failedUpdates)}${scanSection(input.scans)}`;
+  return html`${section(FAILED, input.failedUpdates)}${section(SCANS, input.scans)}`;
 }

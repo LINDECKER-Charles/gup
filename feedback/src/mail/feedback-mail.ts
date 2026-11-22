@@ -1,8 +1,8 @@
 import type { MailConfig } from "../config/app-config.js";
 import type { Feedback } from "../domain/feedback.js";
 import type { OutgoingMail } from "../ports/mailer.js";
-import { formatDate } from "../views/kit/format-date.js";
-import { LABELS } from "../views/kit/labels.js";
+import { formatDate } from "../views/text/format-date.js";
+import { LABELS } from "../views/text/labels.js";
 
 export interface FeedbackMailInput {
   readonly feedback: Feedback;

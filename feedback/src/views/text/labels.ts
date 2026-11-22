@@ -15,7 +15,15 @@ export const LABELS = {
     resolved: "Résolus",
     dismissed: "Écartés",
   } satisfies Record<FeedbackStatus, string>,
+  /** The inbox's title for each status filter. */
+  inboxTitle: {
+    new: "Nouveaux retours",
+    in_progress: "Retours en cours",
+    resolved: "Retours résolus",
+    dismissed: "Retours écartés",
+  } satisfies Record<FeedbackStatus, string>,
   kind: { bug: "Bug", suggestion: "Suggestion" } satisfies Record<FeedbackKind, string>,
+  kindFilter: { bug: "Bugs", suggestion: "Suggestions" } satisfies Record<FeedbackKind, string>,
   level: {
     error: "Erreur",
     warn: "Alerte",

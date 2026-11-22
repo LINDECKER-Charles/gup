@@ -1,0 +1,235 @@
+/* The frame of every page: shell, top bar, page header, notices. */
+
+.shell {
+  inline-size: 100%;
+  max-inline-size: var(--shell-max);
+  margin-inline: auto;
+  padding-inline: var(--shell-pad);
+}
+
+/* ── Top bar ───────────────────────────────────────────────────────────────
+   One row from 720 px; below, the two sections become a second row. */
+
+.topbar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 10;
+  border-block-end: 1px solid var(--line);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+}
+.topbar__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 28px;
+  min-block-size: var(--topbar-h);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: var(--topbar-h);
+  margin-inline-end: auto;
+  color: var(--fg);
+  text-decoration: none;
+}
+.brand:hover {
+  color: var(--fg);
+}
+.brand__mark {
+  inline-size: 30px;
+  block-size: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+.brand__word {
+  font-family: var(--font-brand);
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+.brand__tag {
+  padding: 2px 7px;
+  border: 1px solid var(--edge-violet);
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: var(--label-tracking-tight);
+  text-transform: uppercase;
+  color: var(--violet-text);
+  white-space: nowrap;
+}
+
+.nav {
+  order: 3;
+  display: flex;
+  gap: 28px;
+  inline-size: 100%;
+  border-block-start: 1px solid var(--line-faint);
+}
+.nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 46px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--fg-soft);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav__link:hover {
+  color: var(--fg);
+}
+.nav__link[aria-current="page"] {
+  color: var(--fg);
+  text-decoration: underline 2px var(--violet);
+  text-underline-offset: 8px;
+}
+.nav__index {
+  color: var(--fg-dim);
+}
+
+.logout {
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .brand {
+    margin-inline-end: 8px;
+  }
+  .nav {
+    order: 0;
+    inline-size: auto;
+    margin-inline-end: auto;
+    border: 0;
+  }
+}
+
+/* ── Page ──────────────────────────────────────────────────────────────── */
+
+.page {
+  position: relative;
+  z-index: 1;
+  padding-block: 28px 80px;
+}
+/* Focused by the skip link only, to move the reading point. */
+.page:focus {
+  outline: none;
+}
+@media (min-width: 720px) {
+  .page {
+    padding-block: 48px 112px;
+  }
+}
+
+.page-head {
+  display: grid;
+  gap: 12px;
+  margin-block-end: 28px;
+}
+@media (min-width: 720px) {
+  .page-head {
+    margin-block-end: 36px;
+  }
+}
+
+.back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 32px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--fg-soft);
+  text-decoration: none;
+}
+.back:hover {
+  color: var(--fg);
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--violet-text);
+}
+.kicker::after {
+  content: "";
+  flex: 1;
+  block-size: 1px;
+  background: var(--line);
+}
+
+/* Page names: the landing's display face. */
+.display {
+  font-family: var(--font-brand);
+  font-size: clamp(36px, 7vw, 58px);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: 0.004em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+/* Titles a reporter wrote: the text face, whatever they typed. */
+.content-title {
+  font-size: clamp(25px, 4.2vw, 36px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.page-head__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  font-size: 14.5px;
+  color: var(--fg-muted);
+}
+
+/* ── Notices ───────────────────────────────────────────────────────────── */
+
+.notice,
+.alert {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-block-end: 24px;
+  padding: 12px 16px;
+  border: 1px solid;
+  border-radius: var(--radius);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+.notice {
+  border-color: var(--edge-green);
+  background: var(--tint-green);
+}
+.notice::before {
+  content: "✓" / "";
+  font-weight: 700;
+  color: var(--green);
+}
+.alert {
+  border-color: var(--edge-red);
+  background: var(--tint-red);
+}
+.alert::before {
+  content: "!" / "";
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--red);
+}

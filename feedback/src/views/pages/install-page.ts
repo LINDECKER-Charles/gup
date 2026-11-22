@@ -1,13 +1,14 @@
 import type { Feedback } from "../../domain/feedback.js";
 import type { InstallSummary } from "../../ports/install-reader.js";
 import { ADMIN_UI } from "../admin-ui.js";
-import { csrfField } from "../csrf-field.js";
-import { badge } from "../kit/badge.js";
+import { dangerZone } from "../danger-zone.js";
 import { emptyState } from "../kit/empty-state.js";
-import { formatDate } from "../kit/format-date.js";
+import { feedbackCard } from "../kit/feedback-card.js";
 import { html, type SafeHtml } from "../kit/html.js";
-import { LABELS } from "../kit/labels.js";
 import { layout } from "../kit/layout.js";
+import { pageHeader } from "../kit/page-header.js";
+import { formatDate } from "../text/format-date.js";
+import { LABELS } from "../text/labels.js";
 import { historySections, type HistorySectionsInput } from "./history-sections.js";
 import { logSection, type LogSectionInput } from "./log-section.js";
 
@@ -17,65 +18,86 @@ export interface InstallPageInput extends HistorySectionsInput, LogSectionInput 
   readonly feedback: readonly Feedback[];
 }
 
+const INSTALLS_PATH = `${ADMIN_UI.home}/installs`;
 const UNKNOWN = html`<span class="muted">inconnu</span>`;
 
-function facts(install: InstallSummary): SafeHtml {
-  const platform = install.platform === null ? null : LABELS.platform[install.platform];
-  return html`<dl class="facts facts--grid">
-    <dt>Dernier envoi</dt><dd>${formatDate(install.lastSeenAt)}</dd>
-    <dt>Premier envoi</dt><dd>${formatDate(install.firstSeenAt)}</dd>
-    <dt>Version de gup</dt><dd>${install.gupVersion ?? UNKNOWN}</dd>
-    <dt>Plateforme</dt><dd>${platform ?? install.platform ?? UNKNOWN}
-      ${install.arch === null ? "" : `(${install.arch})`}</dd>
-    <dt>Node.js</dt><dd>${install.node ?? UNKNOWN}</dd>
-    <dt>Langue</dt><dd>${install.locale ?? UNKNOWN}</dd>
-  </dl>`;
+function fact(term: string, value: SafeHtml | string): SafeHtml {
+  return html`<div class="facts__item"><dt>${term}</dt><dd>${value}</dd></div>`;
+}
+
+function platformOf(install: InstallSummary): string | null {
+  if (install.platform === null) return null;
+  const name = LABELS.platform[install.platform] ?? install.platform;
+  return install.arch === null ? name : `${name} (${install.arch})`;
+}
+
+function factsPanel(install: InstallSummary): SafeHtml {
+  return html`<section class="panel" aria-label="Fiche de l’installation">
+    <dl class="facts">
+      ${fact("Dernier envoi", formatDate(install.lastSeenAt))}
+      ${fact("Premier envoi", formatDate(install.firstSeenAt))}
+      ${fact("Version de gup", install.gupVersion ?? UNKNOWN)}
+      ${fact("Plateforme", platformOf(install) ?? UNKNOWN)}
+      ${fact("Node.js", install.node ?? UNKNOWN)}
+      ${fact("Langue", install.locale ?? UNKNOWN)}
+    </dl>
+  </section>`;
+}
+
+/** A long page: one pill per section, with what it holds. */
+function jumps(input: InstallPageInput): SafeHtml {
+  const targets = [
+    { id: "retours", label: "Retours liés", count: input.feedback.length },
+    { id: "echecs", label: "Mises à jour échouées", count: input.failedUpdates.total },
+    { id: "analyses", label: "Analyses", count: input.scans.total },
+    { id: "journal", label: "Journal", count: input.logs.total },
+  ];
+  return html`<nav class="jumps" aria-label="Sections de la page"><div class="pills">
+    ${targets.map((target) => html`<a class="pill" href="#${target.id}">${target.label}
+      <span class="pill__count">${target.count}</span></a>`)}
+  </div></nav>`;
 }
 
 function feedbackSection(feedback: readonly Feedback[]): SafeHtml {
-  const rows = feedback.map((item) => html`<li class="row"><a class="row__link"
-      href="/admin/feedback/${item.id}">
-    <span class="row__head"><span class="row__title">${item.title}</span>
-      <span class="row__badges">${badge({ family: "kind", value: item.kind })}
-        ${badge({ family: "status", value: item.status })}</span></span>
-    <span class="row__meta">#${item.id} · ${formatDate(item.createdAt)}</span></a></li>`);
   const body = feedback.length === 0
-    ? emptyState("Aucun retour ne cite cette installation.")
-    : html`<ol class="rows">${rows}</ol>`;
-  return html`<section class="section" aria-labelledby="feedback-title">
-    <h2 class="section__title" id="feedback-title">Retours liés</h2>${body}
+    ? emptyState({ title: "Aucun retour ne cite cette installation." })
+    : html`<ol class="rows">${feedback.map(feedbackCard)}</ol>`;
+  return html`<section class="section" id="retours" aria-labelledby="retours-title">
+    <div class="section__head">
+      <h2 class="section__title" id="retours-title">Retours liés</h2>
+    </div>
+    ${body}
   </section>`;
 }
 
-function eraseForm(input: InstallPageInput): SafeHtml {
-  return html`<section class="section">
-    <form class="form danger" method="post" action="/admin/installs/${input.install.id}/erase">
-      ${csrfField(input.csrfToken)}
-      <h2 class="section__title">Effacer</h2>
-      <p class="hint">Supprime l’installation et tous ses journaux. Les retours sont conservés.</p>
-      <div class="check">
-        <input id="confirm-erase" name="confirm" type="checkbox"
-          value="${ADMIN_UI.confirmed}" required>
-        <label for="confirm-erase">Je confirme l’effacement définitif de ces journaux.</label>
-      </div>
-      <button class="button button--danger" type="submit">Effacer l’installation</button>
-    </form>
-  </section>`;
+function eraseSection(input: InstallPageInput): SafeHtml {
+  return html`<section class="section" aria-label="Effacement">${dangerZone({
+    csrfToken: input.csrfToken,
+    action: `${INSTALLS_PATH}/${input.install.id}/erase`,
+    id: "erase",
+    summary: "Effacer cette installation",
+    consequence: "L’installation et tous ses journaux sont supprimés pour de bon. "
+      + "Les retours qui la citent restent.",
+    confirmation: "Je confirme l’effacement définitif de ces journaux.",
+    button: "Effacer définitivement",
+  })}</section>`;
 }
 
 export function installPage(input: InstallPageInput): string {
   return layout({
     title: `Installation ${input.install.id}`,
     signedIn: { csrfToken: input.csrfToken, section: "installs" },
-    main: html`<p><a class="back" href="/admin/installs">← Installations</a></p>
-      <header class="page__header">
-        <h1 class="page__title">Installation</h1>
-        <p><code class="mono">${input.install.id}</code></p>
-      </header>
-      <section class="card">${facts(input.install)}</section>
+    main: html`${pageHeader({
+      back: { href: INSTALLS_PATH, label: "Installations" },
+      kicker: "02 / Installations",
+      title: "Installation",
+      meta: html`<span class="ident">${input.install.id}</span>`,
+    })}
+      ${jumps(input)}
+      ${factsPanel(input.install)}
       ${feedbackSection(input.feedback)}
       ${historySections(input)}
       ${logSection(input)}
-      ${eraseForm(input)}`,
+      ${eraseSection(input)}`,
   });
 }

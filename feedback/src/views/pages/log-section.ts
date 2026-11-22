@@ -1,15 +1,19 @@
 import { JOURNAL_VOCABULARY } from "../../domain/journal.js";
 import type { StoredLogRecord } from "../../ports/install-reader.js";
 import type { Page } from "../../ports/page.js";
+import { ADMIN_UI } from "../admin-ui.js";
 import { badge } from "../kit/badge.js";
 import { emptyState } from "../kit/empty-state.js";
-import { formatDate } from "../kit/format-date.js";
 import { href } from "../kit/href.js";
 import { html, type SafeHtml } from "../kit/html.js";
-import { LABELS } from "../kit/labels.js";
 import { pagination } from "../kit/pagination.js";
+import { countOf } from "../text/count-of.js";
+import { formatDate } from "../text/format-date.js";
+import { LABELS } from "../text/labels.js";
 
 const JSON_INDENT = 2;
+const ENTRY_NOUN = { one: "entrée", many: "entrées" };
+const ERROR_RANK = JOURNAL_VOCABULARY.logLevels.indexOf("error");
 
 export interface LogSectionInput {
   readonly installId: string;
@@ -18,7 +22,12 @@ export interface LogSectionInput {
   readonly maxLevelRank: number;
 }
 
-/** ctx and data, the parts of a record that are not already in the row. */
+/** The section's URL at this level, anchored on the section itself. */
+function logHref(installId: string, level: string | null, page = 1): string {
+  return `${href(`${ADMIN_UI.home}/installs/${installId}`, { level, page })}#journal`;
+}
+
+/** ctx and data, the parts of a record that are not already on the line. */
 function details(record: StoredLogRecord): SafeHtml {
   const { ctx, data } = record.data;
   if (ctx === undefined && data === undefined) return html``;
@@ -26,47 +35,53 @@ function details(record: StoredLogRecord): SafeHtml {
   return html`<details class="details"><summary>Détails</summary><pre>${json}</pre></details>`;
 }
 
-function logRow(record: StoredLogRecord): SafeHtml {
-  return html`<tr>
-    <td class="nowrap">${formatDate(record.ts, "second")}</td>
-    <td>${badge({ family: "level", rank: record.levelRank })}</td>
-    <td class="wrap"><code class="mono">${record.event}</code>${details(record)}</td>
-  </tr>`;
+function logLine(record: StoredLogRecord): SafeHtml {
+  const error = record.levelRank <= ERROR_RANK ? " log__line--error" : "";
+  return html`<li class="log__line${error}">
+    <time class="log__time" datetime="${record.ts.toISOString()}">
+      ${formatDate(record.ts, "second")}</time>
+    <span class="log__level">${badge({ family: "level", rank: record.levelRank })}</span>
+    <div class="log__event"><code>${record.event}</code>${details(record)}</div>
+  </li>`;
 }
 
+/** One pill per level: each shows that level and everything more severe. */
 function levelFilter(input: LogSectionInput): SafeHtml {
-  const options = JOURNAL_VOCABULARY.logLevels.map((level, rank) => {
-    const selected = rank === input.maxLevelRank ? html` selected` : "";
-    return html`<option value="${level}"${selected}>${LABELS.level[level]} et plus grave</option>`;
+  const pills = JOURNAL_VOCABULARY.logLevels.map((level, rank) => {
+    const current = rank === input.maxLevelRank ? html` aria-current="page"` : "";
+    return html`<a class="pill" href="${logHref(input.installId, level)}"${current}>
+      ${LABELS.level[level]}</a>`;
   });
-  return html`<form class="form form--inline" method="get"
-      action="/admin/installs/${input.installId}#journal">
-    <div class="field">
-      <label for="level">Niveau minimal</label>
-      <select id="level" name="level">${options}</select>
-    </div>
-    <button class="button" type="submit">Filtrer</button>
-  </form>`;
+  return html`<nav class="filter" aria-labelledby="level-title">
+    <span class="field-label" id="level-title">Niveau minimal</span>
+    <div class="pills">${pills}</div>
+  </nav>`;
 }
 
-function table(logs: Page<StoredLogRecord>): SafeHtml {
-  if (logs.items.length === 0) return emptyState("Aucune entrée à ce niveau.");
-  return html`<div class="table-wrap"><table class="table">
-    <thead><tr><th scope="col">Heure</th><th scope="col">Niveau</th>
-      <th scope="col">Évènement</th></tr></thead>
-    <tbody>${logs.items.map(logRow)}</tbody>
-  </table></div>`;
+function lines(logs: Page<StoredLogRecord>): SafeHtml {
+  if (logs.items.length === 0) {
+    return emptyState({
+      title: "Aucune entrée à ce niveau.",
+      hint: "Un niveau moins grave en montre davantage.",
+    });
+  }
+  return html`<ol class="log">${logs.items.map(logLine)}</ol>`;
 }
 
 /** The install's debug log, filtered by minimum level and paginated. */
 export function logSection(input: LogSectionInput): SafeHtml {
   const level = JOURNAL_VOCABULARY.logLevels[input.maxLevelRank] ?? null;
-  const pageHref = (page: number) =>
-    `${href(`/admin/installs/${input.installId}`, { level, page })}#journal`;
   return html`<section class="section" id="journal" aria-labelledby="journal-title">
-    <h2 class="section__title" id="journal-title">Journal de débogage</h2>
+    <div class="section__head">
+      <h2 class="section__title" id="journal-title">Journal de débogage</h2>
+      <p class="section__note">${countOf(input.logs.total, ENTRY_NOUN)} à ce niveau</p>
+    </div>
     ${levelFilter(input)}
-    ${table(input.logs)}
-    ${pagination({ page: input.logs, hrefFor: pageHref, label: "Pages du journal" })}
+    ${lines(input.logs)}
+    ${pagination({
+      page: input.logs,
+      hrefFor: (page) => logHref(input.installId, level, page),
+      label: "Pages du journal",
+    })}
   </section>`;
 }

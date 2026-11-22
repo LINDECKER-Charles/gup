@@ -1,7 +1,7 @@
 import type { FeedbackKind, FeedbackStatus } from "../../domain/feedback.js";
 import { JOURNAL_VOCABULARY } from "../../domain/journal.js";
 import { html, type SafeHtml } from "./html.js";
-import { LABELS } from "./labels.js";
+import { LABELS } from "../text/labels.js";
 
 type BadgeSpec =
   | { readonly family: "status"; readonly value: FeedbackStatus }

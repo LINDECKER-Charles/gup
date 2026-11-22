@@ -1,6 +1,7 @@
 import { ADMIN_UI } from "../admin-ui.js";
 import { html } from "../kit/html.js";
 import { layout, type LayoutInput } from "../kit/layout.js";
+import { pageHeader } from "../kit/page-header.js";
 
 export interface ErrorPageInput {
   readonly title: string;
@@ -12,10 +13,10 @@ export function errorPage(input: ErrorPageInput): string {
   return layout({
     title: input.title,
     ...(input.signedIn === undefined ? {} : { signedIn: input.signedIn }),
-    main: html`<section class="card card--narrow">
-      <h1 class="page__title">${input.title}</h1>
+    main: html`<div class="auth"><section class="panel auth__panel">
+      ${pageHeader({ kicker: "Erreur", title: input.title })}
       <p>${input.message}</p>
-      <p><a class="button button--quiet" href="${ADMIN_UI.home}">Retour aux retours</a></p>
-    </section>`,
+      <a class="btn btn--ghost" href="${ADMIN_UI.home}">Retour aux retours</a>
+    </section></div>`,
   });
 }

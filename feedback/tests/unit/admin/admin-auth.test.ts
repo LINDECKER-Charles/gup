@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   ADMIN_PASSWORD, ADMIN_USERNAME, createTestApp, PUBLIC_ORIGIN, type TestApp,
-} from "../support/test-app.js";
+} from "../../support/test-app.js";
 
 const COOKIE = "__Host-gup_admin";
 const FORM = "application/x-www-form-urlencoded";

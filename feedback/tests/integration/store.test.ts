@@ -67,11 +67,36 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
     expect(await feedback.find(id)).toMatchObject({
       ...FEEDBACK, id, status: "in_progress", note: "Looking into it.",
     });
-    const page = await feedback.list({ status: "in_progress", kind: null, page: 1, pageSize: 20 });
+    const page = await feedback.list({
+      status: "in_progress", kind: null, search: null, page: 1, pageSize: 20,
+    });
     expect(page.total).toBe(1);
-    expect(await feedback.countByStatus(null)).toMatchObject({ in_progress: 1, new: 0 });
+    expect(await feedback.countByStatus({ kind: null, search: null }))
+      .toMatchObject({ in_progress: 1, new: 0 });
     const outbox = await pool.query("SELECT feedback_id FROM mail_outbox");
     expect(outbox.rows).toEqual([{ feedback_id: String(id) }]);
+  });
+
+  it("searches text, address, install and number, with % and _ taken literally", async () => {
+    // "see config" would match `e_c` if `_` stayed a wildcard.
+    const first = await feedback.create({
+      ...FEEDBACK, title: "Upgrade at 100% stalls", message: "It froze; see config.",
+    });
+    await feedback.create({ ...FEEDBACK, kind: "suggestion", title: "Dark theme", email: null,
+      message: "A snake_case option.", installId: OTHER_INSTALL_ID });
+    const titles = async (search: string) => (await feedback.list({
+      status: null, kind: null, search, page: 1, pageSize: 20,
+    })).items.map((item) => item.title);
+    expect(await titles("100%")).toEqual(["Upgrade at 100% stalls"]);
+    expect(await titles("%")).toEqual(["Upgrade at 100% stalls"]);
+    expect(await titles("e_c")).toEqual(["Dark theme"]);
+    expect(await titles("A@EXAMPLE")).toEqual(["Upgrade at 100% stalls"]);
+    expect(await titles(OTHER_INSTALL_ID.slice(0, 8))).toEqual(["Dark theme"]);
+    expect(await titles(`#${first}`)).toEqual(["Upgrade at 100% stalls"]);
+    expect(await feedback.countByStatus({ kind: "bug", search: "dark" }))
+      .toMatchObject({ new: 0 });
+    expect(await feedback.countByStatus({ kind: null, search: "dark" }))
+      .toMatchObject({ new: 1 });
   });
 
   it("creates the install with its first batch and stores each item once", async () => {

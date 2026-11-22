@@ -14,7 +14,7 @@ declare module "fastify" {
     adminSession: AdminSession | null;
   }
   interface FastifyContextConfig {
-    /** Reachable without a session: the login page and the stylesheet. */
+    /** Reachable without a session: the login page and the assets it needs. */
     isPublicAdminRoute?: boolean;
   }
 }

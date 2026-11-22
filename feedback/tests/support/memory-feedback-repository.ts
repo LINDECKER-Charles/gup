@@ -1,9 +1,21 @@
 import {
   FEEDBACK_VOCABULARY,
-  type Feedback, type FeedbackKind, type FeedbackStatus, type NewFeedback, type StatusCounts,
+  type Feedback, type FeedbackStatus, type NewFeedback, type StatusCounts,
 } from "../../src/domain/feedback.js";
-import type { FeedbackQuery, FeedbackRepository } from "../../src/ports/feedback-repository.js";
+import type {
+  FeedbackFilter, FeedbackQuery, FeedbackRepository,
+} from "../../src/ports/feedback-repository.js";
 import type { Page } from "../../src/ports/page.js";
+
+/** The port's search rule, as the SQL adapter applies it. */
+function matches(row: Feedback, filter: FeedbackFilter): boolean {
+  if (filter.kind !== null && row.kind !== filter.kind) return false;
+  if (filter.search === null) return true;
+  const needle = filter.search.toLowerCase();
+  const fields = [row.title, row.message, row.email ?? "", row.installId ?? ""];
+  return fields.some((field) => field.toLowerCase().includes(needle))
+    || filter.search.replace(/^#/, "") === String(row.id);
+}
 
 export class MemoryFeedbackRepository implements FeedbackRepository {
   readonly rows = new Map<number, Feedback>();
@@ -19,7 +31,7 @@ export class MemoryFeedbackRepository implements FeedbackRepository {
   async list(query: FeedbackQuery): Promise<Page<Feedback>> {
     const matching = [...this.rows.values()]
       .filter((row) => query.status === null || row.status === query.status)
-      .filter((row) => query.kind === null || row.kind === query.kind)
+      .filter((row) => matches(row, query))
       .reverse();
     const start = (query.page - 1) * query.pageSize;
     return {
@@ -30,10 +42,10 @@ export class MemoryFeedbackRepository implements FeedbackRepository {
     };
   }
 
-  async countByStatus(kind: FeedbackKind | null): Promise<StatusCounts> {
+  async countByStatus(filter: FeedbackFilter): Promise<StatusCounts> {
     const counts = Object.fromEntries(FEEDBACK_VOCABULARY.statuses.map((status) => [status, 0]));
     for (const row of this.rows.values()) {
-      if (kind === null || row.kind === kind) counts[row.status] = (counts[row.status] ?? 0) + 1;
+      if (matches(row, filter)) counts[row.status] = (counts[row.status] ?? 0) + 1;
     }
     return counts as StatusCounts;
   }

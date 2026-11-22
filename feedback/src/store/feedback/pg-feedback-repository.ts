@@ -1,15 +1,15 @@
 import type { Pool } from "pg";
 import {
   FEEDBACK_VOCABULARY,
-  type Feedback, type FeedbackKind, type FeedbackStatus, type NewFeedback, type StatusCounts,
+  type Feedback, type FeedbackStatus, type NewFeedback, type StatusCounts,
 } from "../../domain/feedback.js";
-import type { FeedbackQuery, FeedbackRepository } from "../../ports/feedback-repository.js";
+import type {
+  FeedbackFilter, FeedbackQuery, FeedbackRepository,
+} from "../../ports/feedback-repository.js";
 import type { Page } from "../../ports/page.js";
 import { FEEDBACK_COLUMNS } from "./feedback-columns.js";
+import { FEEDBACK_FILTER, feedbackFilterParams } from "./feedback-filter-sql.js";
 import { toFeedback, type FeedbackRow } from "./feedback-row.js";
-
-/** `$1` = status or null, `$2` = kind or null. */
-const FILTER = "($1::text IS NULL OR f.status = $1) AND ($2::text IS NULL OR f.kind = $2)";
 
 export class PgFeedbackRepository implements FeedbackRepository {
   readonly #pool: Pool;
@@ -40,16 +40,16 @@ export class PgFeedbackRepository implements FeedbackRepository {
   }
 
   async list(query: FeedbackQuery): Promise<Page<Feedback>> {
-    const filter = [query.status, query.kind];
+    const filter = feedbackFilterParams(query.status, query);
     const offset = (query.page - 1) * query.pageSize;
     const [items, total] = await Promise.all([
       this.#pool.query<FeedbackRow>(
-        `SELECT ${FEEDBACK_COLUMNS} FROM feedback f WHERE ${FILTER}
-         ORDER BY f.created_at DESC, f.id DESC LIMIT $3 OFFSET $4`,
+        `SELECT ${FEEDBACK_COLUMNS} FROM feedback f WHERE ${FEEDBACK_FILTER}
+         ORDER BY f.created_at DESC, f.id DESC LIMIT $5 OFFSET $6`,
         [...filter, query.pageSize, offset],
       ),
       this.#pool.query<{ total: number }>(
-        `SELECT count(*)::int AS total FROM feedback f WHERE ${FILTER}`, filter),
+        `SELECT count(*)::int AS total FROM feedback f WHERE ${FEEDBACK_FILTER}`, [...filter]),
     ]);
     return {
       items: items.rows.map(toFeedback),
@@ -59,11 +59,11 @@ export class PgFeedbackRepository implements FeedbackRepository {
     };
   }
 
-  async countByStatus(kind: FeedbackKind | null): Promise<StatusCounts> {
+  async countByStatus(filter: FeedbackFilter): Promise<StatusCounts> {
     const { rows } = await this.#pool.query<{ status: FeedbackStatus; count: number }>(
-      `SELECT status, count(*)::int AS count FROM feedback
-       WHERE $1::text IS NULL OR kind = $1 GROUP BY status`,
-      [kind],
+      `SELECT f.status, count(*)::int AS count FROM feedback f
+       WHERE ${FEEDBACK_FILTER} GROUP BY f.status`,
+      [...feedbackFilterParams(null, filter)],
     );
     const counts = Object.fromEntries(FEEDBACK_VOCABULARY.statuses.map((status) => [status, 0]));
     for (const row of rows) counts[row.status] = row.count;

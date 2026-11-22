@@ -24,6 +24,6 @@ export function pagination(input: PaginationInput): SafeHtml {
 
 function stepLink(href: string | null, text: string, rel: "prev" | "next"): SafeHtml {
   return href === null
-    ? html`<span class="button button--quiet" aria-disabled="true">${text}</span>`
-    : html`<a class="button button--quiet" rel="${rel}" href="${href}">${text}</a>`;
+    ? html`<span class="btn btn--ghost btn--small" aria-disabled="true">${text}</span>`
+    : html`<a class="btn btn--ghost btn--small" rel="${rel}" href="${href}">${text}</a>`;
 }

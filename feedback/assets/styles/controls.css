@@ -1,0 +1,317 @@
+/* Buttons, fields, filter pills, the status choices and the danger zone. */
+
+/* ── Buttons (the landing's) ───────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-block-size: 44px;
+  padding: 11px 20px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  background: var(--violet);
+  color: var(--violet-ink);
+  box-shadow: 0 12px 40px -16px var(--violet);
+}
+.btn--primary:hover {
+  background: var(--violet-lit);
+  color: var(--violet-ink);
+}
+
+.btn--ghost {
+  border-color: var(--line-strong);
+  background: var(--bg-deep);
+  color: var(--fg);
+}
+.btn--ghost:hover {
+  border-color: var(--violet);
+  color: var(--fg);
+}
+
+.btn--danger {
+  background: var(--red);
+  color: var(--red-ink);
+}
+.btn--danger:hover {
+  background: var(--red-lit);
+  color: var(--red-ink);
+}
+
+.btn--small {
+  min-block-size: 40px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+}
+.btn--block {
+  inline-size: 100%;
+}
+
+/* A step that cannot be taken (first or last page): visible, inert. */
+.btn[aria-disabled="true"] {
+  border-style: dashed;
+  color: var(--fg-dim);
+  cursor: default;
+}
+.btn[aria-disabled="true"]:hover {
+  border-color: var(--line-strong);
+}
+
+/* ── Fields (the landing's form) ───────────────────────────────────────── */
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.field-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: var(--label-tracking-tight);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.field-control {
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg-deep);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--fg);
+  transition: border-color 0.2s ease;
+}
+textarea.field-control {
+  min-block-size: 132px;
+  resize: vertical;
+}
+.field-control:hover {
+  border-color: var(--deco-faint);
+}
+.field-control:focus-visible {
+  border-color: var(--violet);
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+.field-control::placeholder {
+  color: var(--fg-dim);
+}
+
+.field-note {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+}
+
+/* ── Search ────────────────────────────────────────────────────────────── */
+
+.search {
+  display: grid;
+  gap: 8px;
+}
+.search__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+/* ── Filter pills: one value per group, each a link that keeps the others ─ */
+
+.filter {
+  display: grid;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/*
+ * Below 720 px, one row that scrolls sideways instead of three wrapped ones:
+ * the list starts within the first screen, and the cut pill says there is
+ * more. The 4 px of padding keep the focus ring out of the clipped edge.
+ */
+@media (max-width: 719px) {
+  .pills {
+    flex-wrap: nowrap;
+    margin: -4px;
+    padding: 4px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--bg-deep);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.pill:hover {
+  border-color: var(--violet);
+  color: var(--fg);
+}
+.pill[aria-current="page"] {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: var(--violet-ink);
+}
+.pill__count {
+  min-inline-size: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  font-size: 11.5px;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--fg-muted);
+}
+.pill[aria-current="page"] .pill__count {
+  background: var(--violet-ink);
+  color: var(--violet-text);
+}
+/* What is waiting is counted in amber, the landing's colour for "new". */
+.pill__count--waiting {
+  background: var(--amber);
+  color: var(--amber-ink);
+}
+
+/* ── Status choices: one click sets the status ─────────────────────────── */
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.choice {
+  min-block-size: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg-deep);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.choice:hover {
+  border-color: var(--violet);
+  color: var(--fg);
+}
+.choice[aria-pressed="true"] {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: var(--violet-ink);
+}
+
+/* ── Confirmation box ──────────────────────────────────────────────────── */
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+.check input {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--red);
+}
+
+/* ── Danger zone: an irreversible action, folded until asked for ───────── */
+
+.danger {
+  border: 1px solid var(--edge-red);
+  border-radius: var(--radius);
+}
+.danger > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-block-size: 46px;
+  padding: 10px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--red);
+  list-style: none;
+  cursor: pointer;
+}
+.danger > summary::-webkit-details-marker {
+  display: none;
+}
+.danger > summary::after {
+  content: "+" / "";
+  font-size: 18px;
+  line-height: 1;
+}
+.danger[open] > summary::after {
+  content: "−" / "";
+}
+.danger__body {
+  display: grid;
+  gap: 14px;
+  padding: 0 16px 16px;
+}
+.danger__body p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+.danger__body .btn {
+  justify-self: start;
+}
