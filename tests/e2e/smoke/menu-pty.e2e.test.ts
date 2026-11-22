@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import manifest from "../../../package.json" with { type: "json" };
+import { FEEDBACK_MENU_LABELS } from "../../../src/ui/text/feedback/feedback-menu-labels.js";
 import { JOURNAL_LABELS } from "../../../src/ui/text/journal/journal-labels.js";
 import { MENU_LABELS, updateCountFact, VIEW_LABELS } from "../../../src/ui/text/menu-labels.js";
 import { PACKAGES_PLACEHOLDERS } from "../../../src/ui/text/packages-labels.js";
@@ -35,6 +36,8 @@ const VIEWS: ReadonlyArray<{ readonly title: string; readonly shows: string | Re
   { title: SCHEDULE_MENU_LABELS.schedulesLabel, shows: SCHEDULE_MENU_LABELS.emptySchedules[0] },
   { title: VIEW_LABELS.providers, shows: anyCount(PROVIDERS_PANEL_LABELS.detected) },
   { title: JOURNAL_LABELS.view, shows: JOURNAL_LABELS.tabs[0] },
+  // The install ID row, drawn whether or not the ID exists yet.
+  { title: FEEDBACK_MENU_LABELS.view, shows: FEEDBACK_MENU_LABELS.installId("").trim() },
   { title: VIEW_LABELS.options, shows: OPTIONS_SECTIONS.scan },
 ];
 
