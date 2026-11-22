@@ -249,8 +249,8 @@ describe("launchDetached", () => {
     setPlatform("win32");
     const { unref } = detachedChild("spawn");
     await expect(launchDetached("explorer.exe", ["C:\\r.html"])).resolves.toBe(true);
-    const [command, args, options] = execaMock.mock.calls[0]!;
-    expect([command, args]).toEqual(["explorer.exe", ["C:\\r.html"]]);
+    const [command, , options] = execaMock.mock.calls[0]!;
+    expect(command).toBe("explorer.exe");
     expect(options).toMatchObject({
       detached: true,
       cleanup: false,
@@ -259,6 +259,42 @@ describe("launchDetached", () => {
       windowsHide: false,
     });
     expect(unref).toHaveBeenCalled();
+  });
+
+  // explorer.exe splits an unquoted argument on `,` and `=`: the feedback
+  // form's `?install=…` opened the Documents folder instead of the browser.
+  it("writes every token quoted whole on Windows, for Node to pass as it is", async () => {
+    setPlatform("win32");
+    detachedChild("spawn");
+    const form = "https://example.test/gup/?install=abc&version=1.0.0#feedback";
+    const explorer = "C:\\Windows\\explorer.exe";
+
+    await launchDetached(explorer, [form]);
+
+    const [, args, options] = execaMock.mock.calls[0]!;
+    expect(args).toEqual([`"${form}"`]);
+    expect(options).toMatchObject({ argv0: `"${explorer}"`, windowsVerbatimArguments: true });
+  });
+
+  it("leaves the argv to the OS elsewhere", async () => {
+    setPlatform("linux");
+    detachedChild("spawn");
+
+    await launchDetached("/usr/bin/xdg-open", ["https://example.test/?a=b"]);
+
+    const [, args, options] = execaMock.mock.calls[0]!;
+    expect(args).toEqual(["https://example.test/?a=b"]);
+    expect(options).not.toHaveProperty("windowsVerbatimArguments");
+  });
+
+  it.each([
+    ["a quote", 'C:\\r\\"r".html'],
+    ["a final backslash, which would escape the closing quote", "C:\\reports\\"],
+  ])("refuses an argument holding %s on Windows, before spawning", async (_case, arg) => {
+    setPlatform("win32");
+
+    await expect(launchDetached("C:\\Windows\\explorer.exe", [arg])).rejects.toThrow(/runner:/);
+    expect(execaMock).not.toHaveBeenCalled();
   });
 
   it("resolves false when the process never spawned", async () => {

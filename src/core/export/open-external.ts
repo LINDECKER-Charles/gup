@@ -8,9 +8,10 @@ import { webPageUrl } from "./web-page-url.js";
  * detached launch, so the argv barrier applies and nothing waits for the
  * browser:
  *
- * - Windows: `%SystemRoot%\explorer.exe <target>`, by absolute path (no PATH
- *   lookup to hijack). explorer splits its arguments on commas and quotes, so
- *   a target holding one is not opened: it is printed instead.
+ * - Windows: `%SystemRoot%\explorer.exe "<target>"`, by absolute path (no PATH
+ *   lookup to hijack). The runner quotes the target whole: explorer splits an
+ *   unquoted argument on `,` and `=`, so the feedback form's query string
+ *   (`?install=…`) opened the Documents folder instead of the browser.
  * - macOS: `/usr/bin/open <target>`.
  * - Linux and others: `xdg-open`; under WSL `wslview` first, which opens the
  *   Windows browser where a bare `xdg-open` may fall back to a text browser.
@@ -62,8 +63,6 @@ export interface OpenDeps {
 const DEFAULT_WINDOWS_ROOT = "C:\\Windows";
 /** What the default application may open: gup's HTML report, nothing that could run. */
 const HTML_EXTENSIONS: ReadonlySet<string> = new Set([".html", ".htm"]);
-/** Characters explorer.exe reads as argument separators. */
-const EXPLORER_SEPARATORS = /[,"]/;
 const MAC_OPEN = "/usr/bin/open";
 const NO_LAUNCHERS = { xdgOpen: null, wslview: null } as const;
 
@@ -100,7 +99,7 @@ export function openerFor(file: string, facts: OpenerFacts): Opener {
 
 /** The platform's default-application launcher for a checked `target` (a file or a URL). */
 function launcherFor(target: string, facts: OpenerFacts): Opener {
-  if (facts.platform === "win32") return explorerOpener(target, facts.env);
+  if (facts.platform === "win32") return { command: explorerPath(facts.env), args: [target] };
   if (facts.platform === "darwin") return { command: MAC_OPEN, args: [target] };
   const { xdgOpen, wslview } = facts.launchers;
   const launcher = isWsl(facts.env) ? (wslview ?? xdgOpen) : xdgOpen;
@@ -130,13 +129,10 @@ function isHtmlFile(file: string, platform: NodeJS.Platform): boolean {
   return HTML_EXTENSIONS.has(path.extname(file).toLowerCase());
 }
 
-function explorerOpener(target: string, env: NodeJS.ProcessEnv): Opener {
-  if (EXPLORER_SEPARATORS.test(target)) {
-    return { reason: "explorer cannot open a target with , or \"" };
-  }
+function explorerPath(env: NodeJS.ProcessEnv): string {
   const root = env["SystemRoot"];
   const windowsDir = root !== undefined && win32.isAbsolute(root) ? root : DEFAULT_WINDOWS_ROOT;
-  return { command: win32.join(windowsDir, "explorer.exe"), args: [target] };
+  return win32.join(windowsDir, "explorer.exe");
 }
 
 /** A launcher refused by the runner's argv barrier (it throws) did not start either. */

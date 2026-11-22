@@ -1,6 +1,6 @@
-# Unreleased — `main` after 0.6.0
+# Unreleased — `main` after 0.6.1
 
-[Compare `0.6.0...main`](https://github.com/LINDECKER-Charles/gup/compare/0.6.0...main)
+[Compare `0.6.1...main`](https://github.com/LINDECKER-Charles/gup/compare/0.6.1...main)
 
 **0 commits**
 

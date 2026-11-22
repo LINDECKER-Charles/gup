@@ -621,9 +621,9 @@ export async function launchDetached(
   args: readonly string[] = [],
 ): Promise<boolean> {
   const safeCommand = sanitizeCommand(command);
-  const safeArgs = sanitizeArgs(args);
+  const commandLine = detachedCommandLine(safeCommand, sanitizeArgs(args));
   try {
-    const child = execa(safeCommand, safeArgs, {
+    const child = execa(safeCommand, commandLine.args, {
       detached: true,
       cleanup: false,
       stdio: "ignore",
@@ -631,6 +631,7 @@ export async function launchDetached(
       // explorer.exe is a GUI-subsystem binary: there is no console to hide,
       // and SW_HIDE could be handed down to the window it opens.
       windowsHide: process.platform !== "win32",
+      ...commandLine.options,
     });
     // execa's subprocess is no ChildProcess any more: the Node events and
     // unref() live on its documented `nodeChildProcess` escape hatch.
@@ -642,6 +643,39 @@ export async function launchDetached(
   } catch {
     return false;
   }
+}
+
+/** What cannot sit between two quotes: a quote, or a final `\` that would escape the closing one. */
+const UNQUOTABLE_WINDOWS_TOKEN = /"|\\$/;
+
+interface DetachedCommandLine {
+  readonly args: readonly string[];
+  readonly options: { readonly argv0?: string; readonly windowsVerbatimArguments?: boolean };
+}
+
+/**
+ * The argv of a detached launch, and how Node must write it. On Windows every
+ * token of the command line is quoted whole, and Node told to quote nothing
+ * more: a GUI program parses its own command line, and explorer.exe splits an
+ * unquoted argument on `,` and `=` — handed a URL with a query (`?install=…`),
+ * it opened the Documents folder instead of the browser. Quoted, explorer and
+ * the C runtime both read one argument. The program's own path is quoted too,
+ * since Node stops quoting it as well (`C:\Program Files\…`). A token that
+ * cannot be quoted so is refused, like any other argv the barrier rejects.
+ */
+function detachedCommandLine(command: string, args: readonly string[]): DetachedCommandLine {
+  if (process.platform !== "win32") return { args, options: {} };
+  return {
+    args: args.map((arg) => quotedWindowsToken(arg)),
+    options: { argv0: quotedWindowsToken(command), windowsVerbatimArguments: true },
+  };
+}
+
+function quotedWindowsToken(token: string): string {
+  if (UNQUOTABLE_WINDOWS_TOKEN.test(token)) {
+    throw new Error("runner: cannot quote a token holding a quote or ending in a backslash");
+  }
+  return `"${token}"`;
 }
 
 /** Reported when the child has no exit code (killed by a signal, never spawned). */
