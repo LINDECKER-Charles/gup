@@ -1,0 +1,65 @@
+import * as z from "zod";
+import type { HistoryBreakdownCell, JournalSpan } from "../../../ports/install-reader.js";
+import { FEEDBACK_JSON } from "../feedback/feedback-json.js";
+import { TOOL_INPUTS } from "../tool-inputs.js";
+import type { ToolContext, ToolOutput, ToolSpec } from "../tool-spec.js";
+import { findInstall } from "./find-install.js";
+import { INSTALL_JSON } from "./install-json.js";
+
+const input = z.strictObject({ installId: TOOL_INPUTS.installId });
+
+function isoOrNull(date: Date | null): string | null {
+  return date === null ? null : date.toISOString();
+}
+
+function spanJson(span: JournalSpan) {
+  return {
+    oldestAt: isoOrNull(span.oldestAt),
+    newestAt: isoOrNull(span.newestAt),
+    oldestReceivedAt: isoOrNull(span.oldestReceivedAt),
+    runCount: span.runCount,
+  };
+}
+
+function breakdownLine(cells: readonly HistoryBreakdownCell[]): string {
+  const parts = cells.map((cell) =>
+    `${cell.kind}${cell.status === null ? "" : ` ${cell.status}`} ${cell.count}`);
+  return `history: ${parts.join(", ") || "none"}`;
+}
+
+async function get(context: ToolContext, installId: string): Promise<ToolOutput> {
+  const install = await findInstall(context, installId);
+  const { journals, feedback } = context;
+  const [breakdown, span, linked] = await Promise.all([
+    journals.historyBreakdown(install.id),
+    journals.journalSpan(install.id),
+    feedback.listByInstall(install.id),
+  ]);
+  const journal = spanJson(span);
+  return {
+    structured: {
+      install: INSTALL_JSON.summary(install), historyBreakdown: breakdown,
+      journalSpan: journal, feedback: linked.map(FEEDBACK_JSON.summary),
+    },
+    text: [
+      INSTALL_JSON.line(install), breakdownLine(breakdown),
+      `records from ${journal.oldestAt ?? "?"} to ${journal.newestAt ?? "?"} over `
+        + `${journal.runCount} runs; oldest received ${journal.oldestReceivedAt ?? "?"}`,
+      `feedback: ${linked.length === 0 ? "none" : ""}`, ...linked.map(FEEDBACK_JSON.line),
+    ].join("\n"),
+  };
+}
+
+export function getInstallTool(context: ToolContext): ToolSpec<typeof input> {
+  return {
+    name: "get_install",
+    title: "Get one install",
+    description: "Returns one install that shared its journals: its summary, the count of "
+      + "history items per kind and status (e.g. update failed 3), the time span and number "
+      + "of runs its records cover (the oldest received is purged first), and the feedback "
+      + "that gave its install ID. Follow up with list_history, list_logs or get_run.",
+    input,
+    isReadOnly: true,
+    run: ({ installId }) => get(context, installId),
+  };
+}

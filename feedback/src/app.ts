@@ -14,6 +14,7 @@ import { installRoutes } from "./http/api/install-routes.js";
 import { HttpError } from "./http/http-error.js";
 import { HTTP_STATUS } from "./http/http-status.js";
 import { securityHeaders } from "./http/security-headers.js";
+import { mcpPlugin } from "./mcp/mcp-plugin.js";
 import { ADMIN_UI } from "./views/admin-ui.js";
 
 /** Default for every route that does not set its own (the logs upload does). */
@@ -64,5 +65,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   registerFeedbackRoute(app, deps);
   await app.register(installRoutes(deps));
   await app.register(adminPlugin(adminContext(deps)), { prefix: ADMIN_UI.home });
+  // Without a configured token digest the endpoint does not exist: /mcp answers 404.
+  const { mcpTokenDigest } = deps.config;
+  if (mcpTokenDigest !== undefined) await app.register(mcpPlugin(deps, mcpTokenDigest));
   return app;
 }

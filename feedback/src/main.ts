@@ -134,6 +134,7 @@ async function main(): Promise<void> {
   pool.on("error", (error) => app.log.error({ err: error }, "idle database client failed"));
   await waitForDatabase(pool, app);
   app.log.info({ applied: await migrate(pool) }, "migrations up to date");
+  if (config.mcpTokenDigest !== undefined) app.log.info("MCP endpoint enabled on /mcp");
   const relay = { outbox: new PgOutboxRepository(pool), mailer };
   const tasks = [retentionTask(config, pool, app), outboxTask(config, app, relay)]
     .filter((task) => task !== null);

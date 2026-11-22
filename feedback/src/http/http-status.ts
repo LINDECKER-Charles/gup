@@ -10,6 +10,7 @@ export const HTTP_STATUS = {
   unauthorized: 401,
   forbidden: 403,
   notFound: 404,
+  methodNotAllowed: 405,
   payloadTooLarge: 413,
   unsupportedMediaType: 415,
   tooManyRequests: 429,
