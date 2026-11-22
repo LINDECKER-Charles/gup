@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { opensBackOffice } from "../../auth/admin-sessions.js";
 import type { AdminSession } from "../../ports/session-repository.js";
 import { constantTimeEqual } from "../../security/constant-time-equal.js";
 import { isSameOriginRequest } from "../../security/same-origin.js";
@@ -28,21 +29,29 @@ export function refuseFormSubmission(): never {
   throw new HttpError(HTTP_STATUS.forbidden, "Cross-site or expired form submission refused.");
 }
 
+/** Where a request without a session that opens the back office goes to sign in. */
+function signInPath(session: AdminSession | null, isSecondFactorRequired: boolean): string {
+  return isSecondFactorRequired && session?.secondFactor === "due"
+    ? ADMIN_UI.codePath
+    : ADMIN_UI.loginPath;
+}
+
 /**
  * preHandler of every back-office route: a POST must come from the service's
- * own origin (login included), and a non-public route needs a live, fully
- * signed-in session (second factor given) — plus, for a POST, that session's
- * CSRF token.
+ * own origin (login included), and a non-public route needs a live session
+ * that opens the back office (second factor given when configured) — plus,
+ * for a POST, that session's CSRF token.
  */
 export function createAdminGuard(context: AdminContext) {
+  const isSecondFactorRequired = context.secondFactor !== null;
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     const isPost = request.method === "POST";
     const { publicOrigin } = context.config;
     if (isPost && !isSameOriginRequest(request.headers, publicOrigin)) refuseFormSubmission();
     if (request.routeOptions.config.isPublicAdminRoute === true) return;
     const session = await context.sessions.resolve(context.cookie.read(request));
-    if (session === null || session.secondFactorDue) {
-      await reply.redirect(ADMIN_UI.loginPath, HTTP_STATUS.seeOther);
+    if (session === null || !opensBackOffice(session, isSecondFactorRequired)) {
+      await reply.redirect(signInPath(session, isSecondFactorRequired), HTTP_STATUS.seeOther);
       return;
     }
     if (isPost && !isCsrfTokenValid(request, session)) refuseFormSubmission();

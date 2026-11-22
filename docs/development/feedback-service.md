@@ -295,7 +295,13 @@ session that reaches nothing but the code form, for 5 minutes. The code is TOTP 
 6238: HMAC-SHA-1, 6 digits, 30-second steps, one step either side), compared in
 constant time; the right one replaces that session with a full one (a new token), and
 the step it belongs to is recorded so the same code, or an older one, never opens
-another. Five wrong codes drop the half-open session: the password is asked again. Every response carries `X-Content-Type-Options: nosniff`, and
+another. A half-open session has 5 code attempts, each taken in one statement before the
+code is checked (parallel posts get no more); the fifth wrong one drops it and the
+password is asked again. Every wrong password and wrong code is logged as a warning. Each
+session records how far it got (`due`, `passed`, or `skipped` when no key is configured):
+with a key, only `passed` opens the back office, so sessions opened with the password
+alone before the key was set are refused. *Recommencer avec le mot de passe* on the code
+form is a logout: the half-open session goes at once. Every response carries `X-Content-Type-Options: nosniff`, and
 `Strict-Transport-Security` when `FEEDBACK_PUBLIC_URL` is `https:`.
 
 ## MCP access

@@ -28,7 +28,8 @@ The contract is the reference; in short:
   per hour per address; 5 feedbacks per 10 minutes per address; 10 password and 10 code
   attempts per 15 minutes per address, and 100 per hour overall, both steps counted.
 - **Back-office login**: the password, then a TOTP code (required in production). A code
-  works once; 5 wrong codes drop the half-open session and ask for the password again.
+  works once; a password-checked session gets 5 code attempts, reserved before each check,
+  then the password is asked again. Wrong passwords and codes are logged as warnings.
 - **MCP** (`/mcp`, off unless configured): a bearer token checked against its SHA-256,
   no browser origin, 20 failed authentications per 15 minutes and 600 calls per hour per
   address; reads everything, writes only a feedback's status and note.
@@ -193,8 +194,9 @@ npm run -s admin:totp -- secret            # a new key, printed and nothing else
 printf '%s' "$ADMIN_TOTP_SECRET" | npm run -s admin:totp -- qr totp.svg [account]
 ```
 
-The second command writes the enrolment QR code (owner-only file) without printing the
-key: scan it, then delete the file. Apps that take a key by hand accept
+The second command writes the enrolment QR code without printing the key, never over an
+existing file; the file is owner-only on Unix, and takes its folder's permissions on
+Windows. Scan it, then delete the file. Apps that take a key by hand accept
 `ADMIN_TOTP_SECRET` as it is. A lost phone means a new key: replace it, redeploy, scan
 the new QR code. The service refuses to start in production without a key.
 

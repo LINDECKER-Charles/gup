@@ -1,5 +1,7 @@
 import type { Clock } from "../ports/clock.js";
-import type { AdminSession, SessionRepository } from "../ports/session-repository.js";
+import type {
+  AdminSession, SecondFactorStage, SessionRepository,
+} from "../ports/session-repository.js";
 import { randomToken } from "../security/random-token.js";
 import { sha256 } from "../security/sha256.js";
 import { DURATION_MS } from "../time-units.js";
@@ -10,6 +12,17 @@ const IDLE_LIFETIME_MS = 12 * DURATION_MS.hour;
 const SECOND_FACTOR_LIFETIME_MS = 5 * DURATION_MS.minute;
 /** Activity is recorded at most once a minute: one write per page view is waste. */
 const TOUCH_INTERVAL_MS = DURATION_MS.minute;
+
+/**
+ * Whether a session opens the back office. With a TOTP key configured, only
+ * one that passed it does: a session opened with the password alone, before
+ * the key was set, is refused.
+ */
+export function opensBackOffice(session: AdminSession, isSecondFactorRequired: boolean): boolean {
+  return isSecondFactorRequired
+    ? session.secondFactor === "passed"
+    : session.secondFactor !== "due";
+}
 
 export interface OpenedSession {
   /** Cookie value: shown once, stored only as its hash. */
@@ -39,27 +52,29 @@ export class AdminSessions {
    * A session waiting for its second factor lives 5 minutes and opens only
    * the code form; signing in fully opens a new one (a fresh token).
    */
-  async open(options: { readonly secondFactorDue?: boolean } = {}): Promise<OpenedSession> {
-    const secondFactorDue = options.secondFactorDue ?? false;
+  async open(secondFactor: SecondFactorStage): Promise<OpenedSession> {
     const token = randomToken();
     const now = this.#clock.now();
-    const lifetimeMs = secondFactorDue ? SECOND_FACTOR_LIFETIME_MS : ABSOLUTE_LIFETIME_MS;
+    const lifetimeMs = secondFactor === "due" ? SECOND_FACTOR_LIFETIME_MS : ABSOLUTE_LIFETIME_MS;
     const session: AdminSession = {
       tokenHash: sha256(token),
       csrfToken: randomToken(),
       createdAt: now,
       lastSeenAt: now,
       expiresAt: new Date(now.getTime() + lifetimeMs),
-      secondFactorDue,
-      failedCodes: 0,
+      secondFactor,
+      codeAttempts: 0,
     };
     await this.#repository.create(session);
     return { token, session };
   }
 
-  /** Counts a wrong TOTP code against the session; returns the total so far. */
-  async recordFailedCode(session: AdminSession): Promise<number> {
-    return this.#repository.countFailedCode(session.tokenHash);
+  /**
+   * Takes one of the `max` code attempts of a `due` session before the code
+   * is checked: parallel posts cannot try more. null = none left.
+   */
+  async reserveCodeAttempt(session: AdminSession, max: number): Promise<number | null> {
+    return this.#repository.reserveCodeAttempt(session.tokenHash, max);
   }
 
   /** The live session the cookie names, or null when absent, unknown or expired. */

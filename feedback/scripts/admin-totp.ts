@@ -31,13 +31,30 @@ function fail(message: string): never {
   process.exit(EXIT_USAGE);
 }
 
-/** Key URI format of Google Authenticator, read by every authenticator app. */
+/**
+ * Key URI format of Google Authenticator, read by every authenticator app.
+ * Percent-encoded by hand: URLSearchParams writes a space `+`, which some
+ * apps show as is.
+ */
 function otpauthUri(secret: string, account: string): string {
-  const label = `${encodeURIComponent(ISSUER)}:${encodeURIComponent(account)}`;
-  const query = new URLSearchParams({
-    secret, issuer: ISSUER, algorithm: "SHA1", digits: "6", period: "30",
-  });
-  return `otpauth://totp/${label}?${query.toString()}`;
+  const issuer = encodeURIComponent(ISSUER);
+  const query = { secret, issuer: ISSUER, algorithm: "SHA1", digits: "6", period: "30" };
+  const pairs = Object.entries(query).map(([name, value]) => `${name}=${encodeURIComponent(value)}`);
+  return `otpauth://totp/${issuer}:${encodeURIComponent(account)}?${pairs.join("&")}`;
+}
+
+/** Never over an existing file: its permissions, maybe wider, would be kept. */
+async function writeOwnerOnly(file: string, content: string): Promise<void> {
+  try {
+    await writeFile(file, content, { mode: OWNER_ONLY, flag: "wx" });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") fail(`${file} exists: delete it first`);
+    throw error;
+  }
+  if (process.platform === "win32") {
+    process.stderr.write("admin:totp: Windows ignores the owner-only mode: the file takes the "
+      + "folder's permissions.\n");
+  }
 }
 
 async function writeQr(file: string | undefined, account: string): Promise<void> {
@@ -51,7 +68,7 @@ async function writeQr(file: string | undefined, account: string): Promise<void>
   }
   if (key.length < Totp.minSecretBytes) fail(`the key needs ${Totp.minSecretBytes} bytes at least`);
   const svg = renderSVG(otpauthUri(base32Encode(key), account), { ecc: "M", border: 2 });
-  await writeFile(file, svg, { mode: OWNER_ONLY });
+  await writeOwnerOnly(file, svg);
   process.stderr.write(`admin:totp: QR code written to ${file}: scan it, then delete it.\n`);
 }
 

@@ -1,5 +1,7 @@
 import type { Pool } from "pg";
-import type { AdminSession, SessionRepository } from "../ports/session-repository.js";
+import type {
+  AdminSession, SecondFactorStage, SessionRepository,
+} from "../ports/session-repository.js";
 
 interface SessionRow {
   token_hash: Buffer;
@@ -7,8 +9,8 @@ interface SessionRow {
   created_at: Date;
   last_seen_at: Date;
   expires_at: Date;
-  second_factor_due: boolean;
-  failed_codes: number;
+  second_factor: SecondFactorStage;
+  code_attempts: number;
 }
 
 export class PgSessionRepository implements SessionRepository {
@@ -21,10 +23,10 @@ export class PgSessionRepository implements SessionRepository {
   async create(session: AdminSession): Promise<void> {
     await this.#pool.query(
       `INSERT INTO admin_session (token_hash, csrf_token, created_at, last_seen_at, expires_at,
-         second_factor_due, failed_codes)
+         second_factor, code_attempts)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [session.tokenHash, session.csrfToken, session.createdAt, session.lastSeenAt,
-        session.expiresAt, session.secondFactorDue, session.failedCodes]);
+        session.expiresAt, session.secondFactor, session.codeAttempts]);
   }
 
   async find(tokenHash: Buffer): Promise<AdminSession | null> {
@@ -38,8 +40,8 @@ export class PgSessionRepository implements SessionRepository {
       createdAt: row.created_at,
       lastSeenAt: row.last_seen_at,
       expiresAt: row.expires_at,
-      secondFactorDue: row.second_factor_due,
-      failedCodes: row.failed_codes,
+      secondFactor: row.second_factor,
+      codeAttempts: row.code_attempts,
     };
   }
 
@@ -48,11 +50,12 @@ export class PgSessionRepository implements SessionRepository {
       "UPDATE admin_session SET last_seen_at = $2 WHERE token_hash = $1", [tokenHash, at]);
   }
 
-  async countFailedCode(tokenHash: Buffer): Promise<number> {
-    const { rows } = await this.#pool.query<{ failed_codes: number }>(
-      `UPDATE admin_session SET failed_codes = failed_codes + 1
-       WHERE token_hash = $1 RETURNING failed_codes`, [tokenHash]);
-    return rows[0]?.failed_codes ?? 0;
+  async reserveCodeAttempt(tokenHash: Buffer, max: number): Promise<number | null> {
+    const { rows } = await this.#pool.query<{ code_attempts: number }>(
+      `UPDATE admin_session SET code_attempts = code_attempts + 1
+       WHERE token_hash = $1 AND second_factor = 'due' AND code_attempts < $2
+       RETURNING code_attempts`, [tokenHash, max]);
+    return rows[0]?.code_attempts ?? null;
   }
 
   async remove(tokenHash: Buffer): Promise<void> {

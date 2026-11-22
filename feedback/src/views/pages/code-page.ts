@@ -1,6 +1,6 @@
 import { ADMIN_UI } from "../admin-ui.js";
 import { csrfField } from "../csrf-field.js";
-import { html } from "../kit/html.js";
+import { html, type SafeHtml } from "../kit/html.js";
 import { layout } from "../kit/layout.js";
 import { pageHeader } from "../kit/page-header.js";
 
@@ -10,6 +10,15 @@ export interface CodePageInput {
   readonly digits: number;
   /** Shown above the form: a wrong or expired code. */
   readonly error: string | null;
+}
+
+/** Back to the password: a logout, so the half-open session goes now, not in 5 minutes. */
+function restartForm(csrfToken: string): SafeHtml {
+  return html`<form method="post" action="${ADMIN_UI.home}/logout">
+    ${csrfField(csrfToken)}
+    <button class="btn btn--ghost btn--small" type="submit">Recommencer avec le mot de
+      passe</button>
+  </form>`;
 }
 
 /** The second step of a login: the code of the authenticator app. */
@@ -37,8 +46,7 @@ export function codePage(input: CodePageInput): string {
         </div>
         <button class="btn btn--primary btn--block" type="submit">Vérifier</button>
       </form>
-      <p class="field-note"><a href="${ADMIN_UI.loginPath}">Recommencer avec le mot de
-        passe</a></p>
+      ${restartForm(input.csrfToken)}
     </section></div>`,
   });
 }

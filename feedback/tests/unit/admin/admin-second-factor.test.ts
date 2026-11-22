@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { AdminSessions } from "../../../src/auth/admin-sessions.js";
 import { Totp } from "../../../src/auth/totp.js";
 import {
   ADMIN_PASSWORD, ADMIN_USERNAME, createTestApp, PUBLIC_ORIGIN, testConfig, type TestApp,
@@ -70,7 +71,7 @@ describe("admin login with a second factor", () => {
     const token = await givePassword();
     const inbox = await get("/admin", token);
     expect(inbox.statusCode).toBe(303);
-    expect(inbox.headers.location).toBe("/admin/login");
+    expect(inbox.headers.location).toBe("/admin/login/code");
     const form = await get("/admin/login/code", token);
     expect(form.body).toContain('autocomplete="one-time-code"');
     expect(form.body).toContain("Code à 6 chiffres");
@@ -125,6 +126,39 @@ describe("admin login with a second factor", () => {
     expect(ctx.sessions.sessions.size).toBe(0);
     const late = await giveCode(token, currentCode(), csrf);
     expect(late.headers.location).toBe("/admin/login");
+  });
+
+  it("takes the attempt before checking the code: the right one comes too late", async () => {
+    const token = await givePassword();
+    const csrf = await csrfOfCodeForm(token);
+    // Five attempts reserved by posts still in flight.
+    for (const [key, session] of ctx.sessions.sessions) {
+      ctx.sessions.sessions.set(key, { ...session, codeAttempts: 5 });
+    }
+    const response = await giveCode(token, currentCode(), csrf);
+    expect(response.statusCode).toBe(401);
+    expect(response.body).toContain("Trop de codes incorrects");
+    expect(ctx.sessions.sessions.size).toBe(0);
+  });
+
+  it("drops the half-open session when the login restarts from the code form", async () => {
+    const token = await givePassword();
+    const page = await get("/admin/login/code", token);
+    expect(page.body).toContain('action="/admin/logout"');
+    const restart = await ctx.app.inject({
+      method: "POST", url: "/admin/logout", cookies: { [COOKIE]: token }, headers: SAME_ORIGIN,
+      payload: new URLSearchParams({ _csrf: await csrfOfCodeForm(token) }).toString(),
+    });
+    expect(restart.headers.location).toBe("/admin/login");
+    expect(ctx.sessions.sessions.size).toBe(0);
+  });
+
+  it("refuses a session opened with the password alone, before the key was set", async () => {
+    const { token } = await new AdminSessions({ repository: ctx.sessions, clock: ctx.clock })
+      .open("skipped");
+    const inbox = await get("/admin", token);
+    expect(inbox.headers.location).toBe("/admin/login");
+    expect((await get("/admin/login", token)).statusCode).toBe(200);
   });
 
   it("refuses a code posted without the form's CSRF token", async () => {

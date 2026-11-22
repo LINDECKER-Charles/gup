@@ -162,19 +162,35 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
     const expiresAt = new Date(now.getTime() + 7 * DAY_MS);
     await sessions.create({
       tokenHash, csrfToken: "csrf", createdAt: now, lastSeenAt: now, expiresAt,
-      secondFactorDue: true, failedCodes: 0,
+      secondFactor: "due", codeAttempts: 0,
     });
     const later = new Date(now.getTime() + DAY_MS);
     await sessions.touch(tokenHash, later);
-    expect(await sessions.countFailedCode(tokenHash)).toBe(1);
-    expect(await sessions.countFailedCode(tokenHash)).toBe(2);
-    expect(await sessions.countFailedCode(sha256("unknown"))).toBe(0);
+    expect(await sessions.reserveCodeAttempt(tokenHash, 2)).toBe(1);
+    expect(await sessions.reserveCodeAttempt(tokenHash, 2)).toBe(2);
+    expect(await sessions.reserveCodeAttempt(tokenHash, 2)).toBeNull();
+    expect(await sessions.reserveCodeAttempt(sha256("unknown"), 2)).toBeNull();
     expect(await sessions.find(tokenHash)).toMatchObject({
-      csrfToken: "csrf", lastSeenAt: later, secondFactorDue: true, failedCodes: 2,
+      csrfToken: "csrf", lastSeenAt: later, secondFactor: "due", codeAttempts: 2,
     });
     const window = { journalCutoff: now, now: later, sessionIdleCutoff: later };
     expect(await new PgRetentionStore(pool).purge(window)).toMatchObject({ sessions: 1 });
     expect(await sessions.find(tokenHash)).toBeNull();
+  });
+
+  it("gives a due session its code attempts once each, racing posts included", async () => {
+    const sessions = new PgSessionRepository(pool);
+    const now = new Date();
+    const session = {
+      csrfToken: "csrf", createdAt: now, lastSeenAt: now, expiresAt: new Date(now.getTime() + DAY_MS),
+      codeAttempts: 0,
+    };
+    await sessions.create({ ...session, tokenHash: sha256("due"), secondFactor: "due" });
+    await sessions.create({ ...session, tokenHash: sha256("passed"), secondFactor: "passed" });
+    const racing = await Promise.all(
+      Array.from({ length: 8 }, () => sessions.reserveCodeAttempt(sha256("due"), 5)));
+    expect(racing.filter((attempt) => attempt !== null).sort()).toEqual([1, 2, 3, 4, 5]);
+    expect(await sessions.reserveCodeAttempt(sha256("passed"), 5)).toBeNull();
   });
 
   it("accepts a TOTP step once, never an older one, and one of two racing claims", async () => {
