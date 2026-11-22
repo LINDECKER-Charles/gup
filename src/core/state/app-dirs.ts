@@ -5,8 +5,8 @@ import { pathFlavour } from "../platform/path-flavour.js";
 /**
  * Where gup keeps what it writes, per platform. One module so every kind of
  * state agrees on the same roots and env overrides. For a state `<kind>`
- * (history, logs, reports, scheduler; override `GUP_HISTORY_DIR`,
- * `GUP_LOG_DIR`, `GUP_REPORT_DIR`, `GUP_SCHEDULER_DIR`):
+ * (history, logs, reports, scheduler, feedback; override `GUP_HISTORY_DIR`,
+ * `GUP_LOG_DIR`, `GUP_REPORT_DIR`, `GUP_SCHEDULER_DIR`, `GUP_FEEDBACK_DIR`):
  *
  *   - Windows: `%LOCALAPPDATA%\gup\<kind>`
  *   - macOS:   `~/Library/Application Support/gup/<kind>`, except logs in
@@ -24,7 +24,7 @@ import { pathFlavour } from "../platform/path-flavour.js";
  * directory would litter whatever repository the user happens to be in.
  */
 
-export type StateKind = "history" | "logs" | "reports" | "scheduler";
+export type StateKind = "history" | "logs" | "reports" | "scheduler" | "feedback";
 
 /** What a location depends on; every field defaults to the running process. */
 export interface DirContext {
@@ -40,6 +40,9 @@ const STATE_OVERRIDE_ENV: Readonly<Record<StateKind, string>> = {
   logs: "GUP_LOG_DIR",
   reports: "GUP_REPORT_DIR",
   scheduler: "GUP_SCHEDULER_DIR",
+  // The install identity and the journal-sharing cursor: never in the
+  // settings file, which roams with the profile and gets shared.
+  feedback: "GUP_FEEDBACK_DIR",
 };
 
 const CONFIG_OVERRIDE_ENV = "GUP_CONFIG_DIR";

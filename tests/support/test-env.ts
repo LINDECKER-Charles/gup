@@ -18,6 +18,7 @@ export const SANDBOX_DIR_VARS = {
   GUP_LOG_DIR: "logs",
   GUP_REPORT_DIR: "reports",
   GUP_SCHEDULER_DIR: "scheduler",
+  GUP_FEEDBACK_DIR: "feedback",
 } as const;
 
 export type SandboxDirVar = keyof typeof SANDBOX_DIR_VARS;
@@ -46,6 +47,7 @@ function sandboxDirs(base: string): Readonly<Record<SandboxDirVar, string>> {
     GUP_LOG_DIR: join(base, SANDBOX_DIR_VARS.GUP_LOG_DIR),
     GUP_REPORT_DIR: join(base, SANDBOX_DIR_VARS.GUP_REPORT_DIR),
     GUP_SCHEDULER_DIR: join(base, SANDBOX_DIR_VARS.GUP_SCHEDULER_DIR),
+    GUP_FEEDBACK_DIR: join(base, SANDBOX_DIR_VARS.GUP_FEEDBACK_DIR),
   };
 }
 
@@ -56,6 +58,8 @@ export function sharedTestEnv(root: string): Readonly<Record<string, string>> {
     GUP_HISTORY: "0",
     GUP_CONFIG: "0",
     GUP_LOG_LEVEL: "off",
+    // No journal ever leaves a test run, and no CLI it spawns asks about it.
+    GUP_SHARE_LOGS: "0",
     // The language of the suites' expectations, for the CLI they spawn
     // (tests/support/locale.ts sets it in-process).
     GUP_LANG: "fr",
