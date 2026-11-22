@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CliModule, StartupContext } from "../../../src/commands/cli/cli-module.js";
-import { handleFatal, installStartup } from "../../../src/commands/cli/startup.js";
+import { endCommand, handleFatal, installStartup } from "../../../src/commands/cli/startup.js";
 import { runTrigger, type RunTrigger } from "../../../src/core/state/run-context.js";
 import { PromptCancelledError } from "../../../src/ui/tui/prompt-cancelled.js";
 
@@ -81,6 +81,38 @@ describe("installStartup", () => {
     await parse("__admin-batch", "C:\\tmp\\batch.json");
     expect(seen).toEqual(["journal"]);
     expect(ran).toEqual(["admin"]);
+  });
+});
+
+describe("endCommand", () => {
+  it("lets every module finish, in order, a failing one included, then exits with the code", async () => {
+    const steps: string[] = [];
+    const failing: CliModule = {
+      id: "a",
+      order: 10,
+      beforeExit: () => Promise.reject(new Error("offline")),
+    };
+    const uploading: CliModule = {
+      id: "b",
+      order: 20,
+      beforeExit: async (context) => void steps.push(`upload after ${JSON.stringify(context.commandPath)}`),
+    };
+    await program([uploading, failing]).parse("update");
+    const exit = vi.fn(() => void steps.push("exit"));
+
+    await endCommand(3, exit);
+
+    expect(steps).toEqual(['upload after "update"', "exit"]);
+    expect(exit).toHaveBeenCalledWith(3);
+  });
+
+  it("runs no module's last word in the elevated child", async () => {
+    const beforeExit = vi.fn(async () => undefined);
+    await program([{ id: "feedback", order: 100, beforeExit }]).parse("__admin-batch", "C:\\b.json");
+
+    await endCommand(0, vi.fn());
+
+    expect(beforeExit).not.toHaveBeenCalled();
   });
 });
 

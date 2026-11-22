@@ -6,6 +6,7 @@ import { uiPreferences } from "../ui/app/ui-preferences.js";
 import type { MenuController } from "../ui/app/session/menu-session.js";
 import { runScan } from "../ui/scan-progress.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
+import { endCommand } from "./cli/startup.js";
 import type { MenuState } from "./menu-state.js";
 import { menuViews } from "./menu-views.js";
 import { updateOnConsole } from "./update.js";
@@ -58,8 +59,7 @@ export const menuModule: CliModule = {
   order: MODULE_ORDER.commands,
   register(program) {
     program.action(async () => {
-      const code = await menuCommand();
-      process.exit(code);
+      await endCommand(await menuCommand());
     });
   },
 };

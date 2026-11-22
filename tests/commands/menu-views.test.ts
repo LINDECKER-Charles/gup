@@ -17,6 +17,7 @@ describe("menuViews", () => {
       ["Planification", 0],
       ["Providers", 1],
       ["Journal", 1],
+      ["Retours", 1],
       ["Options", 1],
       ["Quitter", 2],
     ]);

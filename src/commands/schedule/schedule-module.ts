@@ -11,6 +11,7 @@ import {
 import { SCHEDULE_COMMAND_LABELS } from "../../ui/text/schedule/schedule-command-labels.js";
 import { triggerLine } from "../../ui/text/schedule/schedule-labels.js";
 import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "../cli/cli-module.js";
+import { endCommand } from "../cli/startup.js";
 import { addCommand, disableCommand, enableCommand, removeCommand } from "./crud-commands.js";
 import { listSchedulesCommand, statusCommand } from "./report-commands.js";
 import { runNowCommand } from "./run-now.js";
@@ -40,7 +41,8 @@ import { installCommand, uninstallCommand } from "./trigger-commands.js";
 export interface ScheduleModuleDeps {
   readonly services: () => SchedulerServices | { readonly error: string };
   readonly output: CommandOutput;
-  readonly exit: (code: number) => void;
+  /** Ends the process (`endCommand`: the modules' last word first). */
+  readonly exit: (code: number) => void | Promise<void>;
   /** Records the menu's "run now" (the Schedules view's run tracker). */
   readonly menuRuns: () => UpdateObserver;
   /** The pipeline's process-wide observer slot. */
@@ -89,14 +91,16 @@ function registerCommands(program: Command, deps: ScheduleModuleDeps): void {
     const services = deps.services();
     if ("error" in services) {
       deps.output.err(services.error);
-      return deps.exit(1);
+      return await deps.exit(1);
     }
-    deps.exit(await command(services));
+    await deps.exit(await command(services));
   };
   registerReports(schedule, { deps, run });
   registerChanges(schedule, { deps, run });
   registerTrigger(schedule, { deps, run });
-  program.command(TICK_COMMAND, { hidden: true }).action(async () => deps.exit(await runTick()));
+  program.command(TICK_COMMAND, { hidden: true }).action(async () => {
+    await deps.exit(await runTick());
+  });
 }
 
 type Runner = (command: (services: SchedulerServices) => Promise<number>) => () => Promise<void>;
@@ -229,7 +233,7 @@ function diagnosticOf(report: TriggerReport, now: Date): DiagnosticLine {
 export const scheduleModule: CliModule = createScheduleModule({
   services: processSchedulerServices,
   output: CONSOLE_OUTPUT,
-  exit: (code) => process.exit(code),
+  exit: (code) => endCommand(code),
   menuRuns: () => menuSchedules().runTracker,
   observe: observeUpdates,
 });

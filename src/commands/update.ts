@@ -25,6 +25,7 @@ import { counted } from "../ui/text/format.js";
 import { beginSkipSession } from "../ui/skip-controller.js";
 import { consolePorts, printReport } from "../ui/update-console.js";
 import { MODULE_ORDER, type CliModule } from "./cli/cli-module.js";
+import { endCommand } from "./cli/startup.js";
 import { warnIgnoredProviders } from "./warn-ignored-providers.js";
 
 /** The command's own words: its help, its question and its messages. */
@@ -295,7 +296,7 @@ export const updateModule: CliModule = {
           ...(opts.provider && { only: opts.provider }),
           ...(opts.fast !== undefined && { fast: opts.fast }),
         });
-        process.exit(code);
+        await endCommand(code);
       });
   },
 };

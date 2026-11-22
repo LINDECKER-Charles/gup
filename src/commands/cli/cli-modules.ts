@@ -1,5 +1,6 @@
 import { adminBatchModule } from "../admin-batch.js";
 import { doctorModule } from "../doctor.js";
+import { feedbackModule } from "../feedback/feedback-module.js";
 import { journalModule } from "../journal/journal-module.js";
 import { listModule } from "../list.js";
 import { menuModule } from "../menu.js";
@@ -20,6 +21,7 @@ export const CLI_MODULES: readonly CliModule[] = [
   adminBatchModule,
   doctorModule,
   embeddedTerminalModule,
+  feedbackModule,
   journalModule,
   languageModule,
   listModule,

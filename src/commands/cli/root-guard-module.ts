@@ -27,7 +27,7 @@ import { MODULE_ORDER, type CliModule, type DiagnosticLine } from "./cli-module.
  */
 
 const ROOT_UID = 0;
-const STATE_KINDS: readonly StateKind[] = ["history", "logs", "reports", "scheduler"];
+const STATE_KINDS: readonly StateKind[] = ["history", "logs", "reports", "scheduler", "feedback"];
 
 const ROOT_GUARD_LABELS = localized({
   en: {
