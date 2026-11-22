@@ -38,10 +38,11 @@ async function issue(admin: AdminSession, fields: Record<string, string | string
   return { token, page };
 }
 
-/** The registration command as a copy of the block gives it: text only, entities decoded. */
+/** The registration command as a copy of the block gives it: its parts, entities decoded. */
 function commandOf(body: string): string {
   const block = /<pre class="command"><code>(.*?)<\/code><\/pre>/s.exec(body)?.[1] ?? "";
-  return block.replace(/<[^>]+>/g, "").replaceAll("&#39;", "'");
+  const parts = [...block.matchAll(/<span class="command__part">([^<]*)<\/span>/g)];
+  return parts.map((part) => part[1]).join(" ").replaceAll("&#39;", "'");
 }
 
 function mcpCall(token: string) {
