@@ -50,11 +50,11 @@ async function get(context: ToolContext, installId: string): Promise<ToolOutput>
   const journal = spanJson(span);
   return {
     structured: {
-      install: INSTALL_JSON.summary(install), historyBreakdown: breakdown,
+      install: INSTALL_JSON.summary(install, context.permissions), historyBreakdown: breakdown,
       journalSpan: journal, feedback: linked?.map(FEEDBACK_JSON.summary) ?? null,
     },
     text: [
-      INSTALL_JSON.line(install), breakdownLine(breakdown),
+      INSTALL_JSON.line(install, context.permissions), breakdownLine(breakdown),
       `records from ${journal.oldestAt ?? "?"} to ${journal.newestAt ?? "?"} over `
         + `${journal.runCount} runs; oldest received ${journal.oldestReceivedAt ?? "?"}`,
       ...feedbackLines(linked),

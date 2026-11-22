@@ -1,4 +1,5 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { IssuedMcpAccess } from "../../../auth/mcp-accesses.js";
 import { MCP_ACCESS_RULES } from "../../../domain/mcp-access.js";
 import type { AdminSession } from "../../../ports/session-repository.js";
 import { ADMIN_UI } from "../../../views/admin-ui.js";
@@ -32,11 +33,13 @@ function sessionOf(request: FastifyRequest): AdminSession {
 /** The accesses to /mcp: the list, issuing one, its token shown once, revoking one. */
 class McpEndpoints {
   readonly #context: AdminContext;
+  readonly #log: FastifyBaseLogger;
   readonly #reveals: TokenReveals;
 
-  constructor(context: AdminContext) {
+  constructor(context: AdminContext, log: FastifyBaseLogger) {
     this.#context = context;
-    this.#reveals = new TokenReveals(context.clock);
+    this.#log = log;
+    this.#reveals = new TokenReveals(context.clock, this.#revokeUnseen);
   }
 
   register(app: FastifyInstance): void {
@@ -44,6 +47,7 @@ class McpEndpoints {
     app.post("/mcp", this.issue);
     app.get("/mcp/token", this.reveal);
     app.post("/mcp/:id/revoke", this.revoke);
+    app.addHook("onClose", () => this.#reveals.clear());
   }
 
   readonly show = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -58,8 +62,9 @@ class McpEndpoints {
       const status = HTTP_STATUS.unprocessableContent;
       return this.#page(request, reply, { form: result.form, notice: null, status });
     }
+    const session = sessionOf(request);
     const issued = await this.#context.mcpAccesses.issue(result.request);
-    this.#reveals.hold(sessionOf(request), issued);
+    this.#reveals.hold(session, issued);
     request.log.info({ mcpAccessId: issued.access.id }, "MCP access issued");
     return reply.redirect(ADMIN_UI.mcpTokenPath, HTTP_STATUS.seeOther);
   };
@@ -86,6 +91,16 @@ class McpEndpoints {
     return this.#done(reply, isRevoked ? "access-revoked" : "access-inactive");
   };
 
+  /** A token nobody saw opens nothing: its access is revoked rather than left active. */
+  readonly #revokeUnseen = async ({ access }: IssuedMcpAccess): Promise<void> => {
+    try {
+      const isRevoked = await this.#context.mcpAccesses.revoke(access.id);
+      if (isRevoked) this.#log.info({ mcpAccessId: access.id }, "MCP access revoked: token unseen");
+    } catch (error) {
+      this.#log.error({ err: error, mcpAccessId: access.id }, "unseen MCP access not revoked");
+    }
+  };
+
   async #page(request: FastifyRequest, reply: FastifyReply, view: PageView) {
     const { mcpAccesses, clock, config } = this.#context;
     return sendHtml(reply, mcpPage({
@@ -100,5 +115,5 @@ class McpEndpoints {
 }
 
 export function registerMcpRoutes(app: FastifyInstance, context: AdminContext): void {
-  new McpEndpoints(context).register(app);
+  new McpEndpoints(context, app.log).register(app);
 }

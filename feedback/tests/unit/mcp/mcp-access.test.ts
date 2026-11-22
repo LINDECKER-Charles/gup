@@ -1,3 +1,6 @@
+import {
+  CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY, PROTOCOL_VERSION_META_KEY,
+} from "@modelcontextprotocol/server";
 import { afterEach, describe, expect, it } from "vitest";
 import type { NewFeedback } from "../../../src/domain/feedback.js";
 import type { McpPermission } from "../../../src/domain/mcp-access.js";
@@ -28,6 +31,25 @@ afterEach(async () => {
 async function toolNames(app: TestApp["app"], token = TOKEN): Promise<string[]> {
   const response = await rpc(app, { method: "tools/list", token });
   expect(response.statusCode).toBe(200);
+  return (response.json().result.tools as { name: string }[]).map((tool) => tool.name).sort();
+}
+
+const MODERN_ERA = "2026-07-28";
+
+/** tools/list in the 2026-07-28 per-request envelope: the SDK handler's path, not the legacy one. */
+async function modernToolNames(app: TestApp["app"]): Promise<string[]> {
+  const response = await rpc(app, {
+    method: "tools/list",
+    headers: { "mcp-protocol-version": MODERN_ERA, "mcp-method": "tools/list" },
+    params: {
+      _meta: {
+        [PROTOCOL_VERSION_META_KEY]: MODERN_ERA,
+        [CLIENT_INFO_META_KEY]: { name: "test", version: "1" },
+        [CLIENT_CAPABILITIES_META_KEY]: {},
+      },
+    },
+  });
+  expect(response.statusCode, response.body).toBe(200);
   return (response.json().result.tools as { name: string }[]).map((tool) => tool.name).sort();
 }
 
@@ -78,10 +100,26 @@ describe("MCP permissions", () => {
     [["feedback:read", "feedback:triage"]],
     [["journals:read"]],
     [["feedback:read", "feedback:triage", "journals:read"]],
-  ] as McpPermission[][][])("lists the tools of %j and no other", async (permissions) => {
+  ] as McpPermission[][][])("lists the tools of %j and no other, in both eras", async (permissions) => {
     ctx = await createMcpApp({}, permissions);
     const expected = permissions.flatMap((permission) => TOOLS_OF[permission]).sort();
     expect(await toolNames(ctx.app)).toEqual(expected);
+    expect(await modernToolNames(ctx.app)).toEqual(expected);
+  });
+
+  it("brings reading with triage, whatever the stored row says", async () => {
+    ctx = await createMcpApp({}, ["feedback:triage"]);
+    expect(await toolNames(ctx.app)).toEqual(
+      ["get_feedback", "search_feedback", "update_feedback"]);
+  });
+
+  it("leaves the feedback count out of the installs without feedback:read", async () => {
+    ctx = await createMcpApp({}, ["journals:read"]);
+    for (const [name, args] of [["list_installs", {}], ["get_install", { installId: INSTALL_ID }]]) {
+      const { result } = await call(ctx.app, String(name), args as Record<string, unknown>);
+      expect(JSON.stringify(result?.structuredContent)).toContain("\"feedbackCount\":null");
+      expect(result?.content[0]?.text).not.toMatch(/\d+ feedback/);
+    }
   });
 
   it("says what the access may do in the server's instructions", async () => {

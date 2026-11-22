@@ -32,12 +32,13 @@ async function get(context: ToolContext, id: number): Promise<ToolOutput> {
     };
   }
   const install = installId === null ? null : await context.journals.find(installId);
+  const { permissions } = context;
   return {
     structured: {
       feedback: FEEDBACK_JSON.full(feedback),
-      install: install === null ? null : INSTALL_JSON.summary(install),
+      install: install === null ? null : INSTALL_JSON.summary(install, permissions),
     },
-    text: render(feedback, install === null ? "none" : INSTALL_JSON.line(install)),
+    text: render(feedback, install === null ? "none" : INSTALL_JSON.line(install, permissions)),
   };
 }
 

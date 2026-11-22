@@ -263,7 +263,7 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
       .toMatchObject({ mcpAccesses: 1 });
   });
 
-  it("refuses an MCP access with an unknown permission or none", async () => {
+  it("refuses an MCP access with an unknown permission, none, or triage alone", async () => {
     const now = new Date();
     const insert = (permissions: string[]) => pool.query(
       `INSERT INTO mcp_access (id, name, token_sha256, token_hint, permissions, created_at,
@@ -271,6 +271,7 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
       [sha256(permissions.join()), permissions, now, new Date(now.getTime() + DAY_MS)]);
     await expect(insert(["admin:all"])).rejects.toThrow();
     await expect(insert([])).rejects.toThrow();
-    await expect(insert(["feedback:triage"])).resolves.toBeDefined();
+    await expect(insert(["feedback:triage"])).rejects.toThrow(/mcp_access_triage_reads/);
+    await expect(insert(["feedback:triage", "feedback:read"])).resolves.toBeDefined();
   });
 });

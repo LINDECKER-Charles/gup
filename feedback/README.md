@@ -211,7 +211,8 @@ gets `401`.
 1. Issue an access: a name (the tool and the machine), its permissions — `feedback:read`,
    `feedback:triage` (which brings reading), `journals:read` — and a lifetime of 1, 7, 30 or
    90 days or a year. The next page shows the token once; the service keeps its SHA-256 and
-   its last four characters, never the token.
+   its last four characters, never the token. Leave that page unseen for 10 minutes, or issue
+   another first, and the access is revoked: nobody could use it.
 2. Put the token in a user-level environment variable of the machine — `GUP_FEEDBACK_MCP_TOKEN`
    for production, `GUP_FEEDBACK_DEV_MCP_TOKEN` for the local stack — or in the vault
    (`feedback/prod-client.env`), exported by the shell profile.

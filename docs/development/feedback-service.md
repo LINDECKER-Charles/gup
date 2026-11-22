@@ -210,7 +210,7 @@ client-side script, strict CSP (`default-src 'none'`; styles and fonts from `'se
 | `POST /admin/mails/test` · `POST /admin/mails/retry` | send a test mail to the address typed in (the notification recipient by default); make every unsent mail due now |
 | `POST /admin/mails/recipient` · `POST /admin/mails/recipient/reset` | change the address notifications go to; go back to `FEEDBACK_NOTIFY_TO` |
 | `GET /admin/mcp` · `POST /admin/mcp` | the MCP accesses, active then expired or revoked, and the form that issues one (`422` with the refused fields) |
-| `GET /admin/mcp/token` | the token of the access the session just issued, once: in memory for 10 minutes, then gone |
+| `GET /admin/mcp/token` | the token of the access the session just issued, once: in memory for 10 minutes, then gone and its access revoked |
 | `POST /admin/mcp/{id}/revoke` | revoke an active access, confirmed by a ticked box |
 | `GET /admin/assets/{name}` | stylesheet, fonts, logo and favicons; no session needed (the login page uses them) |
 
@@ -321,7 +321,10 @@ tool answers with the feedback it changed), `journals:read` (installs and their 
 Lifetimes: 1, 7, 30, 90 or 365 days, 30 by default; none is unlimited. The token is
 `gupmcp_` and 43 base64url characters (256 random bits); it is shown once, on the page that
 follows the issue, and the service keeps its SHA-256 and its last four characters only. A
-revoked access cannot be restored: issue another. Expired and revoked accesses stay listed
+token nobody saw opens nothing, so its access is revoked: when a second issue from the same
+session replaces it before it is shown, when its 10 minutes run out, or when the service
+stops. A revoked access cannot be restored: issue another. The table refuses
+`feedback:triage` without `feedback:read`, and the check of a token applies that rule again. Expired and revoked accesses stay listed
 90 days, then the daily purge deletes them.
 
 **Transport.** Streamable HTTP, stateless (no `Mcp-Session-Id`, a fresh server instance
@@ -345,10 +348,11 @@ window ends. Responses carry `Cache-Control: no-store` and `nosniff`.
 
 **Tools.** An access lists and serves only the tools of its permissions — `search_feedback`
 and `get_feedback` for `feedback:read`, `update_feedback` for `feedback:triage`, the five
-others for `journals:read` — and the server's instructions name what it may do. Two tools
-straddle permissions and leave out what the access does not cover: `get_feedback` returns
-`install: null` without `journals:read`, `get_install` returns `feedback: null` without
-`feedback:read`. Inputs are strict JSON schemas (unknown keys, out-of-range pages, malformed IDs
+others for `journals:read` — and the server's instructions name what it may do. Tools
+whose answer straddles permissions leave out what the access does not cover: `get_feedback`
+returns `install: null` without `journals:read`; without `feedback:read`, `get_install`
+returns `feedback: null`, and it and `list_installs` give each install a `feedbackCount` of
+`null`. Inputs are strict JSON schemas (unknown keys, out-of-range pages, malformed IDs
 refused); results are structured JSON plus a compact text rendering; dates are ISO 8601
 UTC; lists are newest first and paginated (`page` from 1). An unknown ID or an invalid
 input is a tool error (`isError`), never an HTTP error.

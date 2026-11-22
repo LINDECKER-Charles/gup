@@ -91,6 +91,23 @@ describe("MCP tab", () => {
     expect(noticeOf(await other.get(TOKEN_PAGE))).toBe("token-gone");
     ctx.clock.advance(11 * DURATION_MS.minute);
     expect(noticeOf(await admin.get(TOKEN_PAGE))).toBe("token-gone");
+    await expect.poll(() => ctx.mcpAccesses.stored()[0]?.revokedAt).not.toBeNull();
+  });
+
+  it("revokes an access whose token was never shown, replaced by a second issue", async () => {
+    const admin = await open();
+    await admin.post(MCP, { ...VALID, name: "First, never shown" });
+    const { token } = await issue(admin, { ...VALID, name: "Second" });
+    await expect.poll(() => ctx.mcpAccesses.stored()[0]?.revokedAt).not.toBeNull();
+    expect(ctx.mcpAccesses.stored()[1]?.revokedAt).toBeNull();
+    expect((await mcpCall(token)).statusCode).toBe(200);
+  });
+
+  it("revokes the accesses still waiting to be shown when the service stops", async () => {
+    const admin = await open();
+    await admin.post(MCP, VALID);
+    await ctx.app.close();
+    expect(ctx.mcpAccesses.stored()[0]?.revokedAt).not.toBeNull();
   });
 
   it.each([

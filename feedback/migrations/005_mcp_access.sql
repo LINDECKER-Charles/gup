@@ -13,5 +13,8 @@ CREATE TABLE mcp_access (
   created_at   timestamptz NOT NULL,
   expires_at   timestamptz NOT NULL CHECK (expires_at > created_at),
   last_used_at timestamptz,
-  revoked_at   timestamptz
+  revoked_at   timestamptz,
+  -- Triaging answers with the whole feedback: it never comes without reading.
+  CONSTRAINT mcp_access_triage_reads CHECK (
+    NOT 'feedback:triage' = ANY (permissions) OR 'feedback:read' = ANY (permissions))
 );

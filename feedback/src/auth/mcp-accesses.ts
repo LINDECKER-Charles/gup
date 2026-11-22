@@ -75,6 +75,8 @@ export class McpAccesses {
   async authorize(authorization: string | undefined): Promise<McpGrant | null> {
     const token = bearerToken(authorization);
     if (token === null) return null;
-    return this.#store.use(sha256(token), this.#clock.now());
+    const grant = await this.#store.use(sha256(token), this.#clock.now());
+    // The table enforces it too; whatever wrote the row, triage still brings reading.
+    return grant === null ? null : { ...grant, permissions: grantedPermissions(grant.permissions) };
   }
 }
