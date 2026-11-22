@@ -1,6 +1,6 @@
 import type { InstallSummary } from "../../ports/install-reader.js";
 import type { Page } from "../../ports/page.js";
-import { ADMIN_UI } from "../admin-ui.js";
+import { INSTALL_LINKS } from "./install/install-view.js";
 import { emptyState } from "../kit/empty-state.js";
 import { href } from "../kit/href.js";
 import { html, type SafeHtml } from "../kit/html.js";
@@ -14,7 +14,7 @@ import { LABELS } from "../text/labels.js";
 
 /** The first block of a UUID is enough to tell installs apart at a glance. */
 const SHORT_ID_LENGTH = 8;
-const INSTALLS_PATH = `${ADMIN_UI.home}/installs`;
+const INSTALLS_PATH = INSTALL_LINKS.list;
 const INSTALL_NOUN = { one: "installation", many: "installations" };
 
 export interface InstallsPageInput {

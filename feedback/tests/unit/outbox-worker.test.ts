@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { Feedback } from "../../src/domain/feedback.js";
 import { OutboxWorker } from "../../src/mail/outbox-worker.js";
 import { RETRY_POLICY } from "../../src/mail/retry-policy.js";
-import type { OutgoingMail } from "../../src/ports/mailer.js";
+import type { OutgoingMail } from "../../src/ports/mail/mailer.js";
 import type {
   ClaimRequest, MailFailure, OutboxRepository, PendingMail,
-} from "../../src/ports/outbox-repository.js";
+} from "../../src/ports/mail/outbox-repository.js";
 import { ManualClock } from "../support/test-app.js";
 
 const FEEDBACK: Feedback = {

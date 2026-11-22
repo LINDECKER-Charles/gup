@@ -198,10 +198,31 @@
   background: var(--tint-red);
   color: var(--red);
 }
-.badge--kind-suggestion {
+.badge--kind-suggestion,
+.badge--entry-scan {
   border-color: var(--edge-lilac);
   background: var(--tint-lilac);
   color: var(--lilac);
+}
+.badge--entry-update {
+  border-color: var(--edge-violet);
+  background: var(--tint-violet);
+  color: var(--violet-text);
+}
+.badge--outcome-success {
+  border-color: var(--edge-green);
+  background: var(--tint-green);
+  color: var(--green);
+}
+.badge--outcome-failed {
+  border-color: var(--edge-red);
+  background: var(--tint-red);
+  color: var(--red);
+}
+.badge--outcome-skipped {
+  border-color: var(--edge-amber);
+  background: var(--tint-amber);
+  color: var(--amber);
 }
 
 /* ── Empty states and pages ────────────────────────────────────────────── */
@@ -226,6 +247,14 @@
 }
 .empty .btn {
   margin-block-start: 12px;
+}
+/* Inside a panel: what is missing, without a second frame. */
+.empty--inline {
+  justify-items: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: start;
 }
 
 .pagination {

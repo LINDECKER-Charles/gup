@@ -1,6 +1,6 @@
 import type { MailConfig } from "../config/app-config.js";
 import type { Feedback } from "../domain/feedback.js";
-import type { OutgoingMail } from "../ports/mailer.js";
+import type { OutgoingMail } from "../ports/mail/mailer.js";
 import { formatDate } from "../views/text/format-date.js";
 import { LABELS } from "../views/text/labels.js";
 

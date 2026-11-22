@@ -1,5 +1,6 @@
 import type { FeedbackStatus } from "../../domain/feedback.js";
 import type { FeedbackFilter } from "../../ports/feedback-repository.js";
+import { likePattern } from "../like-pattern.js";
 
 /** `42` or `#42`: a search that may also be a feedback's number. */
 const FEEDBACK_NUMBER = /^#?(\d{1,15})$/;
@@ -15,11 +16,6 @@ export const FEEDBACK_FILTER = `($1::text IS NULL OR f.status = $1)
   AND ($3::text IS NULL OR f.title ILIKE $3 OR f.message ILIKE $3 OR f.email ILIKE $3
     OR f.install_id::text ILIKE $3 OR f.id = $4::bigint)`;
 
-/** `%`, `_` and the escape character itself match literally. */
-function containing(search: string): string {
-  return `%${search.replace(/[\\%_]/g, (character) => `\\${character}`)}%`;
-}
-
 /** The four parameters of FEEDBACK_FILTER, in order. */
 export function feedbackFilterParams(
   status: FeedbackStatus | null,
@@ -27,5 +23,5 @@ export function feedbackFilterParams(
 ): readonly unknown[] {
   if (filter.search === null) return [status, filter.kind, null, null];
   const number = FEEDBACK_NUMBER.exec(filter.search)?.[1] ?? null;
-  return [status, filter.kind, containing(filter.search), number];
+  return [status, filter.kind, likePattern(filter.search), number];
 }

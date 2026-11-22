@@ -1,8 +1,8 @@
 import type { FastifyBaseLogger } from "fastify";
 import type { MailConfig } from "../config/app-config.js";
 import type { Clock } from "../ports/clock.js";
-import type { Mailer } from "../ports/mailer.js";
-import type { OutboxRepository, PendingMail } from "../ports/outbox-repository.js";
+import type { Mailer } from "../ports/mail/mailer.js";
+import type { OutboxRepository, PendingMail } from "../ports/mail/outbox-repository.js";
 import { feedbackMail } from "./feedback-mail.js";
 import { RETRY_POLICY } from "./retry-policy.js";
 import { DURATION_MS } from "../time-units.js";

@@ -1,4 +1,4 @@
-import type { Feedback } from "../domain/feedback.js";
+import type { Feedback } from "../../domain/feedback.js";
 
 export interface PendingMail {
   readonly id: number;

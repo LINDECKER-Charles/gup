@@ -1,5 +1,5 @@
 import { createTransport, type Transporter } from "nodemailer";
-import type { Mailer, OutgoingMail } from "../ports/mailer.js";
+import type { Mailer, OutgoingMail } from "../ports/mail/mailer.js";
 import { DURATION_MS } from "../time-units.js";
 
 /**

@@ -1,31 +1,9 @@
 import { FEEDBACK_VOCABULARY, type StatusCounts } from "../../../domain/feedback.js";
 import { ADMIN_UI } from "../../admin-ui.js";
 import { html, type SafeHtml } from "../../kit/html.js";
+import { pillGroup, type Pill } from "../../kit/pill-group.js";
 import { LABELS } from "../../text/labels.js";
 import { inboxHref, type InboxFilters } from "./inbox-href.js";
-
-interface Pill {
-  readonly label: string;
-  readonly href: string;
-  readonly isCurrent: boolean;
-  readonly count?: { readonly value: number; readonly isWaiting: boolean };
-}
-
-function pill(item: Pill): SafeHtml {
-  const current = item.isCurrent ? html` aria-current="page"` : "";
-  const waiting = item.count?.isWaiting === true ? " pill__count--waiting" : "";
-  const count = item.count === undefined
-    ? ""
-    : html` <span class="pill__count${waiting}">${item.count.value}</span>`;
-  return html`<a class="pill" href="${item.href}"${current}>${item.label}${count}</a>`;
-}
-
-function group(id: string, label: string, pills: readonly Pill[]): SafeHtml {
-  return html`<nav class="filter" aria-labelledby="${id}">
-    <span class="field-label" id="${id}">${label}</span>
-    <div class="pills">${pills.map(pill)}</div>
-  </nav>`;
-}
 
 function statusPills(filters: InboxFilters, counts: StatusCounts): readonly Pill[] {
   const total = FEEDBACK_VOCABULARY.statuses.reduce((sum, status) => sum + counts[status], 0);
@@ -72,8 +50,8 @@ export function inboxToolbar(filters: InboxFilters, counts: StatusCounts): SafeH
   return html`<section class="toolbar" aria-label="Recherche et filtres">
     ${searchForm(filters)}
     <div class="toolbar__filters">
-      ${group("filter-status", "Statut", statusPills(filters, counts))}
-      ${group("filter-kind", "Type", kindPills(filters))}
+      ${pillGroup({ id: "filter-status", label: "Statut", pills: statusPills(filters, counts) })}
+      ${pillGroup({ id: "filter-kind", label: "Type", pills: kindPills(filters) })}
     </div>
   </section>`;
 }

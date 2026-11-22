@@ -1,5 +1,5 @@
 import type { FeedbackKind, FeedbackStatus } from "../../domain/feedback.js";
-import type { LogLevel } from "../../domain/journal.js";
+import type { HistoryKind, LogLevel, UpdateStatus } from "../../domain/journal.js";
 
 /** Every French word the back office shows for a code, in one place. */
 export const LABELS = {
@@ -31,6 +31,21 @@ export const LABELS = {
     debug: "Débogage",
     trace: "Trace",
   } satisfies Record<LogLevel, string>,
+  historyKind: { scan: "Analyse", update: "Mise à jour" } satisfies Record<HistoryKind, string>,
+  historyKindFilter: {
+    scan: "Analyses",
+    update: "Mises à jour",
+  } satisfies Record<HistoryKind, string>,
+  updateStatus: {
+    success: "Réussie",
+    failed: "Échouée",
+    skipped: "Ignorée",
+  } satisfies Record<UpdateStatus, string>,
+  updateStatusFilter: {
+    success: "Réussies",
+    failed: "Échouées",
+    skipped: "Ignorées",
+  } satisfies Record<UpdateStatus, string>,
   platform: { win32: "Windows", darwin: "macOS", linux: "Linux", other: "Autre" } as Readonly<
     Record<string, string>
   >,

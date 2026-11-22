@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import type { Feedback } from "../../../src/domain/feedback.js";
 import type {
   InstallSummary, StoredHistoryRecord, StoredLogRecord,
 } from "../../../src/ports/install-reader.js";
 import type { Page } from "../../../src/ports/page.js";
 import { feedbackPage } from "../../../src/views/pages/feedback-page.js";
-import { installPage } from "../../../src/views/pages/install-page.js";
+import { installPage } from "../../../src/views/pages/install/install-page.js";
+import { runPage } from "../../../src/views/pages/install/run-page.js";
+import { mailsPage } from "../../../src/views/pages/mails/mails-page.js";
 
 /** Breaks out of an attribute, then out of the text: whatever the context, it must stay text. */
 const HOSTILE = `"'><script>alert(1)</script><img src=x onerror=alert(2)>`;
@@ -20,7 +22,8 @@ function pageOf<T>(items: readonly T[]): Page<T> {
 function expectInert(markup: string): void {
   expect(markup).not.toContain("<script");
   expect(markup).not.toContain("<img src=x");
-  expect(markup).not.toMatch(/<[a-z][^>]*\sonerror=/i);
+  // Quoted attribute values are inert: an injected attribute would sit outside the quotes.
+  expect(markup.replace(/"[^"]*"/g, `""`)).not.toMatch(/<[a-z][^>]*\sonerror=/i);
   expect(markup).not.toMatch(/href="javascript:/i);
 }
 
@@ -66,8 +69,29 @@ describe("install page", () => {
     data: { ctx: { [HOSTILE]: HOSTILE }, data: HOSTILE },
   };
   const markup = installPage({
-    csrfToken: "token", install, installId: INSTALL_ID, feedback: [FEEDBACK],
-    failedUpdates: pageOf([failed]), scans: pageOf([scan]), logs: pageOf([log]), maxLevelRank: 4,
+    csrfToken: "token", install, feedback: [FEEDBACK],
+    span: { oldestAt: AT, newestAt: AT, oldestReceivedAt: AT, runCount: 1 },
+    retentionDays: 90,
+    view: {
+      installId: INSTALL_ID,
+      history: { kind: null, status: null, page: 1 },
+      log: { maxLevelRank: 4, search: HOSTILE, page: 1 },
+    },
+    history: pageOf([failed, scan]),
+    breakdown: [{ kind: "update", status: "failed", count: 1 }],
+    logs: pageOf([log]),
+  });
+  const runMarkup = runPage({
+    csrfToken: "token",
+    run: {
+      installId: INSTALL_ID, runId: HOSTILE, startedAt: AT, endedAt: AT,
+      historyCount: 2, logCount: 1, errorCount: 1, failedUpdateCount: 1,
+    },
+    entries: pageOf([
+      { source: "history", record: failed },
+      { source: "history", record: scan },
+      { source: "log", record: log },
+    ]),
   });
 
   it("escapes uploaded records, their keys and the install's metadata", () => {
@@ -77,5 +101,43 @@ describe("install page", () => {
 
   it("still renders the records it escaped", () => {
     expect(markup.match(/&lt;script&gt;/g)?.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("shows each record's whole data, pretty-printed and escaped", () => {
+    expect(markup).toContain("Données complètes");
+    expect(markup).toContain("&quot;providerId&quot;: &quot;\\&quot;&#39;&gt;&lt;script&gt;");
+  });
+
+  it("links a run by its encoded ID and keeps the search in the form, escaped", () => {
+    expect(markup).toContain(`/runs/${encodeURIComponent(HOSTILE).replaceAll("'", "&#39;")}"`);
+    expect(markup).toContain(`value="&quot;&#39;&gt;&lt;script&gt;`);
+  });
+
+  it("escapes a run's ID and every record of its story", () => {
+    expectInert(runMarkup);
+    expect(runMarkup.match(/&lt;script&gt;/g)?.length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe("mails page", () => {
+  const markup = mailsPage({
+    csrfToken: "token", notice: null, pollIntervalMs: 5_000, maxAttempts: 8,
+    relay: {
+      endpoint: { host: HOSTILE, port: 465, isDefaultPort: true, isImplicitTls: true },
+      from: HOSTILE, to: HOSTILE,
+    },
+    lastTest: { at: AT, to: HOSTILE, error: HOSTILE },
+    testLimit: { max: 5, windowMs: 600_000 },
+    counts: { waiting: 1, failing: 1, sentRecently: 0 },
+    unsent: pageOf([{
+      id: 1, feedbackId: 7, feedbackKind: "bug", feedbackTitle: HOSTILE, attempts: 3,
+      nextAttemptAt: AT, lastError: HOSTILE, createdAt: AT,
+    }]),
+    sentWindowDays: 30,
+  });
+
+  it("escapes the relay settings, the last test error and the outbox", () => {
+    expectInert(markup);
+    expect(markup.match(/&lt;script&gt;/g)?.length).toBeGreaterThanOrEqual(5);
   });
 });

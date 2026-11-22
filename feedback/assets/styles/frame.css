@@ -65,7 +65,7 @@
 .nav {
   order: 3;
   display: flex;
-  gap: 28px;
+  gap: 18px;
   inline-size: 100%;
   border-block-start: 1px solid var(--line-faint);
 }
@@ -104,6 +104,7 @@
   }
   .nav {
     order: 0;
+    gap: 28px;
     inline-size: auto;
     margin-inline-end: auto;
     border: 0;

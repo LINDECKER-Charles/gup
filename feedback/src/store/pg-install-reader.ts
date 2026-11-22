@@ -1,66 +1,50 @@
-import type { Pool } from "pg";
-import type { HistoryKind } from "../domain/journal.js";
+import type { Pool, QueryResultRow } from "pg";
 import type {
-  HistoryQuery, InstallReader, InstallSummary, LogQuery, StoredHistoryRecord, StoredLogRecord,
+  HistoryBreakdownCell, HistoryQuery, InstallReader, InstallSummary, JournalSpan, LogQuery,
+  RunEntry, RunKey, RunQuery, RunSummary, StoredHistoryRecord, StoredLogRecord,
 } from "../ports/install-reader.js";
 import type { Page, PageRequest } from "../ports/page.js";
+import {
+  offsetOf, toHistory, toLog, toPage, toRunEntry, toSummary,
+  type HistoryRow, type LogRow, type Paged, type RunRow, type SummaryRow,
+} from "./install/journal-rows.js";
+import {
+  HISTORY_BREAKDOWN, HISTORY_CHUNK, HISTORY_PAGE, INSTALL_SUMMARY, JOURNAL_SPAN, LOG_CHUNK,
+  LOG_PAGE, RUN_PAGE, RUN_SUMMARY,
+} from "./install/journal-sql.js";
+import { likePattern } from "./like-pattern.js";
 
-const SUMMARY = `SELECT i.id, i.gup_version, i.platform, i.arch, i.node_version, i.locale,
-    i.first_seen_at, i.last_seen_at,
-    (SELECT count(*) FROM install_history_item h WHERE h.install_id = i.id)::int AS history_count,
-    (SELECT count(*) FROM install_log_item l WHERE l.install_id = i.id)::int AS log_count,
-    (SELECT count(*) FROM feedback f WHERE f.install_id = i.id)::int AS feedback_count
-  FROM install i`;
+/** Rows per round trip of an export: a few MiB at most, whatever the install holds. */
+const EXPORT_CHUNK_ROWS = 1000;
 
-interface SummaryRow {
-  id: string;
-  gup_version: string | null;
-  platform: string | null;
-  arch: string | null;
-  node_version: string | null;
-  locale: string | null;
-  first_seen_at: Date;
-  last_seen_at: Date;
+interface SpanRow {
+  oldest_at: Date | null;
+  newest_at: Date | null;
+  oldest_received_at: Date | null;
+  run_count: number;
+}
+
+interface RunSummaryRow {
+  started_at: Date | null;
+  ended_at: Date | null;
   history_count: number;
   log_count: number;
-  feedback_count: number;
+  error_count: number;
+  failed_update_count: number;
 }
 
-interface RecordRow {
+interface ChunkCursor {
   id: string;
-  ts: Date;
-  run_id: string;
-  data: Record<string, unknown>;
-  total: number;
+  ts_cursor: string;
 }
 
-function toSummary(row: SummaryRow): InstallSummary {
+function toRunSummary(key: RunKey, row: RunSummaryRow | undefined): RunSummary | null {
+  if (row?.started_at == null || row.ended_at === null) return null;
   return {
-    id: row.id, gupVersion: row.gup_version, platform: row.platform, arch: row.arch,
-    node: row.node_version, locale: row.locale, firstSeenAt: row.first_seen_at,
-    lastSeenAt: row.last_seen_at, historyCount: row.history_count, logCount: row.log_count,
-    feedbackCount: row.feedback_count,
+    ...key, startedAt: row.started_at, endedAt: row.ended_at,
+    historyCount: row.history_count, logCount: row.log_count, errorCount: row.error_count,
+    failedUpdateCount: row.failed_update_count,
   };
-}
-
-function toRecord(row: RecordRow) {
-  return { id: Number(row.id), ts: row.ts, runId: row.run_id, data: row.data };
-}
-
-function offsetOf(request: PageRequest): number {
-  return (request.page - 1) * request.pageSize;
-}
-
-/**
- * Wraps the rows of a page query that also selected `count(*) OVER () AS total`.
- * A page past the end has no row to carry the total: it reads as empty, which
- * is what the back office shows for it anyway.
- */
-function toPage<R extends { total: number }, T>(
-  rows: readonly R[], request: PageRequest, map: (row: R) => T,
-): Page<T> {
-  const { page, pageSize } = request;
-  return { items: rows.map(map), total: rows[0]?.total ?? 0, page, pageSize };
 }
 
 export class PgInstallReader implements InstallReader {
@@ -71,37 +55,76 @@ export class PgInstallReader implements InstallReader {
   }
 
   async list(request: PageRequest): Promise<Page<InstallSummary>> {
-    const { rows } = await this.#pool.query<SummaryRow & { total: number }>(
-      `SELECT s.*, count(*) OVER ()::int AS total FROM (${SUMMARY}) s
+    const { rows } = await this.#pool.query<SummaryRow & Paged>(
+      `SELECT s.*, count(*) OVER ()::int AS total FROM (${INSTALL_SUMMARY}) s
        ORDER BY s.last_seen_at DESC, s.id LIMIT $1 OFFSET $2`,
       [request.pageSize, offsetOf(request)]);
     return toPage(rows, request, toSummary);
   }
 
   async find(installId: string): Promise<InstallSummary | null> {
-    const { rows } = await this.#pool.query<SummaryRow>(`${SUMMARY} WHERE i.id = $1`, [installId]);
+    const { rows } = await this.#pool.query<SummaryRow>(
+      `${INSTALL_SUMMARY} WHERE i.id = $1`, [installId]);
     return rows[0] === undefined ? null : toSummary(rows[0]);
   }
 
   async listHistory(query: HistoryQuery): Promise<Page<StoredHistoryRecord>> {
-    const { rows } = await this.#pool.query<RecordRow & { kind: HistoryKind; status: string }>(
-      `SELECT id, ts, run_id, data, kind, status, count(*) OVER ()::int AS total
-       FROM install_history_item
-       WHERE install_id = $1 AND kind = $2 AND ($3::text IS NULL OR status = $3)
-       ORDER BY ts DESC, id DESC LIMIT $4 OFFSET $5`,
-      [query.installId, query.kind, query.status, query.pageSize, offsetOf(query)]);
-    return toPage(rows, query, (row) => ({ ...toRecord(row), kind: row.kind, status: row.status }));
+    const { rows } = await this.#pool.query<HistoryRow & Paged>(HISTORY_PAGE, [
+      query.installId, query.kind, query.status, query.pageSize, offsetOf(query)]);
+    return toPage(rows, query, toHistory);
   }
 
   async listLogs(query: LogQuery): Promise<Page<StoredLogRecord>> {
-    const { rows } = await this.#pool.query<RecordRow & { level_rank: number; event: string }>(
-      `SELECT id, ts, run_id, data, level_rank, event, count(*) OVER ()::int AS total
-       FROM install_log_item
-       WHERE install_id = $1 AND level_rank <= $2
-       ORDER BY ts DESC, id DESC LIMIT $3 OFFSET $4`,
-      [query.installId, query.maxLevelRank, query.pageSize, offsetOf(query)]);
-    return toPage(rows, query, (row) => ({
-      ...toRecord(row), levelRank: row.level_rank, event: row.event,
-    }));
+    const pattern = query.search == null ? null : likePattern(query.search);
+    const { rows } = await this.#pool.query<LogRow & Paged>(LOG_PAGE, [
+      query.installId, query.maxLevelRank, pattern, query.pageSize, offsetOf(query)]);
+    return toPage(rows, query, toLog);
+  }
+
+  async historyBreakdown(installId: string): Promise<readonly HistoryBreakdownCell[]> {
+    const { rows } = await this.#pool.query<HistoryBreakdownCell>(HISTORY_BREAKDOWN, [installId]);
+    return rows;
+  }
+
+  async journalSpan(installId: string): Promise<JournalSpan> {
+    const { rows } = await this.#pool.query<SpanRow>(JOURNAL_SPAN, [installId]);
+    const row = rows[0];
+    return {
+      oldestAt: row?.oldest_at ?? null, newestAt: row?.newest_at ?? null,
+      oldestReceivedAt: row?.oldest_received_at ?? null, runCount: row?.run_count ?? 0,
+    };
+  }
+
+  async findRun(key: RunKey): Promise<RunSummary | null> {
+    const { rows } = await this.#pool.query<RunSummaryRow>(
+      RUN_SUMMARY, [key.installId, key.runId]);
+    return toRunSummary(key, rows[0]);
+  }
+
+  async listRun(query: RunQuery): Promise<Page<RunEntry>> {
+    const { rows } = await this.#pool.query<RunRow & Paged>(RUN_PAGE, [
+      query.installId, query.runId, query.pageSize, offsetOf(query)]);
+    return toPage(rows, query, toRunEntry);
+  }
+
+  streamHistory(installId: string): AsyncIterable<StoredHistoryRecord> {
+    return this.#stream(HISTORY_CHUNK, installId, toHistory);
+  }
+
+  streamLogs(installId: string): AsyncIterable<StoredLogRecord> {
+    return this.#stream(LOG_CHUNK, installId, toLog);
+  }
+
+  async *#stream<R extends QueryResultRow, T>(
+    sql: string, installId: string, map: (row: R) => T,
+  ): AsyncGenerator<T> {
+    let after: ChunkCursor | undefined;
+    for (;;) {
+      const params = [installId, after?.ts_cursor ?? null, after?.id ?? null, EXPORT_CHUNK_ROWS];
+      const result = await this.#pool.query<R & ChunkCursor>(sql, params);
+      for (const row of result.rows) yield map(row);
+      if (result.rows.length < EXPORT_CHUNK_ROWS) return;
+      after = result.rows.at(-1);
+    }
   }
 }

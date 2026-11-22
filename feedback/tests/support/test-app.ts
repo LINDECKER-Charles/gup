@@ -3,11 +3,11 @@ import { buildApp } from "../../src/app.js";
 import type { AppDeps } from "../../src/app-deps.js";
 import type { AppConfig } from "../../src/config/app-config.js";
 import type { Clock } from "../../src/ports/clock.js";
-import type { InstallReader } from "../../src/ports/install-reader.js";
-import type { PageRequest } from "../../src/ports/page.js";
 import { PasswordHash } from "../../src/security/password-hash.js";
 import { MemoryFeedbackRepository } from "./memory-feedback-repository.js";
+import { MemoryInstallReader } from "./memory-install-reader.js";
 import { MemoryInstallStore } from "./memory-install-store.js";
+import { MemoryOutboxMonitor } from "./memory-outbox-monitor.js";
 import { MemorySessionRepository } from "./memory-session-repository.js";
 
 export const ADMIN_USERNAME = "admin";
@@ -52,22 +52,13 @@ export class ManualClock implements Clock {
   }
 }
 
-function emptyPage(request: PageRequest) {
-  return { items: [], total: 0, page: request.page, pageSize: request.pageSize };
-}
-
-const EMPTY_JOURNALS: InstallReader = {
-  list: async (request) => emptyPage(request),
-  find: async () => null,
-  listHistory: async (query) => emptyPage(query),
-  listLogs: async (query) => emptyPage(query),
-};
-
 export interface TestApp {
   readonly app: FastifyInstance;
   readonly clock: ManualClock;
   readonly feedback: MemoryFeedbackRepository;
   readonly installs: MemoryInstallStore;
+  readonly journals: MemoryInstallReader;
+  readonly outbox: MemoryOutboxMonitor;
   readonly sessions: MemorySessionRepository;
 }
 
@@ -76,16 +67,20 @@ export async function createTestApp(overrides: Partial<AppDeps> = {}): Promise<T
   const feedback = new MemoryFeedbackRepository();
   const installs = new MemoryInstallStore();
   const sessions = new MemorySessionRepository();
+  const journals = new MemoryInstallReader();
+  const outbox = new MemoryOutboxMonitor();
   const app = await buildApp({
     config: testConfig(),
     feedback,
     installs,
-    journals: EMPTY_JOURNALS,
+    journals,
+    outbox,
+    mailer: null,
     sessions,
     health: { isHealthy: async () => true },
     clock,
     logger: false,
     ...overrides,
   });
-  return { app, clock, feedback, installs, sessions };
+  return { app, clock, feedback, installs, journals, outbox, sessions };
 }

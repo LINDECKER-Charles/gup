@@ -16,19 +16,12 @@ function readStatus(query: RequestParams): FeedbackStatus | null {
   return query.choice("status", FEEDBACK_VOCABULARY.statuses) ?? DEFAULT_STATUS;
 }
 
-/** Spaces collapsed, cut to the field's limit; nothing left = no search. */
-function readSearch(query: RequestParams): string | null {
-  const search = (query.text("q") ?? "").replace(/\s+/g, " ").trim()
-    .slice(0, ADMIN_UI.maxSearchLength);
-  return search === "" ? null : search;
-}
-
 export function registerInboxRoutes(app: FastifyInstance, context: AdminContext): void {
   app.get("/", async (request, reply) => {
     const query = new RequestParams(request.query);
     const status = readStatus(query);
     const kind = query.choice("kind", FEEDBACK_VOCABULARY.kinds);
-    const filter = { kind, search: readSearch(query) };
+    const filter = { kind, search: query.search("q") };
     const [counts, page] = await Promise.all([
       context.feedback.countByStatus(filter),
       context.feedback.list({ ...filter, status, page: query.page(), pageSize: PAGE_SIZE }),

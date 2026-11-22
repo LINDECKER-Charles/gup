@@ -1,26 +1,28 @@
+import { Readable } from "node:stream";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { FIELD_RULES } from "../../../domain/field-rules.js";
-import { JOURNAL_VOCABULARY } from "../../../domain/journal.js";
 import type { InstallSummary } from "../../../ports/install-reader.js";
-import { installPage } from "../../../views/pages/install-page.js";
-import { installsPage } from "../../../views/pages/installs-page.js";
 import { ADMIN_UI } from "../../../views/admin-ui.js";
+import { installPage } from "../../../views/pages/install/install-page.js";
+import { runPage } from "../../../views/pages/install/run-page.js";
+import { installsPage } from "../../../views/pages/installs-page.js";
 import { HttpError } from "../../http-error.js";
 import { HTTP_STATUS } from "../../http-status.js";
 import type { AdminContext } from "../admin-context.js";
 import { csrfTokenOf } from "../csrf-token-of.js";
 import { RequestParams } from "../request-params.js";
 import { sendHtml } from "../send-html.js";
+import { installExport } from "./install-export.js";
+import { readInstallView } from "./install-view-params.js";
 
-const INSTALLS_PAGE_SIZE = 20;
-const LOGS_PAGE_SIZE = 50;
-const FAILED_UPDATES_SHOWN = 50;
-const SCANS_SHOWN = 10;
-/** `warn` and above unless asked otherwise: the useful signal for a bug report. */
-const { logLevels } = JOURNAL_VOCABULARY;
-const DEFAULT_LEVEL_RANK = logLevels.indexOf("warn");
+const PAGE_SIZES = { installs: 20, history: 50, logs: 50, run: 200 } as const;
+const EXPORT_CONTENT_TYPE = "application/x-ndjson; charset=utf-8";
 
-/** Installs that shared journals: the list, one install's journals, erasing one. */
+function notFound(what: string): never {
+  throw new HttpError(HTTP_STATUS.notFound, `No such ${what}.`);
+}
+
+/** Installs that shared journals: the list, one install's journals, a run, export, erase. */
 class InstallsEndpoints {
   readonly #context: AdminContext;
 
@@ -31,6 +33,8 @@ class InstallsEndpoints {
   register(app: FastifyInstance): void {
     app.get("/installs", this.list);
     app.get("/installs/:id", this.show);
+    app.get("/installs/:id/runs/:runId", this.showRun);
+    app.get("/installs/:id/export", this.download);
     app.post("/installs/:id/erase", this.erase);
   }
 
@@ -38,7 +42,7 @@ class InstallsEndpoints {
     const query = new RequestParams(request.query);
     const page = await this.#context.journals.list({
       page: query.page(),
-      pageSize: INSTALLS_PAGE_SIZE,
+      pageSize: PAGE_SIZES.installs,
     });
     const notice = query.text("ok");
     return sendHtml(reply, installsPage({ csrfToken: csrfTokenOf(request), page, notice }));
@@ -46,25 +50,45 @@ class InstallsEndpoints {
 
   readonly show = async (request: FastifyRequest, reply: FastifyReply) => {
     const install = await this.#load(request);
-    const query = new RequestParams(request.query);
-    const level = query.choice("level", logLevels);
-    const maxLevelRank = level === null ? DEFAULT_LEVEL_RANK : logLevels.indexOf(level);
-    const { journals, feedback } = this.#context;
+    const view = readInstallView(install.id, request.query);
+    const { journals, feedback, config } = this.#context;
     const installId = install.id;
-    const [failedUpdates, scans, logs, linked] = await Promise.all([
-      journals.listHistory({
-        installId, kind: "update", status: "failed", page: 1, pageSize: FAILED_UPDATES_SHOWN,
-      }),
-      journals.listHistory({
-        installId, kind: "scan", status: null, page: 1, pageSize: SCANS_SHOWN,
-      }),
-      journals.listLogs({ installId, maxLevelRank, page: query.page(), pageSize: LOGS_PAGE_SIZE }),
+    const [span, breakdown, history, logs, linked] = await Promise.all([
+      journals.journalSpan(installId),
+      journals.historyBreakdown(installId),
+      journals.listHistory({ installId, ...view.history, pageSize: PAGE_SIZES.history }),
+      journals.listLogs({ installId, ...view.log, pageSize: PAGE_SIZES.logs }),
       feedback.listByInstall(installId),
     ]);
     return sendHtml(reply, installPage({
-      csrfToken: csrfTokenOf(request), install, installId, feedback: linked,
-      failedUpdates, scans, logs, maxLevelRank,
+      csrfToken: csrfTokenOf(request), install, span, retentionDays: config.logRetentionDays,
+      feedback: linked, view, history, breakdown, logs,
     }));
+  };
+
+  readonly showRun = async (request: FastifyRequest, reply: FastifyReply) => {
+    const install = await this.#load(request);
+    const runId = new RequestParams(request.params).text("runId") ?? "";
+    const isWellFormed = runId !== "" && runId.length <= FIELD_RULES.runId.max;
+    const key = { installId: install.id, runId };
+    const run = isWellFormed ? await this.#context.journals.findRun(key) : null;
+    if (run === null) notFound("run");
+    const entries = await this.#context.journals.listRun({
+      ...key, page: new RequestParams(request.query).page(), pageSize: PAGE_SIZES.run,
+    });
+    return sendHtml(reply, runPage({ csrfToken: csrfTokenOf(request), run, entries }));
+  };
+
+  /** Streamed as the client reads it; `no-store` comes with every back-office response. */
+  readonly download = async (request: FastifyRequest, reply: FastifyReply) => {
+    const install = await this.#load(request);
+    const lines = installExport({
+      context: this.#context, install, exportedAt: this.#context.clock.now(),
+    });
+    return reply
+      .type(EXPORT_CONTENT_TYPE)
+      .header("Content-Disposition", `attachment; filename="gup-install-${install.id}.jsonl"`)
+      .send(Readable.from(lines));
   };
 
   readonly erase = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -80,8 +104,7 @@ class InstallsEndpoints {
     const id = new RequestParams(request.params).text("id")?.toLowerCase() ?? "";
     const isWellFormed = FIELD_RULES.installId.pattern.test(id);
     const install = isWellFormed ? await this.#context.journals.find(id) : null;
-    if (install === null) throw new HttpError(HTTP_STATUS.notFound, "No such install.");
-    return install;
+    return install ?? notFound("install");
   }
 }
 

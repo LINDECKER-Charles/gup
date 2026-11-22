@@ -56,7 +56,7 @@ describe.skipIf(DATABASE_URL === undefined)("Postgres store", () => {
 
   it("migrates an empty database once, then finds nothing to apply", async () => {
     await pool.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
-    expect(await migrate(pool)).toEqual(["001_initial.sql"]);
+    expect(await migrate(pool)).toEqual(["001_initial.sql", "002_journal_reading.sql"]);
     expect(await migrate(pool)).toEqual([]);
   });
 

@@ -10,11 +10,14 @@ import { loggerOptions } from "./logger-options.js";
 import { NodemailerMailer } from "./mail/nodemailer-mailer.js";
 import { OutboxWorker } from "./mail/outbox-worker.js";
 import { SYSTEM_CLOCK } from "./ports/clock.js";
+import type { Mailer } from "./ports/mail/mailer.js";
+import type { OutboxRepository } from "./ports/mail/outbox-repository.js";
 import { migrate } from "./store/migrate.js";
 import { PgFeedbackRepository } from "./store/feedback/pg-feedback-repository.js";
 import { PgHealthProbe } from "./store/pg-health-probe.js";
 import { PgInstallReader } from "./store/pg-install-reader.js";
 import { PgInstallStore } from "./store/pg-install-store.js";
+import { PgOutboxMonitor } from "./store/feedback/pg-outbox-monitor.js";
 import { PgOutboxRepository } from "./store/feedback/pg-outbox-repository.js";
 import { PgRetentionStore } from "./store/pg-retention-store.js";
 import { PgSessionRepository } from "./store/pg-session-repository.js";
@@ -73,14 +76,26 @@ function retentionTask(config: AppConfig, pool: pg.Pool, app: FastifyInstance): 
   });
 }
 
+interface OutboxRelay {
+  readonly outbox: OutboxRepository;
+  readonly mailer: Mailer | null;
+}
+
+/** One relay for the outbox worker and the back office's test mail; none without SMTP. */
+function mailerOf(config: AppConfig): Mailer | null {
+  return config.mail === null ? null : new NodemailerMailer(config.mail.smtpUrl);
+}
+
 /** No SMTP: one warning, and the mails wait in the outbox until a restart with SMTP set. */
-function outboxTask(config: AppConfig, pool: pg.Pool, app: FastifyInstance): IntervalTask | null {
-  if (config.mail === null) {
+function outboxTask(
+  config: AppConfig, app: FastifyInstance, relay: OutboxRelay,
+): IntervalTask | null {
+  if (config.mail === null || relay.mailer === null) {
     app.log.warn("SMTP_URL is not set: notification mails stay queued in the outbox");
     return null;
   }
   const worker = new OutboxWorker({
-    outbox: new PgOutboxRepository(pool), mailer: new NodemailerMailer(config.mail.smtpUrl),
+    outbox: relay.outbox, mailer: relay.mailer,
     clock: SYSTEM_CLOCK, mail: config.mail, publicOrigin: config.publicOrigin, logger: app.log,
   });
   const run = () => worker.runOnce();
@@ -109,16 +124,18 @@ async function main(): Promise<void> {
     max: POOL_SIZE,
     connectionTimeoutMillis: CONNECT_TIMEOUT_MS,
   });
+  const mailer = mailerOf(config);
   const app = await buildApp({
     config, clock: SYSTEM_CLOCK, logger: loggerOptions(config.logLevel),
     feedback: new PgFeedbackRepository(pool), installs: new PgInstallStore(pool),
     journals: new PgInstallReader(pool), sessions: new PgSessionRepository(pool),
-    health: new PgHealthProbe(pool),
+    outbox: new PgOutboxMonitor(pool), mailer, health: new PgHealthProbe(pool),
   });
   pool.on("error", (error) => app.log.error({ err: error }, "idle database client failed"));
   await waitForDatabase(pool, app);
   app.log.info({ applied: await migrate(pool) }, "migrations up to date");
-  const tasks = [retentionTask(config, pool, app), outboxTask(config, pool, app)]
+  const relay = { outbox: new PgOutboxRepository(pool), mailer };
+  const tasks = [retentionTask(config, pool, app), outboxTask(config, app, relay)]
     .filter((task) => task !== null);
   for (const task of tasks) task.start();
   onShutdown(async () => {

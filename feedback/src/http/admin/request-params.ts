@@ -1,3 +1,5 @@
+import { ADMIN_UI } from "../../views/admin-ui.js";
+
 /**
  * Lenient reads of query strings, route params and form bodies: back-office
  * inputs come from its own links and forms, so a value that does not parse
@@ -30,8 +32,15 @@ export class RequestParams {
     return Number.isSafeInteger(parsed) ? parsed : null;
   }
 
-  /** The `page` query parameter, 1 when absent or malformed. */
-  page(): number {
-    return this.positiveInteger("page") ?? 1;
+  /** A page number (`page` unless named otherwise), 1 when absent or malformed. */
+  page(name = "page"): number {
+    return this.positiveInteger(name) ?? 1;
+  }
+
+  /** A search box: spaces collapsed, cut to the search limit; nothing left = no search. */
+  search(name: string): string | null {
+    const search = (this.text(name) ?? "").replace(/\s+/g, " ").trim()
+      .slice(0, ADMIN_UI.maxSearchLength);
+    return search === "" ? null : search;
   }
 }

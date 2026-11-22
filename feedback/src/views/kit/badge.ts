@@ -1,12 +1,24 @@
 import type { FeedbackKind, FeedbackStatus } from "../../domain/feedback.js";
-import { JOURNAL_VOCABULARY } from "../../domain/journal.js";
+import { JOURNAL_VOCABULARY, type HistoryKind } from "../../domain/journal.js";
 import { html, type SafeHtml } from "./html.js";
 import { LABELS } from "../text/labels.js";
 
 type BadgeSpec =
   | { readonly family: "status"; readonly value: FeedbackStatus }
   | { readonly family: "kind"; readonly value: FeedbackKind }
-  | { readonly family: "level"; readonly rank: number };
+  | { readonly family: "level"; readonly rank: number }
+  | { readonly family: "entry"; readonly value: HistoryKind }
+  /** An update's status: free text in the contract, a known word or shown as sent. */
+  | { readonly family: "outcome"; readonly value: string };
+
+const UNKNOWN_OUTCOME_TONE = "outcome-other";
+
+function outcome(value: string): { text: string; tone: string } {
+  const known = JOURNAL_VOCABULARY.updateStatuses.find((status) => status === value);
+  return known === undefined
+    ? { text: value, tone: UNKNOWN_OUTCOME_TONE }
+    : { text: LABELS.updateStatus[known], tone: `outcome-${known}` };
+}
 
 function describe(spec: BadgeSpec): { text: string; tone: string } {
   switch (spec.family) {
@@ -18,6 +30,10 @@ function describe(spec: BadgeSpec): { text: string; tone: string } {
       const level = JOURNAL_VOCABULARY.logLevels[spec.rank] ?? "trace";
       return { text: LABELS.level[level], tone: `level-${level}` };
     }
+    case "entry":
+      return { text: LABELS.historyKind[spec.value], tone: `entry-${spec.value}` };
+    case "outcome":
+      return outcome(spec.value);
   }
 }
 

@@ -5,10 +5,13 @@ export const JOURNAL_VOCABULARY = {
   /** Least verbose first, as in the CLI (src/core/log/types.ts): a level's index is its rank. */
   logLevels: ["error", "warn", "info", "debug", "trace"],
   historyKinds: ["scan", "update"],
+  /** `status` of an update record, as the CLI writes it (src/core/history/types.ts). */
+  updateStatuses: ["success", "failed", "skipped"],
 } as const;
 
 export type LogLevel = (typeof JOURNAL_VOCABULARY.logLevels)[number];
 export type HistoryKind = (typeof JOURNAL_VOCABULARY.historyKinds)[number];
+export type UpdateStatus = (typeof JOURNAL_VOCABULARY.updateStatuses)[number];
 
 /** What the CLI says about itself in an upload. */
 export interface ClientMeta extends ClientFacts {

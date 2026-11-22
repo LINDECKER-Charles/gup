@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import type {
   ClaimRequest, MailFailure, OutboxRepository, PendingMail,
-} from "../../ports/outbox-repository.js";
+} from "../../ports/mail/outbox-repository.js";
 import { FEEDBACK_COLUMNS } from "./feedback-columns.js";
 import { toFeedback, type FeedbackRow } from "./feedback-row.js";
 
